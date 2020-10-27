@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
@@ -135,5 +137,61 @@ class WeakSubjectivityInitializer {
 
               return SafeFuture.completedFuture(finalizedConfig);
             });
+  }
+
+  /**
+   * @param client The local chain data
+   * @param anchor The configured anchor
+   * @param storageQueryChannel The storage query channel
+   * @return A future that completes successfully if the anchor is consitent with the stored chain
+   *     data, otherwise returns an exceptional future
+   */
+  public SafeFuture<Void> assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+      final RecentChainData client,
+      final AnchorPoint anchor,
+      final StorageQueryChannel storageQueryChannel) {
+    return SafeFuture.of(
+        () -> {
+          if (client.isPreGenesis()) {
+            // Nothing to do
+            return SafeFuture.COMPLETE;
+          }
+          final Checkpoint finalizedCheckpoint = client.getFinalizedCheckpoint().orElseThrow();
+
+          // For now, disallow fast-forwarding an existing chain with a new anchor
+          if (anchor.getEpoch().isGreaterThan(finalizedCheckpoint.getEpoch())) {
+            throw new IllegalStateException(
+                "Cannot set future weak subjectivity state for an existing database.");
+          }
+
+          // Validate state is consistent with stored data
+          if (anchor.getEpoch().equals(finalizedCheckpoint.getEpoch())) {
+            if (!anchor.getRoot().equals(finalizedCheckpoint.getRoot())) {
+              throw new IllegalStateException(
+                  "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint.");
+            }
+          } else {
+            // Look up historical block to check for consistency
+            return storageQueryChannel
+                .getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot())
+                .thenApply(
+                    blockAtAnchor -> {
+                      final Optional<Bytes32> storedBlockRoot =
+                          blockAtAnchor.map(SignedBeaconBlock::getRoot);
+                      final boolean storedBlockMatchesAnchor =
+                          storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
+                      if (!storedBlockMatchesAnchor) {
+                        throw new IllegalStateException(
+                            "Supplied weak subjectivity state does not match stored block at epoch "
+                                + anchor.getEpoch()
+                                + ": "
+                                + storedBlockRoot.map(Object::toString).orElse("(empty)"));
+                      }
+                      return null;
+                    });
+          }
+
+          return SafeFuture.COMPLETE;
+        });
   }
 }

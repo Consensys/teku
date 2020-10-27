@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -24,6 +25,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -167,9 +170,7 @@ public class WeakSubjectivityInitializerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(cliCheckpoint.getEpochStartSlot());
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(cliCheckpoint.getEpoch());
 
     final Optional<Checkpoint> configuredCheckpoint =
         testFinalizeAndStoreConfigWithAnchor(
@@ -184,10 +185,7 @@ public class WeakSubjectivityInitializerTest {
 
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(
-            compute_start_slot_at_epoch(wsCheckpointEpoch.plus(2)));
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.plus(2));
 
     final Optional<Checkpoint> configuredCheckpoint =
         testFinalizeAndStoreConfigWithAnchor(
@@ -202,10 +200,7 @@ public class WeakSubjectivityInitializerTest {
 
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(
-            compute_start_slot_at_epoch(wsCheckpointEpoch.minus(2)));
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.minus(2));
 
     final Optional<Checkpoint> configuredCheckpoint =
         testFinalizeAndStoreConfigWithAnchor(
@@ -219,9 +214,7 @@ public class WeakSubjectivityInitializerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
     final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(storedCheckpoint.getEpochStartSlot());
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(storedCheckpoint.getEpoch());
 
     final Optional<Checkpoint> configuredCheckpoint =
         testFinalizeAndStoreConfigWithAnchor(
@@ -236,10 +229,7 @@ public class WeakSubjectivityInitializerTest {
 
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
     final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(
-            compute_start_slot_at_epoch(wsCheckpointEpoch.plus(2)));
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.plus(2));
 
     final Optional<Checkpoint> configuredCheckpoint =
         testFinalizeAndStoreConfigWithAnchor(
@@ -312,5 +302,153 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result.join()).usingRecursiveComparison().isEqualTo(expectedConfig);
 
     return expectedWsCheckpoint;
+  }
+
+  @Test
+  public void assertWeakSubjectivityAnchorIsConsistentWithExistingData_chainIsPreGenesis() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+    when(chain.isPreGenesis()).thenReturn(true);
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    assertThat(result).isCompleted();
+    verify(queryChannel, never()).getLatestFinalizedBlockAtSlot(any());
+  }
+
+  @Test
+  public void
+      assertWeakSubjectivityAnchorIsConsistentWithExistingData_anchorMatchesLatestFinalized() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint()).thenReturn(Optional.of(anchor.getCheckpoint()));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    assertThat(result).isCompleted();
+    verify(queryChannel, never()).getLatestFinalizedBlockAtSlot(any());
+  }
+
+  @Test
+  public void
+      assertWeakSubjectivityAnchorIsConsistentWithExistingData_anchorDoesNotMatchLatestFinalized() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch())));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    verify(queryChannel, never()).getLatestFinalizedBlockAtSlot(any());
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint");
+  }
+
+  @Test
+  public void
+      assertWeakSubjectivityAnchorIsConsistentWithExistingData_anchorMatchesHistoricalBlock() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch().plus(1))));
+    when(queryChannel.getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(anchor.getBlock())));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    assertThat(result).isCompleted();
+    verify(queryChannel).getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot());
+  }
+
+  @Test
+  public void
+      assertWeakSubjectivityAnchorIsConsistentWithExistingData_anchorDoesNotMatchHistoricalBlock() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+    final SignedBeaconBlock historicalBlock =
+        dataStructureUtil.randomSignedBeaconBlock(anchor.getEpochStartSlot());
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch().plus(1))));
+    when(queryChannel.getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(historicalBlock)));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    verify(queryChannel).getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot());
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "Supplied weak subjectivity state does not match stored block at epoch "
+                + anchor.getEpoch()
+                + ": "
+                + historicalBlock.getRoot());
+  }
+
+  @Test
+  public void assertWeakSubjectivityAnchorIsConsistentWithExistingData_historicalBlockMissing() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch().plus(1))));
+    when(queryChannel.getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    verify(queryChannel).getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot());
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "Supplied weak subjectivity state does not match stored block at epoch "
+                + anchor.getEpoch()
+                + ": (empty)");
+  }
+
+  @Test
+  public void
+      assertWeakSubjectivityAnchorIsConsistentWithExistingData_anchorIsNewerThanLatestFinalized() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(10);
+    final RecentChainData chain = mock(RecentChainData.class);
+
+    when(chain.isPreGenesis()).thenReturn(false);
+    when(chain.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch().minus(1))));
+
+    final SafeFuture<Void> result =
+        initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+            chain, anchor, queryChannel);
+    verify(queryChannel, never()).getLatestFinalizedBlockAtSlot(any());
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Cannot set future weak subjectivity state for an existing database");
   }
 }

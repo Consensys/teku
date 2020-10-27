@@ -273,30 +273,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
                     coalescingChainHeadChannel,
                     eventBus))
-        .thenApply(
+        .thenCompose(
             client -> {
               // Setup chain storage
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
-                // Set up initial state
-                if (weakSubjectivityAnchor.isPresent()) {
-                  client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
-                } else if (config.getInitialState() != null) {
-                  setupGenesisState();
-                } else if (config.isInteropEnabled()) {
-                  setupInteropState();
-                } else if (config.isEth1Enabled()) {
-                  STATUS_LOG.loadingGenesisFromEth1Chain();
-                } else {
-                  throw new InvalidConfigurationException(
-                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
-                }
+                setupInitialState(client);
               } else if (weakSubjectivityAnchor.isPresent()) {
-                // We already have an existing database, throw for now
-                throw new IllegalStateException(
-                    "Cannot set weak subjectivity state for an existing database.");
+                // If we already have an existing database and a ws anchor, validate that they are
+                // consistent
+                return wsInitializer
+                    .assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+                        client, weakSubjectivityAnchor.get(), storageQueryChannel)
+                    .thenApply(__ -> client);
               }
-              return client;
+              return SafeFuture.completedFuture(client);
             })
         .thenAccept(
             client -> {
@@ -500,7 +491,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       // We're pre-genesis but no eth1 endpoint is set
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
-    LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
+    STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
   }
 
@@ -707,6 +698,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
+  }
+
+  private void setupInitialState(final RecentChainData client) {
+    if (weakSubjectivityAnchor.isPresent()) {
+      client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
+    } else if (config.getInitialState() != null) {
+      setupGenesisState();
+    } else if (config.isInteropEnabled()) {
+      setupInteropState();
+    } else if (!config.isEth1Enabled()) {
+      throw new InvalidConfigurationException(
+          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
+    }
   }
 
   private void setupInteropState() {
