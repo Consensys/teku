@@ -203,7 +203,7 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber(final int validatorCount) {
     final StableSubnetSubscriber subscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(13241234L));
+        new ValidatorBasedStableSubnetSubscriber(validatorApiChannel, new Random(13241234L));
     subscriber.updateValidatorCount(validatorCount);
     return subscriber;
   }

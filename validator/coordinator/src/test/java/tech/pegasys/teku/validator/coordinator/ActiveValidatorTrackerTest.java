@@ -24,9 +24,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 
 class ActiveValidatorTrackerTest {
-  private final StableSubnetSubscriber stableSubnetSubscriber = mock(StableSubnetSubscriber.class);
+  private final StableSubnetSubscriber stableSubnetSubscriber =
+      mock(ValidatorBasedStableSubnetSubscriber.class);
 
   private final ActiveValidatorTracker tracker = new ActiveValidatorTracker(stableSubnetSubscriber);
 
