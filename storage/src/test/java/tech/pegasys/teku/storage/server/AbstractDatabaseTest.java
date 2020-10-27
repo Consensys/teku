@@ -133,7 +133,7 @@ public abstract class AbstractDatabaseTest {
 
   protected void setDefaultStorage(final StorageSystem storageSystem) {
     this.storageSystem = storageSystem;
-    database = storageSystem.getDatabase();
+    database = storageSystem.database();
     recentChainData = storageSystem.recentChainData();
     storageSystems.add(storageSystem);
   }
