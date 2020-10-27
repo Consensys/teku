@@ -18,10 +18,13 @@ import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerform
 import com.google.common.base.Objects;
 
 public class BlockPerformance {
+  final int numberOfExpectedBlocks;
   final int numberOfIncludedBlocks;
   final int numberOfProducedBlocks;
 
-  public BlockPerformance(int numberOfIncludedBlocks, int numberOfProducedBlocks) {
+  public BlockPerformance(
+      int numberOfExpectedBlocks, int numberOfIncludedBlocks, int numberOfProducedBlocks) {
+    this.numberOfExpectedBlocks = numberOfExpectedBlocks;
     this.numberOfIncludedBlocks = numberOfIncludedBlocks;
     this.numberOfProducedBlocks = numberOfProducedBlocks;
   }
@@ -31,19 +34,21 @@ public class BlockPerformance {
     if (this == o) return true;
     if (!(o instanceof BlockPerformance)) return false;
     BlockPerformance that = (BlockPerformance) o;
-    return numberOfIncludedBlocks == that.numberOfIncludedBlocks
+    return numberOfExpectedBlocks == that.numberOfExpectedBlocks
+        && numberOfIncludedBlocks == that.numberOfIncludedBlocks
         && numberOfProducedBlocks == that.numberOfProducedBlocks;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(numberOfIncludedBlocks, numberOfProducedBlocks);
+    return Objects.hashCode(numberOfExpectedBlocks, numberOfIncludedBlocks, numberOfProducedBlocks);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "Block performance: produced %d, included %d (%d%%)",
+        "Block performance: expected %d, produced %d, included %d (%d%%)",
+        numberOfExpectedBlocks,
         numberOfProducedBlocks,
         numberOfIncludedBlocks,
         getPercentage(numberOfIncludedBlocks, numberOfProducedBlocks));

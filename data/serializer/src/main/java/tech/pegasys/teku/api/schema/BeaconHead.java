@@ -63,6 +63,10 @@ public class BeaconHead {
         && Objects.equals(state_root, that.state_root);
   }
 
+  public UInt64 getSlot() {
+    return slot;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(slot, block_root, state_root);

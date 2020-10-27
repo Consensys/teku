@@ -16,20 +16,29 @@ package tech.pegasys.teku.util.config;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Constants {
 
+  static final String[] NETWORK_DEFINITIONS = {
+    "mainnet", "minimal", "swift", "medalla", "spadina", "zinken"
+  };
+
   // Non-configurable constants
-  public static UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
-  public static UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
-  public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
-  public static int JUSTIFICATION_BITS_LENGTH = 4;
+  public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
+  public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
+  public static final int JUSTIFICATION_BITS_LENGTH = 4;
+
+  public static String CONFIG_NAME;
 
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
@@ -43,7 +52,7 @@ public class Constants {
   public static UInt64 HYSTERESIS_QUOTIENT;
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
-  public static int PROPORTIONAL_SLASHING_MULTIPLIER = 3;
+  public static int PROPORTIONAL_SLASHING_MULTIPLIER;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
@@ -70,7 +79,6 @@ public class Constants {
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static UInt64 SHARD_COMMITTEE_PERIOD;
-  public static int MAX_EPOCHS_PER_CROSSLINK;
 
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR;
@@ -105,10 +113,6 @@ public class Constants {
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
 
-  // Deposit
-  public static String DEPOSIT_NORMAL = "normal";
-  public static String DEPOSIT_TEST = "test";
-
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
 
@@ -126,7 +130,7 @@ public class Constants {
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
-  public static UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
+  public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
 
   public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
 
@@ -167,6 +171,13 @@ public class Constants {
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
+  public static final Map<String, Object> CONFIG_ITEM_MAP = new HashMap<>();
+
+  // Custom
+  // Temporary BLS backward compatibility flag
+  // Set to 1 if required BLS to be pre rc-1 spec compatible
+  public static boolean BLS_INFINITY_VALID = false;
+
   static {
     setConstants("minimal");
   }
@@ -174,6 +185,7 @@ public class Constants {
   public static void setConstants(final String source) {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
+      BLSConstants.VALID_INFINITY = BLS_INFINITY_VALID;
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load constants from " + source, e);
     }
@@ -181,14 +193,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            name -> name + ".yaml",
-            "mainnet",
-            "minimal",
-            "swift",
-            "medalla",
-            "spadina",
-            "zinken")
+            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS)
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

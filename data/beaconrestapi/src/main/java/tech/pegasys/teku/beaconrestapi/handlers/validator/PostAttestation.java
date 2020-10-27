@@ -42,8 +42,7 @@ public class PostAttestation implements Handler {
   private final JsonProvider jsonProvider;
 
   public PostAttestation(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
-    this.provider = dataProvider.getValidatorDataProvider();
+    this(dataProvider.getValidatorDataProvider(), jsonProvider);
   }
 
   public PostAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
@@ -54,12 +53,14 @@ public class PostAttestation implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Submit a signed attestation.",
+      deprecated = true,
+      summary = "Submit a signed attestation",
       tags = {TAG_VALIDATOR},
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
       description =
           "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
-              + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.",
+              + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.\n\n"
+              + "Deprecated - use `/eth/v1/beacon/pool/attestations` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_NO_CONTENT,

@@ -37,6 +37,7 @@ class ConstantsReader {
           .put(String.class, Function.identity())
           .put(Bytes.class, toString(Bytes::fromHexString))
           .put(Bytes4.class, toString(Bytes4::fromHexString))
+          .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
   @SuppressWarnings("unchecked")
@@ -50,6 +51,7 @@ class ConstantsReader {
                 .readValues(source)
                 .next();
     values.forEach(ConstantsReader::setField);
+    Constants.CONFIG_ITEM_MAP.putAll(values);
   }
 
   private static void setField(final String key, final Object value) {

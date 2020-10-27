@@ -31,6 +31,7 @@ import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
@@ -92,10 +93,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private long discoveryNetworkAttestationSubnetsSubscription;
 
   // Upstream consumers
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
-  private final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
-  private final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
-  private final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer;
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  private final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
+  private final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
 
   public ActiveEth2Network(
       final AsyncRunner asyncRunner,
@@ -106,10 +108,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final AttestationSubnetService attestationSubnetService,
-      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer,
-      final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer,
-      final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer,
-      final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer,
+      final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer,
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer,
+      final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer,
+      final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer,
+      final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
       final VerifiedBlockAttestationsSubscriptionProvider
           verifiedBlockAttestationsSubscriptionProvider) {
@@ -122,6 +125,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
     this.attestationSubnetService = attestationSubnetService;
+    this.gossipedBlockConsumer = gossipedBlockConsumer;
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
     this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
@@ -179,7 +183,13 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     blockGossipManager =
         new BlockGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            blockValidator,
+            eventBus,
+            gossipedBlockConsumer);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);

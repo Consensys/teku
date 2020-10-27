@@ -120,9 +120,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     TekuConfiguration expected =
         expectedConfigurationBuilder()
-            .globalConfig(
+            .p2p(
                 b -> {
-                  b.setP2pInterface("1.2.3.5");
+                  b.p2pInterface("1.2.3.5");
                 })
             .build();
     assertTekuConfiguration(expected);
@@ -143,9 +143,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder()
-            .globalConfig(
+            .p2p(
                 b -> {
-                  b.setP2pInterface("1.2.3.5");
+                  b.p2pInterface("1.2.3.5");
                 })
             .build();
     assertTekuConfiguration(expected);
@@ -162,9 +162,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder()
-            .globalConfig(
+            .p2p(
                 b -> {
-                  b.setP2pInterface("1.2.3.5");
+                  b.p2pInterface("1.2.3.5");
                 })
             .build();
     assertTekuConfiguration(expected);
@@ -281,30 +281,33 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("medalla");
     return expectedConfigurationBuilder()
         .globalConfig(
-            b -> {
-              b.setNetwork(NetworkDefinition.fromCliArg("medalla"))
-                  .setEth1DepositContractAddress(null)
-                  .setEth1Endpoint(null)
-                  .setMetricsCategories(
-                      DEFAULT_METRICS_CATEGORIES.stream()
-                          .map(Object::toString)
-                          .collect(Collectors.toList()))
-                  .setP2pAdvertisedPort(OptionalInt.empty())
-                  .setP2pDiscoveryEnabled(true)
-                  .setP2pInterface("0.0.0.0")
-                  .setP2pPort(9000)
-                  .setP2pPrivateKeyFile(null)
-                  .setInteropEnabled(false)
-                  .setPeerRateLimit(500)
-                  .setPeerRequestLimit(50)
-                  .setInteropGenesisTime(0)
-                  .setInteropOwnedValidatorCount(0)
-                  .setLogDestination(DEFAULT_BOTH)
-                  .setLogFile(DEFAULT_LOG_FILE)
-                  .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
-            })
+            b ->
+                b.setNetwork(networkDefinition)
+                    .setEth1DepositContractAddress(null)
+                    .setEth1Endpoint(null)
+                    .setMetricsCategories(
+                        DEFAULT_METRICS_CATEGORIES.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.toList()))
+                    .setInteropEnabled(false)
+                    .setPeerRateLimit(500)
+                    .setPeerRequestLimit(50)
+                    .setInteropGenesisTime(0)
+                    .setInteropOwnedValidatorCount(0)
+                    .setLogDestination(DEFAULT_BOTH)
+                    .setLogFile(DEFAULT_LOG_FILE)
+                    .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN))
+        .p2p(
+            b ->
+                b.p2pAdvertisedPort(OptionalInt.empty())
+                    .p2pDiscoveryEnabled(true)
+                    .p2pDiscoveryBootnodes(networkDefinition.getDiscoveryBootnodes())
+                    .p2pInterface("0.0.0.0")
+                    .p2pPort(9000)
+                    .p2pPrivateKeyFile(null))
         .validator(b -> b.validatorKeystoreLockingEnabled(true));
   }
 
@@ -322,6 +325,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     return TekuConfiguration.builder()
         .globalConfig(this::buildExpectedGlobalConfiguration)
         .data(b -> b.dataBasePath(dataPath))
+        .p2p(
+            b ->
+                b.p2pEnabled(false)
+                    .p2pInterface("1.2.3.4")
+                    .p2pPort(1234)
+                    .p2pDiscoveryEnabled(false)
+                    .p2pAdvertisedPort(OptionalInt.of(9000))
+                    .p2pAdvertisedIp(Optional.empty())
+                    .p2pPrivateKeyFile("path/to/file")
+                    .p2pPeerLowerBound(64)
+                    .p2pPeerUpperBound(74)
+                    .targetSubnetSubscriberCount(2)
+                    .p2pStaticPeers(Collections.emptyList()))
         .validator(
             b -> b.validatorExternalSignerTimeout(1000).validatorKeystoreLockingEnabled(true));
   }
@@ -330,20 +346,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
     builder
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
-        .setP2pEnabled(false)
-        .setP2pInterface("1.2.3.4")
+        .setInteropGenesisTime(1)
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
-        .setP2pPort(1234)
-        .setP2pDiscoveryEnabled(false)
-        .setP2pAdvertisedPort(OptionalInt.of(9000))
-        .setP2pAdvertisedIp(Optional.empty())
-        .setP2pPrivateKeyFile("path/to/file")
-        .setP2pPeerLowerBound(64)
-        .setP2pPeerUpperBound(74)
-        .setTargetSubnetSubscriberCount(2)
-        .setP2pStaticPeers(Collections.emptyList())
-        .setInteropGenesisTime(1)
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
@@ -366,7 +371,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
-        .setHotStatePersistenceFrequencyInEpochs(1)
+        .setHotStatePersistenceFrequencyInEpochs(2)
         .setIsBlockProcessingAtStartupDisabled(true)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)

@@ -25,6 +25,8 @@ public class AttesterDuties {
   private final int committeeLength;
   /** the committee index of the committee that includes the specified validator */
   private final int committeeIndex;
+
+  private final int commiteesAtSlot;
   // index of the validator in the committee
   private final int validatorCommitteeIndex;
   private final UInt64 slot;
@@ -34,33 +36,16 @@ public class AttesterDuties {
       final int validatorIndex,
       final int committeeLength,
       final int committeeIndex,
+      final int commiteesAtSlot,
       final int validatorCommitteeIndex,
       final UInt64 slot) {
     this.publicKey = publicKey;
     this.validatorIndex = validatorIndex;
     this.committeeLength = committeeLength;
     this.committeeIndex = committeeIndex;
+    this.commiteesAtSlot = commiteesAtSlot;
     this.validatorCommitteeIndex = validatorCommitteeIndex;
     this.slot = slot;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final AttesterDuties that = (AttesterDuties) o;
-    return validatorIndex == that.validatorIndex
-        && committeeLength == that.committeeLength
-        && committeeIndex == that.committeeIndex
-        && validatorCommitteeIndex == that.validatorCommitteeIndex
-        && Objects.equals(publicKey, that.publicKey)
-        && Objects.equals(slot, that.slot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        publicKey, validatorIndex, committeeLength, committeeIndex, validatorCommitteeIndex, slot);
   }
 
   public BLSPublicKey getPublicKey() {
@@ -79,6 +64,10 @@ public class AttesterDuties {
     return committeeIndex;
   }
 
+  public int getCommiteesAtSlot() {
+    return commiteesAtSlot;
+  }
+
   public int getValidatorCommitteeIndex() {
     return validatorCommitteeIndex;
   }
@@ -88,12 +77,43 @@ public class AttesterDuties {
   }
 
   @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final AttesterDuties that = (AttesterDuties) o;
+    return validatorIndex == that.validatorIndex
+        && committeeLength == that.committeeLength
+        && committeeIndex == that.committeeIndex
+        && commiteesAtSlot == that.commiteesAtSlot
+        && validatorCommitteeIndex == that.validatorCommitteeIndex
+        && Objects.equals(publicKey, that.publicKey)
+        && Objects.equals(slot, that.slot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        publicKey,
+        validatorIndex,
+        committeeLength,
+        committeeIndex,
+        commiteesAtSlot,
+        validatorCommitteeIndex,
+        slot);
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
         .add("validatorIndex", validatorIndex)
         .add("committeeLength", committeeLength)
         .add("committeeIndex", committeeIndex)
+        .add("commiteesAtSlot", commiteesAtSlot)
         .add("validatorCommitteeIndex", validatorCommitteeIndex)
         .add("slot", slot)
         .toString();

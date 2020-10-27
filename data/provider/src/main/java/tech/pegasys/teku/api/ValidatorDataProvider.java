@@ -16,7 +16,10 @@ package tech.pegasys.teku.api;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.validator.api.ValidatorApiChannel.UKNOWN_VALIDATOR_ID;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -45,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
@@ -191,21 +196,53 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return validatorApiChannel
-        .createAggregate(attestationHashTreeRoot)
+        .createAggregate(slot, attestationHashTreeRoot)
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 
-  public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
-    validatorApiChannel.sendAggregateAndProof(
-        aggregateAndProof.asInternalSignedAggregateAndProof());
+  public void sendAggregateAndProofs(List<SignedAggregateAndProof> aggregateAndProofs) {
+    aggregateAndProofs.stream()
+        .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+        .forEach(validatorApiChannel::sendAggregateAndProof);
+  }
+
+  public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
+    validatorApiChannel.subscribeToBeaconCommittee(
+        requests.stream()
+            .map(
+                request ->
+                    new CommitteeSubscriptionRequest(
+                        request.validator_index,
+                        request.committee_index,
+                        request.committees_at_slot,
+                        request.slot,
+                        request.is_aggregator))
+            .collect(toList()));
   }
 
   public void subscribeToBeaconCommitteeForAggregation(
       final SubscribeToBeaconCommitteeRequest request) {
-    validatorApiChannel.subscribeToBeaconCommitteeForAggregation(
-        request.committee_index, request.aggregation_slot);
+    final UInt64 slot = request.aggregation_slot;
+    combinedChainDataClient
+        .getBestState()
+        // No point aggregating for historic slots and we can't calculate the subnet ID
+        .filter(state -> state.getSlot().compareTo(slot) <= 0)
+        .ifPresent(
+            state -> {
+              final UInt64 committeesAtSlot =
+                  get_committee_count_per_slot(state, compute_epoch_at_slot(slot));
+              validatorApiChannel.subscribeToBeaconCommittee(
+                  List.of(
+                      new CommitteeSubscriptionRequest(
+                          UKNOWN_VALIDATOR_ID,
+                          request.committee_index,
+                          committeesAtSlot,
+                          slot,
+                          true)));
+            });
   }
 
   public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {
@@ -256,6 +293,7 @@ public class ValidatorDataProvider {
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getCommiteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }

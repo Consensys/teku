@@ -307,10 +307,16 @@ public class CommitteeUtil {
 
   public static int computeSubnetForCommittee(
       final BeaconState state, final UInt64 attestationSlot, final UInt64 committeeIndex) {
+    return computeSubnetForCommittee(
+        attestationSlot,
+        committeeIndex,
+        get_committee_count_per_slot(state, compute_epoch_at_slot(attestationSlot)));
+  }
+
+  public static int computeSubnetForCommittee(
+      final UInt64 attestationSlot, final UInt64 committeeIndex, final UInt64 committeesPerSlot) {
     final UInt64 slotsSinceEpochStart = attestationSlot.mod(SLOTS_PER_EPOCH);
-    final UInt64 committeesSinceEpochStart =
-        get_committee_count_per_slot(state, compute_epoch_at_slot(attestationSlot))
-            .times(slotsSinceEpochStart);
+    final UInt64 committeesSinceEpochStart = committeesPerSlot.times(slotsSinceEpochStart);
     return committeesSinceEpochStart.plus(committeeIndex).mod(ATTESTATION_SUBNET_COUNT).intValue();
   }
 }

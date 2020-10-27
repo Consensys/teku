@@ -50,6 +50,7 @@ public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
+  private final Eth1ChainIdValidator chainIdValidator;
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
@@ -106,6 +107,8 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));
+
+    chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
   }
 
   private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
@@ -132,13 +135,15 @@ public class PowchainService extends Service {
   protected SafeFuture<?> doStart() {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::start),
-        SafeFuture.fromRunnable(eth1DepositManager::start));
+        SafeFuture.fromRunnable(eth1DepositManager::start),
+        SafeFuture.fromRunnable(chainIdValidator::start));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::stop),
-        SafeFuture.fromRunnable(eth1DepositManager::stop));
+        SafeFuture.fromRunnable(eth1DepositManager::stop),
+        SafeFuture.fromRunnable(chainIdValidator::stop));
   }
 }

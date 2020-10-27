@@ -36,7 +36,6 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.bls.impl.mikuli.G1Point;
 import tech.pegasys.teku.bls.impl.mikuli.G2Point;
 import tech.pegasys.teku.bls.impl.mikuli.GTPoint;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliKeyPair;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 import tech.pegasys.teku.bls.impl.mikuli.Scalar;
@@ -67,7 +66,7 @@ public class BLSPrimitivesBenchmark {
 
   MikuliKeyPair keyPair = MikuliKeyPair.random(123);
   Bytes32 message = Bytes32.random();
-  MikuliSignature signature = MikuliBLS12381.sign(keyPair.getSecretKey(), message);
+  MikuliSignature signature = keyPair.getSecretKey().sign(message);
   FP12 gtPoint = PAIR.ate(signature.g2Point().getPoint(), g1Generator.getPoint());
 
   @Benchmark

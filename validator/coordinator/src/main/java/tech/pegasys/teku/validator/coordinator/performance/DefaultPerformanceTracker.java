@@ -31,6 +31,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,8 +50,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @VisibleForTesting
   final NavigableMap<UInt64, Set<SignedBeaconBlock>> producedBlocksByEpoch = new TreeMap<>();
 
-  @VisibleForTesting
   final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, AtomicInteger> attestationProductionAttemptsByEpoch = new TreeMap<>();
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
@@ -104,6 +106,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
       statusLogger.performance(attestationPerformance.toString());
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
+      attestationProductionAttemptsByEpoch.headMap(analyzedEpoch, true).clear();
       validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
     }
 
@@ -113,9 +116,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         UInt64 oldestAnalyzedEpoch = currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
         BlockPerformance blockPerformance =
             getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
-        if (blockPerformance.numberOfProducedBlocks > 0) {
+        if (blockPerformance.numberOfExpectedBlocks > 0) {
           statusLogger.performance(blockPerformance.toString());
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
+          blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
         }
       }
@@ -124,6 +128,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   private BlockPerformance getBlockPerformanceForEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+    int numberOfBlockProductionAttempts =
+        blockProductionAttemptsByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false)
+            .values().stream()
+            .mapToInt(AtomicInteger::get)
+            .sum();
     List<SignedBeaconBlock> producedBlocks =
         producedBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
             .stream()
@@ -141,7 +150,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                         .orElse(false))
             .count();
 
-    return new BlockPerformance((int) numberOfIncludedBlocks, producedBlocks.size());
+    int numberOfProducedBlocks = producedBlocks.size();
+    return new BlockPerformance(
+        numberOfBlockProductionAttempts, (int) numberOfIncludedBlocks, numberOfProducedBlocks);
   }
 
   private AttestationPerformance getAttestationPerformanceForEpoch(
@@ -149,10 +160,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     checkArgument(
         analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
         "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
+
     // Attestations can be included in either the epoch they were produced in or in
     // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
     // performance is current epoch - 2.
     UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(ATTESTATION_INCLUSION_RANGE);
+
+    int numberOfAttestationProductionAttempts =
+        attestationProductionAttemptsByEpoch
+            .subMap(analyzedEpoch, true, analyzedEpoch.plus(1), false).values().stream()
+            .mapToInt(AtomicInteger::get)
+            .sum();
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
@@ -216,16 +234,18 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
 
     // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list is empty.
+    int numberOfProducedAttestations = producedAttestations.size();
     return producedAttestations.size() > 0
         ? new AttestationPerformance(
-            producedAttestations.size(),
+            numberOfAttestationProductionAttempts,
+            numberOfProducedAttestations,
             (int) inclusionDistanceStatistics.getCount(),
             inclusionDistanceStatistics.getMax(),
             inclusionDistanceStatistics.getMin(),
             inclusionDistanceStatistics.getAverage(),
             correctTargetCount,
             correctHeadBlockCount)
-        : AttestationPerformance.empty();
+        : AttestationPerformance.empty(numberOfAttestationProductionAttempts);
   }
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
@@ -273,6 +293,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     Set<SignedBeaconBlock> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
     blocksInEpoch.add(block);
+  }
+
+  @Override
+  public void reportAttestationProductionAttempt(UInt64 epoch) {
+    AtomicInteger numberOfAttestationProductionAttempts =
+        attestationProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
+    numberOfAttestationProductionAttempts.incrementAndGet();
+  }
+
+  @Override
+  public void reportBlockProductionAttempt(UInt64 epoch) {
+    AtomicInteger numberOfBlockProductionAttempts =
+        blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
+    numberOfBlockProductionAttempts.incrementAndGet();
   }
 
   static long getPercentage(final long numerator, final long denominator) {

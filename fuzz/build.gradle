@@ -9,3 +9,10 @@ dependencies {
 
     testImplementation testFixtures(project(':ethereum:datastructures'))
 }
+
+
+task fuzzDist(type: Copy) {
+    dependsOn([jar])
+    from configurations.runtimeClasspath + configurations.runtimeClasspath.allArtifacts.collect { it.file }
+    destinationDir file("$buildDir/fuzzDist")
+}

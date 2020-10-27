@@ -41,6 +41,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -55,14 +56,13 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.GossipConfig;
@@ -70,9 +70,10 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -105,10 +106,11 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
-    protected GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
-    protected GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
-    protected GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
-    protected GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+    protected GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer;
+    protected GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+    protected GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
+    protected GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
+    protected GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -224,6 +226,7 @@ public class Eth2NetworkFactory {
             recentChainData,
             gossipEncoding,
             attestationSubnetService,
+            gossipedBlockConsumer,
             gossipedAttestationConsumer,
             gossipedAttesterSlashingConsumer,
             gossipedProposerSlashingConsumer,
@@ -285,17 +288,20 @@ public class Eth2NetworkFactory {
             Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
+      if (gossipedBlockConsumer == null) {
+        gossipedBlockConsumer = GossipedItemConsumer.noop();
+      }
       if (gossipedAttestationConsumer == null) {
-        gossipedAttestationConsumer = GossipedOperationConsumer.noop();
+        gossipedAttestationConsumer = GossipedItemConsumer.noop();
       }
       if (gossipedAttesterSlashingConsumer == null) {
-        gossipedAttesterSlashingConsumer = GossipedOperationConsumer.noop();
+        gossipedAttesterSlashingConsumer = GossipedItemConsumer.noop();
       }
       if (gossipedProposerSlashingConsumer == null) {
-        gossipedProposerSlashingConsumer = GossipedOperationConsumer.noop();
+        gossipedProposerSlashingConsumer = GossipedItemConsumer.noop();
       }
       if (gossipedVoluntaryExitConsumer == null) {
-        gossipedVoluntaryExitConsumer = GossipedOperationConsumer.noop();
+        gossipedVoluntaryExitConsumer = GossipedItemConsumer.noop();
       }
     }
 
@@ -334,29 +340,36 @@ public class Eth2NetworkFactory {
       return this;
     }
 
+    public Eth2P2PNetworkBuilder gossipedBlockConsumer(
+        final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
+      checkNotNull(gossipedBlockConsumer);
+      this.gossipedBlockConsumer = gossipedBlockConsumer;
+      return this;
+    }
+
     public Eth2P2PNetworkBuilder gossipedAttestationConsumer(
-        final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+        final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
       checkNotNull(gossipedAttestationConsumer);
       this.gossipedAttestationConsumer = gossipedAttestationConsumer;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedAttesterSlashingConsumer(
-        final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+        final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
       checkNotNull(gossipedAttesterSlashingConsumer);
       this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedProposerSlashingConsumer(
-        final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+        final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
       checkNotNull(gossipedProposerSlashingConsumer);
       this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedVoluntaryExitConsumer(
-        final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+        final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
       checkNotNull(gossipedVoluntaryExitConsumer);
       this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
       return this;

@@ -33,14 +33,14 @@ public class AggregateAttestationTopicHandler
   private final SignedAggregateAndProofValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   public AggregateAttestationTopicHandler(
       final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
-      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();

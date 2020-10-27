@@ -54,6 +54,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   // Public
   public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
+    // If no anchor is explicitly set, default to zero (genesis epoch)
+    final UInt64 anchorEpoch =
+        store.getAnchor().map(Checkpoint::getEpoch).orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
     ProtoArray protoArray =
         storageChannel
             .getProtoArraySnapshot()
@@ -64,6 +67,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                     Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
                     store.getJustifiedCheckpoint().getEpoch(),
                     store.getFinalizedCheckpoint().getEpoch(),
+                    anchorEpoch,
                     new ArrayList<>(),
                     new HashMap<>()));
 

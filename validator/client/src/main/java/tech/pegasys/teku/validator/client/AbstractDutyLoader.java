@@ -59,7 +59,7 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   protected abstract SafeFuture<Optional<List<D>>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
-  private SafeFuture<Void> scheduleAllDuties(
+  protected SafeFuture<Void> scheduleAllDuties(
       final ScheduledDuties scheduledDuties, final List<D> duties) {
     return SafeFuture.allOf(
         duties.stream()

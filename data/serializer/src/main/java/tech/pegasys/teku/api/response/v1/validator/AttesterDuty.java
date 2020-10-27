@@ -53,6 +53,13 @@ public class AttesterDuty {
       description = "Number of validators in committee")
   public final UInt64 committeeLength;
 
+  @JsonProperty("committees_at_slot")
+  @Schema(
+      type = "string",
+      example = EXAMPLE_UINT64,
+      description = "Number of committees at the provided slot")
+  public final UInt64 committeesAtSlot;
+
   @JsonProperty("validator_committee_index")
   @Schema(
       type = "string",
@@ -73,25 +80,32 @@ public class AttesterDuty {
       @JsonProperty("validator_index") final UInt64 validatorIndex,
       @JsonProperty("committee_index") final UInt64 committeeIndex,
       @JsonProperty("committee_length") final UInt64 committeeLength,
+      @JsonProperty("committees_at_slot") final UInt64 committeesAtSlot,
       @JsonProperty("validator_committee_index") final UInt64 validatorCommitteeIndex,
       @JsonProperty("slot") final UInt64 slot) {
     this.pubkey = pubkey;
     this.validatorIndex = validatorIndex;
     this.committeeIndex = committeeIndex;
     this.committeeLength = committeeLength;
+    this.committeesAtSlot = committeesAtSlot;
     this.validatorCommitteeIndex = validatorCommitteeIndex;
     this.slot = slot;
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final AttesterDuty that = (AttesterDuty) o;
     return Objects.equals(pubkey, that.pubkey)
         && Objects.equals(validatorIndex, that.validatorIndex)
         && Objects.equals(committeeIndex, that.committeeIndex)
         && Objects.equals(committeeLength, that.committeeLength)
+        && Objects.equals(committeesAtSlot, that.committeesAtSlot)
         && Objects.equals(validatorCommitteeIndex, that.validatorCommitteeIndex)
         && Objects.equals(slot, that.slot);
   }
@@ -99,6 +113,12 @@ public class AttesterDuty {
   @Override
   public int hashCode() {
     return Objects.hash(
-        pubkey, validatorIndex, committeeIndex, committeeLength, validatorCommitteeIndex, slot);
+        pubkey,
+        validatorIndex,
+        committeeIndex,
+        committeeLength,
+        committeesAtSlot,
+        validatorCommitteeIndex,
+        slot);
   }
 }

@@ -276,6 +276,27 @@ class UInt64Test {
         .isInstanceOf(IllegalArgumentException.class);
   }
 
+  @Test
+  void minusMinZero_shouldReturnZeroWhenResultUnderflows() {
+    assertThat(UInt64.valueOf(10).minusMinZero(11)).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void minusMinZero_shouldReturnZeroWhenParamsEqual() {
+    assertThat(UInt64.valueOf(10).minusMinZero(10)).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void minusMinZero_shouldPerformMinusWhenResultLargerThanZero() {
+    assertThat(UInt64.valueOf(10).minusMinZero(8)).isEqualTo(UInt64.valueOf(2));
+  }
+
+  @Test
+  void minusMinZero_shouldThrowIllegalArgumentExceptionWhenArgumentIsNegative() {
+    assertThatThrownBy(() -> UInt64.valueOf(10).minusMinZero(-1))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
   @ParameterizedTest
   @MethodSource("modNumbers")
   void mod_shouldCalculateRemainder(

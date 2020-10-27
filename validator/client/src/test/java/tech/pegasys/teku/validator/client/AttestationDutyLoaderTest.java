@@ -1,0 +1,152 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.validator.client;
+
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+
+class AttestationDutyLoaderTest {
+
+  private static final List<Integer> VALIDATOR_INDICES = List.of(1);
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ForkProvider forkProvider = mock(ForkProvider.class);
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+      mock(BeaconCommitteeSubscriptions.class);
+  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
+  private BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
+  private final Signer signer = mock(Signer.class);
+  private final Validator validator = new Validator(validatorKey, signer, Optional.empty());
+  private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
+  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+
+  private final AttestationDutyLoader dutyLoader =
+      new AttestationDutyLoader(
+          validatorApiChannel,
+          forkProvider,
+          () -> scheduledDuties,
+          validators,
+          validatorIndexProvider,
+          beaconCommitteeSubscriptions);
+
+  @BeforeEach
+  void setUp() {
+    when(validatorIndexProvider.getValidatorIndices(any())).thenReturn(VALIDATOR_INDICES);
+    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+  }
+
+  @Test
+  void shouldSubscribeToSubnetWhenValidatorIsAggregator() {
+    final UInt64 slot = UInt64.ONE;
+    final Integer validatorIndex = VALIDATOR_INDICES.get(0);
+    final int committeeLength = 1;
+    final int committeeIndex = 3;
+    final int committeesAtSlot = 4;
+    final AttesterDuties duty =
+        new AttesterDuties(
+            validatorKey,
+            validatorIndex,
+            committeeLength,
+            committeeIndex,
+            committeesAtSlot,
+            0,
+            slot);
+    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(duty))));
+
+    when(scheduledDuties.scheduleAttestationProduction(
+            any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
+        .thenReturn(new SafeFuture<>());
+    when(signer.signAggregationSlot(slot, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+
+    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+
+    assertThat(result).isCompleted();
+    verify(beaconCommitteeSubscriptions)
+        .subscribeToBeaconCommittee(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, true));
+    verify(beaconCommitteeSubscriptions).sendRequests();
+  }
+
+  @Test
+  void shouldSubscribeToSubnetWhenValidatorIsNotAggregator() {
+    final UInt64 slot = UInt64.ONE;
+    final Integer validatorIndex = VALIDATOR_INDICES.get(0);
+    final int committeeLength = 10000000;
+    final int committeeIndex = 3;
+    final int committeesAtSlot = 4;
+    final AttesterDuties duty =
+        new AttesterDuties(
+            validatorKey,
+            validatorIndex,
+            committeeLength,
+            committeeIndex,
+            committeesAtSlot,
+            0,
+            slot);
+    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(duty))));
+
+    when(scheduledDuties.scheduleAttestationProduction(
+            any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
+        .thenReturn(new SafeFuture<>());
+    when(signer.signAggregationSlot(slot, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+
+    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+
+    assertThat(result).isCompleted();
+    verify(beaconCommitteeSubscriptions)
+        .subscribeToBeaconCommittee(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, false));
+    verify(beaconCommitteeSubscriptions).sendRequests();
+  }
+
+  @Test
+  void shouldSendSubscriptionRequestsWhenAllDutiesAreScheduled() {
+    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+
+    assertThat(result).isCompleted();
+    verify(beaconCommitteeSubscriptions).sendRequests();
+  }
+}

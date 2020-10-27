@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.assertj.core.api.AbstractAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
 
@@ -115,6 +116,10 @@ public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
   public void hasRange(final long firstSlot, final long lastSlot) {
     hasFirstSlot(firstSlot);
     hasLastSlot(lastSlot);
+  }
+
+  public void hasTargetChain(final TargetChain expected) {
+    assertThat(actual.getTargetChain()).isEqualTo(expected);
   }
 
   public void isAwaitingBlocks() {

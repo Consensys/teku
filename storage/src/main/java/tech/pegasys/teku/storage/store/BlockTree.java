@@ -109,9 +109,13 @@ public class BlockTree {
   }
 
   public UInt64 getEpoch(Bytes32 blockRoot) {
-    assertBlockIsInTree(blockRoot);
-    final UInt64 slot = blockRootToSlot.get(blockRoot);
+    final UInt64 slot = getSlot(blockRoot);
     return compute_epoch_at_slot(slot);
+  }
+
+  public UInt64 getSlot(Bytes32 blockRoot) {
+    assertBlockIsInTree(blockRoot);
+    return blockRootToSlot.get(blockRoot);
   }
 
   public int size() {

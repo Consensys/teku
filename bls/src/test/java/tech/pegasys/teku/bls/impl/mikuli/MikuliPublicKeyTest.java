@@ -34,7 +34,7 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
 
   @Test
   void zeroSecretKeyGivesPointAtInfinity() {
-    MikuliPublicKey pubKey = new MikuliPublicKey(new MikuliSecretKey(new Scalar(new BIG(0))));
+    MikuliPublicKey pubKey = new MikuliSecretKey(new Scalar(new BIG(0))).derivePublicKey();
     assertTrue(pubKey.g1Point().ecpPoint().is_infinity());
   }
 

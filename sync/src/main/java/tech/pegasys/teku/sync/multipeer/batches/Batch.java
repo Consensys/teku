@@ -26,6 +26,8 @@ public interface Batch {
 
   UInt64 getLastSlot();
 
+  UInt64 getCount();
+
   Optional<SignedBeaconBlock> getFirstBlock();
 
   Optional<SignedBeaconBlock> getLastBlock();

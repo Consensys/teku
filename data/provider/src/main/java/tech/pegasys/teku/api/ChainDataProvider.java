@@ -21,9 +21,15 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
+import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
@@ -36,6 +42,7 @@ import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -48,6 +55,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ChainDataProvider {
+  private final BlockSelectorFactory defaultBlockSelectorFactory;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
@@ -57,6 +65,7 @@ public class ChainDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
+    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
   }
 
   public UInt64 getGenesisTime() {
@@ -110,6 +119,72 @@ public class ChainDataProvider {
                             .collect(toList())));
   }
 
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochBySlotV1(
+      final UInt64 stateSlot,
+      final UInt64 epoch,
+      final Optional<UInt64> maybeSlot,
+      final Optional<Integer> maybeIndex) {
+    final UInt64 earliestQueryableSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+
+    if (stateSlot.isLessThan(earliestQueryableSlot)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    final Predicate<CommitteeAssignment> filterForSlot =
+        (committee) -> maybeSlot.map(slot -> committee.getSlot().equals(slot)).orElse(true);
+
+    final Predicate<CommitteeAssignment> filterForCommitteeIndex =
+        (committee) ->
+            maybeIndex.map(index -> committee.getCommitteeIndex().intValue() == index).orElse(true);
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(stateSlot)
+        .thenApply(
+            maybeResult ->
+                maybeResult.map(
+                    state ->
+                        combinedChainDataClient.getCommitteesFromState(state, epoch).stream()
+                            .filter(filterForSlot)
+                            .filter(filterForCommitteeIndex)
+                            .map(EpochCommitteeResponse::new)
+                            .collect(toList())));
+  }
+
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochByStateRoot(
+      final Bytes32 stateRoot,
+      final UInt64 epoch,
+      final Optional<UInt64> maybeSlot,
+      final Optional<Integer> maybeIndex) {
+    final UInt64 earliestQueryableSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+
+    final Predicate<CommitteeAssignment> filterForSlot =
+        (committee) -> maybeSlot.map(slot -> committee.getSlot().equals(slot)).orElse(true);
+
+    final Predicate<CommitteeAssignment> filterForCommitteeIndex =
+        (committee) ->
+            maybeIndex.map(index -> committee.getCommitteeIndex().intValue() == index).orElse(true);
+
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(
+            maybeResult ->
+                maybeResult
+                    .flatMap(
+                        state ->
+                            state.getSlot().isLessThan(earliestQueryableSlot)
+                                ? Optional.empty()
+                                : Optional.of(state))
+                    .map(
+                        state ->
+                            combinedChainDataClient.getCommitteesFromState(state, epoch).stream()
+                                .filter(filterForSlot)
+                                .filter(filterForCommitteeIndex)
+                                .map(EpochCommitteeResponse::new)
+                                .collect(toList())));
+  }
+
   public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UInt64 slot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
@@ -117,6 +192,17 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getBlockInEffectAtSlot(slot)
         .thenApply(block -> block.map(GetBlockResponse::new));
+  }
+
+  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
+    if (!isStoreAvailable()) {
+      return chainUnavailable();
+    }
+
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
   public boolean isStoreAvailable() {
@@ -149,6 +235,20 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
+  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsByStateRootV1(
+      final Bytes32 stateRoot) {
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
+  }
+
+  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsBySlot(
+      final UInt64 slot) {
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
@@ -168,11 +268,23 @@ public class ChainDataProvider {
         .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
+  // TODO: remove once old API's are removed
   public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UInt64 slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
 
+    return SafeFuture.of(
+        () ->
+            combinedChainDataClient
+                .getStateAtSlotExact(slot)
+                .thenApplyChecked(
+                    maybeState ->
+                        maybeState.map(
+                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
+  }
+
+  public SafeFuture<Optional<Bytes32>> getStateRootAtSlotV1(final UInt64 slot) {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
@@ -228,15 +340,7 @@ public class ChainDataProvider {
     return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
   }
 
-  /**
-   * Convert a State Parameter {state_id} from a URL to a slot number
-   *
-   * @param pathParam head, genesis, finalized, justified, &lt;slot&gt;, &lt;state_root&gt;
-   * @return Optional slot of the desired state
-   * @throws IllegalArgumentException if state cannot be parsed or is in the future.
-   * @throws ChainDataUnavailableException if store is not able to process requests.
-   */
-  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
+  public Optional<UInt64> blockParameterToSlot(final String pathParam) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
@@ -248,22 +352,57 @@ public class ChainDataProvider {
           return Optional.of(UInt64.ZERO);
         case ("finalized"):
           return recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpochStartSlot);
-        case ("justified"):
-          return recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpochStartSlot);
       }
       if (pathParam.toLowerCase().startsWith("0x")) {
-        // state root
-        Bytes32 stateRoot = Bytes32.fromHexString(pathParam);
-        return combinedChainDataClient.getSlotByStateRoot(stateRoot).join();
+        // block root
+        Bytes32 blockRoot = Bytes32.fromHexString(pathParam);
+        return combinedChainDataClient.getSlotByBlockRoot(blockRoot).join();
       } else {
         final UInt64 slot = UInt64.valueOf(pathParam);
         final UInt64 headSlot = recentChainData.getHeadSlot();
         if (slot.isGreaterThan(headSlot)) {
           throw new IllegalArgumentException(
-              String.format("Invalid state: %s is beyond head slot %s", slot, headSlot));
+              String.format("Invalid block: %s is beyond head slot %s", slot, headSlot));
         }
         return Optional.of(UInt64.valueOf(pathParam));
       }
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException(String.format("Invalid block: %s", pathParam));
+    }
+  }
+
+  public void requireStoreAvailable() {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+  }
+
+  /**
+   * Convert a State Parameter {state_id} from a URL to a slot number
+   *
+   * @param pathParam head, genesis, finalized, justified, &lt;slot&gt;
+   * @return Optional slot of the desired state
+   * @throws IllegalArgumentException if state cannot be parsed or is in the future.
+   */
+  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
+    try {
+      switch (pathParam) {
+        case ("head"):
+          return recentChainData.getCurrentSlot();
+        case ("genesis"):
+          return Optional.of(UInt64.ZERO);
+        case ("finalized"):
+          return recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpochStartSlot);
+        case ("justified"):
+          return recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpochStartSlot);
+      }
+      final UInt64 slot = UInt64.valueOf(pathParam);
+      final UInt64 headSlot = recentChainData.getHeadSlot();
+      if (slot.isGreaterThan(headSlot)) {
+        throw new IllegalArgumentException(
+            String.format("Invalid state: %s is beyond head slot %s", slot, headSlot));
+      }
+      return Optional.of(UInt64.valueOf(pathParam));
     } catch (NumberFormatException ex) {
       throw new IllegalArgumentException(String.format("Invalid state: %s", pathParam));
     }
@@ -319,18 +458,24 @@ public class ChainDataProvider {
     }
   }
 
+  public SafeFuture<Optional<Fork>> getForkAtStateRoot(final Bytes32 root) {
+    return combinedChainDataClient
+        .getStateByStateRoot(root)
+        .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
+  }
+
   public SafeFuture<Optional<Fork>> getForkAtSlot(final UInt64 slot) {
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
   }
 
-  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetails(
+  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsBySlot(
       final UInt64 slot, final Optional<Integer> validatorIndex) {
     if (validatorIndex.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     } else {
-      return getValidatorsDetails(slot, List.of(validatorIndex.get()))
+      return getValidatorsDetailsBySlot(slot, List.of(validatorIndex.get()))
           .thenApply(
               maybeValidators ->
                   maybeValidators.flatMap(
@@ -343,12 +488,8 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetails(
+  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsBySlot(
       final UInt64 slot, final List<Integer> validatorIndices) {
-    if (!isStoreAvailable()) {
-      throw new ChainDataUnavailableException();
-    }
-
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
@@ -356,6 +497,59 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
+  }
+
+  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsByStateRoot(
+      final Bytes32 stateRoot, final Optional<Integer> validatorIndex) {
+    if (validatorIndex.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    } else {
+      return getValidatorsDetailsByStateRoot(stateRoot, List.of(validatorIndex.get()))
+          .thenApply(
+              maybeValidators ->
+                  maybeValidators.flatMap(
+                      validators -> {
+                        checkState(
+                            validators.size() <= 1,
+                            "Received more than one validator for a single index");
+                        return validators.stream().findFirst();
+                      }));
+    }
+  }
+
+  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsByStateRoot(
+      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
+  }
+
+  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesBySlot(
+      final UInt64 slot, final List<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
+  }
+
+  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesByStateRoot(
+      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(
+            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
   }
 
   private List<ValidatorResponse> getValidators(
@@ -366,10 +560,35 @@ public class ChainDataProvider {
         .collect(toList());
   }
 
+  private List<ValidatorBalanceResponse> getValidatorBalances(
+      final List<Integer> validatorIndices,
+      final tech.pegasys.teku.datastructures.state.BeaconState state) {
+    return validatorIndices.stream()
+        .map(index -> ValidatorBalanceResponse.fromState(state, index))
+        .collect(toList());
+  }
+
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
         .join()
         .map(Merkleizable::hash_tree_root);
+  }
+
+  public SafeFuture<List<BlockHeader>> getBlockHeaders(
+      final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    if (parentRoot.isPresent()) {
+      return SafeFuture.completedFuture(List.of());
+    }
+
+    return defaultBlockSelectorFactory
+        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .getBlock()
+        .thenApply(
+            blockList ->
+                blockList.stream().map(block -> new BlockHeader(block, true)).collect(toList()));
   }
 }

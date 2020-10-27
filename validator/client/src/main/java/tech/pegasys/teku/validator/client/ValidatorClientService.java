@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -30,6 +29,8 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
+import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -77,9 +78,14 @@ public class ValidatorClientService extends Service {
             .orElseGet(() -> InProcessBeaconNodeApi.create(services, asyncRunner));
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
-    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
+    final GenesisDataProvider genesisDataProvider =
+        new GenesisDataProvider(asyncRunner, validatorApiChannel);
+    final ForkProvider forkProvider =
+        new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
     final ValidatorIndexProvider validatorIndexProvider =
         new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
+    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final DutyLoader attestationDutyLoader =
@@ -90,7 +96,8 @@ public class ValidatorClientService extends Service {
                 forkProvider,
                 () -> new ScheduledDuties(validatorDutyFactory),
                 validators,
-                validatorIndexProvider));
+                validatorIndexProvider,
+                beaconCommitteeSubscriptions));
     final DutyLoader blockDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,
@@ -99,10 +106,8 @@ public class ValidatorClientService extends Service {
                 () -> new ScheduledDuties(validatorDutyFactory),
                 validators,
                 validatorIndexProvider));
-    final StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
     final AttestationDutyScheduler attestationDutyScheduler =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, stableSubnetSubscriber);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
     final BlockDutyScheduler blockDutyScheduler =
         new BlockDutyScheduler(metricsSystem, blockDutyLoader);
 

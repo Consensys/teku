@@ -17,10 +17,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -39,11 +41,13 @@ public class BlockGossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final BlockValidator blockValidator,
-      final EventBus eventBus) {
+      final EventBus eventBus,
+      final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
     this.gossipEncoding = gossipEncoding;
 
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, blockValidator, eventBus);
+        new BlockTopicHandler(
+            asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

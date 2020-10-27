@@ -131,7 +131,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
       names = {"-c", CONFIG_FILE_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Path/filename of the yaml config file (default: none)",
-      arity = "1")
+      arity = "1",
+      // Available to all subcommands
+      scope = ScopeType.INHERIT)
   private File configFile;
 
   @Mixin(name = "Network")
@@ -322,11 +324,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-
-      builder.globalConfig(this::buildGlobalConfiguration);
+      final NetworkDefinition networkDefinition =
+          NetworkDefinition.fromCliArg(networkOptions.getNetwork());
+      builder.globalConfig(
+          globalBuilder -> buildGlobalConfiguration(globalBuilder, networkDefinition));
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
+      p2POptions.configure(builder, networkDefinition);
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -334,26 +339,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
     }
   }
 
-  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
+  private void buildGlobalConfiguration(
+      final GlobalConfigurationBuilder builder, final NetworkDefinition networkDefinition) {
     builder
-        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setNetwork(networkDefinition)
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
         .setPeerRateLimit(networkOptions.getPeerRateLimit())
         .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
-        .setP2pEnabled(p2POptions.isP2pEnabled())
-        .setP2pInterface(p2POptions.getP2pInterface())
-        .setP2pPort(p2POptions.getP2pPort())
-        .setP2pDiscoveryEnabled(p2POptions.isP2pDiscoveryEnabled())
-        .setP2pDiscoveryBootnodes(p2POptions.getP2pDiscoveryBootnodes())
-        .setP2pAdvertisedIp(p2POptions.getP2pAdvertisedIp())
-        .setP2pAdvertisedPort(p2POptions.getP2pAdvertisedPort())
-        .setP2pPrivateKeyFile(p2POptions.getP2pPrivateKeyFile())
-        .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
-        .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
-        .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
-        .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
-        .setMultiPeerSyncEnabled(p2POptions.isMultiPeerSyncEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.weaksubjectivity.policies;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -22,14 +21,19 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
   private static final Logger LOG = LogManager.getLogger();
-  private final Level level;
 
-  public LoggingWeakSubjectivityViolationPolicy(Level level) {
+  private final Level level;
+  private final WeakSubjectivityLogger wsLogger;
+
+  public LoggingWeakSubjectivityViolationPolicy(
+      final WeakSubjectivityLogger wsLogger, Level level) {
     this.level = level;
+    this.wsLogger = wsLogger;
   }
 
   @Override
@@ -46,19 +50,19 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
         activeValidatorCount,
         latestFinalizedCheckpoint.getEpoch().plus(wsPeriod),
         currentEpoch);
-    STATUS_LOG.finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+    wsLogger.finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
         level, latestFinalizedCheckpoint.getEpoch());
   }
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
       Checkpoint wsCheckpoint, SignedBeaconBlock block) {
-    STATUS_LOG.chainInconsistentWithWeakSubjectivityCheckpoint(
+    wsLogger.chainInconsistentWithWeakSubjectivityCheckpoint(
         level, block.getRoot(), block.getSlot(), wsCheckpoint.getRoot(), wsCheckpoint.getEpoch());
   }
 
   @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
-    STATUS_LOG.failedToPerformWeakSubjectivityValidation(level, message, error);
+    wsLogger.failedToPerformWeakSubjectivityValidation(level, message, error);
   }
 }

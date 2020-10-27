@@ -19,7 +19,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AttesterSlashingTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -35,7 +35,7 @@ public class AttesterSlashingGossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final AttesterSlashingValidator attesterSlashingValidator,
-      final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+      final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
     final AttesterSlashingTopicHandler topicHandler =
         new AttesterSlashingTopicHandler(
             asyncRunner,

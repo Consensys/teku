@@ -59,6 +59,8 @@ public class AttestationProductionDuty implements Duty {
    * @param validator the validator to produce an attestation
    * @param attestationCommitteeIndex the committee index for the validator
    * @param committeePosition the validator's position within the committee
+   * @param validatorIndex the index of the validator
+   * @param committeeSize the number of validators in the committee
    * @return a future which will be completed with the unsigned attestation for the committee.
    */
   public SafeFuture<Optional<AttestationData>> addValidator(

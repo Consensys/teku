@@ -61,6 +61,18 @@ public class InlineEventThread implements EventThread {
   }
 
   /**
+   * Available for testing so that tests can call methods which normally must be accessed on the
+   * event thread, without having to actually pass a lambda to execute.
+   */
+  public void markAsOnEventThread() {
+    isEventThread.set(Boolean.TRUE);
+  }
+
+  public void markAsOffEventThread() {
+    isEventThread.set(Boolean.FALSE);
+  }
+
+  /**
    * Executes the specified command with a flag set to identify the current thread as the event
    * thread.
    *
@@ -73,7 +85,7 @@ public class InlineEventThread implements EventThread {
   private void withEventThreadMarkerSet(final Runnable command) {
 
     final Boolean originalEventThread = isEventThread.get();
-    isEventThread.set(Boolean.TRUE);
+    markAsOnEventThread();
     command.run();
 
     isEventThread.set(originalEventThread);

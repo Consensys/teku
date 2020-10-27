@@ -171,6 +171,14 @@ public final class UInt64 implements Comparable<UInt64> {
     return fromLongBits(longBits1 - longBits2);
   }
 
+  public UInt64 minusMinZero(final long other) {
+    return minusMinZero(valueOf(other));
+  }
+
+  public UInt64 minusMinZero(final UInt64 other) {
+    return isGreaterThan(other) ? minus(other) : ZERO;
+  }
+
   /**
    * Return the result of multiplying the specified value with this one.
    *

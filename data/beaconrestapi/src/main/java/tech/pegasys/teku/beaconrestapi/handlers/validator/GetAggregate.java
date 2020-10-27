@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorResponse;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAggregate implements Handler {
@@ -62,7 +63,11 @@ public class GetAggregate implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Aggregates all attestations matching given attestation data root and slot.",
+      deprecated = true,
+      summary = "Get aggregated attestations",
+      description =
+          "Aggregates all attestations matching given attestation data root and slot.\n\n"
+              + "Deprecated - use `/eth/v1/validator/aggregate_attestation` instead.",
       tags = {TAG_VALIDATOR},
       queryParams = {
         @OpenApiParam(
@@ -75,7 +80,6 @@ public class GetAggregate implements Handler {
             description = "`uint64` Non-finalized slot for which to create the aggregation.",
             required = true)
       },
-      description = "Aggregates all attestations matching given attestation data root and slot.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -98,13 +102,11 @@ public class GetAggregate implements Handler {
             String.format("Please specify both %s and %s", ATTESTATION_DATA_ROOT, SLOT));
       }
       Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
-      // Teku isn't using this parameter at the moment. We are enforcing it to stay compatible with
-      // the standard api
-      getParameterValueAsUInt64(parameters, SLOT);
+      final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
 
       ctx.result(
           provider
-              .createAggregate(beacon_block_root)
+              .createAggregate(slot, beacon_block_root)
               .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {

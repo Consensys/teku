@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -33,6 +34,10 @@ public interface TreeNode {
 
   static TreeNode createLeafNode(Bytes32 val) {
     return new LeafNodeImpl(val);
+  }
+
+  static TreeNode createCompressedLeafNode(Bytes val) {
+    return new CompressedLeafNodeImpl(val);
   }
 
   /**
@@ -152,6 +157,8 @@ public interface TreeNode {
    * a new node
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+
+  boolean isZero();
 
   /** Updates the tree in a batch */
   default TreeNode updated(TreeUpdates newNodes) {

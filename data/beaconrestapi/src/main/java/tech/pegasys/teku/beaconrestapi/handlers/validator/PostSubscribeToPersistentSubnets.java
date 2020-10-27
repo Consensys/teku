@@ -50,9 +50,12 @@ public class PostSubscribeToPersistentSubnets implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Subscribe beacon node persistently to a list of subnets.",
+      description =
+          "Deprecated - Persistent subnets are automatically managed based on requests to `/eth/v1/validator/beacon_committee_subscriptions`.",
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(

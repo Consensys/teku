@@ -22,7 +22,14 @@ import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 public class BasicViews {
 
   public static class BitView extends AbstractBasicView<Boolean, BitView> {
-    public BitView(Boolean value) {
+    private static final BitView TRUE_VIEW = new BitView(true);
+    private static final BitView FALSE_VIEW = new BitView(false);
+
+    public static BitView viewOf(boolean value) {
+      return value ? TRUE_VIEW : FALSE_VIEW;
+    }
+
+    private BitView(Boolean value) {
       super(value, BasicViewTypes.BIT_TYPE);
     }
   }

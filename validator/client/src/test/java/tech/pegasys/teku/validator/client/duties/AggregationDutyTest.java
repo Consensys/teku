@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -81,26 +80,6 @@ class AggregationDutyTest {
   }
 
   @Test
-  public void shouldSubscribeToCommitteeTopicWhenNewCommitteeAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
-  }
-
-  @Test
-  public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    duty.addValidator(
-        validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-
-    verify(validatorApiChannel, times(1))
-        .subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
-  }
-
-  @Test
   public void shouldProduceAggregateAndProof() {
     final int validatorIndex = 1;
     final int attestationCommitteeIndex = 2;
@@ -114,7 +93,7 @@ class AggregationDutyTest {
         attestationCommitteeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -157,9 +136,9 @@ class AggregationDutyTest {
         validator2CommitteeIndex,
         completedFuture(Optional.of(committee2AttestationData)));
 
-    when(validatorApiChannel.createAggregate(committee1AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee1AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(committee2AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee2AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -211,7 +190,7 @@ class AggregationDutyTest {
         committeeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
@@ -236,7 +215,6 @@ class AggregationDutyTest {
   public void shouldFailWhenAttestationDataNotCreated() {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(anyInt(), any());
 
     performAndReportDuty();
 
@@ -266,7 +244,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
@@ -285,7 +263,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();

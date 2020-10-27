@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Objects;
 import java.util.Random;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -22,6 +20,7 @@ import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 
 /**
  * G1 is a subgroup of an elliptic curve whose points are elements of the finite field Fp. The curve
@@ -56,7 +55,9 @@ public final class G1Point implements Group<G1Point> {
   }
 
   public static G1Point fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 49, "Expected 49 bytes, received %s.", bytes.size());
+    if (bytes.size() != 49) {
+      throw new DeserializeException("Expected 49 bytes but received " + bytes.size());
+    }
     return new G1Point(ECP.fromBytes(bytes.toArrayUnsafe()));
   }
 
@@ -70,11 +71,10 @@ public final class G1Point implements Group<G1Point> {
    * @return the point
    */
   public static G1Point fromBytesCompressed(Bytes bytes) {
-    checkArgument(
-        bytes.size() == fpPointSize,
-        "Expected %s bytes but received %s.",
-        fpPointSize,
-        bytes.size());
+    if (bytes.size() != fpPointSize) {
+      throw new DeserializeException(
+          "Expected " + fpPointSize + " bytes but received " + bytes.size());
+    }
     byte[] xBytes = bytes.toArray();
 
     boolean aIn = (xBytes[0] & (byte) (1 << 5)) != 0;
@@ -83,7 +83,7 @@ public final class G1Point implements Group<G1Point> {
     xBytes[0] &= (byte) 31;
 
     if (!cIn) {
-      throw new IllegalArgumentException("The serialized input does not have the C flag set.");
+      throw new DeserializeException("The serialized input does not have the C flag set.");
     }
 
     if (bIn) {
@@ -92,7 +92,7 @@ public final class G1Point implements Group<G1Point> {
         return new G1Point();
       } else {
         // The input is malformed
-        throw new IllegalArgumentException(
+        throw new DeserializeException(
             "The serialized input has B flag set, but A flag is set, or X is non-zero.");
       }
     }
@@ -103,17 +103,17 @@ public final class G1Point implements Group<G1Point> {
     BIG xBig = BIG.fromBytes(xBytes);
     BIG modulus = new BIG(ROM.Modulus);
     if (BIG.comp(modulus, xBig) <= 0) {
-      throw new IllegalArgumentException("X coordinate is too large.");
+      throw new DeserializeException("X coordinate is too large.");
     }
 
     ECP point = new ECP(xBig);
 
     if (point.is_infinity()) {
-      throw new IllegalArgumentException("X coordinate is not on the curve.");
+      throw new DeserializeException("X coordinate is not on the curve.");
     }
 
     if (!isInGroup(point)) {
-      throw new IllegalArgumentException("The deserialized point is not in the G1 subgroup.");
+      throw new DeserializeException("The deserialized point is not in the G1 subgroup.");
     }
 
     // Did we get the right branch of the sqrt?

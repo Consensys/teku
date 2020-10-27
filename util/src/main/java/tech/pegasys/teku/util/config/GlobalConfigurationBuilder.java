@@ -15,7 +15,6 @@ package tech.pegasys.teku.util.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
@@ -31,19 +30,6 @@ public class GlobalConfigurationBuilder {
   private Integer startupTimeoutSeconds;
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
-  private boolean p2pEnabled;
-  private String p2pInterface;
-  private int p2pPort;
-  private boolean p2pDiscoveryEnabled;
-  private List<String> p2pDiscoveryBootnodes;
-  private Optional<String> p2pAdvertisedIp = Optional.empty();
-  private OptionalInt p2pAdvertisedPort = OptionalInt.empty();
-  private String p2pPrivateKeyFile;
-  private int p2pPeerLowerBound;
-  private int p2pPeerUpperBound;
-  private int targetSubnetSubscriberCount;
-  private List<String> p2pStaticPeers;
-  private boolean multiPeerSyncEnabled = false;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -104,73 +90,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
     this.peerRequestLimit = peerRequestLimit;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pEnabled(final boolean p2pEnabled) {
-    this.p2pEnabled = p2pEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pInterface(final String p2pInterface) {
-    this.p2pInterface = p2pInterface;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pPort(final int p2pPort) {
-    this.p2pPort = p2pPort;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pDiscoveryEnabled(final boolean p2pDiscoveryEnabled) {
-    this.p2pDiscoveryEnabled = p2pDiscoveryEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pDiscoveryBootnodes(
-      final List<String> p2pDiscoveryBootnodes) {
-    this.p2pDiscoveryBootnodes = p2pDiscoveryBootnodes;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pAdvertisedIp(final Optional<String> p2pAdvertisedIp) {
-    this.p2pAdvertisedIp = p2pAdvertisedIp;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pAdvertisedPort(final OptionalInt p2pAdvertisedPort) {
-    this.p2pAdvertisedPort = p2pAdvertisedPort;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pPrivateKeyFile(final String p2pPrivateKeyFile) {
-    this.p2pPrivateKeyFile = p2pPrivateKeyFile;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pPeerLowerBound(final int p2pPeerLowerBound) {
-    this.p2pPeerLowerBound = p2pPeerLowerBound;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pPeerUpperBound(final int p2pPeerUpperBound) {
-    this.p2pPeerUpperBound = p2pPeerUpperBound;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setTargetSubnetSubscriberCount(
-      final int targetSubnetSubscriberCount) {
-    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
-    this.p2pStaticPeers = p2pStaticPeers;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setMultiPeerSyncEnabled(final boolean multiPeerSyncEnabled) {
-    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     return this;
   }
 
@@ -377,7 +296,6 @@ public class GlobalConfigurationBuilder {
           getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
       eth1DepositContractAddress =
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
-      p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
     }
 
@@ -392,19 +310,6 @@ public class GlobalConfigurationBuilder {
         startupTimeoutSeconds,
         peerRateLimit,
         peerRequestLimit,
-        p2pEnabled,
-        p2pInterface,
-        p2pPort,
-        p2pDiscoveryEnabled,
-        p2pDiscoveryBootnodes,
-        p2pAdvertisedIp,
-        p2pAdvertisedPort,
-        p2pPrivateKeyFile,
-        p2pPeerLowerBound,
-        p2pPeerUpperBound,
-        targetSubnetSubscriberCount,
-        p2pStaticPeers,
-        multiPeerSyncEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,

@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -86,6 +87,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       assertThat(finishedProcessingFuture).isNotDone();
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -95,8 +97,9 @@ public abstract class Eth2OutgoingRequestHandlerTest
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
-    verify(rpcStream).close();
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
     assertThat(blocks.size()).isEqualTo(3);
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -109,6 +112,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       assertThat(finishedProcessingFuture).isNotDone();
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -125,7 +129,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
-    verify(rpcStream, atLeastOnce()).close();
+    verify(rpcStream, atLeastOnce()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(maxChunks - 1);
     assertThatThrownBy(finishedProcessingFuture::get).hasRootCause(error);
   }
@@ -139,11 +143,12 @@ public abstract class Eth2OutgoingRequestHandlerTest
     assertThat(finishedProcessingFuture).isNotDone();
     deliverError();
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(1);
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
@@ -164,12 +169,13 @@ public abstract class Eth2OutgoingRequestHandlerTest
       }
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get)
@@ -180,19 +186,19 @@ public abstract class Eth2OutgoingRequestHandlerTest
   public void disconnectsIfInitialBytesAreNotReceivedInTime() {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
 
     // Run async tasks
     timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
   public void doesNotDisconnectIfInitialBytesAreReceivedInTime() throws Exception {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
 
     // Deliver some bytes just in time
     timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
@@ -202,7 +208,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Go past the time the first bytes should have been received and check it doesn't timeout
     timeProvider.advanceTimeByMillis(10);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -214,7 +220,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Run timeouts
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
@@ -229,7 +235,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // the second chunk and ensure the timeout never fires.
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -244,7 +250,39 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Run timeouts
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
+  }
+
+  @Test
+  public void abortsWhenNoReadComplete() throws Exception {
+    sendInitialPayload();
+
+    timeProvider.advanceTimeByMillis(100);
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+
+    asyncRequestRunner.executeQueuedActions();
+
+    // Run timeouts
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeoutRunner.executeDueActions();
+    verify(rpcStream).closeAbruptly();
+  }
+
+  @Test
+  public void shouldCompleteExceptionallyWhenClosedWithTruncatedMessage() {
+    sendInitialPayload();
+
+    timeProvider.advanceTimeByMillis(100);
+    final Bytes chunkBytes = chunks.get(0);
+    deliverBytes(chunkBytes.slice(0, chunkBytes.size() - 1));
+
+    asyncRequestRunner.executeQueuedActions();
+
+    complete();
+
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
 
   @Test
@@ -266,7 +304,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // the third chunk and ensure the timeout never fires.
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
   }
 
@@ -295,7 +333,11 @@ public abstract class Eth2OutgoingRequestHandlerTest
   }
 
   private void complete() {
-    reqHandler.complete(nodeId, rpcStream);
+    reqHandler.readComplete(nodeId, rpcStream);
+  }
+
+  private void close() {
+    reqHandler.closed(nodeId, rpcStream);
   }
 
   public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {

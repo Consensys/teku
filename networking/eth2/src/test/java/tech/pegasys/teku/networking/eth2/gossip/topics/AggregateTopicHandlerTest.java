@@ -35,8 +35,8 @@ public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @SuppressWarnings("unchecked")
-  private final GossipedOperationConsumer<ValidateableAttestation> attestationConsumer =
-      mock(GossipedOperationConsumer.class);
+  private final GossipedItemConsumer<ValidateableAttestation> attestationConsumer =
+      mock(GossipedItemConsumer.class);
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;

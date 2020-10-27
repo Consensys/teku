@@ -87,7 +87,7 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(BeaconBlock.class, new LengthBounds(304, 157656)),
         Arguments.of(BeaconBlockBody.class, new LengthBounds(220, 157572)),
         Arguments.of(BeaconBlockHeader.class, new LengthBounds(112, 112)),
-        Arguments.of(BeaconStateImpl.class, new LengthBounds(2687377, 141837542965649L)),
+        Arguments.of(BeaconStateImpl.class, new LengthBounds(2687377, 141837543039377L)),
         Arguments.of(Checkpoint.class, new LengthBounds(40, 40)),
         Arguments.of(Deposit.class, new LengthBounds(1240, 1240)),
         Arguments.of(DepositData.class, new LengthBounds(184, 184)),

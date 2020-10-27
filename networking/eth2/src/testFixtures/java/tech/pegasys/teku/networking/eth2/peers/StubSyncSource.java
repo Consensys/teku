@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 
 public class StubSyncSource implements SyncSource {
 
@@ -66,6 +67,9 @@ public class StubSyncSource implements SyncSource {
   public void assertRequestedBlocks(final long startSlot, final long count) {
     assertThat(requests).contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
+
+  @Override
+  public void adjustReputation(final ReputationAdjustment adjustment) {}
 
   private static final class Request {
     private final UInt64 start;

@@ -66,7 +66,7 @@ public final class MikuliKeyPair extends KeyPair {
   }
 
   public MikuliKeyPair(MikuliSecretKey secretKey) {
-    this(secretKey, new MikuliPublicKey(secretKey));
+    this(secretKey, secretKey.derivePublicKey());
   }
 
   public MikuliKeyPair(Scalar secretKey) {

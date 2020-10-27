@@ -65,17 +65,11 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public Signature sign(Bytes message) {
-    if (isZero()) {
-      return BlstSignature.INFINITY;
-    }
     return BlstBLS12381.sign(this, message);
   }
 
   @Override
   public Signature sign(Bytes message, Bytes dst) {
-    if (isZero()) {
-      return BlstSignature.INFINITY;
-    }
     return BlstBLS12381.sign(this, message, dst);
   }
 

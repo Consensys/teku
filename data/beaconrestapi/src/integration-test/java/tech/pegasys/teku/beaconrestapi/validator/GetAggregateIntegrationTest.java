@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
@@ -44,9 +43,9 @@ public class GetAggregateIntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Map<String, String> params =
         Map.of(
             "attestation_data_root", attestation.hash_tree_root().toHexString(),
-            "slot", UInt64.valueOf(1).toString());
+            "slot", UInt64.ONE.toString());
 
-    when(validatorApiChannel.createAggregate(eq(attestation.hash_tree_root())))
+    when(validatorApiChannel.createAggregate(UInt64.ONE, attestation.hash_tree_root()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     Response response = getResponse(GetAggregate.ROUTE, params);
@@ -59,9 +58,9 @@ public class GetAggregateIntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Map<String, String> params =
         Map.of(
             "attestation_data_root", attestation.hash_tree_root().toHexString(),
-            "slot", UInt64.valueOf(1).toString());
+            "slot", UInt64.ONE.toString());
 
-    when(validatorApiChannel.createAggregate(eq(attestation.hash_tree_root())))
+    when(validatorApiChannel.createAggregate(UInt64.ONE, attestation.hash_tree_root()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
 
     Response response = getResponse(GetAggregate.ROUTE, params);

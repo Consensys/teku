@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Holds a block root and the state corresponding to this block's post-state */
 public class BlockRootAndState {
@@ -31,5 +32,9 @@ public class BlockRootAndState {
 
   public Bytes32 getBlockRoot() {
     return blockRoot;
+  }
+
+  public UInt64 getSlot() {
+    return state.getSlot();
   }
 }

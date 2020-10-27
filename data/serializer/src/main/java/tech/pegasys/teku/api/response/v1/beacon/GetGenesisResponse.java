@@ -24,4 +24,8 @@ public class GetGenesisResponse {
   public GetGenesisResponse(@JsonProperty("data") final GenesisData data) {
     this.data = data;
   }
+
+  public GenesisData getData() {
+    return data;
+  }
 }

@@ -18,7 +18,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VoluntaryExitTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -35,7 +35,7 @@ public class VoluntaryExitGossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final VoluntaryExitValidator voluntaryExitValidator,
-      final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+      final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
     final VoluntaryExitTopicHandler topicHandler =
         new VoluntaryExitTopicHandler(
             asyncRunner,
