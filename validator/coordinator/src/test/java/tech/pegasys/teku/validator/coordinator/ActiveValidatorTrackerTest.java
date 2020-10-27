@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -44,8 +43,7 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
-    inOrder.verify(stableSubnetSubscriber).updateValidatorCount(3);
-    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot);
+    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot, 3);
   }
 
   @Test
@@ -60,8 +58,7 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
-    inOrder.verify(stableSubnetSubscriber).updateValidatorCount(1);
-    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot);
+    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot, 1);
   }
 
   @Test
@@ -80,7 +77,8 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     // And both slot updates wind up setting 0 validators
-    verify(stableSubnetSubscriber, times(2)).updateValidatorCount(0);
+    verify(stableSubnetSubscriber).onSlot(nextEpochStartSlot, 0);
+    verify(stableSubnetSubscriber).onSlot(epochStartSlot, 0);
   }
 
   @Test
@@ -98,6 +96,7 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot.plus(1));
 
     // And both slot updates wind up setting 3 validators
-    verify(stableSubnetSubscriber, times(2)).updateValidatorCount(3);
+    verify(stableSubnetSubscriber).onSlot(epochStartSlot, 3);
+    verify(stableSubnetSubscriber).onSlot(epochStartSlot.plus(1), 3);
   }
 }
