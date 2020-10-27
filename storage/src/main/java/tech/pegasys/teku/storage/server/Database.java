@@ -60,6 +60,9 @@ public interface Database extends AutoCloseable {
    */
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
+  /** @return The slot at which our historical (finalized) block data starts */
+  Optional<UInt64> getEarliestHistoricalBlockSlot();
+
   /**
    * Returns the latest finalized block at or prior to the given slot
    *

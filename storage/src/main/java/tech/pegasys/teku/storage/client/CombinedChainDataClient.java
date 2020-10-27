@@ -382,6 +382,11 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
+  /** @return The slot at which our historical (finalized) block data starts */
+  public SafeFuture<Optional<UInt64>> getEarliestHistoricalBlockSlot() {
+    return historicalChainData.getEarliestHistoricalBlockSlot();
+  }
+
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return recentChainData
         .retrieveSignedBlockByRoot(blockRoot)

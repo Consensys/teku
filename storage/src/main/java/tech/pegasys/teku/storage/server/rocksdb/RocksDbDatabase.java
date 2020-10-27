@@ -319,6 +319,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestHistoricalBlockSlot() {
+    return finalizedDao.getEarliestFinalizedBlockSlot();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return finalizedDao.getLatestFinalizedBlockAtSlot(slot);
   }

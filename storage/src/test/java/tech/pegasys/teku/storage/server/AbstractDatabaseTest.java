@@ -545,6 +545,36 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void getEarliestHistoricalBlockSlot_withMissingHistoricalBlocks() {
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+    createStorage(StateStorageMode.PRUNE);
+    initFromAnchor(anchor);
+
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(anchorEpoch.plus(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestHistoricalBlockSlot()).contains(anchorBlockAndState.getSlot());
+  }
+
+  @Test
+  public void getEarliestHistoricalBlockSlot_startFromGenesis() {
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(UInt64.valueOf(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestHistoricalBlockSlot()).contains(genesisBlockAndState.getSlot());
+  }
+
+  @Test
   public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
