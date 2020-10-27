@@ -57,8 +57,10 @@ public class ReferenceTestGenerator {
               .replace("$SPEC$", testDefinition.getSpec())
               .replace("$TEST_TYPE$", testDefinition.getTestType())
               .replace("$TEST_NAME$", testDefinition.getTestName())
-              .replace("$RELATIVE_PATH$", StringEscapeUtils
-                  .escapeJava(testDefinition.getPathFromPhaseTestDir().toString()));
+              .replace(
+                  "$RELATIVE_PATH$",
+                  StringEscapeUtils.escapeJava(
+                      testDefinition.getPathFromPhaseTestDir().toString()));
 
       final String relativePath =
           testPackage.replace('.', File.separatorChar)
