@@ -69,6 +69,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void setup() {
     when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
+    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
+        .thenReturn(completedFuture(Optional.of(UInt64.valueOf(0))));
   }
 
   @Test
@@ -82,6 +84,38 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withAncestorRoots(startBlock, count, skip, hotBlocks());
 
     when(combinedChainDataClient.getBlockAtSlotExact(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    requestBlocks(startBlock, count, skip);
+
+    verifyNoBlocksReturned();
+  }
+
+  @Test
+  public void shouldReturnNoBlocksWhenFirstBlockIsMissing() {
+    final int startBlock = 1;
+    final int count = 5;
+    final int skip = 1;
+    withCanonicalHeadBlock(BLOCKS.get(8));
+    withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
+
+    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
+        .thenReturn(completedFuture(Optional.of(UInt64.valueOf(2))));
+
+    requestBlocks(startBlock, count, skip);
+
+    verifyNoBlocksReturned();
+  }
+
+  @Test
+  public void shouldReturnNoBlocksWhenEarliestHistoricalBlockUnknown() {
+    final int startBlock = 1;
+    final int count = 5;
+    final int skip = 1;
+    withCanonicalHeadBlock(BLOCKS.get(8));
+    withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
+
+    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
         .thenReturn(completedFuture(Optional.empty()));
 
     requestBlocks(startBlock, count, skip);
