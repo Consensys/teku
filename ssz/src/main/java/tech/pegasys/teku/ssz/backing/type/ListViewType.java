@@ -116,7 +116,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   private static class LastBytesDelayer implements Consumer<Bytes> {
     private final Consumer<Bytes> delegate;
-    private Bytes last = null;
+    private Bytes last = Bytes.EMPTY;
 
     public LastBytesDelayer(Consumer<Bytes> delegate) {
       this.delegate = delegate;
