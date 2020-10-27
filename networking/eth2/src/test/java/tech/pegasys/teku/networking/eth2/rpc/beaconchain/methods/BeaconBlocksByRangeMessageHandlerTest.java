@@ -92,7 +92,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldReturnNoBlocksWhenFirstBlockIsMissing() {
+  public void shouldReturnErrorWhenFirstBlockIsMissing() {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
@@ -104,11 +104,15 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
-    verifyNoBlocksReturned();
+    final RpcException expectedError =
+        new RpcException.HistoricalDataUnavailableException(
+            "Requested historical blocks are currently unavailable");
+    verify(listener).completeWithErrorResponse(expectedError);
+    verifyNoMoreInteractions(listener);
   }
 
   @Test
-  public void shouldReturnNoBlocksWhenEarliestHistoricalBlockUnknown() {
+  public void shouldReturnErrorWhenEarliestHistoricalBlockUnknown() {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
@@ -120,7 +124,11 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
-    verifyNoBlocksReturned();
+    final RpcException expectedError =
+        new RpcException.HistoricalDataUnavailableException(
+            "Requested historical blocks are currently unavailable");
+    verify(listener).completeWithErrorResponse(expectedError);
+    verifyNoMoreInteractions(listener);
   }
 
   @Test

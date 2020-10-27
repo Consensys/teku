@@ -110,8 +110,10 @@ public class BeaconBlocksByRangeMessageHandler
         .thenCompose(
             earliestSlot -> {
               if (earliestSlot.map(s -> s.isGreaterThan(message.getStartSlot())).orElse(true)) {
-                // We're missing the first block, so we have nothing to send
-                return SafeFuture.COMPLETE;
+                // We're missing the first block so return an error
+                return SafeFuture.failedFuture(
+                    new RpcException.HistoricalDataUnavailableException(
+                        "Requested historical blocks are currently unavailable"));
               }
 
               final UInt64 headBlockSlot =
