@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -53,13 +53,13 @@ public class BeaconChainControllerTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final AtomicReference<GlobalConfiguration> globalConfig =
-      new AtomicReference<>(GlobalConfiguration.builder().build());
+  private P2PConfig p2pConfig = P2PConfig.builder().build();
+
   @TempDir public Path dataDir;
 
   @BeforeEach
   public void setup() {
-    when(serviceConfig.getConfig()).thenAnswer(__ -> globalConfig.get());
+    when(serviceConfig.getConfig()).thenReturn(GlobalConfiguration.builder().build());
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     when(serviceConfig.getDataDirLayout())
@@ -70,7 +70,7 @@ public class BeaconChainControllerTest {
 
   private BeaconChainConfiguration beaconChainConfiguration() {
     return new BeaconChainConfiguration(
-        WeakSubjectivityConfig.builder().build(), ValidatorConfig.builder().build());
+        WeakSubjectivityConfig.builder().build(), ValidatorConfig.builder().build(), p2pConfig);
   }
 
   @Test
@@ -101,9 +101,7 @@ public class BeaconChainControllerTest {
     Path customPKFile = dataDir.resolve("customPK.hex");
     Files.writeString(customPKFile, generatedPK.toHexString());
 
-    GlobalConfiguration globalConfiguration1 =
-        GlobalConfiguration.builder().setP2pPrivateKeyFile(customPKFile.toString()).build();
-    globalConfig.set(globalConfiguration1);
+    p2pConfig = P2PConfig.builder().p2pPrivateKeyFile(customPKFile.toString()).build();
     BeaconChainController controller1 =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());
     Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
@@ -144,7 +142,7 @@ public class BeaconChainControllerTest {
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build(), p2pConfig);
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
@@ -215,7 +213,7 @@ public class BeaconChainControllerTest {
             .safetyDecay(UInt64.valueOf(5))
             .build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build(), p2pConfig);
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
@@ -254,7 +252,7 @@ public class BeaconChainControllerTest {
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build(), p2pConfig);
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
