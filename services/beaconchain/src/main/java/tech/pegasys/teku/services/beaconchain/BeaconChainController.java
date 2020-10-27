@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import org.apache.logging.log4j.LogManager;
@@ -54,7 +53,6 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -99,7 +97,6 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -131,7 +128,6 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -151,6 +147,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final AsyncRunner eventAsyncRunner;
   private final Path beaconDataDirectory;
+  private final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -259,15 +256,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
-    return initWeakSubjectivity()
+    StorageQueryChannel storageQueryChannel =
+        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+    StorageUpdateChannel storageUpdateChannel =
+        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+    return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
                 StorageBackedRecentChainData.create(
                     metricsSystem,
                     storeConfig,
                     asyncRunner,
-                    eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
-                    eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
+                    storageQueryChannel,
+                    storageUpdateChannel,
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
                     coalescingChainHeadChannel,
@@ -393,81 +394,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivity() {
-    return initWeakSubjectivity(loadWeakSubjectivityInitialAnchorPoint());
-  }
-
-  @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivity(Optional<AnchorPoint> wsAnchor) {
-    this.weakSubjectivityAnchor = wsAnchor;
-    StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
-    StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
-
-    return storageQueryChannel
-        .getWeakSubjectivityState()
-        .thenCompose(
-            storedState -> {
-              WeakSubjectivityConfig wsConfig = beaconConfig.weakSubjectivity();
-              final Optional<Checkpoint> storedWsCheckpoint = storedState.getCheckpoint();
-              Optional<Checkpoint> newWsCheckpoint = wsConfig.getWeakSubjectivityCheckpoint();
-
-              // Reconcile supplied config with stored configuration
-              Optional<WeakSubjectivityConfig> configToPersist = Optional.empty();
-              if (newWsCheckpoint.isPresent()
-                  && !Objects.equals(storedWsCheckpoint, newWsCheckpoint)) {
-                // We have a new ws checkpoint, so we need to persist it
-                configToPersist = Optional.of(wsConfig);
-              } else if (storedState.getCheckpoint().isPresent()) {
-                // We haven't supplied a new ws checkpoint, so use the stored value
-                wsConfig =
-                    wsConfig.updated(
-                        b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
-              }
-
-              // Reconcile ws checkpoint with ws state
-              boolean shouldClearStoredState = false;
-              final Optional<UInt64> wsAnchorEpoch =
-                  weakSubjectivityAnchor.map(AnchorPoint::getEpoch);
-              final Optional<UInt64> wsCheckpointEpoch =
-                  wsConfig.getWeakSubjectivityCheckpoint().map(Checkpoint::getEpoch);
-              if (wsAnchorEpoch.isPresent()
-                  && wsCheckpointEpoch.isPresent()
-                  && wsAnchorEpoch.get().isGreaterThanOrEqualTo(wsCheckpointEpoch.get())) {
-                // The ws checkpoint is prior to our new anchor, so clear it out
-                wsConfig = wsConfig.updated(b -> b.weakSubjectivityCheckpoint(Optional.empty()));
-                configToPersist = Optional.empty();
-                if (newWsCheckpoint.isPresent()) {
-                  LOG.info(
-                      "Ignoring configured weak subjectivity checkpoint which is prior to supplied weak subjectivity state");
-                }
-                if (storedWsCheckpoint.isPresent()) {
-                  shouldClearStoredState = true;
-                }
-              }
-
-              weakSubjectivityValidator = WeakSubjectivityValidator.moderate(wsConfig);
-
-              // Persist changes as necessary
-              if (shouldClearStoredState) {
-                // Clear out stored checkpoint
-                LOG.info("Clearing stored weak subjectivity checkpoint");
-                WeakSubjectivityUpdate update =
-                    WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint();
-                return storageUpdateChannel.onWeakSubjectivityUpdate(update);
-              } else if (configToPersist.isPresent()) {
-                final Checkpoint updatedCheckpoint =
-                    configToPersist.get().getWeakSubjectivityCheckpoint().orElseThrow();
-
-                // Persist changes
-                LOG.info("Update stored weak subjectivity checkpoint to: {}", updatedCheckpoint);
-                WeakSubjectivityUpdate update =
-                    WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(updatedCheckpoint);
-                return storageUpdateChannel.onWeakSubjectivityUpdate(update);
-              }
-
-              return SafeFuture.COMPLETE;
+  SafeFuture<Void> initWeakSubjectivity(
+      final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
+    this.weakSubjectivityAnchor = wsInitializer.loadAnchorPoint(beaconConfig.weakSubjectivity());
+    return wsInitializer
+        .finalizeAndStoreConfig(
+            beaconConfig.weakSubjectivity(), weakSubjectivityAnchor, queryChannel, updateChannel)
+        .thenAccept(
+            finalConfig -> {
+              this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
             });
   }
 
@@ -791,34 +726,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     } catch (final IOException e) {
       throw new IllegalStateException("Failed to load genesis state", e);
     }
-  }
-
-  private Optional<AnchorPoint> loadWeakSubjectivityInitialAnchorPoint() {
-    return beaconConfig
-        .weakSubjectivity()
-        .getWeakSubjectivityStateResource()
-        .map(
-            wsStateResource -> {
-              try {
-                final String wsBlockResource =
-                    beaconConfig
-                        .weakSubjectivity()
-                        .getWeakSubjectivityBlockResource()
-                        .orElseThrow(
-                            () ->
-                                new IllegalArgumentException(
-                                    "Weak subjectivity block must be supplied with state"));
-                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource, wsBlockResource);
-                final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final SignedBeaconBlock block = ChainDataLoader.loadBlock(wsBlockResource);
-                STATUS_LOG.loadedWeakSubjectivityStateResources(
-                    state.hashTreeRoot(), block.getRoot(), state.getSlot());
-                return AnchorPoint.fromInitialBlockAndState(block, state);
-              } catch (IOException e) {
-                throw new IllegalStateException(
-                    "Failed to load weak subjectivity initial state data", e);
-              }
-            });
   }
 
   private void initializeGenesis(final BeaconState genesisState) {
