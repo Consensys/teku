@@ -705,7 +705,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
         combinedChainDataClient.getBestBlock().get();
-    BlockHeader result = provider.getBlockHeaderByBlockId("head").get().get();
+    BlockHeader result = provider.getBlockHeader("head").get().get();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
@@ -744,14 +744,17 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void shouldGetBlockHeaderWithBlockRoot() throws ExecutionException, InterruptedException {
+  public void shouldGetBlockHeadersOnEmptyChainHeadSlot() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final SignedBeaconBlock block =
-        new SignedBeaconBlock(combinedChainDataClient.getBestBlock().get());
-    Optional<BlockHeader> results =
-        provider.getBlockHeaderByBlockRoot(block.asInternalSignedBeaconBlock().getRoot()).get();
-    assertThat(results.get().header.message.slot).isEqualTo(slot);
+
+    final UInt64 headSlot = recentChainData.getHeadSlot();
+    storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
+
+    final SafeFuture<List<BlockHeader>> future =
+        provider.getBlockHeaders(Optional.empty(), Optional.empty());
+    final BlockHeader header = future.join().get(0);
+    assertThat(header.header.message.slot).isEqualTo(headSlot);
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
