@@ -154,7 +154,3 @@ DOMAIN_DEPOSIT: 0x03000000
 DOMAIN_VOLUNTARY_EXIT: 0x04000000
 DOMAIN_SELECTION_PROOF: 0x05000000
 DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
-
-# Custom constants
-# ---------------------------------------------------------------
-BLS_INFINITY_VALID: true

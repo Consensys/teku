@@ -495,7 +495,22 @@ public abstract class AbstractDatabaseTest {
     assertThat(tx.commit()).isCompleted();
 
     // All finalized blocks and states should be available
-    assertFinalizedBlocksAndStatesAvailable(newBlocks);
+    final List<SignedBeaconBlock> expectedFinalizedBlocks =
+        newBlocks.stream().map(SignedBlockAndState::getBlock).collect(toList());
+    final Map<Bytes32, BeaconState> expectedFinalizedStates =
+        newBlocks.stream()
+            // Hot state is recorded for the first block of each epoch and we only use the available
+            // states, so ensure that at least those are available (some others will be available
+            // because they were in cache)
+            .filter(
+                blockAndState ->
+                    blockAndState
+                        .getSlot()
+                        .equals(compute_start_slot_at_epoch(blockAndState.getSlot())))
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+    assertBlocksFinalized(expectedFinalizedBlocks);
+    assertBlocksAvailable(expectedFinalizedBlocks);
+    assertFinalizedStatesAvailable(expectedFinalizedStates);
   }
 
   @Test
