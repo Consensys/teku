@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -503,18 +502,27 @@ public class RocksDbDatabase implements Database {
 
           final StateRootRecorder recorder =
               new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
-          final StateGenerator stateGenerator =
-              StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-          // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
-          stateGenerator
-              .regenerateAllStates(
-                  (block, state) -> {
-                    updater.addFinalizedBlock(block);
-                    updater.addFinalizedState(block.getRoot(), state);
-                    recorder.acceptNextState(state);
-                  })
-              .join();
+
+          blockTree
+              .preOrderStream()
+              .forEach(
+                  blockRoot -> {
+                    updater.addFinalizedBlock(
+                        blockProvider
+                            .getBlock(blockRoot)
+                            .join()
+                            .orElseThrow(
+                                () -> new IllegalStateException("Missing finalized block")));
+                    Optional.ofNullable(finalizedStates.get(blockRoot))
+                        .or(() -> getHotState(blockRoot))
+                        .ifPresent(
+                            state -> {
+                              updater.addFinalizedState(blockRoot, state);
+                              recorder.acceptNextState(state);
+                            });
+                  });
           break;
+
         case PRUNE:
           for (Bytes32 root : finalizedChildToParentMap.keySet()) {
             SignedBeaconBlock block =
