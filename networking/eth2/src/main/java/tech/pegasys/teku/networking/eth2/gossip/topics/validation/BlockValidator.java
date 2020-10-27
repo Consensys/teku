@@ -67,14 +67,14 @@ public class BlockValidator {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    if (recentChainData.containsBlock(block.getRoot())) {
-      LOG.trace("Block is already imported");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
-    }
-
     if (blockIsFromFutureSlot(block)) {
       LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
       return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    if (recentChainData.containsBlock(block.getRoot())) {
+      LOG.trace("Block is already imported");
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
     if (!recentChainData.containsBlock(block.getParent_root())) {
