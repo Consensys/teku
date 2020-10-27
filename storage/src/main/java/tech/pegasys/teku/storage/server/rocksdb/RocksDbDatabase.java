@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
@@ -35,9 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -500,18 +500,27 @@ public class RocksDbDatabase implements Database {
 
           final StateRootRecorder recorder =
               new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
-          final StateGenerator stateGenerator =
-              StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-          // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
-          stateGenerator
-              .regenerateAllStates(
-                  (block, state) -> {
-                    updater.addFinalizedBlock(block);
-                    updater.addFinalizedState(block.getRoot(), state);
-                    recorder.acceptNextState(state);
-                  })
-              .join();
+
+          blockTree
+              .preOrderStream()
+              .forEach(
+                  blockRoot -> {
+                    updater.addFinalizedBlock(
+                        blockProvider
+                            .getBlock(blockRoot)
+                            .join()
+                            .orElseThrow(
+                                () -> new IllegalStateException("Missing finalized block")));
+                    Optional.ofNullable(finalizedStates.get(blockRoot))
+                        .or(() -> getHotState(blockRoot))
+                        .ifPresent(
+                            state -> {
+                              updater.addFinalizedState(blockRoot, state);
+                              recorder.acceptNextState(state);
+                            });
+                  });
           break;
+
         case PRUNE:
           for (Bytes32 root : finalizedChildToParentMap.keySet()) {
             SignedBeaconBlock block =
