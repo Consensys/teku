@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ChainDataProvider {
+  private final BlockSelectorFactory defaultBlockSelectorFactory;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
@@ -63,6 +65,7 @@ public class ChainDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
+    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
   }
 
   public UInt64 getGenesisTime() {
@@ -191,29 +194,15 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
+  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
 
-    final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
-    if (maybeSlot.isEmpty()) {
-      return getBlockHeaderByBlockRoot(Bytes32.fromHexString(slotParameter));
-    }
-
-    final UInt64 slot = maybeSlot.get();
-    return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
-  }
-
-  // because this is called after attempting to match a block to a slot, this function
-  // will only ever be run for non canonical blocks. if made public, it will have to be updated to
-  // first check that the block doesnt have a slot, before it can make that assumption.
-  SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
-    return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, false)));
   }
 
   public boolean isStoreAvailable() {
@@ -595,11 +584,11 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(List.of());
     }
 
-    final UInt64 slotToLoad = slot.or(recentChainData::getCurrentSlot).orElseThrow();
-    return combinedChainDataClient
-        .getBlockAtSlotExact(slotToLoad)
+    return defaultBlockSelectorFactory
+        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .getBlock()
         .thenApply(
-            maybeBlock ->
-                maybeBlock.map(block -> List.of(new BlockHeader(block, true))).orElse(List.of()));
+            blockList ->
+                blockList.stream().map(block -> new BlockHeader(block, true)).collect(toList()));
   }
 }
