@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 
 import java.util.ArrayList;
@@ -334,5 +336,21 @@ class BeaconStateUtilTest {
   @Test
   void ensureVerifyDepositDefaultsToTrue() {
     assertThat(BeaconStateUtil.BLS_VERIFY_DEPOSIT).isTrue();
+  }
+
+  @Test
+  void compute_next_epoch_boundary_slotAtBoundary() {
+    final UInt64 expectedEpoch = UInt64.valueOf(2);
+    final UInt64 slot = compute_start_slot_at_epoch(expectedEpoch);
+
+    assertThat(compute_next_epoch_boundary(slot)).isEqualTo(expectedEpoch);
+  }
+
+  @Test
+  void compute_next_epoch_boundary_slotPriorToBoundary() {
+    final UInt64 expectedEpoch = UInt64.valueOf(2);
+    final UInt64 slot = compute_start_slot_at_epoch(expectedEpoch).minus(1);
+
+    assertThat(compute_next_epoch_boundary(slot)).isEqualTo(expectedEpoch);
   }
 }

@@ -57,6 +57,7 @@ class StoreTest extends AbstractStoreTest {
                     new StubMetricsSystem(),
                     blockProviderFromChainBuilder(),
                     StateAndBlockProvider.NOOP,
+                    Optional.empty(),
                     genesisTime.minus(1),
                     genesisTime,
                     genesisCheckpoint,
