@@ -409,7 +409,7 @@ public class BeaconChainControllerTest {
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build(), p2pConfig);
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
