@@ -499,6 +499,9 @@ public abstract class AbstractDatabaseTest {
         newBlocks.stream().map(SignedBlockAndState::getBlock).collect(toList());
     final Map<Bytes32, BeaconState> expectedFinalizedStates =
         newBlocks.stream()
+            // Hot state is recorded for the first block of each epoch and we only use the available
+            // states, so ensure that at least those are available (some others will be available
+            // because they were in cache)
             .filter(
                 blockAndState ->
                     blockAndState
