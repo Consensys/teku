@@ -53,4 +53,6 @@ public interface SchemaHot extends Schema {
   RocksDbVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot();
 
   RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
+
+  RocksDbVariable<Checkpoint> getVariableAnchorCheckpoint();
 }

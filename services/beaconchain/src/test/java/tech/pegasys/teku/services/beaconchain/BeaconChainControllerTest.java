@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +30,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -109,7 +112,7 @@ public class BeaconChainControllerTest {
   }
 
   @Test
-  public void initWeakSubjectivityValidator_nothingStored_noNewArgs() {
+  public void initWeakSubjectivity_nothingStored_noNewArgs() {
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
@@ -124,7 +127,7 @@ public class BeaconChainControllerTest {
     when(queryChannel.getWeakSubjectivityState())
         .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
 
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
+    assertThat(controller.initWeakSubjectivity()).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
@@ -136,7 +139,7 @@ public class BeaconChainControllerTest {
   }
 
   @Test
-  public void initWeakSubjectivityValidator_nothingStored_withNewArgs() {
+  public void initWeakSubjectivity_nothingStored_withNewArgs() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
@@ -158,7 +161,7 @@ public class BeaconChainControllerTest {
     when(queryChannel.getWeakSubjectivityState())
         .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
 
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
+    assertThat(controller.initWeakSubjectivity()).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
@@ -172,7 +175,7 @@ public class BeaconChainControllerTest {
   }
 
   @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_noNewArgs() {
+  public void initWeakSubjectivity_withStoredCheckpoint_noNewArgs() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());
@@ -191,7 +194,7 @@ public class BeaconChainControllerTest {
     when(queryChannel.getWeakSubjectivityState())
         .thenReturn(SafeFuture.completedFuture(storedState));
 
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
+    assertThat(controller.initWeakSubjectivity()).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
@@ -203,7 +206,7 @@ public class BeaconChainControllerTest {
   }
 
   @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_withNewDistinctArgs() {
+  public void initWeakSubjectivity_withStoredCheckpoint_withNewDistinctArgs() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
@@ -232,7 +235,7 @@ public class BeaconChainControllerTest {
     when(queryChannel.getWeakSubjectivityState())
         .thenReturn(SafeFuture.completedFuture(storedState));
 
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
+    assertThat(controller.initWeakSubjectivity()).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
@@ -246,7 +249,7 @@ public class BeaconChainControllerTest {
   }
 
   @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_withConsistentCLIArgs() {
+  public void initWeakSubjectivity_withStoredCheckpoint_withConsistentCLIArgs() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
@@ -269,7 +272,7 @@ public class BeaconChainControllerTest {
     when(queryChannel.getWeakSubjectivityState())
         .thenReturn(SafeFuture.completedFuture(storedState));
 
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
+    assertThat(controller.initWeakSubjectivity()).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
@@ -278,5 +281,171 @@ public class BeaconChainControllerTest {
     assertThat(controller.getWeakSubjectivityValidator())
         .usingRecursiveComparison()
         .isEqualTo(expectedValidator);
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorAtSameEpochAsCLIWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(cliCheckpoint.getEpochStartSlot());
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isEmpty();
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorAfterCLIWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
+    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(
+            compute_start_slot_at_epoch(wsCheckpointEpoch.plus(2)));
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isEmpty();
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorPriorToCLIWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
+    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(
+            compute_start_slot_at_epoch(wsCheckpointEpoch.minus(2)));
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isPresent();
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorAtSameEpochAsStoredWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(storedCheckpoint.getEpochStartSlot());
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isEmpty();
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorAfterStoredWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
+    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(
+            compute_start_slot_at_epoch(wsCheckpointEpoch.plus(2)));
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isEmpty();
+  }
+
+  @Test
+  public void initWeakSubjectivity_anchorPriorToStoredWSCheckpoint() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
+    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
+    final SignedBlockAndState anchorBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(
+            compute_start_slot_at_epoch(wsCheckpointEpoch.minus(2)));
+    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+
+    final Optional<Checkpoint> configuredCheckpoint =
+        testInitWeakSubjectivityWithAnchor(
+            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
+    // Sanity check
+    assertThat(configuredCheckpoint).isPresent();
+  }
+
+  private Optional<Checkpoint> testInitWeakSubjectivityWithAnchor(
+      Optional<Checkpoint> storedCheckpoint,
+      Optional<Checkpoint> cliCheckpoint,
+      Optional<AnchorPoint> wsInitialAnchor) {
+    // Set up expectations
+    final Optional<Checkpoint> expectedWsCheckpoint =
+        cliCheckpoint
+            .or(() -> storedCheckpoint)
+            .filter(
+                c ->
+                    wsInitialAnchor.isEmpty()
+                        || wsInitialAnchor.get().getEpoch().isLessThan(c.getEpoch()));
+    final boolean shouldPersistWsCheckpoint =
+        cliCheckpoint.isPresent() && expectedWsCheckpoint.isPresent();
+    final boolean shouldClearWsCheckpoint =
+        storedCheckpoint.isPresent() && expectedWsCheckpoint.isEmpty();
+    final WeakSubjectivityConfig expectedConfig =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(expectedWsCheckpoint).build();
+
+    final WeakSubjectivityConfig cliConfig =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
+    final BeaconChainConfiguration beaconChainConfiguration =
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build(), p2pConfig);
+    final BeaconChainController controller =
+        new BeaconChainController(serviceConfig, beaconChainConfiguration);
+
+    // Mock storage channels
+    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
+    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
+    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
+    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
+        .thenReturn(updateChannel);
+    when(updateChannel.onWeakSubjectivityUpdate(any())).thenReturn(SafeFuture.COMPLETE);
+
+    // Setup storage
+    final WeakSubjectivityState storedState = WeakSubjectivityState.create(storedCheckpoint);
+    when(queryChannel.getWeakSubjectivityState())
+        .thenReturn(SafeFuture.completedFuture(storedState));
+
+    assertThat(controller.initWeakSubjectivity(wsInitialAnchor)).isCompleted();
+    verify(queryChannel).getWeakSubjectivityState();
+    if (shouldPersistWsCheckpoint) {
+      verify(updateChannel)
+          .onWeakSubjectivityUpdate(
+              WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(
+                  expectedWsCheckpoint.orElseThrow()));
+    } else if (shouldClearWsCheckpoint) {
+      verify(updateChannel)
+          .onWeakSubjectivityUpdate(WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint());
+    } else {
+      verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
+    }
+
+    final WeakSubjectivityValidator expectedValidator =
+        WeakSubjectivityValidator.moderate(expectedConfig);
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
+
+    return expectedWsCheckpoint;
   }
 }

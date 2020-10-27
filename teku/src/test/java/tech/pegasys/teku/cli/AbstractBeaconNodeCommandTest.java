@@ -53,8 +53,8 @@ public abstract class AbstractBeaconNodeCommandTest {
     try {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
-      verify(startAction).start(configCaptor.capture(), eq(false));
       assertThat(stringWriter.toString()).isEmpty();
+      verify(startAction).start(configCaptor.capture(), eq(false));
 
       return configCaptor.getValue();
     } catch (Throwable t) {
