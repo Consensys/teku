@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.stream.Stream;
 import org.apache.commons.text.CaseUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import tech.pegasys.teku.ethtests.finder.ReferenceTestFinder;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
@@ -56,7 +57,8 @@ public class ReferenceTestGenerator {
               .replace("$SPEC$", testDefinition.getSpec())
               .replace("$TEST_TYPE$", testDefinition.getTestType())
               .replace("$TEST_NAME$", testDefinition.getTestName())
-              .replace("$RELATIVE_PATH$", testDefinition.getPathFromPhaseTestDir().toString());
+              .replace("$RELATIVE_PATH$", StringEscapeUtils
+                  .escapeJava(testDefinition.getPathFromPhaseTestDir().toString()));
 
       final String relativePath =
           testPackage.replace('.', File.separatorChar)
