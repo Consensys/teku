@@ -64,8 +64,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.network.GossipConfig;
@@ -325,7 +328,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initRecentBlockFetcher() {
     LOG.debug("BeaconChainController.initRecentBlockFetcher()");
-    if (!config.isP2pEnabled()) {
+    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
       recentBlockFetcher = new NoopRecentBlockFetcher();
     } else {
       recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
@@ -479,9 +482,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
     final ActiveValidatorTracker activeValidatorTracker =
-        new ActiveValidatorTracker(
-            new StableSubnetSubscriber(attestationTopicSubscriber, new Random()));
+        new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
     final ValidatorApiHandler validatorApiHandler =
@@ -529,7 +535,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
-    if (!config.isP2pEnabled()) {
+    final P2PConfig configOptions = beaconConfig.p2pConfig();
+    if (!configOptions.isP2pEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
       final KeyValueStore<String, Bytes> keyValueStore =
@@ -539,18 +546,18 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
-              config.getP2pInterface(),
-              config.getP2pAdvertisedIp(),
-              config.getP2pPort(),
-              config.getP2pAdvertisedPort(),
-              config.getP2pStaticPeers(),
-              config.isP2pDiscoveryEnabled(),
-              config.getP2pDiscoveryBootnodes(),
+              configOptions.getP2pInterface(),
+              configOptions.getP2pAdvertisedIp(),
+              configOptions.getP2pPort(),
+              configOptions.getP2pAdvertisedPort(),
+              configOptions.getP2pStaticPeers(),
+              configOptions.isP2pDiscoveryEnabled(),
+              configOptions.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(
-                  config.getP2pPeerLowerBound(),
-                  config.getP2pPeerUpperBound(),
-                  config.getMinimumRandomlySelectedPeerCount()),
-              config.getTargetSubnetSubscriberCount(),
+                  configOptions.getP2pPeerLowerBound(),
+                  configOptions.getP2pPeerUpperBound(),
+                  configOptions.getMinimumRandomlySelectedPeerCount()),
+              configOptions.getTargetSubnetSubscriberCount(),
               GossipConfig.DEFAULT_CONFIG,
               new WireLogsConfig(
                   config.isLogWireCipher(),
@@ -610,7 +617,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   Bytes getP2pPrivateKeyBytes(KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
-    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
+    final String p2pPrivateKeyFile = beaconConfig.p2pConfig().getP2pPrivateKeyFile();
     if (p2pPrivateKeyFile != null) {
       try {
         privateKey = Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile)));
@@ -685,9 +692,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
-    if (!config.isP2pEnabled()) {
+    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
       syncService = new NoopSyncService();
-    } else if (config.isMultiPeerSyncEnabled()) {
+    } else if (beaconConfig.p2pConfig().isMultiPeerSyncEnabled()) {
       syncService =
           MultipeerSyncService.create(
               asyncRunnerFactory,

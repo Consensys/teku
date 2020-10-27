@@ -11,11 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.subnets;
+package tech.pegasys.teku.api.blockselector;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public interface StableSubnetSubscriber {
+public interface BlockSelector {
+  SafeFuture<List<SignedBeaconBlock>> getBlock();
 
-  void onSlot(UInt64 slot, int validatorCount);
+  default SafeFuture<Optional<SignedBeaconBlock>> getSingleBlock() {
+    return getBlock().thenApply(blockList -> blockList.stream().findFirst());
+  }
 }

@@ -49,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorResponse;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAggregateAttestation extends AbstractHandler implements Handler {
@@ -104,13 +105,11 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
             String.format("Please specify both %s and %s", ATTESTATION_DATA_ROOT, SLOT));
       }
       Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
-      // Teku isn't using this parameter at the moment. We are enforcing it to stay compatible with
-      // the standard api
-      getParameterValueAsUInt64(parameters, SLOT);
+      final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
 
       ctx.result(
           provider
-              .createAggregate(beacon_block_root)
+              .createAggregate(slot, beacon_block_root)
               .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {

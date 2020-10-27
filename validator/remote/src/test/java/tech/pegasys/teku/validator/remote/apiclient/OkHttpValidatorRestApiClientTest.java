@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -491,7 +492,26 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void createAttestationData_WhenSuccess_ReturnsAttestation() {
+  public void createAttestationData_WhenSuccessWithData_ReturnsAttestationData() {
+    final UInt64 slot = UInt64.ONE;
+    final int committeeIndex = 1;
+    final GetAttestationDataResponse expectedAttestationData =
+        new GetAttestationDataResponse(schemaObjects.attestation().data);
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestationData)));
+
+    Optional<AttestationData> attestationData =
+        apiClient.createAttestationData(slot, committeeIndex);
+
+    assertThat(attestationData).isPresent();
+    assertThat(attestationData.get())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedAttestationData.data);
+  }
+
+  @Test
+  public void createAttestationData_WhenSuccessWithNonData_ReturnsAttestationData() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
     final AttestationData expectedAttestationData = schemaObjects.attestation().data;
@@ -545,12 +565,12 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void createAggregate_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ZERO;
+    final UInt64 slot = UInt64.valueOf(323);
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.createAggregate(attestationHashTreeRoot);
+    apiClient.createAggregate(slot, attestationHashTreeRoot);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -567,8 +587,17 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
+    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void createAggregate_WhenNotFound_ReturnsEmpty() {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot)).isEmpty();
   }
 
   @Test
@@ -577,7 +606,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
+    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
@@ -592,7 +621,8 @@ class OkHttpValidatorRestApiClientTest {
             .setResponseCode(SC_OK)
             .setBody(asJson(new GetAggregatedAttestationResponse(expectedAttestation))));
 
-    final Optional<Attestation> attestation = apiClient.createAggregate(attestationHashTreeRoot);
+    final Optional<Attestation> attestation =
+        apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
 
     assertThat(attestation).isPresent();
     assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
