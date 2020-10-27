@@ -14,7 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -65,24 +67,46 @@ public class BlockValidator {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
+    if (recentChainData.containsBlock(block.getRoot())) {
+      LOG.trace("Block is already imported");
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+    }
+
+    if (blockIsFromFutureSlot(block)) {
+      LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
+      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    if (!recentChainData.containsBlock(block.getParent_root())) {
+      LOG.trace("Block parent is not availalbe. It will be saved for future processing");
+      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
+      LOG.trace("Block does not descend from finalized checkpoint");
+      return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+    }
+
     return recentChainData
         .retrieveBlockState(block.getMessage().getParent_root())
         .thenApply(
             preState -> {
-              if (preState.isEmpty() || blockIsFromFutureSlot(block)) {
+              if (preState.isEmpty()) {
                 LOG.trace(
-                    "BlockValidator: Either block pre state does not exist or block is from the future. "
-                        + "It will be saved for future processing");
+                    "BlockValidator: Block pre state does not exist. It will be saved for future processing");
                 return InternalValidationResult.SAVE_FOR_FUTURE;
               }
 
+              if (preState.get().getSlot().isGreaterThanOrEqualTo(block.getSlot())) {
+                LOG.trace("Parent block is after child block.");
+                return InternalValidationResult.REJECT;
+              }
+
               try {
-                BeaconState postState =
-                    stateTransition.process_slots(preState.get(), block.getMessage().getSlot());
+                BeaconState postState = getStateInBlockEpoch(block, preState.get());
                 if (blockIsProposedByTheExpectedProposer(block, postState)
                     && blockSignatureIsValidWithRespectToProposerIndex(
-                        block, preState.get(), postState)
-                    && currentFinalizedCheckpointIsAncestorOfBlock(block)) {
+                        block, preState.get(), postState)) {
                   return InternalValidationResult.ACCEPT;
                 }
               } catch (EpochProcessingException | SlotProcessingException e) {
@@ -92,6 +116,17 @@ public class BlockValidator {
 
               return InternalValidationResult.REJECT;
             });
+  }
+
+  private BeaconState getStateInBlockEpoch(
+      final SignedBeaconBlock block, final BeaconState preState)
+      throws EpochProcessingException, SlotProcessingException {
+    final UInt64 firstSlotInBlockEpoch =
+        compute_start_slot_at_epoch(compute_epoch_at_slot(block.getSlot()));
+    if (preState.getSlot().isGreaterThanOrEqualTo(firstSlotInBlockEpoch)) {
+      return preState;
+    }
+    return stateTransition.process_slots(preState, firstSlotInBlockEpoch);
   }
 
   private boolean blockIsFromFutureSlot(SignedBeaconBlock block) {
@@ -128,7 +163,7 @@ public class BlockValidator {
 
   private boolean blockIsProposedByTheExpectedProposer(
       SignedBeaconBlock block, BeaconState postState) {
-    final int proposerIndex = get_beacon_proposer_index(postState);
+    final int proposerIndex = get_beacon_proposer_index(postState, block.getSlot());
     return proposerIndex == block.getMessage().getProposer_index().longValue();
   }
 
