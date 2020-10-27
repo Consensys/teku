@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,10 +22,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committe
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -50,6 +50,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.statetransition.attestation.AttestationValidator;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -301,13 +303,9 @@ class AttestationValidatorTest {
     final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
-    assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId + 1))
+    assertThat(validator.validate(ValidateableAttestation.from(attestation), expectedSubnetId + 1))
         .isCompletedWithValue(REJECT);
-    assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+    assertThat(validator.validate(ValidateableAttestation.from(attestation), expectedSubnetId))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -319,7 +317,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromAttestation(
+                ValidateableAttestation.from(
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -342,7 +340,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromAttestation(
+                ValidateableAttestation.from(
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -366,9 +364,7 @@ class AttestationValidatorTest {
     final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
-    assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+    assertThat(validator.validate(ValidateableAttestation.from(attestation), expectedSubnetId))
         .isCompletedWithValue(REJECT);
   }
 
@@ -383,9 +379,7 @@ class AttestationValidatorTest {
         .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
         .thenReturn(Optional.of(Bytes32.ZERO));
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
-    assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+    assertThat(validator.validate(ValidateableAttestation.from(attestation), expectedSubnetId))
         .isCompletedWithValue(REJECT);
   }
 
@@ -393,7 +387,7 @@ class AttestationValidatorTest {
     final BeaconState state = recentChainData.getBestState().orElseThrow();
     return validator
         .validate(
-            ValidateableAttestation.fromAttestation(attestation),
+            ValidateableAttestation.from(attestation),
             computeSubnetForAttestation(state, attestation))
         .join();
   }

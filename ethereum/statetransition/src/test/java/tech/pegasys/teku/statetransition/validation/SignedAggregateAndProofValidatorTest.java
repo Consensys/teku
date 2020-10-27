@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -25,10 +25,10 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorM
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -56,6 +56,8 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.attestation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.attestation.AttestationValidator;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -111,8 +113,8 @@ class SignedAggregateAndProofValidatorTest {
       new AggregateGenerator(chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
-  private final SignedAggregateAndProofValidator validator =
-      new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
+  private final AggregateAttestationValidator validator =
+      new AggregateAttestationValidator(recentChainData, attestationValidator);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 

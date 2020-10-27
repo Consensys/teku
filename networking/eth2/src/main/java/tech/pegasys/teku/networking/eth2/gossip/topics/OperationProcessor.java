@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public interface GossipedItemConsumer<T> {
-  void forward(T operation);
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 
-  GossipedItemConsumer<?> NOOP = (__) -> {};
+public interface OperationProcessor<T> {
+  SafeFuture<InternalValidationResult> process(T operation);
+
+  OperationProcessor<?> NOOP = (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
 
   @SuppressWarnings("unchecked")
-  static <T> GossipedItemConsumer<T> noop() {
-    return (GossipedItemConsumer<T>) NOOP;
+  static <T> OperationProcessor<T> noop() {
+    return (OperationProcessor<T>) NOOP;
   }
 }

@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
@@ -32,9 +30,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.BlockTopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.block.BlockValidator;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,16 +49,11 @@ public class BlockTopicHandlerTest {
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
 
   @SuppressWarnings("unchecked")
-  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
-      mock(GossipedItemConsumer.class);
+  private final OperationProcessor<SignedBeaconBlock> processor = mock(OperationProcessor.class);
 
   private BlockTopicHandler topicHandler =
       new BlockTopicHandler(
-          asyncRunner,
-          gossipEncoding,
-          dataStructureUtil.randomForkInfo(),
-          blockValidator,
-          gossipedBlockConsumer);
+          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), processor);
 
   @BeforeEach
   public void setup() {
@@ -70,12 +65,13 @@ public class BlockTopicHandlerTest {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = gossipEncoding.encode(block);
-    beaconChainUtil.setSlot(nextSlot);
+
+    when(processor.process(block))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
-    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -83,12 +79,13 @@ public class BlockTopicHandlerTest {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = gossipEncoding.encode(block);
-    beaconChainUtil.setSlot(recentChainData.getHeadSlot());
+
+    when(processor.process(block))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -96,10 +93,12 @@ public class BlockTopicHandlerTest {
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
 
+    when(processor.process(block))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -121,7 +120,6 @@ public class BlockTopicHandlerTest {
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
-    verify(gossipedBlockConsumer, never()).forward(block);
   }
 
   @Test
@@ -130,8 +128,7 @@ public class BlockTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
+        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, processor);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

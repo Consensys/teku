@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.attestation;
 
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -22,10 +22,10 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetF
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
@@ -33,7 +33,6 @@ import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -69,7 +69,7 @@ public class AttestationValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final ValidateableAttestation validateableAttestation, final int receivedOnSubnetId) {
+      final ValidateableAttestation validateableAttestation) {
     Attestation attestation = validateableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult != ACCEPT) {
@@ -77,7 +77,7 @@ public class AttestationValidator {
     }
 
     return singleOrAggregateAttestationChecks(
-            validateableAttestation, OptionalInt.of(receivedOnSubnetId))
+            validateableAttestation, validateableAttestation.getReceivedSubnetId())
         .thenApply(
             result -> {
               if (result != ACCEPT) {
@@ -113,7 +113,8 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final ValidateableAttestation validateableAttestation, final OptionalInt receivedOnSubnetId) {
+      final ValidateableAttestation validateableAttestation,
+      final Optional<Integer> receivedOnSubnetId) {
 
     Attestation attestation = validateableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
@@ -162,8 +163,7 @@ public class AttestationValidator {
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
               if (receivedOnSubnetId.isPresent()
-                  && computeSubnetForAttestation(state, attestation)
-                      != receivedOnSubnetId.getAsInt()) {
+                  && computeSubnetForAttestation(state, attestation) != receivedOnSubnetId.get()) {
                 return REJECT;
               }
 

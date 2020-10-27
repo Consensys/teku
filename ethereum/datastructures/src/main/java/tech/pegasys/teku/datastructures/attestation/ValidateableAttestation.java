@@ -39,20 +39,29 @@ public class ValidateableAttestation {
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
+  private volatile Optional<Integer> receivedSubnetId;
 
-  public static ValidateableAttestation fromAttestation(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty());
+  public static ValidateableAttestation from(Attestation attestation) {
+    return new ValidateableAttestation(attestation, Optional.empty(), Optional.empty());
+  }
+
+  public static ValidateableAttestation fromNetwork(Attestation attestation, int receivedSubnetId) {
+    return new ValidateableAttestation(
+        attestation, Optional.empty(), Optional.of(receivedSubnetId));
   }
 
   public static ValidateableAttestation fromSignedAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation));
+        attestation.getMessage().getAggregate(), Optional.of(attestation), Optional.empty());
   }
 
   private ValidateableAttestation(
-      Attestation attestation, Optional<SignedAggregateAndProof> aggregateAndProof) {
+      Attestation attestation,
+      Optional<SignedAggregateAndProof> aggregateAndProof,
+      Optional<Integer> receivedSubnetId) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
   }
 
@@ -62,6 +71,10 @@ public class ValidateableAttestation {
 
   public Optional<Bytes32> getCommitteeShufflingSeed() {
     return committeeShufflingSeed;
+  }
+
+  public Optional<Integer> getReceivedSubnetId() {
+    return receivedSubnetId;
   }
 
   public void setIndexedAttestation(IndexedAttestation indexedAttestation) {

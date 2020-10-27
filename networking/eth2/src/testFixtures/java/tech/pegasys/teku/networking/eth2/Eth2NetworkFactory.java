@@ -56,7 +56,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -106,11 +106,12 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
-    protected GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer;
-    protected GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
-    protected GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
-    protected GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
-    protected GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+    protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+    protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
+    protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+    protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
+    protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
+    protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -226,13 +227,13 @@ public class Eth2NetworkFactory {
             recentChainData,
             gossipEncoding,
             attestationSubnetService,
-            gossipedBlockConsumer,
-            gossipedAttestationConsumer,
-            gossipedAttesterSlashingConsumer,
-            gossipedProposerSlashingConsumer,
-            gossipedVoluntaryExitConsumer,
-            processedAttestationSubscriptionProvider,
-            verifiedBlockAttestationsSubscriptionProvider);
+            gossipedBlockProcessor,
+            gossipedAttestationProcessor,
+            gossipedAggregateProcessor,
+            attesterSlashingProcessor,
+            proposerSlashingProcessor,
+            voluntaryExitProcessor,
+            processedAttestationSubscriptionProvider);
       }
     }
 
@@ -288,20 +289,23 @@ public class Eth2NetworkFactory {
             Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
-      if (gossipedBlockConsumer == null) {
-        gossipedBlockConsumer = GossipedItemConsumer.noop();
+      if (gossipedBlockProcessor == null) {
+        gossipedBlockProcessor = OperationProcessor.noop();
       }
-      if (gossipedAttestationConsumer == null) {
-        gossipedAttestationConsumer = GossipedItemConsumer.noop();
+      if (gossipedAttestationProcessor == null) {
+        gossipedAttestationProcessor = OperationProcessor.noop();
       }
-      if (gossipedAttesterSlashingConsumer == null) {
-        gossipedAttesterSlashingConsumer = GossipedItemConsumer.noop();
+      if (gossipedAggregateProcessor == null) {
+        gossipedAttestationProcessor = OperationProcessor.noop();
       }
-      if (gossipedProposerSlashingConsumer == null) {
-        gossipedProposerSlashingConsumer = GossipedItemConsumer.noop();
+      if (attesterSlashingProcessor == null) {
+        attesterSlashingProcessor = OperationProcessor.noop();
       }
-      if (gossipedVoluntaryExitConsumer == null) {
-        gossipedVoluntaryExitConsumer = GossipedItemConsumer.noop();
+      if (proposerSlashingProcessor == null) {
+        proposerSlashingProcessor = OperationProcessor.noop();
+      }
+      if (voluntaryExitProcessor == null) {
+        voluntaryExitProcessor = OperationProcessor.noop();
       }
     }
 
@@ -340,38 +344,45 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedBlockConsumer(
-        final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
-      checkNotNull(gossipedBlockConsumer);
-      this.gossipedBlockConsumer = gossipedBlockConsumer;
+    public Eth2P2PNetworkBuilder gossipedBlockProcessor(
+        final OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
+      checkNotNull(gossipedBlockProcessor);
+      this.gossipedBlockProcessor = gossipedBlockProcessor;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedAttestationConsumer(
-        final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
-      checkNotNull(gossipedAttestationConsumer);
-      this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
+        final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
+      checkNotNull(gossipedAggregateProcessor);
+      this.gossipedAggregateProcessor = gossipedAggregateProcessor;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedAttesterSlashingConsumer(
-        final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
-      checkNotNull(gossipedAttesterSlashingConsumer);
-      this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
+    public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
+        final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
+      checkNotNull(gossipedAttestationProcessor);
+      this.gossipedAttestationProcessor = gossipedAttestationProcessor;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedProposerSlashingConsumer(
-        final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
-      checkNotNull(gossipedProposerSlashingConsumer);
-      this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
+    public Eth2P2PNetworkBuilder gossipedAttesterSlashingProcessor(
+        final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingProcessor) {
+      checkNotNull(gossipedAttesterSlashingProcessor);
+      this.attesterSlashingProcessor = gossipedAttesterSlashingProcessor;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedVoluntaryExitConsumer(
-        final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
-      checkNotNull(gossipedVoluntaryExitConsumer);
-      this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
+    public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
+        final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
+      checkNotNull(gossipedProposerSlashingProcessor);
+      this.proposerSlashingProcessor = gossipedProposerSlashingProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedVoluntaryExitProcessor(
+        final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
+      checkNotNull(gossipedVoluntaryExitProcessor);
+      this.voluntaryExitProcessor = gossipedVoluntaryExitProcessor;
       return this;
     }
 

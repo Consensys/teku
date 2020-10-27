@@ -11,39 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.ProposerSlashingTopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class ProposerSlashingGossipManager {
-  private final TopicChannel channel;
+public class ProposerSlashingTopicHandler
+    extends Eth2TopicHandler.SimpleEth2TopicHandler<ProposerSlashing> {
+  public static String TOPIC_NAME = "proposer_slashing";
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-  public ProposerSlashingGossipManager(
+  public ProposerSlashingTopicHandler(
       final AsyncRunner asyncRunner,
-      final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer) {
-    final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, gossipedProposerSlashingConsumer);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<ProposerSlashing> processor) {
+    super(asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest());
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  public String getTopicName() {
+    return TOPIC_NAME;
+  }
+
+  @Override
+  public Class<ProposerSlashing> getValueType() {
+    return ProposerSlashing.class;
   }
 }

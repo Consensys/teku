@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.operationvalidators.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.operationvalidators;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class VoluntaryExitValidator {
+public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
@@ -49,7 +49,8 @@ public class VoluntaryExitValidator {
     this.signatureVerifier = signatureVerifier;
   }
 
-  public InternalValidationResult validate(SignedVoluntaryExit exit) {
+  @Override
+  public InternalValidationResult validateFully(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
       return IGNORE;
@@ -67,21 +68,23 @@ public class VoluntaryExitValidator {
     }
   }
 
-  private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
-    BeaconState state =
-        recentChainData
-            .getBestState()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Unable to get best state for voluntary exit processing."));
-
+  @Override
+  public boolean validateForStateTransition(BeaconState state, SignedVoluntaryExit exit) {
     Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
           "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
           invalidReason.get().describe());
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
+    final BeaconState state = getState();
+    if (!validateForStateTransition(state, exit)) {
       return false;
     }
 
@@ -94,5 +97,14 @@ public class VoluntaryExitValidator {
 
   private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
     return !receivedValidExitSet.contains(exit.getMessage().getValidator_index());
+  }
+
+  private BeaconState getState() {
+    return recentChainData
+        .getBestState()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to get best state for voluntary exit processing."));
   }
 }

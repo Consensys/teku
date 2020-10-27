@@ -11,39 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AttesterSlashingTopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class AttesterSlashingGossipManager {
-  private final TopicChannel channel;
+public class AttesterSlashingTopicHandler
+    extends Eth2TopicHandler.SimpleEth2TopicHandler<AttesterSlashing> {
+  public static String TOPIC_NAME = "attester_slashing";
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-  public AttesterSlashingGossipManager(
+  public AttesterSlashingTopicHandler(
       final AsyncRunner asyncRunner,
-      final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer) {
-    final AttesterSlashingTopicHandler topicHandler =
-        new AttesterSlashingTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, gossipedAttesterSlashingConsumer);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingProcessor) {
+    super(asyncRunner, gossipedAttesterSlashingProcessor, gossipEncoding, forkInfo.getForkDigest());
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  public String getTopicName() {
+    return TOPIC_NAME;
+  }
+
+  @Override
+  public Class<AttesterSlashing> getValueType() {
+    return AttesterSlashing.class;
   }
 }

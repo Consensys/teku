@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.attestation;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -19,16 +19,15 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_sign
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,10 +46,11 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
-public class SignedAggregateAndProofValidator {
+public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
@@ -59,7 +59,7 @@ public class SignedAggregateAndProofValidator {
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
-  public SignedAggregateAndProofValidator(
+  public AggregateAttestationValidator(
       final RecentChainData recentChainData, final AttestationValidator attestationValidator) {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
@@ -89,7 +89,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     return attestationValidator
-        .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
+        .singleOrAggregateAttestationChecks(attestation, Optional.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult == REJECT

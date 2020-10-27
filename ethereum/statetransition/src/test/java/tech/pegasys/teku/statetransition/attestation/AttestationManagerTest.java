@@ -78,7 +78,7 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.from(dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
     attestationManager.onAttestation(attestation).reportExceptions();
 
@@ -109,7 +109,7 @@ class AttestationManagerTest {
     attestationManager.onSlot(currentSlot);
 
     ValidateableAttestation attestation =
-        ValidateableAttestation.fromAttestation(attestationFromSlot(futureSlot));
+        ValidateableAttestation.from(attestationFromSlot(futureSlot));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
     attestationManager.onAttestation(attestation).reportExceptions();
@@ -139,7 +139,7 @@ class AttestationManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromAttestation(attestationFromSlot(1, requiredBlockRoot));
+        ValidateableAttestation.from(attestationFromSlot(1, requiredBlockRoot));
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(UNKNOWN_BLOCK))
         .thenReturn(completedFuture(SUCCESSFUL));
@@ -170,7 +170,7 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.from(dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
     attestationManager.onAttestation(attestation).reportExceptions();

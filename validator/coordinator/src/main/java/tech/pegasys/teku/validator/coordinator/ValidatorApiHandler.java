@@ -386,7 +386,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendSignedAttestation(
       final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
-        .onAttestation(ValidateableAttestation.fromAttestation(attestation))
+        .onAttestation(ValidateableAttestation.from(attestation))
         .finish(
             result -> {
               result.ifInvalid(

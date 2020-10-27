@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -45,6 +46,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
@@ -56,12 +58,14 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks) {
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final BlockValidator validator) {
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
+    this.validator = validator;
   }
 
   public static BlockManager create(
@@ -69,8 +73,10 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final RecentChainData recentChainData,
-      final BlockImporter blockImporter) {
-    return new BlockManager(eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks);
+      final BlockImporter blockImporter,
+      final BlockValidator validator) {
+    return new BlockManager(
+        eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
   }
 
   @Override
@@ -89,6 +95,19 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", () -> formatBlock(block.getSlot(), block.getRoot()));
     return doImportBlock(block);
+  }
+
+  public SafeFuture<InternalValidationResult> validateAndImportBlock(
+      final SignedBeaconBlock block) {
+    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
+    validationResult.thenAccept(
+        result -> {
+          if (result.equals(InternalValidationResult.ACCEPT)
+              || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+            importBlock(block).finish(err -> LOG.error("Failed to process received block.", err));
+          }
+        });
+    return validationResult;
   }
 
   @Override

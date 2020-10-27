@@ -21,9 +21,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.BlockTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
@@ -40,14 +39,12 @@ public class BlockGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final BlockValidator blockValidator,
       final EventBus eventBus,
-      final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
+      final OperationProcessor<SignedBeaconBlock> gossipedBlockConsumer) {
     this.gossipEncoding = gossipEncoding;
 
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
+        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, gossipedBlockConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

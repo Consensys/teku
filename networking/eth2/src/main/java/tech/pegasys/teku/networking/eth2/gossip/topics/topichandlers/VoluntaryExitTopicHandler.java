@@ -11,39 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.VoluntaryExitTopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class VoluntaryExitGossipManager {
-  private final TopicChannel channel;
+public class VoluntaryExitTopicHandler
+    extends Eth2TopicHandler.SimpleEth2TopicHandler<SignedVoluntaryExit> {
+  public static String TOPIC_NAME = "voluntary_exit";
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-  public VoluntaryExitGossipManager(
+  public VoluntaryExitTopicHandler(
       final AsyncRunner asyncRunner,
-      final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
-    final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, gossipedVoluntaryExitConsumer);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<SignedVoluntaryExit> processor) {
+    super(asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest());
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  public String getTopicName() {
+    return TOPIC_NAME;
+  }
+
+  @Override
+  public Class<SignedVoluntaryExit> getValueType() {
+    return SignedVoluntaryExit.class;
   }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -49,17 +50,24 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final Subscribers<ProcessedAttestationListener> processedAttestationSubscriber =
       Subscribers.create(true);
 
+  private final AttestationValidator attestationValidator;
+  private final AggregateAttestationValidator aggregateValidator;
+
   AttestationManager(
       final EventBus eventBus,
       final ForkChoice attestationProcessor,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
-      final AggregatingAttestationPool aggregatingAttestationPool) {
+      final AggregatingAttestationPool aggregatingAttestationPool,
+      final AttestationValidator attestationValidator,
+      final AggregateAttestationValidator aggregateValidator) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
     this.aggregatingAttestationPool = aggregatingAttestationPool;
+    this.attestationValidator = attestationValidator;
+    this.aggregateValidator = aggregateValidator;
   }
 
   public static AttestationManager create(
@@ -67,18 +75,52 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
       final ForkChoice attestationProcessor,
-      final AggregatingAttestationPool aggregatingAttestationPool) {
+      final AggregatingAttestationPool aggregatingAttestationPool,
+      final AttestationValidator attestationValidator,
+      final AggregateAttestationValidator aggregateValidator) {
     return new AttestationManager(
         eventBus,
         attestationProcessor,
         pendingAttestations,
         futureAttestations,
-        aggregatingAttestationPool);
+        aggregatingAttestationPool,
+        attestationValidator,
+        aggregateValidator);
   }
 
   public void subscribeToProcessedAttestations(
       ProcessedAttestationListener processedAttestationListener) {
     processedAttestationSubscriber.subscribe(processedAttestationListener);
+  }
+
+  public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
+    SafeFuture<InternalValidationResult> validationResult =
+        attestationValidator.validate(attestation);
+    processInternallyValidatedAttestation(validationResult, attestation);
+    return validationResult;
+  }
+
+  public SafeFuture<InternalValidationResult> addAggregate(ValidateableAttestation attestation) {
+    SafeFuture<InternalValidationResult> validationResult =
+        aggregateValidator.validate(attestation);
+    processInternallyValidatedAttestation(validationResult, attestation);
+    return validationResult;
+  }
+
+  private void processInternallyValidatedAttestation(
+      SafeFuture<InternalValidationResult> validationResult, ValidateableAttestation attestation) {
+    validationResult.thenAccept(
+        internalValidationResult -> {
+          if (internalValidationResult.equals(InternalValidationResult.ACCEPT)
+              || internalValidationResult.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+            onAttestation(attestation)
+                .finish(
+                    result ->
+                        result.ifInvalid(
+                            reason -> LOG.debug("Rejected received attestation: " + reason)),
+                    err -> LOG.error("Failed to process received attestation.", err));
+          }
+        });
   }
 
   @Override
