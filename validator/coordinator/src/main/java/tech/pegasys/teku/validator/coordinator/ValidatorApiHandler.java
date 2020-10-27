@@ -225,7 +225,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
                   combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
     }
-    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = compute_start_slot_at_epoch(epoch);
     LOG.trace("Retrieving proposer duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)

@@ -33,6 +33,7 @@ public class P2PConfig {
   private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
   private final boolean multiPeerSyncEnabled;
+  private final boolean subscribeAllSubnetsEnabled;
 
   private P2PConfig(
       final boolean p2pEnabled,
@@ -47,7 +48,8 @@ public class P2PConfig {
       final int p2pPeerUpperBound,
       final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
-      final boolean multiPeerSyncEnabled) {
+      final boolean multiPeerSyncEnabled,
+      final boolean subscribeAllSubnetsEnabled) {
     this.p2pEnabled = p2pEnabled;
     this.p2pInterface = p2pInterface;
     this.p2pPort = p2pPort;
@@ -61,6 +63,7 @@ public class P2PConfig {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
+    this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
   }
 
   public static P2PConfigBuilder builder() {
@@ -123,6 +126,10 @@ public class P2PConfig {
     return multiPeerSyncEnabled;
   }
 
+  public boolean isSubscribeAllSubnetsEnabled() {
+    return subscribeAllSubnetsEnabled;
+  }
+
   public static final class P2PConfigBuilder {
 
     private boolean p2pEnabled;
@@ -138,6 +145,7 @@ public class P2PConfig {
     private int targetSubnetSubscriberCount;
     private List<String> p2pStaticPeers = new ArrayList<>();
     private boolean multiPeerSyncEnabled;
+    private boolean subscribeAllSubnetsEnabled;
 
     private P2PConfigBuilder() {}
 
@@ -206,6 +214,11 @@ public class P2PConfig {
       return this;
     }
 
+    public P2PConfigBuilder subscribeAllSubnetsEnabled(final boolean subscribeAllSubnetsEnabled) {
+      this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+      return this;
+    }
+
     public P2PConfig build() {
       return new P2PConfig(
           p2pEnabled,
@@ -220,7 +233,8 @@ public class P2PConfig {
           p2pPeerUpperBound,
           targetSubnetSubscriberCount,
           p2pStaticPeers,
-          multiPeerSyncEnabled);
+          multiPeerSyncEnabled,
+          subscribeAllSubnetsEnabled);
     }
   }
 }
