@@ -45,8 +45,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Random random;
 
-  private volatile int validatorCount = 0;
-
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber, final Random random) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
@@ -55,7 +53,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot, final int validatorCount) {
     // Iterate through current subscriptions to remove the ones that have expired
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
@@ -76,11 +74,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     if (!newSubnetSubscriptions.isEmpty()) {
       persistentSubnetSubscriber.subscribeToPersistentSubnets(newSubnetSubscriptions);
     }
-  }
-
-  @Override
-  public void updateValidatorCount(final int validatorCount) {
-    this.validatorCount = validatorCount;
   }
 
   /**
