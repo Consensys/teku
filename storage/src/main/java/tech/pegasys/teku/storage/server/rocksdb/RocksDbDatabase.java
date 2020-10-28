@@ -492,7 +492,7 @@ public class RocksDbDatabase implements Database {
       switch (stateStorageMode) {
         case ARCHIVE:
           // Get previously finalized block to build on top of
-          final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
+          final SignedBeaconBlock baseBlock = getFinalizedBlock();
 
           final HashTree blockTree =
               HashTree.builder()
@@ -541,11 +541,9 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private SignedBlockAndState getFinalizedBlockAndState() {
+  private SignedBeaconBlock getFinalizedBlock() {
     final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
-    final SignedBeaconBlock baseBlock = finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
-    final BeaconState baseState = hotDao.getLatestFinalizedState().orElseThrow();
-    return new SignedBlockAndState(baseBlock, baseState);
+    return finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
   }
 
   private void putFinalizedState(
