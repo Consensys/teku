@@ -73,7 +73,7 @@ public class VectorViewWriteImpl<
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =
-                  nodeVals.size() == elementsPerChunk ? TreeUtil.ZERO_LEAF : original.get(gIndex);
+                  nodeVals.size() == elementsPerChunk ? TreeUtil.EMPTY_LEAF : original.get(gIndex);
               for (Map.Entry<Integer, ElementReadType> entry : nodeVals) {
                 node =
                     elementType.updateBackingNode(

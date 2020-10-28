@@ -30,12 +30,15 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
     implements ByteBufDecoder<TMessage, TException> {
 
   private CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
+  private boolean closed = false;
 
   @Override
   public Optional<TMessage> decodeOneMessage(ByteBuf in) throws TException {
     if (!in.isReadable()) {
       return Optional.empty();
     }
+    assertNotClosed();
+
     compositeByteBuf.addComponent(true, in.retainedSlice());
     try {
       Optional<TMessage> outBuf;
@@ -57,14 +60,14 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
       }
       return outBuf;
     } catch (Throwable t) {
-      compositeByteBuf.release();
-      compositeByteBuf = Unpooled.compositeBuffer();
+      close();
       throw t;
     }
   }
 
   @Override
   public void complete() throws TException {
+    assertNotClosed();
     try {
       if (compositeByteBuf.isReadable()) {
         throwUnprocessedDataException(compositeByteBuf.readableBytes());
@@ -76,8 +79,15 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
 
   @Override
   public void close() {
-    if (compositeByteBuf.isReadable()) {
+    if (!closed) {
+      closed = true;
       compositeByteBuf.release();
+    }
+  }
+
+  private void assertNotClosed() {
+    if (closed) {
+      throw new IllegalStateException("Trying to reuse disposed decoder instance");
     }
   }
 
