@@ -53,10 +53,22 @@ public interface ByteBufDecoder<TMessage, TException extends Exception> {
 
   /**
    * Tells the decoder that the input stream is over and no more bytes would be supplied. After
-   * {@code complete()} call calling any Decoder method would result in error If any buffered data
-   * still remains unprocessed in the decoder it is released and {@link TException} is thrown
+   * {@code complete()} call calling any Decoder method would result in error
+   *
+   * <p>The {@link #close()} should be invoked by implementation on either success or error so on
+   * {@code complete()} return all resources should be released by a decoder
+   *
+   * <p>To abort the decoder use {@link #close()} method
    *
    * @throws TException if any unprocessed data left
    */
   void complete() throws TException;
+
+  /**
+   * Releases all associated resources. Normally should be used to release resources on abrupt
+   * completion. Use {@link #complete()} method for regular decoder completion.
+   *
+   * <p>After {@code close()} calling any Decoder method would result in error.
+   */
+  void close();
 }

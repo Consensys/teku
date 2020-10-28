@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -99,8 +99,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    final UpdatableStore expectedStore =
-        genesisStoreBuilder.storeConfig(storeConfig).build().join();
+    final UpdatableStore expectedStore = genesisStoreBuilder.storeConfig(storeConfig).build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
@@ -145,10 +144,8 @@ public class StorageBackedRecentChainDataTest {
                 StateAndBlockProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
-            .build()
-            .join();
-    final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
-    assertThat(initialized).isCompleted();
+            .build();
+    client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
@@ -195,7 +192,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build().join());
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build());
   }
 
   @Test
@@ -241,10 +238,9 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    final SafeFuture<Void> initialized = client.initializeFromGenesis(INITIAL_STATE);
-    assertThat(initialized).isCompletedExceptionally();
-    assertThatThrownBy(initialized::get)
-        .hasCauseInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Failed to set genesis state: store has already been initialized");
+    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "Failed to initialize from state: store has already been initialized");
   }
 }

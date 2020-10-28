@@ -16,18 +16,19 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityViolationPolicy {
-  private final WeakSubjectivityConfig config;
   private final Throttler<WeakSubjectivityViolationPolicy> warningPolicy =
-      new Throttler<>(new LoggingWeakSubjectivityViolationPolicy(Level.WARN), UInt64.valueOf(10));
+      new Throttler<>(
+          new LoggingWeakSubjectivityViolationPolicy(
+              WeakSubjectivityLogger.createFileLogger(), Level.INFO),
+          UInt64.valueOf(50));
 
-  public ModerateWeakSubjectivityViolationPolicy(final WeakSubjectivityConfig config) {
+  public ModerateWeakSubjectivityViolationPolicy() {
     super(List.of(WeakSubjectivityViolationPolicy.strict()));
-    this.config = config;
   }
 
   @Override
@@ -36,17 +37,11 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
       final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod) {
-    if (config.getWeakSubjectivityCheckpoint().isPresent()) {
-      // If WS checkpoint is set, run strict check
-      super.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod);
-    } else {
-      // Otherwise, warn periodically
-      warningPolicy.invoke(
-          currentSlot,
-          p ->
-              p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-                  latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod));
-    }
+    // Warn periodically
+    warningPolicy.invoke(
+        currentSlot,
+        p ->
+            p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+                latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod));
   }
 }

@@ -112,7 +112,7 @@ public class BeaconChainUtil {
       final boolean signDeposits) {
     final BeaconState initState =
         InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, signDeposits);
-    recentChainData.initializeFromGenesis(initState).reportExceptions();
+    recentChainData.initializeFromGenesis(initState);
   }
 
   public void initializeStorage() {
@@ -203,7 +203,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead(slot, false);
+    forkChoice.processHead(slot);
     return importResult.getBlock();
   }
 

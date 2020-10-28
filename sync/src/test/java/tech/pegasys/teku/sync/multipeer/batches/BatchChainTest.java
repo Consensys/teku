@@ -391,6 +391,25 @@ class BatchChainTest {
     assertThat(batchChain.firstImportableBatch()).isEmpty();
   }
 
+  @Test
+  void replace_shouldRemoveOldAndAddNewBatch() {
+    final Batch oldBatch = createBatch(1);
+    final Batch newBatch = createBatch(1);
+    batchChain.add(oldBatch);
+    batchChain.replace(oldBatch, newBatch);
+    assertThat(batchChain.contains(oldBatch)).isFalse();
+    assertThat(batchChain.contains(newBatch)).isTrue();
+  }
+
+  @Test
+  void replace_shouldAddNewBatchIfOldIsNotInChain() {
+    final Batch oldBatch = createBatch(1);
+    final Batch newBatch = createBatch(1);
+    batchChain.replace(oldBatch, newBatch);
+    assertThat(batchChain.contains(oldBatch)).isFalse();
+    assertThat(batchChain.contains(newBatch)).isTrue();
+  }
+
   private Batch createNonEmptyBatch(final int startSlot) {
     final Batch batch =
         batchFactory.createBatch(targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(startSlot));

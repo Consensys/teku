@@ -62,18 +62,28 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
@@ -126,6 +136,8 @@ public class BeaconRestApi {
     addEventHandler(dataProvider, eventChannels, asyncRunner);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
+    addV1ConfigHandlers();
+    addV1DebugHandlers(dataProvider);
 
     // Endpoints from before standard API
     addAdminHandlers();
@@ -134,6 +146,16 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
+  }
+
+  private void addV1ConfigHandlers() {
+    app.get(GetSpec.ROUTE, new GetSpec(jsonProvider));
+  }
+
+  private void addV1DebugHandlers(final DataProvider dataProvider) {
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
@@ -283,21 +305,43 @@ public class BeaconRestApi {
   }
 
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
-    app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
+    app.post(PostAttestationData.ROUTE, new PostAttestationData(dataProvider, jsonProvider));
+    app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
+    app.post(
+        PostSubscribeToBeaconCommitteeSubnet.ROUTE,
+        new PostSubscribeToBeaconCommitteeSubnet(dataProvider, jsonProvider));
+
+    app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
+    app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
   }
 
   private void addV1BeaconHandlers(final DataProvider dataProvider) {
+    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
+    app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot(
+            dataProvider, jsonProvider));
     app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
+    app.get(
+        GetStateFinalityCheckpoints.ROUTE,
+        new GetStateFinalityCheckpoints(dataProvider, jsonProvider));
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
     app.get(GetStateValidators.ROUTE, new GetStateValidators(dataProvider, jsonProvider));
+    app.get(
+        GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
+    GetStateEpochCommittees getStateEpochCommittees =
+        new GetStateEpochCommittees(dataProvider, jsonProvider);
+    app.get(GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, getStateEpochCommittees);
+    app.get(GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, getStateEpochCommittees);
     app.post(
         tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock(

@@ -14,17 +14,24 @@
 package tech.pegasys.teku.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ConstantsReaderTest {
-  private static final List<String> ZERO_FIELDS = List.of("GENESIS_SLOT", "GENESIS_EPOCH");
+  private static final List<String> ZERO_FIELDS =
+      List.of("GENESIS_SLOT", "GENESIS_EPOCH", "BLS_INFINITY_VALID");
 
   @AfterEach
   public void tearDown() {
@@ -62,11 +69,43 @@ class ConstantsReaderTest {
     assertAllFieldsSet();
   }
 
+  @ParameterizedTest
+  @MethodSource("knownNetworks")
+  public void shouldLoadAllKnownNetworks(final String name) throws Exception {
+    resetAllFields();
+    Constants.setConstants(name);
+
+    assertAllFieldsSet();
+  }
+
   @Test
   public void shouldLoadFromUrl() throws Exception {
     Constants.setConstants(Constants.class.getResource("mainnet.yaml").toExternalForm());
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
     assertAllFieldsSet();
+  }
+
+  static Stream<Arguments> knownNetworks() {
+    return Stream.of(Constants.NETWORK_DEFINITIONS).map(Arguments::of);
+  }
+
+  private void resetAllFields() throws Exception {
+    for (Field field : Constants.class.getFields()) {
+      if (Modifier.isFinal(field.getModifiers())) {
+        continue;
+      }
+      if (!field.getType().isPrimitive()) {
+        field.set(null, null);
+      } else if (field.getType().equals(Integer.TYPE)) {
+        field.set(null, 0);
+      } else if (field.getType().equals(Long.TYPE)) {
+        field.set(null, 0L);
+      } else if (field.getType().equals(Boolean.TYPE)) {
+        field.set(null, false);
+      } else {
+        fail("Don't know how to reset field of type: " + field.getType());
+      }
+    }
   }
 
   private void assertAllFieldsSet() throws Exception {

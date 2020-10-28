@@ -83,6 +83,14 @@ public class WeakSubjectivityCalculator {
     return finalizedEpoch.dividedBy(weakSubjectivityMod).times(weakSubjectivityMod);
   }
 
+  /**
+   * @param state A trusted / effectively finalized state
+   * @return The weak subjectivity period in epochs
+   */
+  public UInt64 computeWeakSubjectivityPeriod(final BeaconState state) {
+    return computeWeakSubjectivityPeriod(getActiveValidators(state));
+  }
+
   // TODO(#2779) - This calculation is still under development, make sure it is updated to the
   // latest when possible
   public UInt64 computeWeakSubjectivityPeriod(final int validatorCount) {

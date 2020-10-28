@@ -71,7 +71,7 @@ public class DepositContract extends Contract {
               new TypeReference<DynamicBytes>() {},
               new TypeReference<DynamicBytes>() {},
               new TypeReference<DynamicBytes>() {},
-              new TypeReference<DynamicBytes>() {}));;
+              new TypeReference<DynamicBytes>() {}));
 
   @Deprecated
   protected DepositContract(

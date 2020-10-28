@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
@@ -27,17 +26,19 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public interface ValidatorRestApiClient {
 
-  Optional<GetForkResponse> getFork();
+  Optional<Fork> getFork();
 
   Optional<GetGenesisResponse> getGenesis();
 
@@ -61,11 +62,11 @@ public interface ValidatorRestApiClient {
 
   void sendSignedAttestation(Attestation attestation);
 
-  Optional<Attestation> createAggregate(Bytes32 attestationHashTreeRoot);
+  Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
-  void sendAggregateAndProof(SignedAggregateAndProof signedAggregateAndProof);
+  void sendAggregateAndProofs(List<SignedAggregateAndProof> signedAggregateAndProof);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
+  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 }

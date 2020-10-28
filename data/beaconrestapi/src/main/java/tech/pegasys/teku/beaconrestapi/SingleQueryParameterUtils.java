@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -117,5 +118,19 @@ public class SingleQueryParameterUtils {
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_BYTES96_DATA);
     }
+  }
+
+  public static Optional<Bytes32> getParameterValueAsBytes32IfPresent(
+      final Map<String, List<String>> parameterMap, final String key) {
+    return parameterMap.containsKey(key)
+        ? Optional.of(SingleQueryParameterUtils.getParameterValueAsBytes32(parameterMap, key))
+        : Optional.empty();
+  }
+
+  public static Optional<UInt64> getParameterValueAsUInt64IfPresent(
+      final Map<String, List<String>> parameterMap, final String key) {
+    return parameterMap.containsKey(key)
+        ? Optional.of(SingleQueryParameterUtils.getParameterValueAsUInt64(parameterMap, key))
+        : Optional.empty();
   }
 }

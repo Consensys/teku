@@ -14,25 +14,23 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
 /** This class represents a Signature on G2 */
 public class MikuliSignature implements Signature {
 
   private static final int COMPRESSED_SIG_SIZE = 96;
-  private static final int UNCOMPRESSED_SIG_SIZE = 192;
   private static final G1Point g1GeneratorNeg = Util.g1Generator.neg();
 
   /**
@@ -43,32 +41,9 @@ public class MikuliSignature implements Signature {
    * @return Signature
    */
   public static MikuliSignature aggregate(List<MikuliSignature> signatures) {
-    return aggregate(signatures.stream());
-  }
-
-  /**
-   * Aggregates a stream of Signatures, returning the signature that corresponds to G2 point at
-   * infinity if list is empty.
-   *
-   * @param signatures The stream of signatures to aggregate
-   * @return Signature
-   */
-  public static MikuliSignature aggregate(Stream<MikuliSignature> signatures) {
-    return signatures
+    return signatures.stream()
         .reduce(MikuliSignature::combine)
         .orElseGet(() -> new MikuliSignature(new G2Point()));
-  }
-
-  /**
-   * Decode a signature from its serialized representation.
-   *
-   * <p>Note that this uses uncompressed form, and requires 192 bytes of input.
-   *
-   * @param bytes the bytes of the signature
-   * @return the signature
-   */
-  public static MikuliSignature fromBytes(Bytes bytes) {
-    return new MikuliSignature(bytes);
   }
 
   /**
@@ -82,7 +57,7 @@ public class MikuliSignature implements Signature {
         bytes.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         bytes.size());
-    return new MikuliSignature(bytes);
+    return new MikuliSignature(G2Point.fromBytesCompressed(bytes));
   }
 
   static MikuliSignature fromSignature(Signature signature) {
@@ -93,22 +68,7 @@ public class MikuliSignature implements Signature {
     }
   }
 
-  /**
-   * Create a random signature for testing
-   *
-   * @param entropy to seed the key pair generation
-   * @return a random, valid signature
-   */
-  public static MikuliSignature random(int entropy) {
-    MikuliKeyPair keyPair = MikuliKeyPair.random(entropy);
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    return MikuliBLS12381.sign(keyPair.getSecretKey(), Bytes.wrap(message));
-  }
-
-  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
-  // Let's only interpret the raw data into a point when necessary to do so.
-  private final Bytes rawData;
-  private final Supplier<G2Point> point;
+  private final G2Point point;
 
   /**
    * Construct signature from a given G2 point.
@@ -116,18 +76,7 @@ public class MikuliSignature implements Signature {
    * @param point the G2 point corresponding to the signature
    */
   public MikuliSignature(G2Point point) {
-    this.rawData = point.toBytes();
-    this.point = () -> point;
-  }
-
-  /**
-   * Construct signature from provided Bytes.
-   *
-   * @param rawData Bytes that may or may not correspond to a G2 point
-   */
-  public MikuliSignature(Bytes rawData) {
-    this.rawData = rawData;
-    this.point = Suppliers.memoize(() -> parseSignatureBytes(this.rawData));
+    this.point = point;
   }
 
   /**
@@ -136,44 +85,37 @@ public class MikuliSignature implements Signature {
    * @param signature the signature to be copied
    */
   public MikuliSignature(MikuliSignature signature) {
-    this.rawData = signature.rawData;
     this.point = signature.point;
   }
 
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
-    return MikuliBLS12381.aggregateVerify(
+    if (keysToMessages.stream().map(PublicKeyMessagePair::getMessage).distinct().count()
+        != keysToMessages.size()) {
+      // duplicate messages found
+      return false;
+    }
+
+    List<G2Point> hashesInG2 =
+        keysToMessages.stream()
+            .map(km -> new G2Point(hashToG2(km.getMessage())))
+            .collect(Collectors.toList());
+    return aggregateVerify(
         keysToMessages.stream()
             .map(km -> MikuliPublicKey.fromPublicKey(km.getPublicKey()))
-            .collect(toList()),
-        keysToMessages.stream().map(PublicKeyMessagePair::getMessage).collect(toList()),
-        this);
+            .collect(Collectors.toList()),
+        hashesInG2);
   }
 
   @Override
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
-    return MikuliBLS12381.fastAggregateVerify(
-        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(toList()), message, this);
+    return verify(MikuliPublicKey.aggregate(publicKeys), message, HashToCurve.ETH2_DST);
   }
 
   @Override
   public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
-    return MikuliBLS12381.coreVerify(MikuliPublicKey.fromPublicKey(publicKey), message, this, dst);
-  }
-
-  private G2Point parseSignatureBytes(Bytes signatureBytes) {
-    if (signatureBytes.size() == COMPRESSED_SIG_SIZE) {
-      return G2Point.fromBytesCompressed(signatureBytes);
-    } else if (signatureBytes.size() == UNCOMPRESSED_SIG_SIZE) {
-      return G2Point.fromBytes(signatureBytes);
-    }
-    throw new RuntimeException(
-        "Expected either "
-            + COMPRESSED_SIG_SIZE
-            + " or "
-            + UNCOMPRESSED_SIG_SIZE
-            + " bytes for signature, but found "
-            + signatureBytes.size());
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+    return verify(MikuliPublicKey.fromPublicKey(publicKey), hashInGroup2);
   }
 
   /**
@@ -183,9 +125,13 @@ public class MikuliSignature implements Signature {
    * @param hashInG2 The G2 point corresponding to the message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  public boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
+  private boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
+    if (!BLSConstants.VALID_INFINITY && publicKey.isInfinity()) {
+      return false;
+    }
+
     try {
-      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point.get());
+      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point);
       return e.isunity();
     } catch (RuntimeException e) {
       return false;
@@ -199,17 +145,22 @@ public class MikuliSignature implements Signature {
    * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  public boolean aggregateVerify(List<MikuliPublicKey> publicKeys, List<G2Point> hashesInG2) {
+  private boolean aggregateVerify(List<MikuliPublicKey> publicKeys, List<G2Point> hashesInG2) {
     checkArgument(
         publicKeys.size() == hashesInG2.size(),
         "List of public keys and list of messages differ in length");
     checkArgument(publicKeys.size() > 0, "List of public keys is empty");
+
+    if (!BLSConstants.VALID_INFINITY && publicKeys.stream().anyMatch(MikuliPublicKey::isInfinity)) {
+      return false;
+    }
+
     try {
       GTPoint gt1 = AtePairing.pair(publicKeys.get(0).g1Point(), hashesInG2.get(0));
       for (int i = 1; i < publicKeys.size(); i++) {
         gt1 = gt1.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashesInG2.get(i)));
       }
-      GTPoint gt2 = AtePairing.pair(Util.g1Generator, point.get());
+      GTPoint gt2 = AtePairing.pair(Util.g1Generator, point);
       return gt2.equals(gt1);
     } catch (RuntimeException e) {
       return false;
@@ -223,17 +174,7 @@ public class MikuliSignature implements Signature {
    * @return a new signature as combination of both signatures
    */
   public MikuliSignature combine(MikuliSignature signature) {
-    return new MikuliSignature(point.get().add(signature.point.get()));
-  }
-
-  /**
-   * Signature serialization
-   *
-   * @return byte array representation of the signature, not null
-   */
-  @Override
-  public Bytes toBytesUncompressed() {
-    return (rawData.size() == UNCOMPRESSED_SIG_SIZE) ? rawData : point.get().toBytes();
+    return new MikuliSignature(point.add(signature.point));
   }
 
   /**
@@ -243,7 +184,7 @@ public class MikuliSignature implements Signature {
    */
   @Override
   public Bytes toBytesCompressed() {
-    return (rawData.size() == COMPRESSED_SIG_SIZE) ? rawData : point.get().toBytesCompressed();
+    return point.toBytesCompressed();
   }
 
   @Override
@@ -253,17 +194,12 @@ public class MikuliSignature implements Signature {
 
   @Override
   public int hashCode() {
-    try {
-      return point.get().hashCode();
-    } catch (final IllegalArgumentException e) {
-      // Invalid point so only equal if it has the same raw data, hence use that hashCode.
-      return rawData.hashCode();
-    }
+    return point.hashCode();
   }
 
   @VisibleForTesting
   public G2Point g2Point() {
-    return point.get();
+    return point;
   }
 
   @Override
@@ -278,11 +214,8 @@ public class MikuliSignature implements Signature {
       return false;
     }
     MikuliSignature other = (MikuliSignature) obj;
-    if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
-      return true;
-    }
     try {
-      return point.get().equals(other.point.get());
+      return point.equals(other.point);
     } catch (final IllegalArgumentException e) {
       // Invalid points are only equal if they have the exact some data.
       return false;

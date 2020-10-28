@@ -63,9 +63,9 @@ public class AggregationDuty implements Duty {
    * @param validatorIndex the validator's index
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
-   * @param unsignedAttestationFuture the future returned by {@link
-   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int)} which completes with
-   *     the unsigned attestation for this committee and slot.
+   * @param unsignedAttestationFuture the future returned by {@link #addValidator(Validator, int,
+   *     BLSSignature, int, SafeFuture)} which completes with the unsigned attestation for this
+   *     committee and slot.
    */
   public void addValidator(
       final Validator validator,
@@ -75,15 +75,13 @@ public class AggregationDuty implements Duty {
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
-        committeeIndex -> {
-          validatorApiChannel.subscribeToBeaconCommitteeForAggregation(committeeIndex, slot);
-          return new CommitteeAggregator(
-              validator,
-              UInt64.valueOf(validatorIndex),
-              attestationCommitteeIndex,
-              proof,
-              unsignedAttestationFuture);
-        });
+        committeeIndex ->
+            new CommitteeAggregator(
+                validator,
+                UInt64.valueOf(validatorIndex),
+                attestationCommitteeIndex,
+                proof,
+                unsignedAttestationFuture));
   }
 
   @Override
@@ -109,7 +107,7 @@ public class AggregationDuty implements Duty {
             () ->
                 new IllegalStateException(
                     "Unable to perform aggregation for committee because no attestation was produced"));
-    return validatorApiChannel.createAggregate(attestationData.hashTreeRoot());
+    return validatorApiChannel.createAggregate(slot, attestationData.hashTreeRoot());
   }
 
   private SafeFuture<DutyResult> sendAggregate(

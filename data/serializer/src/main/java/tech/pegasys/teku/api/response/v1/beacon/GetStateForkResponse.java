@@ -25,4 +25,8 @@ public class GetStateForkResponse {
   public GetStateForkResponse(@JsonProperty("data") final Fork data) {
     this.data = data;
   }
+
+  public Fork getData() {
+    return data;
+  }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -48,6 +49,10 @@ public class BlockGossipManagerTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
+  @SuppressWarnings("unchecked")
+  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
+      mock(GossipedItemConsumer.class);
+
   @BeforeEach
   public void setup() {
     doReturn(topicChannel)
@@ -59,7 +64,8 @@ public class BlockGossipManagerTest {
         gossipEncoding,
         dataStructureUtil.randomForkInfo(),
         blockValidator,
-        eventBus);
+        eventBus,
+        gossipedBlockConsumer);
   }
 
   @Test

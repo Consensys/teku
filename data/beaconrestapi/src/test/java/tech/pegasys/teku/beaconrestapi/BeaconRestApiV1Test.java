@@ -22,25 +22,41 @@ import static org.mockito.Mockito.when;
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
+import io.javalin.http.Handler;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -59,7 +75,7 @@ public class BeaconRestApiV1Test {
   private final SyncService syncService = mock(SyncService.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
-  private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
   @BeforeEach
   public void setup() {
@@ -75,83 +91,85 @@ public class BeaconRestApiV1Test {
         app);
   }
 
-  @Test
-  public void shouldHaveVersionEndpoint() {
-    verify(app).get(eq(GetVersion.ROUTE), any(GetVersion.class));
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getParameters")
+  void getRouteExists(final String route, final Class<Handler> type) {
+    verify(app).get(eq(route), any(type));
   }
 
-  @Test
-  public void shouldHaveIdentityEndpoint() {
-    verify(app).get(eq(GetIdentity.ROUTE), any(GetIdentity.class));
+  static Stream<Arguments> getParameters() {
+    Stream.Builder<Arguments> builder = Stream.builder();
+
+    // beacon
+    builder
+        .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
+        .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
+        .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
+        .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
+        .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))
+        .add(Arguments.of(GetStateValidator.ROUTE, GetStateValidator.class))
+        .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
+        .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
+        .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class));
+
+    // events
+    builder.add(Arguments.of(GetEvents.ROUTE, GetEvents.class));
+
+    // node
+    builder
+        .add(Arguments.of(GetHealth.ROUTE, GetHealth.class))
+        .add(Arguments.of(GetIdentity.ROUTE, GetIdentity.class))
+        .add(Arguments.of(GetPeerById.ROUTE, GetPeerById.class))
+        .add(Arguments.of(GetPeers.ROUTE, GetPeers.class))
+        .add(Arguments.of(GetSyncing.ROUTE, GetSyncing.class))
+        .add(Arguments.of(GetVersion.ROUTE, GetVersion.class));
+
+    // validator
+    builder
+        .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
+        .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
+        .add(Arguments.of(GetAttesterDuties.ROUTE, GetAttesterDuties.class))
+        .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
+        .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
+
+    // config
+    builder.add(Arguments.of(GetSpec.ROUTE, GetSpec.class));
+
+    // DEBUG
+    builder.add(Arguments.of(GetState.ROUTE, GetState.class));
+
+    return builder.build();
   }
 
-  @Test
-  public void shouldHaveHealthEndpoint() {
-    verify(app).get(eq(GetHealth.ROUTE), any(GetHealth.class));
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("postParameters")
+  void postRouteExists(final String route, final Class<Handler> type) {
+    verify(app).post(eq(route), any(type));
   }
 
-  @Test
-  public void shouldHaveSyncingEndpoint() {
-    verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
-  }
+  static Stream<Arguments> postParameters() {
+    Stream.Builder<Arguments> builder = Stream.builder();
 
-  @Test
-  public void shouldHavePeersEndpoint() {
-    verify(app).get(eq(GetPeers.ROUTE), any(GetPeers.class));
-  }
+    // beacon
+    builder
+        .add(Arguments.of(PostAttesterDuties.ROUTE, PostAttesterDuties.class))
+        .add(Arguments.of(PostBlock.ROUTE, PostBlock.class));
 
-  @Test
-  public void shouldHavePeerByIdEndpoint() {
-    verify(app).get(eq(GetPeerById.ROUTE), any(GetPeerById.class));
-  }
+    // validator
+    builder
+        .add(Arguments.of(PostAggregateAndProofs.ROUTE, PostAggregateAndProofs.class))
+        .add(Arguments.of(PostAttesterDuties.ROUTE, PostAttesterDuties.class))
+        .add(
+            Arguments.of(
+                PostSubscribeToBeaconCommitteeSubnet.ROUTE,
+                PostSubscribeToBeaconCommitteeSubnet.class));
 
-  @Test
-  public void shouldHaveGetAttesterDutiesEndpoint() {
-    verify(app).get(eq(GetAttesterDuties.ROUTE), any(GetAttesterDuties.class));
-  }
-
-  @Test
-  public void shouldHavePostAttesterDutiesEndpoint() {
-    verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
-  }
-
-  @Test
-  public void shouldHaveGetProposerDutiesEndpoint() {
-    verify(app).get(eq(GetProposerDuties.ROUTE), any(GetProposerDuties.class));
-  }
-
-  @Test
-  public void shouldHaveGetStateForkEndpoint() {
-    verify(app).get(eq(GetStateFork.ROUTE), any(GetStateFork.class));
-  }
-
-  @Test
-  public void shouldHaveGetStateValidatorEndpoint() {
-    verify(app).get(eq(GetStateValidator.ROUTE), any(GetStateValidator.class));
-  }
-
-  @Test
-  public void shouldHaveGetStateValidatorsEndpoint() {
-    verify(app).get(eq(GetStateValidators.ROUTE), any(GetStateValidators.class));
-  }
-
-  @Test
-  public void shouldHaveGetGenesisEndpoint() {
-    verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
-  }
-
-  @Test
-  public void shouldHaveValidatorBlockEndpoint() {
-    verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
-  }
-
-  @Test
-  public void shouldHaveGetNewBlockEndpoint() {
-    verify(app).get(eq(GetNewBlock.ROUTE), any(GetNewBlock.class));
-  }
-
-  @Test
-  public void shouldHaveGetAttestationDataEndpoint() {
-    verify(app).get(eq(GetAttestationData.ROUTE), any(GetAttestationData.class));
+    return builder.build();
   }
 }

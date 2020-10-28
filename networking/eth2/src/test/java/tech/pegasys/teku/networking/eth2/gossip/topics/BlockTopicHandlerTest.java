@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -49,13 +48,17 @@ public class BlockTopicHandlerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
 
+  @SuppressWarnings("unchecked")
+  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
+      mock(GossipedItemConsumer.class);
+
   private BlockTopicHandler topicHandler =
       new BlockTopicHandler(
           asyncRunner,
           gossipEncoding,
           dataStructureUtil.randomForkInfo(),
           blockValidator,
-          eventBus);
+          gossipedBlockConsumer);
 
   @BeforeEach
   public void setup() {
@@ -72,7 +75,7 @@ public class BlockTopicHandlerTest {
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
-    verify(eventBus).post(new GossipedBlockEvent(block));
+    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -85,7 +88,7 @@ public class BlockTopicHandlerTest {
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(eventBus).post(new GossipedBlockEvent(block));
+    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -96,7 +99,7 @@ public class BlockTopicHandlerTest {
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verify(eventBus).post(new GossipedBlockEvent(block));
+    verify(gossipedBlockConsumer).forward(block);
   }
 
   @Test
@@ -118,7 +121,7 @@ public class BlockTopicHandlerTest {
     final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
-    verify(eventBus, never()).post(new GossipedBlockEvent(block));
+    verify(gossipedBlockConsumer, never()).forward(block);
   }
 
   @Test
@@ -127,7 +130,8 @@ public class BlockTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, blockValidator, eventBus);
+        new BlockTopicHandler(
+            asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

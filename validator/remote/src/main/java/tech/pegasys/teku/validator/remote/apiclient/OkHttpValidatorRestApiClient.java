@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
@@ -27,7 +28,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -49,12 +51,13 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
-import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -63,13 +66,16 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.TemporaryAttestationData;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
@@ -90,27 +96,32 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<GetForkResponse> getFork() {
-    return get(GET_FORK, EMPTY_QUERY_PARAMS, GetForkResponse.class);
+  public Optional<Fork> getFork() {
+    return get(
+            GET_FORK,
+            Map.of("state_id", "head"),
+            EMPTY_QUERY_PARAMS,
+            createHandler(GetStateForkResponse.class))
+        .map(GetStateForkResponse::getData);
   }
 
   @Override
   public Optional<GetGenesisResponse> getGenesis() {
-    return get(GET_GENESIS, EMPTY_QUERY_PARAMS, GetGenesisResponse.class);
+    return get(GET_GENESIS, EMPTY_QUERY_PARAMS, createHandler(GetGenesisResponse.class));
   }
 
   @Override
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("validator_id", String.join(",", validatorIds));
-    return get(GET_VALIDATORS, queryParams, GetStateValidatorsResponse.class)
+    queryParams.put("id", String.join(",", validatorIds));
+    return get(GET_VALIDATORS, queryParams, createHandler(GetStateValidatorsResponse.class))
         .map(response -> response.data);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public List<ValidatorDuties> getDuties(final ValidatorDutiesRequest request) {
-    return post(GET_DUTIES, request, ValidatorDuties[].class)
+    return post(GET_DUTIES, request, createHandler(ValidatorDuties[].class))
         .map(Arrays::asList)
         .orElse(Collections.EMPTY_LIST);
   }
@@ -122,7 +133,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_ATTESTATION_DUTIES,
             Map.of("epoch", epoch.toString()),
             validatorIndexes.toArray(),
-            GetAttesterDutiesResponse.class)
+            createHandler(GetAttesterDutiesResponse.class))
         .map(response -> response.data)
         .orElse(Collections.emptyList());
   }
@@ -133,7 +144,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_PROPOSER_DUTIES,
             Map.of("epoch", epoch.toString()),
             emptyMap(),
-            GetProposerDutiesResponse.class)
+            createHandler(GetProposerDutiesResponse.class))
         .map(response -> response.data)
         .orElse(Collections.emptyList());
   }
@@ -149,15 +160,14 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_UNSIGNED_BLOCK,
             Map.of("slot", slot.toString()),
             queryParams,
-            GetNewBlockResponse.class)
+            createHandler(GetNewBlockResponse.class))
         .map(response -> response.data);
   }
 
   @Override
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    return post(SEND_SIGNED_BLOCK, beaconBlock, String.class)
-        .map(Bytes32::fromHexString)
-        .map(SendSignedBlockResult::success)
+    return post(SEND_SIGNED_BLOCK, beaconBlock, createHandler())
+        .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
@@ -168,7 +178,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("committee_index", String.valueOf(committeeIndex));
 
-    return get(GET_UNSIGNED_ATTESTATION, queryParams, Attestation.class);
+    return get(GET_UNSIGNED_ATTESTATION, queryParams, createHandler(Attestation.class));
   }
 
   @Override
@@ -178,67 +188,90 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("committee_index", String.valueOf(committeeIndex));
 
-    return get(GET_ATTESTATION_DATA, queryParams, AttestationData.class);
+    return get(GET_ATTESTATION_DATA, queryParams, createHandler(TemporaryAttestationData.class))
+        .map(TemporaryAttestationData::getAttestationData);
   }
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    post(SEND_SIGNED_ATTESTATION, attestation, null);
+    post(SEND_SIGNED_ATTESTATION, attestation, createHandler());
   }
 
   @Override
-  public Optional<Attestation> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public Optional<Attestation> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(UInt64.ZERO));
+    queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("attestation_data_root", encodeQueryParam(attestationHashTreeRoot));
 
-    return get(GET_AGGREGATE, queryParams, Attestation.class);
+    return get(
+            GET_AGGREGATE,
+            queryParams,
+            createHandler(GetAggregatedAttestationResponse.class)
+                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
+        .map(result -> result.data);
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof signedAggregateAndProof) {
-    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, null);
+  public void sendAggregateAndProofs(final List<SignedAggregateAndProof> signedAggregateAndProof) {
+    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, createHandler());
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    final SubscribeToBeaconCommitteeRequest request =
-        new SubscribeToBeaconCommitteeRequest(committeeIndex, aggregationSlot);
-    post(SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION, request, null);
+  public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+    final BeaconCommitteeSubscriptionRequest[] body =
+        requests.stream()
+            .map(
+                request ->
+                    new BeaconCommitteeSubscriptionRequest(
+                        request.getValidatorIndex(),
+                        request.getCommitteeIndex(),
+                        request.getCommitteesAtSlot(),
+                        request.getSlot(),
+                        request.isAggregator()))
+            .toArray(BeaconCommitteeSubscriptionRequest[]::new);
+    post(SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET, body, createHandler());
   }
 
   @Override
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
-    post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, null);
+    post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
+  }
+
+  private ResponseHandler<Void> createHandler() {
+    return createHandler(null);
+  }
+
+  private <T> ResponseHandler<T> createHandler(final Class<T> responseClass) {
+    return new ResponseHandler<>(jsonProvider, responseClass);
   }
 
   public <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> queryParams,
-      final Class<T> responseClass) {
-    return get(apiMethod, emptyMap(), queryParams, responseClass);
+      final ResponseHandler<T> responseHandler) {
+    return get(apiMethod, emptyMap(), queryParams, responseHandler);
   }
 
   public <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
-      final Class<T> responseClass) {
+      final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     if (queryParams != null && !queryParams.isEmpty()) {
       queryParams.forEach(httpUrlBuilder::addQueryParameter);
     }
 
-    final Request request = new Request.Builder().url(httpUrlBuilder.build()).build();
-    return executeCall(request, responseClass);
+    final Request request = requestBuilder().url(httpUrlBuilder.build()).build();
+    return executeCall(request, responseHandler);
   }
 
   private <T> Optional<T> post(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Object requestBodyObj,
-      final Class<T> responseClass) {
+      final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     final String requestBody;
     try {
@@ -248,19 +281,29 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     }
 
     final Request request =
-        new Request.Builder()
+        requestBuilder()
             .url(httpUrlBuilder.build())
             .post(RequestBody.create(requestBody, APPLICATION_JSON))
             .build();
 
-    return executeCall(request, responseClass);
+    return executeCall(request, responseHandler);
+  }
+
+  private Request.Builder requestBuilder() {
+    final Request.Builder builder = new Request.Builder();
+    if (!baseEndpoint.username().isEmpty()) {
+      builder.header(
+          "Authorization",
+          Credentials.basic(baseEndpoint.encodedUsername(), baseEndpoint.encodedPassword()));
+    }
+    return builder;
   }
 
   private <T> Optional<T> post(
       final ValidatorApiMethod apiMethod,
       final Object requestBodyObj,
-      final Class<T> responseClass) {
-    return post(apiMethod, Collections.emptyMap(), requestBodyObj, responseClass);
+      final ResponseHandler<T> responseHandler) {
+    return post(apiMethod, Collections.emptyMap(), requestBodyObj, responseHandler);
   }
 
   private HttpUrl.Builder urlBuilder(
@@ -268,53 +311,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return baseEndpoint.resolve(apiMethod.getPath(urlParams)).newBuilder();
   }
 
-  private <T> Optional<T> executeCall(final Request request, final Class<T> responseClass) {
+  private <T> Optional<T> executeCall(
+      final Request request, final ResponseHandler<T> responseHandler) {
     try (final Response response = httpClient.newCall(request).execute()) {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
-
-      switch (response.code()) {
-        case 200:
-          {
-            final String responseBody = response.body().string();
-            if (responseClass != null) {
-              final T responseObj = jsonProvider.jsonToObject(responseBody, responseClass);
-              return Optional.of(responseObj);
-            } else {
-              return Optional.empty();
-            }
-          }
-        case 202:
-        case 204:
-        case 404:
-        case 503:
-          {
-            return Optional.empty();
-          }
-        case 400:
-          {
-            throw new IllegalArgumentException(
-                "Invalid params response from Beacon Node API (url = "
-                    + request.url()
-                    + ", response = "
-                    + response.body().string()
-                    + ")");
-          }
-        default:
-          {
-            final String responseBody = response.body().string();
-            LOG.error(
-                "Unexpected error calling Beacon Node API (url = {}, status = {}, response = {})",
-                request.url(),
-                response.code(),
-                responseBody);
-            throw new RuntimeException(
-                "Unexpected response from Beacon Node API (status = "
-                    + response.code()
-                    + ", response = "
-                    + responseBody
-                    + ")");
-          }
-      }
+      return responseHandler.handleResponse(request, response);
     } catch (IOException e) {
       throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
     }

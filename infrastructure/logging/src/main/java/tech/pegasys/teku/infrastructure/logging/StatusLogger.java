@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -31,7 +30,7 @@ public class StatusLogger {
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
 
-  private final Logger log;
+  final Logger log;
 
   private StatusLogger(final String name) {
     this.log = LogManager.getLogger(name);
@@ -139,8 +138,20 @@ public class StatusLogger {
         () -> peerCount);
   }
 
-  public void loadingGenesisFile(final String genesisFile) {
+  public void loadingGenesisResource(final String genesisFile) {
     log.info("Loading genesis from {}", genesisFile);
+  }
+
+  public void loadingWeakSubjectivityStateResources(
+      final String wsStateResource, final String wsBlockResource) {
+    log.info(
+        "Loading weak subjectivity state from {}, block from {}", wsBlockResource, wsBlockResource);
+  }
+
+  public void loadedWeakSubjectivityStateResources(
+      final Bytes32 stateRoot, final Bytes32 blockRoot, final UInt64 slot) {
+    log.info(
+        "Loaded weak subjectivity state {} for block {} at slot {}", stateRoot, blockRoot, slot);
   }
 
   public void loadingGenesisFromEth1Chain() {
@@ -205,50 +216,11 @@ public class StatusLogger {
     log.info(performance);
   }
 
-  public void warnWeakSubjectivityChecksSuppressed(final UInt64 untilEpoch) {
-    final String msg = "Suppressing weak subjectivity errors until epoch " + untilEpoch;
-    logWithColorIfLevelGreaterThanInfo(Level.WARN, msg, ColorConsolePrinter.Color.YELLOW);
-  }
-
-  public void warnWeakSubjectivityFinalizedCheckpointValidationDeferred(
-      final UInt64 finalizedEpoch, final UInt64 wsCheckpointEpoch) {
-    final String msg =
-        String.format(
-            "Deferring weak subjectivity checks for finalized checkpoint at epoch %s.  Checks will resume once weak subjectivity checkpoint at epoch %s is reached.",
-            finalizedEpoch, wsCheckpointEpoch);
-    logWithColorIfLevelGreaterThanInfo(Level.WARN, msg, ColorConsolePrinter.Color.YELLOW);
-  }
-
-  public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      Level level, final UInt64 latestFinalizedCheckpointEpoch) {
-    final String msg =
-        String.format(
-            "The latest finalized checkpoint at epoch %s is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
-            latestFinalizedCheckpointEpoch);
-    logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.RED);
-  }
-
-  public void chainInconsistentWithWeakSubjectivityCheckpoint(
-      final Level level,
-      final Bytes32 blockRoot,
-      final UInt64 blockSlot,
-      final Bytes32 wsCheckpointRoot,
-      final UInt64 wsCheckpointEpoch) {
-    final String msg =
-        String.format(
-            "Block %s at slot %s is inconsistent with weak subjectivity checkpoint (root=%s, epoch=%s)",
-            blockRoot, blockSlot, wsCheckpointRoot, wsCheckpointEpoch);
-    logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.RED);
-  }
-
-  public void failedToPerformWeakSubjectivityValidation(
-      final Level level, final String message, final Throwable error) {
-    log.log(level, "Failed to perform weak subjectivity validation: " + message, error);
-  }
-
-  private void logWithColorIfLevelGreaterThanInfo(
-      final Level level, final String msg, final ColorConsolePrinter.Color color) {
-    final boolean useColor = level.isMoreSpecificThan(Level.INFO);
-    log.log(level, useColor ? print(msg, color) : msg);
+  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId) {
+    log.log(
+        Level.ERROR,
+        "PLEASE CHECK YOUR ETH1 NODE | Wrong Eth1 chain id (expected={}, actual={})",
+        expectedChainId,
+        eth1ChainId);
   }
 }

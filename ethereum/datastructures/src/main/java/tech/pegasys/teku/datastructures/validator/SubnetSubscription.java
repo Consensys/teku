@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.datastructures.validator;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SubnetSubscription {
@@ -31,5 +33,30 @@ public class SubnetSubscription {
 
   public UInt64 getUnsubscriptionSlot() {
     return unsubscriptionSlot;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final SubnetSubscription that = (SubnetSubscription) o;
+    return subnetId == that.subnetId && Objects.equals(unsubscriptionSlot, that.unsubscriptionSlot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(subnetId, unsubscriptionSlot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("subnetId", subnetId)
+        .add("unsubscriptionSlot", unsubscriptionSlot)
+        .toString();
   }
 }

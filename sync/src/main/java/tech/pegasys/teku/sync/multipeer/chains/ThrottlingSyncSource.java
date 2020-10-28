@@ -25,6 +25,7 @@ import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,6 +62,11 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     return delegate.disconnectCleanly(reason);
+  }
+
+  @Override
+  public void adjustReputation(final ReputationAdjustment adjustment) {
+    delegate.adjustReputation(adjustment);
   }
 
   @Override

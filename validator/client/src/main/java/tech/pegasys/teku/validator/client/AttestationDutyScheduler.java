@@ -19,26 +19,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private UInt64 lastAttestationCreationSlot;
-  private final StableSubnetSubscriber stableSubnetSubscriber;
 
   public AttestationDutyScheduler(
-      final MetricsSystem metricsSystem,
-      final DutyLoader epochDutiesScheduler,
-      final StableSubnetSubscriber stableSubnetSubscriber) {
+      final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
     super(epochDutiesScheduler, 1);
 
-    this.stableSubnetSubscriber = stableSubnetSubscriber;
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
-  }
-
-  @Override
-  public void onSlot(final UInt64 slot) {
-    super.onSlot(slot);
-    stableSubnetSubscriber.onSlot(slot);
   }
 
   @Override

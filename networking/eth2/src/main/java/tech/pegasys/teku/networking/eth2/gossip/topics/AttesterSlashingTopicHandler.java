@@ -32,14 +32,14 @@ public class AttesterSlashingTopicHandler
   private final AttesterSlashingValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedOperationConsumer<AttesterSlashing> consumer;
+  private final GossipedItemConsumer<AttesterSlashing> consumer;
 
   public AttesterSlashingTopicHandler(
       final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final AttesterSlashingValidator validator,
-      final GossipedOperationConsumer<AttesterSlashing> consumer) {
+      final GossipedItemConsumer<AttesterSlashing> consumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();

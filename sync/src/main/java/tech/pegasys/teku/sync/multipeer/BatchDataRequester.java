@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
+import static java.util.stream.Collectors.toList;
+
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,6 +56,8 @@ public class BatchDataRequester {
       final Consumer<Batch> requestCompleteCallback) {
     eventThread.checkOnEventThread();
 
+    replaceBatchesFromOldChainsWithNoSources(targetChain);
+
     final long pendingBatchesCount =
         activeBatches.stream().filter(batch -> !batch.isEmpty() || !batch.isComplete()).count();
 
@@ -76,6 +82,42 @@ public class BatchDataRequester {
         break;
       }
     }
+  }
+
+  /**
+   * All the sync sources on a given target chain may have moved to a new chain or disconnected. To
+   * avoid getting stuck attempting and failing to request data when there are no sync sources, find
+   * the first batch from an old chain with no sources, and replace all batches after it that are
+   * from old chains with batches from our new chain.
+   */
+  private void replaceBatchesFromOldChainsWithNoSources(final TargetChain targetChain) {
+    final Optional<Batch> firstStrandedBatch =
+        activeBatches.stream()
+            .filter(batch -> incompleteBatchFromOldChainWithNoPeers(targetChain, batch))
+            .findFirst();
+    firstStrandedBatch.ifPresent(
+        strandedBatch -> {
+          // We have at least one batch from an old chain which no longer has any target peers to
+          // request data from. Remove all batches from that one to where the new chain starts and
+          // replace with batches from the new chain.
+          final List<Batch> batchesToReplace =
+              activeBatches.batchesAfterInclusive(strandedBatch).stream()
+                  .takeWhile(batch -> !batch.getTargetChain().equals(targetChain))
+                  .collect(toList());
+          batchesToReplace.forEach(
+              batchToReplace ->
+                  activeBatches.replace(
+                      batchToReplace,
+                      batchFactory.createBatch(
+                          targetChain, batchToReplace.getFirstSlot(), batchToReplace.getCount())));
+        });
+  }
+
+  private boolean incompleteBatchFromOldChainWithNoPeers(
+      final TargetChain targetChain, final Batch batch) {
+    return !batch.isComplete()
+        && !batch.getTargetChain().equals(targetChain)
+        && batch.getTargetChain().getPeerCount() == 0;
   }
 
   private UInt64 getNextSlotToRequest(final UInt64 commonAncestorSlot) {

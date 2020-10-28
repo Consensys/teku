@@ -17,7 +17,9 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -62,5 +64,33 @@ public class BeaconBlockHeader {
   public tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader asInternalBeaconBlockHeader() {
     return new tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader(
         slot, proposer_index, parent_root, state_root, body_root);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final BeaconBlockHeader that = (BeaconBlockHeader) o;
+    return Objects.equals(slot, that.slot)
+        && Objects.equals(proposer_index, that.proposer_index)
+        && Objects.equals(parent_root, that.parent_root)
+        && Objects.equals(state_root, that.state_root)
+        && Objects.equals(body_root, that.body_root);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(slot, proposer_index, parent_root, state_root, body_root);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("proposer_index", proposer_index)
+        .add("parent_root", parent_root)
+        .add("state_root", state_root)
+        .add("body_root", body_root)
+        .toString();
   }
 }

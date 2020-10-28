@@ -36,6 +36,7 @@ public class ProtoArraySnapshotTest {
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
             UInt64.valueOf(10),
             UInt64.valueOf(9),
+            UInt64.ZERO,
             nodes,
             new HashMap<>());
 
@@ -77,6 +78,7 @@ public class ProtoArraySnapshotTest {
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
             UInt64.valueOf(10),
             UInt64.valueOf(9),
+            UInt64.ZERO,
             nodes,
             new HashMap<>());
 

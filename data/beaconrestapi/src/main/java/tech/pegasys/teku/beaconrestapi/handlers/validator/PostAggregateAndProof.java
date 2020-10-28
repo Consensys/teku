@@ -29,6 +29,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -48,6 +49,7 @@ public class PostAggregateAndProof implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
       summary =
@@ -55,7 +57,9 @@ public class PostAggregateAndProof implements Handler {
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedAggregateAndProof.class)}),
-      description = "Aggregates all attestations matching given attestation data root and slot.",
+      description =
+          "Aggregates all attestations matching given attestation data root and slot.\n"
+              + "Deprecated - use `/eth/v1/validator/aggregate_and_proofs` instead.",
       responses = {
         @OpenApiResponse(status = RES_OK, description = "Successfully processed attestation."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
@@ -67,7 +71,7 @@ public class PostAggregateAndProof implements Handler {
       final SignedAggregateAndProof signedAggregateAndProof =
           jsonProvider.jsonToObject(ctx.body(), SignedAggregateAndProof.class);
 
-      provider.sendAggregateAndProof(signedAggregateAndProof);
+      provider.sendAggregateAndProofs(List.of(signedAggregateAndProof));
       ctx.status(SC_OK);
     } catch (final JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));

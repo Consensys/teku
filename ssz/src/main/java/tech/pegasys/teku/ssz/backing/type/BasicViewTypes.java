@@ -31,27 +31,35 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 /** The collection of commonly used basic types */
 public class BasicViewTypes {
+  private static final TreeNode SINGLE_FALSE_NODE = TreeNode.createCompressedLeafNode(Bytes.of(0));
+  private static final TreeNode SINGLE_TRUE_NODE = TreeNode.createCompressedLeafNode(Bytes.of(1));
 
   public static final BasicViewType<BitView> BIT_TYPE =
       new BasicViewType<>(1) {
         @Override
         public BitView createFromBackingNode(TreeNode node, int idx) {
-          return new BitView((node.hashTreeRoot().get(idx / 8) & (1 << (idx % 8))) != 0);
+          return BitView.viewOf((node.hashTreeRoot().get(idx / 8) & (1 << (idx % 8))) != 0);
         }
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int idx, ViewRead newValue) {
-          MutableBytes32 dest = srcNode.hashTreeRoot().mutableCopy();
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
-          byte b = dest.get(byteIndex);
-          if (((BitView) newValue).get()) {
+          Bytes32 originalBytes = srcNode.hashTreeRoot();
+          byte b = originalBytes.get(byteIndex);
+          boolean bit = ((BitView) newValue).get();
+          if (bit) {
             b = (byte) (b | (1 << bitIndex));
           } else {
             b = (byte) (b & ~(1 << bitIndex));
           }
-          dest.set(byteIndex, b);
-          return TreeNode.createLeafNode(dest);
+          if (srcNode.isZero() && byteIndex == 0) {
+            return bit ? SINGLE_TRUE_NODE : SINGLE_FALSE_NODE;
+          } else {
+            MutableBytes32 dest = originalBytes.mutableCopy();
+            dest.set(byteIndex, b);
+            return TreeNode.createLeafNode(dest);
+          }
         }
       };
 
@@ -64,9 +72,14 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
-          byte[] bytes = srcNode.hashTreeRoot().toArray();
-          bytes[index] = ((ByteView) newValue).get();
-          return TreeNode.createLeafNode(Bytes32.wrap(bytes));
+          byte aByte = ((ByteView) newValue).get();
+          if (srcNode.isZero() && index == 0) {
+            return TreeNode.createCompressedLeafNode(Bytes.of(aByte));
+          } else {
+            byte[] bytes = srcNode.hashTreeRoot().toArray();
+            bytes[index] = aByte;
+            return TreeNode.createLeafNode(Bytes32.wrap(bytes));
+          }
         }
       };
 
@@ -101,13 +114,18 @@ public class BasicViewTypes {
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
-          return TreeNode.createLeafNode(
-              Bytes32.wrap(
-                  Bytes.concatenate(
-                      originalChunk.slice(0, index * 8),
-                      Bytes.ofUnsignedLong(
-                          ((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
-                      originalChunk.slice((index + 1) * 8))));
+          Bytes uintBytes =
+              Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
+          if (srcNode.isZero() && index == 0) {
+            return TreeNode.createCompressedLeafNode(uintBytes);
+          } else {
+            return TreeNode.createLeafNode(
+                Bytes32.wrap(
+                    Bytes.concatenate(
+                        originalChunk.slice(0, index * 8),
+                        uintBytes,
+                        originalChunk.slice((index + 1) * 8))));
+          }
         }
       };
 
@@ -122,13 +140,19 @@ public class BasicViewTypes {
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
-          Bytes32 originalChunk = srcNode.hashTreeRoot();
-          return TreeNode.createLeafNode(
-              Bytes32.wrap(
-                  Bytes.concatenate(
-                      originalChunk.slice(0, internalIndex * 4),
-                      ((Bytes4View) newValue).get().getWrappedBytes(),
-                      originalChunk.slice((internalIndex + 1) * 4))));
+          Bytes bytes = ((Bytes4View) newValue).get().getWrappedBytes();
+
+          if (srcNode.isZero() && internalIndex == 0) {
+            return TreeNode.createCompressedLeafNode(bytes);
+          } else {
+            Bytes32 originalChunk = srcNode.hashTreeRoot();
+            return TreeNode.createLeafNode(
+                Bytes32.wrap(
+                    Bytes.concatenate(
+                        originalChunk.slice(0, internalIndex * 4),
+                        bytes,
+                        originalChunk.slice((internalIndex + 1) * 4))));
+          }
         }
       };
 

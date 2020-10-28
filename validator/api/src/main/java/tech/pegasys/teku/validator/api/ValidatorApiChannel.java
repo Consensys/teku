@@ -27,14 +27,16 @@ import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorApiChannel extends ChannelInterface {
-  SafeFuture<Optional<ForkInfo>> getForkInfo();
+  int UKNOWN_VALIDATOR_ID = -1;
+
+  SafeFuture<Optional<Fork>> getFork();
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 
@@ -55,9 +57,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
+  SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
+  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 

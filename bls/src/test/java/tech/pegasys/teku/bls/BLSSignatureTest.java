@@ -137,4 +137,22 @@ abstract class BLSSignatureTest {
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());
   }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForInvalidSignatures() {
+    final Bytes rawData = Bytes.fromHexString("11".repeat(96));
+    final BLSSignature signature1 = BLSSignature.fromBytesCompressed(rawData);
+    final BLSSignature signature2 = BLSSignature.fromBytesCompressed(rawData);
+    assertEquals(signature1, signature2);
+    assertEquals(signature1.hashCode(), signature2.hashCode());
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsFalseForDifferentInvalidSignatures() {
+    final BLSSignature signature1 =
+        BLSSignature.fromBytesCompressed(Bytes.fromHexString("11".repeat(96)));
+    final BLSSignature signature2 =
+        BLSSignature.fromBytesCompressed(Bytes.fromHexString("22".repeat(96)));
+    assertNotEquals(signature1, signature2);
+  }
 }

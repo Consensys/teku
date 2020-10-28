@@ -21,6 +21,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArraySnapshot> {
   @Override
@@ -33,7 +34,18 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
           final List<BlockInformation> blockInformationList =
               reader.readBytesList().stream().map(BlockInformation::fromBytes).collect(toList());
 
-          return new ProtoArraySnapshot(justifiedEpoch, finalizedEpoch, blockInformationList);
+          final UInt64 anchorEpoch;
+          if (reader.isComplete()) {
+            // Read earlier format which is missing an explicit anchorEpoch value
+            // Set anchor epoch to default of zero for genesis
+            anchorEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
+          } else {
+            // Read anchor epoch
+            anchorEpoch = UInt64.fromLongBits(reader.readUInt64());
+          }
+
+          return new ProtoArraySnapshot(
+              justifiedEpoch, finalizedEpoch, anchorEpoch, blockInformationList);
         });
   }
 
@@ -48,6 +60,7 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
                   protoArraySnapshot.getBlockInformationList().stream()
                       .map(BlockInformation::toBytes)
                       .collect(toList()));
+              writer.writeUInt64(protoArraySnapshot.getAnchorEpoch().longValue());
             });
     return bytes.toArrayUnsafe();
   }

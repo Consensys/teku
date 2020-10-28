@@ -158,7 +158,7 @@ public class ForkChoiceTestExecutor {
 
     EventBus eventBus = new EventBus();
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-    storageClient.initializeFromGenesis(genesis).join();
+    storageClient.initializeFromGenesis(genesis);
 
     ForkChoice forkChoice =
         new ForkChoice(SingleThreadedForkChoiceExecutor.create(), storageClient, st);

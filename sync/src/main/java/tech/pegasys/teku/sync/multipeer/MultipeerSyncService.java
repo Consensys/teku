@@ -25,11 +25,12 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.batches.PeerScoringConflictResolutionStrategy;
 import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
@@ -70,16 +71,16 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
-            new BatchFactory(eventThread),
-            Constants.SYNC_BATCH_SIZE);
+            new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),
+            Constants.SYNC_BATCH_SIZE,
+            MultipeerCommonAncestorFinder.create(recentChainData, eventThread));
     final SyncController syncController =
         new SyncController(
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            ChainSelector.createFinalizedChainSelector(recentChainData, finalizedTargetChains),
-            ChainSelector.createNonfinalizedChainSelector(
-                recentChainData, nonfinalizedTargetChains),
+            new ChainSelector(recentChainData, finalizedTargetChains),
+            new ChainSelector(recentChainData, nonfinalizedTargetChains),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(

@@ -26,8 +26,10 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -47,6 +49,34 @@ public class ProtoArrayForkChoiceStrategyTest {
     assertThat(future).isCompleted();
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
     assertThat(forkChoiceStrategy.size()).isEqualTo(chainSize + 1);
+  }
+
+  @Test
+  public void findHead_worksForChainInitializedFromNonGenesisAnchor() {
+    // Set up store with an anchor point that has justified and finalized checkpoints prior to its
+    // epoch
+    final UInt64 anchorEpoch = UInt64.valueOf(100);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final BeaconState anchorState =
+        dataStructureUtil
+            .stateBuilder()
+            .setJustifiedCheckpointsToEpoch(anchorEpoch.minus(2))
+            .setFinalizedCheckpointToEpoch(anchorEpoch.minus(3))
+            .setSlotToStartOfEpoch(anchorEpoch)
+            .build();
+    AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
+    MutableStore store = new TestStoreFactory().createAnchorStore(anchor);
+
+    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
+        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
+    assertThat(future).isCompleted();
+    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
+
+    assertThat(forkChoiceStrategy.size()).isEqualTo(1);
+    final Bytes32 head =
+        forkChoiceStrategy.findHead(
+            store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+    assertThat(head).isEqualTo(anchor.getRoot());
   }
 
   private void saveChainToStore(final int blockCount) {

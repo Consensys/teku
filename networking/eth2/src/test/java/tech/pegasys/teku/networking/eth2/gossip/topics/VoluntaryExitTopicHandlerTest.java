@@ -44,8 +44,8 @@ public class VoluntaryExitTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
 
   @SuppressWarnings("unchecked")
-  private final GossipedOperationConsumer<SignedVoluntaryExit> consumer =
-      mock(GossipedOperationConsumer.class);
+  private final GossipedItemConsumer<SignedVoluntaryExit> consumer =
+      mock(GossipedItemConsumer.class);
 
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);

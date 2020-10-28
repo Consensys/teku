@@ -137,6 +137,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockInEffectAtSlot(
+      final UInt64 slot) {
+    return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+  }
+
   public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
       final UInt64 slot) {
     return getSignedBlockAndStateInEffectAtSlot(slot)
@@ -401,6 +406,19 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
     return getStateByStateRoot(stateRoot)
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
+  }
+
+  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
+    return getBlockByBlockRoot(blockRoot)
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+  }
+
+  public Optional<SignedBeaconBlock> getFinalizedBlock() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(getStore().getLatestFinalizedBlockAndState().getBlock());
   }
 
   public Optional<GenesisData> getGenesisData() {

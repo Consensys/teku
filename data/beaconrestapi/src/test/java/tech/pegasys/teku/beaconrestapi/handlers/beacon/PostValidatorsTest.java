@@ -45,8 +45,8 @@ import tech.pegasys.teku.util.config.Constants;
 public class PostValidatorsTest {
   private static final String EMPTY_LIST = "[]";
 
-  private final Context context = mock(Context.class);;
-  private final ChainDataProvider provider = mock(ChainDataProvider.class);;
+  private final Context context = mock(Context.class);
+  private final ChainDataProvider provider = mock(ChainDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final BLSPubKey pubKey = new BLSPubKey(new DataStructureUtil().randomPublicKey());
   private final ValidatorsRequest smallRequest =

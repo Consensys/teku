@@ -23,9 +23,12 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
+import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +40,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -53,7 +55,7 @@ import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -61,9 +63,11 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
@@ -84,19 +88,17 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getForkInfo_WhenPresent_ReturnsValue() {
-    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-    when(apiClient.getFork()).thenReturn(Optional.of(new GetForkResponse(forkInfo)));
+    final Fork fork = dataStructureUtil.randomFork();
+    when(apiClient.getFork()).thenReturn(Optional.of(new tech.pegasys.teku.api.schema.Fork(fork)));
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
 
-    SafeFuture<Optional<ForkInfo>> future = apiHandler.getForkInfo();
-
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(forkInfo);
+    assertThat(unwrapToValue(future)).isEqualTo(fork);
   }
 
   @Test
   public void getForkInfo_WhenNotPresent_ReturnsEmpty() {
     when(apiClient.getFork()).thenReturn(Optional.empty());
-
-    SafeFuture<Optional<ForkInfo>> future = apiHandler.getForkInfo();
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }
@@ -303,12 +305,14 @@ class RemoteValidatorApiHandlerTest {
     final int committeeLength = 2;
     final int committeeIndex = 1;
     final int validatorCommitteeIndex = 3;
+    final int committeesAtSlot = 15;
     final AttesterDuty schemaValidatorDuties =
         new AttesterDuty(
             new BLSPubKey(blsPublicKey),
             UInt64.valueOf(validatorIndex),
             UInt64.valueOf(committeeIndex),
             UInt64.valueOf(committeeLength),
+            UInt64.valueOf(committeesAtSlot),
             UInt64.valueOf(validatorCommitteeIndex),
             UInt64.ZERO);
     final AttesterDuties expectedValidatorDuties =
@@ -317,6 +321,7 @@ class RemoteValidatorApiHandlerTest {
             validatorIndex,
             committeeLength,
             committeeIndex,
+            committeesAtSlot,
             validatorCommitteeIndex,
             UInt64.ZERO);
 
@@ -503,30 +508,34 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void createAggregate_WhenNotFound_ReturnsEmpty() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    when(apiClient.createAggregate(eq(attHashTreeRoot))).thenReturn(Optional.empty());
+    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void createAggregate_WhenFound_ReturnsAttestation() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    when(apiClient.createAggregate(eq(attHashTreeRoot))).thenReturn(Optional.of(schemaAttestation));
+    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
+        .thenReturn(Optional.of(schemaAttestation));
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void sendSAggregateAndProof_InvokeApiWithCorrectRequest() {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
@@ -537,28 +546,33 @@ class RemoteValidatorApiHandlerTest {
     tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
     apiHandler.sendAggregateAndProof(signedAggregateAndProof);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendAggregateAndProof(argumentCaptor.capture());
+    verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
-        .isEqualTo(schemaSignedAggAndProof);
+        .isEqualTo(List.of(schemaSignedAggAndProof));
   }
 
   @Test
   public void subscribeToBeaconCommitteeForAggregation_InvokeApi() {
+    final int validatorIndex = 3;
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
-
-    apiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    final boolean isAggregator = true;
+    final UInt64 committeesAtSlot = UInt64.valueOf(23);
+    final List<CommitteeSubscriptionRequest> requests =
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator));
+    apiHandler.subscribeToBeaconCommittee(requests);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient)
-        .subscribeToBeaconCommitteeForAggregation(eq(committeeIndex), eq(aggregationSlot));
+    verify(apiClient).subscribeToBeaconCommittee(requests);
   }
 
   @Test
@@ -581,9 +595,25 @@ class RemoteValidatorApiHandlerTest {
 
     final Set<tech.pegasys.teku.api.schema.SubnetSubscription> request = argumentCaptor.getValue();
     assertThat(request).hasSize(1);
-    assertThat(request.stream().findFirst().get())
+    assertThat(request.stream().findFirst().orElseThrow())
         .usingRecursiveComparison()
         .isEqualTo(schemaSubnetSubscription);
+  }
+
+  @Test
+  void shouldRetryAfterDelayWhenRequestRateLimited() {
+    when(apiClient.getFork()).thenThrow(new RateLimitedException("/fork"));
+
+    final SafeFuture<Optional<Fork>> result = apiHandler.getFork();
+
+    for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
+      asyncRunner.executeQueuedActions();
+      assertThat(result).isNotDone();
+      verify(apiClient, times(i + 1)).getFork();
+    }
+
+    asyncRunner.executeQueuedActions();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(RateLimitedException.class);
   }
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {

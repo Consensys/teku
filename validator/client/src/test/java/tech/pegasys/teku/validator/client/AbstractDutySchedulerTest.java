@@ -50,7 +50,6 @@ public abstract class AbstractDutySchedulerTest {
   final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   final ForkProvider forkProvider = mock(ForkProvider.class);
-  final StableSubnetSubscriber stableSubnetSubscriber = mock(StableSubnetSubscriber.class);
   final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();

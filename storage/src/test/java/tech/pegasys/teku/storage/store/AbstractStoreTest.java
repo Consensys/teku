@@ -124,25 +124,22 @@ public abstract class AbstractStoreTest {
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    final SafeFuture<UpdatableStore> result =
-        Store.create(
-            SYNC_RUNNER,
-            new StubMetricsSystem(),
-            blockProviderFromChainBuilder(),
-            StateAndBlockProvider.NOOP,
-            genesis.getState().getGenesis_time(),
-            genesis.getState().getGenesis_time(),
-            genesisCheckpoint,
-            genesisCheckpoint,
-            genesisCheckpoint,
-            Map.of(genesis.getRoot(), genesis.getParentRoot()),
-            Map.of(genesis.getRoot(), genesis.getSlot()),
-            genesis,
-            Collections.emptyMap(),
-            pruningOptions);
-
-    assertThat(result).isCompleted();
-    return result.join();
+    return Store.create(
+        SYNC_RUNNER,
+        new StubMetricsSystem(),
+        blockProviderFromChainBuilder(),
+        StateAndBlockProvider.NOOP,
+        Optional.empty(),
+        genesis.getState().getGenesis_time(),
+        genesis.getState().getGenesis_time(),
+        genesisCheckpoint,
+        genesisCheckpoint,
+        genesisCheckpoint,
+        Map.of(genesis.getRoot(), genesis.getParentRoot()),
+        Map.of(genesis.getRoot(), genesis.getSlot()),
+        genesis,
+        Collections.emptyMap(),
+        pruningOptions);
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

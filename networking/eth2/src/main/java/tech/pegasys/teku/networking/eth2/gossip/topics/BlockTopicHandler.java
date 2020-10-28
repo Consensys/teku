@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -21,7 +20,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -33,19 +31,19 @@ public class BlockTopicHandler extends Eth2TopicHandler.SimpleEth2TopicHandler<S
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
   private final BlockValidator blockValidator;
-  private final EventBus eventBus;
+  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer;
 
   public BlockTopicHandler(
       final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final BlockValidator blockValidator,
-      final EventBus eventBus) {
+      final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.blockValidator = blockValidator;
-    this.eventBus = eventBus;
+    this.gossipedBlockConsumer = gossipedBlockConsumer;
   }
 
   @Override
@@ -58,10 +56,10 @@ public class BlockTopicHandler extends Eth2TopicHandler.SimpleEth2TopicHandler<S
         break;
       case SAVE_FOR_FUTURE:
         LOG.trace("Deferring message for topic: {}", this::getTopic);
-        eventBus.post(createEvent(block));
+        gossipedBlockConsumer.forward(block);
         break;
       case ACCEPT:
-        eventBus.post(createEvent(block));
+        gossipedBlockConsumer.forward(block);
         break;
       default:
         throw new UnsupportedOperationException(
@@ -72,10 +70,6 @@ public class BlockTopicHandler extends Eth2TopicHandler.SimpleEth2TopicHandler<S
   @Override
   public GossipEncoding getGossipEncoding() {
     return gossipEncoding;
-  }
-
-  public Object createEvent(final SignedBeaconBlock block) {
-    return new GossipedBlockEvent(block);
   }
 
   @Override

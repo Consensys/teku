@@ -17,8 +17,10 @@ import static java.util.Collections.emptyMap;
 
 import com.launchdarkly.eventsource.EventSource;
 import java.util.concurrent.CountDownLatch;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -49,7 +51,21 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.eventSource =
         new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
             .client(okHttpClient)
+            .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
             .build();
+  }
+
+  private Request applyBasicAuthentication(final HttpUrl eventSourceUrl, final Request request) {
+    if (!eventSourceUrl.username().isEmpty()) {
+      return request
+          .newBuilder()
+          .header(
+              "Authorization",
+              Credentials.basic(eventSourceUrl.encodedUsername(), eventSourceUrl.encodedPassword()))
+          .build();
+    } else {
+      return request;
+    }
   }
 
   @Override

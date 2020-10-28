@@ -20,23 +20,29 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 public class ForkProvider {
   private static final Logger LOG = LogManager.getLogger();
 
-  private AsyncRunner asyncRunner;
+  private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
+  private final GenesisDataProvider genesisDataProvider;
 
   private volatile Optional<ForkInfo> currentFork = Optional.empty();
 
   public ForkProvider(
-      final AsyncRunner asyncRunner, final ValidatorApiChannel validatorApiChannel) {
+      final AsyncRunner asyncRunner,
+      final ValidatorApiChannel validatorApiChannel,
+      final GenesisDataProvider genesisDataProvider) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
+    this.genesisDataProvider = genesisDataProvider;
   }
 
   public SafeFuture<ForkInfo> getForkInfo() {
@@ -54,16 +60,21 @@ public class ForkProvider {
   }
 
   private SafeFuture<ForkInfo> requestForkInfo() {
+    return genesisDataProvider.getGenesisValidatorsRoot().thenCompose(this::requestFork);
+  }
+
+  public SafeFuture<ForkInfo> requestFork(final Bytes32 genesisValidatorsRoot) {
     return validatorApiChannel
-        .getForkInfo()
+        .getFork()
         .thenCompose(
-            maybeForkInfo -> {
-              if (maybeForkInfo.isEmpty()) {
+            maybeFork -> {
+              if (maybeFork.isEmpty()) {
                 LOG.trace("Fork info not available, retrying");
                 return asyncRunner.runAfterDelay(
                     this::requestForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
               }
-              final ForkInfo forkInfo = maybeForkInfo.orElseThrow();
+              final ForkInfo forkInfo =
+                  new ForkInfo(maybeFork.orElseThrow(), genesisValidatorsRoot);
               currentFork = Optional.of(forkInfo);
               // Periodically refresh the current fork info.
               asyncRunner

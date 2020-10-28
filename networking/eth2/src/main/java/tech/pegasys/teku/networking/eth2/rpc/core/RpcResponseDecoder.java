@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -96,19 +97,25 @@ public class RpcResponseDecoder<T> {
     }
   }
 
+  public void close() {
+    payloadDecoder.ifPresent(ByteBufDecoder::close);
+    errorDecoder.ifPresent(ByteBufDecoder::close);
+  }
+
   public void complete() throws RpcException {
-    if (payloadDecoder.isPresent()) {
-      payloadDecoder.get().complete();
-    }
-    if (errorDecoder.isPresent()) {
-      errorDecoder.get().complete();
+    try {
+      if (payloadDecoder.isPresent()) {
+        payloadDecoder.get().complete();
+        payloadDecoder = Optional.empty();
+      }
+    } finally {
+      if (errorDecoder.isPresent()) {
+        errorDecoder.get().complete();
+        errorDecoder = Optional.empty();
+      }
     }
     if (respCodeMaybe.isPresent()) {
       throw new PayloadTruncatedException();
     }
-  }
-
-  public interface FirstByteReceivedListener {
-    void onFirstByteReceived();
   }
 }

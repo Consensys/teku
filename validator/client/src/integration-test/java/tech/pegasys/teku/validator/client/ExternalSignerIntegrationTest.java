@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockserver.matchers.MatchType.STRICT;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
@@ -41,6 +41,7 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
 import org.mockserver.model.MediaType;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -131,8 +132,10 @@ public class ExternalSignerIntegrationTest {
             signingRootForSignBlock(block, fork),
             SignType.BLOCK,
             Map.of(
-                "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
-                "slot", block.getSlot()));
+                "fork_info",
+                createForkInfo(),
+                "block",
+                new tech.pegasys.teku.api.schema.BeaconBlock(block)));
 
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
@@ -154,50 +157,52 @@ public class ExternalSignerIntegrationTest {
             signingRootForSignAttestationData(attestationData, fork),
             SignType.ATTESTATION,
             Map.of(
-                "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
-                "sourceEpoch", attestationData.getSource().getEpoch(),
-                "targetEpoch", attestationData.getTarget().getEpoch()));
+                "fork_info",
+                createForkInfo(),
+                "attestation",
+                new tech.pegasys.teku.api.schema.AttestationData(attestationData)));
 
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
   @Test
   void shouldSignRandaoReveal() throws Exception {
+    final UInt64 epoch = UInt64.valueOf(7);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "j7vOT7GQBnv+aIqxb0byMWNvMCXhQwAfj38UcMne7pNGXOvNZKnXQ9Knma/NOPUyAvLcRBDtew23vVtzWcm7naaTRJVvLJS6xiPOMIHOw6wNtGggzc20heZAXZAMdaKi"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.createRandaoReveal(UInt64.valueOf(7), fork).join();
+    final BLSSignature response = externalSigner.createRandaoReveal(epoch, fork).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForRandaoReveal(UInt64.valueOf(7), fork),
+            signingRootForRandaoReveal(epoch, fork),
             SignType.RANDAO_REVEAL,
-            emptyMap());
+            Map.of("fork_info", createForkInfo(), "randao_reveal", Map.of("epoch", epoch)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
   @Test
   public void shouldSignAggregationSlot() throws Exception {
+    final UInt64 slot = UInt64.valueOf(7);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "hnCLCZlbEyzMFq2JLHl6wk4W6gpbFGoQA2N4WB+CpgqVg3gcxJpRKOswtSTU4XdSEU2x3Hf0oTlxer/gVaFwAh84Mm4VLH67LNUxVO4+o2Q5TxOD1sArnvMcOJdGMGp2"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response =
-        externalSigner.signAggregationSlot(UInt64.valueOf(7), fork).join();
+    final BLSSignature response = externalSigner.signAggregationSlot(slot, fork).join();
 
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForSignAggregationSlot(UInt64.valueOf(7), fork),
+            signingRootForSignAggregationSlot(slot, fork),
             SignType.AGGREGATION_SLOT,
-            emptyMap());
+            Map.of("fork_info", createForkInfo(), "aggregation_slot", Map.of("slot", slot)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
@@ -219,7 +224,11 @@ public class ExternalSignerIntegrationTest {
         new SigningRequestBody(
             signingRootForSignAggregateAndProof(aggregateAndProof, fork),
             SignType.AGGREGATE_AND_PROOF,
-            emptyMap());
+            Map.of(
+                "fork_info",
+                createForkInfo(),
+                "aggregate_and_proof",
+                new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
@@ -238,8 +247,20 @@ public class ExternalSignerIntegrationTest {
         new SigningRequestBody(
             signingRootForSignVoluntaryExit(voluntaryExit, fork),
             SignType.VOLUNTARY_EXIT,
-            emptyMap());
+            Map.of(
+                "fork_info",
+                createForkInfo(),
+                "voluntary_exit",
+                new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+  }
+
+  private Map<String, Object> createForkInfo() {
+    return Map.of(
+        "genesis_validators_root",
+        fork.getGenesisValidatorsRoot(),
+        "fork",
+        new Fork(fork.getFork()));
   }
 
   private void verifySignRequest(
@@ -249,7 +270,7 @@ public class ExternalSignerIntegrationTest {
         request()
             .withMethod("POST")
             .withContentType(MediaType.APPLICATION_JSON)
-            .withBody(json(jsonProvider.objectToJSON(signingRequestBody)))
+            .withBody(json(jsonProvider.objectToJSON(signingRequestBody), STRICT))
             .withPath(ExternalSigner.EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey));
   }
 }

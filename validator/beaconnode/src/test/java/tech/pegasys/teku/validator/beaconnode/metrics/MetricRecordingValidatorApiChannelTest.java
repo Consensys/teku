@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -118,7 +119,7 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
-            channel -> channel.subscribeToBeaconCommitteeForAggregation(1, UInt64.ZERO),
+            channel -> channel.subscribeToBeaconCommittee(emptyList()),
             MetricRecordingValidatorApiChannel.AGGREGATION_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "subscribeToPersistentSubnets",
@@ -148,9 +149,9 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         requestDataTest(
             "getForkInfo",
-            ValidatorApiChannel::getForkInfo,
+            ValidatorApiChannel::getFork,
             MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomForkInfo()),
+            dataStructureUtil.randomFork()),
         requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,
@@ -173,7 +174,8 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomAttestation()),
         requestDataTest(
             "createAggregate",
-            channel -> channel.createAggregate(attestationData.hashTreeRoot()),
+            channel ->
+                channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomAttestation()));
   }

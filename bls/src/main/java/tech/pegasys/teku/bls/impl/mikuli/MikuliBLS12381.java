@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
-
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -89,156 +85,18 @@ public class MikuliBLS12381 implements BLS12381 {
 
   @Override
   public SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
-    return MikuliSecretKey.fromBytes(Bytes48.leftPad(secretKeyBytes));
+    return MikuliSecretKey.fromBytes(secretKeyBytes);
   }
 
   @Override
   public PublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
-    return MikuliPublicKey.aggregate(
-        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()));
+    return MikuliPublicKey.aggregate(publicKeys);
   }
 
   @Override
   public MikuliSignature aggregateSignatures(List<? extends Signature> signatures) {
     return MikuliSignature.aggregate(
         signatures.stream().map(MikuliSignature::fromSignature).collect(Collectors.toList()));
-  }
-
-  /**
-   * Generates a Signature from a private key and message.
-   *
-   * @param secretKey The secret key, not null
-   * @param message The message to sign, not null
-   * @return The Signature, not null
-   */
-  public static MikuliSignature sign(MikuliSecretKey secretKey, Bytes message) {
-    G2Point hashInGroup2 = new G2Point(hashToG2(message));
-    return new MikuliSignature(secretKey.sign(hashInGroup2));
-  }
-
-  /**
-   * Generates a Signature from a private key, message and DST.
-   *
-   * @param secretKey The secret key, not null
-   * @param message The message to sign, not null
-   * @param dst Domain Seperation Tag (DST), not null
-   * @return The Signature, not null
-   */
-  public static MikuliSignature sign(MikuliSecretKey secretKey, Bytes message, Bytes dst) {
-    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
-    return new MikuliSignature(secretKey.sign(hashInGroup2));
-  }
-
-  /**
-   * Verifies the given BLS signature against the message bytes using the public key.
-   *
-   * @param publicKey The public key, not null
-   * @param message The message data to verify, not null
-   * @param signature The signature, not null
-   * @return True if the verification is successful, false otherwise.
-   */
-  public static boolean verify(
-      MikuliPublicKey publicKey, Bytes message, MikuliSignature signature) {
-    return coreVerify(publicKey, message, signature);
-  }
-
-  /**
-   * Aggregates a list of signatures into a single signature using BLS magic.
-   *
-   * @param signatures the list of signatures to be aggregated
-   * @return the aggregated signature
-   */
-  public static MikuliSignature aggregate(List<MikuliSignature> signatures) {
-    return new MikuliSignature(MikuliSignature.aggregate(signatures));
-  }
-
-  /**
-   * Aggregates a stream of signatures into a single signature using BLS magic.
-   *
-   * @param signatures the stream of signatures to be aggregated
-   * @return the aggregated signature
-   */
-  public static MikuliSignature aggregate(Stream<MikuliSignature> signatures) {
-    return new MikuliSignature(MikuliSignature.aggregate(signatures));
-  }
-
-  /**
-   * Verifies an aggregate signature against a list of distinct messages using the list of public
-   * keys.
-   *
-   * @param publicKeys The list of public keys, not null
-   * @param messages The list of messages to verify, all distinct, not null
-   * @param signature The aggregate signature, not null
-   * @return True if the verification is successful, false otherwise
-   */
-  public static boolean aggregateVerify(
-      List<MikuliPublicKey> publicKeys, List<Bytes> messages, MikuliSignature signature) {
-    // Check that there are no duplicate messages
-    Set<Bytes> set = new HashSet<>();
-    for (Bytes message : messages) {
-      if (!set.add(message)) return false;
-    }
-    return coreAggregateVerify(publicKeys, messages, signature);
-  }
-
-  /**
-   * Verifies an aggregate signature against a message using the list of public keys.
-   *
-   * @param publicKeys The list of public keys, not null
-   * @param message The message data to verify, not null
-   * @param signature The aggregate signature, not null
-   * @return True if the verification is successful, false otherwise
-   */
-  public static boolean fastAggregateVerify(
-      List<MikuliPublicKey> publicKeys, Bytes message, MikuliSignature signature) {
-    return coreVerify(MikuliPublicKey.aggregate(publicKeys), message, signature);
-  }
-
-  /**
-   * The CoreVerify algorithm checks that a signature is valid for the octet string message under
-   * the public key publicKey.
-   *
-   * @param publicKey The public key, not null
-   * @param message The message data to verify, not null
-   * @param signature The aggregate signature, not null
-   * @return True if the verification is successful, false otherwise
-   */
-  public static boolean coreVerify(
-      MikuliPublicKey publicKey, Bytes message, MikuliSignature signature) {
-    G2Point hashInGroup2 = new G2Point(hashToG2(message));
-    return signature.verify(publicKey, hashInGroup2);
-  }
-
-  /**
-   * The CoreVerify algorithm checks that a signature is valid for the octet string message under
-   * the public key publicKey and given DST.
-   *
-   * @param publicKey The public key, not null
-   * @param message The message data to verify, not null
-   * @param signature The aggregate signature, not null
-   * @param dst the domain separation tag (DST)
-   * @return True if the verification is successful, false otherwise
-   */
-  public static boolean coreVerify(
-      MikuliPublicKey publicKey, Bytes message, MikuliSignature signature, Bytes dst) {
-    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
-    return signature.verify(publicKey, hashInGroup2);
-  }
-
-  /**
-   * Verifies an aggregate signature against a list of distinct messages using the list of public
-   * keys.
-   *
-   * @param publicKeys The list of public keys, not null
-   * @param messages The list of messages to verify, all distinct, not null
-   * @param signature The aggregate signature, not null
-   * @return True if the verification is successful, false otherwise
-   */
-  public static boolean coreAggregateVerify(
-      List<MikuliPublicKey> publicKeys, List<Bytes> messages, MikuliSignature signature) {
-    List<G2Point> hashesInG2 =
-        messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
-    return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 
   /**
@@ -255,9 +113,10 @@ public class MikuliBLS12381 implements BLS12381 {
     G2Point sigG2Point;
     G2Point msgG2Point;
 
-    List<MikuliPublicKey> mikuliPublicKeys =
-        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList());
     MikuliSignature mikuliSignature = MikuliSignature.fromSignature(signature);
+    if (publicKeys.stream().anyMatch(k -> MikuliPublicKey.fromPublicKey(k).isInfinity())) {
+      return new MikuliInvalidBatchSemiAggregate();
+    }
 
     if (index == 0) {
       // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
@@ -271,28 +130,9 @@ public class MikuliBLS12381 implements BLS12381 {
     }
 
     GTPoint pair =
-        AtePairing.pairNoExp(MikuliPublicKey.aggregate(mikuliPublicKeys).g1Point(), msgG2Point);
+        AtePairing.pairNoExp(MikuliPublicKey.aggregate(publicKeys).g1Point(), msgG2Point);
 
     return new MukuliBatchSemiAggregate(sigG2Point, pair);
-  }
-
-  @Override
-  public BatchSemiAggregate prepareBatchVerify2(
-      int index,
-      List<? extends PublicKey> publicKeys1,
-      Bytes message1,
-      Signature signature1,
-      List<? extends PublicKey> publicKeys2,
-      Bytes message2,
-      Signature signature2) {
-    return prepareBatchVerify2(
-        index,
-        publicKeys1.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
-        message1,
-        MikuliSignature.fromSignature(signature1),
-        publicKeys2.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
-        message2,
-        MikuliSignature.fromSignature(signature2));
   }
 
   /**
@@ -306,31 +146,37 @@ public class MikuliBLS12381 implements BLS12381 {
    *
    * @return the pair of values above in an opaque instance
    */
-  private static MukuliBatchSemiAggregate prepareBatchVerify2(
+  @Override
+  public BatchSemiAggregate prepareBatchVerify2(
       int index,
-      List<MikuliPublicKey> publicKeys1,
+      List<? extends PublicKey> publicKeys1,
       Bytes message1,
-      MikuliSignature signature1,
-      List<MikuliPublicKey> publicKeys2,
+      Signature signature1,
+      List<? extends PublicKey> publicKeys2,
       Bytes message2,
-      MikuliSignature signature2) {
+      Signature signature2) {
+
+    if (Stream.concat(publicKeys1.stream(), publicKeys2.stream())
+        .anyMatch(k -> MikuliPublicKey.fromPublicKey(k).isInfinity())) {
+      return new MikuliInvalidBatchSemiAggregate();
+    }
 
     G2Point sigG2Point1;
     G2Point msgG2Point1;
     if (index == 0) {
       // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
       // let it be the component with index 0
-      sigG2Point1 = signature1.g2Point();
+      sigG2Point1 = MikuliSignature.fromSignature(signature1).g2Point();
       msgG2Point1 = G2Point.hashToG2(message1);
     } else {
       Scalar randomMult = nextBatchRandomMultiplier();
-      sigG2Point1 = signature1.g2Point().mul(randomMult);
+      sigG2Point1 = MikuliSignature.fromSignature(signature1).g2Point().mul(randomMult);
       msgG2Point1 = G2Point.hashToG2(message1).mul(randomMult);
     }
     MikuliPublicKey publicKey1 = MikuliPublicKey.aggregate(publicKeys1);
 
     Scalar randomMult2 = nextBatchRandomMultiplier();
-    G2Point sigG2Point2 = signature2.g2Point().mul(randomMult2);
+    G2Point sigG2Point2 = MikuliSignature.fromSignature(signature2).g2Point().mul(randomMult2);
     G2Point msgG2Point2 = G2Point.hashToG2(message2).mul(randomMult2);
     MikuliPublicKey publicKey2 = MikuliPublicKey.aggregate(publicKeys2);
 
@@ -347,8 +193,8 @@ public class MikuliBLS12381 implements BLS12381 {
    * pairing and exponentiation
    *
    * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
-   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, MikuliSignature, List,
-   *     Bytes, MikuliSignature)} or mixed from both
+   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes,
+   *     Signature)} or mixed from both
    * @return True if the verification is successful, false otherwise
    */
   @Override
@@ -356,6 +202,10 @@ public class MikuliBLS12381 implements BLS12381 {
     if (preparedList.isEmpty()) {
       return true;
     }
+    if (preparedList.stream().anyMatch(it -> it instanceof MikuliInvalidBatchSemiAggregate)) {
+      return false;
+    }
+
     G2Point sigSum = null;
     GTPoint pairProd = null;
     for (BatchSemiAggregate semiSig : preparedList) {
@@ -382,4 +232,6 @@ public class MikuliBLS12381 implements BLS12381 {
     bigContent[0] = l;
     return new BIG(bigContent);
   }
+
+  protected static class MikuliInvalidBatchSemiAggregate implements BatchSemiAggregate {}
 }

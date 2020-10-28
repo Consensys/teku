@@ -110,12 +110,12 @@ public class BlockPropagationIntegrationTest {
         () -> {
           for (SignedBeaconBlock block : blocksToFetch) {
             final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-            assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(blockRoot))
+            assertThatSafeFuture(node2.recentChainData().retrieveBlockByRoot(blockRoot))
                 .isCompletedWithNonEmptyOptional();
           }
           // Last block should be imported as well
           final Bytes32 newBlockRoot = newBlock.getMessage().hash_tree_root();
-          assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(newBlockRoot))
+          assertThatSafeFuture(node2.recentChainData().retrieveBlockByRoot(newBlockRoot))
               .isCompletedWithNonEmptyOptional();
         });
   }

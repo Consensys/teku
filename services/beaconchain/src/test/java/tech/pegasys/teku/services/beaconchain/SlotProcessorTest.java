@@ -30,7 +30,6 @@ import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -64,8 +63,7 @@ public class SlotProcessorTest {
 
   @BeforeEach
   public void setup() {
-    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(beaconState);
-    assertThat(initialized).isCompleted();
+    recentChainData.initializeFromGenesis(beaconState);
   }
 
   @Test
@@ -211,7 +209,7 @@ public class SlotProcessorTest {
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
             1);
-    verify(forkChoice).processHead(slot, false);
+    verify(forkChoice).processHead(slot);
   }
 
   @Test
@@ -245,7 +243,7 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ZERO, false);
+    verify(forkChoice).processHead(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = beaconState.getGenesis_time().plus(SECONDS_PER_SLOT);
@@ -253,6 +251,6 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ONE, false);
+    verify(forkChoice).processHead(ONE);
   }
 }

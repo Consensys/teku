@@ -61,7 +61,7 @@ public class ViewUtils {
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitlist.getCurrentSize(); i++) {
-      viewWrite.append(new BitView(bitlist.getBit(i)));
+      viewWrite.append(BitView.viewOf(bitlist.getBit(i)));
     }
     return viewWrite.commitChanges();
   }
@@ -84,7 +84,7 @@ public class ViewUtils {
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
-      viewWrite.set(i, new BitView(bitvector.getBit(i)));
+      viewWrite.set(i, BitView.viewOf(bitvector.getBit(i)));
     }
     return viewWrite.commitChanges();
   }

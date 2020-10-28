@@ -115,7 +115,7 @@ public class SlotProcessor {
 
   private void processSlotWhileSyncing() {
     UInt64 slot = nodeSlot.getValue();
-    this.forkChoice.processHead(slot, true);
+    this.forkChoice.processHead(slot);
     eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(slot);
   }
@@ -164,7 +164,7 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UInt64 nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    this.forkChoice.processHead(onTickSlotAttestation, false);
+    this.forkChoice.processHead(onTickSlotAttestation);
     recentChainData
         .getHeadBlock()
         .ifPresent(
