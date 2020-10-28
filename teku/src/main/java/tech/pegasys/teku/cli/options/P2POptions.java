@@ -122,6 +122,14 @@ public class P2POptions {
       arity = "1")
   private boolean multiPeerSyncEnabled = false;
 
+  @Option(
+      names = {"--p2p-subscribe-all-subnets-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "",
+      arity = "1",
+      fallbackValue = "false")
+  private boolean subscribeAllSubnetsEnabled = false;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -163,6 +171,7 @@ public class P2POptions {
                 .p2pPeerUpperBound(getP2pUpperBound())
                 .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                 .p2pStaticPeers(p2pStaticPeers)
-                .multiPeerSyncEnabled(multiPeerSyncEnabled));
+                .multiPeerSyncEnabled(multiPeerSyncEnabled)
+                .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled));
   }
 }

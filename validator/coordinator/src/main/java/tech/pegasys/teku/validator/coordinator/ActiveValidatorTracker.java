@@ -50,8 +50,7 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
     final UInt64 epoch = compute_epoch_at_slot(slot);
     final int validatorCount = validatorsPerEpoch.getOrDefault(epoch, emptySet()).size();
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
-    stableSubnetSubscriber.updateValidatorCount(validatorCount);
-    stableSubnetSubscriber.onSlot(slot);
+    stableSubnetSubscriber.onSlot(slot, validatorCount);
     validatorsPerEpoch.headMap(epoch, false).clear();
   }
 }
