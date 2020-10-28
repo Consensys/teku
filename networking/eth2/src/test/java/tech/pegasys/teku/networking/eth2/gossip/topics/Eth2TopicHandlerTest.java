@@ -196,7 +196,8 @@ public class Eth2TopicHandlerTest {
     private static GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private static Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 
-    protected MockEth2TopicHandler(final AsyncRunner asyncRunner, OperationProcessor processor) {
+    protected MockEth2TopicHandler(
+        final AsyncRunner asyncRunner, OperationProcessor<SignedBeaconBlock> processor) {
       super(asyncRunner, processor, gossipEncoding, forkDigest, "test", SignedBeaconBlock.class);
     }
 
