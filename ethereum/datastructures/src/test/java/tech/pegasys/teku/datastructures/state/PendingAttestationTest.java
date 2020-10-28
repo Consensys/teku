@@ -17,11 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.util.config.Constants;
 
 class PendingAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -94,5 +97,19 @@ class PendingAttestationTest {
             proposerIndex.plus(dataStructureUtil.randomUInt64()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
+  }
+
+  @Test
+  void testSszRoundtripWithEmptyBitlist() {
+    PendingAttestation testPendingAttestation =
+        new PendingAttestation(
+            new Bitlist(0, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+            data,
+            inclusionDelay,
+            proposerIndex.plus(dataStructureUtil.randomUInt64()));
+    Bytes ssz = testPendingAttestation.sszSerialize();
+    PendingAttestation attestation =
+        SimpleOffsetSerializer.deserialize(ssz, PendingAttestation.class);
+    assertEquals(testPendingAttestation, attestation);
   }
 }

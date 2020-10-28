@@ -267,6 +267,7 @@ public class DepositProviderTest {
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);
     when(depositsFromBlockEvent.getDeposits())
         .thenReturn(allSeenDepositsList.subList(startIndex, startIndex + n));
+    when(depositsFromBlockEvent.getBlockHash()).thenReturn(Bytes32.ZERO);
     depositProvider.onDepositsFromBlock(depositsFromBlockEvent);
   }
 
