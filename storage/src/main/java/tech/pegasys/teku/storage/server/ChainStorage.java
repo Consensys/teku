@@ -116,8 +116,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestHistoricalBlockSlot() {
-    return SafeFuture.of(database::getEarliestHistoricalBlockSlot);
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return SafeFuture.of(database::getEarliestAvailableBlockSlot);
   }
 
   @Override

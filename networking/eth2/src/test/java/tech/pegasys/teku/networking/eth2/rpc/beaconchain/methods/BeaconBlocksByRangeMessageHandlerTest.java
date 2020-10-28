@@ -69,7 +69,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void setup() {
     when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
-    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(UInt64.valueOf(0))));
   }
 
@@ -99,7 +99,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withCanonicalHeadBlock(BLOCKS.get(8));
     withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
 
-    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(UInt64.valueOf(2))));
 
     requestBlocks(startBlock, count, skip);
@@ -119,7 +119,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withCanonicalHeadBlock(BLOCKS.get(8));
     withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
 
-    when(combinedChainDataClient.getEarliestHistoricalBlockSlot())
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.empty()));
 
     requestBlocks(startBlock, count, skip);

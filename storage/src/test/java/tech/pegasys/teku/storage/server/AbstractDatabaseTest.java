@@ -545,7 +545,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void getEarliestHistoricalBlockSlot_withMissingHistoricalBlocks() {
+  public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks() {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
@@ -561,17 +561,17 @@ public abstract class AbstractDatabaseTest {
     // And finalize them
     justifyAndFinalizeEpoch(anchorEpoch.plus(1), chainBuilder.getLatestBlockAndState());
 
-    assertThat(database.getEarliestHistoricalBlockSlot()).contains(anchorBlockAndState.getSlot());
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 
   @Test
-  public void getEarliestHistoricalBlockSlot_startFromGenesis() {
+  public void getEarliestAvailableBlockSlot_noBlocksMissing() {
     // Add some blocks
     addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
     // And finalize them
     justifyAndFinalizeEpoch(UInt64.valueOf(1), chainBuilder.getLatestBlockAndState());
 
-    assertThat(database.getEarliestHistoricalBlockSlot()).contains(genesisBlockAndState.getSlot());
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
   @Test

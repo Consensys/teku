@@ -106,7 +106,7 @@ public class BeaconBlocksByRangeMessageHandler
     final UInt64 endSlot = message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
 
     return combinedChainDataClient
-        .getEarliestHistoricalBlockSlot()
+        .getEarliestAvailableBlockSlot()
         .thenCompose(
             earliestSlot -> {
               if (earliestSlot.map(s -> s.isGreaterThan(message.getStartSlot())).orElse(true)) {

@@ -94,7 +94,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
-    assertThat(database.getEarliestHistoricalBlockSlot()).contains(genesisBlockAndState.getSlot());
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
   @Test
@@ -178,6 +178,6 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
     assertThat(memoryStore.getAnchor()).contains(anchor.getCheckpoint());
-    assertThat(database.getEarliestHistoricalBlockSlot()).contains(anchorBlockAndState.getSlot());
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 }

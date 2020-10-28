@@ -40,7 +40,7 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestHistoricalBlockSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
