@@ -57,8 +57,12 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -76,6 +80,9 @@ public class BeaconRestApiV1Test {
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
   @BeforeEach
   public void setup() {
@@ -84,7 +91,15 @@ public class BeaconRestApiV1Test {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient, combinedChainDataClient, null, syncService, null, attestationPool),
+            storageClient,
+            combinedChainDataClient,
+            null,
+            syncService,
+            null,
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool),
         config,
         eventChannels,
         new StubAsyncRunner(),
