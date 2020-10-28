@@ -18,6 +18,7 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,26 @@ public class CompositeListViewTest {
         @Override
         public int getBitsSize() {
           return 256;
+        }
+
+        @Override
+        public boolean isFixedSize() {
+          return true;
+        }
+
+        @Override
+        public int getFixedPartSize() {
+          return 0;
+        }
+
+        @Override
+        public int getVariablePartSize(TreeNode node) {
+          return 0;
+        }
+
+        @Override
+        public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+          return 0;
         }
       };
 
