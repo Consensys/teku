@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.statetransition;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
-
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -30,7 +24,14 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
-@SuppressWarnings("unchecked")
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
+
+@SuppressWarnings({"unchecked", "FutureReturnValueIgnored "})
 public class OperationPoolTest {
 
   DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -85,8 +86,8 @@ public class OperationPoolTest {
     pool.add(slashing1);
     pool.add(slashing2);
 
-    when(validator.validateForStateTransition(any(), slashing1)).thenReturn(false);
-    when(validator.validateForStateTransition(any(), slashing2)).thenReturn(true);
+    when(validator.validateForStateTransition(any(), eq(slashing1))).thenReturn(false);
+    when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(true);
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
   }
