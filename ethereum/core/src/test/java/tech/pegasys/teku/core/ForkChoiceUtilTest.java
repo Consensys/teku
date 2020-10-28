@@ -128,6 +128,29 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  void getAncestorsOnFork_shouldIncludeHeadBlockAndExcludeStartSlot() {
+    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
+
+    final NavigableMap<UInt64, Bytes32> ancestorsOnFork = ForkChoiceUtil.getAncestorsOnFork(
+        forkChoiceStrategy,
+        chainBuilder.getLatestBlockAndState().getRoot(),
+        UInt64.valueOf(5));
+    assertThat(ancestorsOnFork).doesNotContainKey(UInt64.valueOf(5));
+  }
+
+  @Test
+  void getAncestorsOnFork_shouldNotIncludeHeadBlockWhenItIsAtStartSlot() {
+    chainBuilder.generateBlocksUpToSlot(3).forEach(this::addBlock);
+
+    final SignedBlockAndState headBlock = chainBuilder.getLatestBlockAndState();
+    final NavigableMap<UInt64, Bytes32> ancestorsOnFork = ForkChoiceUtil.getAncestorsOnFork(
+        forkChoiceStrategy,
+        headBlock.getRoot(),
+        headBlock.getSlot());
+    assertThat(ancestorsOnFork).isEmpty();
+  }
+
+  @Test
   public void getCurrentSlot_shouldGetZeroAtGenesis() {
     assertThat(ForkChoiceUtil.getCurrentSlot(GENESIS_TIME, GENESIS_TIME)).isEqualTo(UInt64.ZERO);
   }
