@@ -603,7 +603,7 @@ public class ChainDataProvider {
       final Set<ValidatorStatus> statusFilter) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
-        .getSingleState()
+        .getState()
         .thenApply(
             maybeState ->
                 maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));

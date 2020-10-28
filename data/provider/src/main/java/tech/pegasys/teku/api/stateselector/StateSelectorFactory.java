@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.api.stateselector;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -49,32 +45,26 @@ public class StateSelectorFactory {
   }
 
   public StateSelector headSelector() {
-    return () -> optionalToList(SafeFuture.completedFuture(client.getBestState()));
+    return () -> SafeFuture.completedFuture(client.getBestState());
   }
 
   public StateSelector finalizedSelector() {
-    return () -> optionalToList(SafeFuture.completedFuture(client.getFinalizedState()));
+    return () -> SafeFuture.completedFuture(client.getFinalizedState());
   }
 
   public StateSelector justifiedSelector() {
-    return () -> optionalToList(client.getJustifiedState());
+    return () -> client.getJustifiedState();
   }
 
   public StateSelector genesisSelector() {
-    return () -> optionalToList(client.getStateAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT)));
+    return () -> client.getStateAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT));
   }
 
   public StateSelector forSlot(final UInt64 slot) {
-    return () -> optionalToList(client.getStateAtSlotExact(slot));
+    return () -> client.getStateAtSlotExact(slot);
   }
 
   public StateSelector forStateRoot(final Bytes32 stateRoot) {
-    return () -> optionalToList(client.getStateByStateRoot(stateRoot));
-  }
-
-  private SafeFuture<List<BeaconState>> optionalToList(
-      final SafeFuture<Optional<BeaconState>> future) {
-    return future.thenApply(
-        maybeBlock -> maybeBlock.map(List::of).orElseGet(Collections::emptyList));
+    return () -> client.getStateByStateRoot(stateRoot);
   }
 }

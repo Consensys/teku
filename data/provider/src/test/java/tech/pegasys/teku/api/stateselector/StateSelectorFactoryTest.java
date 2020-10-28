@@ -37,7 +37,7 @@ public class StateSelectorFactoryTest {
   @Test
   public void headSelector_shouldGetBestState() throws ExecutionException, InterruptedException {
     when(client.getBestState()).thenReturn(Optional.of(state));
-    Optional<BeaconState> result = factory.headSelector().getSingleState().get();
+    Optional<BeaconState> result = factory.headSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getBestState();
   }
@@ -46,7 +46,7 @@ public class StateSelectorFactoryTest {
   public void finalizedSelector_shouldGetFinalizedState()
       throws ExecutionException, InterruptedException {
     when(client.getFinalizedState()).thenReturn(Optional.of(state));
-    Optional<BeaconState> result = factory.finalizedSelector().getSingleState().get();
+    Optional<BeaconState> result = factory.finalizedSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getFinalizedState();
   }
@@ -55,7 +55,7 @@ public class StateSelectorFactoryTest {
   public void justifiedSelector_shouldGetJustifiedState()
       throws ExecutionException, InterruptedException {
     when(client.getJustifiedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<BeaconState> result = factory.justifiedSelector().getSingleState().get();
+    Optional<BeaconState> result = factory.justifiedSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getJustifiedState();
   }
@@ -65,7 +65,7 @@ public class StateSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.getStateAtSlotExact(UInt64.ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<BeaconState> result = factory.genesisSelector().getSingleState().get();
+    Optional<BeaconState> result = factory.genesisSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getStateAtSlotExact(UInt64.ZERO);
   }
@@ -74,7 +74,7 @@ public class StateSelectorFactoryTest {
   public void forSlot_shouldGetStateAtSlotExact() throws ExecutionException, InterruptedException {
     when(client.getStateAtSlotExact(state.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<BeaconState> result = factory.forSlot(state.getSlot()).getSingleState().get();
+    Optional<BeaconState> result = factory.forSlot(state.getSlot()).getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getStateAtSlotExact(state.getSlot());
   }
@@ -84,8 +84,7 @@ public class StateSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.getStateByStateRoot(state.hash_tree_root()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<BeaconState> result =
-        factory.forStateRoot(state.hash_tree_root()).getSingleState().get();
+    Optional<BeaconState> result = factory.forStateRoot(state.hash_tree_root()).getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getStateByStateRoot(state.hash_tree_root());
   }

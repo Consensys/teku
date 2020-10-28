@@ -13,15 +13,10 @@
 
 package tech.pegasys.teku.api.stateselector;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface StateSelector {
-  SafeFuture<List<BeaconState>> getState();
-
-  default SafeFuture<Optional<BeaconState>> getSingleState() {
-    return getState().thenApply(stateList -> stateList.stream().findFirst());
-  }
+  SafeFuture<Optional<BeaconState>> getState();
 }

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DE
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
@@ -99,6 +100,7 @@ public class GetStateValidators extends AbstractHandler {
             content = @OpenApiContent(from = GetStateValidatorsResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
+        @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
