@@ -23,7 +23,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -283,7 +282,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.failedFuture(new CompletionException(new NullPointerException())));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
