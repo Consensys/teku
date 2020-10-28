@@ -23,7 +23,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -247,9 +246,9 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlock)));
     when(peer.requestBlockBySlot(earlierBlock.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlock)));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
@@ -266,9 +265,9 @@ public class PeerChainValidatorTest {
     final SignedBeaconBlock nonMatchingBlock =
         dataStructureUtil.randomSignedBeaconBlock(earlierCheckpoint.getEpochStartSlot());
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlock)));
     when(peer.requestBlockBySlot(earlierBlock.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(nonMatchingBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(nonMatchingBlock)));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
@@ -283,7 +282,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.failedFuture(new CompletionException(new NullPointerException())));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
@@ -370,7 +369,8 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnSameChain() {
-    final SafeFuture<SignedBeaconBlock> blockFuture = SafeFuture.completedFuture(earlierBlock);
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        SafeFuture.completedFuture(Optional.of(earlierBlock));
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
@@ -394,8 +394,8 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
-    final SafeFuture<SignedBeaconBlock> blockFuture =
-        SafeFuture.completedFuture(randomBlock(earlierBlockSlot));
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        SafeFuture.completedFuture(Optional.of(randomBlock(earlierBlockSlot)));
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
@@ -406,7 +406,7 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
-    final SafeFuture<SignedBeaconBlock> blockFuture =
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
         SafeFuture.failedFuture(new NullPointerException());
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));

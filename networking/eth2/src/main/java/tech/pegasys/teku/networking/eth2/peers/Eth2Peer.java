@@ -178,18 +178,19 @@ public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UInt64 slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(slot, UInt64.ONE, UInt64.ONE);
-    return requestSingleItem(blocksByRange, request);
+    return requestOptionalItem(blocksByRange, request);
   }
 
-  public SafeFuture<SignedBeaconBlock> requestBlockByRoot(final Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(final Bytes32 blockRoot) {
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
-    return requestSingleItem(blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
+    return requestOptionalItem(
+        blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
   }
 
   @Override
@@ -256,6 +257,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
     SafeFuture<O> respFuture = handler.getResponseStream().expectSingleResponse();
+    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+  }
+
+  public <I extends RpcRequest, O> SafeFuture<Optional<O>> requestOptionalItem(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    final Eth2OutgoingRequestHandler<I, O> handler =
+        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
+    SafeFuture<Optional<O>> respFuture = handler.getResponseStream().expectOptionalResponse();
     return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
