@@ -280,12 +280,19 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
-      Optional<ProtoNode> currentNode = getProtoNode(blockRoot);
-      while (currentNode.isPresent() && currentNode.get().getBlockSlot().isGreaterThan(slot)) {
-        currentNode =
-            currentNode.flatMap(ProtoNode::getParentIndex).map(protoArray.getNodes()::get);
+      // Normally we use Optional instead of null but during long periods of finality this becomes a
+      // massive hot spot in the code and our performance is dominated by the time taken to create
+      // Optional instances.  So in this particular case we're using null instead of Optional
+      // because the performance payoff really is worth it.
+      ProtoNode currentNode = getProtoNode(blockRoot).orElse(null);
+      while (currentNode != null && currentNode.getBlockSlot().isGreaterThan(slot)) {
+        final Optional<Integer> parentIndex = currentNode.getParentIndex();
+        if (parentIndex.isEmpty()) {
+          return Optional.empty();
+        }
+        currentNode = protoArray.getNodes().get(parentIndex.get());
       }
-      return currentNode.map(ProtoNode::getBlockRoot);
+      return currentNode != null ? Optional.of(currentNode.getBlockRoot()) : Optional.empty();
     } finally {
       protoArrayLock.readLock().unlock();
     }
