@@ -70,7 +70,13 @@ public class ValidatorResponse {
         new Validator(validatorInternal));
   }
 
-  static ValidatorStatus getValidatorStatus(
+  public static ValidatorStatus getValidatorStatus(
+      final BeaconState state, final Integer validatorIndex) {
+    return getValidatorStatus(
+        compute_epoch_at_slot(state.getSlot()), state.getValidators().get(validatorIndex));
+  }
+
+  public static ValidatorStatus getValidatorStatus(
       final UInt64 epoch, final tech.pegasys.teku.datastructures.state.Validator validator) {
     // pending
     if (validator.getActivation_epoch().isGreaterThan(epoch)) {

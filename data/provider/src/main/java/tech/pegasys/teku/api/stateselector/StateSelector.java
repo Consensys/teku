@@ -11,19 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.api.stateselector;
 
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
+import java.util.Optional;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.events.ChannelInterface;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
-public interface StorageUpdateChannel extends ChannelInterface {
-
-  SafeFuture<Void> onStorageUpdate(StorageUpdate event);
-
-  SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
-
-  void onAnchorPoint(AnchorPoint anchorPoint);
+public interface StateSelector {
+  SafeFuture<Optional<BeaconState>> getState();
 }

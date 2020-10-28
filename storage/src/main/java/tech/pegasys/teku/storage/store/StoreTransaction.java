@@ -189,6 +189,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<Checkpoint> getAnchor() {
+    return store.getAnchor();
+  }
+
+  @Override
   public Checkpoint getJustifiedCheckpoint() {
     return justified_checkpoint.orElseGet(store::getJustifiedCheckpoint);
   }

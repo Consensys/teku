@@ -20,16 +20,17 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
   AsyncRunner asyncRunner;
@@ -40,6 +41,7 @@ public class StoreBuilder {
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+  Optional<Checkpoint> anchor = Optional.empty();
   UInt64 time;
   UInt64 genesisTime;
   Checkpoint justifiedCheckpoint;
@@ -75,6 +77,7 @@ public class StoreBuilder {
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .stateProvider(stateAndBlockProvider)
+        .anchor(anchor.getCheckpoint())
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
@@ -94,6 +97,7 @@ public class StoreBuilder {
         metricsSystem,
         blockProvider,
         stateAndBlockProvider,
+        anchor,
         time,
         genesisTime,
         justifiedCheckpoint,
@@ -151,6 +155,17 @@ public class StoreBuilder {
   public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
     checkNotNull(stateProvider);
     this.stateAndBlockProvider = stateProvider;
+    return this;
+  }
+
+  public StoreBuilder anchor(final Checkpoint anchorPoint) {
+    checkNotNull(anchorPoint);
+    return anchor(Optional.of(anchorPoint));
+  }
+
+  public StoreBuilder anchor(final Optional<Checkpoint> anchorPoint) {
+    checkNotNull(anchorPoint);
+    this.anchor = anchorPoint;
     return this;
   }
 

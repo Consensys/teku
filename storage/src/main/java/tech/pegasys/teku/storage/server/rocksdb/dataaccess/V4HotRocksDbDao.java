@@ -50,6 +50,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  public Optional<Checkpoint> getAnchor() {
+    return db.get(schema.getVariableAnchorCheckpoint());
+  }
+
+  @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return db.get(schema.getVariableJustifiedCheckpoint());
   }
@@ -168,6 +173,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void setGenesisTime(final UInt64 genesisTime) {
       transaction.put(schema.getVariableGenesisTime(), genesisTime);
+    }
+
+    @Override
+    public void setAnchor(final Checkpoint anchor) {
+      transaction.put(schema.getVariableAnchorCheckpoint(), anchor);
     }
 
     @Override

@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -41,11 +44,51 @@ public class ProtoArraySnapshotSerializerTest {
     addBlockToBlockInformationList(blockInformationList, block3);
 
     ProtoArraySnapshot protoArraySnapshot =
-        new ProtoArraySnapshot(UInt64.valueOf(100), UInt64.valueOf(99), blockInformationList);
+        new ProtoArraySnapshot(
+            UInt64.valueOf(100), UInt64.valueOf(99), UInt64.ZERO, blockInformationList);
 
     final byte[] bytes = serializer.serialize(protoArraySnapshot);
     final ProtoArraySnapshot result = serializer.deserialize(bytes);
     assertThat(protoArraySnapshot).isEqualToComparingFieldByField(result);
+  }
+
+  @Test
+  public void deserialize_shouldSupportOriginalFormat() {
+    List<BlockInformation> blockInformationList = new ArrayList<>();
+    BeaconBlock block1 = dataStructureUtil.randomBeaconBlock(10000);
+    addBlockToBlockInformationList(blockInformationList, block1);
+
+    ProtoArraySnapshot protoArraySnapshot =
+        new ProtoArraySnapshot(
+            UInt64.valueOf(100), UInt64.valueOf(99), UInt64.ZERO, blockInformationList);
+
+    // Serialize to old format
+    final byte[] oldSerializationFormat = serializeV1Format(protoArraySnapshot);
+    final byte[] currentSerializationFormat = serializer.serialize(protoArraySnapshot);
+    assertThat(oldSerializationFormat.length).isLessThan(currentSerializationFormat.length);
+
+    final ProtoArraySnapshot deserialized = serializer.deserialize(oldSerializationFormat);
+    assertThat(deserialized).isEqualToComparingFieldByField(protoArraySnapshot);
+  }
+
+  @Test
+  public void deserialize_withNonZeroAnchorEpoch() {
+    List<BlockInformation> blockInformationList = new ArrayList<>();
+    BeaconBlock block1 = dataStructureUtil.randomBeaconBlock(10000);
+    addBlockToBlockInformationList(blockInformationList, block1);
+
+    final UInt64 anchorEpoch = UInt64.valueOf(123);
+    ProtoArraySnapshot protoArraySnapshot =
+        new ProtoArraySnapshot(
+            UInt64.valueOf(100), UInt64.valueOf(99), anchorEpoch, blockInformationList);
+
+    // Serialize
+    final byte[] serialized = serializer.serialize(protoArraySnapshot);
+
+    // Deserialize and check that value matches the original
+    final ProtoArraySnapshot deserialized = serializer.deserialize(serialized);
+    assertThat(deserialized.getAnchorEpoch()).isEqualTo(anchorEpoch);
+    assertThat(deserialized).isEqualToComparingFieldByField(protoArraySnapshot);
   }
 
   private void addBlockToBlockInformationList(List<BlockInformation> list, BeaconBlock block) {
@@ -57,5 +100,20 @@ public class ProtoArraySnapshotSerializerTest {
             block.getState_root(),
             UInt64.valueOf(101),
             UInt64.valueOf(100)));
+  }
+
+  private byte[] serializeV1Format(final ProtoArraySnapshot protoArraySnapshot) {
+    // Serialize to original format without anchorEpoch saved
+    Bytes bytes =
+        SSZ.encode(
+            writer -> {
+              writer.writeUInt64(protoArraySnapshot.getJustifiedEpoch().longValue());
+              writer.writeUInt64(protoArraySnapshot.getFinalizedEpoch().longValue());
+              writer.writeBytesList(
+                  protoArraySnapshot.getBlockInformationList().stream()
+                      .map(BlockInformation::toBytes)
+                      .collect(toList()));
+            });
+    return bytes.toArrayUnsafe();
   }
 }

@@ -20,6 +20,32 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
+
+  @CommandLine.ArgGroup(exclusive = false)
+  InitialStateArguments initialStateArguments;
+
+  static class InitialStateArguments {
+    @CommandLine.Option(
+        required = true,
+        names = {"--Xws-initial-state"},
+        paramLabel = "<STRING>",
+        description =
+            "A recent state within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded state.",
+        arity = "1",
+        hidden = true)
+    private String weakSubjectivityState;
+
+    @CommandLine.Option(
+        required = true,
+        names = {"--Xws-initial-block"},
+        paramLabel = "<STRING>",
+        description =
+            "A recent block within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded block.",
+        arity = "1",
+        hidden = true)
+    private String weakSubjectivityBlock;
+  }
+
   @CommandLine.Option(
       converter = CheckpointConverter.class,
       names = {"--ws-checkpoint"},
@@ -40,6 +66,10 @@ public class WeakSubjectivityOptions {
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
+          if (initialStateArguments != null) {
+            wsBuilder.weakSubjectivityStateResource(initialStateArguments.weakSubjectivityState);
+            wsBuilder.weakSubjectivityBlockResource(initialStateArguments.weakSubjectivityBlock);
+          }
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }
