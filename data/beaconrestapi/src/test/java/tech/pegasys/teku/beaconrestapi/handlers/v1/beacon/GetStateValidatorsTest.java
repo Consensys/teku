@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -54,18 +55,12 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
-    for (int i = 1; i <= 4; i++) {
-      when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
-          .thenReturn(Optional.of(i));
-    }
-    when(chainDataProvider.getValidatorsDetailsBySlot(slot, List.of(1, 2, 3, 4)))
+    when(chainDataProvider.getStateValidators("head", List.of("1", "2", "3", "4"), emptySet()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorResponse))));
     handler.handle(context);
     GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);
-    assertThat(response.data).isEqualTo(List.of(validatorResponse));
+    assertThat(response.data).containsExactly(validatorResponse);
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +36,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +65,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -640,18 +643,18 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void validatorsDetails_shouldGetResponse() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertValidatorsRespondsWithCorrectValidatorsAtHead(provider, List.of(0, 1, 2));
+  }
+
+  @Test
   public void getValidatorsDetails_shouldReturnEmptyListWhenNoValidatorIndicesProvided() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     assertThatSafeFuture(provider.getValidatorsDetailsBySlot(ONE, emptyList()))
         .isCompletedWithValue(Optional.of(emptyList()));
-  }
-
-  @Test
-  public void validatorsDetails_shouldGetResponse() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertValidatorsRespondsWithCorrectValidatorsAtHead(provider, List.of(0, 1, 2));
   }
 
   @Test
@@ -764,6 +767,53 @@ public class ChainDataProviderTest {
         provider.getBlockHeaders(Optional.empty(), Optional.empty());
     final BlockHeader header = future.join().get(0);
     assertThat(header.header.message.slot).isEqualTo(headSlot);
+  }
+
+  @Test
+  public void filteredValidatorsList_shouldFilterByValidatorIndex() {
+    final DataStructureUtil data = new DataStructureUtil();
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(1024);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    List<Integer> indexes =
+        provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
+            .map(v -> v.index.intValue())
+            .collect(toList());
+    assertThat(indexes).containsExactly(1, 33);
+  }
+
+  @Test
+  public void filteredValidatorsList_shouldFilterByValidatorPubkey() {
+    final DataStructureUtil data = new DataStructureUtil();
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(1024);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final String key = internalState.getValidators().get(12).getPubkey().toString();
+    List<String> pubkeys =
+        provider.getFilteredValidatorList(internalState, List.of(key), emptySet()).stream()
+            .map(v -> v.validator.pubkey.toHexString())
+            .collect(toList());
+    assertThat(pubkeys).containsExactly(key);
+  }
+
+  @Test
+  public void filteredValidatorsList_shouldFilterByValidatorStatus() {
+    final DataStructureUtil data = new DataStructureUtil();
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(11);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(
+            provider.getFilteredValidatorList(
+                internalState, emptyList(), Set.of(ValidatorStatus.pending_initialized)))
+        .hasSize(11);
+    assertThat(
+            provider.getFilteredValidatorList(
+                internalState, emptyList(), Set.of(ValidatorStatus.active_ongoing)))
+        .hasSize(0);
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
