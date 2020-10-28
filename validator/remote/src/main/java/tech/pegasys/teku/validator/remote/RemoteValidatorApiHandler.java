@@ -268,11 +268,12 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return sendRequest(
         () ->
             apiClient
-                .createAggregate(attestationHashTreeRoot)
+                .createAggregate(slot, attestationHashTreeRoot)
                 .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
   }
 

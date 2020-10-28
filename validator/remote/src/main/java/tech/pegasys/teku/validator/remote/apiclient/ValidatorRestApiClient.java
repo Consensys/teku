@@ -62,7 +62,7 @@ public interface ValidatorRestApiClient {
 
   void sendSignedAttestation(Attestation attestation);
 
-  Optional<Attestation> createAggregate(Bytes32 attestationHashTreeRoot);
+  Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
   void sendAggregateAndProofs(List<SignedAggregateAndProof> signedAggregateAndProof);
 

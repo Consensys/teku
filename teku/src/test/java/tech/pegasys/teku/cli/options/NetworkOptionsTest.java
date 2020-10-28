@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -38,8 +40,9 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final GlobalConfiguration config = getResultingGlobalConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes())
+    final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
+    final GlobalConfiguration config = tekuConfig.global();
+    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
     assertThat(config.getInitialState())
@@ -58,8 +61,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
 
-    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
-    assertThat(globalConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
+    final P2PConfig config = getResultingTekuConfiguration().beaconChain().p2pConfig();
+    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   @Test

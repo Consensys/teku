@@ -34,6 +34,8 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<UInt64> getGenesisTime();
 
+  Optional<Checkpoint> getAnchor();
+
   Optional<Checkpoint> getJustifiedCheckpoint();
 
   Optional<Checkpoint> getBestJustifiedCheckpoint();
@@ -65,6 +67,8 @@ public interface RocksDbHotDao extends AutoCloseable {
   interface HotUpdater extends AutoCloseable {
 
     void setGenesisTime(final UInt64 genesisTime);
+
+    void setAnchor(final Checkpoint anchorPoint);
 
     void setJustifiedCheckpoint(final Checkpoint checkpoint);
 

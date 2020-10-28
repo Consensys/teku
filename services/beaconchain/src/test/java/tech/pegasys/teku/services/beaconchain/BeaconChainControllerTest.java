@@ -15,51 +15,38 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.WeakSubjectivityState;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainControllerTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final AtomicReference<GlobalConfiguration> globalConfig =
-      new AtomicReference<>(GlobalConfiguration.builder().build());
+  private P2PConfig p2pConfig = P2PConfig.builder().build();
+
   @TempDir public Path dataDir;
 
   @BeforeEach
   public void setup() {
-    when(serviceConfig.getConfig()).thenAnswer(__ -> globalConfig.get());
+    when(serviceConfig.getConfig()).thenReturn(GlobalConfiguration.builder().build());
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     when(serviceConfig.getDataDirLayout())
@@ -70,7 +57,7 @@ public class BeaconChainControllerTest {
 
   private BeaconChainConfiguration beaconChainConfiguration() {
     return new BeaconChainConfiguration(
-        WeakSubjectivityConfig.builder().build(), ValidatorConfig.builder().build());
+        WeakSubjectivityConfig.builder().build(), ValidatorConfig.builder().build(), p2pConfig);
   }
 
   @Test
@@ -101,184 +88,10 @@ public class BeaconChainControllerTest {
     Path customPKFile = dataDir.resolve("customPK.hex");
     Files.writeString(customPKFile, generatedPK.toHexString());
 
-    GlobalConfiguration globalConfiguration1 =
-        GlobalConfiguration.builder().setP2pPrivateKeyFile(customPKFile.toString()).build();
-    globalConfig.set(globalConfiguration1);
+    p2pConfig = P2PConfig.builder().p2pPrivateKeyFile(customPKFile.toString()).build();
     BeaconChainController controller1 =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());
     Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
     assertThat(customPK).isEqualTo(generatedPK);
-  }
-
-  @Test
-  public void initWeakSubjectivityValidator_nothingStored_noNewArgs() {
-    final BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration());
-
-    // Mock storage channels
-    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
-    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
-    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
-        .thenReturn(updateChannel);
-
-    // Nothing is stored
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
-
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-
-    final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.moderate(WeakSubjectivityConfig.defaultConfig());
-    assertThat(controller.getWeakSubjectivityValidator())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidator);
-  }
-
-  @Test
-  public void initWeakSubjectivityValidator_nothingStored_withNewArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
-    final WeakSubjectivityConfig cliConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
-    final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
-    final BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration);
-
-    // Mock storage channels
-    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
-    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
-    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
-        .thenReturn(updateChannel);
-    when(updateChannel.onWeakSubjectivityUpdate(any())).thenReturn(SafeFuture.COMPLETE);
-
-    // Nothing is stored
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
-
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    verify(updateChannel)
-        .onWeakSubjectivityUpdate(
-            WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-
-    final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.moderate(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidator);
-  }
-
-  @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_noNewArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration());
-
-    // Mock storage channels
-    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
-    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
-    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
-        .thenReturn(updateChannel);
-
-    // Setup storage
-    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint();
-    final WeakSubjectivityState storedState =
-        WeakSubjectivityState.create(Optional.of(storedCheckpoint));
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(storedState));
-
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-
-    final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.moderate(WeakSubjectivityConfig.from(storedState));
-    assertThat(controller.getWeakSubjectivityValidator())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidator);
-  }
-
-  @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_withNewDistinctArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
-    final WeakSubjectivityConfig cliConfig =
-        WeakSubjectivityConfig.builder()
-            .weakSubjectivityCheckpoint(cliCheckpoint)
-            .suppressWSPeriodChecksUntilEpoch(UInt64.valueOf(123))
-            .safetyDecay(UInt64.valueOf(5))
-            .build();
-    final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
-    final BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration);
-
-    // Mock storage channels
-    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
-    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
-    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
-        .thenReturn(updateChannel);
-    when(updateChannel.onWeakSubjectivityUpdate(any())).thenReturn(SafeFuture.COMPLETE);
-
-    // Setup storage
-    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint();
-    final WeakSubjectivityState storedState =
-        WeakSubjectivityState.create(Optional.of(storedCheckpoint));
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(storedState));
-
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    verify(updateChannel)
-        .onWeakSubjectivityUpdate(
-            WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-
-    final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.moderate(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidator);
-  }
-
-  @Test
-  public void initWeakSubjectivityValidator_withStoredCheckpoint_withConsistentCLIArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
-    final WeakSubjectivityConfig cliConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
-    final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
-    final BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration);
-
-    // Mock storage channels
-    final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
-    final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-    when(eventChannels.getPublisher(eq(StorageQueryChannel.class), any())).thenReturn(queryChannel);
-    when(eventChannels.getPublisher(eq(StorageUpdateChannel.class), any()))
-        .thenReturn(updateChannel);
-
-    // Setup storage
-    final WeakSubjectivityState storedState =
-        WeakSubjectivityState.create(Optional.of(cliCheckpoint));
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(storedState));
-
-    assertThat(controller.initWeakSubjectivityValidator()).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-
-    final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.moderate(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidator);
   }
 }

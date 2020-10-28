@@ -14,6 +14,8 @@
 package tech.pegasys.teku.config;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
@@ -33,11 +35,13 @@ public class TekuConfiguration {
       GlobalConfiguration globalConfiguration,
       WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
-      final DataConfig dataConfig) {
+      final DataConfig dataConfig,
+      final P2PConfig p2pConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.dataConfig = dataConfig;
-    this.beaconChainConfig = new BeaconChainConfiguration(weakSubjectivityConfig, validatorConfig);
+    this.beaconChainConfig =
+        new BeaconChainConfiguration(weakSubjectivityConfig, validatorConfig, p2pConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(globalConfiguration, validatorConfig, dataConfig);
   }
@@ -77,6 +81,7 @@ public class TekuConfiguration {
         WeakSubjectivityConfig.builder();
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
+    private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
 
     private Builder() {}
 
@@ -85,7 +90,8 @@ public class TekuConfiguration {
           globalConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),
-          dataConfigBuilder.build());
+          dataConfigBuilder.build(),
+          p2pConfigBuilder.build());
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
@@ -106,6 +112,11 @@ public class TekuConfiguration {
 
     public Builder data(final Consumer<DataConfig.Builder> dataConfigConsumer) {
       dataConfigConsumer.accept(dataConfigBuilder);
+      return this;
+    }
+
+    public Builder p2p(final Consumer<P2PConfigBuilder> p2pConfigConsumer) {
+      p2pConfigConsumer.accept(p2pConfigBuilder);
       return this;
     }
   }

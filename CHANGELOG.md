@@ -5,6 +5,7 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
+- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - REST API endpoints are being migrated to the standard API. Deprecated endpoints will be removed in a future release. Current replacements:
   - GET `/eth/v1/beacon/states/{state_id}/validators/{validator_id}` replaced by POST `/eth/v1/beacon/states/{state_id}/validators/{validator_id}`
   - `/network/enr` replaced by `/eth/v1/node/identity`
@@ -28,6 +29,34 @@ we recommend most users use the latest `master` branch of Teku.
   - `/validator/persistent_subnets_subscription` deprecated. The beacon node now automatically establishes persistent subnet subscriptions based on calls to `/eth/v1/validator/beacon_committee_subscriptions`
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 - Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+
+## 0.12.12
+
+### Breaking Changes
+- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
+- Support for the v3 database format has been removed.  This is an old format that was replaced prior to the Medalla testnet launching so all users should already be on more recent versions. 
+
+### Additions and Improvements
+- External signing API now includes all data required for the external signer to independently compute the signing root
+- New standard REST API endpoints:
+  - GET `/eth/v1/beacon/headers` - currently the `parent_root` option is not supported
+  - GET `/eth/v1/debug/states/{state_id}`
+  - GET `/eth/v1/config/spec`
+- Validator client now supports basic authentication when the credentials are specified as part of the `--beacon-node-api-endpoint` option
+- Validator client now has simple handling for 429 Too Many Request responses from the beacon node
+- Added `--p2p-subscribe-all-subnets-enabled` option to the beacon node to automatically create persistent subscriptions to all attestation subnets
+- Early access: support for starting sync from an arbitrary point in the chain with `--Xws-initial-state=<path-to-ssz-encoded-state> --Xws-initial-block=<path-to-ssz-encoded-block>`. As this is early access, the CLI options are subject to change.
+
+
+### Bug Fixes
+- Fixed a long stall when the chain finalizes after a long period of non-finalization in archive mode
+- `--config-file` option can now be used with subcommands and specified either before or after the subcommand on the command line
+- Fixed issue where validator committee indices were not string formatted in the standard REST API responses
+- Requests for `head`, `justified` and `finalized` blocks would incorrectly return a `404` response if the slot was empty
+- Fixed issue where the `slot` parameter for the `/eth/v1/validator/aggregate_attestation` endpoint was ignored and the validator client always set it to 0 when making requests.
+- Fixed issue where the `/eth/v1/validator/attestation_data` endpoint did not wrap the response in the `data` element as expected
+- Fixed an issue where a state from the previous epoch was used when calculating proposer duties
+- Performed block gossip validation checks which do not require the state prior to loading it to improve performance
 
 ## 0.12.11
 

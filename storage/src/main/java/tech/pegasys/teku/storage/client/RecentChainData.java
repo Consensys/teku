@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -50,7 +51,6 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -122,24 +122,27 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
+    initializeFromAnchorPoint(genesis);
+  }
+
+  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint) {
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner, metricsSystem, blockProvider, stateProvider, genesis)
+                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint)
             .storeConfig(storeConfig)
             .build();
 
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
-          "Failed to set genesis state: store has already been initialized");
+          "Failed to initialize from state: store has already been initialized");
     }
 
-    storageUpdateChannel.onGenesis(genesis);
-    eventBus.post(genesis);
+    eventBus.post(anchorPoint);
 
-    // The genesis state is by definition finalized so just get the root from there.
-    final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
-    updateHead(headBlock.getRoot(), headBlock.getSlot());
+    // Set the head to the anchor point
+    updateHead(anchorPoint.getRoot(), anchorPoint.getEpochStartSlot());
+    storageUpdateChannel.onAnchorPoint(anchorPoint);
   }
 
   public UInt64 getGenesisTime() {

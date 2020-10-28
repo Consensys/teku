@@ -413,6 +413,29 @@ public class CombinedChainDataClient {
         .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
   }
 
+  public Optional<SignedBeaconBlock> getFinalizedBlock() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(getStore().getLatestFinalizedBlockAndState().getBlock());
+  }
+
+  public Optional<BeaconState> getFinalizedState() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalizedBlockAndState().getState());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getJustifiedState() {
+    if (recentChainData.isPreGenesis()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
+  }
+
   public Optional<GenesisData> getGenesisData() {
     return recentChainData.getGenesisData();
   }
