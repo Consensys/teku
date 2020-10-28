@@ -13,23 +13,23 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.operationvalidators.AttesterSlashingValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 public class AttesterSlashingValidatorTest {
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -51,7 +51,7 @@ public class AttesterSlashingValidatorTest {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validate(slashing)).isEqualTo(ACCEPT);
+    assertThat(attesterSlashingValidator.validateFully(slashing)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -62,7 +62,7 @@ public class AttesterSlashingValidatorTest {
             Optional.of(
                 AttesterSlashingStateTransitionValidator.AttesterSlashingInvalidReason
                     .ATTESTATIONS_NOT_SLASHABLE));
-    assertThat(attesterSlashingValidator.validate(slashing)).isEqualTo(REJECT);
+    assertThat(attesterSlashingValidator.validateFully(slashing)).isEqualTo(REJECT);
   }
 
   @Test
@@ -72,7 +72,7 @@ public class AttesterSlashingValidatorTest {
         new AttesterSlashing(slashing1.getAttestation_1(), slashing1.getAttestation_2());
     when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validate(slashing1)).isEqualTo(ACCEPT);
-    assertThat(attesterSlashingValidator.validate(slashing2)).isEqualTo(IGNORE);
+    assertThat(attesterSlashingValidator.validateFully(slashing1)).isEqualTo(ACCEPT);
+    assertThat(attesterSlashingValidator.validateFully(slashing2)).isEqualTo(IGNORE);
   }
 }

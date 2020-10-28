@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,10 +28,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.List;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -107,6 +110,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     return validationResult;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void processInternallyValidatedAttestation(
       SafeFuture<InternalValidationResult> validationResult, ValidateableAttestation attestation) {
     validationResult.thenAccept(

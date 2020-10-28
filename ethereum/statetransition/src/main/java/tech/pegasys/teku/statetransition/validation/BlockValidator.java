@@ -11,20 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.block;
-
-import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
-import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
+package tech.pegasys.teku.statetransition.validation;
 
 import com.google.common.base.Objects;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,8 +31,19 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Set;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
+import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 public class BlockValidator {
   private static final Logger LOG = LogManager.getLogger();

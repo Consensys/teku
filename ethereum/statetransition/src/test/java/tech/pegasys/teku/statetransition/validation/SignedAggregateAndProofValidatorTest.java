@@ -13,26 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assignment;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import java.util.List;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,13 +36,32 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.attestation.AggregateAttestationValidator;
-import tech.pegasys.teku.statetransition.attestation.AttestationValidator;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assignment;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 /**
  * The following validations MUST pass before forwarding the signed_aggregate_and_proof on the
@@ -170,7 +169,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(REJECT));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(REJECT);
@@ -182,7 +181,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(IGNORE));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(IGNORE);
@@ -194,7 +193,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(SAVE_FOR_FUTURE);
@@ -206,7 +205,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(SAVE_FOR_FUTURE);
@@ -223,7 +222,7 @@ class SignedAggregateAndProofValidatorTest {
             .generate();
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation)).isCompletedWithValue(REJECT);
@@ -474,7 +473,7 @@ class SignedAggregateAndProofValidatorTest {
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            eq(attestation), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
   }
 

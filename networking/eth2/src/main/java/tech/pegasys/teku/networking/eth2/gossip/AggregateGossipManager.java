@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -24,7 +23,11 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAt
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class AggregateGossipManager {
+  public static String TOPIC_NAME = "beacon_aggregate_and_proof";
+
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
 
@@ -35,11 +38,11 @@ public class AggregateGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
+      final OperationProcessor<ValidateableAttestation> processor) {
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
-        new AggregateAttestationTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, gossipedAggregateProcessor);
+        new AggregateAttestationTopicHandler(asyncRunner, processor, gossipEncoding,
+                forkInfo.getForkDigest());
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);

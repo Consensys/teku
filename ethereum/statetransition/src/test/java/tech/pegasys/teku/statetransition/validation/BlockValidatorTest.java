@@ -32,8 +32,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.block.BlockValidator;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;

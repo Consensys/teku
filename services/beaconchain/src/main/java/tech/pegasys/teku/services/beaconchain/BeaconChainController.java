@@ -13,26 +13,12 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.Optional;
-import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -82,23 +68,23 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
-import tech.pegasys.teku.statetransition.attestation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.attestation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.block.BlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
-import tech.pegasys.teku.statetransition.operationvalidators.AttesterSlashingValidator;
-import tech.pegasys.teku.statetransition.operationvalidators.ProposerSlashingValidator;
-import tech.pegasys.teku.statetransition.operationvalidators.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -137,6 +123,21 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.Random;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();

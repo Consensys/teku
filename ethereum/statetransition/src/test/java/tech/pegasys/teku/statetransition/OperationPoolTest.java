@@ -26,8 +26,8 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
-import tech.pegasys.teku.statetransition.operationvalidators.OperationValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings("unchecked")

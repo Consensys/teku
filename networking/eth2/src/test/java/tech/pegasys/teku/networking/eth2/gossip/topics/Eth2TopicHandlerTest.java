@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.RejectedExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -29,7 +25,12 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.RejectedExecutionException;
+
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 public class Eth2TopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0);
@@ -190,24 +191,18 @@ public class Eth2TopicHandlerTest {
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
   }
 
-  private static class MockEth2TopicHandler
-      extends Eth2TopicHandler<SignedBeaconBlock, SignedBeaconBlock> {
+  private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     private Deserializer<SignedBeaconBlock> deserializer =
         (bytes) -> getGossipEncoding().decode(bytes, SignedBeaconBlock.class);
     private static GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private static Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 
     protected MockEth2TopicHandler(final AsyncRunner asyncRunner, OperationProcessor processor) {
-      super(asyncRunner, processor, gossipEncoding, forkDigest);
+      super(asyncRunner, processor, gossipEncoding, forkDigest, "test", SignedBeaconBlock.class);
     }
 
     public void setDeserializer(final Deserializer<SignedBeaconBlock> deserializer) {
       this.deserializer = deserializer;
-    }
-
-    @Override
-    protected SignedBeaconBlock wrapMessage(final SignedBeaconBlock deserialized) {
-      return deserialized;
     }
 
     @Override
@@ -223,16 +218,6 @@ public class Eth2TopicHandlerTest {
     @Override
     public GossipEncoding getGossipEncoding() {
       return gossipEncoding;
-    }
-
-    @Override
-    public String getTopicName() {
-      return "test";
-    }
-
-    @Override
-    public Class<SignedBeaconBlock> getValueType() {
-      return SignedBeaconBlock.class;
     }
   }
 

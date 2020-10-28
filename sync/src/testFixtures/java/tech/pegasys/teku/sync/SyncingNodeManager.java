@@ -35,7 +35,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.block.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;

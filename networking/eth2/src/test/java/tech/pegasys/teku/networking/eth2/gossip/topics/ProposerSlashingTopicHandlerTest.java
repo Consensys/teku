@@ -13,29 +13,29 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.ProposerSlashingTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 public class ProposerSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -49,9 +49,9 @@ public class ProposerSlashingTopicHandlerTest {
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
 
-  private ProposerSlashingTopicHandler topicHandler =
-      new ProposerSlashingTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), processor);
+  private final Eth2TopicHandler<ProposerSlashing> topicHandler =
+          new Eth2TopicHandler<>(
+                  asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), ProposerSlashingGossipManager.TOPIC_NAME, ProposerSlashing.class);
 
   @BeforeEach
   public void setup() {
@@ -101,10 +101,9 @@ public class ProposerSlashingTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
-    final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(asyncRunner, gossipEncoding, forkInfo, processor);
+    Eth2TopicHandler<ProposerSlashing> topicHandler =
+            new Eth2TopicHandler<>(
+                    asyncRunner, processor, gossipEncoding, forkDigest, ProposerSlashingGossipManager.TOPIC_NAME, ProposerSlashing.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }
 }

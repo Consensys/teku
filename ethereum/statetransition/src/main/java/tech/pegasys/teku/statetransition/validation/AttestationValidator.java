@@ -11,29 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.attestation;
+package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -46,9 +25,30 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
 public class AttestationValidator {
 

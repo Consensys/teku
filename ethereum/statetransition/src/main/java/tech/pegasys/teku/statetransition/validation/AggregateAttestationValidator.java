@@ -11,24 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.attestation;
+package tech.pegasys.teku.statetransition.validation;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
-import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -46,9 +30,25 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
+import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();

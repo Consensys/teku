@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,39 +26,44 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.exceptions.ExceptionUtil;
 
-public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrapped>
+import java.util.concurrent.RejectedExecutionException;
+
+public class Eth2TopicHandler<T>
     implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
-  private final OperationProcessor<TWrapped> processor;
+  private final OperationProcessor<T> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
+  private final String topicName;
+  private final Class<T> clazz;
 
   public Eth2TopicHandler(
       AsyncRunner asyncRunner,
-      OperationProcessor<TWrapped> processor,
+      OperationProcessor<T> processor,
       GossipEncoding gossipEncoding,
-      Bytes4 forkDigest) {
+      Bytes4 forkDigest,
+      String topicName,
+      Class<T> clazz) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
+    this.topicName = topicName;
+    this.clazz = clazz;
   }
 
   @Override
   public SafeFuture<ValidationResult> handleMessage(final Bytes bytes) {
     return SafeFuture.of(() -> deserialize(bytes))
-        .thenApply(this::wrapMessage)
-        .thenCompose(
-            wrapped ->
+        .thenCompose(deserialized ->
                 asyncRunner.runAsync(
                     () ->
                         processor
-                            .process(wrapped)
+                            .process(deserialized)
                             .thenApply(
                                 internalValidation -> {
                                   processMessage(internalValidation);
@@ -68,6 +72,7 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
                                 })))
         .exceptionally(this::handleMessageProcessingError);
   }
+
 
   private void processMessage(final InternalValidationResult internalValidationResult) {
     switch (internalValidationResult) {
@@ -84,6 +89,14 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
         throw new UnsupportedOperationException(
             "Unexpected validation result: " + internalValidationResult);
     }
+  }
+
+  private String getTopicName() {
+    return topicName;
+  }
+
+  private Class<T> getValueType() {
+    return clazz;
   }
 
   protected ValidationResult handleMessageProcessingError(Throwable err) {
@@ -103,7 +116,7 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
     return response;
   }
 
-  public T deserialize(Bytes bytes) throws DecodingException {
+  protected T deserialize(Bytes bytes) throws DecodingException {
     return getGossipEncoding().decode(bytes, getValueType());
   }
 
@@ -119,31 +132,4 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
     return forkDigest;
   }
 
-  protected abstract TWrapped wrapMessage(T deserialized);
-
-  public abstract String getTopicName();
-
-  public abstract Class<T> getValueType();
-
-  public abstract static class SimpleEth2TopicHandler<T extends SimpleOffsetSerializable>
-      extends Eth2TopicHandler<T, T> {
-
-    protected SimpleEth2TopicHandler(
-        final AsyncRunner asyncRunner,
-        final OperationProcessor<T> operationProcessor,
-        GossipEncoding gossipEncoding,
-        Bytes4 forkDigest) {
-      super(asyncRunner, operationProcessor, gossipEncoding, forkDigest);
-    }
-
-    @Override
-    public T deserialize(Bytes bytes) throws DecodingException {
-      return getGossipEncoding().decode(bytes, getValueType());
-    }
-
-    @Override
-    protected T wrapMessage(T deserialized) {
-      return deserialized;
-    }
-  }
 }

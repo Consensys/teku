@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.operationvalidators;
+package tech.pegasys.teku.statetransition.validation;
 
-public enum InternalValidationResult {
-  ACCEPT, // (ValidationResult.Valid),
-  SAVE_FOR_FUTURE, // (ValidationResult.Ignore),
-  IGNORE, // (ValidationResult.Ignore),
-  REJECT // (ValidationResult.Invalid);
+import tech.pegasys.teku.datastructures.state.BeaconState;
+
+public interface OperationValidator<T> {
+  InternalValidationResult validateFully(T operation);
+
+  boolean validateForStateTransition(BeaconState state, T operation);
 }

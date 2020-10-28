@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipSubValidationUtil {
 

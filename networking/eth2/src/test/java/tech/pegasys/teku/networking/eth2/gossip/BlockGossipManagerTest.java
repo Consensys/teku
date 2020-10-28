@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,12 +22,17 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.BlockTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class BlockGossipManagerTest {
 
@@ -52,7 +51,7 @@ public class BlockGossipManagerTest {
   public void setup() {
     doReturn(topicChannel)
         .when(gossipNetwork)
-        .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
+        .subscribe(contains(BlockGossipManager.TOPIC_NAME), any());
     new BlockGossipManager(
         asyncRunner,
         gossipNetwork,

@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
-import tech.pegasys.teku.statetransition.operationvalidators.OperationValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T> {

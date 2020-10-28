@@ -14,9 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -31,13 +28,17 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   private final AsyncRunner asyncRunner;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
   private final RecentChainData recentChainData;
-  private final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
+  private final OperationProcessor<ValidateableAttestation> processor;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -46,12 +47,12 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
-      final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
+      final OperationProcessor<ValidateableAttestation> processor) {
     this.asyncRunner = asyncRunner;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
-    this.gossipedAttestationProcessor = gossipedAttestationProcessor;
+    this.processor = processor;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -95,9 +96,10 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   private TopicChannel createChannelForSubnetId(final int subnetId) {
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
+    final String topicName = TopicNames.getAttestationSubnetTopicName(subnetId);
     final SingleAttestationTopicHandler topicHandler =
         new SingleAttestationTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, subnetId, gossipedAttestationProcessor);
+            asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

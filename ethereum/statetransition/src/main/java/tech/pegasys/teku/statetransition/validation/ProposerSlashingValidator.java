@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.operationvalidators;
+package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;

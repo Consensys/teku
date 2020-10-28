@@ -13,21 +13,20 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import io.libp2p.core.pubsub.ValidationResult;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -40,7 +39,7 @@ public class AggregateTopicHandlerTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final AggregateAttestationTopicHandler topicHandler =
       new AggregateAttestationTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), processor);
+          asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest());
 
   @Test
   public void handleMessage_validAggregate() {
@@ -101,10 +100,8 @@ public class AggregateTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final AggregateAttestationTopicHandler topicHandler =
-        new AggregateAttestationTopicHandler(asyncRunner, gossipEncoding, forkInfo, processor);
+        new AggregateAttestationTopicHandler(asyncRunner, processor, gossipEncoding, forkDigest);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }

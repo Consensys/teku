@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.attestation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 

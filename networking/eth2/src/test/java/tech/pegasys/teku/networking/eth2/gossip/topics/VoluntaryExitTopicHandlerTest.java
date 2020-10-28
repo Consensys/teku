@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,17 +20,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.VoluntaryExitTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
 public class VoluntaryExitTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -52,10 +52,9 @@ public class VoluntaryExitTopicHandlerTest {
   private final VoluntaryExitGenerator exitGenerator =
       new VoluntaryExitGenerator(beaconChainUtil.getValidatorKeys());
 
-  private VoluntaryExitTopicHandler topicHandler =
-      new VoluntaryExitTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), processor);
-
+  private final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
+          new Eth2TopicHandler<>(
+                  asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), VoluntaryExitGossipManager.TOPIC_NAME, SignedVoluntaryExit.class);
   @BeforeEach
   public void setup() {
     beaconChainUtil.initializeStorage();
@@ -95,10 +94,9 @@ public class VoluntaryExitTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
-    final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(asyncRunner, gossipEncoding, forkInfo, processor);
+    final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
+            new Eth2TopicHandler<>(
+                    asyncRunner, processor, gossipEncoding, forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, SignedVoluntaryExit.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }
 }

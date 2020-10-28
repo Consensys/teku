@@ -13,22 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-
 import com.google.common.eventbus.EventBus;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +34,24 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -63,7 +66,7 @@ class AttestationManagerTest {
 
   private final AttestationManager attestationManager =
       new AttestationManager(
-          eventBus, forkChoice, pendingAttestations, futureAttestations, attestationPool);
+          eventBus, forkChoice, pendingAttestations, futureAttestations, attestationPool, mock(AttestationValidator.class), mock(AggregateAttestationValidator.class));
 
   @BeforeEach
   public void setup() {

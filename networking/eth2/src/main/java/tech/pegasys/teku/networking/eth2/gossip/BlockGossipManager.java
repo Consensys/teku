@@ -15,19 +15,22 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.BlockTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class BlockGossipManager {
+  public static String TOPIC_NAME = "beacon_block";
+
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
   private final EventBus eventBus;
@@ -40,11 +43,12 @@ public class BlockGossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final EventBus eventBus,
-      final OperationProcessor<SignedBeaconBlock> gossipedBlockConsumer) {
+      final OperationProcessor<SignedBeaconBlock> processor) {
     this.gossipEncoding = gossipEncoding;
 
-    final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, gossipedBlockConsumer);
+    final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
+        new Eth2TopicHandler<>(asyncRunner, processor, gossipEncoding,
+                forkInfo.getForkDigest(), TOPIC_NAME, SignedBeaconBlock.class);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

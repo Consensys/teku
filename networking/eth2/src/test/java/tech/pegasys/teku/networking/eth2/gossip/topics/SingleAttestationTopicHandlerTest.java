@@ -13,16 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.SAVE_FOR_FUTURE;
-
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +23,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -39,9 +30,18 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 public class SingleAttestationTopicHandlerTest {
 
@@ -57,9 +57,10 @@ public class SingleAttestationTopicHandlerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
+  final String topicName = TopicNames.getAttestationSubnetTopicName(SUBNET_ID);
   private final SingleAttestationTopicHandler topicHandler =
       new SingleAttestationTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), SUBNET_ID, processor);
+          asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), topicName, SUBNET_ID);
 
   @BeforeEach
   public void setup() {
@@ -139,10 +140,10 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
+    final String topicName = TopicNames.getAttestationSubnetTopicName(0);
     final SingleAttestationTopicHandler topicHandler =
-        new SingleAttestationTopicHandler(asyncRunner, gossipEncoding, forkInfo, 0, processor);
+            new SingleAttestationTopicHandler(
+                    asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
   }
 }

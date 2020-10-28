@@ -13,41 +13,33 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SingleAttestationTopicHandler
-    extends Eth2TopicHandler<Attestation, ValidateableAttestation> {
-
+        extends Eth2TopicHandler<ValidateableAttestation> {
   private final int subnetId;
 
   public SingleAttestationTopicHandler(
-      final AsyncRunner asyncRunner,
-      final GossipEncoding gossipEncoding,
-      final ForkInfo forkInfo,
-      final int subnetId,
-      final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
-    super(asyncRunner, gossipedAttestationProcessor, gossipEncoding, forkInfo.getForkDigest());
+          final AsyncRunner asyncRunner,
+          final OperationProcessor<ValidateableAttestation> operationProcessor,
+          final GossipEncoding gossipEncoding,
+          final Bytes4 forkDigest,
+          final String topicName,
+          final int subnetId) {
+    super(asyncRunner, operationProcessor, gossipEncoding, forkDigest, topicName, ValidateableAttestation.class);
     this.subnetId = subnetId;
   }
 
   @Override
-  protected ValidateableAttestation wrapMessage(Attestation deserialized) {
-    return ValidateableAttestation.fromNetwork(deserialized, subnetId);
-  }
-
-  @Override
-  public String getTopicName() {
-    return TopicNames.getAttestationSubnetTopicName(subnetId);
-  }
-
-  @Override
-  public Class<Attestation> getValueType() {
-    return Attestation.class;
+  protected ValidateableAttestation deserialize(Bytes bytes) throws DecodingException {
+    Attestation attestation = getGossipEncoding().decode(bytes, Attestation.class);
+    return ValidateableAttestation.fromNetwork(attestation, subnetId);
   }
 }

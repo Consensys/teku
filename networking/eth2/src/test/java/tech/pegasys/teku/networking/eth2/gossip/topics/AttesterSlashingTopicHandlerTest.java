@@ -13,29 +13,29 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult.REJECT;
-
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AttesterSlashingTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 public class AttesterSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -49,9 +49,9 @@ public class AttesterSlashingTopicHandlerTest {
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
 
-  private AttesterSlashingTopicHandler topicHandler =
-      new AttesterSlashingTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), processor);
+  private Eth2TopicHandler<AttesterSlashing> topicHandler =
+      new Eth2TopicHandler<>(
+          asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), AttesterSlashingGossipManager.TOPIC_NAME, AttesterSlashing.class);
 
   @BeforeEach
   public void setup() {
@@ -101,10 +101,9 @@ public class AttesterSlashingTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
-    final AttesterSlashingTopicHandler topicHandler =
-        new AttesterSlashingTopicHandler(asyncRunner, gossipEncoding, forkInfo, processor);
+    Eth2TopicHandler<AttesterSlashing> topicHandler =
+            new Eth2TopicHandler<>(
+                    asyncRunner, processor, gossipEncoding, forkDigest, AttesterSlashingGossipManager.TOPIC_NAME, AttesterSlashing.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }
 }

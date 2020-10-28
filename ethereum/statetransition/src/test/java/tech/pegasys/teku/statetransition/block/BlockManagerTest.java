@@ -13,16 +13,7 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
-
 import com.google.common.eventbus.EventBus;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,10 +31,21 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
@@ -75,7 +77,7 @@ public class BlockManagerTest {
           localRecentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
   private final BlockManager blockManager =
       new BlockManager(
-          localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks);
+          localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks, mock(BlockValidator.class));
 
   private final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
   private UInt64 currentSlot = genesisSlot;
@@ -124,7 +126,7 @@ public class BlockManagerTest {
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     final BlockManager blockManager =
         new BlockManager(
-            localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks);
+            localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks, mock(BlockValidator.class));
     assertThat(blockManager.start()).isCompleted();
 
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);

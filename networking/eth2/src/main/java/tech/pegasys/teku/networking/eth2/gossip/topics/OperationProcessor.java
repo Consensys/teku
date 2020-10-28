@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.statetransition.operationvalidators.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface OperationProcessor<T> {
   SafeFuture<InternalValidationResult> process(T operation);
