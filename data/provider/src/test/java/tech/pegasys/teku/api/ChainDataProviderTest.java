@@ -650,6 +650,14 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getValidatorsDetails_shouldReturnEmptyListWhenNoValidatorIndicesProvided() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThatSafeFuture(provider.getValidatorsDetailsBySlot(ONE, emptyList()))
+        .isCompletedWithValue(Optional.of(emptyList()));
+  }
+
+  @Test
   public void getForkAtSlot_shouldGetCurrentFork() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);

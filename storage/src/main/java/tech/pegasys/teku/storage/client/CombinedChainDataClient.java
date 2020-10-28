@@ -426,7 +426,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
 
-    return Optional.ofNullable(getStore().getLatestFinalizedBlockAndState().getState());
+    return Optional.of(getStore().getLatestFinalizedBlockAndState().getState());
   }
 
   public SafeFuture<Optional<BeaconState>> getJustifiedState() {
