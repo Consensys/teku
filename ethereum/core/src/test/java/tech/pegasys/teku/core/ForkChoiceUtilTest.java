@@ -131,10 +131,9 @@ class ForkChoiceUtilTest {
   void getAncestorsOnFork_shouldIncludeHeadBlockAndExcludeStartSlot() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
 
-    final NavigableMap<UInt64, Bytes32> ancestorsOnFork = ForkChoiceUtil.getAncestorsOnFork(
-        forkChoiceStrategy,
-        chainBuilder.getLatestBlockAndState().getRoot(),
-        UInt64.valueOf(5));
+    final NavigableMap<UInt64, Bytes32> ancestorsOnFork =
+        ForkChoiceUtil.getAncestorsOnFork(
+            forkChoiceStrategy, chainBuilder.getLatestBlockAndState().getRoot(), UInt64.valueOf(5));
     assertThat(ancestorsOnFork).doesNotContainKey(UInt64.valueOf(5));
   }
 
@@ -143,10 +142,9 @@ class ForkChoiceUtilTest {
     chainBuilder.generateBlocksUpToSlot(3).forEach(this::addBlock);
 
     final SignedBlockAndState headBlock = chainBuilder.getLatestBlockAndState();
-    final NavigableMap<UInt64, Bytes32> ancestorsOnFork = ForkChoiceUtil.getAncestorsOnFork(
-        forkChoiceStrategy,
-        headBlock.getRoot(),
-        headBlock.getSlot());
+    final NavigableMap<UInt64, Bytes32> ancestorsOnFork =
+        ForkChoiceUtil.getAncestorsOnFork(
+            forkChoiceStrategy, headBlock.getRoot(), headBlock.getSlot());
     assertThat(ancestorsOnFork).isEmpty();
   }
 
