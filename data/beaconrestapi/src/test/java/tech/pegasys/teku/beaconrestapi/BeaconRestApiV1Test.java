@@ -40,6 +40,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
@@ -136,6 +137,9 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAttesterDuties.ROUTE, GetAttesterDuties.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
+
+    // config
+    builder.add(Arguments.of(GetSpec.ROUTE, GetSpec.class));
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));

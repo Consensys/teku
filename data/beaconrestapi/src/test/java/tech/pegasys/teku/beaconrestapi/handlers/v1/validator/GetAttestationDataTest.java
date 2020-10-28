@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -108,7 +109,9 @@ class GetAttestationDataTest {
 
     verify(context).result(resultCaptor.capture());
     final SafeFuture<String> result = resultCaptor.getValue();
-    assertThat(result).isCompletedWithValue(jsonProvider.objectToJSON(attestation.data));
+    assertThat(result)
+        .isCompletedWithValue(
+            jsonProvider.objectToJSON(new GetAttestationDataResponse(attestation.data)));
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

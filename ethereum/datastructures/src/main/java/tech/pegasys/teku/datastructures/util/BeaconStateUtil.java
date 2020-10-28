@@ -465,6 +465,21 @@ public class BeaconStateUtil {
   }
 
   /**
+   * If the given slot is at an epoch boundary returns the current epoch, otherwise returns the next
+   * epoch.
+   *
+   * @param slot The slot for which we want to calculate the next epoch boundary
+   * @return Either the current epoch or next epoch depending on whether the slot is at or before an
+   *     epoch boundary
+   */
+  public static UInt64 compute_next_epoch_boundary(final UInt64 slot) {
+    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
+    return compute_start_slot_at_epoch(currentEpoch).equals(slot)
+        ? currentEpoch
+        : currentEpoch.plus(1);
+  }
+
+  /**
    * Initiate the exit of the validator with index ``index``.
    *
    * @param state

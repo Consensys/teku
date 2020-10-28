@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.storage.api;
 
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
@@ -37,5 +37,5 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
-  public void onGenesis(AnchorPoint genesis) {}
+  public void onAnchorPoint(AnchorPoint anchorPoint) {}
 }

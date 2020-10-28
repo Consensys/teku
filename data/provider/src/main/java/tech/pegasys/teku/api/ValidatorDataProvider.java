@@ -196,9 +196,10 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return validatorApiChannel
-        .createAggregate(attestationHashTreeRoot)
+        .createAggregate(slot, attestationHashTreeRoot)
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 

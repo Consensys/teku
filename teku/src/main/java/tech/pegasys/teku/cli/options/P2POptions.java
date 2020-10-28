@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class P2POptions {
 
@@ -120,39 +122,15 @@ public class P2POptions {
       arity = "1")
   private boolean multiPeerSyncEnabled = false;
 
-  public boolean isP2pEnabled() {
-    return p2pEnabled;
-  }
+  @Option(
+      names = {"--p2p-subscribe-all-subnets-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "",
+      arity = "1",
+      fallbackValue = "false")
+  private boolean subscribeAllSubnetsEnabled = false;
 
-  public String getP2pInterface() {
-    return p2pInterface;
-  }
-
-  public int getP2pPort() {
-    return p2pPort;
-  }
-
-  public boolean isP2pDiscoveryEnabled() {
-    return p2pDiscoveryEnabled;
-  }
-
-  public List<String> getP2pDiscoveryBootnodes() {
-    return p2pDiscoveryBootnodes;
-  }
-
-  public Optional<String> getP2pAdvertisedIp() {
-    return Optional.ofNullable(p2pAdvertisedIp);
-  }
-
-  public OptionalInt getP2pAdvertisedPort() {
-    return p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
-  }
-
-  public String getP2pPrivateKeyFile() {
-    return p2pPrivateKeyFile;
-  }
-
-  public int getP2pLowerBound() {
+  private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
       return p2pUpperBound;
@@ -161,7 +139,7 @@ public class P2POptions {
     }
   }
 
-  public int getP2pUpperBound() {
+  private int getP2pUpperBound() {
     if (p2pUpperBound < p2pLowerBound) {
       STATUS_LOG.adjustingP2pUpperBoundToLowerBound(p2pLowerBound);
       return p2pLowerBound;
@@ -170,15 +148,30 @@ public class P2POptions {
     }
   }
 
-  public int getP2pTargetSubnetSubscriberCount() {
-    return p2pTargetSubnetSubscriberCount;
-  }
-
-  public List<String> getP2pStaticPeers() {
-    return p2pStaticPeers;
-  }
-
-  public boolean isMultiPeerSyncEnabled() {
-    return multiPeerSyncEnabled;
+  public void configure(
+      final TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
+    builder.p2p(
+        p2pBuilder ->
+            p2pBuilder
+                .p2pEnabled(p2pEnabled)
+                .p2pInterface(p2pInterface)
+                .p2pPort(p2pPort)
+                .p2pDiscoveryEnabled(p2pDiscoveryEnabled)
+                .p2pDiscoveryBootnodes(
+                    p2pDiscoveryBootnodes == null
+                        ? networkDefinition.getDiscoveryBootnodes()
+                        : p2pDiscoveryBootnodes)
+                .p2pAdvertisedIp(Optional.ofNullable(p2pAdvertisedIp))
+                .p2pAdvertisedPort(
+                    p2pAdvertisedPort == null
+                        ? OptionalInt.empty()
+                        : OptionalInt.of(p2pAdvertisedPort))
+                .p2pPrivateKeyFile(p2pPrivateKeyFile)
+                .p2pPeerLowerBound(getP2pLowerBound())
+                .p2pPeerUpperBound(getP2pUpperBound())
+                .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+                .p2pStaticPeers(p2pStaticPeers)
+                .multiPeerSyncEnabled(multiPeerSyncEnabled)
+                .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled));
   }
 }

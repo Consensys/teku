@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import org.apache.logging.log4j.LogManager;
@@ -52,9 +51,9 @@ import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.StartupUtil;
+import tech.pegasys.teku.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -64,8 +63,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.network.GossipConfig;
@@ -95,7 +97,6 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -127,7 +128,6 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -147,6 +147,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final AsyncRunner eventAsyncRunner;
   private final Path beaconDataDirectory;
+  private final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -166,6 +167,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
+  private volatile Optional<AnchorPoint> weakSubjectivityAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
   private volatile RecentBlockFetcher recentBlockFetcher;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -253,33 +255,42 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .build();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
-    return StorageBackedRecentChainData.create(
-            metricsSystem,
-            storeConfig,
-            asyncRunner,
-            eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
-            eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
-            eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
-            eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
-            coalescingChainHeadChannel,
-            eventBus)
-        .thenAccept(
+
+    StorageQueryChannel storageQueryChannel =
+        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+    StorageUpdateChannel storageUpdateChannel =
+        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+    return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
+        .thenCompose(
+            __ ->
+                StorageBackedRecentChainData.create(
+                    metricsSystem,
+                    storeConfig,
+                    asyncRunner,
+                    storageQueryChannel,
+                    storageUpdateChannel,
+                    eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
+                    eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
+                    coalescingChainHeadChannel,
+                    eventBus))
+        .thenCompose(
             client -> {
               // Setup chain storage
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
-                // Set up genesis
-                if (config.getInitialState() != null) {
-                  setupInitialState();
-                } else if (config.isInteropEnabled()) {
-                  setupInteropState();
-                } else if (config.isEth1Enabled()) {
-                  STATUS_LOG.loadingGenesisFromEth1Chain();
-                } else {
-                  throw new InvalidConfigurationException(
-                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
-                }
+                setupInitialState(client);
+              } else if (weakSubjectivityAnchor.isPresent()) {
+                // If we already have an existing database and a ws anchor, validate that they are
+                // consistent
+                return wsInitializer
+                    .assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+                        client, weakSubjectivityAnchor.get(), storageQueryChannel)
+                    .thenApply(__ -> client);
               }
+              return SafeFuture.completedFuture(client);
+            })
+        .thenAccept(
+            client -> {
               // Init other services
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
@@ -290,7 +301,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
-    initWeakSubjectivityValidator().join();
     initStateTransition();
     initForkChoice();
     initBlockImporter();
@@ -325,7 +335,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initRecentBlockFetcher() {
     LOG.debug("BeaconChainController.initRecentBlockFetcher()");
-    if (!config.isP2pEnabled()) {
+    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
       recentBlockFetcher = new NoopRecentBlockFetcher();
     } else {
       recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
@@ -375,49 +385,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivityValidator() {
-    StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
-    StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
-    return storageQueryChannel
-        .getWeakSubjectivityState()
-        .thenApply(
-            storedState -> {
-              // Reconcile supplied config with stored configuration
-              WeakSubjectivityConfig wsConfig = beaconConfig.weakSubjectivity();
-              final Optional<Checkpoint> newWsCheckpoint = wsConfig.getWeakSubjectivityCheckpoint();
-              final Optional<Checkpoint> storedWsCheckpoint = storedState.getCheckpoint();
-              Optional<WeakSubjectivityConfig> configToPersist = Optional.empty();
-              if (newWsCheckpoint.isPresent()
-                  && !Objects.equals(storedWsCheckpoint, newWsCheckpoint)) {
-                // We have a new ws checkpoint, so we need to persist it
-                configToPersist = Optional.of(wsConfig);
-              } else if (storedState.getCheckpoint().isPresent()) {
-                // We haven't supplied a new ws checkpoint, so use the stored value
-                wsConfig =
-                    wsConfig.updated(
-                        b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
-              }
-
-              weakSubjectivityValidator = WeakSubjectivityValidator.moderate(wsConfig);
-              return configToPersist;
-            })
-        .thenCompose(
-            maybeConfigToPersist -> {
-              // Persist weak subjectivity configuration
-              if (maybeConfigToPersist.isEmpty()) {
-                return SafeFuture.COMPLETE;
-              }
-              final WeakSubjectivityConfig config = maybeConfigToPersist.get();
-              final Checkpoint updatedCheckpoint =
-                  config.getWeakSubjectivityCheckpoint().orElseThrow();
-
-              // Persist changes
-              LOG.info("Update stored weak subjectivity checkpoint to: {}", updatedCheckpoint);
-              WeakSubjectivityUpdate update =
-                  WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(updatedCheckpoint);
-              return storageUpdateChannel.onWeakSubjectivityUpdate(update);
+  SafeFuture<Void> initWeakSubjectivity(
+      final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
+    this.weakSubjectivityAnchor = wsInitializer.loadAnchorPoint(beaconConfig.weakSubjectivity());
+    return wsInitializer
+        .finalizeAndStoreConfig(
+            beaconConfig.weakSubjectivity(), weakSubjectivityAnchor, queryChannel, updateChannel)
+        .thenAccept(
+            finalConfig -> {
+              this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
             });
   }
 
@@ -479,9 +455,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
     final ActiveValidatorTracker activeValidatorTracker =
-        new ActiveValidatorTracker(
-            new StableSubnetSubscriber(attestationTopicSubscriber, new Random()));
+        new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
     final ValidatorApiHandler validatorApiHandler =
@@ -505,11 +484,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initGenesisHandler() {
-    if (config.isInteropEnabled() || config.getInitialState() != null) {
-      // We're manually setting genesis, so don't spin up the genesis handler
+    if (!recentChainData.isPreGenesis()) {
+      // We already have a genesis block - no need for a genesis handler
       return;
+    } else if (!config.isEth1Enabled()) {
+      // We're pre-genesis but no eth1 endpoint is set
+      throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
-    LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
+    STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
   }
 
@@ -529,7 +511,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
-    if (!config.isP2pEnabled()) {
+    final P2PConfig configOptions = beaconConfig.p2pConfig();
+    if (!configOptions.isP2pEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
       final KeyValueStore<String, Bytes> keyValueStore =
@@ -539,18 +522,18 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
-              config.getP2pInterface(),
-              config.getP2pAdvertisedIp(),
-              config.getP2pPort(),
-              config.getP2pAdvertisedPort(),
-              config.getP2pStaticPeers(),
-              config.isP2pDiscoveryEnabled(),
-              config.getP2pDiscoveryBootnodes(),
+              configOptions.getP2pInterface(),
+              configOptions.getP2pAdvertisedIp(),
+              configOptions.getP2pPort(),
+              configOptions.getP2pAdvertisedPort(),
+              configOptions.getP2pStaticPeers(),
+              configOptions.isP2pDiscoveryEnabled(),
+              configOptions.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(
-                  config.getP2pPeerLowerBound(),
-                  config.getP2pPeerUpperBound(),
-                  config.getMinimumRandomlySelectedPeerCount()),
-              config.getTargetSubnetSubscriberCount(),
+                  configOptions.getP2pPeerLowerBound(),
+                  configOptions.getP2pPeerUpperBound(),
+                  configOptions.getMinimumRandomlySelectedPeerCount()),
+              configOptions.getTargetSubnetSubscriberCount(),
               GossipConfig.DEFAULT_CONFIG,
               new WireLogsConfig(
                   config.isLogWireCipher(),
@@ -610,7 +593,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   Bytes getP2pPrivateKeyBytes(KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
-    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
+    final String p2pPrivateKeyFile = beaconConfig.p2pConfig().getP2pPrivateKeyFile();
     if (p2pPrivateKeyFile != null) {
       try {
         privateKey = Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile)));
@@ -685,9 +668,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
-    if (!config.isP2pEnabled()) {
+    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
       syncService = new NoopSyncService();
-    } else if (config.isMultiPeerSyncEnabled()) {
+    } else if (beaconConfig.p2pConfig().isMultiPeerSyncEnabled()) {
       syncService =
           MultipeerSyncService.create(
               asyncRunnerFactory,
@@ -717,6 +700,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  private void setupInitialState(final RecentChainData client) {
+    if (weakSubjectivityAnchor.isPresent()) {
+      client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
+    } else if (config.getInitialState() != null) {
+      setupGenesisState();
+    } else if (config.isInteropEnabled()) {
+      setupInteropState();
+    } else if (!config.isEth1Enabled()) {
+      throw new InvalidConfigurationException(
+          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
+    }
+  }
+
   private void setupInteropState() {
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
@@ -726,13 +722,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initializeGenesis(interopState);
   }
 
-  private void setupInitialState() {
+  private void setupGenesisState() {
     try {
-      STATUS_LOG.loadingGenesisFile(config.getInitialState());
-      final BeaconState initialState = StartupUtil.loadBeaconState(config.getInitialState());
-      initializeGenesis(initialState);
+      STATUS_LOG.loadingGenesisResource(config.getInitialState());
+      final BeaconState genesisState = ChainDataLoader.loadState(config.getInitialState());
+      initializeGenesis(genesisState);
     } catch (final IOException e) {
-      throw new IllegalStateException("Failed to load initial state", e);
+      throw new IllegalStateException("Failed to load genesis state", e);
     }
   }
 
