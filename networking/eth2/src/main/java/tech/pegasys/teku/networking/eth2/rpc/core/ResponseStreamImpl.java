@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -27,7 +28,7 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
   private volatile ResponseStreamListener<O> responseListener;
 
   @Override
-  public SafeFuture<O> expectSingleResponse() {
+  public SafeFuture<Optional<O>> expectOptionalResponse() {
     final AtomicReference<O> firstResponse = new AtomicReference<>();
     return expectMultipleResponses(
             response -> {
@@ -37,12 +38,7 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
               }
               return SafeFuture.COMPLETE;
             })
-        .thenApply(
-            done -> {
-              checkNotNull(
-                  firstResponse.get(), "No response received when single response expected");
-              return firstResponse.get();
-            });
+        .thenApply(done -> Optional.ofNullable(firstResponse.get()));
   }
 
   @Override
