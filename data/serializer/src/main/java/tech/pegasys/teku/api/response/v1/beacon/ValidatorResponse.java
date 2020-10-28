@@ -71,8 +71,9 @@ public class ValidatorResponse {
   }
 
   public static ValidatorStatus getValidatorStatus(
-      final BeaconState state, final tech.pegasys.teku.datastructures.state.Validator validator) {
-    return getValidatorStatus(compute_epoch_at_slot(state.getSlot()), validator);
+      final BeaconState state, final Integer validatorIndex) {
+    return getValidatorStatus(
+        compute_epoch_at_slot(state.getSlot()), state.getValidators().get(validatorIndex));
   }
 
   public static ValidatorStatus getValidatorStatus(

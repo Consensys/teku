@@ -21,12 +21,14 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getVali
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.response.GetBlockResponse;
@@ -51,7 +53,6 @@ import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -416,7 +417,6 @@ public class ChainDataProvider {
       throw new IllegalArgumentException(String.format("Invalid state: %s", pathParam));
     }
   }
-
   /**
    * Convert a {validator_id} from a URL to a validator index
    *
@@ -434,7 +434,15 @@ public class ChainDataProvider {
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
-    final tech.pegasys.teku.datastructures.state.BeaconState state = maybeState.get();
+    return validatorParameterToIndex(maybeState.get(), validatorParameter);
+  }
+
+  private Optional<Integer> validatorParameterToIndex(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final String validatorParameter) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
 
     if (validatorParameter.toLowerCase().startsWith("0x")) {
       try {
@@ -624,44 +632,42 @@ public class ChainDataProvider {
   public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
       final String stateIdParam,
       final List<String> validators,
-      final List<ValidatorStatus> statusFilter) {
-
-    final List<Integer> validatorIndices =
-        validators.stream()
-            .flatMap(validatorParameter -> validatorParameterToIndex(validatorParameter).stream())
-            .collect(Collectors.toList());
-
+      final Set<ValidatorStatus> statusFilter) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getSingleState()
         .thenApply(
             maybeState ->
-                maybeState.map(
-                    state ->
-                        getFilteredValidatorList(
-                            state,
-                            v ->
-                                validators.isEmpty()
-                                    || validatorIndices.contains(
-                                        getValidatorIndex(state, v.getPubkey()).orElse(-1)),
-                            v ->
-                                statusFilter.isEmpty()
-                                    || statusFilter.contains(getValidatorStatus(state, v)))));
+                maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));
   }
 
-  private List<ValidatorResponse> getFilteredValidatorList(
+  @VisibleForTesting
+  List<ValidatorResponse> getFilteredValidatorList(
       final tech.pegasys.teku.datastructures.state.BeaconState state,
-      final Predicate<Validator> validatorIndicesPredicate,
-      final Predicate<Validator> statusPredicate) {
-    return state.getValidators().stream()
-        .filter(validatorIndicesPredicate)
-        .filter(statusPredicate)
-        .map(
-            v ->
-                getValidatorIndex(state, v.getPubkey())
-                    .map(index -> ValidatorResponse.fromState(state, index))
-                    .orElse(null))
-        .filter(Objects::nonNull)
+      final List<String> validators,
+      final Set<ValidatorStatus> statusFilter) {
+    return getValidatorSelector(state, validators)
+        .filter(getStatusPredicate(state, statusFilter))
+        .mapToObj(index -> ValidatorResponse.fromState(state, index))
         .collect(toList());
+  }
+
+  private IntPredicate getStatusPredicate(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final Set<ValidatorStatus> statusFilter) {
+    return statusFilter.isEmpty()
+        ? i -> true
+        : i -> statusFilter.contains(getValidatorStatus(state, i));
+  }
+
+  private IntStream getValidatorSelector(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final List<String> validators) {
+    return validators.isEmpty()
+        ? IntStream.range(0, state.getValidators().size())
+        : validators.stream()
+            .flatMapToInt(
+                validatorParameter ->
+                    validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
   }
 }

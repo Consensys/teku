@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -110,7 +111,7 @@ public class GetStateValidators extends AbstractHandler {
             ? ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID)
             : Collections.emptyList();
 
-    final List<ValidatorStatus> statusFilter = stateValidatorsUtil.parseStatusFilter(queryParamMap);
+    final Set<ValidatorStatus> statusFilter = stateValidatorsUtil.parseStatusFilter(queryParamMap);
 
     SafeFuture<Optional<List<ValidatorResponse>>> future =
         chainDataProvider.getStateValidators(

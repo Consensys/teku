@@ -19,6 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -26,14 +27,14 @@ import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 
 public class StateValidatorsUtil {
 
-  public List<ValidatorStatus> parseStatusFilter(final Map<String, List<String>> queryParameters) {
+  public Set<ValidatorStatus> parseStatusFilter(final Map<String, List<String>> queryParameters) {
     if (!queryParameters.containsKey(STATUS)) {
-      return List.of();
+      return Set.of();
     }
 
     return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
         .map(ValidatorStatus::valueOf)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 
   public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {
