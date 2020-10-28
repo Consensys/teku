@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.statetransition;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import tech.pegasys.teku.core.operationvalidators.OperationStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -22,11 +26,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 public class OperationPool<T> {
 
