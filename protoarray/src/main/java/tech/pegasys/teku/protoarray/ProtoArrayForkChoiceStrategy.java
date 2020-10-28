@@ -276,6 +276,21 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  @Override
+  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+    protoArrayLock.readLock().lock();
+    try {
+      Optional<ProtoNode> currentNode = getProtoNode(blockRoot);
+      while (currentNode.isPresent() && currentNode.get().getBlockSlot().isGreaterThan(slot)) {
+        currentNode =
+            currentNode.flatMap(ProtoNode::getParentIndex).map(protoArray.getNodes()::get);
+      }
+      return currentNode.map(ProtoNode::getBlockRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
     return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
         .flatMap(
