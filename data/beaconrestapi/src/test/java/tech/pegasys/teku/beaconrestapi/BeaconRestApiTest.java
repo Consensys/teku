@@ -63,7 +63,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
-@SuppressWarnings({"unchecked"})
+@SuppressWarnings("unchecked")
 class BeaconRestApiTest {
 
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
