@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface ViewType {
+public interface ViewType extends SSZType {
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally
