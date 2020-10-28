@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -25,8 +26,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BlockGossipManager {
   public static String TOPIC_NAME = "beacon_block";
@@ -47,8 +46,13 @@ public class BlockGossipManager {
     this.gossipEncoding = gossipEncoding;
 
     final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
-        new Eth2TopicHandler<>(asyncRunner, processor, gossipEncoding,
-                forkInfo.getForkDigest(), TOPIC_NAME, SignedBeaconBlock.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkInfo.getForkDigest(),
+            TOPIC_NAME,
+            SignedBeaconBlock.class);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

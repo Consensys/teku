@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,10 +30,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.exceptions.ExceptionUtil;
 
-import java.util.concurrent.RejectedExecutionException;
-
-public class Eth2TopicHandler<T>
-    implements TopicHandler {
+public class Eth2TopicHandler<T> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<T> processor;
@@ -59,7 +57,8 @@ public class Eth2TopicHandler<T>
   @Override
   public SafeFuture<ValidationResult> handleMessage(final Bytes bytes) {
     return SafeFuture.of(() -> deserialize(bytes))
-        .thenCompose(deserialized ->
+        .thenCompose(
+            deserialized ->
                 asyncRunner.runAsync(
                     () ->
                         processor
@@ -72,7 +71,6 @@ public class Eth2TopicHandler<T>
                                 })))
         .exceptionally(this::handleMessageProcessingError);
   }
-
 
   private void processMessage(final InternalValidationResult internalValidationResult) {
     switch (internalValidationResult) {
@@ -131,5 +129,4 @@ public class Eth2TopicHandler<T>
   public Bytes4 getForkDigest() {
     return forkDigest;
   }
-
 }

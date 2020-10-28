@@ -22,18 +22,23 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class SingleAttestationTopicHandler
-        extends Eth2TopicHandler<ValidateableAttestation> {
+public class SingleAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
   private final int subnetId;
 
   public SingleAttestationTopicHandler(
-          final AsyncRunner asyncRunner,
-          final OperationProcessor<ValidateableAttestation> operationProcessor,
-          final GossipEncoding gossipEncoding,
-          final Bytes4 forkDigest,
-          final String topicName,
-          final int subnetId) {
-    super(asyncRunner, operationProcessor, gossipEncoding, forkDigest, topicName, ValidateableAttestation.class);
+      final AsyncRunner asyncRunner,
+      final OperationProcessor<ValidateableAttestation> operationProcessor,
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final String topicName,
+      final int subnetId) {
+    super(
+        asyncRunner,
+        operationProcessor,
+        gossipEncoding,
+        forkDigest,
+        topicName,
+        ValidateableAttestation.class);
     this.subnetId = subnetId;
   }
 

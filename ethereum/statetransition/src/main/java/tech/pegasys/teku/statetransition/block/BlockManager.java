@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,18 +33,12 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 public class BlockManager extends Service implements SlotEventsChannel, BlockImportChannel {
   private static final Logger LOG = LogManager.getLogger();

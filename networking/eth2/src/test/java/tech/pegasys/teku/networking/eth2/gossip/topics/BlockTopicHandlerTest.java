@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -34,10 +38,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
@@ -52,9 +52,13 @@ public class BlockTopicHandlerTest {
   private final OperationProcessor<SignedBeaconBlock> processor = mock(OperationProcessor.class);
 
   private Eth2TopicHandler<SignedBeaconBlock> topicHandler =
-          new Eth2TopicHandler<>(
-                  asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), BlockGossipManager.TOPIC_NAME, SignedBeaconBlock.class);
-
+      new Eth2TopicHandler<>(
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo().getForkDigest(),
+          BlockGossipManager.TOPIC_NAME,
+          SignedBeaconBlock.class);
 
   @BeforeEach
   public void setup() {
@@ -127,8 +131,13 @@ public class BlockTopicHandlerTest {
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
-            new Eth2TopicHandler<>(
-                    asyncRunner, processor, gossipEncoding, forkDigest, BlockGossipManager.TOPIC_NAME, SignedBeaconBlock.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            BlockGossipManager.TOPIC_NAME,
+            SignedBeaconBlock.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

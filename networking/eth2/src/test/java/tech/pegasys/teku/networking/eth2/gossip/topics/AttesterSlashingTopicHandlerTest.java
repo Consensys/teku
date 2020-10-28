@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,12 +37,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-
 public class AttesterSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
@@ -51,7 +51,12 @@ public class AttesterSlashingTopicHandlerTest {
 
   private Eth2TopicHandler<AttesterSlashing> topicHandler =
       new Eth2TopicHandler<>(
-          asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), AttesterSlashingGossipManager.TOPIC_NAME, AttesterSlashing.class);
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo().getForkDigest(),
+          AttesterSlashingGossipManager.TOPIC_NAME,
+          AttesterSlashing.class);
 
   @BeforeEach
   public void setup() {
@@ -102,8 +107,13 @@ public class AttesterSlashingTopicHandlerTest {
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<AttesterSlashing> topicHandler =
-            new Eth2TopicHandler<>(
-                    asyncRunner, processor, gossipEncoding, forkDigest, AttesterSlashingGossipManager.TOPIC_NAME, AttesterSlashing.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            AttesterSlashingGossipManager.TOPIC_NAME,
+            AttesterSlashing.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }
 }

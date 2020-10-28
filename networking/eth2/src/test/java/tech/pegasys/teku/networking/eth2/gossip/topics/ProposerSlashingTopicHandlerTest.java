@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,12 +37,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-
 public class ProposerSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
@@ -50,8 +50,13 @@ public class ProposerSlashingTopicHandlerTest {
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
 
   private final Eth2TopicHandler<ProposerSlashing> topicHandler =
-          new Eth2TopicHandler<>(
-                  asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), ProposerSlashingGossipManager.TOPIC_NAME, ProposerSlashing.class);
+      new Eth2TopicHandler<>(
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo().getForkDigest(),
+          ProposerSlashingGossipManager.TOPIC_NAME,
+          ProposerSlashing.class);
 
   @BeforeEach
   public void setup() {
@@ -102,8 +107,13 @@ public class ProposerSlashingTopicHandlerTest {
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<ProposerSlashing> topicHandler =
-            new Eth2TopicHandler<>(
-                    asyncRunner, processor, gossipEncoding, forkDigest, ProposerSlashingGossipManager.TOPIC_NAME, ProposerSlashing.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            ProposerSlashingGossipManager.TOPIC_NAME,
+            ProposerSlashing.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }
 }

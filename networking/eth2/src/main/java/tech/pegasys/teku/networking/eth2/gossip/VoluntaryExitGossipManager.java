@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -21,8 +22,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class VoluntaryExitGossipManager {
   public static String TOPIC_NAME = "voluntary_exit";
@@ -37,8 +36,13 @@ public class VoluntaryExitGossipManager {
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor) {
     final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
-        new Eth2TopicHandler<>(asyncRunner, processor, gossipEncoding,
-                forkInfo.getForkDigest(), TOPIC_NAME, SignedVoluntaryExit.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkInfo.getForkDigest(),
+            TOPIC_NAME,
+            SignedVoluntaryExit.class);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

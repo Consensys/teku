@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,11 +37,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-
 public class VoluntaryExitTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
@@ -53,8 +53,14 @@ public class VoluntaryExitTopicHandlerTest {
       new VoluntaryExitGenerator(beaconChainUtil.getValidatorKeys());
 
   private final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
-          new Eth2TopicHandler<>(
-                  asyncRunner, processor, gossipEncoding, dataStructureUtil.randomForkInfo().getForkDigest(), VoluntaryExitGossipManager.TOPIC_NAME, SignedVoluntaryExit.class);
+      new Eth2TopicHandler<>(
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo().getForkDigest(),
+          VoluntaryExitGossipManager.TOPIC_NAME,
+          SignedVoluntaryExit.class);
+
   @BeforeEach
   public void setup() {
     beaconChainUtil.initializeStorage();
@@ -95,8 +101,13 @@ public class VoluntaryExitTopicHandlerTest {
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
-            new Eth2TopicHandler<>(
-                    asyncRunner, processor, gossipEncoding, forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, SignedVoluntaryExit.class);
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            VoluntaryExitGossipManager.TOPIC_NAME,
+            SignedVoluntaryExit.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }
 }

@@ -22,22 +22,27 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class AggregateAttestationTopicHandler
-        extends Eth2TopicHandler<ValidateableAttestation> {
+public class AggregateAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
 
   public AggregateAttestationTopicHandler(
-          final AsyncRunner asyncRunner,
-          final OperationProcessor<ValidateableAttestation> operationProcessor,
-          final GossipEncoding gossipEncoding,
-          final Bytes4 forkDigest) {
-    super(asyncRunner, operationProcessor, gossipEncoding, forkDigest, TOPIC_NAME, ValidateableAttestation.class);
+      final AsyncRunner asyncRunner,
+      final OperationProcessor<ValidateableAttestation> operationProcessor,
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest) {
+    super(
+        asyncRunner,
+        operationProcessor,
+        gossipEncoding,
+        forkDigest,
+        TOPIC_NAME,
+        ValidateableAttestation.class);
   }
 
   @Override
   protected ValidateableAttestation deserialize(Bytes bytes) throws DecodingException {
-    SignedAggregateAndProof aggregate = getGossipEncoding().decode(bytes, SignedAggregateAndProof.class);
+    SignedAggregateAndProof aggregate =
+        getGossipEncoding().decode(bytes, SignedAggregateAndProof.class);
     return ValidateableAttestation.fromSignedAggregate(aggregate);
   }
 }
-
