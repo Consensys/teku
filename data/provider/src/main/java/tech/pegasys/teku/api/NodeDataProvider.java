@@ -39,10 +39,6 @@ public class NodeDataProvider {
     this.voluntaryExitPool = voluntaryExitPool;
   }
 
-  public AggregatingAttestationPool getAttestationPool() {
-    return attestationPool;
-  }
-
   public List<tech.pegasys.teku.api.schema.AttesterSlashing> getAttesterSlashings() {
     return attesterSlashingPool.getAll().stream()
         .map(tech.pegasys.teku.api.schema.AttesterSlashing::new)
