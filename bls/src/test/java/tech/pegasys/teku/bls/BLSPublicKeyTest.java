@@ -24,37 +24,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 abstract class BLSPublicKeyTest {
-
-  public static class BlstPublicKeyTest extends BLSPublicKeyTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
-
-  public static class MikuliPublicKeyTest extends BLSPublicKeyTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(MikuliBLS12381.INSTANCE);
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
 
   private static final Bytes InfinityPublicKey =
       Bytes.fromHexString(

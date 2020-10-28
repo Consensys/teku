@@ -15,16 +15,13 @@ package tech.pegasys.teku.networking.eth2;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -45,10 +42,9 @@ public class ErrorConditionsIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  public void shouldRejectInvalidRequests(final String encodingName, final RpcEncoding encoding)
-      throws Exception {
+  @Test
+  public void shouldRejectInvalidRequests() throws Exception {
+    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final Eth2Network network1 = networkFactory.builder().rpcEncoding(encoding).startNetwork();
     final Eth2Network network2 =
         networkFactory.builder().rpcEncoding(encoding).peer(network1).startNetwork();
@@ -77,11 +73,6 @@ public class ErrorConditionsIntegrationTest {
                 },
                 "Exception did not match expected exception %s",
                 expected));
-  }
-
-  public static Stream<Arguments> getEncodings() {
-    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
   }
 
   // Deliberately doesn't serialize to a valid STATUS message.

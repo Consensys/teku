@@ -23,10 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -53,10 +52,9 @@ public class GossipMessageHandlerIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
     // Setup network 1
@@ -338,11 +336,6 @@ public class GossipMessageHandlerIntegrationTest {
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
     return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
-  }
-
-  public static Stream<Arguments> getEncodings() {
-    final List<GossipEncoding> encodings = List.of(GossipEncoding.SSZ, GossipEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of("gossipEncoding: " + e.getName(), e));
   }
 
   private void waitForTopicRegistration() throws Exception {

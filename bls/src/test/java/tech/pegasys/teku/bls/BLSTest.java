@@ -29,37 +29,9 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 public abstract class BLSTest {
-
-  public static class BlstBlsTest extends BLSTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
-
-  public static class MikuliBlsTest extends BLSTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(MikuliBLS12381.INSTANCE);
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
 
   @Test
   void succeedsWhenWeCanSignAndVerify() {

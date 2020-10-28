@@ -38,7 +38,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public abstract class BeaconBlocksByRangeIntegrationTest {
+public class BeaconBlocksByRangeIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
@@ -72,8 +72,6 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
             .startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
-
-  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -195,21 +193,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     return blocks;
   }
 
-  public static class BeaconBlocksByRangeIntegrationTest_ssz
-      extends BeaconBlocksByRangeIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class BeaconBlocksByRangeIntegrationTest_sszSnappy
-      extends BeaconBlocksByRangeIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
+  protected RpcEncoding getEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 }

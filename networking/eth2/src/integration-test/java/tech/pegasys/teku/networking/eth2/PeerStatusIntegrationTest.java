@@ -19,12 +19,11 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -56,15 +55,9 @@ public class PeerStatusIntegrationTest {
     networkFactory.stopAll();
   }
 
-  public static Stream<Arguments> getEncodings() {
-    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
-  }
-
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  public void shouldExchangeStatusMessagesOnConnection(
-      final String encodingName, final RpcEncoding encoding) throws Exception {
+  @Test
+  public void shouldExchangeStatusMessagesOnConnection() throws Exception {
+    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
