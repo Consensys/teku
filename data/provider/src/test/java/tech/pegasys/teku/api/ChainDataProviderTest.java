@@ -638,7 +638,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetailsBySlot(UInt64.valueOf(12345678), List.of(1), List.of());
+        provider.getValidatorsDetailsBySlot(UInt64.valueOf(12345678), List.of(1));
     assertThatSafeFuture(response).isCompletedWithEmptyOptional();
   }
 
@@ -838,7 +838,7 @@ public class ChainDataProviderTest {
             .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
             .collect(toList());
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetailsBySlot(slot, validatorIds, List.of());
+        provider.getValidatorsDetailsBySlot(slot, validatorIds);
     assertThatSafeFuture(response).isCompletedWithValue(Optional.of(expectedValidators));
   }
 }

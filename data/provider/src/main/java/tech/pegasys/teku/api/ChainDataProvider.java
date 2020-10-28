@@ -22,7 +22,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -492,7 +491,7 @@ public class ChainDataProvider {
     if (validatorIndex.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     } else {
-      return getValidatorsDetailsBySlot(slot, List.of(validatorIndex.get()), List.of())
+      return getValidatorsDetailsBySlot(slot, List.of(validatorIndex.get()))
           .thenApply(
               maybeValidators ->
                   maybeValidators.flatMap(
@@ -506,15 +505,11 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsBySlot(
-      final UInt64 slot,
-      final List<Integer> validatorIndices,
-      final List<ValidatorStatus> statusFilter) {
+      final UInt64 slot, final List<Integer> validatorIndices) {
 
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getValidators(validatorIndices, statusFilter, state)));
+        .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
   }
 
   public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsByStateRoot(
@@ -538,9 +533,7 @@ public class ChainDataProvider {
 
     return combinedChainDataClient
         .getStateByStateRoot(stateRoot)
-        .thenApply(
-            maybeState ->
-                maybeState.map(state -> getValidators(validatorIndices, statusFilter, state)));
+        .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
   }
 
   public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesBySlot(
@@ -566,40 +559,15 @@ public class ChainDataProvider {
 
   private List<ValidatorResponse> getValidators(
       final List<Integer> validatorIndices,
-      final List<ValidatorStatus> statusFilter,
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
-    final List<ValidatorResponse> result;
-
-    if (validatorIndices.isEmpty()) {
-      final int validatorCount = state.getValidators().size();
-      result = new ArrayList<>();
-      for (int i = 0; i < validatorCount; i++) {
-        result.add(ValidatorResponse.fromState(state, i));
-      }
-    } else {
-      result =
-          validatorIndices.stream()
-              .map(index -> ValidatorResponse.fromState(state, index))
-              .collect(toList());
-    }
-
-    if (statusFilter.isEmpty()) {
-      return result;
-    }
-    return result.stream().filter(v -> statusFilter.contains(v.status)).collect(toList());
+    return validatorIndices.stream()
+        .map(index -> ValidatorResponse.fromState(state, index))
+        .collect(toList());
   }
 
   private List<ValidatorBalanceResponse> getValidatorBalances(
       final List<Integer> validatorIndices,
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
-    if (validatorIndices.isEmpty()) {
-      final int validatorCount = state.getValidators().size();
-      final List<ValidatorBalanceResponse> result = new ArrayList<>();
-      for (int i = 0; i < validatorCount; i++) {
-        result.add(ValidatorBalanceResponse.fromState(state, i));
-      }
-      return result;
-    }
     return validatorIndices.stream()
         .map(index -> ValidatorBalanceResponse.fromState(state, index))
         .collect(toList());
