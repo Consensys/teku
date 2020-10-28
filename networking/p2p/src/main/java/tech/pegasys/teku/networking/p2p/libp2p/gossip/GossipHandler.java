@@ -62,7 +62,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
             .createLabelledCounter(
                 TekuMetricCategory.LIBP2P,
                 "gossip_messages_total",
-                "Total number of gossip messages received",
+                "Total number of gossip messages received (avoid libp2p deduplication)",
                 "topic")
             .labels(topic.getTopic());
   }
