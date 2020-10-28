@@ -34,6 +34,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -75,6 +77,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
@@ -242,6 +245,7 @@ public class RocksDbDatabase implements Database {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
       return Optional.empty();
     }
+    LOG.trace("Creating memory store");
     final UInt64 genesisTime = maybeGenesisTime.get();
     final Optional<Checkpoint> anchor = hotDao.getAnchor();
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
@@ -249,8 +253,10 @@ public class RocksDbDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
+    LOG.trace("Loading votes");
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
+    LOG.trace("Loading hot blocks");
     // Build maps with block information
     final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
     final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
@@ -262,6 +268,7 @@ public class RocksDbDatabase implements Database {
           });
     }
 
+    LOG.trace("Validating finalized data");
     // Validate finalized data is consistent and available
     final SignedBeaconBlock finalizedBlock =
         hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
@@ -272,6 +279,7 @@ public class RocksDbDatabase implements Database {
     final SignedBlockAndState latestFinalized =
         new SignedBlockAndState(finalizedBlock, finalizedState);
 
+    LOG.trace("Setting store time");
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
     final long clockTime = timeSupplier.get();

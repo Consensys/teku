@@ -18,11 +18,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshot {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final UInt64 justifiedEpoch;
   private final UInt64 finalizedEpoch;
   private final UInt64 anchorEpoch;
@@ -51,6 +53,7 @@ public class ProtoArraySnapshot {
   }
 
   public ProtoArray toProtoArray() {
+    LOG.trace("Converting snapshot to protoarray");
     ProtoArray protoArray =
         new ProtoArray(
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
@@ -69,6 +72,7 @@ public class ProtoArraySnapshot {
                 blockInformation.getStateRoot(),
                 blockInformation.getJustifiedEpoch(),
                 blockInformation.getFinalizedEpoch()));
+    LOG.trace("Protoarray created");
     return protoArray;
   }
 

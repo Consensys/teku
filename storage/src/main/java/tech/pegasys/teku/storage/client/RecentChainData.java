@@ -174,6 +174,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
+    LOG.trace("Initializing fork choice");
     ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel)
         .thenAccept(
             forkChoiceStrategy -> {

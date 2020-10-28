@@ -14,11 +14,14 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 
 public class ProtoArrayStorage implements ProtoArrayStorageChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final Database database;
 
   public ProtoArrayStorage(Database database) {
@@ -32,6 +35,9 @@ public class ProtoArrayStorage implements ProtoArrayStorageChannel {
 
   @Override
   public SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot() {
-    return SafeFuture.completedFuture(database.getProtoArraySnapshot());
+    LOG.trace("Loading protoarray snapshot");
+    final Optional<ProtoArraySnapshot> result = database.getProtoArraySnapshot();
+    LOG.trace("Loaded protoarray snapshot");
+    return SafeFuture.completedFuture(result);
   }
 }
