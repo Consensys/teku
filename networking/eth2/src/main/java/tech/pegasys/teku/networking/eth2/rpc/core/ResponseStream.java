@@ -13,10 +13,21 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ResponseStream<O> {
-  SafeFuture<O> expectSingleResponse();
+  default SafeFuture<O> expectSingleResponse() {
+    return expectOptionalResponse()
+        .thenApply(
+            maybeResult ->
+                maybeResult.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No response received when single repsonse expected")));
+  }
+
+  SafeFuture<Optional<O>> expectOptionalResponse();
 
   SafeFuture<Void> expectNoResponse();
 

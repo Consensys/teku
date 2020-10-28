@@ -183,8 +183,6 @@ public class PeerChainValidator {
       LOG.trace(
           "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
-          // Map result to an optional block
-          .thenApply(Optional::of)
           .exceptionally(
               err -> {
                 if (Throwables.getRootCause(err) instanceof NullPointerException) {
@@ -205,9 +203,11 @@ public class PeerChainValidator {
                                   .thenApply(
                                       blockBySlot -> {
                                         final boolean blockMatches =
-                                            blockBySlot
-                                                .getRoot()
-                                                .equals(checkpointToVerify.getRoot());
+                                            blockBySlot.isPresent()
+                                                && blockBySlot
+                                                    .get()
+                                                    .getRoot()
+                                                    .equals(checkpointToVerify.getRoot());
                                         requiredCheckpointVerified.set(blockMatches);
                                         return blockMatches;
                                       }))
@@ -327,6 +327,15 @@ public class PeerChainValidator {
         .map(SignedBeaconBlock::getSlot)
         .orElseThrow(
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
+  }
+
+  private boolean validateBlockRootsMatch(
+      final Eth2Peer peer, final Optional<SignedBeaconBlock> mabyeBlock, final Bytes32 root) {
+    if (mabyeBlock.isEmpty()) {
+      LOG.debug("Peer validation failed because it did not provide requested finalized block");
+      return false;
+    }
+    return validateBlockRootsMatch(peer, mabyeBlock.get(), root);
   }
 
   private boolean validateBlockRootsMatch(

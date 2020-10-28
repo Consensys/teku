@@ -148,7 +148,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
     peer1.disconnectImmediately(Optional.empty(), false);
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -162,7 +162,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -204,6 +204,13 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
+  }
+
+  @Test
+  void requestBlockByRoot_shouldReturnEmptyWhenBlockIsNotKnown() throws Exception {
+    final Optional<SignedBeaconBlock> result =
+        waitFor(peer1.requestBlockByRoot(Bytes32.fromHexStringLenient("0x123456789")));
+    assertThat(result).isEmpty();
   }
 
   private SignedBeaconBlock addBlock() {
