@@ -13,6 +13,17 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,18 +44,6 @@ import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilde
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
-import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
-import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 public class GossipMessageHandlerIntegrationTest {
 

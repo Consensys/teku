@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -28,8 +29,6 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.exceptions.ExceptionUtil;
-
-import java.util.concurrent.RejectedExecutionException;
 
 public class Eth2TopicHandler<T> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
