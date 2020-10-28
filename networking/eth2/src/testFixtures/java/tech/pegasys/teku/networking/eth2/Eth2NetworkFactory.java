@@ -13,28 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
-import java.net.BindException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -81,6 +62,26 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.net.BindException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class Eth2NetworkFactory {
 
@@ -296,7 +297,7 @@ public class Eth2NetworkFactory {
         gossipedAttestationProcessor = OperationProcessor.noop();
       }
       if (gossipedAggregateProcessor == null) {
-        gossipedAttestationProcessor = OperationProcessor.noop();
+        gossipedAggregateProcessor = OperationProcessor.noop();
       }
       if (attesterSlashingProcessor == null) {
         attesterSlashingProcessor = OperationProcessor.noop();
