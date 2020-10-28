@@ -56,14 +56,17 @@ public class CompoundWeakSubjectivityViolationPolicyTest {
   public void onChainInconsistentWithWeakSubjectivityCheckpoint() {
     final Checkpoint wsCheckpoint = mock(Checkpoint.class);
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
-    policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, block);
+    policy.onChainInconsistentWithWeakSubjectivityCheckpoint(
+        wsCheckpoint, block.getRoot(), block.getSlot());
 
     orderedPolicyMocks
         .verify(policies.get(0))
-        .onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, block);
+        .onChainInconsistentWithWeakSubjectivityCheckpoint(
+            wsCheckpoint, block.getRoot(), block.getSlot());
     orderedPolicyMocks
         .verify(policies.get(1))
-        .onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, block);
+        .onChainInconsistentWithWeakSubjectivityCheckpoint(
+            wsCheckpoint, block.getRoot(), block.getSlot());
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
 

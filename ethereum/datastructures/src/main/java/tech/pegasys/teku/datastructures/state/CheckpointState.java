@@ -47,16 +47,16 @@ public class CheckpointState {
     return checkpoint;
   }
 
-  public SignedBeaconBlock getBlock() {
-    return block;
-  }
-
   public UInt64 getEpoch() {
     return getCheckpoint().getEpoch();
   }
 
   public Bytes32 getRoot() {
-    return getBlock().getRoot();
+    return block.getRoot();
+  }
+
+  public UInt64 getBlockSlot() {
+    return block.getSlot();
   }
 
   /** @return The checkpoint state which is advanced to the checkpoint epoch boundary */

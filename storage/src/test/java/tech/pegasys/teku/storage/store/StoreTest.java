@@ -218,7 +218,7 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = store.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
     assertThat(result.join().getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));

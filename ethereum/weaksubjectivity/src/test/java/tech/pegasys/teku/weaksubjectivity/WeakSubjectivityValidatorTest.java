@@ -174,7 +174,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
-            wsCheckpoint, checkpointState.getBlock());
+            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verifyNoMoreInteractions(policy);
   }
 
@@ -225,7 +225,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
-            wsCheckpoint, checkpointState.getBlock());
+            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
             checkpointState, validatorCount, currentSlot, mockWsPeriod);
@@ -409,7 +409,9 @@ public class WeakSubjectivityValidatorTest {
     verify(chainData).isFinalizedEpoch(wsCheckpoint.getEpoch());
     verify(chainData).getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot());
 
-    verify(policy).onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, otherBlock);
+    verify(policy)
+        .onChainInconsistentWithWeakSubjectivityCheckpoint(
+            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verifyNoMoreInteractions(policy);
   }
 
