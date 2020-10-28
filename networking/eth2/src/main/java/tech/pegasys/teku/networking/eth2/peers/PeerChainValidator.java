@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -183,13 +182,6 @@ public class PeerChainValidator {
       LOG.trace(
           "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
-          .exceptionally(
-              err -> {
-                if (Throwables.getRootCause(err) instanceof NullPointerException) {
-                  return Optional.empty();
-                }
-                throw new RuntimeException(err);
-              })
           // When requesting block by root, there is no explicit guarantee that the block is
           // canonical.
           // So, double-check by requesting the block by slot to make sure the peer considers this
