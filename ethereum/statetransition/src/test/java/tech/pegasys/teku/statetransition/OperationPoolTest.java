@@ -31,7 +31,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
-@SuppressWarnings({"unchecked", "FutureReturnValueIgnored "})
+@SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class OperationPoolTest {
 
   DataStructureUtil dataStructureUtil = new DataStructureUtil();
