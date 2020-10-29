@@ -155,7 +155,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     recentChainData1.updateHead(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately(Optional.empty(), false);
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UInt64.ONE);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockBySlot(UInt64.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -171,11 +171,18 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     recentChainData1.updateHead(block2Root, block2.getSlot());
 
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UInt64.ONE);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockBySlot(UInt64.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
+  }
+
+  @Test
+  void requestBlockBySlot_shouldReturnEmptyWhenBlockIsNotKnown() throws Exception {
+    final Optional<SignedBeaconBlock> result =
+        waitFor(peer1.requestBlockBySlot(UInt64.valueOf(49382982)));
+    assertThat(result).isEmpty();
   }
 
   private List<SignedBeaconBlock> requestBlocks()
