@@ -65,7 +65,7 @@ public class ValidatorResponse {
   public static Optional<ValidatorResponse> fromState(
       final BeaconState state, final Integer index) {
     if (index >= state.getValidators().size()) {
-      throw new BadRequestException("Validator index out of bounds: " + index);
+      return Optional.empty();
     }
     tech.pegasys.teku.datastructures.state.Validator validatorInternal =
         state.getValidators().get(index);
