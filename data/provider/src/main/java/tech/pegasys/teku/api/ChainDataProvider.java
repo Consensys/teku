@@ -558,8 +558,7 @@ public class ChainDataProvider {
       final List<Integer> validatorIndices,
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
     return validatorIndices.stream()
-        .map(index -> ValidatorResponse.fromState(state, index))
-        .flatMap(Optional::stream)
+        .flatMap(index -> ValidatorResponse.fromState(state, index).stream())
         .collect(toList());
   }
 
