@@ -192,6 +192,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                   sendToSubscribersIfProducedLocally(attestation);
                   aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
+                  break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hash_tree_root);
