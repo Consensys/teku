@@ -15,10 +15,11 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.AttestationsToSendListener;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -35,8 +36,6 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-import java.util.List;
-
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -50,7 +49,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
-  private final Subscribers<AttestationsToSendListener> attestationsToSendSubscribers =
+  private final Subscribers<ProcessedAttestationListener> processedAttestationSubscriber =
       Subscribers.create(true);
 
   private final AttestationValidator attestationValidator;
@@ -91,28 +90,23 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregateValidator);
   }
 
-  public void subscribeToAttestationsToSend(
-      AttestationsToSendListener attestationsToSendListener) {
-    attestationsToSendSubscribers.subscribe(attestationsToSendListener);
+  public void subscribeToProcessedAttestations(
+      ProcessedAttestationListener processedAttestationListener) {
+    processedAttestationSubscriber.subscribe(processedAttestationListener);
   }
 
-  public SafeFuture<InternalValidationResult> processNetworkAttestation(ValidateableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
     SafeFuture<InternalValidationResult> validationResult =
         attestationValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
   }
 
-  public SafeFuture<InternalValidationResult> processNetworkAggregate(ValidateableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAggregate(ValidateableAttestation attestation) {
     SafeFuture<InternalValidationResult> validationResult =
         aggregateValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
-  }
-
-  public SafeFuture<AttestationProcessingResult> processValidatorAttestation(ValidateableAttestation attestation) {
-    notifyAttestationsToSendSubscribers(attestation);
-    return onAttestation(attestation);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -140,11 +134,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       return;
     }
     attestationProcessor.applyIndexedAttestations(attestations);
-    attestations.forEach(this::notifyAttestationsToSendSubscribers);
+    attestations.forEach(this::notifySubscribers);
   }
 
-  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
-    attestationsToSendSubscribers.forEach(s -> s.send(attestation));
+  private void notifySubscribers(ValidateableAttestation attestation) {
+    processedAttestationSubscriber.forEach(s -> s.accept(attestation));
   }
 
   @Subscribe
@@ -176,19 +170,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         .onAttestation(attestation)
         .thenApply(
             result -> {
-              if (attestation.isProducedInHouse()) {
-                if (attestation.isAggregate()) {
-                  aggregateValidator.addSeenAggregate(attestation);
-                } else {
-                  attestationValidator.addSeenAttestation(attestation);
-                }
-                return result;
-              }
-
               switch (result.getStatus()) {
                 case SUCCESSFUL:
                   LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
-                  aggregatingAttestationPool.add(attestation);
+                  processValidAttestation(attestation);
+                  notifySubscribers(attestation);
                   break;
                 case UNKNOWN_BLOCK:
                   LOG.trace(
@@ -197,11 +183,18 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                   pendingAttestations.add(attestation);
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING:
+                  LOG.trace(
+                      "Defer fork choice processing of attestation {}",
+                      attestation::hash_tree_root);
+                  notifySubscribers(attestation);
+                  futureAttestations.add(attestation);
+                  processValidAttestation(attestation);
+                  break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hash_tree_root);
                   futureAttestations.add(attestation);
-                  aggregatingAttestationPool.add(attestation);
+                  processValidAttestation(attestation);
                   break;
                 case INVALID:
                   break;
@@ -211,6 +204,20 @@ public class AttestationManager extends Service implements SlotEventsChannel {
               }
               return result;
             });
+  }
+
+  private void processValidAttestation(ValidateableAttestation attestation) {
+    aggregatingAttestationPool.add(attestation);
+
+    if (!attestation.isProducedInHouse()) {
+      return;
+    }
+
+    if (attestation.isAggregate()) {
+      aggregateValidator.addSeenAggregate(attestation);
+    } else {
+      attestationValidator.addSeenAttestation(attestation);
+    }
   }
 
   @Override

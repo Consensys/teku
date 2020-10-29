@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.datastructures.attestation.AttestationsToSendListener;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 
 public interface ProcessedAttestationSubscriptionProvider {
-  void subscribe(AttestationsToSendListener attestationsToSendListener);
+  void subscribe(ProcessedAttestationListener processedAttestationListener);
 }

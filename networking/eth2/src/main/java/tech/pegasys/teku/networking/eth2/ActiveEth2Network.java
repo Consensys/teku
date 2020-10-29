@@ -15,6 +15,11 @@ package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -46,12 +51,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
-
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -64,7 +63,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
   private final AttestationSubnetService attestationSubnetService;
-  private final ProcessedAttestationSubscriptionProvider producedAttestationSubscriptionProvider;
+  private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
 
   // Gossip managers
@@ -100,7 +99,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final ProcessedAttestationSubscriptionProvider producedAttestationSubscriptionProvider) {
+      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
@@ -116,7 +115,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.attesterSlashingProcessor = attesterSlashingProcessor;
     this.proposerSlashingProcessor = proposerSlashingProcessor;
     this.voluntaryExitProcessor = voluntaryExitProcessor;
-    this.producedAttestationSubscriptionProvider = producedAttestationSubscriptionProvider;
+    this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
   @Override
@@ -171,8 +170,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     pendingSubnetSubscriptions.forEach(this::subscribeToAttestationSubnetId);
     pendingSubnetSubscriptions.clear();
 
-    producedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
-    producedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
+    processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
+    processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
   }
 
   @Override
