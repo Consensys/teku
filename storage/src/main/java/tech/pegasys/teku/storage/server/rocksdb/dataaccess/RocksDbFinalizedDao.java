@@ -34,6 +34,8 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
+  Optional<UInt64> getEarliestFinalizedBlockSlot();
+
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
