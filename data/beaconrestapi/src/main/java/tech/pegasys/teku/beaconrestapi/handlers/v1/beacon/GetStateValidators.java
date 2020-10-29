@@ -81,7 +81,6 @@ public class GetStateValidators extends AbstractHandler {
             isRepeatable = true),
         @OpenApiParam(
             name = STATUS,
-            type = ValidatorStatus.class,
             description =
                 "valid values:   pending_initialized, "
                     + "  pending_queued, "
