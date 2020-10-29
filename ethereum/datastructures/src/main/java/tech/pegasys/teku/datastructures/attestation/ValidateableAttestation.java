@@ -37,33 +37,56 @@ public class ValidateableAttestation {
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
+  private final boolean producedInHouse;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile OptionalInt receivedSubnetId;
 
   public static ValidateableAttestation from(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty());
+    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), false);
+  }
+
+  public static ValidateableAttestation fromValidator(Attestation attestation) {
+    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), true);
   }
 
   public static ValidateableAttestation fromNetwork(Attestation attestation, int receivedSubnetId) {
     return new ValidateableAttestation(
-        attestation, Optional.empty(), OptionalInt.of(receivedSubnetId));
+        attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
   }
 
-  public static ValidateableAttestation fromSignedAggregate(SignedAggregateAndProof attestation) {
+  public static ValidateableAttestation aggregateFromValidator(
+      SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation), OptionalInt.empty());
+        attestation.getMessage().getAggregate(),
+        Optional.of(attestation),
+        OptionalInt.empty(),
+        true);
+  }
+
+  public static ValidateableAttestation aggregateFromNetwork(SignedAggregateAndProof attestation) {
+    return new ValidateableAttestation(
+        attestation.getMessage().getAggregate(),
+        Optional.of(attestation),
+        OptionalInt.empty(),
+        false);
   }
 
   private ValidateableAttestation(
       Attestation attestation,
       Optional<SignedAggregateAndProof> aggregateAndProof,
-      OptionalInt receivedSubnetId) {
+      OptionalInt receivedSubnetId,
+      boolean producedInHouse) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
+    this.producedInHouse = producedInHouse;
+  }
+
+  public boolean isProducedInHouse() {
+    return producedInHouse;
   }
 
   public Optional<IndexedAttestation> getIndexedAttestation() {

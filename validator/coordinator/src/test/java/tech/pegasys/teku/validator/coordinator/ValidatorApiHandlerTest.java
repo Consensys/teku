@@ -612,7 +612,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.aggregateFromValidator(aggregateAndProof));
   }
 
   @Test

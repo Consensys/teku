@@ -99,7 +99,7 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
     attestationManager.onAttestation(aggregate).reportExceptions();
@@ -192,7 +192,7 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation aggregateAndProof =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));

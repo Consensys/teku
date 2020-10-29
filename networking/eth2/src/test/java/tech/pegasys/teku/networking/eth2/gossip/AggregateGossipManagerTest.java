@@ -64,7 +64,7 @@ public class AggregateGossipManagerTest {
   public void onNewAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = gossipEncoding.encode(aggregate);
-    gossipManager.onNewAggregate(ValidateableAttestation.fromSignedAggregate(aggregate));
+    gossipManager.onNewAggregate(ValidateableAttestation.aggregateFromValidator(aggregate));
 
     verify(topicChannel).gossip(serialized);
   }

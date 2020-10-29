@@ -173,7 +173,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
               switch (result.getStatus()) {
                 case SUCCESSFUL:
                   LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
-                  aggregatingAttestationPool.add(attestation);
+                  processValidAttestation(attestation);
                   notifySubscribers(attestation);
                   break;
                 case UNKNOWN_BLOCK:
@@ -188,13 +188,13 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                       attestation::hash_tree_root);
                   notifySubscribers(attestation);
                   futureAttestations.add(attestation);
-                  aggregatingAttestationPool.add(attestation);
+                  processValidAttestation(attestation);
                   break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hash_tree_root);
                   futureAttestations.add(attestation);
-                  aggregatingAttestationPool.add(attestation);
+                  processValidAttestation(attestation);
                   break;
                 case INVALID:
                   break;
@@ -204,6 +204,20 @@ public class AttestationManager extends Service implements SlotEventsChannel {
               }
               return result;
             });
+  }
+
+  private void processValidAttestation(ValidateableAttestation attestation) {
+    aggregatingAttestationPool.add(attestation);
+
+    if (!attestation.isProducedInHouse()) {
+      return;
+    }
+
+    if (attestation.isAggregate()) {
+      aggregateValidator.addSeenAggregate(attestation);
+    } else {
+      attestationValidator.addSeenAttestation(attestation);
+    }
   }
 
   @Override

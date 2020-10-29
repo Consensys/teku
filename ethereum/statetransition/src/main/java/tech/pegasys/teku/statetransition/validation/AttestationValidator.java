@@ -88,6 +88,10 @@ public class AttestationValidator {
             });
   }
 
+  public void addSeenAttestation(final ValidateableAttestation attestation) {
+    receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation.getAttestation()));
+  }
+
   private InternalValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.

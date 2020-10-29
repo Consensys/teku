@@ -47,7 +47,7 @@ public class AggregateTopicHandlerTest {
   @Test
   public void handleMessage_validAggregate() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -61,7 +61,7 @@ public class AggregateTopicHandlerTest {
   @Test
   public void handleMessage_savedForFuture() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
@@ -75,7 +75,7 @@ public class AggregateTopicHandlerTest {
   @Test
   public void handleMessage_ignoredAggregate() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
@@ -89,7 +89,7 @@ public class AggregateTopicHandlerTest {
   @Test
   public void handleMessage_invalidAggregate() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromSignedAggregate(
+        ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
