@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 
@@ -32,9 +33,13 @@ public class StateValidatorsUtil {
       return Set.of();
     }
 
-    return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
-        .map(ValidatorStatus::valueOf)
-        .collect(Collectors.toSet());
+    try {
+      return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
+          .map(ValidatorStatus::valueOf)
+          .collect(Collectors.toSet());
+    } catch (IllegalArgumentException ex) {
+      throw new BadRequestException("Invalid validator state requested: " + ex.getMessage());
+    }
   }
 
   public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {

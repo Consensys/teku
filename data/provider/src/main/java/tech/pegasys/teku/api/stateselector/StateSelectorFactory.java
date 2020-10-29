@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api.stateselector;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -39,8 +40,11 @@ public class StateSelectorFactory {
         return finalizedSelector();
       case ("justified"):
         return justifiedSelector();
-      default:
-        return forSlot(UInt64.valueOf(selectorMethod));
+    }
+    try {
+      return forSlot(UInt64.valueOf(selectorMethod));
+    } catch (NumberFormatException ex) {
+      throw new BadRequestException("Invalid state: " + selectorMethod);
     }
   }
 

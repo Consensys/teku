@@ -22,11 +22,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorResponse {
+
   @JsonProperty("index")
   @Schema(
       type = "string",
@@ -59,15 +61,20 @@ public class ValidatorResponse {
     this.validator = validator;
   }
 
-  public static ValidatorResponse fromState(final BeaconState state, final Integer index) {
+  public static Optional<ValidatorResponse> fromState(
+      final BeaconState state, final Integer index) {
+    if (index >= state.getValidators().size()) {
+      return Optional.empty();
+    }
     tech.pegasys.teku.datastructures.state.Validator validatorInternal =
         state.getValidators().get(index);
     final UInt64 current_epoch = compute_epoch_at_slot(state.getSlot());
-    return new ValidatorResponse(
-        UInt64.valueOf(index),
-        state.getBalances().get(index),
-        getValidatorStatus(current_epoch, validatorInternal),
-        new Validator(validatorInternal));
+    return Optional.of(
+        new ValidatorResponse(
+            UInt64.valueOf(index),
+            state.getBalances().get(index),
+            getValidatorStatus(current_epoch, validatorInternal),
+            new Validator(validatorInternal)));
   }
 
   public static ValidatorStatus getValidatorStatus(
