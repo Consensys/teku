@@ -21,5 +21,5 @@ public abstract class RpcResponseStatus {
   public static final byte SERVER_ERROR_CODE = 2;
 
   // Custom errors
-  public static final byte HISTORICAL_DATA_UNAVAILABLE = (byte) 128;
+  public static final byte HISTORICAL_DATA_UNAVAILABLE = (byte) 222;
 }
