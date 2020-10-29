@@ -39,7 +39,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.datastructures.attestation.AttestationsToSendListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -281,7 +281,7 @@ public class Eth2NetworkFactory {
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
       if (processedAttestationSubscriptionProvider == null) {
-        Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);
+        Subscribers<AttestationsToSendListener> subscribers = Subscribers.create(false);
         processedAttestationSubscriptionProvider = subscribers::subscribe;
       }
       if (verifiedBlockAttestationsSubscriptionProvider == null) {
