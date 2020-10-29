@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,8 +35,6 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.List;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -136,9 +135,9 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     }
     attestationProcessor.applyIndexedAttestations(attestations);
     attestations.stream()
-            .filter(ValidateableAttestation::isProducedLocally)
-            .filter(a -> !a.isGossiped())
-            .forEach(this::notifyAttestationsToSendSubscribers);
+        .filter(ValidateableAttestation::isProducedLocally)
+        .filter(a -> !a.isGossiped())
+        .forEach(this::notifyAttestationsToSendSubscribers);
   }
 
   private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
@@ -188,8 +187,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING:
                   LOG.trace(
-                          "Defer fork choice processing of attestation {}",
-                          attestation::hash_tree_root);
+                      "Defer fork choice processing of attestation {}",
+                      attestation::hash_tree_root);
                   sendToSubscribersIfProducedLocally(attestation);
                   aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);

@@ -13,8 +13,17 @@
 
 package tech.pegasys.teku.datastructures.attestation;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -22,16 +31,6 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.Collection;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
-
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
 public class ValidateableAttestation {
   private final Attestation attestation;
