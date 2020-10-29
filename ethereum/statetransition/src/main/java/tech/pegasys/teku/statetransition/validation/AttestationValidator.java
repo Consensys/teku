@@ -33,6 +33,7 @@ import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
@@ -112,8 +113,7 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final ValidateableAttestation validateableAttestation,
-      final Optional<Integer> receivedOnSubnetId) {
+      final ValidateableAttestation validateableAttestation, final OptionalInt receivedOnSubnetId) {
 
     Attestation attestation = validateableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
@@ -162,7 +162,8 @@ public class AttestationValidator {
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
               if (receivedOnSubnetId.isPresent()
-                  && computeSubnetForAttestation(state, attestation) != receivedOnSubnetId.get()) {
+                  && computeSubnetForAttestation(state, attestation)
+                      != receivedOnSubnetId.getAsInt()) {
                 return REJECT;
               }
 

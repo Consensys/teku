@@ -28,6 +28,7 @@ import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +89,7 @@ public class AggregateAttestationValidator {
     }
 
     return attestationValidator
-        .singleOrAggregateAttestationChecks(attestation, Optional.empty())
+        .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult == REJECT

@@ -368,7 +368,7 @@ public class GossipMessageHandlerIntegrationTest {
   }
 
   public static Stream<Arguments> getEncodings() {
-    final List<GossipEncoding> encodings = List.of(GossipEncoding.SSZ_SNAPPY);
+    final List<GossipEncoding> encodings = List.of(GossipEncoding.SSZ, GossipEncoding.SSZ_SNAPPY);
     return encodings.stream().map(e -> Arguments.of("gossipEncoding: " + e.getName(), e));
   }
 

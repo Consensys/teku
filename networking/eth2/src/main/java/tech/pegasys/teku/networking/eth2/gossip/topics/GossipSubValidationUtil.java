@@ -28,7 +28,7 @@ public class GossipSubValidationUtil {
       case REJECT:
         return ValidationResult.Invalid;
       default:
-        throw new UnsupportedOperationException("Unexpected validation result: " + result);
+        throw new IllegalArgumentException("Unexpected internal validation result: " + result);
     }
   }
 }
