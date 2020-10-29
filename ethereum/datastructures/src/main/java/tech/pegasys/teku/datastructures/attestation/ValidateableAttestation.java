@@ -21,6 +21,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
@@ -39,26 +40,26 @@ public class ValidateableAttestation {
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
-  private volatile Optional<Integer> receivedSubnetId;
+  private volatile OptionalInt receivedSubnetId;
 
   public static ValidateableAttestation from(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty(), Optional.empty());
+    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty());
   }
 
   public static ValidateableAttestation fromNetwork(Attestation attestation, int receivedSubnetId) {
     return new ValidateableAttestation(
-        attestation, Optional.empty(), Optional.of(receivedSubnetId));
+        attestation, Optional.empty(), OptionalInt.of(receivedSubnetId));
   }
 
   public static ValidateableAttestation fromSignedAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation), Optional.empty());
+        attestation.getMessage().getAggregate(), Optional.of(attestation), OptionalInt.empty());
   }
 
   private ValidateableAttestation(
       Attestation attestation,
       Optional<SignedAggregateAndProof> aggregateAndProof,
-      Optional<Integer> receivedSubnetId) {
+      OptionalInt receivedSubnetId) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
@@ -73,7 +74,7 @@ public class ValidateableAttestation {
     return committeeShufflingSeed;
   }
 
-  public Optional<Integer> getReceivedSubnetId() {
+  public OptionalInt getReceivedSubnetId() {
     return receivedSubnetId;
   }
 
