@@ -592,7 +592,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
               .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
               .processedAttestationSubscriptionProvider(
-                  attestationManager::subscribeToProcessedAttestations)
+                  attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
                   eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
               .metricsSystem(metricsSystem)

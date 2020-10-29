@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,6 +35,8 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import java.util.List;
+
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -49,7 +50,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
-  private final Subscribers<ProcessedAttestationListener> processedAttestationSubscriber =
+  private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
       Subscribers.create(true);
 
   private final AttestationValidator attestationValidator;
@@ -90,9 +91,9 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregateValidator);
   }
 
-  public void subscribeToProcessedAttestations(
-      ProcessedAttestationListener processedAttestationListener) {
-    processedAttestationSubscriber.subscribe(processedAttestationListener);
+  public void subscribeToAttestationsToSend(
+      ProcessedAttestationListener attestationsToSendListener) {
+    attestationsToSendSubscribers.subscribe(attestationsToSendListener);
   }
 
   public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
@@ -134,11 +135,14 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       return;
     }
     attestationProcessor.applyIndexedAttestations(attestations);
-    attestations.forEach(this::notifySubscribers);
+    attestations.stream()
+            .filter(ValidateableAttestation::isProducedLocally)
+            .filter(a -> !a.isGossiped())
+            .forEach(this::notifyAttestationsToSendSubscribers);
   }
 
-  private void notifySubscribers(ValidateableAttestation attestation) {
-    processedAttestationSubscriber.forEach(s -> s.accept(attestation));
+  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
+    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
   }
 
   @Subscribe
@@ -173,8 +177,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
               switch (result.getStatus()) {
                 case SUCCESSFUL:
                   LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
-                  processValidAttestation(attestation);
-                  notifySubscribers(attestation);
+                  aggregatingAttestationPool.add(attestation);
+                  sendToSubscribersIfProducedLocally(attestation);
                   break;
                 case UNKNOWN_BLOCK:
                   LOG.trace(
@@ -184,17 +188,16 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING:
                   LOG.trace(
-                      "Defer fork choice processing of attestation {}",
-                      attestation::hash_tree_root);
-                  notifySubscribers(attestation);
+                          "Defer fork choice processing of attestation {}",
+                          attestation::hash_tree_root);
+                  sendToSubscribersIfProducedLocally(attestation);
+                  aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
-                  processValidAttestation(attestation);
-                  break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hash_tree_root);
+                  aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
-                  processValidAttestation(attestation);
                   break;
                 case INVALID:
                   break;
@@ -206,10 +209,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
             });
   }
 
-  private void processValidAttestation(ValidateableAttestation attestation) {
-    aggregatingAttestationPool.add(attestation);
-
-    if (!attestation.isProducedInHouse()) {
+  private void sendToSubscribersIfProducedLocally(ValidateableAttestation attestation) {
+    if (!attestation.isProducedLocally()) {
       return;
     }
 
@@ -218,6 +219,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     } else {
       attestationValidator.addSeenAttestation(attestation);
     }
+
+    attestation.markGossiped();
   }
 
   @Override
