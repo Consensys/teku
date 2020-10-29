@@ -189,7 +189,7 @@ public class RocksDbDatabase implements Database {
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
       final BeaconState anchorState = anchor.getState();
-      final SignedBeaconBlock anchorBlock = anchor.getBlock();
+      final Optional<SignedBeaconBlock> anchorBlock = anchor.getBlock();
 
       hotUpdater.setAnchor(anchor.getCheckpoint());
       hotUpdater.setGenesisTime(anchorState.getGenesis_time());
@@ -200,10 +200,14 @@ public class RocksDbDatabase implements Database {
 
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
-      // Save to hot storage
-      hotUpdater.addHotBlock(anchorBlock);
-      // Save to cold storage
-      finalizedUpdater.addFinalizedBlock(anchorBlock);
+      anchorBlock.ifPresent(
+          b -> {
+            // Save to hot storage
+            hotUpdater.addHotBlock(b);
+            // Save to cold storage
+            finalizedUpdater.addFinalizedBlock(b);
+          });
+
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
 
       finalizedUpdater.commit();

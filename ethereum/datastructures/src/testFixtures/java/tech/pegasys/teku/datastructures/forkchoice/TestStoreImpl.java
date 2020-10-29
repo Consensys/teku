@@ -187,7 +187,7 @@ class TestStoreImpl implements MutableStore {
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    return SafeFuture.completedFuture(new CheckpointState(finalized_checkpoint, block, state));
+    return SafeFuture.completedFuture(CheckpointState.create(finalized_checkpoint, block, state));
   }
 
   @Override

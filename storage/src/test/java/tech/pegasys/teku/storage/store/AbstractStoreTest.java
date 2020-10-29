@@ -95,7 +95,7 @@ public abstract class AbstractStoreTest {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
       allCheckpoints.add(
-          new CheckpointState(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
+          CheckpointState.create(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 

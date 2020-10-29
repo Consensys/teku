@@ -14,10 +14,14 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Suppliers;
 import java.util.List;
+import java.util.function.Supplier;
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -60,6 +64,9 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   @SuppressWarnings("unused")
   private final Bytes32 body_root = null;
 
+  @Label("sos-ignore")
+  private final Supplier<Bytes32> hashTreeRootSupplier = Suppliers.memoize(this::calculateRoot);
+
   private BeaconBlockHeader(ContainerViewType<BeaconBlockHeader> type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -85,6 +92,43 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
 
   public BeaconBlockHeader() {
     super(TYPE);
+  }
+
+  /**
+   * Returns the block header associated with this state
+   *
+   * @param state A beacon state
+   * @return The latest block header from the state, with stateRoot pointing to the supplied state
+   */
+  public static BeaconBlockHeader fromState(final BeaconState state) {
+    BeaconBlockHeader latestHeader = state.getLatest_block_header();
+
+    if (latestHeader.getState_root().isZero()) {
+      // If the state root is empty, replace it with the current state root
+      final Bytes32 stateRoot = state.hash_tree_root();
+      latestHeader =
+          new BeaconBlockHeader(
+              latestHeader.getSlot(),
+              latestHeader.getProposer_index(),
+              latestHeader.getParent_root(),
+              stateRoot,
+              latestHeader.getBody_root());
+    }
+
+    return latestHeader;
+  }
+
+  public static BeaconBlockHeader fromBlock(final BeaconBlock block) {
+    return new BeaconBlockHeader(
+        block.getSlot(),
+        block.getProposer_index(),
+        block.getParent_root(),
+        block.getState_root(),
+        block.getBody().hash_tree_root());
+  }
+
+  public static BeaconBlockHeader fromBlock(final SignedBeaconBlock block) {
+    return fromBlock(block.getMessage());
   }
 
   @Override
@@ -125,6 +169,10 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
 
   @Override
   public Bytes32 hash_tree_root() {
+    return hashTreeRootSupplier.get();
+  }
+
+  public Bytes32 calculateRoot() {
     return hashTreeRoot();
   }
 

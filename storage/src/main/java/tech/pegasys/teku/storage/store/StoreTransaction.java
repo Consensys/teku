@@ -334,7 +334,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 return store.retrieveFinalizedCheckpointAndState();
               } else {
                 return SafeFuture.completedFuture(
-                    new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
+                    CheckpointState.create(finalizedCheckpoint, block.get(), state.get()));
               }
             });
   }

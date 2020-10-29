@@ -16,8 +16,9 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
-import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromAnchor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -124,16 +125,17 @@ class Store implements UpdatableStore {
 
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
-    states.cache(finalizedAnchor.getRoot(), finalizedAnchor.getBlockAndState());
+    finalizedAnchor.getBlockAndState().ifPresent(b -> states.cache(finalizedAnchor.getRoot(), b));
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
         BlockProvider.combined(
             fromDynamicMap(
-                () -> {
-                  SignedBlockAndState finalized = this.getLatestFinalized().getBlockAndState();
-                  return Map.of(finalized.getRoot(), finalized.getBlock());
-                }),
+                () ->
+                    this.getLatestFinalized()
+                        .getBlockAndState()
+                        .map((f) -> Map.of(f.getRoot(), f.getBlock()))
+                        .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
   }
@@ -388,25 +390,22 @@ class Store implements UpdatableStore {
 
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
-    final Checkpoint finalizedCheckpoint;
-    final SignedBlockAndState finalizedBlockAndState;
+    final AnchorPoint finalized;
 
     readLock.lock();
     try {
-      finalizedCheckpoint = this.finalizedAnchor.getCheckpoint();
-      finalizedBlockAndState = this.finalizedAnchor.getBlockAndState();
+      finalized = this.finalizedAnchor;
     } finally {
       readLock.unlock();
     }
 
     return checkpointStates
-        .perform(
-            new CheckpointStateTask(finalizedCheckpoint, fromBlockAndState(finalizedBlockAndState)))
+        .perform(new CheckpointStateTask(finalized.getCheckpoint(), fromAnchor(finalized)))
         .thenApply(
             maybeState ->
-                new CheckpointState(
-                    finalizedCheckpoint,
-                    finalizedBlockAndState.getBlock(),
+                CheckpointState.create(
+                    finalized.getCheckpoint(),
+                    finalized.getBlockHeader(),
                     maybeState.orElseThrow()));
   }
 
