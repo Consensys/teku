@@ -69,7 +69,7 @@ class Store implements UpdatableStore {
 
   private final BlockProvider blockProvider;
 
-  private final Optional<Checkpoint> anchor;
+  private final Optional<Checkpoint> initialCheckpoint;
   BlockTree blockTree;
   UInt64 time;
   UInt64 genesis_time;
@@ -88,7 +88,7 @@ class Store implements UpdatableStore {
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
       final CachingTaskQueue<Bytes32, SignedBlockAndState> states,
-      final Optional<Checkpoint> anchor,
+      final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesis_time,
       final Checkpoint justified_checkpoint,
@@ -113,7 +113,7 @@ class Store implements UpdatableStore {
     this.checkpointStates = checkpointStates;
 
     // Store instance variables
-    this.anchor = anchor;
+    this.initialCheckpoint = initialCheckpoint;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
     this.genesis_time = genesis_time;
@@ -145,7 +145,7 @@ class Store implements UpdatableStore {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
-      final Optional<Checkpoint> anchor,
+      final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesisTime,
       final Checkpoint justifiedCheckpoint,
@@ -186,7 +186,7 @@ class Store implements UpdatableStore {
         blockProvider,
         stateAndBlockProvider,
         stateTaskQueue,
-        anchor,
+        initialCheckpoint,
         time,
         genesisTime,
         justifiedCheckpoint,
@@ -256,8 +256,8 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<Checkpoint> getAnchor() {
-    return anchor;
+  public Optional<Checkpoint> getInitialCheckpoint() {
+    return initialCheckpoint;
   }
 
   @Override

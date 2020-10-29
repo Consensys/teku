@@ -183,7 +183,7 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeAnchorPoint(final AnchorPoint anchor) {
+  public void storeInitialAnchor(final AnchorPoint anchor) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
