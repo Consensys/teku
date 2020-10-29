@@ -449,25 +449,21 @@ public class ChainDataProvider {
       } catch (PublicKeyException ex) {
         throw new BadRequestException(String.format("Invalid public key: %s", validatorParameter));
       }
-    } else {
-      try {
-        final UInt64 numericValidator = UInt64.valueOf(validatorParameter);
-        if (numericValidator.isGreaterThan(UInt64.valueOf(Integer.MAX_VALUE))) {
-          throw new BadRequestException(
-              String.format("Validator Index is too high to use: %s", validatorParameter));
-        }
-        final int validatorIndex = numericValidator.intValue();
-        final int validatorCount = state.getValidators().size();
-        if (validatorIndex > validatorCount) {
-          throw new BadRequestException(
-              String.format(
-                  "Invalid validator index: %d, exceeds validator count: %d",
-                  validatorIndex, validatorCount));
-        }
-        return Optional.of(validatorIndex);
-      } catch (NumberFormatException ex) {
-        throw new BadRequestException(String.format("Invalid validator: %s", validatorParameter));
+    }
+    try {
+      final UInt64 numericValidator = UInt64.valueOf(validatorParameter);
+      if (numericValidator.isGreaterThan(UInt64.valueOf(Integer.MAX_VALUE))) {
+        throw new BadRequestException(
+            String.format("Validator Index is too high to use: %s", validatorParameter));
       }
+      final int validatorIndex = numericValidator.intValue();
+      final int validatorCount = state.getValidators().size();
+      if (validatorIndex > validatorCount) {
+        return Optional.empty();
+      }
+      return Optional.of(validatorIndex);
+    } catch (NumberFormatException ex) {
+      throw new BadRequestException(String.format("Invalid validator: %s", validatorParameter));
     }
   }
 

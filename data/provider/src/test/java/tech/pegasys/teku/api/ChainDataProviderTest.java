@@ -578,14 +578,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void validatorParameterToIndex_shouldDetectIndexOutOfBounds() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-
-    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("1234567"));
-  }
-
-  @Test
   public void validatorParameterToIndex_shouldDetectAboveMaxInt() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
@@ -806,10 +798,10 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenIndexTooHigh() {
+  public void validatorParameterToIndex_shouldReturnEmptyIfIndexOutOfBounds() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("1024000"));
+    assertThat(provider.validatorParameterToIndex("1024000")).isEmpty();
   }
 
   @Test
