@@ -29,6 +29,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -132,12 +133,11 @@ public abstract class AbstractStoreTest {
         Optional.empty(),
         genesis.getState().getGenesis_time(),
         genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
+        AnchorPoint.create(genesisCheckpoint, genesis),
         genesisCheckpoint,
         genesisCheckpoint,
         Map.of(genesis.getRoot(), genesis.getParentRoot()),
         Map.of(genesis.getRoot(), genesis.getSlot()),
-        genesis,
         Collections.emptyMap(),
         pruningOptions);
   }

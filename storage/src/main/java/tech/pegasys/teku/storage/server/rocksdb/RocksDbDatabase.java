@@ -269,8 +269,8 @@ public class RocksDbDatabase implements Database {
     checkState(
         finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
         "Latest finalized state does not match latest finalized block");
-    final SignedBlockAndState latestFinalized =
-        new SignedBlockAndState(finalizedBlock, finalizedState);
+    final AnchorPoint latestFinalized =
+        AnchorPoint.create(finalizedCheckpoint, finalizedBlock, finalizedState);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -284,12 +284,11 @@ public class RocksDbDatabase implements Database {
             .time(time)
             .anchor(anchor)
             .genesisTime(genesisTime)
-            .finalizedCheckpoint(finalizedCheckpoint)
+            .latestFinalized(latestFinalized)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
             .rootToSlotMap(rootToSlot)
-            .latestFinalized(latestFinalized)
             .votes(votes));
   }
 

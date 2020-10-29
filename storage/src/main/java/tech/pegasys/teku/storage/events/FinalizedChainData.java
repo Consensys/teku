@@ -22,27 +22,27 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class FinalizedChainData {
-  private final Checkpoint finalizedCheckpoint;
-  private final SignedBlockAndState latestFinalizedBlockAndState;
+  private final AnchorPoint latestFinalized;
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
   private final Map<Bytes32, BeaconState> finalizedStates;
 
   private FinalizedChainData(
-      final Checkpoint finalizedCheckpoint,
+      final Checkpoint latestFinalizedCheckpoint,
       final SignedBlockAndState latestFinalizedBlockAndState,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
-    this.finalizedCheckpoint = finalizedCheckpoint;
-    this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
     this.finalizedStates = finalizedStates;
+
+    latestFinalized = AnchorPoint.create(latestFinalizedCheckpoint, latestFinalizedBlockAndState);
   }
 
   public static Builder builder() {
@@ -50,11 +50,11 @@ public class FinalizedChainData {
   }
 
   public Checkpoint getFinalizedCheckpoint() {
-    return finalizedCheckpoint;
+    return latestFinalized.getCheckpoint();
   }
 
   public BeaconState getLatestFinalizedState() {
-    return latestFinalizedBlockAndState.getState();
+    return latestFinalized.getState();
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
@@ -69,8 +69,8 @@ public class FinalizedChainData {
     return finalizedStates;
   }
 
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
-    return latestFinalizedBlockAndState;
+  public AnchorPoint getLatestFinalized() {
+    return latestFinalized;
   }
 
   public static class Builder {

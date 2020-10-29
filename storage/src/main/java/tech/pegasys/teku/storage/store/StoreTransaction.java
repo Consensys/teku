@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -204,18 +205,20 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+  public AnchorPoint getLatestFinalized() {
     if (finalized_checkpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
       // unlikely to call this on tx objects
-      return retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      final SignedBlockAndState finalizedBlockAndState =
+          retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      return AnchorPoint.create(finalized_checkpoint.get(), finalizedBlockAndState);
     }
-    return store.getLatestFinalizedBlockAndState();
+    return store.getLatestFinalized();
   }
 
   @Override
   public UInt64 getLatestFinalizedBlockSlot() {
-    return getLatestFinalizedBlockAndState().getSlot();
+    return getLatestFinalized().getBlockSlot();
   }
 
   @Override
