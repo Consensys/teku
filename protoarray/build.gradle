@@ -5,7 +5,9 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':util')
 
+    testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':storage'))
 
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesImplementation project(':ethereum:datastructures')
