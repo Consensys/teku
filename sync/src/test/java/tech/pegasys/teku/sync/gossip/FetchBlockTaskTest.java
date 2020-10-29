@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,8 @@ public class FetchBlockTaskTest {
     assertThat(task.getBlockRoot()).isEqualTo(blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
-    when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
+    when(peer.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
     final SafeFuture<FetchBlockResult> result = task.run();
     assertThat(result).isDone();
@@ -117,7 +119,8 @@ public class FetchBlockTaskTest {
 
     // Add another peer
     final Eth2Peer peer2 = registerNewPeer(2);
-    when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
+    when(peer2.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
     // Retry
     final SafeFuture<FetchBlockResult> result2 = task.run();
@@ -140,7 +143,8 @@ public class FetchBlockTaskTest {
     when(peer.getOutstandingRequests()).thenReturn(1);
     // Add another peer
     final Eth2Peer peer2 = registerNewPeer(2);
-    when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
+    when(peer2.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(peer2.getOutstandingRequests()).thenReturn(0);
 
     // We should choose the peer that is less busy, which successfully returns the block
@@ -158,7 +162,8 @@ public class FetchBlockTaskTest {
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
-    when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
+    when(peer.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
     task.cancel();
     final SafeFuture<FetchBlockResult> result = task.run();

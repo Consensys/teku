@@ -15,6 +15,7 @@ package tech.pegasys.teku.weaksubjectivity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -575,6 +576,8 @@ public class WeakSubjectivityValidatorTest {
       when(forkChoiceStrategy.blockSlot(block.getRoot())).thenReturn(Optional.of(block.getSlot()));
       when(forkChoiceStrategy.blockParentRoot(block.getRoot()))
           .thenReturn(Optional.of(block.getParent_root()));
+      when(forkChoiceStrategy.getAncestor(any(), eq(block.getSlot())))
+          .thenReturn(Optional.of(block.getRoot()));
     }
   }
 
