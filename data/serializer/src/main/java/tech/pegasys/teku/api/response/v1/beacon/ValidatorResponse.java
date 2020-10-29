@@ -27,6 +27,9 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorResponse {
+  public static final ValidatorResponse EMPTY =
+      new ValidatorResponse(UInt64.MAX_VALUE, UInt64.ZERO, ValidatorStatus.withdrawal_done, null);
+
   @JsonProperty("index")
   @Schema(
       type = "string",
@@ -60,14 +63,18 @@ public class ValidatorResponse {
   }
 
   public static ValidatorResponse fromState(final BeaconState state, final Integer index) {
-    tech.pegasys.teku.datastructures.state.Validator validatorInternal =
-        state.getValidators().get(index);
-    final UInt64 current_epoch = compute_epoch_at_slot(state.getSlot());
-    return new ValidatorResponse(
-        UInt64.valueOf(index),
-        state.getBalances().get(index),
-        getValidatorStatus(current_epoch, validatorInternal),
-        new Validator(validatorInternal));
+    try {
+      tech.pegasys.teku.datastructures.state.Validator validatorInternal =
+          state.getValidators().get(index);
+      final UInt64 current_epoch = compute_epoch_at_slot(state.getSlot());
+      return new ValidatorResponse(
+          UInt64.valueOf(index),
+          state.getBalances().get(index),
+          getValidatorStatus(current_epoch, validatorInternal),
+          new Validator(validatorInternal));
+    } catch (IndexOutOfBoundsException ex) {
+      return ValidatorResponse.EMPTY;
+    }
   }
 
   public static ValidatorStatus getValidatorStatus(

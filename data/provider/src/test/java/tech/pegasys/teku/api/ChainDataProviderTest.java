@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
@@ -573,7 +574,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
-    assertThrows(IllegalArgumentException.class, () -> provider.validatorParameterToIndex("2a"));
+    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("2a"));
   }
 
   @Test
@@ -581,8 +582,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
-    assertThrows(
-        IllegalArgumentException.class, () -> provider.validatorParameterToIndex("1234567"));
+    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("1234567"));
   }
 
   @Test
@@ -591,7 +591,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
     assertThrows(
-        IllegalArgumentException.class,
+        BadRequestException.class,
         () ->
             provider.validatorParameterToIndex(
                 UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
@@ -603,7 +603,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
     assertThrows(
-        IllegalArgumentException.class,
+        BadRequestException.class,
         () -> provider.validatorParameterToIndex(Bytes32.EMPTY.toHexString()));
   }
 
@@ -796,6 +796,29 @@ public class ChainDataProviderTest {
             .map(v -> v.validator.pubkey.toHexString())
             .collect(toList());
     assertThat(pubkeys).containsExactly(key);
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenIndexInvalid() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("a"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenIndexTooHigh() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThrows(BadRequestException.class, () -> provider.validatorParameterToIndex("1024000"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenKeyNotFound() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThrows(
+        BadRequestException.class,
+        () -> provider.validatorParameterToIndex(Bytes32.fromHexString("0x00").toHexString()));
   }
 
   @Test

@@ -25,6 +25,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -33,17 +34,14 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidator extends AbstractHandler {
@@ -82,21 +80,19 @@ public class GetStateValidator extends AbstractHandler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    final Supplier<Optional<Integer>> getValidatorIndex =
-        () ->
-            chainDataProvider.validatorParameterToIndex(ctx.pathParamMap().get(PARAM_VALIDATOR_ID));
-
-    final Function<Bytes32, SafeFuture<Optional<ValidatorResponse>>> rootHandler =
-        (root) -> chainDataProvider.getValidatorDetailsByStateRoot(root, getValidatorIndex.get());
-    final Function<UInt64, SafeFuture<Optional<ValidatorResponse>>> slotHandler =
-        (slot) -> chainDataProvider.getValidatorDetailsBySlot(slot, getValidatorIndex.get());
-
-    processStateEndpointRequest(
-        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
+    final Map<String, String> pathParamMap = ctx.pathParamMap();
+    SafeFuture<Optional<ValidatorResponse>> future =
+        chainDataProvider.getStateValidator(
+            pathParamMap.get(PARAM_STATE_ID), pathParamMap.get(PARAM_VALIDATOR_ID));
+    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
   private Optional<String> handleResult(Context ctx, final ValidatorResponse response)
       throws JsonProcessingException {
+    if (response.equals(ValidatorResponse.EMPTY)) {
+      ctx.status(SC_NOT_FOUND);
+      return Optional.empty();
+    }
     return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorResponse(response)));
   }
 }

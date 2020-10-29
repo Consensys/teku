@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetChainHead;
@@ -196,6 +198,12 @@ public class BeaconRestApi {
         (e, ctx) -> {
           ctx.status(SC_SERVICE_UNAVAILABLE);
           setErrorBody(ctx, () -> BadRequest.serviceUnavailable(jsonProvider));
+        });
+    app.exception(
+        BadRequestException.class,
+        (e, ctx) -> {
+          ctx.status(SC_BAD_REQUEST);
+          setErrorBody(ctx, () -> BadRequest.badRequest(jsonProvider, e.getMessage()));
         });
     // Add catch-all handler
     app.exception(
