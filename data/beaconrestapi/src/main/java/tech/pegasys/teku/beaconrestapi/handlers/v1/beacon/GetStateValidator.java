@@ -89,10 +89,6 @@ public class GetStateValidator extends AbstractHandler {
 
   private Optional<String> handleResult(Context ctx, final ValidatorResponse response)
       throws JsonProcessingException {
-    if (response.equals(ValidatorResponse.EMPTY)) {
-      ctx.status(SC_NOT_FOUND);
-      return Optional.empty();
-    }
     return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorResponse(response)));
   }
 }

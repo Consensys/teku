@@ -867,6 +867,7 @@ public class ChainDataProviderTest {
     final List<ValidatorResponse> expectedValidators =
         validatorIds.stream()
             .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
+            .flatMap(Optional::stream)
             .collect(toList());
     SafeFuture<Optional<List<ValidatorResponse>>> response =
         provider.getValidatorsDetailsBySlot(slot, validatorIds);

@@ -559,6 +559,7 @@ public class ChainDataProvider {
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
     return validatorIndices.stream()
         .map(index -> ValidatorResponse.fromState(state, index))
+        .flatMap(Optional::stream)
         .collect(toList());
   }
 
@@ -614,7 +615,7 @@ public class ChainDataProvider {
     return getValidatorSelector(state, validators)
         .filter(getStatusPredicate(state, statusFilter))
         .mapToObj(index -> ValidatorResponse.fromState(state, index))
-        .filter(v -> !v.equals(ValidatorResponse.EMPTY))
+        .flatMap(Optional::stream)
         .collect(toList());
   }
 
@@ -632,8 +633,9 @@ public class ChainDataProvider {
       final String validatorIdParam) {
     return getValidatorSelector(state, List.of(validatorIdParam))
         .mapToObj(index -> ValidatorResponse.fromState(state, index))
+        .flatMap(Optional::stream)
         .findFirst()
-        .orElse(ValidatorResponse.EMPTY);
+        .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
   }
 
   private IntPredicate getStatusPredicate(
