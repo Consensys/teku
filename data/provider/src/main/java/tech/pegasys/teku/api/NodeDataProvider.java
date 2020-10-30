@@ -13,15 +13,18 @@
 
 package tech.pegasys.teku.api;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class NodeDataProvider {
 
@@ -53,6 +56,10 @@ public class NodeDataProvider {
     return attesterSlashingPool.getAll().stream()
         .map(tech.pegasys.teku.api.schema.AttesterSlashing::new)
         .collect(Collectors.toList());
+  }
+
+  public SafeFuture<InternalValidationResult> postAttesterSlashing(tech.pegasys.teku.api.schema.AttesterSlashing slashing) {
+    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing());
   }
 
   public List<tech.pegasys.teku.api.schema.ProposerSlashing> getProposerSlashings() {
