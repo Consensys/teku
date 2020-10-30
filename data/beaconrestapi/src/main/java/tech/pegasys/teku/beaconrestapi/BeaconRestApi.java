@@ -80,7 +80,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
@@ -100,7 +100,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
@@ -331,7 +330,7 @@ public class BeaconRestApi {
 
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
-    app.post(PostAttestationData.ROUTE, new PostAttestationData(dataProvider, jsonProvider));
+    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
     app.post(
         PostSubscribeToBeaconCommitteeSubnet.ROUTE,
@@ -424,7 +423,10 @@ public class BeaconRestApi {
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
     app.get(GetAggregate.ROUTE, new GetAggregate(validatorDataProvider, jsonProvider));
 
-    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
+    app.post(
+        tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation(
+            dataProvider, jsonProvider));
     app.post(
         PostBlock.ROUTE,
         new PostBlock(validatorDataProvider, dataProvider.getSyncDataProvider(), jsonProvider));
