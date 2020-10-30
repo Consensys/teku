@@ -244,7 +244,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
     final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidateableAttestation.fromAttestation(attestation));
+    aggregatingPool.add(ValidateableAttestation.from(attestation));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -312,8 +312,7 @@ class AggregatingAttestationPoolTest {
     IntStream.of(validators).forEach(bitlist::setBit);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
-    ValidateableAttestation validateableAttestation =
-        ValidateableAttestation.fromAttestation(attestation);
+    ValidateableAttestation validateableAttestation = ValidateableAttestation.from(attestation);
     validateableAttestation.saveCommitteeShufflingSeed(
         dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validateableAttestation);

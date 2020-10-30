@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -68,7 +68,7 @@ public class ProposerSlashingValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(proposerSlashingValidator.validate(slashing)).isEqualTo(ACCEPT);
+    assertThat(proposerSlashingValidator.validateFully(slashing)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -84,7 +84,7 @@ public class ProposerSlashingValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(proposerSlashingValidator.validate(slashing)).isEqualTo(REJECT);
+    assertThat(proposerSlashingValidator.validateFully(slashing)).isEqualTo(REJECT);
   }
 
   @Test
@@ -97,7 +97,7 @@ public class ProposerSlashingValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
-    assertThat(proposerSlashingValidator.validate(slashing)).isEqualTo(REJECT);
+    assertThat(proposerSlashingValidator.validateFully(slashing)).isEqualTo(REJECT);
   }
 
   @Test
@@ -114,7 +114,7 @@ public class ProposerSlashingValidatorTest {
             any(),
             eq(BLSSignatureVerifier.SIMPLE)))
         .thenReturn(true);
-    assertThat(proposerSlashingValidator.validate(slashing1)).isEqualTo(ACCEPT);
-    assertThat(proposerSlashingValidator.validate(slashing2)).isEqualTo(IGNORE);
+    assertThat(proposerSlashingValidator.validateFully(slashing1)).isEqualTo(ACCEPT);
+    assertThat(proposerSlashingValidator.validateFully(slashing2)).isEqualTo(IGNORE);
   }
 }
