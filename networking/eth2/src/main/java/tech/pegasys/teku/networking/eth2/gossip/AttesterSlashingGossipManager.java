@@ -18,14 +18,14 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.AttesterSlashingTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class AttesterSlashingGossipManager {
   private final TopicChannel channel;
+  public static String TOPIC_NAME = "attester_slashing";
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -34,15 +34,15 @@ public class AttesterSlashingGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final AttesterSlashingValidator attesterSlashingValidator,
-      final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
-    final AttesterSlashingTopicHandler topicHandler =
-        new AttesterSlashingTopicHandler(
+      final OperationProcessor<AttesterSlashing> processor) {
+    final Eth2TopicHandler<AttesterSlashing> topicHandler =
+        new Eth2TopicHandler<>(
             asyncRunner,
+            processor,
             gossipEncoding,
-            forkInfo,
-            attesterSlashingValidator,
-            gossipedAttesterSlashingConsumer);
+            forkInfo.getForkDigest(),
+            TOPIC_NAME,
+            AttesterSlashing.class);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
