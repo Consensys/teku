@@ -13,6 +13,21 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -28,22 +43,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -173,25 +172,26 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return attestations;
   }
 
-  public Stream<Attestation> getAttestations(final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
+  public Stream<Attestation> getAttestations(
+      final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
-            (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
+        (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
-            (group) ->
-                    maybeCommitteeIndex.map(index -> group.getAttestationData().getIndex().equals(index)).orElse(true);
+        (group) ->
+            maybeCommitteeIndex
+                .map(index -> group.getAttestationData().getIndex().equals(index))
+                .orElse(true);
 
-    return dataHashBySlot.descendingMap()
-            .entrySet()
-            .stream()
-            .filter(filterForSlot)
-            .map(Map.Entry::getValue)
-            .flatMap(Collection::stream)
-            .map(attestationGroupByDataHash::get)
-            .filter(Objects::nonNull)
-            .filter(filterForCommitteeIndex)
-            .flatMap(MatchingDataAttestationGroup::stream)
-            .map(ValidateableAttestation::getAttestation);
+    return dataHashBySlot.descendingMap().entrySet().stream()
+        .filter(filterForSlot)
+        .map(Map.Entry::getValue)
+        .flatMap(Collection::stream)
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
+        .filter(filterForCommitteeIndex)
+        .flatMap(MatchingDataAttestationGroup::stream)
+        .map(ValidateableAttestation::getAttestation);
   }
 
   private boolean isValid(

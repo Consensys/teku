@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class NodeDataProvider {
 
@@ -42,10 +41,12 @@ public class NodeDataProvider {
     this.voluntaryExitPool = voluntaryExitPool;
   }
 
-  public List<tech.pegasys.teku.api.schema.Attestation> getAttestations(Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
-    return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex)
-            .map(tech.pegasys.teku.api.schema.Attestation::new)
-            .collect(Collectors.toList());
+  public List<tech.pegasys.teku.api.schema.Attestation> getAttestations(
+      Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
+    return attestationPool
+        .getAttestations(maybeSlot, maybeCommitteeIndex)
+        .map(tech.pegasys.teku.api.schema.Attestation::new)
+        .collect(Collectors.toList());
   }
 
   public List<tech.pegasys.teku.api.schema.AttesterSlashing> getAttesterSlashings() {
