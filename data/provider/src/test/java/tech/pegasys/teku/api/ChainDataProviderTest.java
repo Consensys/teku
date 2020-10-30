@@ -832,6 +832,23 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getStateCommittees_shouldReturnEmptyIfStateNotFound()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(
+            provider
+                .getStateCommittees(
+                    data.randomBytes32().toHexString(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty())
+                .get())
+        .isEmpty();
+  }
+
+  @Test
   public void getCommitteesFromState_shouldNotRequireFilters() {
     final tech.pegasys.teku.datastructures.state.BeaconState internalState =
         data.randomBeaconState(64);

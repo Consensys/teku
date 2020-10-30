@@ -20,6 +20,7 @@ import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -658,11 +659,14 @@ public class ChainDataProvider {
     final Predicate<CommitteeAssignment> committeeFilter =
         committeeIndex.isEmpty()
             ? __ -> true
-            : (assignment) -> assignment.getCommitteeIndex().equals(committeeIndex.get());
+            : (assignment) -> assignment.getCommitteeIndex().compareTo(committeeIndex.get()) == 0;
 
-    return combinedChainDataClient
-        .getCommitteesFromState(state, epoch.orElse(compute_epoch_at_slot(state.getSlot())))
-        .stream()
+    final UInt64 stateEpoch = compute_epoch_at_slot(state.getSlot());
+    if (epoch.isPresent() && epoch.get().isGreaterThan(stateEpoch.plus(ONE))) {
+      throw new BadRequestException(
+          "Epoch " + epoch.get() + " is too far ahead of state epoch " + stateEpoch);
+    }
+    return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
         .filter(slotFilter)
         .filter(committeeFilter)
         .map(EpochCommitteeResponse::new)
