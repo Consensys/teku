@@ -247,7 +247,7 @@ public class SyncSourceBatch implements Batch {
     if (!blocks.isEmpty() && !newBlocks.isEmpty()) {
       final SignedBeaconBlock previousBlock = blocks.get(blocks.size() - 1);
       final SignedBeaconBlock firstNewBlock = newBlocks.get(0);
-      if (!firstNewBlock.getParent_root().equals(previousBlock.getRoot())) {
+      if (!firstNewBlock.getParentRoot().equals(previousBlock.getRoot())) {
         LOG.debug(
             "Marking batch invalid because new blocks do not form a chain with previous blocks");
         markAsInvalid();
@@ -275,7 +275,7 @@ public class SyncSourceBatch implements Batch {
         .add(
             "requiredParent",
             getFirstBlock()
-                .map(block -> LogFormatter.formatHashRoot(block.getParent_root()))
+                .map(block -> LogFormatter.formatHashRoot(block.getParentRoot()))
                 .orElse("<unknown>"))
         .add("firstBlock", getFirstBlock().map(this::formatBlock).orElse("<none>"))
         .add("lastBlock", getLastBlock().map(this::formatBlock).orElse("<none>"))

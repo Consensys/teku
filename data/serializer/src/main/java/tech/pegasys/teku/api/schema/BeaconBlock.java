@@ -38,9 +38,9 @@ public class BeaconBlock {
 
   public BeaconBlock(tech.pegasys.teku.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
-    this.proposer_index = message.getProposer_index();
-    this.parent_root = message.getParent_root();
-    this.state_root = message.getState_root();
+    this.proposer_index = message.getProposerIndex();
+    this.parent_root = message.getParentRoot();
+    this.state_root = message.getStateRoot();
     this.body = new BeaconBlockBody(message.getBody());
   }
 

@@ -100,13 +100,13 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
-    final UInt64 proposerIndex = signedBlock.getMessage().getProposer_index();
+    final UInt64 proposerIndex = signedBlock.getMessage().getProposerIndex();
     final BeaconBlock block =
         new BeaconBlock(
             signedBlock.getSlot(),
             proposerIndex,
             Bytes32.ZERO,
-            signedBlock.getMessage().getState_root(),
+            signedBlock.getMessage().getStateRoot(),
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =
@@ -139,14 +139,14 @@ public class BlockValidatorTest {
 
     final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    UInt64 invalidProposerIndex = signedBlock.getMessage().getProposer_index().minus(ONE);
+    UInt64 invalidProposerIndex = signedBlock.getMessage().getProposerIndex().minus(ONE);
 
     final BeaconBlock block =
         new BeaconBlock(
             signedBlock.getSlot(),
             invalidProposerIndex,
-            signedBlock.getParent_root(),
-            signedBlock.getMessage().getState_root(),
+            signedBlock.getParentRoot(),
+            signedBlock.getMessage().getStateRoot(),
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =

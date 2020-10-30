@@ -152,7 +152,7 @@ public class ProtoArrayForkChoiceStrategyTest {
       when(block.getSlot()).thenReturn(slot);
       when(block.getRoot()).thenReturn(blockHash);
       when(block.hash_tree_root()).thenReturn(blockHash);
-      when(block.getParent_root()).thenReturn(parentRoot);
+      when(block.getParentRoot()).thenReturn(parentRoot);
       when(block.getStateRoot()).thenReturn(blockHash);
 
       final BeaconState state = mock(BeaconState.class);

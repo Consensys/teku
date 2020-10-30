@@ -55,10 +55,10 @@ public class BeaconBlockHeader {
 
   public BeaconBlockHeader(final tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader header) {
     this.slot = header.getSlot();
-    this.proposer_index = header.getProposer_index();
-    this.parent_root = header.getParent_root();
-    this.state_root = header.getState_root();
-    this.body_root = header.getBody_root();
+    this.proposer_index = header.getProposerIndex();
+    this.parent_root = header.getParentRoot();
+    this.state_root = header.getStateRoot();
+    this.body_root = header.getBodyRoot();
   }
 
   public tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader asInternalBeaconBlockHeader() {

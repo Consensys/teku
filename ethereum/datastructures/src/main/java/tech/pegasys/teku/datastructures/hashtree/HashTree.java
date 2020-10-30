@@ -253,7 +253,7 @@ public class HashTree {
 
     public Builder block(final SignedBeaconBlock block) {
       checkNotNull(block);
-      return childAndParentRoots(block.getRoot(), block.getParent_root());
+      return childAndParentRoots(block.getRoot(), block.getParentRoot());
     }
 
     public Builder blocks(final Collection<SignedBeaconBlock> blocks) {

@@ -564,7 +564,7 @@ public class WeakSubjectivityValidatorTest {
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
     when(block.getSlot()).thenReturn(slot);
     when(block.getRoot()).thenReturn(root);
-    when(block.getParent_root()).thenReturn(parentRoot);
+    when(block.getParentRoot()).thenReturn(parentRoot);
 
     return block;
   }
@@ -577,7 +577,7 @@ public class WeakSubjectivityValidatorTest {
     for (SignedBeaconBlock block : blocks) {
       when(forkChoiceStrategy.blockSlot(block.getRoot())).thenReturn(Optional.of(block.getSlot()));
       when(forkChoiceStrategy.blockParentRoot(block.getRoot()))
-          .thenReturn(Optional.of(block.getParent_root()));
+          .thenReturn(Optional.of(block.getParentRoot()));
       when(forkChoiceStrategy.getAncestor(any(), eq(block.getSlot())))
           .thenReturn(Optional.of(block.getRoot()));
     }

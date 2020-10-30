@@ -127,7 +127,7 @@ class StateGenerationTaskTest {
     SignedBeaconBlock block = endBlock;
     while (block.getSlot().isGreaterThan(startBlockAndState.getSlot())) {
       treeBuilder.block(block);
-      block = chainBuilder.getBlock(block.getParent_root()).orElseThrow();
+      block = chainBuilder.getBlock(block.getParentRoot()).orElseThrow();
     }
     final HashTree tree = treeBuilder.build();
     return new StateGenerationTask(

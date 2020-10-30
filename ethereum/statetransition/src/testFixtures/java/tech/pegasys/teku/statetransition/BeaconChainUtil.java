@@ -192,7 +192,7 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final Optional<BeaconState> preState =
-        recentChainData.retrieveBlockState(block.getParent_root()).join();
+        recentChainData.retrieveBlockState(block.getParentRoot()).join();
     final BlockImportResult importResult = forkChoice.onBlock(block, preState).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

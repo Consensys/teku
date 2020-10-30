@@ -248,11 +248,11 @@ public class BlockImporterTest {
     final BeaconBlock invalidAncestryUnsignedBlock =
         new BeaconBlock(
             block.getSlot(),
-            block.getMessage().getProposer_index(),
+            block.getMessage().getProposerIndex(),
             block.getMessage().hash_tree_root(),
-            block.getMessage().getState_root(),
+            block.getMessage().getStateRoot(),
             block.getMessage().getBody());
-    final Signer signer = localChain.getSigner(block.getMessage().getProposer_index().intValue());
+    final Signer signer = localChain.getSigner(block.getMessage().getProposerIndex().intValue());
     final SignedBeaconBlock invalidAncestryBlock =
         new SignedBeaconBlock(
             invalidAncestryUnsignedBlock,

@@ -260,7 +260,7 @@ public class RocksDbDatabase implements Database {
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
-            childToParentLookup.put(b.getRoot(), b.getParent_root());
+            childToParentLookup.put(b.getRoot(), b.getParentRoot());
             rootToSlot.put(b.getRoot(), b.getSlot());
           });
     }
@@ -270,7 +270,7 @@ public class RocksDbDatabase implements Database {
         hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
     checkNotNull(finalizedBlock);
     checkState(
-        finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
+        finalizedBlock.getMessage().getStateRoot().equals(finalizedState.hash_tree_root()),
         "Latest finalized state does not match latest finalized block");
     final AnchorPoint latestFinalized =
         AnchorPoint.create(finalizedCheckpoint, finalizedBlock, finalizedState);

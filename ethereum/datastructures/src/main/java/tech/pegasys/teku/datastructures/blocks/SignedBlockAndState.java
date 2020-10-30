@@ -47,7 +47,7 @@ public class SignedBlockAndState {
   }
 
   public Bytes32 getParentRoot() {
-    return block.getParent_root();
+    return block.getParentRoot();
   }
 
   public Bytes32 getStateRoot() {

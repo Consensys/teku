@@ -114,7 +114,7 @@ public class FinalizedChainData {
     public Builder finalizedBlock(final SignedBeaconBlock block) {
       checkNotNull(block);
       this.finalizedBlocks.put(block.getRoot(), block);
-      this.finalizedChildAndParent(block.getRoot(), block.getParent_root());
+      this.finalizedChildAndParent(block.getRoot(), block.getParentRoot());
       return this;
     }
 

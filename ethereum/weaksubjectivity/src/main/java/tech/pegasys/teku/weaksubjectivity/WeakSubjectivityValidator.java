@@ -184,8 +184,7 @@ public class WeakSubjectivityValidator {
     } else if (blockEpoch.isGreaterThanOrEqualTo(wsCheckpoint.getEpoch())) {
       // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
       final Optional<Bytes32> ancestor =
-          get_ancestor(
-              forkChoiceStrategy, block.getParent_root(), wsCheckpoint.getEpochStartSlot());
+          get_ancestor(forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot());
       // If ancestor is not present, the chain must have moved passed the wsCheckpoint
       return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);
     }

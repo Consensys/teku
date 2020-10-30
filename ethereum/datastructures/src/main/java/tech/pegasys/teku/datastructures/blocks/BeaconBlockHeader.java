@@ -34,7 +34,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class BeaconBlockHeader extends AbstractImmutableContainer
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
@@ -103,16 +103,16 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   public static BeaconBlockHeader fromState(final BeaconState state) {
     BeaconBlockHeader latestHeader = state.getLatest_block_header();
 
-    if (latestHeader.getState_root().isZero()) {
+    if (latestHeader.getStateRoot().isZero()) {
       // If the state root is empty, replace it with the current state root
       final Bytes32 stateRoot = state.hash_tree_root();
       latestHeader =
           new BeaconBlockHeader(
               latestHeader.getSlot(),
-              latestHeader.getProposer_index(),
-              latestHeader.getParent_root(),
+              latestHeader.getProposerIndex(),
+              latestHeader.getParentRoot(),
               stateRoot,
-              latestHeader.getBody_root());
+              latestHeader.getBodyRoot());
     }
 
     return latestHeader;
@@ -121,9 +121,9 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   public static BeaconBlockHeader fromBlock(final BeaconBlock block) {
     return new BeaconBlockHeader(
         block.getSlot(),
-        block.getProposer_index(),
-        block.getParent_root(),
-        block.getState_root(),
+        block.getProposerIndex(),
+        block.getParentRoot(),
+        block.getStateRoot(),
         block.getBody().hash_tree_root());
   }
 
@@ -140,31 +140,40 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(getSlot().longValue()),
-        SSZ.encodeUInt64(getProposer_index().longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(getParent_root())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getState_root())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getBody_root())));
+        SSZ.encodeUInt64(getProposerIndex().longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(getParentRoot())),
+        SSZ.encode(writer -> writer.writeFixedBytes(getStateRoot())),
+        SSZ.encode(writer -> writer.writeFixedBytes(getBodyRoot())));
   }
 
-  /** *************** * GETTERS & SETTERS * * ******************* */
+  @Override
   public UInt64 getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
-  public UInt64 getProposer_index() {
+  @Override
+  public UInt64 getProposerIndex() {
     return ((UInt64View) get(1)).get();
   }
 
-  public Bytes32 getParent_root() {
+  @Override
+  public Bytes32 getParentRoot() {
     return ((Bytes32View) get(2)).get();
   }
 
-  public Bytes32 getState_root() {
+  @Override
+  public Bytes32 getStateRoot() {
     return ((Bytes32View) get(3)).get();
   }
 
-  public Bytes32 getBody_root() {
+  @Override
+  public Bytes32 getBodyRoot() {
     return ((Bytes32View) get(4)).get();
+  }
+
+  @Override
+  public Bytes32 getRoot() {
+    return hash_tree_root();
   }
 
   @Override
@@ -180,10 +189,10 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("slot", getSlot())
-        .add("proposer_index", getProposer_index())
-        .add("parent_root", getParent_root())
-        .add("state_root", getState_root())
-        .add("body_root", getBody_root())
+        .add("proposer_index", getProposerIndex())
+        .add("parent_root", getParentRoot())
+        .add("state_root", getStateRoot())
+        .add("body_root", getBodyRoot())
         .toString();
   }
 }

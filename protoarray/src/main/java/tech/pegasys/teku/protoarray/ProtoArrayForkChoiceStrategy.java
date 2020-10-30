@@ -117,8 +117,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     processBlock(
         block.getSlot(),
         blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
+        block.getParentRoot(),
+        block.getStateRoot(),
         state.getCurrent_justified_checkpoint().getEpoch(),
         state.getFinalized_checkpoint().getEpoch());
   }

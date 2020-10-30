@@ -660,8 +660,8 @@ public class ChainDataProviderTest {
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
-            block.getMessage().getProposer_index(),
-            block.getParent_root(),
+            block.getMessage().getProposerIndex(),
+            block.getParentRoot(),
             block.getStateRoot(),
             block.getRoot());
     final BlockHeader expected =

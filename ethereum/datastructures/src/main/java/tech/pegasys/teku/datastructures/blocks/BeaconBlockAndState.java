@@ -28,7 +28,7 @@ public class BeaconBlockAndState {
 
   public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
     checkArgument(
-        Objects.equals(block.getState_root(), state.hash_tree_root()),
+        Objects.equals(block.getStateRoot(), state.hash_tree_root()),
         "State must belong to the given block");
     this.block = block;
     this.state = state;

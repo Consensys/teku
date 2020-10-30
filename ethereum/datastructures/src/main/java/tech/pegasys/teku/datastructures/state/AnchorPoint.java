@@ -46,7 +46,7 @@ public class AnchorPoint {
     this.blockHeader =
         block.map(BeaconBlockHeader::fromBlock).orElseGet(() -> BeaconBlockHeader.fromState(state));
     checkArgument(
-        blockHeader.getState_root().equals(state.hash_tree_root()), "Block and state must match");
+        blockHeader.getStateRoot().equals(state.hash_tree_root()), "Block and state must match");
     checkArgument(
         checkpoint.getRoot().equals(blockHeader.hashTreeRoot()), "Checkpoint and block must match");
 
@@ -140,7 +140,7 @@ public class AnchorPoint {
   }
 
   public Bytes32 getParentRoot() {
-    return blockHeader.getParent_root();
+    return blockHeader.getParentRoot();
   }
 
   @Override

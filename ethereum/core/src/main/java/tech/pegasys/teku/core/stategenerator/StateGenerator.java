@@ -185,7 +185,7 @@ public class StateGenerator {
                 BeaconState postState = stateCache.get(currentBlock.getRoot()).orElse(null);
                 if (postState == null) {
                   // Generate post state
-                  final Bytes32 parentRoot = currentBlock.getParent_root();
+                  final Bytes32 parentRoot = currentBlock.getParentRoot();
                   // Find pre-state to build on
                   final BeaconState preState;
                   if (currentState.getBlockRoot().equals(parentRoot)) {

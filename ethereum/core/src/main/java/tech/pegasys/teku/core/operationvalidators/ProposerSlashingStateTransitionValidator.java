@@ -41,7 +41,7 @@ public class ProposerSlashingStateTransitionValidator
                 ProposerSlashingInvalidReason.HEADER_SLOTS_DIFFERENT),
         () ->
             check(
-                header1.getProposer_index().equals(header2.getProposer_index()),
+                header1.getProposerIndex().equals(header2.getProposerIndex()),
                 ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT),
         () ->
             check(
@@ -49,13 +49,13 @@ public class ProposerSlashingStateTransitionValidator
                 ProposerSlashingInvalidReason.SAME_HEADER),
         () ->
             check(
-                UInt64.valueOf(state.getValidators().size()).compareTo(header1.getProposer_index())
+                UInt64.valueOf(state.getValidators().size()).compareTo(header1.getProposerIndex())
                     > 0,
                 ProposerSlashingInvalidReason.INVALID_PROPOSER),
         () ->
             check(
                 is_slashable_validator(
-                    state.getValidators().get(toIntExact(header1.getProposer_index().longValue())),
+                    state.getValidators().get(toIntExact(header1.getProposerIndex().longValue())),
                     get_current_epoch(state)),
                 ProposerSlashingInvalidReason.PROPOSER_NOT_SLASHABLE));
   }
