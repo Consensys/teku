@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -71,7 +71,7 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(ACCEPT);
+    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -91,9 +91,9 @@ public class VoluntaryExitValidatorTest {
             eq(BLSSignatureVerifier.SIMPLE)))
         .thenReturn(true);
 
-    assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(ACCEPT);
-    assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(IGNORE);
-    assertThat(voluntaryExitValidator.validate(exit3)).isEqualTo(IGNORE);
+    assertThat(voluntaryExitValidator.validateFully(exit1)).isEqualTo(ACCEPT);
+    assertThat(voluntaryExitValidator.validateFully(exit2)).isEqualTo(IGNORE);
+    assertThat(voluntaryExitValidator.validateFully(exit3)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -107,7 +107,7 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(REJECT);
+    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(REJECT);
   }
 
   @Test
@@ -120,6 +120,6 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(REJECT);
+    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(REJECT);
   }
 }

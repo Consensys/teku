@@ -40,7 +40,10 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
+import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
@@ -90,6 +93,12 @@ import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExec
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -356,22 +365,32 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttesterSlashingPool() {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
-    attesterSlashingPool =
-        new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+    AttesterSlashingValidator validator =
+        new AttesterSlashingValidator(
+            recentChainData, new AttesterSlashingStateTransitionValidator());
+    attesterSlashingPool = new OperationPool<>(AttesterSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
   private void initProposerSlashingPool() {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
-    proposerSlashingPool =
-        new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
+    ProposerSlashingValidator validator =
+        new ProposerSlashingValidator(
+            recentChainData,
+            new ProposerSlashingStateTransitionValidator(),
+            new ProposerSlashingSignatureVerifier());
+    proposerSlashingPool = new OperationPool<>(ProposerSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    voluntaryExitPool =
-        new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
+    VoluntaryExitValidator validator =
+        new VoluntaryExitValidator(
+            recentChainData,
+            new VoluntaryExitStateTransitionValidator(),
+            new VoluntaryExitSignatureVerifier());
+    voluntaryExitPool = new OperationPool<>(SignedVoluntaryExit.class, validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
@@ -501,9 +520,25 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
+    AttestationValidator attestationValidator =
+        new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
+    AggregateAttestationValidator aggregateValidator =
+        new AggregateAttestationValidator(recentChainData, attestationValidator);
+    blockImporter.subscribeToVerifiedBlockAttestations(
+        (attestations) ->
+            attestations.forEach(
+                attestation ->
+                    aggregateValidator.addSeenAggregate(
+                        ValidateableAttestation.from(attestation))));
     attestationManager =
         AttestationManager.create(
-            eventBus, pendingAttestations, futureAttestations, forkChoice, attestationPool);
+            eventBus,
+            pendingAttestations,
+            futureAttestations,
+            forkChoice,
+            attestationPool,
+            attestationValidator,
+            aggregateValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
@@ -550,28 +585,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedBlockConsumer(
-                  block ->
-                      blockManager
-                          .importBlock(block)
-                          .finish(err -> LOG.error("Failed to process gossiped block.", err)))
-              .gossipedAttestationConsumer(
-                  attestation ->
-                      attestationManager
-                          .onAttestation(attestation)
-                          .finish(
-                              result ->
-                                  result.ifInvalid(
-                                      reason ->
-                                          LOG.debug("Rejected gossiped attestation: " + reason)),
-                              err -> LOG.error("Failed to process gossiped attestation.", err)))
-              .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
-              .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
-              .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
+              .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+              .gossipedAttestationProcessor(attestationManager::addAttestation)
+              .gossipedAggregateProcessor(attestationManager::addAggregate)
+              .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
+              .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
+              .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
               .processedAttestationSubscriptionProvider(
-                  attestationManager::subscribeToProcessedAttestations)
-              .verifiedBlockAttestationsProvider(
-                  blockImporter::subscribeToVerifiedBlockAttestations)
+                  attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
                   eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
               .metricsSystem(metricsSystem)
@@ -659,8 +680,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
+    BlockValidator blockValidator = new BlockValidator(recentChainData, stateTransition);
     blockManager =
-        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
+        BlockManager.create(
+            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager);
