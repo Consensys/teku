@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -129,7 +129,7 @@ public abstract class AbstractStoreTest {
         SYNC_RUNNER,
         new StubMetricsSystem(),
         blockProviderFromChainBuilder(),
-        StateAndBlockProvider.NOOP,
+        StateAndBlockSummaryProvider.NOOP,
         Optional.empty(),
         genesis.getState().getGenesis_time(),
         genesis.getState().getGenesis_time(),

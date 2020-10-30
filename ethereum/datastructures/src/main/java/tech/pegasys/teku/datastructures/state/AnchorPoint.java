@@ -22,8 +22,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -119,8 +121,10 @@ public class AnchorPoint {
     return block;
   }
 
-  public Optional<SignedBlockAndState> getBlockAndState() {
-    return block.map(b -> new SignedBlockAndState(b, state));
+  public StateAndBlockSummary getStateAndBlockSummary() {
+    final BeaconBlockSummary blockSummary =
+        block.map(BeaconBlockSummary.class::cast).orElse(blockHeader);
+    return new StateAndBlockSummary(blockSummary, state);
   }
 
   public UInt64 getBlockSlot() {

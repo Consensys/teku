@@ -29,7 +29,7 @@ import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -168,7 +168,7 @@ public class DebugDbCommand implements Runnable {
                       builder
                           .blockProvider(BlockProvider.NOOP)
                           .asyncRunner(asyncRunner)
-                          .stateProvider(StateAndBlockProvider.NOOP)
+                          .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
               .map(UpdatableStore::getLatestFinalized);
       int result = writeState(outputFile, finalizedAnchor.map(AnchorPoint::getState));

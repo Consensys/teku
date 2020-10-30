@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -93,7 +93,7 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
@@ -141,7 +141,7 @@ public class StorageBackedRecentChainDataTest {
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
                 BlockProvider.NOOP,
-                StateAndBlockProvider.NOOP,
+                StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
             .build();
@@ -186,7 +186,7 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();

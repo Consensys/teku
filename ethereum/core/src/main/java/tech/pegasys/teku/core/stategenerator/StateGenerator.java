@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
@@ -66,14 +67,14 @@ public class StateGenerator {
 
   public static StateGenerator create(
       final HashTree blockTree,
-      final SignedBlockAndState rootBlockAndState,
+      final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider) {
     return create(blockTree, rootBlockAndState, blockProvider, Collections.emptyMap());
   }
 
   public static StateGenerator create(
       final HashTree blockTree,
-      final SignedBlockAndState rootBlockAndState,
+      final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates) {
     return create(
@@ -87,7 +88,7 @@ public class StateGenerator {
 
   public static StateGenerator create(
       final HashTree blockTree,
-      final SignedBlockAndState rootBlockAndState,
+      final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates,
       final int blockBatchSize,
@@ -199,7 +200,7 @@ public class StateGenerator {
                       final List<Bytes32> remainingRoots = blockRoots.subList(i, blockRoots.size());
                       return chainStateGenerator
                           .generateTargetState(parentRoot)
-                          .thenApply(SignedBlockAndState::getState)
+                          .thenApply(StateAndBlockSummary::getState)
                           .thenApply(parentState -> new BlockRootAndState(parentRoot, parentState))
                           .thenCompose(
                               (lastState) ->

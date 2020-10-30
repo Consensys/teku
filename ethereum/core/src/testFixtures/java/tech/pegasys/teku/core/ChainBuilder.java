@@ -35,7 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -43,6 +43,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -99,8 +100,10 @@ public class ChainBuilder {
         () -> Maps.transformValues(blocksByHash, SignedBlockAndState::getBlock));
   }
 
-  public StateAndBlockProvider getStateAndBlockProvider() {
-    return blockRoot -> SafeFuture.completedFuture(getBlockAndState(blockRoot));
+  public StateAndBlockSummaryProvider getStateAndBlockProvider() {
+    return blockRoot ->
+        SafeFuture.completedFuture(
+            getBlockAndState(blockRoot).map(StateAndBlockSummary.class::cast));
   }
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This

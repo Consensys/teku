@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -31,7 +31,7 @@ class StoreTransactionUpdates {
 
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
+  private final Map<Bytes32, StateAndBlockSummary> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
@@ -42,7 +42,7 @@ class StoreTransactionUpdates {
       final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
-      final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
+      final Map<Bytes32, StateAndBlockSummary> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
       final Optional<BlockTree> updatedBlockTree,

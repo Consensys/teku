@@ -23,9 +23,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,11 +41,12 @@ class StateRegenerationBaseSelectorTest {
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier =
       mock(Supplier.class);
 
-  private final StateAndBlockProvider stateAndBlockProvider = mock(StateAndBlockProvider.class);
+  private final StateAndBlockSummaryProvider stateAndBlockProvider =
+      mock(StateAndBlockSummaryProvider.class);
   private final BlockProvider blockProvider = mock(BlockProvider.class);
 
   private Optional<SignedBlockAndState> closestBlockAndStateFromStore = Optional.empty();
-  private Optional<SignedBlockAndState> rebasedStartingPoint = Optional.empty();
+  private Optional<StateAndBlockSummary> rebasedStartingPoint = Optional.empty();
   private Optional<SignedBlockAndState> latestEpochBoundary = Optional.empty();
 
   @Test
@@ -117,7 +119,7 @@ class StateRegenerationBaseSelectorTest {
     final StateRegenerationBaseSelector selector = createSelector();
 
     // Make the epoch boundary state unavailable
-    when(stateAndBlockProvider.getBlockAndState(fromEpochBoundary.getRoot()))
+    when(stateAndBlockProvider.getStateAndBlock(fromEpochBoundary.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(Optional.of(fromStore));
@@ -205,7 +207,7 @@ class StateRegenerationBaseSelectorTest {
     return blockAndState;
   }
 
-  private SafeFuture<Optional<SignedBlockAndState>> getBestBase() {
+  private SafeFuture<Optional<StateAndBlockSummary>> getBestBase() {
     return createSelector().getBestBase();
   }
 
@@ -223,7 +225,7 @@ class StateRegenerationBaseSelectorTest {
 
     latestEpochBoundary.ifPresent(
         blockAndState ->
-            when(stateAndBlockProvider.getBlockAndState(blockAndState.getRoot()))
+            when(stateAndBlockProvider.getStateAndBlock(blockAndState.getRoot()))
                 .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState))));
 
     return new StateRegenerationBaseSelector(

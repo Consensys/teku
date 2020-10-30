@@ -33,7 +33,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.traversal.OrderedTreeStream;
 
 /** A tree where each node is identified by a Bytes32 hash */
@@ -251,12 +251,12 @@ public class HashTree {
       return this;
     }
 
-    public Builder block(final SignedBeaconBlock block) {
+    public Builder block(final BeaconBlockSummary block) {
       checkNotNull(block);
       return childAndParentRoots(block.getRoot(), block.getParentRoot());
     }
 
-    public Builder blocks(final Collection<SignedBeaconBlock> blocks) {
+    public Builder blocks(final Collection<? extends BeaconBlockSummary> blocks) {
       checkNotNull(blocks);
       blocks.forEach(this::block);
       return this;

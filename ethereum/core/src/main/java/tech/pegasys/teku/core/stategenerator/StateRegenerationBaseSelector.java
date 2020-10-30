@@ -19,9 +19,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,9 +29,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class StateRegenerationBaseSelector {
   private final Optional<SlotAndBlockRoot> latestEpochBoundary;
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier;
-  private final StateAndBlockProvider stateAndBlockProvider;
+  private final StateAndBlockSummaryProvider stateAndBlockProvider;
   private final BlockProvider blockProvider;
-  private final Optional<SignedBlockAndState> rebasedStartingPoint;
+  private final Optional<StateAndBlockSummary> rebasedStartingPoint;
 
   /**
    * Loading states from disk is expensive in terms of time and the amount of memory they consume so
@@ -43,9 +43,9 @@ public class StateRegenerationBaseSelector {
   public StateRegenerationBaseSelector(
       final Optional<SlotAndBlockRoot> latestEpochBoundary,
       final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier,
-      final StateAndBlockProvider stateAndBlockProvider,
+      final StateAndBlockSummaryProvider stateAndBlockProvider,
       final BlockProvider blockProvider,
-      final Optional<SignedBlockAndState> rebasedStartingPoint,
+      final Optional<StateAndBlockSummary> rebasedStartingPoint,
       final int replayToleranceToAvoidLoadingInEpochs) {
     this.latestEpochBoundary = latestEpochBoundary;
     this.closestAvailableStateSupplier = closestAvailableStateSupplier;
@@ -56,7 +56,7 @@ public class StateRegenerationBaseSelector {
   }
 
   public StateRegenerationBaseSelector withRebasedStartingPoint(
-      final SignedBlockAndState blockAndState) {
+      final StateAndBlockSummary blockAndState) {
     if (isBetterThanCurrentRebasedStartingPoint(blockAndState)
         && isEqualToOrBetterThanLatestEpochBoundary(blockAndState)) {
       return new StateRegenerationBaseSelector(
@@ -71,17 +71,18 @@ public class StateRegenerationBaseSelector {
   }
 
   private boolean isEqualToOrBetterThanLatestEpochBoundary(
-      final SignedBlockAndState blockAndState) {
+      final StateAndBlockSummary blockAndState) {
     return latestEpochBoundary.isEmpty()
         || blockAndState.getSlot().isGreaterThanOrEqualTo(latestEpochBoundary.get().getSlot());
   }
 
-  private boolean isBetterThanCurrentRebasedStartingPoint(final SignedBlockAndState blockAndState) {
+  private boolean isBetterThanCurrentRebasedStartingPoint(
+      final StateAndBlockSummary blockAndState) {
     return isBetterThan(
-        blockAndState.getSlot(), rebasedStartingPoint.map(SignedBlockAndState::getSlot));
+        blockAndState.getSlot(), rebasedStartingPoint.map(StateAndBlockSummary::getSlot));
   }
 
-  public SafeFuture<Optional<SignedBlockAndState>> getBestBase() {
+  public SafeFuture<Optional<StateAndBlockSummary>> getBestBase() {
     final Optional<BlockRootAndState> closestAvailableFromStore =
         closestAvailableStateSupplier.get();
     if (closestAvailableFromStore.isEmpty()) {
@@ -92,12 +93,12 @@ public class StateRegenerationBaseSelector {
     final Optional<UInt64> storeSlot = closestAvailableFromStore.map(BlockRootAndState::getSlot);
     final Optional<UInt64> epochBoundarySlot =
         getLatestEpochBoundarySlotMinusTolerance(latestEpochBoundary);
-    final Optional<UInt64> rebasedSlot = rebasedStartingPoint.map(SignedBlockAndState::getSlot);
+    final Optional<UInt64> rebasedSlot = rebasedStartingPoint.map(StateAndBlockSummary::getSlot);
 
     if (epochBoundarySlot.isPresent()
         && isBestOption(epochBoundarySlot.get(), storeSlot, rebasedSlot)) {
       return stateAndBlockProvider
-          .getBlockAndState(latestEpochBoundary.get().getBlockRoot())
+          .getStateAndBlock(latestEpochBoundary.get().getBlockRoot())
           .thenCompose(
               maybeBlockAndState -> {
                 if (maybeBlockAndState.isEmpty()) {
@@ -111,7 +112,7 @@ public class StateRegenerationBaseSelector {
     return getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get());
   }
 
-  private SafeFuture<Optional<SignedBlockAndState>> getBestBaseExcludingLatestEpochBoundary(
+  private SafeFuture<Optional<StateAndBlockSummary>> getBestBaseExcludingLatestEpochBoundary(
       final BlockRootAndState closestAvailableFromStore) {
     if (rebasedStartingPoint.isPresent()
         && rebasedStartingPoint
@@ -125,7 +126,8 @@ public class StateRegenerationBaseSelector {
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(
-                    block -> new SignedBlockAndState(block, closestAvailableFromStore.getState())));
+                    block ->
+                        new StateAndBlockSummary(block, closestAvailableFromStore.getState())));
   }
 
   private Optional<UInt64> getLatestEpochBoundarySlotMinusTolerance(
