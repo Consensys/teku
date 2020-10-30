@@ -176,7 +176,7 @@ public final class BeaconBlock
   }
 
   @Override
-  public Optional<BeaconBlock> getExpandedBeaconBlock() {
+  public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(this);
   }
 

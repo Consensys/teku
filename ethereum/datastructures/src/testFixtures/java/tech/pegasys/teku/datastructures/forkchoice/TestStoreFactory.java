@@ -78,7 +78,7 @@ public class TestStoreFactory {
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
 
-    blocks.put(anchorRoot, anchor.getBlock().orElseThrow());
+    blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     block_states.put(anchorRoot, anchorState);
     checkpoint_states.put(anchorCheckpoint, anchorState);
 

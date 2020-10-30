@@ -71,13 +71,13 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   }
 
   @Override
-  public Optional<BeaconBlock> getExpandedBeaconBlock() {
-    return blockSummary.getExpandedBeaconBlock();
+  public Optional<BeaconBlock> getBeaconBlock() {
+    return blockSummary.getBeaconBlock();
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getSignedExpandedBeaconBlock() {
-    return blockSummary.getSignedExpandedBeaconBlock();
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return blockSummary.getSignedBeaconBlock();
   }
 
   @Override

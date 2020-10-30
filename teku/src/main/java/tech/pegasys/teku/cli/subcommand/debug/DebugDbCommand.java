@@ -174,7 +174,7 @@ public class DebugDbCommand implements Runnable {
       int result = writeState(outputFile, finalizedAnchor.map(AnchorPoint::getState));
       if (result == 0 && blockOutputFile != null) {
         final Optional<SignedBeaconBlock> finalizedBlock =
-            finalizedAnchor.flatMap(AnchorPoint::getBlock);
+            finalizedAnchor.flatMap(AnchorPoint::getSignedBeaconBlock);
         result = writeBlock(blockOutputFile, finalizedBlock);
       }
       return result;

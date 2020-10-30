@@ -33,11 +33,11 @@ public interface BeaconBlockSummary {
   /** @return the hash tree root of the block */
   Bytes32 getRoot();
 
-  default Optional<BeaconBlock> getExpandedBeaconBlock() {
+  default Optional<BeaconBlock> getBeaconBlock() {
     return Optional.empty();
   }
 
-  default Optional<SignedBeaconBlock> getSignedExpandedBeaconBlock() {
+  default Optional<SignedBeaconBlock> getSignedBeaconBlock() {
     return Optional.empty();
   }
 }

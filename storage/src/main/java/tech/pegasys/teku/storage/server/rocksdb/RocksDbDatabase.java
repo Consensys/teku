@@ -189,7 +189,7 @@ public class RocksDbDatabase implements Database {
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
       final BeaconState anchorState = anchor.getState();
-      final Optional<SignedBeaconBlock> anchorBlock = anchor.getBlock();
+      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
 
       hotUpdater.setAnchor(anchor.getCheckpoint());
       hotUpdater.setGenesisTime(anchorState.getGenesis_time());

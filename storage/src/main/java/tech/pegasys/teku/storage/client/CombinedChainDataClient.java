@@ -423,7 +423,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
 
-    return getStore().getLatestFinalized().getBlock();
+    return getStore().getLatestFinalized().getSignedBeaconBlock();
   }
 
   public Optional<BeaconState> getFinalizedState() {

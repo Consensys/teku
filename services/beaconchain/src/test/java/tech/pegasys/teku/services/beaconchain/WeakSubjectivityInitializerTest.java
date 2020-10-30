@@ -368,7 +368,8 @@ public class WeakSubjectivityInitializerTest {
     when(chain.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(anchor.getEpoch().plus(1))));
     when(queryChannel.getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(anchor.getBlock().orElseThrow())));
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(anchor.getSignedBeaconBlock().orElseThrow())));
 
     final SafeFuture<Void> result =
         initializer.assertWeakSubjectivityAnchorIsConsistentWithExistingData(

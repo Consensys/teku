@@ -93,12 +93,12 @@ public class SignedBeaconBlock
   }
 
   @Override
-  public Optional<BeaconBlock> getExpandedBeaconBlock() {
+  public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(message);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getSignedExpandedBeaconBlock() {
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
     return Optional.of(this);
   }
 

@@ -126,7 +126,7 @@ class Store implements UpdatableStore {
 
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
-    states.cache(finalizedAnchor.getRoot(), finalizedAnchor.getStateAndBlockSummary());
+    states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
@@ -134,7 +134,7 @@ class Store implements UpdatableStore {
             fromDynamicMap(
                 () ->
                     this.getLatestFinalized()
-                        .getBlock()
+                        .getSignedBeaconBlock()
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
@@ -451,7 +451,7 @@ class Store implements UpdatableStore {
                 return SafeFuture.completedFuture(Optional.empty());
               }
               final Optional<SignedBeaconBlock> maybeBlock =
-                  res.flatMap(StateAndBlockSummary::getSignedExpandedBeaconBlock);
+                  res.flatMap(StateAndBlockSummary::getSignedBeaconBlock);
               return maybeBlock
                   .map(b -> SafeFuture.completedFuture(Optional.of(b)))
                   .orElseGet(() -> blockProvider.getBlock(blockRoot))
