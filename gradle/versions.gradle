@@ -148,6 +148,6 @@ dependencyManagement {
 
     dependency 'tech.pegasys.discovery:discovery:0.4.0-dev-4ec8e5ee'
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.5'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.13'
   }
 }
