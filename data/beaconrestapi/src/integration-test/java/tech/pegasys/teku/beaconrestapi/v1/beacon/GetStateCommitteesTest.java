@@ -22,13 +22,9 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -114,23 +110,14 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     assertThat(body.getMessage()).startsWith("Epoch 1024000 is too far ahead ");
   }
 
-  @ParameterizedTest
-  @MethodSource("emptyListConditions")
   public void queryFiltersOutResults(final String queryParam, final String queryParamValue)
       throws IOException {
-    final Response response = get("head", Map.of(queryParam, queryParamValue));
+    final Response response = get("head", Map.of("index", "1024000"));
     assertThat(response.code()).isEqualTo(SC_OK);
     final GetStateCommitteesResponse body =
         jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
     final List<EpochCommitteeResponse> data = body.data;
     assertThat(data).isEmpty();
-  }
-
-  static Stream<Arguments> emptyListConditions() {
-    Stream.Builder<Arguments> builder = Stream.builder();
-    builder.add(Arguments.of("index", "1024000")).add(Arguments.of("slot", "1024000"));
-
-    return builder.build();
   }
 
   public Response get(final String stateIdString, final Map<String, String> query)
