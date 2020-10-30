@@ -13,64 +13,70 @@
 
 package tech.pegasys.teku.api;
 
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttesterSlashing;
+import tech.pegasys.teku.api.schema.ProposerSlashing;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 public class NodeDataProvider {
 
   private final AggregatingAttestationPool attestationPool;
-  private final OperationPool<AttesterSlashing> attesterSlashingPool;
-  private final OperationPool<ProposerSlashing> proposerSlashingPool;
-  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+      attesterSlashingPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+      proposerSlashingPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+      voluntaryExitPool;
 
   public NodeDataProvider(
       AggregatingAttestationPool attestationPool,
-      OperationPool<AttesterSlashing> attesterSlashingsPool,
-      OperationPool<ProposerSlashing> proposerSlashingPool,
-      OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
+      OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+          attesterSlashingsPool,
+      OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+          proposerSlashingPool,
+      OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+          voluntaryExitPool) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
   }
 
-  public List<tech.pegasys.teku.api.schema.Attestation> getAttestations(
+  public List<Attestation> getAttestations(
       Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
     return attestationPool
         .getAttestations(maybeSlot, maybeCommitteeIndex)
-        .map(tech.pegasys.teku.api.schema.Attestation::new)
+        .map(Attestation::new)
         .collect(Collectors.toList());
   }
 
-  public List<tech.pegasys.teku.api.schema.AttesterSlashing> getAttesterSlashings() {
+  public List<AttesterSlashing> getAttesterSlashings() {
     return attesterSlashingPool.getAll().stream()
-        .map(tech.pegasys.teku.api.schema.AttesterSlashing::new)
+        .map(AttesterSlashing::new)
         .collect(Collectors.toList());
   }
 
-  public SafeFuture<InternalValidationResult> postAttesterSlashing(tech.pegasys.teku.api.schema.AttesterSlashing slashing) {
+  public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
     return attesterSlashingPool.add(slashing.asInternalAttesterSlashing());
   }
 
-  public List<tech.pegasys.teku.api.schema.ProposerSlashing> getProposerSlashings() {
+  public List<ProposerSlashing> getProposerSlashings() {
     return proposerSlashingPool.getAll().stream()
-        .map(tech.pegasys.teku.api.schema.ProposerSlashing::new)
+        .map(ProposerSlashing::new)
         .collect(Collectors.toList());
   }
 
-  public List<tech.pegasys.teku.api.schema.SignedVoluntaryExit> getVoluntaryExits() {
+  public List<SignedVoluntaryExit> getVoluntaryExits() {
     return voluntaryExitPool.getAll().stream()
-        .map(tech.pegasys.teku.api.schema.SignedVoluntaryExit::new)
+        .map(SignedVoluntaryExit::new)
         .collect(Collectors.toList());
   }
 

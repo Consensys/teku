@@ -24,9 +24,11 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetVoluntaryExitsResponse;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -47,7 +49,7 @@ public class GetVoluntaryExits extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get SignedVoluntaryExits from operation pool",
+      summary = "Get signed voluntary exits",
       tags = {TAG_V1_BEACON},
       description =
           "Retrieves voluntary exits known by the node but not necessarily incorporated into any block.",
@@ -60,8 +62,7 @@ public class GetVoluntaryExits extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.result(
-        jsonProvider.objectToJSON(
-            new GetVoluntaryExitsResponse(nodeDataProvider.getVoluntaryExits())));
+    List<SignedVoluntaryExit> exits = nodeDataProvider.getVoluntaryExits();
+    ctx.result(jsonProvider.objectToJSON(new GetVoluntaryExitsResponse(exits)));
   }
 }

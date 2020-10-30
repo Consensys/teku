@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
@@ -27,10 +28,14 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttestationsResponse;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,7 +53,7 @@ public class GetAttestations extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get attestations from operation pool",
+      summary = "Get attestations",
       tags = {TAG_V1_BEACON},
       description =
           "Retrieves attestations known by the node but not necessarily incorporated into any block.",
@@ -56,22 +61,23 @@ public class GetAttestations extends AbstractHandler {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = GetAttestationsResponse.class)),
+        @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
+      Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       Optional<UInt64> maybeSlot =
-          SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(ctx.queryParamMap(), SLOT);
+          SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParamMap, SLOT);
       Optional<UInt64> maybeCommitteeIndex =
           SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(
               ctx.queryParamMap(), COMMITTEE_INDEX);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(
-          jsonProvider.objectToJSON(
-              new GetAttestationsResponse(
-                  nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex))));
-    } catch (IllegalArgumentException e) {
+      List<Attestation> attestations =
+          nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex);
+      ctx.result(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
+    } catch (BadRequestException e) {
       ctx.result("The slot or committee index could not be parsed.");
       ctx.status(SC_BAD_REQUEST);
     }

@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -29,12 +35,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-
 public class PostAttesterSlashings extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/attester_slashings";
   private final NodeDataProvider nodeDataProvider;
@@ -45,30 +45,34 @@ public class PostAttesterSlashings extends AbstractHandler {
   }
 
   @OpenApi(
-          path = ROUTE,
-          method = HttpMethod.POST,
-          summary = "Submit attester slashing object",
-          tags = {TAG_V1_BEACON},
-          description =
-                  "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
-          requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = AttesterSlashing.class)}),
-          responses = {
-                  @OpenApiResponse(
-                          status = RES_OK,
-                          description = "Attester Slashing has been successfully validated, added to the pool, and broadcast."),
-                  @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid attester slashing, it will never pass validation so it's rejected"),
-                  @OpenApiResponse(status = RES_INTERNAL_ERROR),
-          })
+      path = ROUTE,
+      method = HttpMethod.POST,
+      summary = "Submit attester slashing object",
+      tags = {TAG_V1_BEACON},
+      description =
+          "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
+      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = AttesterSlashing.class)}),
+      responses = {
+        @OpenApiResponse(
+            status = RES_OK,
+            description =
+                "Attester Slashing has been successfully validated, added to the pool, and broadcast."),
+        @OpenApiResponse(
+            status = RES_BAD_REQUEST,
+            description =
+                "Invalid attester slashing, it will never pass validation so it's rejected"),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR),
+      })
   @Override
   public void handle(final Context ctx) throws Exception {
     final AttesterSlashing attesterSlashing =
-            jsonProvider.jsonToObject(ctx.body(), AttesterSlashing.class);
+        jsonProvider.jsonToObject(ctx.body(), AttesterSlashing.class);
 
-    SafeFuture<InternalValidationResult> result = nodeDataProvider.postAttesterSlashing(attesterSlashing);
+    SafeFuture<InternalValidationResult> result =
+        nodeDataProvider.postAttesterSlashing(attesterSlashing);
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(
-            jsonProvider.objectToJSON(
-                    new GetAttesterSlashingsResponse(nodeDataProvider.getAttesterSlashings())));
+        jsonProvider.objectToJSON(
+            new GetAttesterSlashingsResponse(nodeDataProvider.getAttesterSlashings())));
   }
 }
