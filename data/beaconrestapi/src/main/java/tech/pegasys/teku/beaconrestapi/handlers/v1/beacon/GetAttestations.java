@@ -33,11 +33,6 @@ public class GetAttestations  extends AbstractHandler {
     this.nodeDataProvider = dataProvider.getNodeDataProvider();
   }
 
-  GetAttestations(final NodeDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = provider;
-  }
-
   @OpenApi(
           path = ROUTE,
           method = HttpMethod.GET,
@@ -63,7 +58,7 @@ public class GetAttestations  extends AbstractHandler {
               jsonProvider.objectToJSON(
                       new GetAttestationsResponse(nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex))));
     } catch (IllegalArgumentException e) {
-      ctx.result("The slot or committee index could not be parsed");
+      ctx.result("The slot or committee index could not be parsed.");
       ctx.status(SC_BAD_REQUEST);
     }
   }
