@@ -13,25 +13,21 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
@@ -39,6 +35,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
@@ -69,6 +66,14 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
@@ -118,21 +123,25 @@ public class BeaconRestApiV1Test {
 
     // beacon
     builder
-        .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
-        .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
-        .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
-        .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
-        .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))
-        .add(Arguments.of(GetStateValidator.ROUTE, GetStateValidator.class))
-        .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
-        .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
-        .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
-        .add(
-            Arguments.of(
-                GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
-        .add(
-            Arguments.of(
-                GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class));
+            .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
+            .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
+            .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
+            .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
+            .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))
+            .add(Arguments.of(GetStateValidator.ROUTE, GetStateValidator.class))
+            .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
+            .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
+            .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
+            .add(
+                    Arguments.of(
+                            GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
+            .add(
+                    Arguments.of(
+                            GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class))
+            .add(Arguments.of(GetAttestations.ROUTE, GetAttestations.class))
+            .add(Arguments.of(GetAttesterSlashings.ROUTE, GetAttesterSlashings.class))
+            .add(Arguments.of(GetProposerSlashings.ROUTE, GetProposerSlashings.class))
+            .add(Arguments.of(GetVoluntaryExits.ROUTE, GetVoluntaryExits.class));
 
     // events
     builder.add(Arguments.of(GetEvents.ROUTE, GetEvents.class));

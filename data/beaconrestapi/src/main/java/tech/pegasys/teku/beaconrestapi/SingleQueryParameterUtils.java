@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class SingleQueryParameterUtils {
 
