@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -36,10 +37,13 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final MetricsSystem metricsSystem;
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
 
-  public LibP2PGossipNetwork(final Gossip gossip, final PubsubPublisherApi publisher) {
+  public LibP2PGossipNetwork(
+      final MetricsSystem metricsSystem, final Gossip gossip, final PubsubPublisherApi publisher) {
+    this.metricsSystem = metricsSystem;
     this.gossip = gossip;
     this.publisher = publisher;
   }
@@ -54,7 +58,8 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     LOG.trace("Subscribe to topic: {}", topic);
     final Topic libP2PTopic = new Topic(topic);
-    final GossipHandler gossipHandler = new GossipHandler(libP2PTopic, publisher, topicHandler);
+    final GossipHandler gossipHandler =
+        new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
     PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);
     return new LibP2PTopicChannel(gossipHandler, subscription);
   }

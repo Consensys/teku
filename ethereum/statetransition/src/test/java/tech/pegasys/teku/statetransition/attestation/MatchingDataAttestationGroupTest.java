@@ -121,7 +121,7 @@ class MatchingDataAttestationGroupTest {
   public void add_shouldIgnoreDuplicateAttestations() {
     final ValidateableAttestation attestation = addAttestation(1);
     final ValidateableAttestation copy =
-        ValidateableAttestation.fromAttestation(
+        ValidateableAttestation.from(
             SimpleOffsetSerializer.deserialize(
                 SimpleOffsetSerializer.serialize(attestation.getAttestation()), Attestation.class));
 
@@ -136,7 +136,7 @@ class MatchingDataAttestationGroupTest {
 
     final Attestation expected =
         aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
-    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.fromAttestation(expected));
+    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.from(expected));
   }
 
   @Test
@@ -147,7 +147,7 @@ class MatchingDataAttestationGroupTest {
 
     assertThat(group)
         .containsExactly(
-            ValidateableAttestation.fromAttestation(
+            ValidateableAttestation.from(
                 aggregateAttestations(
                     bigAttestation.getAttestation(), littleAttestation.getAttestation())),
             mediumAttestation);
@@ -199,7 +199,7 @@ class MatchingDataAttestationGroupTest {
   private ValidateableAttestation createAttestation(final int... validators) {
     final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
-    return ValidateableAttestation.fromAttestation(
+    return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

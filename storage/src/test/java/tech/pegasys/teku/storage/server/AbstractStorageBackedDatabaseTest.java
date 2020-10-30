@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -92,6 +94,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
   @Test
@@ -155,5 +158,26 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     Consumer<StateStorageMode> initializeDatabase = mode -> createStorage(tempDir.toFile(), mode);
 
     testShouldRecordFinalizedBlocksAndStates(storageMode, false, initializeDatabase);
+  }
+
+  @Test
+  public void shouldRecreateAnchorStoreOnRestart(@TempDir final Path tempDir) {
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+    createStorage(tempDir.toFile(), StateStorageMode.PRUNE);
+    initFromAnchor(anchor);
+
+    // Shutdown and restart
+    restartStorage();
+
+    final UpdatableStore memoryStore = recreateStore();
+    assertStoresMatch(memoryStore, store);
+    assertThat(memoryStore.getAnchor()).contains(anchor.getCheckpoint());
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 }

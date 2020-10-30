@@ -14,28 +14,41 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
 
 import io.javalin.http.Context;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class StateValidatorsUtil {
 
+  public Set<ValidatorStatus> parseStatusFilter(final Map<String, List<String>> queryParameters) {
+    if (!queryParameters.containsKey(STATUS)) {
+      return Set.of();
+    }
+
+    try {
+      return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
+          .map(ValidatorStatus::valueOf)
+          .collect(Collectors.toSet());
+    } catch (IllegalArgumentException ex) {
+      throw new BadRequestException("Invalid validator state requested: " + ex.getMessage());
+    }
+  }
+
   public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {
+    if (!ctx.queryParamMap().containsKey(PARAM_ID)) {
+      return List.of();
+    }
     return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID).stream()
         .flatMap(
             validatorParameter -> provider.validatorParameterToIndex(validatorParameter).stream())
         .collect(Collectors.toList());
-  }
-
-  public UInt64 parseStateIdPathParam(final ChainDataProvider provider, final Context ctx) {
-    return provider
-        .stateParameterToSlot(ctx.pathParamMap().get(PARAM_STATE_ID))
-        .orElseThrow(ChainDataUnavailableException::new);
   }
 }

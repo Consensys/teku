@@ -46,13 +46,13 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -133,7 +133,7 @@ public abstract class AbstractDatabaseTest {
 
   protected void setDefaultStorage(final StorageSystem storageSystem) {
     this.storageSystem = storageSystem;
-    database = storageSystem.getDatabase();
+    database = storageSystem.database();
     recentChainData = storageSystem.recentChainData();
     storageSystems.add(storageSystem);
   }
@@ -495,7 +495,22 @@ public abstract class AbstractDatabaseTest {
     assertThat(tx.commit()).isCompleted();
 
     // All finalized blocks and states should be available
-    assertFinalizedBlocksAndStatesAvailable(newBlocks);
+    final List<SignedBeaconBlock> expectedFinalizedBlocks =
+        newBlocks.stream().map(SignedBlockAndState::getBlock).collect(toList());
+    final Map<Bytes32, BeaconState> expectedFinalizedStates =
+        newBlocks.stream()
+            // Hot state is recorded for the first block of each epoch and we only use the available
+            // states, so ensure that at least those are available (some others will be available
+            // because they were in cache)
+            .filter(
+                blockAndState ->
+                    blockAndState
+                        .getSlot()
+                        .equals(compute_start_slot_at_epoch(blockAndState.getSlot())))
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+    assertBlocksFinalized(expectedFinalizedBlocks);
+    assertBlocksAvailable(expectedFinalizedBlocks);
+    assertFinalizedStatesAvailable(expectedFinalizedStates);
   }
 
   @Test
@@ -527,6 +542,36 @@ public abstract class AbstractDatabaseTest {
 
     assertThat(fromStorage.isPresent()).isTrue();
     assertThat(fromStorage.get()).isEqualTo(slotAndBlockRoot);
+  }
+
+  @Test
+  public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks() {
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+    createStorage(StateStorageMode.PRUNE);
+    initFromAnchor(anchor);
+
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(anchorEpoch.plus(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
+  }
+
+  @Test
+  public void getEarliestAvailableBlockSlot_noBlocksMissing() {
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(UInt64.valueOf(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
   @Test
@@ -896,6 +941,11 @@ public abstract class AbstractDatabaseTest {
 
   protected void initGenesis() {
     recentChainData.initializeFromGenesis(genesisBlockAndState.getState());
+    store = recentChainData.getStore();
+  }
+
+  protected void initFromAnchor(final AnchorPoint anchor) {
+    recentChainData.initializeFromAnchorPoint(anchor);
     store = recentChainData.getStore();
   }
 

@@ -17,12 +17,20 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
@@ -30,6 +38,7 @@ import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
@@ -40,13 +49,13 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -54,6 +63,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ChainDataProvider {
+  private final BlockSelectorFactory defaultBlockSelectorFactory;
+  private final StateSelectorFactory defaultStateSelectorFactory;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
@@ -63,6 +74,8 @@ public class ChainDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
+    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
+    this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
   }
 
   public UInt64 getGenesisTime() {
@@ -191,29 +204,15 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
+  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
 
-    final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
-    if (maybeSlot.isEmpty()) {
-      return getBlockHeaderByBlockRoot(Bytes32.fromHexString(slotParameter));
-    }
-
-    final UInt64 slot = maybeSlot.get();
-    return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
-  }
-
-  // because this is called after attempting to match a block to a slot, this function
-  // will only ever be run for non canonical blocks. if made public, it will have to be updated to
-  // first check that the block doesnt have a slot, before it can make that assumption.
-  SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
-    return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, false)));
   }
 
   public boolean isStoreAvailable() {
@@ -418,7 +417,6 @@ public class ChainDataProvider {
       throw new IllegalArgumentException(String.format("Invalid state: %s", pathParam));
     }
   }
-
   /**
    * Convert a {validator_id} from a URL to a validator index
    *
@@ -431,41 +429,41 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    final Optional<tech.pegasys.teku.datastructures.state.BeaconState> maybeState =
-        recentChainData.getBestState();
-    if (maybeState.isEmpty()) {
-      return Optional.empty();
+    return recentChainData
+        .getBestState()
+        .map(state -> validatorParameterToIndex(state, validatorParameter))
+        .orElse(Optional.empty());
+  }
+
+  private Optional<Integer> validatorParameterToIndex(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final String validatorParameter) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
     }
-    final tech.pegasys.teku.datastructures.state.BeaconState state = maybeState.get();
 
     if (validatorParameter.toLowerCase().startsWith("0x")) {
       try {
         BLSPubKey publicKey = BLSPubKey.fromHexString(validatorParameter);
-        return ValidatorsUtil.getValidatorIndex(state, publicKey.asBLSPublicKey());
+        return getValidatorIndex(state, publicKey.asBLSPublicKey());
       } catch (PublicKeyException ex) {
-        throw new IllegalArgumentException(
-            String.format("Invalid public key: %s", validatorParameter));
+        throw new BadRequestException(String.format("Invalid public key: %s", validatorParameter));
       }
-    } else {
-      try {
-        final UInt64 numericValidator = UInt64.valueOf(validatorParameter);
-        if (numericValidator.isGreaterThan(UInt64.valueOf(Integer.MAX_VALUE))) {
-          throw new IllegalArgumentException(
-              String.format("Validator Index is too high to use: %s", validatorParameter));
-        }
-        final int validatorIndex = numericValidator.intValue();
-        final int validatorCount = state.getValidators().size();
-        if (validatorIndex > validatorCount) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "Invalid validator index: %d, exceeds validator count: %d",
-                  validatorIndex, validatorCount));
-        }
-        return Optional.of(validatorIndex);
-      } catch (NumberFormatException ex) {
-        throw new IllegalArgumentException(
-            String.format("Invalid validator: %s", validatorParameter));
+    }
+    try {
+      final UInt64 numericValidator = UInt64.valueOf(validatorParameter);
+      if (numericValidator.isGreaterThan(UInt64.valueOf(Integer.MAX_VALUE))) {
+        throw new BadRequestException(
+            String.format("Validator Index is too high to use: %s", validatorParameter));
       }
+      final int validatorIndex = numericValidator.intValue();
+      final int validatorCount = state.getValidators().size();
+      if (validatorIndex > validatorCount) {
+        return Optional.empty();
+      }
+      return Optional.of(validatorIndex);
+    } catch (NumberFormatException ex) {
+      throw new BadRequestException(String.format("Invalid validator: %s", validatorParameter));
     }
   }
 
@@ -501,9 +499,6 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsBySlot(
       final UInt64 slot, final List<Integer> validatorIndices) {
-    if (validatorIndices.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
 
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -512,27 +507,22 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsByStateRoot(
       final Bytes32 stateRoot, final Optional<Integer> validatorIndex) {
-    if (validatorIndex.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    } else {
-      return getValidatorsDetailsByStateRoot(stateRoot, List.of(validatorIndex.get()))
-          .thenApply(
-              maybeValidators ->
-                  maybeValidators.flatMap(
-                      validators -> {
-                        checkState(
-                            validators.size() <= 1,
-                            "Received more than one validator for a single index");
-                        return validators.stream().findFirst();
-                      }));
-    }
+    return getValidatorsDetailsByStateRoot(stateRoot, List.of(validatorIndex.get()), List.of())
+        .thenApply(
+            maybeValidators ->
+                maybeValidators.flatMap(
+                    validators -> {
+                      checkState(
+                          validators.size() <= 1,
+                          "Received more than one validator for a single index");
+                      return validators.stream().findFirst();
+                    }));
   }
 
   public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsByStateRoot(
-      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
-    if (validatorIndices.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
+      final Bytes32 stateRoot,
+      final List<Integer> validatorIndices,
+      final List<ValidatorStatus> statusFilter) {
 
     return combinedChainDataClient
         .getStateByStateRoot(stateRoot)
@@ -541,9 +531,6 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesBySlot(
       final UInt64 slot, final List<Integer> validatorIndices) {
-    if (validatorIndices.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
 
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -567,7 +554,7 @@ public class ChainDataProvider {
       final List<Integer> validatorIndices,
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
     return validatorIndices.stream()
-        .map(index -> ValidatorResponse.fromState(state, index))
+        .flatMap(index -> ValidatorResponse.fromState(state, index).stream())
         .collect(toList());
   }
 
@@ -595,11 +582,73 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(List.of());
     }
 
-    final UInt64 slotToLoad = slot.or(recentChainData::getCurrentSlot).orElseThrow();
-    return combinedChainDataClient
-        .getBlockAtSlotExact(slotToLoad)
+    return defaultBlockSelectorFactory
+        .forSlot(slot.orElse(combinedChainDataClient.getHeadSlot()))
+        .getBlock()
         .thenApply(
-            maybeBlock ->
-                maybeBlock.map(block -> List.of(new BlockHeader(block, true))).orElse(List.of()));
+            blockList ->
+                blockList.stream().map(block -> new BlockHeader(block, true)).collect(toList()));
+  }
+
+  public SafeFuture<Optional<List<ValidatorResponse>>> getStateValidators(
+      final String stateIdParam,
+      final List<String> validators,
+      final Set<ValidatorStatus> statusFilter) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(state -> getFilteredValidatorList(state, validators, statusFilter)));
+  }
+
+  @VisibleForTesting
+  List<ValidatorResponse> getFilteredValidatorList(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final List<String> validators,
+      final Set<ValidatorStatus> statusFilter) {
+    return getValidatorSelector(state, validators)
+        .filter(getStatusPredicate(state, statusFilter))
+        .mapToObj(index -> ValidatorResponse.fromState(state, index))
+        .flatMap(Optional::stream)
+        .collect(toList());
+  }
+
+  public SafeFuture<Optional<ValidatorResponse>> getStateValidator(
+      final String stateIdParam, final String validatorIdParam) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(
+            maybeState -> maybeState.map(state -> getValidatorFromState(state, validatorIdParam)));
+  }
+
+  private ValidatorResponse getValidatorFromState(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final String validatorIdParam) {
+    return getValidatorSelector(state, List.of(validatorIdParam))
+        .mapToObj(index -> ValidatorResponse.fromState(state, index))
+        .flatMap(Optional::stream)
+        .findFirst()
+        .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
+  }
+
+  private IntPredicate getStatusPredicate(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final Set<ValidatorStatus> statusFilter) {
+    return statusFilter.isEmpty()
+        ? i -> true
+        : i -> statusFilter.contains(getValidatorStatus(state, i));
+  }
+
+  private IntStream getValidatorSelector(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final List<String> validators) {
+    return validators.isEmpty()
+        ? IntStream.range(0, state.getValidators().size())
+        : validators.stream()
+            .flatMapToInt(
+                validatorParameter ->
+                    validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
   }
 }

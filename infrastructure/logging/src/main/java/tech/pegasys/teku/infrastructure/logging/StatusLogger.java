@@ -22,6 +22,8 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StatusLogger {
 
@@ -36,6 +38,10 @@ public class StatusLogger {
 
   public void onStartup(final String version) {
     log.info("Teku version: {}", version);
+    log.info(
+        "This software is licensed under the Apache License, Version 2.0 (the \"License\"); "
+            + "you may not use this software except in compliance with the License. "
+            + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
   public void fatalError(final String description, final Throwable cause) {
@@ -136,8 +142,20 @@ public class StatusLogger {
         () -> peerCount);
   }
 
-  public void loadingGenesisFile(final String genesisFile) {
+  public void loadingGenesisResource(final String genesisFile) {
     log.info("Loading genesis from {}", genesisFile);
+  }
+
+  public void loadingWeakSubjectivityStateResources(
+      final String wsStateResource, final String wsBlockResource) {
+    log.info(
+        "Loading weak subjectivity state from {}, block from {}", wsBlockResource, wsBlockResource);
+  }
+
+  public void loadedWeakSubjectivityStateResources(
+      final Bytes32 stateRoot, final Bytes32 blockRoot, final UInt64 slot) {
+    log.info(
+        "Loaded weak subjectivity state {} for block {} at slot {}", stateRoot, blockRoot, slot);
   }
 
   public void loadingGenesisFromEth1Chain() {

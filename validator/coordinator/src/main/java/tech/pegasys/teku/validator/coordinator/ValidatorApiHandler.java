@@ -225,7 +225,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
                   combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
     }
-    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = compute_start_slot_at_epoch(epoch);
     LOG.trace("Retrieving proposer duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)
@@ -346,13 +346,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(
         attestationPool
             .createAggregateFor(attestationHashTreeRoot)
+            .filter(attestation -> attestation.getData().getSlot().equals(slot))
             .map(ValidateableAttestation::getAttestation));
   }
 
@@ -384,7 +386,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendSignedAttestation(
       final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
-        .onAttestation(ValidateableAttestation.fromAttestation(attestation))
+        .onAttestation(ValidateableAttestation.fromValidator(attestation))
         .finish(
             result -> {
               result.ifInvalid(
@@ -409,7 +411,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager
-        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
+        .onAttestation(ValidateableAttestation.aggregateFromValidator(aggregateAndProof))
         .finish(
             result -> {
               result.ifInvalid(

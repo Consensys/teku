@@ -70,6 +70,8 @@ public class V4SchemaHot implements SchemaHot {
       RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
   private static final RocksDbVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
       RocksDbVariable.create(8, CHECKPOINT_SERIALIZER);
+  private static final RocksDbVariable<Checkpoint> ANCHOR_CHECKPOINT =
+      RocksDbVariable.create(9, CHECKPOINT_SERIALIZER);
 
   private static final List<RocksDbColumn<?, ?>> ALL_COLUMNS =
       List.of(
@@ -89,7 +91,8 @@ public class V4SchemaHot implements SchemaHot {
           LATEST_FINALIZED_STATE,
           MIN_GENESIS_TIME_BLOCK,
           PROTO_ARRAY_SNAPSHOT,
-          WEAK_SUBJECTIVITY_CHECKPOINT);
+          WEAK_SUBJECTIVITY_CHECKPOINT,
+          ANCHOR_CHECKPOINT);
 
   private V4SchemaHot() {}
 
@@ -161,6 +164,11 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return WEAK_SUBJECTIVITY_CHECKPOINT;
+  }
+
+  @Override
+  public RocksDbVariable<Checkpoint> getVariableAnchorCheckpoint() {
+    return ANCHOR_CHECKPOINT;
   }
 
   @Override

@@ -55,7 +55,6 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -82,8 +81,9 @@ class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
+  private static final UInt64 EPOCH_START_SLOT = compute_start_slot_at_epoch(EPOCH);
   private static final UInt64 PREVIOUS_EPOCH_START_SLOT =
-      BeaconStateUtil.compute_start_slot_at_epoch(PREVIOUS_EPOCH);
+      compute_start_slot_at_epoch(PREVIOUS_EPOCH);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final SyncStateTracker syncStateTracker = mock(SyncStateTracker.class);
@@ -388,8 +388,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
-    final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    when(chainDataClient.getLatestStateAtSlot(EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -401,8 +401,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldAllowOneEpochTolerance() {
-    final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    when(chainDataClient.getLatestStateAtSlot(EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
@@ -499,7 +499,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
-            dataStructureUtil.randomAttestationData().hashTreeRoot());
+            ONE, dataStructureUtil.randomAttestationData().hashTreeRoot());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -510,9 +510,11 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
-        .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
+        .thenReturn(aggregate.map(ValidateableAttestation::from));
 
-    assertThat(validatorApiHandler.createAggregate(attestationData.hashTreeRoot()))
+    assertThat(
+            validatorApiHandler.createAggregate(
+                aggregate.get().getData().getSlot(), attestationData.hashTreeRoot()))
         .isCompletedWithValue(aggregate);
   }
 
@@ -554,7 +556,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(SUCCESSFUL));
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationManager).onAttestation(ValidateableAttestation.fromAttestation(attestation));
+    verify(attestationManager).onAttestation(ValidateableAttestation.from(attestation));
   }
 
   @Test
@@ -610,7 +612,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.aggregateFromValidator(aggregateAndProof));
   }
 
   @Test

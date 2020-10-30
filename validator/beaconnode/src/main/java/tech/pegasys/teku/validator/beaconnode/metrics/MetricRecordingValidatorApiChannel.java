@@ -227,9 +227,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return countRequest(
-        delegate.createAggregate(attestationHashTreeRoot), aggregateRequestsCounter);
+        delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
   }
 
   @Override

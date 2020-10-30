@@ -19,10 +19,12 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -31,9 +33,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 /** The collection of commonly used basic types */
 public class BasicViewTypes {
-  private static final TreeNode SINGLE_FALSE_NODE = TreeNode.createCompressedLeafNode(Bytes.of(0));
-  private static final TreeNode SINGLE_TRUE_NODE = TreeNode.createCompressedLeafNode(Bytes.of(1));
-
   public static final BasicViewType<BitView> BIT_TYPE =
       new BasicViewType<>(1) {
         @Override
@@ -45,21 +44,21 @@ public class BasicViewTypes {
         public TreeNode updateBackingNode(TreeNode srcNode, int idx, ViewRead newValue) {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
-          Bytes32 originalBytes = srcNode.hashTreeRoot();
-          byte b = originalBytes.get(byteIndex);
+          Bytes originalBytes = ((LeafNode) srcNode).getData();
+          byte b = byteIndex < originalBytes.size() ? originalBytes.get(byteIndex) : 0;
           boolean bit = ((BitView) newValue).get();
           if (bit) {
             b = (byte) (b | (1 << bitIndex));
           } else {
             b = (byte) (b & ~(1 << bitIndex));
           }
-          if (srcNode.isZero() && byteIndex == 0) {
-            return bit ? SINGLE_TRUE_NODE : SINGLE_FALSE_NODE;
-          } else {
-            MutableBytes32 dest = originalBytes.mutableCopy();
-            dest.set(byteIndex, b);
-            return TreeNode.createLeafNode(dest);
-          }
+          Bytes newBytes = updateExtending(originalBytes, byteIndex, Bytes.of(b));
+          return TreeNode.createLeafNode(newBytes);
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[1];
         }
       };
 
@@ -73,13 +72,14 @@ public class BasicViewTypes {
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
           byte aByte = ((ByteView) newValue).get();
-          if (srcNode.isZero() && index == 0) {
-            return TreeNode.createCompressedLeafNode(Bytes.of(aByte));
-          } else {
-            byte[] bytes = srcNode.hashTreeRoot().toArray();
-            bytes[index] = aByte;
-            return TreeNode.createLeafNode(Bytes32.wrap(bytes));
-          }
+          Bytes curVal = ((LeafNode) srcNode).getData();
+          Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
+          return TreeNode.createLeafNode(newBytes);
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[1];
         }
       };
 
@@ -113,19 +113,16 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
-          Bytes32 originalChunk = srcNode.hashTreeRoot();
           Bytes uintBytes =
               Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
-          if (srcNode.isZero() && index == 0) {
-            return TreeNode.createCompressedLeafNode(uintBytes);
-          } else {
-            return TreeNode.createLeafNode(
-                Bytes32.wrap(
-                    Bytes.concatenate(
-                        originalChunk.slice(0, index * 8),
-                        uintBytes,
-                        originalChunk.slice((index + 1) * 8))));
-          }
+          Bytes curVal = ((LeafNode) srcNode).getData();
+          Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
+          return TreeNode.createLeafNode(newBytes);
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[8];
         }
       };
 
@@ -141,18 +138,14 @@ public class BasicViewTypes {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes bytes = ((Bytes4View) newValue).get().getWrappedBytes();
+          Bytes curVal = ((LeafNode) srcNode).getData();
+          Bytes newBytes = updateExtending(curVal, internalIndex * 4, bytes);
+          return TreeNode.createLeafNode(newBytes);
+        }
 
-          if (srcNode.isZero() && internalIndex == 0) {
-            return TreeNode.createCompressedLeafNode(bytes);
-          } else {
-            Bytes32 originalChunk = srcNode.hashTreeRoot();
-            return TreeNode.createLeafNode(
-                Bytes32.wrap(
-                    Bytes.concatenate(
-                        originalChunk.slice(0, internalIndex * 4),
-                        bytes,
-                        originalChunk.slice((internalIndex + 1) * 4))));
-          }
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[4];
         }
       };
 
@@ -167,5 +160,26 @@ public class BasicViewTypes {
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
           return TreeNode.createLeafNode(((Bytes32View) newValue).get());
         }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[32];
+        }
       };
+
+  private static Bytes updateExtending(Bytes origBytes, int origOff, Bytes newBytes) {
+    if (origOff == origBytes.size()) {
+      return Bytes.wrap(origBytes, newBytes);
+    } else {
+      final MutableBytes dest;
+      if (origOff + newBytes.size() > origBytes.size()) {
+        dest = MutableBytes.create(origOff + newBytes.size());
+        origBytes.copyTo(dest, 0);
+      } else {
+        dest = origBytes.mutableCopy();
+      }
+      newBytes.copyTo(dest, origOff);
+      return dest;
+    }
+  }
 }

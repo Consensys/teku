@@ -54,6 +54,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   // Public
   public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
+    // If no anchor is explicitly set, default to zero (genesis epoch)
+    final UInt64 anchorEpoch =
+        store.getAnchor().map(Checkpoint::getEpoch).orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
     ProtoArray protoArray =
         storageChannel
             .getProtoArraySnapshot()
@@ -64,6 +67,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                     Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
                     store.getJustifiedCheckpoint().getEpoch(),
                     store.getFinalizedCheckpoint().getEpoch(),
+                    anchorEpoch,
                     new ArrayList<>(),
                     new HashMap<>()));
 
@@ -267,6 +271,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+    protoArrayLock.readLock().lock();
+    try {
+      // Note: This code could be more succinct if currentNode were an Optional and we used flatMap
+      // and map but during long periods of finality this becomes a massive hot spot in the code and
+      // our performance is dominated by the time taken to create Optional instances within the map
+      // calls.
+      final Optional<ProtoNode> startingNode = getProtoNode(blockRoot);
+      if (startingNode.isEmpty()) {
+        return Optional.empty();
+      }
+      ProtoNode currentNode = startingNode.get();
+      while (currentNode.getBlockSlot().isGreaterThan(slot)) {
+        final Optional<Integer> parentIndex = currentNode.getParentIndex();
+        if (parentIndex.isEmpty()) {
+          return Optional.empty();
+        }
+        currentNode = protoArray.getNodes().get(parentIndex.get());
+      }
+      return Optional.of(currentNode.getBlockRoot());
     } finally {
       protoArrayLock.readLock().unlock();
     }
