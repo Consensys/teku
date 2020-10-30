@@ -40,6 +40,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
     return state;
   }
 
+  public BeaconBlockSummary getBlockSummary() {
+    return blockSummary;
+  }
+
   @Override
   public UInt64 getSlot() {
     return blockSummary.getSlot();

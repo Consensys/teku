@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -171,6 +172,13 @@ class TestStoreImpl implements MutableStore {
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockAndState(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
+      final Bytes32 blockRoot) {
+    return retrieveBlockAndState(blockRoot)
+        .thenApply(res -> res.map(StateAndBlockSummary.class::cast));
   }
 
   @Override
