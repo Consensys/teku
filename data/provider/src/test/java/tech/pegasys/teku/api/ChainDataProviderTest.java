@@ -98,6 +98,7 @@ public class ChainDataProviderTest {
       mock(CombinedChainDataClient.class);
   private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
   private UInt64 actualBalance;
+  private final DataStructureUtil data = new DataStructureUtil();
 
   @BeforeEach
   public void setup() {
@@ -815,7 +816,6 @@ public class ChainDataProviderTest {
 
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorStatus() {
-    final DataStructureUtil data = new DataStructureUtil();
     final tech.pegasys.teku.datastructures.state.BeaconState internalState =
         data.randomBeaconState(11);
     final ChainDataProvider provider =
@@ -829,6 +829,39 @@ public class ChainDataProviderTest {
             provider.getFilteredValidatorList(
                 internalState, emptyList(), Set.of(ValidatorStatus.active_ongoing)))
         .hasSize(0);
+  }
+
+  @Test
+  public void getCommitteesFromState_shouldNotRequireFilters() {
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(64);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(
+            provider
+                .getCommitteesFromState(
+                    internalState, Optional.empty(), Optional.empty(), Optional.empty())
+                .size())
+        .isEqualTo(SLOTS_PER_EPOCH);
+  }
+
+  @Test
+  public void getCommitteesFromState_shouldFilterOnSlot() {
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(64);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(
+            provider
+                .getCommitteesFromState(
+                    internalState,
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(internalState.getSlot()))
+                .size())
+        .isEqualTo(1);
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(

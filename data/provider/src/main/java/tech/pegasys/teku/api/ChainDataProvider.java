@@ -633,6 +633,42 @@ public class ChainDataProvider {
         .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
   }
 
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(
+      final String stateIdParameter,
+      final Optional<UInt64> epoch,
+      final Optional<UInt64> committeeIndex,
+      final Optional<UInt64> slot) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParameter)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
+  }
+
+  List<EpochCommitteeResponse> getCommitteesFromState(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final Optional<UInt64> epoch,
+      final Optional<UInt64> committeeIndex,
+      final Optional<UInt64> slot) {
+    final Predicate<CommitteeAssignment> slotFilter =
+        slot.isEmpty() ? __ -> true : (assignment) -> assignment.getSlot().equals(slot.get());
+
+    final Predicate<CommitteeAssignment> committeeFilter =
+        committeeIndex.isEmpty()
+            ? __ -> true
+            : (assignment) -> assignment.getCommitteeIndex().equals(committeeIndex.get());
+
+    return combinedChainDataClient
+        .getCommitteesFromState(state, epoch.orElse(compute_epoch_at_slot(state.getSlot())))
+        .stream()
+        .filter(slotFilter)
+        .filter(committeeFilter)
+        .map(EpochCommitteeResponse::new)
+        .collect(toList());
+  }
+
   private IntPredicate getStatusPredicate(
       final tech.pegasys.teku.datastructures.state.BeaconState state,
       final Set<ValidatorStatus> statusFilter) {
