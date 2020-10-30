@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api.blockselector;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -82,5 +84,10 @@ public class BlockSelectorFactoryTest {
         blockSelectorFactory.forSlot(block.getSlot()).getBlock().get();
     verify(client).getBlockAtSlotExact(block.getSlot());
     assertThat(blockList).containsExactly(block);
+  }
+
+  @Test
+  public void defaultBlockSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> blockSelectorFactory.defaultBlockSelector("a"));
   }
 }

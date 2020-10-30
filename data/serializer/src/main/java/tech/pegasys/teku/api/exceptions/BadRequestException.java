@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.api.exceptions;
 
-public abstract class RpcResponseStatus {
-  public static final byte SUCCESS_RESPONSE_CODE = 0;
+public class BadRequestException extends RuntimeException {
+  public BadRequestException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  // Standard errors
-  public static final byte INVALID_REQUEST_CODE = 1;
-  public static final byte SERVER_ERROR_CODE = 2;
-
-  // Custom errors
-  public static final byte HISTORICAL_DATA_UNAVAILABLE = (byte) 222;
+  public BadRequestException(String message) {
+    super(message);
+  }
 }

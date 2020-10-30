@@ -133,7 +133,7 @@ public abstract class AbstractDatabaseTest {
 
   protected void setDefaultStorage(final StorageSystem storageSystem) {
     this.storageSystem = storageSystem;
-    database = storageSystem.getDatabase();
+    database = storageSystem.database();
     recentChainData = storageSystem.recentChainData();
     storageSystems.add(storageSystem);
   }
@@ -542,6 +542,36 @@ public abstract class AbstractDatabaseTest {
 
     assertThat(fromStorage.isPresent()).isTrue();
     assertThat(fromStorage.get()).isEqualTo(slotAndBlockRoot);
+  }
+
+  @Test
+  public void getEarliestAvailableBlockSlot_withMissingFinalizedBlocks() {
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+    createStorage(StateStorageMode.PRUNE);
+    initFromAnchor(anchor);
+
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(anchorEpoch.plus(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
+  }
+
+  @Test
+  public void getEarliestAvailableBlockSlot_noBlocksMissing() {
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    justifyAndFinalizeEpoch(UInt64.valueOf(1), chainBuilder.getLatestBlockAndState());
+
+    assertThat(database.getEarliestAvailableBlockSlot()).contains(genesisBlockAndState.getSlot());
   }
 
   @Test

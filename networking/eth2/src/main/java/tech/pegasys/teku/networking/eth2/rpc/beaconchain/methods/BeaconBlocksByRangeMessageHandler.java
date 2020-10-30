@@ -105,24 +105,47 @@ public class BeaconBlocksByRangeMessageHandler
     final UInt64 count = maxRequestSize.min(message.getCount());
     final UInt64 endSlot = message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
 
-    final UInt64 headBlockSlot =
-        combinedChainDataClient.getBestBlock().map(SignedBeaconBlock::getSlot).orElse(ZERO);
-    final NavigableMap<UInt64, Bytes32> hotRoots;
-    if (combinedChainDataClient.isFinalized(endSlot)) {
-      // All blocks are finalized so skip scanning the protoarray
-      hotRoots = new TreeMap<>();
-    } else {
-      hotRoots =
-          combinedChainDataClient.getAncestorRoots(
-              message.getStartSlot(), message.getStep(), count);
-    }
-    // Don't send anything past the last slot found in protoarray to ensure blocks are consistent
-    // If we didn't find any blocks in protoarray, every block in the range must be finalized
-    // so we don't need to worry about inconsistent blocks
-    final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
-    return sendNextBlock(
-        new RequestState(
-            message.getStartSlot(), message.getStep(), count, headSlot, hotRoots, callback));
+    return combinedChainDataClient
+        .getEarliestAvailableBlockSlot()
+        .thenCompose(
+            earliestSlot -> {
+              if (earliestSlot.map(s -> s.isGreaterThan(message.getStartSlot())).orElse(true)) {
+                // We're missing the first block so return an error
+                return SafeFuture.failedFuture(
+                    new RpcException.HistoricalDataUnavailableException(
+                        "Requested historical blocks are currently unavailable"));
+              }
+
+              final UInt64 headBlockSlot =
+                  combinedChainDataClient
+                      .getBestBlock()
+                      .map(SignedBeaconBlock::getSlot)
+                      .orElse(ZERO);
+              final NavigableMap<UInt64, Bytes32> hotRoots;
+              if (combinedChainDataClient.isFinalized(endSlot)) {
+                // All blocks are finalized so skip scanning the protoarray
+                hotRoots = new TreeMap<>();
+              } else {
+                hotRoots =
+                    combinedChainDataClient.getAncestorRoots(
+                        message.getStartSlot(), message.getStep(), count);
+              }
+              // Don't send anything past the last slot found in protoarray to ensure blocks are
+              // consistent
+              // If we didn't find any blocks in protoarray, every block in the range must be
+              // finalized
+              // so we don't need to worry about inconsistent blocks
+              final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
+              return sendNextBlock(
+                      new RequestState(
+                          message.getStartSlot(),
+                          message.getStep(),
+                          count,
+                          headSlot,
+                          hotRoots,
+                          callback))
+                  .toVoid();
+            });
   }
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {

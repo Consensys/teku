@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api.stateselector;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -87,5 +89,10 @@ public class StateSelectorFactoryTest {
     Optional<BeaconState> result = factory.forStateRoot(state.hash_tree_root()).getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
     verify(client).getStateByStateRoot(state.hash_tree_root());
+  }
+
+  @Test
+  public void defaultBlockSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("a"));
   }
 }

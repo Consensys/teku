@@ -101,6 +101,15 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final RocksDbColumn<K, V> column) {
+    assertOpen();
+    try (final Stream<ColumnEntry<K, V>> stream =
+        createStream(column, AbstractRocksIterator::seekToFirst)) {
+      return stream.findFirst();
+    }
+  }
+
+  @Override
   public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream =

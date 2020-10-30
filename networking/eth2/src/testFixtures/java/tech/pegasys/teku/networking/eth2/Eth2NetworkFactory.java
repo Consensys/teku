@@ -106,6 +106,7 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
+    protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
     protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
@@ -161,7 +162,6 @@ public class Eth2NetworkFactory {
     protected Eth2Network buildNetwork(final NetworkConfig config) {
       {
         // Setup eth2 handlers
-        final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
         final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -341,6 +341,13 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder historicalChainData(
+        final StorageQueryChannel historicalChainData) {
+      checkNotNull(historicalChainData);
+      this.historicalChainData = historicalChainData;
       return this;
     }
 

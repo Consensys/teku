@@ -45,6 +45,7 @@ public class StorageSystem implements AutoCloseable {
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final ChainStorage chainStorage;
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
@@ -53,11 +54,13 @@ public class StorageSystem implements AutoCloseable {
       final EventBus eventBus,
       final TrackingChainHeadChannel reorgEventChannel,
       final StateStorageMode storageMode,
+      final ChainStorage chainStorage,
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier) {
     this.metricsSystem = metricsSystem;
+    this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
@@ -107,6 +110,7 @@ public class StorageSystem implements AutoCloseable {
         eventBus,
         reorgEventChannel,
         storageMode,
+        chainStorageServer,
         database,
         recentChainData,
         combinedChainDataClient,
@@ -137,8 +141,12 @@ public class StorageSystem implements AutoCloseable {
     return new ProtoArrayStorage(database);
   }
 
-  public Database getDatabase() {
+  public Database database() {
     return database;
+  }
+
+  public ChainStorage chainStorage() {
+    return chainStorage;
   }
 
   public StorageSystem restarted() {
