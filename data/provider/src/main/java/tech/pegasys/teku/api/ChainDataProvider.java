@@ -666,6 +666,10 @@ public class ChainDataProvider {
       throw new BadRequestException(
           "Epoch " + epoch.get() + " is too far ahead of state epoch " + stateEpoch);
     }
+    if (slot.isPresent() && !compute_epoch_at_slot(slot.get()).equals(epoch.orElse(stateEpoch))) {
+      throw new BadRequestException(
+          "Slot " + slot.get() + " is not in epoch " + epoch.orElse(stateEpoch));
+    }
     return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
         .filter(slotFilter)
         .filter(committeeFilter)
