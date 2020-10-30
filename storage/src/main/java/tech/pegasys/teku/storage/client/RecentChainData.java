@@ -31,7 +31,6 @@ import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
@@ -354,10 +353,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.map(StateAndBlockSummary::getRoot);
   }
 
-  /** @return The block and state at the head of the chain. */
-  public Optional<BeaconBlockAndState> getHeadBlockAndState() {
-    return chainHead.flatMap(
-        h -> h.getBeaconBlock().map(b -> new BeaconBlockAndState(b, h.getState())));
+  /** @return The head of the chain. */
+  public Optional<StateAndBlockSummary> getChainHead() {
+    return chainHead.map(StateAndBlockSummary.class::cast);
   }
 
   /** @return The block at the head of the chain. */

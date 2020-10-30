@@ -33,8 +33,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -208,8 +208,8 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState =
+        node1.storageClient().getChainHead().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
         s -> s.accept(ValidateableAttestation.from(validAttestation)));
@@ -260,8 +260,8 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState =
+        node1.storageClient().getChainHead().orElseThrow();
     ValidateableAttestation validAttestation =
         ValidateableAttestation.from(attestationGenerator.validAttestation(bestBlockAndState));
 
@@ -327,8 +327,8 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState =
+        node1.storageClient().getChainHead().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     final int subnetId = computeSubnetForAttestation(bestBlockAndState.getState(), attestation);

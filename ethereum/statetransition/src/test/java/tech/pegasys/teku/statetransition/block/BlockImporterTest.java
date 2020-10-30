@@ -42,11 +42,10 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
@@ -143,10 +142,14 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UInt64.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state =
-        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
+    final StateAndBlockSummary stateAndBlock =
+        recentChainData
+            .getStore()
+            .retrieveStateAndBlockSummary(block1.getRoot())
+            .join()
+            .orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -163,10 +166,14 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UInt64.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state =
-        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
+    final StateAndBlockSummary stateAndBlock =
+        recentChainData
+            .getStore()
+            .retrieveStateAndBlockSummary(block1.getRoot())
+            .join()
+            .orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -309,7 +316,7 @@ public class BlockImporterTest {
 
     // Now create a new block that is not descendant from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = otherStorage.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = otherStorage.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));

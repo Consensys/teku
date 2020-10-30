@@ -92,7 +92,7 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
 
-    return recentChainData.getHeadBlockAndState().map(BeaconHead::new);
+    return recentChainData.getChainHead().map(BeaconHead::new);
   }
 
   public GetForkResponse getForkInfo() {
@@ -348,7 +348,7 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
+    return recentChainData.getChainHead().map(BeaconChainHead::new);
   }
 
   public Optional<UInt64> blockParameterToSlot(final String pathParam) {
