@@ -19,6 +19,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -27,14 +28,12 @@ public class FinalizedChainDataTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =
       chainBuilder.getCurrentCheckpointForEpoch(Constants.GENESIS_EPOCH);
+  private final AnchorPoint genesisAnchor = AnchorPoint.fromInitialBlockAndState(genesis);
 
   @Test
   public void build_withSingleFinalizedBlock() {
     final FinalizedChainData result =
-        FinalizedChainData.builder()
-            .latestFinalizedBlockAndState(genesis)
-            .finalizedCheckpoint(genesisCheckpoint)
-            .build();
+        FinalizedChainData.builder().latestFinalized(genesisAnchor).build();
 
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
     assertThat(result.getLatestFinalizedState()).isEqualTo(genesis.getState());

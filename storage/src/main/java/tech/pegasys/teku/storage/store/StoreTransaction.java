@@ -139,38 +139,31 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @CheckReturnValue
   @Override
   public SafeFuture<Void> commit() {
-    return retrieveBlockAndState(getFinalizedCheckpoint().getRoot())
-        .thenCompose(
-            maybeLatestFinalized -> {
-              final SignedBlockAndState latestFinalized =
-                  maybeLatestFinalized.orElseThrow(
-                      () -> new IllegalStateException("Missing latest finalized block and state"));
-              final StoreTransactionUpdates updates;
-              // Lock so that we have a consistent view while calculating our updates
-              final Lock writeLock = lock.writeLock();
+    final StoreTransactionUpdates updates;
+    // Lock so that we have a consistent view while calculating our updates
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
+    try {
+      updates = StoreTransactionUpdatesFactory.create(store, this, getLatestFinalized());
+    } finally {
+      writeLock.unlock();
+    }
+
+    return storageUpdateChannel
+        .onStorageUpdate(updates.createStorageUpdate())
+        .thenAccept(
+            __ -> {
+              // Propagate changes to Store
               writeLock.lock();
               try {
-                updates = StoreTransactionUpdatesFactory.create(store, this, latestFinalized);
+                // Add new data
+                updates.applyToStore(store);
               } finally {
                 writeLock.unlock();
               }
 
-              return storageUpdateChannel
-                  .onStorageUpdate(updates.createStorageUpdate())
-                  .thenAccept(
-                      __ -> {
-                        // Propagate changes to Store
-                        writeLock.lock();
-                        try {
-                          // Add new data
-                          updates.applyToStore(store);
-                        } finally {
-                          writeLock.unlock();
-                        }
-
-                        // Signal back changes to the handler
-                        finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
-                      });
+              // Signal back changes to the handler
+              finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
             });
   }
 
