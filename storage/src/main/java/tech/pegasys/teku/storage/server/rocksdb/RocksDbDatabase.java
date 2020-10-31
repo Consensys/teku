@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
@@ -287,14 +285,10 @@ public class RocksDbDatabase implements Database {
     }
 
     // Validate finalized data is consistent and available
-    final SignedBeaconBlock finalizedBlock =
-        hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
-    checkNotNull(finalizedBlock);
-    checkState(
-        finalizedBlock.getMessage().getStateRoot().equals(finalizedState.hash_tree_root()),
-        "Latest finalized state does not match latest finalized block");
+    final Optional<SignedBeaconBlock> finalizedBlock =
+        hotDao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
-        AnchorPoint.create(finalizedCheckpoint, finalizedBlock, finalizedState);
+        AnchorPoint.create(finalizedCheckpoint, finalizedState, finalizedBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
