@@ -43,19 +43,12 @@ class WeakSubjectivityInitializer {
         .map(
             wsStateResource -> {
               try {
-                final String wsBlockResource =
-                    config
-                        .getWeakSubjectivityBlockResource()
-                        .orElseThrow(
-                            () ->
-                                new IllegalArgumentException(
-                                    "Weak subjectivity block must be supplied with state"));
-                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource, wsBlockResource);
+                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource);
                 final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final SignedBeaconBlock block = ChainDataLoader.loadBlock(wsBlockResource);
+                final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
                 STATUS_LOG.loadedWeakSubjectivityStateResources(
-                    state.hashTreeRoot(), block.getRoot(), state.getSlot());
-                return AnchorPoint.fromInitialBlockAndState(block, state);
+                    state.hashTreeRoot(), anchor.getRoot(), state.getSlot());
+                return anchor;
               } catch (IOException e) {
                 throw new IllegalStateException(
                     "Failed to load weak subjectivity initial state data", e);
