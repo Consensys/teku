@@ -28,10 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -173,7 +175,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
           future.thenCompose(
               __ ->
                   store
-                      .retrieveBlockAndState(blockRoot)
+                      .retrieveStateAndBlockSummary(blockRoot)
                       .thenAccept(
                           blockAndState ->
                               processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
@@ -182,7 +184,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   private static void processBlockAtStartup(
-      final ProtoArray protoArray, final SignedBlockAndState blockAndState) {
+      final ProtoArray protoArray, final StateAndBlockSummary blockAndState) {
     final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
         blockAndState.getSlot(),
