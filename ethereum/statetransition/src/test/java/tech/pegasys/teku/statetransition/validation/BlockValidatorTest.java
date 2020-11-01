@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -174,7 +175,7 @@ public class BlockValidatorTest {
   }
 
   @Test
-  void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() throws Exception {
+  void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
     List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(4);
 
     StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
@@ -200,7 +201,8 @@ public class BlockValidatorTest {
     SignedBlockAndState blockAndState =
         chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
     chainUpdater.saveBlockTime(blockAndState);
-    InternalValidationResult result = blockValidator.validate(blockAndState.getBlock()).join();
-    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
+    final SafeFuture<InternalValidationResult> result =
+        blockValidator.validate(blockAndState.getBlock());
+    assertThat(result).isCompletedWithValue(InternalValidationResult.REJECT);
   }
 }

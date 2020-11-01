@@ -229,7 +229,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
-              store, protoArray.getIndices(), oldBalances, newBalances);
+              store,
+              protoArray.getNodes().size(),
+              protoArray.getIndices(),
+              oldBalances,
+              newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);

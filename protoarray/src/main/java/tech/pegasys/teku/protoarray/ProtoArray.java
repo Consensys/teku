@@ -157,7 +157,7 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    checkArgument(deltas.size() == indices.size(), "ProtoArray: Invalid delta length");
+    checkArgument(deltas.size() == nodes.size(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
