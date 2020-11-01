@@ -207,18 +207,18 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
-      @TempDir final Path tempDir) throws Exception {
+      @TempDir final Path tempDir) {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
   }
 
   @Test
   public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
-      @TempDir final Path tempDir) throws Exception {
+      @TempDir final Path tempDir) {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
   }
 
   private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
@@ -265,19 +265,17 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir)
-      throws Exception {
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir) {
     testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir)
-      throws Exception {
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir) {
     testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.PRUNE);
   }
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
