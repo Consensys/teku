@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,7 +84,7 @@ class StoreTransactionUpdatesFactory {
     Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedChildToParent);
 
     // Prune collections
-    calculatePrunedHotBlockRoots(finalizedCheckpoint);
+    calculatePrunedHotBlockRoots();
     prunedHotBlockRoots.forEach(hotBlocks::remove);
     prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
 
@@ -147,8 +146,7 @@ class StoreTransactionUpdatesFactory {
   private Set<SignedBeaconBlock> collectFinalizedBlocks(
       final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     return finalizedChildToParent.keySet().stream()
-        .map(root -> tx.getBlockIfAvailable(root).orElse(null))
-        .filter(Objects::nonNull)
+        .flatMap(root -> tx.getBlockIfAvailable(root).stream())
         .collect(Collectors.toSet());
   }
 
@@ -162,14 +160,15 @@ class StoreTransactionUpdatesFactory {
     return states;
   }
 
-  private void calculatePrunedHotBlockRoots(final Checkpoint finalizedCheckpoint) {
+  private void calculatePrunedHotBlockRoots() {
+    final SignedBeaconBlock finalizedBlock = tx.getLatestFinalizedBlockAndState().getBlock();
     tx.blockAndStates.values().stream()
         // Iterate new blocks in slot order to guarantee we see parents first
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
         .filter(
             newBlockAndState ->
                 shouldPrune(
-                    finalizedCheckpoint,
+                    finalizedBlock,
                     newBlockAndState.getRoot(),
                     newBlockAndState.getSlot(),
                     newBlockAndState.getParentRoot()))
@@ -177,21 +176,21 @@ class StoreTransactionUpdatesFactory {
 
     baseStore.forkChoiceStrategy.forEach(
         (blockRoot, slot, parentRoot) -> {
-          if (shouldPrune(finalizedCheckpoint, blockRoot, slot, parentRoot)) {
+          if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
             prunedHotBlockRoots.add(blockRoot);
           }
         });
   }
 
   private boolean shouldPrune(
-      final Checkpoint finalizedCheckpoint,
+      final SignedBeaconBlock finalizedBlock,
       final Bytes32 blockRoot,
       final UInt64 slot,
       final Bytes32 parentRoot) {
-    return (slot.isLessThanOrEqualTo(finalizedCheckpoint.getEpochStartSlot())
+    return (slot.isLessThanOrEqualTo(finalizedBlock.getSlot())
             || prunedHotBlockRoots.contains(parentRoot))
         // Keep the actual finalized block
-        && !blockRoot.equals(finalizedCheckpoint.getRoot());
+        && !blockRoot.equals(finalizedBlock.getRoot());
   }
 
   private StoreTransactionUpdates createStoreTransactionUpdates(

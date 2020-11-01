@@ -240,9 +240,14 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
 
-
     // Close database and rebuild from disk
     restartStorage();
+
+    // Ensure all states are actually regenerated in memory
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState -> recentChainData.retrieveBlockState(blockAndState.getRoot()).join());
 
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
