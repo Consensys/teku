@@ -39,6 +39,9 @@ public class StoreAssertions {
             "metricsSystem",
             "states",
             "stateAndBlockProvider",
+            "forkChoiceStrategy",
             "checkpointStates");
+    assertThat(actualState.getBlockRoots())
+        .containsExactlyInAnyOrderElementsOf(expectedState.getBlockRoots());
   }
 }

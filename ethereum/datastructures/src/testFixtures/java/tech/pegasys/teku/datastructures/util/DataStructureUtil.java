@@ -15,6 +15,7 @@ package tech.pegasys.teku.datastructures.util;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
@@ -630,10 +631,14 @@ public final class DataStructureUtil {
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    return createAnchorFromBlockAndState(new SignedBlockAndState(signedAnchorBlock, anchorState));
+  }
+
+  public AnchorPoint createAnchorFromBlockAndState(final SignedBlockAndState anchorBlockAndState) {
+    final Bytes32 anchorRoot = anchorBlockAndState.getRoot();
+    final UInt64 anchorEpoch = compute_epoch_at_slot(anchorBlockAndState.getSlot());
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
-    return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
+    return AnchorPoint.create(anchorCheckpoint, anchorBlockAndState);
   }
 }

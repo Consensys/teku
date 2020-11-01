@@ -17,10 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
 import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
 import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 class Store implements UpdatableStore {
@@ -70,7 +73,7 @@ class Store implements UpdatableStore {
   private final BlockProvider blockProvider;
 
   private final Optional<Checkpoint> anchor;
-  BlockTree blockTree;
+  final ProtoArrayForkChoiceStrategy forkChoiceStrategy;
   UInt64 time;
   UInt64 genesis_time;
   Checkpoint justified_checkpoint;
@@ -94,7 +97,7 @@ class Store implements UpdatableStore {
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
-      final BlockTree blockTree,
+      final ProtoArrayForkChoiceStrategy forkChoiceStrategy,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
@@ -122,7 +125,7 @@ class Store implements UpdatableStore {
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = blocks;
     this.votes = new HashMap<>(votes);
-    this.blockTree = blockTree;
+    this.forkChoiceStrategy = forkChoiceStrategy;
 
     // Track latest finalized block
     this.finalizedBlockAndState = finalizedBlockAndState;
@@ -151,8 +154,7 @@ class Store implements UpdatableStore {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
-      final Map<Bytes32, Bytes32> childToParentRoot,
-      final Map<Bytes32, UInt64> rootToSlotMap,
+      final ProtoArrayForkChoiceStrategy protoArrayForkChoiceStrategy,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config) {
@@ -169,17 +171,6 @@ class Store implements UpdatableStore {
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
 
-    // Build block tree structure
-    HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
-    childToParentRoot.forEach(treeBuilder::childAndParentRoots);
-    final BlockTree blockTree = BlockTree.create(treeBuilder.build(), rootToSlotMap);
-    if (blockTree.size() < childToParentRoot.size()) {
-      final int invalidBlockCount = childToParentRoot.size() - blockTree.size();
-      throw new IllegalStateException(
-          invalidBlockCount
-              + " invalid non-canonical block(s) supplied to Store that do not descend from the latest finalized block.");
-    }
-
     return new Store(
         metricsSystem,
         config.getHotStatePersistenceFrequencyInEpochs(),
@@ -192,7 +183,7 @@ class Store implements UpdatableStore {
         justifiedCheckpoint,
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
-        blockTree,
+        protoArrayForkChoiceStrategy,
         finalizedBlockAndState,
         votes,
         blocks,
@@ -281,6 +272,11 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public ForkChoiceStrategy getForkChoiceStrategy() {
+    return forkChoiceStrategy;
+  }
+
+  @Override
   public SignedBlockAndState getLatestFinalizedBlockAndState() {
     readLock.lock();
     try {
@@ -312,32 +308,13 @@ class Store implements UpdatableStore {
 
   @Override
   public boolean containsBlock(Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return blockTree.contains(blockRoot);
-    } finally {
-      readLock.unlock();
-    }
+    return forkChoiceStrategy.contains(blockRoot);
   }
 
+  @VisibleForTesting
   @Override
   public Set<Bytes32> getBlockRoots() {
-    readLock.lock();
-    try {
-      return blockTree.getAllRoots();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public List<Bytes32> getOrderedBlockRoots() {
-    readLock.lock();
-    try {
-      return blockTree.getOrderedBlockRoots();
-    } finally {
-      readLock.unlock();
-    }
+    return forkChoiceStrategy.getBlockRoots();
   }
 
   @Override
@@ -480,17 +457,14 @@ class Store implements UpdatableStore {
     final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
-      blockTree
-          .getHashTree()
-          .processHashesInChain(
-              blockRoot,
-              (root, parent) -> {
-                treeBuilder.childAndParentRoots(root, parent);
-                if (shouldPersistState(blockTree, root)) {
-                  latestEpochBoundary.compareAndExchange(
-                      null, new SlotAndBlockRoot(blockTree.getSlot(root), root));
-                }
-              });
+      forkChoiceStrategy.processHashesInChain(
+          blockRoot,
+          (root, slot, parent) -> {
+            treeBuilder.childAndParentRoots(root, parent);
+            if (shouldPersistState(slot, parent)) {
+              latestEpochBoundary.compareAndExchange(null, new SlotAndBlockRoot(slot, root));
+            }
+          });
       treeBuilder.rootHash(finalizedBlockAndState.getRoot());
     } finally {
       readLock.unlock();
@@ -524,22 +498,20 @@ class Store implements UpdatableStore {
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
     readLock.lock();
     try {
-      blockTree
-          .getHashTree()
-          .processHashesInChainWhile(
-              blockRoot,
-              (root, parent) -> {
-                treeBuilder.childAndParentRoots(root, parent);
-                final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                blockState.ifPresent(
-                    (state) -> {
-                      // We found a base state
-                      treeBuilder.rootHash(root);
-                      baseBlockRoot.set(root);
-                      baseState.set(state);
-                    });
-                return blockState.isEmpty();
-              });
+      forkChoiceStrategy.processHashesInChainWhile(
+          blockRoot,
+          (root, slot, parent) -> {
+            treeBuilder.childAndParentRoots(root, parent);
+            final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+            blockState.ifPresent(
+                (state) -> {
+                  // We found a base state
+                  treeBuilder.rootHash(root);
+                  baseBlockRoot.set(root);
+                  baseState.set(state);
+                });
+            return blockState.isEmpty();
+          });
     } finally {
       readLock.unlock();
     }
@@ -560,9 +532,22 @@ class Store implements UpdatableStore {
     return Optional.of(new BlockRootAndState(baseBlockRoot.get(), baseState.get()));
   }
 
-  boolean shouldPersistState(final BlockTree blockTree, final Bytes32 root) {
+  boolean shouldPersistState(final UInt64 blockSlot, final Bytes32 parentRoot) {
     return hotStatePersistenceFrequencyInEpochs > 0
-        && blockTree.isRootAtNthEpochBoundary(root, hotStatePersistenceFrequencyInEpochs);
+        && isRootAtNthEpochBoundary(blockSlot, parentRoot, hotStatePersistenceFrequencyInEpochs);
+  }
+
+  private boolean isRootAtNthEpochBoundary(
+      final UInt64 blockSlot, final Bytes32 parentRoot, final int n) {
+    return forkChoiceStrategy
+        .blockSlot(parentRoot)
+        .map(
+            parentSlot -> {
+              final UInt64 blockEpoch = compute_epoch_at_slot(blockSlot);
+              final UInt64 parentEpoch = compute_epoch_at_slot(parentSlot);
+              return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+            })
+        .orElse(false);
   }
 
   private void putBlock(final SignedBeaconBlock block) {

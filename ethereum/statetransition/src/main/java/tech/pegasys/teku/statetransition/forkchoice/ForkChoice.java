@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -149,20 +149,17 @@ public class ForkChoice {
                       forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
-              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
               .thenApply(__ -> result);
         });
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final ForkChoiceStrategy forkChoiceStrategy,
-      final BlockImportResult result) {
+      final SignedBeaconBlock block, final BlockImportResult result) {
     result
         .getBlockProcessingRecord()
         .ifPresent(
             record -> {
-              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
               // If the new block builds on our current chain head immediately make it the new head
               // Since fork choice works by walking down the tree selecting the child block with
               // the greatest weight, when a block has only one child it will automatically become

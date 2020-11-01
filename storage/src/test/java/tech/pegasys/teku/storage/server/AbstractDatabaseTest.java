@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -448,8 +449,10 @@ public abstract class AbstractDatabaseTest {
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
       assertThat(result.retrieveSignedBlock(hotBlock.getRoot()))
+          .describedAs("block " + hotBlock.getSlot())
           .isCompletedWithValue(Optional.of(hotBlock.getBlock()));
       assertThat(result.retrieveBlockState(hotBlock.getRoot()))
+          .describedAs("state " + hotBlock.getSlot())
           .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }
 
@@ -965,5 +968,9 @@ public abstract class AbstractDatabaseTest {
   protected UpdatableStore recreateStore() {
     restartStorage();
     return storageSystem.recentChainData().getStore();
+  }
+
+  protected Set<Bytes32> getBlockRoots(final ReadOnlyStore store) {
+    return store.getBlockRoots();
   }
 }

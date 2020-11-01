@@ -18,24 +18,23 @@ import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncSta
 
 import com.google.common.collect.Sets;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -204,6 +203,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public ForkChoiceStrategy getForkChoiceStrategy() {
+    return store.getForkChoiceStrategy();
+  }
+
+  @Override
   public SignedBlockAndState getLatestFinalizedBlockAndState() {
     if (finalized_checkpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
@@ -230,25 +234,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public Set<Bytes32> getBlockRoots() {
-    return Sets.union(blockAndStates.keySet(), store.getBlockRoots());
-  }
-
-  @Override
-  public List<Bytes32> getOrderedBlockRoots() {
-    if (this.blockAndStates.isEmpty()) {
-      return store.getOrderedBlockRoots();
-    }
-
-    lock.readLock().lock();
-    try {
-      final HashTree.Builder treeBuilder = store.blockTree.getHashTree().updater();
-      this.blockAndStates.values().stream()
-          .map(SignedBlockAndState::getBlock)
-          .forEach(treeBuilder::block);
-      return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
-    } finally {
-      lock.readLock().unlock();
-    }
+    final Set<Bytes32> blockRoots = new HashSet<>(blockAndStates.keySet());
+    blockRoots.addAll(store.getBlockRoots());
+    return blockRoots;
   }
 
   @Override

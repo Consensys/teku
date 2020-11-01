@@ -14,44 +14,24 @@
 package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ProtoArrayForkChoiceStrategyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ProtoArrayStorageChannel storageChannel = new StubProtoArrayStorageChannel();
-
-  @Test
-  public void initialize_withLargeChain() {
-    final MutableStore store = new TestStoreFactory().createGenesisStore();
-    final int chainSize = 2_000;
-    saveChainToStore(chainSize, store);
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
-
-    assertThat(future).isCompleted();
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
-    assertThat(forkChoiceStrategy.size()).isEqualTo(chainSize + 1);
-  }
 
   @Test
   public void findHead_worksForChainInitializedFromNonGenesisAnchor() {
@@ -66,17 +46,20 @@ public class ProtoArrayForkChoiceStrategyTest {
             .setSlotToStartOfEpoch(anchorEpoch)
             .build();
     AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
-    MutableStore store = new TestStoreFactory().createAnchorStore(anchor);
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.create().build();
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    recentChainData.initializeFromAnchorPoint(anchor);
+    UpdatableStore store = recentChainData.getStore();
 
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
-    assertThat(future).isCompleted();
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
+    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = createProtoArray(storageSystem);
 
     assertThat(forkChoiceStrategy.size()).isEqualTo(1);
     final Bytes32 head =
         forkChoiceStrategy.findHead(
-            store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+            store.startTransaction(new StubStorageUpdateChannel()),
+            anchor.getCheckpoint(),
+            anchor.getCheckpoint(),
+            anchor.getState());
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -123,50 +106,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   private ProtoArrayForkChoiceStrategy createProtoArray(final StorageSystem storageSystem) {
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(
-            storageSystem.recentChainData().getStore(), storageSystem.createProtoArrayStorage());
-    assertThat(future).isCompleted();
-    return future.join();
-  }
-
-  private void saveChainToStore(final int blockCount, final MutableStore store) {
-    final List<SignedBlockAndState> chain = generateChain(blockCount, store);
-    chain.forEach(store::putBlockAndState);
-  }
-
-  // Creating mocks is much faster than generating random blocks via DataStructureUtil
-  private List<SignedBlockAndState> generateChain(final int count, final MutableStore store) {
-    final SignedBlockAndState genesis =
-        store.retrieveBlockAndState(store.getFinalizedCheckpoint().getRoot()).join().orElseThrow();
-    final List<SignedBlockAndState> chain = new ArrayList<>();
-
-    final Checkpoint checkpoint = store.getFinalizedCheckpoint();
-    SignedBlockAndState parent = genesis;
-    for (int i = 0; i < count; i++) {
-      final UInt64 slot = parent.getSlot().plus(ONE);
-      final Bytes32 blockHash = Bytes32.fromHexStringLenient("0x" + i);
-      final Bytes32 parentRoot = parent.getRoot();
-
-      final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
-      when(block.getSlot()).thenReturn(slot);
-      when(block.getRoot()).thenReturn(blockHash);
-      when(block.hash_tree_root()).thenReturn(blockHash);
-      when(block.getParent_root()).thenReturn(parentRoot);
-      when(block.getStateRoot()).thenReturn(blockHash);
-
-      final BeaconState state = mock(BeaconState.class);
-      when(state.getSlot()).thenReturn(slot);
-      when(state.hash_tree_root()).thenReturn(blockHash);
-      when(state.getCurrent_justified_checkpoint()).thenReturn(checkpoint);
-      when(state.getFinalized_checkpoint()).thenReturn(checkpoint);
-
-      final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
-      chain.add(blockAndState);
-
-      parent = blockAndState;
-    }
-
-    return chain;
+    return (ProtoArrayForkChoiceStrategy)
+        storageSystem.recentChainData().getStore().getForkChoiceStrategy();
   }
 }

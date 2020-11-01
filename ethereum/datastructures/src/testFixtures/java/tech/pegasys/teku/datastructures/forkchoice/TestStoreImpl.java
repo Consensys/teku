@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -91,6 +89,11 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
+  public ForkChoiceStrategy getForkChoiceStrategy() {
+    return null;
+  }
+
+  @Override
   public UInt64 getLatestFinalizedBlockSlot() {
     return blocks.get(finalized_checkpoint.getRoot()).getSlot();
   }
@@ -128,14 +131,6 @@ class TestStoreImpl implements MutableStore {
   @Override
   public Set<Bytes32> getBlockRoots() {
     return blocks.keySet();
-  }
-
-  @Override
-  public List<Bytes32> getOrderedBlockRoots() {
-    return blocks.values().stream()
-        .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
-        .map(SignedBeaconBlock::getRoot)
-        .collect(Collectors.toList());
   }
 
   private BeaconState getBlockState(final Bytes32 blockRoot) {

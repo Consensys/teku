@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,6 +36,10 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -51,23 +54,30 @@ class StoreTest extends AbstractStoreTest {
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
 
     assertThatThrownBy(
-            () ->
-                Store.create(
-                    SYNC_RUNNER,
-                    new StubMetricsSystem(),
-                    blockProviderFromChainBuilder(),
-                    StateAndBlockProvider.NOOP,
-                    Optional.empty(),
-                    genesisTime.minus(1),
-                    genesisTime,
-                    genesisCheckpoint,
-                    genesisCheckpoint,
-                    genesisCheckpoint,
-                    Map.of(genesis.getRoot(), genesis.getParentRoot()),
-                    Map.of(genesis.getRoot(), genesis.getSlot()),
-                    genesis,
-                    Collections.emptyMap(),
-                    StoreConfig.createDefault()))
+            () -> {
+              final ProtoArray protoArray =
+                  new ProtoArrayBuilder()
+                      .finalizedCheckpoint(genesisCheckpoint)
+                      .justifiedCheckpoint(genesisCheckpoint)
+                      .build();
+
+              Store.create(
+                  SYNC_RUNNER,
+                  new StubMetricsSystem(),
+                  blockProviderFromChainBuilder(),
+                  StateAndBlockProvider.NOOP,
+                  Optional.empty(),
+                  genesisTime.minus(1),
+                  genesisTime,
+                  genesisCheckpoint,
+                  genesisCheckpoint,
+                  genesisCheckpoint,
+                  ProtoArrayForkChoiceStrategy.create(
+                      protoArray, new StubProtoArrayStorageChannel()),
+                  genesis,
+                  Collections.emptyMap(),
+                  StoreConfig.createDefault());
+            })
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
   }
@@ -342,6 +352,6 @@ class StoreTest extends AbstractStoreTest {
             .streamBlocksAndStates(checkpoint1.getEpochStartSlot())
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toList());
-    assertThat(store.getOrderedBlockRoots()).containsExactlyElementsOf(expectedBlockRoots);
+    assertThat(store.getBlockRoots()).containsExactlyInAnyOrderElementsOf(expectedBlockRoots);
   }
 }

@@ -25,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +49,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
@@ -251,16 +253,37 @@ public class RocksDbDatabase implements Database {
 
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
-    // Build maps with block information
-    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
-    final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
+    // Build proto array
+    final ProtoArray protoArray =
+        new ProtoArrayBuilder()
+            .protoArraySnapshot(getProtoArraySnapshot())
+            .anchor(anchor)
+            .finalizedCheckpoint(finalizedCheckpoint)
+            .justifiedCheckpoint(justifiedCheckpoint)
+            .build();
+
+    // TODO: Currently we're resetting to the last protoarray snapshot stored which may mean some
+    // hot blocks are not reloaded and if not regenerated as part of sync, may not be pruned
+    // correctly.  Will need to either store a new protoarray snapshot on each transaction that
+    // stores blocks OR re-add these extra blocks to the protoarray
+
+    // TODO: This will load all blocks into memory because of the sort, need to avoid that
+    // TODO: This also should regenerate states to ensure the right finalized/justified checkpoints
+    // are used
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
-      hotBlocks.forEach(
-          b -> {
-            childToParentLookup.put(b.getRoot(), b.getParent_root());
-            rootToSlot.put(b.getRoot(), b.getSlot());
-          });
+      hotBlocks
+          .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
+          .forEach(
+              block ->
+                  protoArray.onBlock(
+                      block.getSlot(),
+                      block.getRoot(),
+                      block.getParent_root(),
+                      block.getStateRoot(),
+                      justifiedCheckpoint.getEpoch(),
+                      finalizedCheckpoint.getEpoch()));
     }
+    // End dodgy bit
 
     // Validate finalized data is consistent and available
     final SignedBeaconBlock finalizedBlock =
@@ -271,6 +294,15 @@ public class RocksDbDatabase implements Database {
         "Latest finalized state does not match latest finalized block");
     final SignedBlockAndState latestFinalized =
         new SignedBlockAndState(finalizedBlock, finalizedState);
+
+    // Make sure at least the latest finalized block is in protoarray
+    protoArray.onBlock(
+        finalizedBlock.getSlot(),
+        finalizedBlock.getRoot(),
+        finalizedBlock.getParent_root(),
+        finalizedBlock.getStateRoot(),
+        justifiedCheckpoint.getEpoch(),
+        finalizedCheckpoint.getEpoch());
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -287,8 +319,7 @@ public class RocksDbDatabase implements Database {
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
-            .childToParentMap(childToParentLookup)
-            .rootToSlotMap(rootToSlot)
+            .protoArray(protoArray)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }
@@ -503,6 +534,7 @@ public class RocksDbDatabase implements Database {
               HashTree.builder()
                   .rootHash(baseBlock.getRoot())
                   .childAndParentRoots(finalizedChildToParentMap)
+//                  .block(baseBlock)  Not convinced this is the right option
                   .build();
 
           final StateRootRecorder recorder =

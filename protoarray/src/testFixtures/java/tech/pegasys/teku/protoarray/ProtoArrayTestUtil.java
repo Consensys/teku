@@ -39,8 +39,15 @@ public class ProtoArrayTestUtil {
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel()).join();
+    final ProtoArray protoArray =
+        new ProtoArrayBuilder()
+            .anchor(store.getAnchor())
+            .finalizedCheckpoint(store.getFinalizedCheckpoint())
+            .justifiedCheckpoint(store.getJustifiedCheckpoint())
+            .build();
+
+    final ProtoArrayForkChoiceStrategy forkChoice =
+        ProtoArrayForkChoiceStrategy.create(protoArray, new StubProtoArrayStorageChannel());
 
     forkChoice.processBlock(
         finalizedBlockSlot,

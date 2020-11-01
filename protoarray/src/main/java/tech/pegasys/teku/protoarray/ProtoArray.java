@@ -187,6 +187,10 @@ public class ProtoArray {
     }
   }
 
+  public void removeBlockRoot(final Bytes32 blockRoot) {
+    indices.remove(blockRoot);
+  }
+
   /**
    * Update the tree with new finalization information. The tree is only actually pruned if both of
    * the two following criteria are met:

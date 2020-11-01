@@ -19,9 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
@@ -31,24 +29,28 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 
 public class StoreBuilder {
-  AsyncRunner asyncRunner;
-  MetricsSystem metricsSystem;
-  BlockProvider blockProvider;
-  StateAndBlockProvider stateAndBlockProvider;
-  StoreConfig storeConfig = StoreConfig.createDefault();
+  private AsyncRunner asyncRunner;
+  private MetricsSystem metricsSystem;
+  private BlockProvider blockProvider;
+  private StateAndBlockProvider stateAndBlockProvider;
+  private StoreConfig storeConfig = StoreConfig.createDefault();
 
-  final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
-  final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
-  Optional<Checkpoint> anchor = Optional.empty();
-  UInt64 time;
-  UInt64 genesisTime;
-  Checkpoint justifiedCheckpoint;
-  Checkpoint finalizedCheckpoint;
-  Checkpoint bestJustifiedCheckpoint;
-  SignedBlockAndState latestFinalized;
-  Map<UInt64, VoteTracker> votes;
+  private Optional<Checkpoint> anchor = Optional.empty();
+  private UInt64 time;
+  private UInt64 genesisTime;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint finalizedCheckpoint;
+  private Checkpoint bestJustifiedCheckpoint;
+  private SignedBlockAndState latestFinalized;
+  private Map<UInt64, VoteTracker> votes;
+  private ProtoArrayStorageChannel protoArrayStorageChannel;
+  private ProtoArray protoArray;
 
   private StoreBuilder() {}
 
@@ -66,11 +68,7 @@ public class StoreBuilder {
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
-    Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
-
-    Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
-    rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
+    final ProtoArray protoArray = ProtoArrayBuilder.fromAnchorPoint(anchor);
 
     return create()
         .asyncRunner(asyncRunner)
@@ -83,14 +81,15 @@ public class StoreBuilder {
         .finalizedCheckpoint(anchor.getCheckpoint())
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
-        .childToParentMap(childToParentMap)
-        .rootToSlotMap(rootToSlotMap)
+        .protoArray(protoArray)
         .latestFinalized(anchor.toSignedBlockAndState())
         .votes(new HashMap<>());
   }
 
   public UpdatableStore build() {
     assertValid();
+    final ProtoArrayForkChoiceStrategy protoArrayForkChoiceStrategy =
+        ProtoArrayForkChoiceStrategy.create(protoArray, protoArrayStorageChannel);
 
     return Store.create(
         asyncRunner,
@@ -103,8 +102,7 @@ public class StoreBuilder {
         justifiedCheckpoint,
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
-        childToParentRoot,
-        rootToSlotMap,
+        protoArrayForkChoiceStrategy,
         latestFinalized,
         votes,
         storeConfig);
@@ -122,11 +120,8 @@ public class StoreBuilder {
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
-    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
-    checkState(
-        Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
-        "Child-parent and root-slot mappings must be consistent");
+    checkState(protoArray != null, "ProtoArray must be defined");
+    checkState(protoArrayStorageChannel != null, "ProtoArrayStorageChannel must be defined");
   }
 
   public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
@@ -169,6 +164,17 @@ public class StoreBuilder {
     return this;
   }
 
+  public StoreBuilder protoArray(final ProtoArray protoArray) {
+    this.protoArray = protoArray;
+    return this;
+  }
+
+  public StoreBuilder protoArrayStorageChannel(
+      final ProtoArrayStorageChannel protoArrayStorageChannel) {
+    this.protoArrayStorageChannel = protoArrayStorageChannel;
+    return this;
+  }
+
   public StoreBuilder time(final UInt64 time) {
     checkNotNull(time);
     this.time = time;
@@ -196,18 +202,6 @@ public class StoreBuilder {
   public StoreBuilder bestJustifiedCheckpoint(final Checkpoint bestJustifiedCheckpoint) {
     checkNotNull(bestJustifiedCheckpoint);
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
-    return this;
-  }
-
-  public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
-    checkNotNull(childToParent);
-    this.childToParentRoot.putAll(childToParent);
-    return this;
-  }
-
-  public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
-    checkNotNull(rootToSlotMap);
-    this.rootToSlotMap.putAll(rootToSlotMap);
     return this;
   }
 

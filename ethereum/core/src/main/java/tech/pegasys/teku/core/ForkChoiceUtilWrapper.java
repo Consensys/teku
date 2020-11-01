@@ -15,8 +15,8 @@ package tech.pegasys.teku.core;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtilWrapper {
 

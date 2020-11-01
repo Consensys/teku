@@ -15,6 +15,7 @@ package tech.pegasys.teku.protoarray;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -61,4 +62,7 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
   public void save() {}
+
+  @Override
+  public void maybePrune(final Bytes32 root) {}
 }

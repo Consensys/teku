@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -55,6 +57,8 @@ public class StorageBackedRecentChainDataTest {
 
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+  private final ProtoArrayStorageChannel protoArrayStorageChannel =
+      Mockito.mock(ProtoArrayStorageChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
@@ -144,6 +148,7 @@ public class StorageBackedRecentChainDataTest {
                 StateAndBlockProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
+            .protoArrayStorageChannel(protoArrayStorageChannel)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());

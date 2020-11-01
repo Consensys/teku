@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import java.util.List;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -44,6 +45,8 @@ public interface ReadOnlyStore {
 
   Checkpoint getFinalizedCheckpoint();
 
+  ForkChoiceStrategy getForkChoiceStrategy();
+
   /**
    * Return the slot of the latest finalized block. This slot may be at or prior to the epoch
    * boundary slot which this block finalizes.
@@ -58,13 +61,14 @@ public interface ReadOnlyStore {
 
   boolean containsBlock(Bytes32 blockRoot);
 
-  Set<Bytes32> getBlockRoots();
-
   /**
-   * @return A list of block roots ordered to guarantee that parent roots will be sorted earlier
-   *     than child roots
+   * This method requires duplicating the entire list of block roots which is awful for memory
+   * usage. Avoid it in production.
+   *
+   * @return a duplicate copy of all block roots.
    */
-  List<Bytes32> getOrderedBlockRoots();
+  @VisibleForTesting
+  Set<Bytes32> getBlockRoots();
 
   Set<UInt64> getVotedValidatorIndices();
 

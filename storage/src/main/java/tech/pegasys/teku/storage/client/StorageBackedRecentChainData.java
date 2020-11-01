@@ -151,6 +151,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .blockProvider(blockProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
+                  .protoArrayStorageChannel(protoArrayStorageChannel)
                   .build();
 
           setStore(store);

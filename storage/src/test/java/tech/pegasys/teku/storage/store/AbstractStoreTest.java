@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -31,12 +30,16 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
 public abstract class AbstractStoreTest {
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
@@ -124,22 +127,25 @@ public abstract class AbstractStoreTest {
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return Store.create(
-        SYNC_RUNNER,
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        StateAndBlockProvider.NOOP,
-        Optional.empty(),
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        Map.of(genesis.getRoot(), genesis.getSlot()),
-        genesis,
-        Collections.emptyMap(),
-        pruningOptions);
+    return StoreBuilder.create()
+        .asyncRunner(SYNC_RUNNER)
+        .metricsSystem(new StubMetricsSystem())
+        .blockProvider(blockProviderFromChainBuilder())
+        .stateProvider(StateAndBlockProvider.NOOP)
+        .anchor(Optional.empty())
+        .genesisTime(genesis.getState().getGenesis_time())
+        .time(genesis.getState().getGenesis_time())
+        .bestJustifiedCheckpoint(genesisCheckpoint)
+        .justifiedCheckpoint(genesisCheckpoint)
+        .finalizedCheckpoint(genesisCheckpoint)
+        .protoArrayStorageChannel(new StubProtoArrayStorageChannel())
+        .protoArray(
+            ProtoArrayBuilder.fromAnchorPoint(
+                dataStructureUtil.createAnchorFromState(genesis.getState())))
+        .latestFinalized(genesis)
+        .votes(Collections.emptyMap())
+        .storeConfig(pruningOptions)
+        .build();
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

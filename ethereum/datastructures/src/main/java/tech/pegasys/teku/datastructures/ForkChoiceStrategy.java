@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.datastructures;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,4 +43,6 @@ public interface ForkChoiceStrategy {
   boolean contains(Bytes32 blockRoot);
 
   void save();
+
+  void maybePrune(Bytes32 root);
 }
