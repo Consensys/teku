@@ -26,6 +26,7 @@ import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -897,13 +898,16 @@ public abstract class AbstractDatabaseTest {
 
   protected void add(
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
-    for (SignedBlockAndState blockAndState : blocksAndStates) {
-      transaction.putBlockAndState(blockAndState);
-      recentChainData
-          .getForkChoiceStrategy()
-          .orElseThrow()
-          .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-    }
+    blocksAndStates.stream()
+        .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
+        .forEach(
+            blockAndState -> {
+              transaction.putBlockAndState(blockAndState);
+              recentChainData
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+            });
   }
 
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {

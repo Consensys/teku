@@ -534,7 +534,6 @@ public class RocksDbDatabase implements Database {
               HashTree.builder()
                   .rootHash(baseBlock.getRoot())
                   .childAndParentRoots(finalizedChildToParentMap)
-//                  .block(baseBlock)  Not convinced this is the right option
                   .build();
 
           final StateRootRecorder recorder =

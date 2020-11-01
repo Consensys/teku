@@ -191,7 +191,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                       block.getStateRoot(),
                       justifiedEpoch,
                       finalizedEpoch));
-      removedBlockRoots.forEach(root -> protoArray.removeBlockRoot(root));
+      removedBlockRoots.forEach(protoArray::removeBlockRoot);
     } finally {
       protoArrayLock.writeLock().unlock();
     }

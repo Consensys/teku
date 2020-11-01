@@ -103,7 +103,11 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    final UpdatableStore expectedStore = genesisStoreBuilder.storeConfig(storeConfig).build();
+    final UpdatableStore expectedStore =
+        genesisStoreBuilder
+            .storeConfig(storeConfig)
+            .protoArrayStorageChannel(protoArrayStorageChannel)
+            .build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
@@ -197,7 +201,9 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build());
+    StoreAssertions.assertStoresMatch(
+        client.get().getStore(),
+        genesisStoreBuilder.protoArrayStorageChannel(protoArrayStorageChannel).build());
   }
 
   @Test

@@ -169,6 +169,7 @@ public class DebugDbCommand implements Runnable {
                           .blockProvider(BlockProvider.NOOP)
                           .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockProvider.NOOP)
+                          // TODO: Need to define protoArrayStorageChannel here
                           .build())
               .map(UpdatableStore::getLatestFinalizedBlockAndState);
       int result = writeState(outputFile, blockAndState.map(SignedBlockAndState::getState));

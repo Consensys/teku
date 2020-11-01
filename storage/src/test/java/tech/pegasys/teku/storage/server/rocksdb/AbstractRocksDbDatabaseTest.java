@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
@@ -91,6 +92,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockProvider.class))
+            .protoArrayStorageChannel(new StubProtoArrayStorageChannel())
             .build();
 
     assertThat(store.getTime()).isEqualTo(genesisTime);
@@ -218,7 +220,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
