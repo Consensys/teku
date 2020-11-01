@@ -307,7 +307,7 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
-    // Now create a new block that is not descendent from the finalized block
+    // Now create a new block that is not descendant from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = otherStorage.getHeadBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
