@@ -183,7 +183,7 @@ public class StorageSystem implements AutoCloseable {
     this.database.close();
   }
 
-  public static interface RestartedStorageSupplier {
+  public interface RestartedStorageSupplier {
     StorageSystem restart(final StateStorageMode storageMode);
   }
 }
