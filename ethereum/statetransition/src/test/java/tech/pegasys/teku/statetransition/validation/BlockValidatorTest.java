@@ -112,7 +112,7 @@ public class BlockValidatorTest {
     BLSSignature blockSignature =
         beaconChainUtil
             .getSigner(proposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().get().getForkInfo())
+            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
 
@@ -152,7 +152,7 @@ public class BlockValidatorTest {
     BLSSignature blockSignature =
         beaconChainUtil
             .getSigner(invalidProposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().get().getForkInfo())
+            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =
         new SignedBeaconBlock(block, blockSignature);
