@@ -245,6 +245,14 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
+  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpoints(
+      final String stateIdParam) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
+  }
+
   public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsByStateRootV1(
       final Bytes32 stateRoot) {
     return combinedChainDataClient
