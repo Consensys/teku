@@ -461,9 +461,10 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<Fork>> getForkAtStateRoot(final Bytes32 root) {
-    return combinedChainDataClient
-        .getStateByStateRoot(root)
+  public SafeFuture<Optional<Fork>> getStateFork(final String stateIdParam) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
         .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
   }
 
