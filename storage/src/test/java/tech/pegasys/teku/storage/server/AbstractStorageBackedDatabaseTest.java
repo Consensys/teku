@@ -177,7 +177,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
-    assertThat(memoryStore.getAnchor()).contains(anchor.getCheckpoint());
+    assertThat(memoryStore.getInitialCheckpoint()).contains(anchor.getCheckpoint());
     assertThat(database.getEarliestAvailableBlockSlot()).contains(anchorBlockAndState.getSlot());
   }
 }

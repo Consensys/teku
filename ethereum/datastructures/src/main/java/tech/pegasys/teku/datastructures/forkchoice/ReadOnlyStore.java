@@ -33,12 +33,12 @@ public interface ReadOnlyStore {
   UInt64 getGenesisTime();
 
   /**
-   * Returns the anchor checkpoint from which the chain was started, if such an anchor exists. If
-   * the anchor is missing, the node was started up from genesis.
+   * Returns the initial checkpoint from which the chain was started. If the checkpoint is missing,
+   * the node was started up from genesis.
    *
-   * @return The anchor if it exists.
+   * @return The initial checkpoint if it exists.
    */
-  Optional<Checkpoint> getAnchor();
+  Optional<Checkpoint> getInitialCheckpoint();
 
   Checkpoint getJustifiedCheckpoint();
 

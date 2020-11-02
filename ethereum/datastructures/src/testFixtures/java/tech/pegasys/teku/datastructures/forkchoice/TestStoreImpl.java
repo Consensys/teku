@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 class TestStoreImpl implements MutableStore {
   protected UInt64 time;
   protected UInt64 genesis_time;
-  protected final Optional<Checkpoint> anchor;
+  protected final Optional<Checkpoint> initialCheckpoint;
   protected Checkpoint justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
   protected Checkpoint best_justified_checkpoint;
@@ -44,7 +44,7 @@ class TestStoreImpl implements MutableStore {
   TestStoreImpl(
       final UInt64 time,
       final UInt64 genesis_time,
-      final Optional<Checkpoint> anchor,
+      final Optional<Checkpoint> initialCheckpoint,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
@@ -54,7 +54,7 @@ class TestStoreImpl implements MutableStore {
       final Map<UInt64, VoteTracker> votes) {
     this.time = time;
     this.genesis_time = genesis_time;
-    this.anchor = anchor;
+    this.initialCheckpoint = initialCheckpoint;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
@@ -76,8 +76,8 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
-  public Optional<Checkpoint> getAnchor() {
-    return anchor;
+  public Optional<Checkpoint> getInitialCheckpoint() {
+    return initialCheckpoint;
   }
 
   @Override

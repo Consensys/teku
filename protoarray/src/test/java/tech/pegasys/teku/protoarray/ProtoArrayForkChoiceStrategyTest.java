@@ -57,13 +57,13 @@ public class ProtoArrayForkChoiceStrategyTest {
   public void findHead_worksForChainInitializedFromNonGenesisAnchor() {
     // Set up store with an anchor point that has justified and finalized checkpoints prior to its
     // epoch
-    final UInt64 anchorEpoch = UInt64.valueOf(100);
+    final UInt64 initialEpoch = UInt64.valueOf(100);
     final BeaconState anchorState =
         dataStructureUtil
             .stateBuilder()
-            .setJustifiedCheckpointsToEpoch(anchorEpoch.minus(2))
-            .setFinalizedCheckpointToEpoch(anchorEpoch.minus(3))
-            .setSlotToStartOfEpoch(anchorEpoch)
+            .setJustifiedCheckpointsToEpoch(initialEpoch.minus(2))
+            .setFinalizedCheckpointToEpoch(initialEpoch.minus(3))
+            .setSlotToStartOfEpoch(initialEpoch)
             .build();
     AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
     MutableStore store = new TestStoreFactory().createAnchorStore(anchor);

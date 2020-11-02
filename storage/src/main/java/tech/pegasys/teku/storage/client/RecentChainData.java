@@ -142,7 +142,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
     // Set the head to the anchor point
     updateHead(anchorPoint.getRoot(), anchorPoint.getEpochStartSlot());
-    storageUpdateChannel.onAnchorPoint(anchorPoint);
+    storageUpdateChannel.onChainInitialized(anchorPoint);
   }
 
   public UInt64 getGenesisTime() {
