@@ -25,7 +25,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +36,8 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -50,7 +51,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
@@ -67,6 +67,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao.HotUpda
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbProtoArrayDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.schema.ProtoArrayLoader;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaHot;
@@ -204,7 +205,10 @@ public class RocksDbDatabase implements Database {
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
       // Save to hot storage
-      hotUpdater.addHotBlock(anchorBlock);
+      hotUpdater.addHotBlock(
+          new BlockAndCheckpointEpochs(
+              anchorBlock,
+              new CheckpointEpochs(anchorCheckpoint.getEpoch(), anchorCheckpoint.getEpoch())));
       // Save to cold storage
       finalizedUpdater.addFinalizedBlock(anchorBlock);
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
@@ -255,35 +259,7 @@ public class RocksDbDatabase implements Database {
 
     // Build proto array
     final ProtoArray protoArray =
-        new ProtoArrayBuilder()
-            .protoArraySnapshot(getProtoArraySnapshot())
-            .anchor(anchor)
-            .finalizedCheckpoint(finalizedCheckpoint)
-            .justifiedCheckpoint(justifiedCheckpoint)
-            .build();
-
-    // TODO: Currently we're resetting to the last protoarray snapshot stored which may mean some
-    // hot blocks are not reloaded and if not regenerated as part of sync, may not be pruned
-    // correctly.  Will need to either store a new protoarray snapshot on each transaction that
-    // stores blocks OR re-add these extra blocks to the protoarray
-
-    // TODO: This will load all blocks into memory because of the sort, need to avoid that
-    // TODO: This also should regenerate states to ensure the right finalized/justified checkpoints
-    // are used
-    try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
-      hotBlocks
-          .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
-          .forEach(
-              block ->
-                  protoArray.onBlock(
-                      block.getSlot(),
-                      block.getRoot(),
-                      block.getParent_root(),
-                      block.getStateRoot(),
-                      justifiedCheckpoint.getEpoch(),
-                      finalizedCheckpoint.getEpoch()));
-    }
-    // End dodgy bit
+        ProtoArrayLoader.loadProtoArray(hotDao, anchor, justifiedCheckpoint, finalizedCheckpoint);
 
     // Validate finalized data is consistent and available
     final SignedBeaconBlock finalizedBlock =

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -41,6 +42,8 @@ public interface RocksDbSerializer<T> {
       new ProtoArraySnapshotSerializer();
   RocksDbSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_SERIALIZER =
       new SlotAndBlockRootSerializer();
+  RocksDbSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
+      new CheckpointEpochsSerializer();
 
   T deserialize(final byte[] data);
 

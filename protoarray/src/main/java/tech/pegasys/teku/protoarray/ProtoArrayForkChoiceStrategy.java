@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.ForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -174,23 +174,23 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   public void applyTransaction(
-      final Collection<SignedBeaconBlock> newBlocks,
+      final Collection<BlockAndCheckpointEpochs> newBlocks,
       final Collection<Bytes32> removedBlockRoots,
       final UInt64 justifiedEpoch,
       final UInt64 finalizedEpoch) {
     protoArrayLock.writeLock().lock();
     try {
       newBlocks.stream()
-          .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
+          .sorted(Comparator.comparing(BlockAndCheckpointEpochs::getSlot))
           .forEach(
               block ->
                   protoArray.onBlock(
-                      block.getSlot(),
-                      block.getRoot(),
-                      block.getParent_root(),
-                      block.getStateRoot(),
-                      justifiedEpoch,
-                      finalizedEpoch));
+                      block.getBlock().getSlot(),
+                      block.getBlock().getRoot(),
+                      block.getBlock().getParent_root(),
+                      block.getBlock().getStateRoot(),
+                      block.getCheckpointEpochs().getJustifiedEpoch(),
+                      block.getCheckpointEpochs().getFinalizedEpoch()));
       removedBlockRoots.forEach(protoArray::removeBlockRoot);
     } finally {
       protoArrayLock.writeLock().unlock();

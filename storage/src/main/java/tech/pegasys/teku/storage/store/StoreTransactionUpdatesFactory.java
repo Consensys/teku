@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -38,7 +40,7 @@ class StoreTransactionUpdatesFactory {
   private final Store baseStore;
   private final StoreTransaction tx;
 
-  private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
+  private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final SignedBlockAndState latestFinalizedBlockAndState;
@@ -55,7 +57,13 @@ class StoreTransactionUpdatesFactory {
     // Save copy of tx data that may be pruned
     hotBlocks =
         tx.blockAndStates.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getBlock()));
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry ->
+                        new BlockAndCheckpointEpochs(
+                            entry.getValue().getBlock(),
+                            CheckpointEpochs.fromBlockAndState(entry.getValue()))));
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockAndStates);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
   }
@@ -129,7 +137,7 @@ class StoreTransactionUpdatesFactory {
     Bytes32 finalizedChainHeadRoot = newlyFinalizedBlockRoot;
     while (!baseStore.containsBlock(finalizedChainHeadRoot)) {
       // Blocks from the new transaction must all be in memory as they haven't been stored yet
-      final SignedBeaconBlock block = hotBlocks.get(finalizedChainHeadRoot);
+      final SignedBeaconBlock block = hotBlocks.get(finalizedChainHeadRoot).getBlock();
       childToParent.put(finalizedChainHeadRoot, block.getParent_root());
       finalizedChainHeadRoot = block.getParent_root();
     }

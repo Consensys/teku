@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -75,6 +77,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+    return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
+  }
+
+  @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
   }
@@ -93,11 +100,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
     return db.get(schema.getVariableWeakSubjectivityCheckpoint());
-  }
-
-  @Override
-  public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
-    return db.getAll(schema.getColumnHotBlocksByRoot());
   }
 
   @Override
@@ -211,9 +213,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void addHotBlock(final SignedBeaconBlock block) {
+    public void addHotBlock(final BlockAndCheckpointEpochs block) {
       final Bytes32 blockRoot = block.getRoot();
-      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block);
+      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
+      transaction.put(
+          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, block.getCheckpointEpochs());
     }
 
     @Override
@@ -232,9 +236,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
     @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-      stateRoots.stream()
-          .forEach(
-              (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
+      stateRoots.forEach(
+          (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
     }
 
     @Override
@@ -246,6 +249,7 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
     }
 
