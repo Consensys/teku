@@ -147,7 +147,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
               final Lock writeLock = lock.writeLock();
               writeLock.lock();
               try {
-                updates = StoreTransactionUpdatesFactory.create(store, this, getLatestFinalized());
+                updates = StoreTransactionUpdatesFactory.create(store, this, latestFinalized);
               } finally {
                 writeLock.unlock();
               }
