@@ -90,9 +90,7 @@ public class FinalizedChainData {
     public Builder latestFinalized(final AnchorPoint latestFinalized) {
       checkNotNull(latestFinalized);
       this.latestFinalized = latestFinalized;
-      latestFinalized
-          .getSignedBeaconBlock()
-          .ifPresent(b -> this.finalizedBlocks.put(b.getRoot(), b));
+      this.finalizedBlocks.put(latestFinalized.getRoot(), latestFinalized.getBlock());
       this.finalizedStates.put(latestFinalized.getRoot(), latestFinalized.getState());
       finalizedChildAndParent(latestFinalized.getRoot(), latestFinalized.getParentRoot());
       return this;
