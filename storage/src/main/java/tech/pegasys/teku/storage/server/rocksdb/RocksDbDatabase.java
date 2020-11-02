@@ -440,9 +440,15 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
-    try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.putProtoArraySnapshot(protoArraySnapshot);
-      updater.commit();
+    try (final RocksDbHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
+      protoArraySnapshot
+          .getBlockInformationList()
+          .forEach(
+              block ->
+                  hotUpdater.addHotBlockCheckpointEpochs(
+                      block.getBlockRoot(),
+                      new CheckpointEpochs(block.getJustifiedEpoch(), block.getFinalizedEpoch())));
+      hotUpdater.commit();
     }
   }
 

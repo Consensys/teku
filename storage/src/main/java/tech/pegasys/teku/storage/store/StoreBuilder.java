@@ -18,7 +18,10 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,6 +36,8 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.NewBlockInformation;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 
 public class StoreBuilder {
   AsyncRunner asyncRunner;
@@ -114,6 +119,31 @@ public class StoreBuilder {
         latestFinalized,
         votes,
         storeConfig);
+  }
+
+  public Optional<ProtoArray> buildProtoArray() {
+    final List<NewBlockInformation> blocks = new ArrayList<>(blockInfoByRoot.values());
+    blocks.sort(Comparator.comparing(NewBlockInformation::getBlockSlot));
+    final ProtoArray protoArray =
+        new ProtoArrayBuilder()
+            .anchor(anchor)
+            .justifiedCheckpoint(justifiedCheckpoint)
+            .finalizedCheckpoint(finalizedCheckpoint)
+            .build();
+    for (NewBlockInformation block : blocks) {
+      if (block.getCheckpointEpochs().isEmpty()) {
+        // Checkpoint epochs aren't available, migration will be required
+        return Optional.empty();
+      }
+      protoArray.onBlock(
+          block.getBlockSlot(),
+          block.getBlockRoot(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          block.getCheckpointEpochs().get().getJustifiedEpoch(),
+          block.getCheckpointEpochs().get().getFinalizedEpoch());
+    }
+    return Optional.of(protoArray);
   }
 
   private void assertValid() {

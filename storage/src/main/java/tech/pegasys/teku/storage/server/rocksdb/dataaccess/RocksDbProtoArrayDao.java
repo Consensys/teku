@@ -27,7 +27,7 @@ public interface RocksDbProtoArrayDao extends AutoCloseable {
   ProtoArrayUpdater protoArrayUpdater();
 
   interface ProtoArrayUpdater extends AutoCloseable {
-    void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot);
+    void deleteProtoArraySnapshot();
 
     void commit();
 

@@ -41,6 +41,4 @@ public interface ForkChoiceStrategy {
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   boolean contains(Bytes32 blockRoot);
-
-  void save();
 }

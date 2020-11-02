@@ -216,8 +216,14 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     public void addHotBlock(final BlockAndCheckpointEpochs block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
+      addHotBlockCheckpointEpochs(blockRoot, block.getCheckpointEpochs());
+    }
+
+    @Override
+    public void addHotBlockCheckpointEpochs(
+        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
       transaction.put(
-          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, block.getCheckpointEpochs());
+          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, checkpointEpochs);
     }
 
     @Override
@@ -269,8 +275,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
-      transaction.put(schema.getVariableProtoArraySnapshot(), newProtoArray);
+    public void deleteProtoArraySnapshot() {
+      transaction.delete(schema.getVariableProtoArraySnapshot());
     }
 
     @Override

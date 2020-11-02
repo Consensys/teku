@@ -134,8 +134,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .build();
 
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-        ProtoArrayForkChoiceStrategy.initialize(
-            ProtoArrayBuilder.fromAnchorPoint(anchorPoint), protoArrayStorageChannel);
+        ProtoArrayForkChoiceStrategy.initialize(ProtoArrayBuilder.fromAnchorPoint(anchorPoint));
 
     final boolean result = setStore(store, forkChoiceStrategy);
     if (!result) {

@@ -28,6 +28,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -153,7 +154,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();
-          return ProtoArrayForkChoiceStrategy.initialize(store, protoArrayStorageChannel)
+          return initForkChoiceStrategy(store, maybeStoreBuilder.get().buildProtoArray())
               .thenApply(
                   forkChoiceStrategy -> {
                     setStore(store, forkChoiceStrategy);
@@ -161,6 +162,15 @@ public class StorageBackedRecentChainData extends RecentChainData {
                     return this;
                   });
         });
+  }
+
+  private SafeFuture<ProtoArrayForkChoiceStrategy> initForkChoiceStrategy(
+      final UpdatableStore store, final Optional<ProtoArray> maybeProtoArray) {
+    return maybeProtoArray
+        .map(
+            protoArray ->
+                SafeFuture.completedFuture(ProtoArrayForkChoiceStrategy.initialize(protoArray)))
+        .orElseGet(() -> ProtoArrayForkChoiceStrategy.initialize(store, protoArrayStorageChannel));
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {
