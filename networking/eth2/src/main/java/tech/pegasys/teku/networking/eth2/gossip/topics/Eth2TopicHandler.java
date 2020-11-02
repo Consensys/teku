@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
+import tech.pegasys.teku.networking.p2p.gossip.GossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -38,8 +43,18 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
   }
 
   @Override
-  public SafeFuture<ValidationResult> handleMessage(final Bytes bytes) {
-    return SafeFuture.of(() -> deserialize(bytes))
+  public SafeFuture<ValidationResult> handleMessage(GossipMessage message) {
+    checkArgument(
+        message instanceof Eth2GossipMessage, "Unexpected message class: " + message.getClass());
+    Eth2GossipMessage eth2GossipMessage = (Eth2GossipMessage) message;
+    Optional<Bytes> decompressedPayload = eth2GossipMessage.getDecompressedPayload();
+    if (decompressedPayload.isEmpty()) {
+      // the message which couldn't be decompressed should fail earlier
+      LOG.warn("Unexpectedly failed decompressing: " + message);
+      return SafeFuture.completedFuture(ValidationResult.Invalid);
+    }
+
+    return SafeFuture.of(() -> deserialize(decompressedPayload.get()))
         .thenApply(this::wrapMessage)
         .thenCompose(
             wrapped ->

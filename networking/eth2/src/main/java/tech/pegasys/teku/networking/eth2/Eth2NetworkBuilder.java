@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -30,9 +32,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.util.LengthBounds;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.SnappyBlockCompressor;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
@@ -138,9 +144,14 @@ public class Eth2NetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
-    final LibP2PNetwork p2pNetwork =
-        new LibP2PNetwork(
-            asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers);
+    // TODO per-topic message bounds
+    LengthBounds maxMessageBounds = SimpleOffsetSerializer
+        .getLengthBounds(SignedBeaconBlock.class).orElseThrow();
+    Eth2GossipMessageFactory eth2GossipMessageFactory = new Eth2GossipMessageFactory(
+        __ -> maxMessageBounds, new SnappyBlockCompressor());
+    final LibP2PNetwork p2pNetwork = new LibP2PNetwork(
+        asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers,
+        eth2GossipMessageFactory);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(

@@ -36,6 +36,7 @@ import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.DefaultMessageFactory;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
@@ -111,7 +112,8 @@ public class DiscoveryNetworkFactory {
                     reputationManager,
                     METRICS_SYSTEM,
                     Collections.emptyList(),
-                    Collections.emptyList()),
+                    Collections.emptyList(),
+                    new DefaultMessageFactory()),
                 new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
                 config);
         try {

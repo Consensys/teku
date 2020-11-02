@@ -19,6 +19,7 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
+import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.Unpooled;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -72,7 +73,13 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
-    return handler.handleMessage(bytes);
+    PubsubMessage pubsubMessage = message.getOriginalMessage();
+    if (!(pubsubMessage instanceof GossipPubsubMessage)) {
+      throw new IllegalArgumentException(
+          "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
+    }
+    GossipPubsubMessage gossipPubsubMessage = (GossipPubsubMessage) pubsubMessage;
+    return handler.handleMessage(gossipPubsubMessage.getGossipMessage());
   }
 
   public void gossip(Bytes bytes) {

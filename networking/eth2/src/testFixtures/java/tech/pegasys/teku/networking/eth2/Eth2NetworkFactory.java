@@ -65,6 +65,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.DefaultMessageFactory;
 import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -205,7 +206,8 @@ public class Eth2NetworkFactory {
                     reputationManager,
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
-                    peerHandlers),
+                    peerHandlers,
+                    new DefaultMessageFactory()),
                 new Eth2PeerSelectionStrategy(
                     config.getTargetPeerRange(),
                     gossipNetwork ->

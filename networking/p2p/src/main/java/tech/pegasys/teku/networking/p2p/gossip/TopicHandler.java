@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.gossip;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface TopicHandler {
@@ -25,5 +24,5 @@ public interface TopicHandler {
    * @param bytes The gossip message
    * @return {@code true} if the message is valid, {@code false} otherwise
    */
-  SafeFuture<ValidationResult> handleMessage(Bytes bytes);
+  SafeFuture<ValidationResult> handleMessage(GossipMessage bytes);
 }

@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -74,6 +75,10 @@ public class SingleAttestationTopicHandlerTest {
     BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
   }
 
+  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
+    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
+  }
+
   @Test
   public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
@@ -85,7 +90,8 @@ public class SingleAttestationTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result = topicHandler
+        .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(gossipedAttestationConsumer).forward(attestation);
@@ -102,7 +108,8 @@ public class SingleAttestationTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(IGNORE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result = topicHandler
+        .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedAttestationConsumer, never()).forward(attestation);
@@ -119,7 +126,8 @@ public class SingleAttestationTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result = topicHandler
+        .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedAttestationConsumer).forward(attestation);
@@ -136,7 +144,8 @@ public class SingleAttestationTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(REJECT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result = topicHandler
+        .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(gossipedAttestationConsumer, never()).forward(attestation);
@@ -146,7 +155,8 @@ public class SingleAttestationTopicHandlerTest {
   public void handleMessage_invalidAttestation_invalidSSZ() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result = topicHandler
+        .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

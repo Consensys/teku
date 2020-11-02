@@ -13,12 +13,18 @@
 
 package tech.pegasys.teku.network.p2p.jvmlibp2p;
 
+import com.google.protobuf.ByteString;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.Topic;
+import io.libp2p.pubsub.DefaultPubsubMessage;
+import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.jetbrains.annotations.NotNull;
+import pubsub.pb.Rpc.Message;
 
 public class MockMessageApi implements MessageApi {
 
@@ -54,4 +60,13 @@ public class MockMessageApi implements MessageApi {
   public List<Topic> getTopics() {
     return topics;
   }
+
+  @NotNull
+  @Override
+  public PubsubMessage getOriginalMessage() {
+    return new DefaultPubsubMessage(Message.newBuilder()
+        .addAllTopicIDs(getTopics().stream().map(Topic::getTopic).collect(Collectors.toList()))
+        .setData(ByteString.copyFrom(getData().nioBuffer())).build());
+  }
+
 }

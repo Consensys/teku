@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.base.Preconditions;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -31,7 +32,7 @@ import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.Ping;
-import io.libp2p.pubsub.PubsubMessageValidator;
+import io.libp2p.pubsub.PubsubRouterMessageValidator;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
@@ -43,7 +44,6 @@ import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -55,14 +55,16 @@ import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.gossip.GossipMessage;
+import tech.pegasys.teku.networking.p2p.gossip.GossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipPubsubMessage;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipWireValidator;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
@@ -80,7 +82,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final PubsubMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
+  private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
   private static Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final PrivKey privKey;
@@ -96,6 +98,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
   private final int listenPort;
+  private final GossipMessageFactory gossipMessageFactory;
 
   public LibP2PNetwork(
       final AsyncRunner asyncRunner,
@@ -103,10 +106,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
-      final List<PeerHandler> peerHandlers) {
+      final List<PeerHandler> peerHandlers,
+      final GossipMessageFactory gossipMessageFactory) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
     this.config = config;
+    this.gossipMessageFactory = gossipMessageFactory;
 
     advertisedAddr =
         MultiaddrUtil.fromInetSocketAddress(
@@ -159,6 +164,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             });
   }
 
+
+
   private Gossip createGossip() {
     GossipParams gossipParams =
         GossipParams.builder()
@@ -175,12 +182,17 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .build();
 
     GossipRouter router = new GossipRouter(gossipParams);
-    router.setMessageIdGenerator(
-        msg ->
-            Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(Hash.sha2_256(msg.getData().toByteArray())));
-    router.setValidator(STRICT_FIELDS_VALIDATOR);
+    router.setMessageFactory(
+        msg -> {
+          Preconditions.checkArgument(
+              msg.getTopicIDsCount() == 1,
+              "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
+          String topic = msg.getTopicIDs(0);
+          GossipMessage gossipMessage =
+              gossipMessageFactory.createMessage(topic, Bytes.wrap(msg.getData().toByteArray()));
+          return new GossipPubsubMessage(msg, gossipMessage);
+        });
+    router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
 
     ChannelHandler debugHandler =
         config.getWireLogsConfig().isLogWireGossip()
