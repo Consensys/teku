@@ -55,6 +55,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -597,6 +598,47 @@ public abstract class AbstractDatabaseTest {
     database.pruneHotStateRoots(database.getStateRootsBeforeSlot(UInt64.valueOf(2L)));
     assertThat(database.getStateRootsBeforeSlot(UInt64.valueOf(10L)))
         .containsExactlyInAnyOrder(twoStateRoot, threeStateRoot);
+  }
+
+  @Test
+  public void startupFromNonGenesisState_prune() {
+    testStartupFromNonGenesisState(StateStorageMode.PRUNE);
+  }
+
+  @Test
+  public void startupFromNonGenesisState_archive() {
+    testStartupFromNonGenesisState(StateStorageMode.ARCHIVE);
+  }
+
+  public void testStartupFromNonGenesisState(final StateStorageMode storageMode) {
+    createStorage(storageMode);
+
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
+            anchorBlockAndState.getState(),
+            Optional.empty());
+    createStorage(storageMode);
+    initFromAnchor(anchor);
+
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+    // And finalize them
+    final SignedBlockAndState newFinalizedBlockAndState = chainBuilder.getLatestBlockAndState();
+    final UInt64 newFinalizedEpock = anchorEpoch.plus(1);
+    justifyAndFinalizeEpoch(newFinalizedEpock, newFinalizedBlockAndState);
+
+    // Restart and check data is what we expect
+    final UpdatableStore originalStore = recentChainData.getStore();
+    restartStorage();
+
+    StoreAssertions.assertStoresMatch(recentChainData.getStore(), originalStore);
+    assertThat(recentChainData.getFinalizedCheckpoint())
+        .contains(new Checkpoint(newFinalizedEpock, newFinalizedBlockAndState.getRoot()));
   }
 
   protected Bytes32 insertRandomSlotAndBlock(

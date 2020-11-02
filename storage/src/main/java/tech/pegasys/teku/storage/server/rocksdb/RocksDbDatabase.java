@@ -38,6 +38,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -540,8 +542,10 @@ public class RocksDbDatabase implements Database {
         BlockProvider.withKnownBlocks(
             roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
+    final Optional<Checkpoint> initialCheckpoint = hotDao.getAnchor();
+    final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
     // Get previously finalized block to build on top of
-    final SignedBeaconBlock baseBlock = getFinalizedBlock();
+    final BeaconBlockSummary baseBlock = getLatestFinalizedBlock();
 
     final List<Bytes32> finalizedRoots =
         HashTree.builder()
@@ -562,12 +566,13 @@ public class RocksDbDatabase implements Database {
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 blockRoot = finalizedRoots.get(i);
 
-          final SignedBeaconBlock block =
-              blockProvider
-                  .getBlock(blockRoot)
-                  .join()
-                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
-          updater.addFinalizedBlock(block);
+          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(blockRoot).join();
+          maybeBlock.ifPresent(updater::addFinalizedBlock);
+          // If block is missing and doesn't match the initial anchor, throw
+          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
+            throw new IllegalStateException("Missing finalized block");
+          }
+
           Optional.ofNullable(finalizedStates.get(blockRoot))
               .or(() -> getHotState(blockRoot))
               .ifPresent(
@@ -576,7 +581,10 @@ public class RocksDbDatabase implements Database {
                     recorder.acceptNextState(state);
                   });
 
-          lastSlot = block.getSlot();
+          lastSlot =
+              maybeBlock
+                  .map(SignedBeaconBlock::getSlot)
+                  .orElseGet(() -> initialCheckpoint.orElseThrow().getEpochStartSlot());
           i++;
         }
         updater.commit();
@@ -590,6 +598,7 @@ public class RocksDbDatabase implements Database {
   private void updateFinalizedDataPruneMode(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
+    final Optional<Bytes32> initialBlockRoot = hotDao.getAnchor().map(Checkpoint::getRoot);
     final BlockProvider blockProvider =
         BlockProvider.withKnownBlocks(
             roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
@@ -601,12 +610,13 @@ public class RocksDbDatabase implements Database {
         final int start = i;
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
-          SignedBeaconBlock block =
-              blockProvider
-                  .getBlock(root)
-                  .join()
-                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
-          updater.addFinalizedBlock(block);
+          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(root).join();
+          maybeBlock.ifPresent(updater::addFinalizedBlock);
+
+          // If block is missing and doesn't match the initial anchor, throw
+          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(root)).isEmpty()) {
+            throw new IllegalStateException("Missing finalized block");
+          }
           i++;
         }
         updater.commit();
@@ -617,9 +627,15 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private SignedBeaconBlock getFinalizedBlock() {
+  private BeaconBlockSummary getLatestFinalizedBlock() {
     final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
-    return finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
+    final Optional<BeaconBlockSummary> finalizedBlock =
+        finalizedDao
+            .getFinalizedBlock(baseBlockRoot)
+            .<BeaconBlockSummary>map(a -> a)
+            .or(() -> hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState));
+    return finalizedBlock.orElseThrow(
+        () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
   }
 
   private void putFinalizedState(
