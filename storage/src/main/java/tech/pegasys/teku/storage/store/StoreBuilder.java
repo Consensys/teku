@@ -17,20 +17,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
+import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.NewBlockInformation;
 
 public class StoreBuilder {
   AsyncRunner asyncRunner;
@@ -39,8 +41,7 @@ public class StoreBuilder {
   StateAndBlockProvider stateAndBlockProvider;
   StoreConfig storeConfig = StoreConfig.createDefault();
 
-  final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
-  final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+  final Map<Bytes32, NewBlockInformation> blockInfoByRoot = new HashMap<>();
   Optional<Checkpoint> anchor = Optional.empty();
   UInt64 time;
   UInt64 genesisTime;
@@ -66,11 +67,17 @@ public class StoreBuilder {
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
-    Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
-
-    Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
-    rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
+    Map<Bytes32, NewBlockInformation> blockInfo = new HashMap<>();
+    blockInfo.put(
+        anchor.getRoot(),
+        new NewBlockInformation(
+            slot,
+            anchor.getRoot(),
+            anchor.getParentRoot(),
+            anchor.getState().hashTreeRoot(),
+            Optional.of(
+                new CheckpointEpochs(
+                    anchor.getCheckpoint().getEpoch(), anchor.getCheckpoint().getEpoch()))));
 
     return create()
         .asyncRunner(asyncRunner)
@@ -83,8 +90,7 @@ public class StoreBuilder {
         .finalizedCheckpoint(anchor.getCheckpoint())
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
-        .childToParentMap(childToParentMap)
-        .rootToSlotMap(rootToSlotMap)
+        .blockInformation(blockInfo)
         .latestFinalized(anchor.toSignedBlockAndState())
         .votes(new HashMap<>());
   }
@@ -103,8 +109,8 @@ public class StoreBuilder {
         justifiedCheckpoint,
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
-        childToParentRoot,
-        rootToSlotMap,
+        Maps.transformValues(blockInfoByRoot, NewBlockInformation::getParentRoot),
+        Maps.transformValues(blockInfoByRoot, NewBlockInformation::getBlockSlot),
         latestFinalized,
         votes,
         storeConfig);
@@ -122,11 +128,7 @@ public class StoreBuilder {
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
-    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
-    checkState(
-        Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
-        "Child-parent and root-slot mappings must be consistent");
+    checkState(!blockInfoByRoot.isEmpty(), "Block data must be supplied");
   }
 
   public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
@@ -199,15 +201,8 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
-    checkNotNull(childToParent);
-    this.childToParentRoot.putAll(childToParent);
-    return this;
-  }
-
-  public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
-    checkNotNull(rootToSlotMap);
-    this.rootToSlotMap.putAll(rootToSlotMap);
+  public StoreBuilder blockInformation(final Map<Bytes32, NewBlockInformation> blockInformation) {
+    this.blockInfoByRoot.putAll(blockInformation);
     return this;
   }
 

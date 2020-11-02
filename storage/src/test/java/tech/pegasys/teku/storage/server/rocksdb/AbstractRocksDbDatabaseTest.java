@@ -33,6 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -151,7 +152,8 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
         ((RocksDbDatabase) database).hotDao.hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
-      assertThatThrownBy(() -> updater.addHotBlock(newBlock.getBlock()))
+      assertThatThrownBy(
+              () -> updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock)))
           .isInstanceOf(ShuttingDownException.class);
     }
   }

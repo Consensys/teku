@@ -31,7 +31,6 @@ import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
@@ -69,16 +68,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   public static RecentChainData create(
       final EventBus eventBus, final ChainHeadChannel chainHeadChannel) {
     return builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
-  }
-
-  public static RecentChainData createWithStore(
-      final EventBus eventBus,
-      final ChainHeadChannel chainHeadChannel,
-      final UpdatableStore store) {
-    final RecentChainData recentChainData =
-        builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
-    recentChainData.setStore(store);
-    return recentChainData;
   }
 
   public static class Builder {

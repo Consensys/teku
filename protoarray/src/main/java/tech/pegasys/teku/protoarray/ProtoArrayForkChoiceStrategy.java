@@ -57,23 +57,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     // If no anchor is explicitly set, default to zero (genesis epoch)
     final UInt64 anchorEpoch =
         store.getAnchor().map(Checkpoint::getEpoch).orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
-    ProtoArray protoArray =
-        storageChannel
-            .getProtoArraySnapshot()
-            .join()
-            .map(ProtoArraySnapshot::toProtoArray)
-            .orElse(
-                new ProtoArray(
-                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                    store.getJustifiedCheckpoint().getEpoch(),
-                    store.getFinalizedCheckpoint().getEpoch(),
-                    anchorEpoch,
-                    new ArrayList<>(),
-                    new HashMap<>()));
-
-    return processBlocksInStoreAtStartup(store, protoArray)
+    return storageChannel
+        .getProtoArraySnapshot()
         .thenApply(
-            __ -> new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel));
+            maybeSnapshot ->
+                maybeSnapshot
+                    .map(ProtoArraySnapshot::toProtoArray)
+                    .orElse(
+                        new ProtoArray(
+                            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+                            store.getJustifiedCheckpoint().getEpoch(),
+                            store.getFinalizedCheckpoint().getEpoch(),
+                            anchorEpoch,
+                            new ArrayList<>(),
+                            new HashMap<>())))
+        .thenCompose(
+            protoArray ->
+                processBlocksInStoreAtStartup(store, protoArray)
+                    .thenApply(
+                        __ ->
+                            new ProtoArrayForkChoiceStrategy(
+                                protoArray, new ArrayList<>(), storageChannel)));
+  }
+
+  public static ProtoArrayForkChoiceStrategy initialize(
+      final ProtoArray protoArray, final ProtoArrayStorageChannel storageChannel) {
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel);
   }
 
   @Override
