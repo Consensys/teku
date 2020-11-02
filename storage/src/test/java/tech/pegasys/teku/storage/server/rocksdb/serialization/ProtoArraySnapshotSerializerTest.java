@@ -87,7 +87,7 @@ public class ProtoArraySnapshotSerializerTest {
 
     // Deserialize and check that value matches the original
     final ProtoArraySnapshot deserialized = serializer.deserialize(serialized);
-    assertThat(deserialized.getAnchorEpoch()).isEqualTo(anchorEpoch);
+    assertThat(deserialized.getInitialEpoch()).isEqualTo(anchorEpoch);
     assertThat(deserialized).isEqualToComparingFieldByField(protoArraySnapshot);
   }
 

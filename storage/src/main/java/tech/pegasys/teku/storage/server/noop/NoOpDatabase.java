@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 public class NoOpDatabase implements Database {
 
   @Override
-  public void storeAnchorPoint(final AnchorPoint genesis) {}
+  public void storeInitialAnchor(final AnchorPoint genesis) {}
 
   @Override
   public void update(final StorageUpdate event) {}

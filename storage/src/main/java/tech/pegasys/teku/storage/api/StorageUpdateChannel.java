@@ -25,5 +25,5 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
-  void onAnchorPoint(AnchorPoint anchorPoint);
+  void onChainInitialized(AnchorPoint initialAnchor);
 }
