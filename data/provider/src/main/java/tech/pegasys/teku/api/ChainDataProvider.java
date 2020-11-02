@@ -253,20 +253,6 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
   }
 
-  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsByStateRootV1(
-      final Bytes32 stateRoot) {
-    return combinedChainDataClient
-        .getStateByStateRoot(stateRoot)
-        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
-  }
-
-  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsBySlot(
-      final UInt64 slot) {
-    return combinedChainDataClient
-        .getStateAtSlotExact(slot)
-        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
-  }
-
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
