@@ -93,8 +93,7 @@ class StoreTransactionUpdates {
     // Update finalized data
     finalizedChainData.ifPresent(
         finalizedData -> {
-          store.finalized_checkpoint = finalizedData.getFinalizedCheckpoint();
-          store.finalizedBlockAndState = finalizedData.getLatestFinalizedBlockAndState();
+          store.finalizedAnchor = finalizedData.getLatestFinalized();
         });
 
     // Prune blocks and states

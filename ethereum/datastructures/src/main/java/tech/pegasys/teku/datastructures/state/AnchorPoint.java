@@ -35,6 +35,7 @@ public class AnchorPoint {
   private final SignedBeaconBlock block;
   private final BeaconState state;
   private final boolean isGenesis;
+  private final SignedBlockAndState blockAndState;
 
   private AnchorPoint(
       final Checkpoint checkpoint, final SignedBeaconBlock block, final BeaconState state) {
@@ -46,6 +47,7 @@ public class AnchorPoint {
     this.block = block;
     this.state = state;
     this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
+    this.blockAndState = new SignedBlockAndState(block, state);
   }
 
   public static AnchorPoint create(
@@ -102,6 +104,14 @@ public class AnchorPoint {
     return block;
   }
 
+  public SignedBlockAndState getBlockAndState() {
+    return blockAndState;
+  }
+
+  public UInt64 getBlockSlot() {
+    return block.getSlot();
+  }
+
   public BeaconState getState() {
     return state;
   }
@@ -122,7 +132,20 @@ public class AnchorPoint {
     return block.getParent_root();
   }
 
-  public SignedBlockAndState toSignedBlockAndState() {
-    return new SignedBlockAndState(block, state);
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final AnchorPoint that = (AnchorPoint) o;
+    return isGenesis == that.isGenesis
+        && Objects.equals(checkpoint, that.checkpoint)
+        && Objects.equals(block, that.block)
+        && Objects.equals(state, that.state)
+        && Objects.equals(blockAndState, that.blockAndState);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(checkpoint, block, state, isGenesis, blockAndState);
   }
 }

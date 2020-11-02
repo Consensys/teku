@@ -25,6 +25,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -77,16 +78,16 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getLatestFinalizedBlockAndState_fromUnderlyingStore() {
+  public void getLatestFinalized_fromUnderlyingStore() {
     final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState expected = store.getLatestFinalizedBlockAndState();
+    final AnchorPoint expected = store.getLatestFinalized();
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(expected);
+    assertThat(tx.getLatestFinalized()).isEqualTo(expected);
   }
 
   @Test
-  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockInUnderlyingStore() {
+  public void getLatestFinalized_withNewFinalizedCheckpoint_blockInUnderlyingStore() {
     final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
@@ -100,11 +101,11 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+    assertThat(tx.getLatestFinalized().getRoot()).isEqualTo(finalizedBlock.getRoot());
   }
 
   @Test
-  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockAddedToTx() {
+  public void getLatestFinalized_withNewFinalizedCheckpoint_blockAddedToTx() {
     final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
@@ -116,7 +117,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(finalizedBlock);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+    assertThat(tx.getLatestFinalized().getRoot()).isEqualTo(finalizedBlock.getRoot());
   }
 
   @Test
