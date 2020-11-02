@@ -269,7 +269,7 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
-  //TODO remove when removing old rest api
+  // TODO remove when removing old rest api
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
@@ -279,7 +279,7 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
-  //TODO remove when removing old rest api
+  // TODO remove when removing old rest api
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UInt64 slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
