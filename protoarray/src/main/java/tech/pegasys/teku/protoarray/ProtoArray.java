@@ -29,9 +29,9 @@ public class ProtoArray {
 
   private UInt64 justifiedEpoch;
   private UInt64 finalizedEpoch;
-  // The epoch of our startup anchor state
+  // The epoch of our initial startup state
   // When starting from genesis, this value is zero (genesis epoch)
-  private final UInt64 anchorEpoch;
+  private final UInt64 initialEpoch;
 
   private final List<ProtoNode> nodes;
   private final Map<Bytes32, Integer> indices;
@@ -40,13 +40,13 @@ public class ProtoArray {
       int pruneThreshold,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
-      UInt64 anchorEpoch,
+      UInt64 initialEpoch,
       List<ProtoNode> nodes,
       Map<Bytes32, Integer> indices) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
-    this.anchorEpoch = anchorEpoch;
+    this.initialEpoch = initialEpoch;
     this.nodes = nodes;
     this.indices = indices;
   }
@@ -390,8 +390,8 @@ public class ProtoArray {
    * @return
    */
   private boolean nodeIsViableForHead(ProtoNode node) {
-    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(anchorEpoch))
-        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(anchorEpoch));
+    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(initialEpoch))
+        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(initialEpoch));
   }
 
   public UInt64 getJustifiedEpoch() {
@@ -402,7 +402,7 @@ public class ProtoArray {
     return finalizedEpoch;
   }
 
-  public UInt64 getAnchorEpoch() {
-    return anchorEpoch;
+  public UInt64 getInitialEpoch() {
+    return initialEpoch;
   }
 }
