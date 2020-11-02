@@ -25,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -44,10 +43,9 @@ public class StoreBuilder {
   Optional<Checkpoint> anchor = Optional.empty();
   UInt64 time;
   UInt64 genesisTime;
+  AnchorPoint latestFinalized;
   Checkpoint justifiedCheckpoint;
-  Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  SignedBlockAndState latestFinalized;
   Map<UInt64, VoteTracker> votes;
 
   private StoreBuilder() {}
@@ -80,12 +78,11 @@ public class StoreBuilder {
         .anchor(anchor.getCheckpoint())
         .time(time)
         .genesisTime(genesisTime)
-        .finalizedCheckpoint(anchor.getCheckpoint())
+        .latestFinalized(anchor)
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
         .childToParentMap(childToParentMap)
         .rootToSlotMap(rootToSlotMap)
-        .latestFinalized(anchor.toSignedBlockAndState())
         .votes(new HashMap<>());
   }
 
@@ -100,12 +97,11 @@ public class StoreBuilder {
         anchor,
         time,
         genesisTime,
+        latestFinalized,
         justifiedCheckpoint,
-        finalizedCheckpoint,
         bestJustifiedCheckpoint,
         childToParentRoot,
         rootToSlotMap,
-        latestFinalized,
         votes,
         storeConfig);
   }
@@ -118,9 +114,8 @@ public class StoreBuilder {
     checkState(time != null, "Time must be defined");
     checkState(genesisTime != null, "Genesis time must be defined");
     checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
-    checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
-    checkState(latestFinalized != null, "Latest finalized block state must be defined");
+    checkState(latestFinalized != null, "Latest finalized anchor must be defined");
     checkState(votes != null, "Votes must be defined");
     checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
     checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
@@ -187,9 +182,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-    checkNotNull(finalizedCheckpoint);
-    this.finalizedCheckpoint = finalizedCheckpoint;
+  public StoreBuilder latestFinalized(final AnchorPoint latestFinalized) {
+    checkNotNull(latestFinalized);
+    this.latestFinalized = latestFinalized;
     return this;
   }
 
@@ -208,12 +203,6 @@ public class StoreBuilder {
   public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
     checkNotNull(rootToSlotMap);
     this.rootToSlotMap.putAll(rootToSlotMap);
-    return this;
-  }
-
-  public StoreBuilder latestFinalized(final SignedBlockAndState latestFinalized) {
-    checkNotNull(latestFinalized);
-    this.latestFinalized = latestFinalized;
     return this;
   }
 
