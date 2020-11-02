@@ -19,14 +19,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class NewBlockInformation {
+public class StoredBlockMetadata {
   private final UInt64 blockSlot;
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
   private final Optional<CheckpointEpochs> checkpointEpochs;
 
-  public NewBlockInformation(
+  public StoredBlockMetadata(
       final UInt64 blockSlot,
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
@@ -67,7 +67,7 @@ public class NewBlockInformation {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final NewBlockInformation that = (NewBlockInformation) o;
+    final StoredBlockMetadata that = (StoredBlockMetadata) o;
     return Objects.equals(blockSlot, that.blockSlot)
         && Objects.equals(blockRoot, that.blockRoot)
         && Objects.equals(parentRoot, that.parentRoot)

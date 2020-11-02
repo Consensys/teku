@@ -51,8 +51,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.protoarray.NewBlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -258,7 +258,7 @@ public class RocksDbDatabase implements Database {
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
     // Build map with block information
-    final Map<Bytes32, NewBlockInformation> blockInformation = new HashMap<>();
+    final Map<Bytes32, StoredBlockMetadata> blockInformation = new HashMap<>();
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
@@ -266,7 +266,7 @@ public class RocksDbDatabase implements Database {
                 hotDao.getHotBlockCheckpointEpochs(b.getRoot());
             blockInformation.put(
                 b.getRoot(),
-                new NewBlockInformation(
+                new StoredBlockMetadata(
                     b.getSlot(),
                     b.getRoot(),
                     b.getParent_root(),

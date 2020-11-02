@@ -35,9 +35,9 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.NewBlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 
 public class StoreBuilder {
   AsyncRunner asyncRunner;
@@ -46,7 +46,7 @@ public class StoreBuilder {
   StateAndBlockProvider stateAndBlockProvider;
   StoreConfig storeConfig = StoreConfig.createDefault();
 
-  final Map<Bytes32, NewBlockInformation> blockInfoByRoot = new HashMap<>();
+  final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
   Optional<Checkpoint> anchor = Optional.empty();
   UInt64 time;
   UInt64 genesisTime;
@@ -72,10 +72,10 @@ public class StoreBuilder {
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
-    Map<Bytes32, NewBlockInformation> blockInfo = new HashMap<>();
+    Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(
         anchor.getRoot(),
-        new NewBlockInformation(
+        new StoredBlockMetadata(
             slot,
             anchor.getRoot(),
             anchor.getParentRoot(),
@@ -114,23 +114,23 @@ public class StoreBuilder {
         justifiedCheckpoint,
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
-        Maps.transformValues(blockInfoByRoot, NewBlockInformation::getParentRoot),
-        Maps.transformValues(blockInfoByRoot, NewBlockInformation::getBlockSlot),
+        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getParentRoot),
+        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getBlockSlot),
         latestFinalized,
         votes,
         storeConfig);
   }
 
   public Optional<ProtoArray> buildProtoArray() {
-    final List<NewBlockInformation> blocks = new ArrayList<>(blockInfoByRoot.values());
-    blocks.sort(Comparator.comparing(NewBlockInformation::getBlockSlot));
+    final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
+    blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
         new ProtoArrayBuilder()
             .anchor(anchor)
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedCheckpoint)
             .build();
-    for (NewBlockInformation block : blocks) {
+    for (StoredBlockMetadata block : blocks) {
       if (block.getCheckpointEpochs().isEmpty()) {
         // Checkpoint epochs aren't available, migration will be required
         return Optional.empty();
@@ -231,7 +231,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder blockInformation(final Map<Bytes32, NewBlockInformation> blockInformation) {
+  public StoreBuilder blockInformation(final Map<Bytes32, StoredBlockMetadata> blockInformation) {
     this.blockInfoByRoot.putAll(blockInformation);
     return this;
   }
