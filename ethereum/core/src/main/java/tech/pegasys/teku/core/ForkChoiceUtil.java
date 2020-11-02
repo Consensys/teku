@@ -93,13 +93,7 @@ public class ForkChoiceUtil {
    */
   public static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    Bytes32 parentRoot = root;
-    Optional<UInt64> blockSlot = forkChoiceStrategy.blockSlot(root);
-    while (blockSlot.isPresent() && blockSlot.get().compareTo(slot) > 0) {
-      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
-      blockSlot = forkChoiceStrategy.blockSlot(parentRoot);
-    }
-    return blockSlot.isPresent() ? Optional.of(parentRoot) : Optional.empty();
+    return forkChoiceStrategy.getAncestor(root, slot);
   }
 
   public static NavigableMap<UInt64, Bytes32> getAncestors(

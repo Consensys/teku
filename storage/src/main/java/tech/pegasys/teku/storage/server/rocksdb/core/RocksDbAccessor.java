@@ -40,6 +40,16 @@ public interface RocksDbAccessor extends AutoCloseable {
   <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(RocksDbColumn<K, V> column, K key);
 
   /**
+   * Returns the first entry in the given column.
+   *
+   * @param column The column we want to query
+   * @param <K> The key type of the column
+   * @param <V> The value type of the column
+   * @return The first entry in this column - the entry with the lowest key value
+   */
+  <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(RocksDbColumn<K, V> column);
+
+  /**
    * Returns the last entry in the given column.
    *
    * @param column The column we want to query

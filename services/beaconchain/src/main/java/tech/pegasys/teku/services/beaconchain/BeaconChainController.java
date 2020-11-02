@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +40,10 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
+import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
@@ -54,7 +56,6 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -92,6 +93,12 @@ import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExec
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -99,7 +106,6 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -131,7 +137,6 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -151,6 +156,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final AsyncRunner eventAsyncRunner;
   private final Path beaconDataDirectory;
+  private final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -259,43 +265,38 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
-    return initWeakSubjectivity()
+    StorageQueryChannel storageQueryChannel =
+        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+    StorageUpdateChannel storageUpdateChannel =
+        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+    return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
                 StorageBackedRecentChainData.create(
                     metricsSystem,
                     storeConfig,
                     asyncRunner,
-                    eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
-                    eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
+                    storageQueryChannel,
+                    storageUpdateChannel,
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
                     coalescingChainHeadChannel,
                     eventBus))
-        .thenApply(
+        .thenCompose(
             client -> {
               // Setup chain storage
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
-                // Set up initial state
-                if (weakSubjectivityAnchor.isPresent()) {
-                  client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
-                } else if (config.getInitialState() != null) {
-                  setupGenesisState();
-                } else if (config.isInteropEnabled()) {
-                  setupInteropState();
-                } else if (config.isEth1Enabled()) {
-                  STATUS_LOG.loadingGenesisFromEth1Chain();
-                } else {
-                  throw new InvalidConfigurationException(
-                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
-                }
+                setupInitialState(client);
               } else if (weakSubjectivityAnchor.isPresent()) {
-                // We already have an existing database, throw for now
-                throw new IllegalStateException(
-                    "Cannot set weak subjectivity state for an existing database.");
+                // If we already have an existing database and a ws anchor, validate that they are
+                // consistent
+                return wsInitializer
+                    .assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+                        client, weakSubjectivityAnchor.get(), storageQueryChannel)
+                    .thenApply(__ -> client);
               }
-              return client;
+              return SafeFuture.completedFuture(client);
             })
         .thenAccept(
             client -> {
@@ -364,22 +365,32 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttesterSlashingPool() {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
-    attesterSlashingPool =
-        new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+    AttesterSlashingValidator validator =
+        new AttesterSlashingValidator(
+            recentChainData, new AttesterSlashingStateTransitionValidator());
+    attesterSlashingPool = new OperationPool<>(AttesterSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
   private void initProposerSlashingPool() {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
-    proposerSlashingPool =
-        new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
+    ProposerSlashingValidator validator =
+        new ProposerSlashingValidator(
+            recentChainData,
+            new ProposerSlashingStateTransitionValidator(),
+            new ProposerSlashingSignatureVerifier());
+    proposerSlashingPool = new OperationPool<>(ProposerSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    voluntaryExitPool =
-        new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
+    VoluntaryExitValidator validator =
+        new VoluntaryExitValidator(
+            recentChainData,
+            new VoluntaryExitStateTransitionValidator(),
+            new VoluntaryExitSignatureVerifier());
+    voluntaryExitPool = new OperationPool<>(SignedVoluntaryExit.class, validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
@@ -393,81 +404,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivity() {
-    return initWeakSubjectivity(loadWeakSubjectivityInitialAnchorPoint());
-  }
-
-  @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivity(Optional<AnchorPoint> wsAnchor) {
-    this.weakSubjectivityAnchor = wsAnchor;
-    StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
-    StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
-
-    return storageQueryChannel
-        .getWeakSubjectivityState()
-        .thenCompose(
-            storedState -> {
-              WeakSubjectivityConfig wsConfig = beaconConfig.weakSubjectivity();
-              final Optional<Checkpoint> storedWsCheckpoint = storedState.getCheckpoint();
-              Optional<Checkpoint> newWsCheckpoint = wsConfig.getWeakSubjectivityCheckpoint();
-
-              // Reconcile supplied config with stored configuration
-              Optional<WeakSubjectivityConfig> configToPersist = Optional.empty();
-              if (newWsCheckpoint.isPresent()
-                  && !Objects.equals(storedWsCheckpoint, newWsCheckpoint)) {
-                // We have a new ws checkpoint, so we need to persist it
-                configToPersist = Optional.of(wsConfig);
-              } else if (storedState.getCheckpoint().isPresent()) {
-                // We haven't supplied a new ws checkpoint, so use the stored value
-                wsConfig =
-                    wsConfig.updated(
-                        b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
-              }
-
-              // Reconcile ws checkpoint with ws state
-              boolean shouldClearStoredState = false;
-              final Optional<UInt64> wsAnchorEpoch =
-                  weakSubjectivityAnchor.map(AnchorPoint::getEpoch);
-              final Optional<UInt64> wsCheckpointEpoch =
-                  wsConfig.getWeakSubjectivityCheckpoint().map(Checkpoint::getEpoch);
-              if (wsAnchorEpoch.isPresent()
-                  && wsCheckpointEpoch.isPresent()
-                  && wsAnchorEpoch.get().isGreaterThanOrEqualTo(wsCheckpointEpoch.get())) {
-                // The ws checkpoint is prior to our new anchor, so clear it out
-                wsConfig = wsConfig.updated(b -> b.weakSubjectivityCheckpoint(Optional.empty()));
-                configToPersist = Optional.empty();
-                if (newWsCheckpoint.isPresent()) {
-                  LOG.info(
-                      "Ignoring configured weak subjectivity checkpoint which is prior to supplied weak subjectivity state");
-                }
-                if (storedWsCheckpoint.isPresent()) {
-                  shouldClearStoredState = true;
-                }
-              }
-
-              weakSubjectivityValidator = WeakSubjectivityValidator.moderate(wsConfig);
-
-              // Persist changes as necessary
-              if (shouldClearStoredState) {
-                // Clear out stored checkpoint
-                LOG.info("Clearing stored weak subjectivity checkpoint");
-                WeakSubjectivityUpdate update =
-                    WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint();
-                return storageUpdateChannel.onWeakSubjectivityUpdate(update);
-              } else if (configToPersist.isPresent()) {
-                final Checkpoint updatedCheckpoint =
-                    configToPersist.get().getWeakSubjectivityCheckpoint().orElseThrow();
-
-                // Persist changes
-                LOG.info("Update stored weak subjectivity checkpoint to: {}", updatedCheckpoint);
-                WeakSubjectivityUpdate update =
-                    WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(updatedCheckpoint);
-                return storageUpdateChannel.onWeakSubjectivityUpdate(update);
-              }
-
-              return SafeFuture.COMPLETE;
+  SafeFuture<Void> initWeakSubjectivity(
+      final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
+    this.weakSubjectivityAnchor = wsInitializer.loadAnchorPoint(beaconConfig.weakSubjectivity());
+    return wsInitializer
+        .finalizeAndStoreConfig(
+            beaconConfig.weakSubjectivity(), weakSubjectivityAnchor, queryChannel, updateChannel)
+        .thenAccept(
+            finalConfig -> {
+              this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
             });
   }
 
@@ -565,7 +510,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       // We're pre-genesis but no eth1 endpoint is set
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
-    LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
+    STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
   }
 
@@ -575,9 +520,25 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
+    AttestationValidator attestationValidator =
+        new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
+    AggregateAttestationValidator aggregateValidator =
+        new AggregateAttestationValidator(recentChainData, attestationValidator);
+    blockImporter.subscribeToVerifiedBlockAttestations(
+        (attestations) ->
+            attestations.forEach(
+                attestation ->
+                    aggregateValidator.addSeenAggregate(
+                        ValidateableAttestation.from(attestation))));
     attestationManager =
         AttestationManager.create(
-            eventBus, pendingAttestations, futureAttestations, forkChoice, attestationPool);
+            eventBus,
+            pendingAttestations,
+            futureAttestations,
+            forkChoice,
+            attestationPool,
+            attestationValidator,
+            aggregateValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
@@ -624,28 +585,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedBlockConsumer(
-                  block ->
-                      blockManager
-                          .importBlock(block)
-                          .finish(err -> LOG.error("Failed to process gossiped block.", err)))
-              .gossipedAttestationConsumer(
-                  attestation ->
-                      attestationManager
-                          .onAttestation(attestation)
-                          .finish(
-                              result ->
-                                  result.ifInvalid(
-                                      reason ->
-                                          LOG.debug("Rejected gossiped attestation: " + reason)),
-                              err -> LOG.error("Failed to process gossiped attestation.", err)))
-              .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
-              .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
-              .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
+              .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+              .gossipedAttestationProcessor(attestationManager::addAttestation)
+              .gossipedAggregateProcessor(attestationManager::addAggregate)
+              .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
+              .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
+              .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
               .processedAttestationSubscriptionProvider(
-                  attestationManager::subscribeToProcessedAttestations)
-              .verifiedBlockAttestationsProvider(
-                  blockImporter::subscribeToVerifiedBlockAttestations)
+                  attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
                   eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
               .metricsSystem(metricsSystem)
@@ -733,8 +680,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
+    BlockValidator blockValidator = new BlockValidator(recentChainData, stateTransition);
     blockManager =
-        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
+        BlockManager.create(
+            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager);
@@ -774,6 +723,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  private void setupInitialState(final RecentChainData client) {
+    if (weakSubjectivityAnchor.isPresent()) {
+      client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
+    } else if (config.getInitialState() != null) {
+      setupGenesisState();
+    } else if (config.isInteropEnabled()) {
+      setupInteropState();
+    } else if (!config.isEth1Enabled()) {
+      throw new InvalidConfigurationException(
+          "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
+    }
+  }
+
   private void setupInteropState() {
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
@@ -791,34 +753,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     } catch (final IOException e) {
       throw new IllegalStateException("Failed to load genesis state", e);
     }
-  }
-
-  private Optional<AnchorPoint> loadWeakSubjectivityInitialAnchorPoint() {
-    return beaconConfig
-        .weakSubjectivity()
-        .getWeakSubjectivityStateResource()
-        .map(
-            wsStateResource -> {
-              try {
-                final String wsBlockResource =
-                    beaconConfig
-                        .weakSubjectivity()
-                        .getWeakSubjectivityBlockResource()
-                        .orElseThrow(
-                            () ->
-                                new IllegalArgumentException(
-                                    "Weak subjectivity block must be supplied with state"));
-                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource, wsBlockResource);
-                final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final SignedBeaconBlock block = ChainDataLoader.loadBlock(wsBlockResource);
-                STATUS_LOG.loadedWeakSubjectivityStateResources(
-                    state.hashTreeRoot(), block.getRoot(), state.getSlot());
-                return AnchorPoint.fromInitialBlockAndState(block, state);
-              } catch (IOException e) {
-                throw new IllegalStateException(
-                    "Failed to load weak subjectivity initial state data", e);
-              }
-            });
   }
 
   private void initializeGenesis(final BeaconState genesisState) {

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AttesterSlashingValidator {
+public class AttesterSlashingValidator implements OperationValidator<AttesterSlashing> {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
@@ -44,13 +44,15 @@ public class AttesterSlashingValidator {
     this.transitionValidator = attesterSlashingStateTransitionValidator;
   }
 
-  public InternalValidationResult validate(AttesterSlashing slashing) {
+  @Override
+  public InternalValidationResult validateFully(AttesterSlashing slashing) {
     if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
       return IGNORE;
     }
 
-    if (!passesProcessAttesterSlashingConditions(slashing)) {
+    BeaconState state = getState();
+    if (!validateForStateTransition(state, slashing)) {
       return REJECT;
     }
 
@@ -62,14 +64,8 @@ public class AttesterSlashingValidator {
     }
   }
 
-  private boolean passesProcessAttesterSlashingConditions(AttesterSlashing slashing) {
-    BeaconState state =
-        recentChainData
-            .getBestState()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Unable to get best state for attester slashing processing."));
+  @Override
+  public boolean validateForStateTransition(BeaconState state, AttesterSlashing slashing) {
     Optional<OperationInvalidReason> invalidReason = transitionValidator.validate(state, slashing);
 
     if (invalidReason.isPresent()) {
@@ -83,5 +79,14 @@ public class AttesterSlashingValidator {
 
   private boolean includesUnseenIndexToSlash(Set<UInt64> intersectingIndices) {
     return !seenIndices.containsAll(intersectingIndices);
+  }
+
+  private BeaconState getState() {
+    return recentChainData
+        .getBestState()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to get best state for attester slashing processing."));
   }
 }

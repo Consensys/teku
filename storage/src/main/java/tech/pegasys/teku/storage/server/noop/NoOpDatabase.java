@@ -77,6 +77,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableBlockSlot() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }

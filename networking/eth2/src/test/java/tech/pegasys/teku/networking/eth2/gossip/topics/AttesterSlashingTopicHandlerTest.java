@@ -15,12 +15,9 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -28,15 +25,16 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
+import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -45,18 +43,21 @@ public class AttesterSlashingTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
 
   @SuppressWarnings("unchecked")
-  private final GossipedItemConsumer<AttesterSlashing> consumer = mock(GossipedItemConsumer.class);
+  private final OperationProcessor<AttesterSlashing> processor = mock(OperationProcessor.class);
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
 
-  private final AttesterSlashingValidator validator = mock(AttesterSlashingValidator.class);
-
-  private AttesterSlashingTopicHandler topicHandler =
-      new AttesterSlashingTopicHandler(
-          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
+  private Eth2TopicHandler<AttesterSlashing> topicHandler =
+      new Eth2TopicHandler<>(
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo().getForkDigest(),
+          AttesterSlashingGossipManager.TOPIC_NAME,
+          AttesterSlashing.class);
 
   @BeforeEach
   public void setup() {
@@ -70,37 +71,35 @@ public class AttesterSlashingTopicHandlerTest {
   @Test
   public void handleMessage_validSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    when(validator.validate(slashing)).thenReturn(ACCEPT);
+    when(processor.process(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
         .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
-    verify(consumer).forward(slashing);
   }
 
   @Test
   public void handleMessage_ignoredSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    when(validator.validate(slashing)).thenReturn(IGNORE);
+    when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
         .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
-    verifyNoInteractions(consumer);
   }
 
   @Test
   public void handleMessage_rejectedSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    when(validator.validate(slashing)).thenReturn(REJECT);
+    when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(REJECT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
         .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
-    verifyNoInteractions(consumer);
   }
 
   @Test
@@ -111,17 +110,19 @@ public class AttesterSlashingTopicHandlerTest {
         .handleMessage(createMessageStub(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
-    verifyNoInteractions(consumer);
   }
 
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final ForkInfo forkInfo = mock(ForkInfo.class);
-    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
-    final AttesterSlashingTopicHandler topicHandler =
-        new AttesterSlashingTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, validator, consumer);
+    Eth2TopicHandler<AttesterSlashing> topicHandler =
+        new Eth2TopicHandler<>(
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkDigest,
+            AttesterSlashingGossipManager.TOPIC_NAME,
+            AttesterSlashing.class);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }
 }

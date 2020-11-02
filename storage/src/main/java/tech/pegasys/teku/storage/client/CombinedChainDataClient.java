@@ -382,6 +382,11 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
+  /** @return The earliest available block's slot */
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return historicalChainData.getEarliestAvailableBlockSlot();
+  }
+
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return recentChainData
         .retrieveSignedBlockByRoot(blockRoot)
@@ -419,6 +424,21 @@ public class CombinedChainDataClient {
     }
 
     return Optional.ofNullable(getStore().getLatestFinalizedBlockAndState().getBlock());
+  }
+
+  public Optional<BeaconState> getFinalizedState() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalizedBlockAndState().getState());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getJustifiedState() {
+    if (recentChainData.isPreGenesis()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
   }
 
   public Optional<GenesisData> getGenesisData() {

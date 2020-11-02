@@ -121,7 +121,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // Setup gossip
     gossip = createGossip();
     final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
-    gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
+    gossipNetwork = new LibP2PGossipNetwork(metricsSystem, gossip, publisher);
 
     // Setup rpc methods
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));
