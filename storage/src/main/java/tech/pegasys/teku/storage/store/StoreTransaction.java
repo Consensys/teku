@@ -139,31 +139,35 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @CheckReturnValue
   @Override
   public SafeFuture<Void> commit() {
-    final StoreTransactionUpdates updates;
-    // Lock so that we have a consistent view while calculating our updates
-    final Lock writeLock = lock.writeLock();
-    writeLock.lock();
-    try {
-      updates = StoreTransactionUpdatesFactory.create(store, this, getLatestFinalized());
-    } finally {
-      writeLock.unlock();
-    }
-
-    return storageUpdateChannel
-        .onStorageUpdate(updates.createStorageUpdate())
-        .thenAccept(
-            __ -> {
-              // Propagate changes to Store
+    return retrieveLatestFinalized()
+        .thenCompose(
+            latestFinalized -> {
+              final StoreTransactionUpdates updates;
+              // Lock so that we have a consistent view while calculating our updates
+              final Lock writeLock = lock.writeLock();
               writeLock.lock();
               try {
-                // Add new data
-                updates.applyToStore(store);
+                updates = StoreTransactionUpdatesFactory.create(store, this, getLatestFinalized());
               } finally {
                 writeLock.unlock();
               }
 
-              // Signal back changes to the handler
-              finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+              return storageUpdateChannel
+                  .onStorageUpdate(updates.createStorageUpdate())
+                  .thenAccept(
+                      __ -> {
+                        // Propagate changes to Store
+                        writeLock.lock();
+                        try {
+                          // Add new data
+                          updates.applyToStore(store);
+                        } finally {
+                          writeLock.unlock();
+                        }
+
+                        // Signal back changes to the handler
+                        finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                      });
             });
   }
 
@@ -207,6 +211,22 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       return AnchorPoint.create(finalized_checkpoint.get(), finalizedBlockAndState);
     }
     return store.getLatestFinalized();
+  }
+
+  private SafeFuture<AnchorPoint> retrieveLatestFinalized() {
+    if (finalized_checkpoint.isPresent()) {
+      final Checkpoint finalizedCheckpoint = finalized_checkpoint.get();
+      return retrieveBlockAndState(finalized_checkpoint.get().getRoot())
+          .thenApply(
+              blockAndState ->
+                  AnchorPoint.create(
+                      finalizedCheckpoint,
+                      blockAndState.orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "Missing latest finalized block and state"))));
+    }
+    return SafeFuture.completedFuture(store.getLatestFinalized());
   }
 
   @Override
