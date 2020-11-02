@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
@@ -27,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
@@ -468,6 +468,26 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
   }
 
+  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getStateValidatorBalances(
+      final String stateIdParam, final List<String> validators) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(state -> getValidatorBalancesFromState(state, validators)));
+  }
+
+  @VisibleForTesting
+  List<ValidatorBalanceResponse> getValidatorBalancesFromState(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final List<String> validators) {
+    return getValidatorSelector(state, validators)
+        .mapToObj(index -> ValidatorBalanceResponse.fromState(state, index))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toList());
+  }
+
   public SafeFuture<Optional<Fork>> getForkAtSlot(final UInt64 slot) {
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -524,40 +544,11 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
   }
 
-  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesBySlot(
-      final UInt64 slot, final List<Integer> validatorIndices) {
-
-    return combinedChainDataClient
-        .getStateAtSlotExact(slot)
-        .thenApply(
-            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
-  }
-
-  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesByStateRoot(
-      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
-    if (validatorIndices.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
-
-    return combinedChainDataClient
-        .getStateByStateRoot(stateRoot)
-        .thenApply(
-            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
-  }
-
   private List<ValidatorResponse> getValidators(
       final List<Integer> validatorIndices,
       final tech.pegasys.teku.datastructures.state.BeaconState state) {
     return validatorIndices.stream()
         .flatMap(index -> ValidatorResponse.fromState(state, index).stream())
-        .collect(toList());
-  }
-
-  private List<ValidatorBalanceResponse> getValidatorBalances(
-      final List<Integer> validatorIndices,
-      final tech.pegasys.teku.datastructures.state.BeaconState state) {
-    return validatorIndices.stream()
-        .map(index -> ValidatorBalanceResponse.fromState(state, index))
         .collect(toList());
   }
 
