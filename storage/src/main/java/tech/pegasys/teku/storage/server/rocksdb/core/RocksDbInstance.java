@@ -229,6 +229,8 @@ public class RocksDbInstance implements RocksDbAccessor {
               rocksDbTx.put(handle, keyBytes, valueBytes);
             } catch (RocksDBException e) {
               throw new DatabaseStorageException("Failed to put column data", e);
+            } catch (final NullPointerException e) {
+              throw e;
             }
           });
     }

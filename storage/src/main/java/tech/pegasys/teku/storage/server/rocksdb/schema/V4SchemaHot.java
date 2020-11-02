@@ -85,7 +85,8 @@ public class V4SchemaHot implements SchemaHot {
           VOTES,
           DEPOSITS_FROM_BLOCK_EVENTS,
           STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT,
-          HOT_STATES_BY_ROOT);
+          HOT_STATES_BY_ROOT,
+          HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT);
 
   private static final List<RocksDbVariable<?>> ALL_VARIABLES =
       List.of(

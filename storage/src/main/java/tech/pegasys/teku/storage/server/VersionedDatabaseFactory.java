@@ -167,6 +167,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
+    database.migrate();
     return database;
   }
 

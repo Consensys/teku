@@ -67,6 +67,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao.HotUpda
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbProtoArrayDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.migration.CheckpointEpochsMigration;
 import tech.pegasys.teku.storage.server.rocksdb.schema.ProtoArrayLoader;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaFinalized;
@@ -183,6 +184,11 @@ public class RocksDbDatabase implements Database {
     this.protoArrayDao = protoArrayDao;
     this.stateStorageMode = stateStorageMode;
     this.hotDao = hotDao;
+  }
+
+  @Override
+  public void migrate() {
+    CheckpointEpochsMigration.migrate(hotDao, protoArrayDao);
   }
 
   @Override

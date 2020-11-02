@@ -36,6 +36,8 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public interface Database extends AutoCloseable {
 
+  void migrate();
+
   void storeAnchorPoint(AnchorPoint genesis);
 
   void update(StorageUpdate event);
