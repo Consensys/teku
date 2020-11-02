@@ -222,7 +222,8 @@ public class RocksDbDatabase implements Database {
             finalizedUpdater.addFinalizedBlock(block);
           });
 
-      putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
+      // Always store anchor state
+      finalizedUpdater.addFinalizedState(anchorRoot, anchorState);
 
       finalizedUpdater.commit();
       hotUpdater.commit();
@@ -636,19 +637,5 @@ public class RocksDbDatabase implements Database {
             .or(() -> hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState));
     return finalizedBlock.orElseThrow(
         () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
-  }
-
-  private void putFinalizedState(
-      FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
-    switch (stateStorageMode) {
-      case ARCHIVE:
-        updater.addFinalizedState(blockRoot, state);
-        break;
-      case PRUNE:
-        // Don't persist finalized state
-        break;
-      default:
-        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
-    }
   }
 }
