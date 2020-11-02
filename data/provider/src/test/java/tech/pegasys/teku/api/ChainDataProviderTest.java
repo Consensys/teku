@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -829,6 +830,41 @@ public class ChainDataProviderTest {
             provider.getFilteredValidatorList(
                 internalState, emptyList(), Set.of(ValidatorStatus.active_ongoing)))
         .hasSize(0);
+  }
+
+  @Test
+  public void getStateFinalityCheckpoints_shouldGetEmptyCheckpointsBeforeFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(provider.getStateFinalityCheckpoints("genesis").get().get())
+        .isEqualTo(
+            new FinalityCheckpointsResponse(
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY));
+  }
+
+  @Test
+  public void getStateFinalityCheckpoints_shouldGetCheckpointsAfterFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
+    final DataStructureUtil data = new DataStructureUtil();
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(UInt64.valueOf(42));
+    final FinalityCheckpointsResponse expected =
+        new FinalityCheckpointsResponse(
+            new tech.pegasys.teku.api.schema.Checkpoint(
+                internalState.getPrevious_justified_checkpoint()),
+            new tech.pegasys.teku.api.schema.Checkpoint(
+                internalState.getCurrent_justified_checkpoint()),
+            new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
+
+    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    assertThat(provider.getStateFinalityCheckpoints("head").get().get()).isEqualTo(expected);
+    verify(mockCombinedChainDataClient).getBestState();
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
