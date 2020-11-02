@@ -95,4 +95,9 @@ public class StateSelectorFactoryTest {
   public void defaultBlockSelector_shouldThrowBadRequestException() {
     assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("a"));
   }
+
+  @Test
+  public void defaultBlockSelector_shouldThrowBadRequestForBadHexState() {
+    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("0xzz"));
+  }
 }
