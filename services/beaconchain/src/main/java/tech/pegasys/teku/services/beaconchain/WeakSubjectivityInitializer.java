@@ -21,7 +21,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -164,13 +165,17 @@ class WeakSubjectivityInitializer {
                   "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint.");
             }
           } else {
-            // Look up historical block to check for consistency
+            // Look up historical chain data to check for consistency
             return storageQueryChannel
-                .getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot())
+                // Query for state rather than block in case we initialized this chain from the
+                // current anchor state and the corresponding block is not available
+                .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
                 .thenApply(
-                    blockAtAnchor -> {
+                    stateAtAnchor -> {
                       final Optional<Bytes32> storedBlockRoot =
-                          blockAtAnchor.map(SignedBeaconBlock::getRoot);
+                          stateAtAnchor
+                              .map(BeaconBlockHeader::fromState)
+                              .map(BeaconBlockSummary::getRoot);
                       final boolean storedBlockMatchesAnchor =
                           storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
                       if (!storedBlockMatchesAnchor) {

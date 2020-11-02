@@ -360,12 +360,17 @@ public final class DataStructureUtil {
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
     final Bytes32 parentRoot = randomBytes32();
-    final Bytes32 state_root = state.hash_tree_root();
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
-    final BeaconBlock block = new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+    final BeaconBlockHeader latestHeader =
+        new BeaconBlockHeader(
+            slot, proposer_index, parentRoot, Bytes32.ZERO, body.hash_tree_root());
 
-    return new BeaconBlockAndState(block, state);
+    final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
+    final BeaconBlock block =
+        new BeaconBlock(slot, proposer_index, parentRoot, matchingState.hashTreeRoot(), body);
+
+    return new BeaconBlockAndState(block, matchingState);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, boolean isFull) {
