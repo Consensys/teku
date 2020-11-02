@@ -101,7 +101,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    assertThat(tx.getLatestFinalized()).isEqualTo(finalizedBlock);
+    assertThat(tx.getLatestFinalized().getRoot()).isEqualTo(finalizedBlock.getRoot());
   }
 
   @Test
@@ -117,7 +117,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(finalizedBlock);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    assertThat(tx.getLatestFinalized()).isEqualTo(finalizedBlock);
+    assertThat(tx.getLatestFinalized().getRoot()).isEqualTo(finalizedBlock.getRoot());
   }
 
   @Test

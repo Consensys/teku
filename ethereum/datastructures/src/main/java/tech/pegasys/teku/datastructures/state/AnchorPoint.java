@@ -131,4 +131,21 @@ public class AnchorPoint {
   public Bytes32 getParentRoot() {
     return block.getParent_root();
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final AnchorPoint that = (AnchorPoint) o;
+    return isGenesis == that.isGenesis
+        && Objects.equals(checkpoint, that.checkpoint)
+        && Objects.equals(block, that.block)
+        && Objects.equals(state, that.state)
+        && Objects.equals(blockAndState, that.blockAndState);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(checkpoint, block, state, isGenesis, blockAndState);
+  }
 }
