@@ -85,6 +85,9 @@ public class FinalizedChainData {
     private void assertValid() {
       checkState(latestFinalized != null, "Latest finalized data must be set");
       checkState(!finalizedChildToParentMap.isEmpty(), "Must supply finalized roots");
+      checkState(
+          finalizedChildToParentMap.containsKey(latestFinalized.getRoot()),
+          "Must supply finalized parent");
     }
 
     public Builder latestFinalized(final AnchorPoint latestFinalized) {
