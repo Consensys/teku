@@ -112,4 +112,9 @@ public class StateSelectorFactoryTest {
         factory.defaultStateSelector(ZERO.toString()).getState();
     assertThat(future.get()).isEmpty();
   }
+
+  @Test
+  public void defaultBlockSelector_shouldThrowBadRequestForBadHexState() {
+    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("0xzz"));
+  }
 }

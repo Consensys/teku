@@ -19,6 +19,7 @@ import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -623,6 +624,49 @@ public class ChainDataProvider {
         .flatMap(Optional::stream)
         .findFirst()
         .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
+  }
+
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(
+      final String stateIdParameter,
+      final Optional<UInt64> epoch,
+      final Optional<UInt64> committeeIndex,
+      final Optional<UInt64> slot) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParameter)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
+  }
+
+  List<EpochCommitteeResponse> getCommitteesFromState(
+      final tech.pegasys.teku.datastructures.state.BeaconState state,
+      final Optional<UInt64> epoch,
+      final Optional<UInt64> committeeIndex,
+      final Optional<UInt64> slot) {
+    final Predicate<CommitteeAssignment> slotFilter =
+        slot.isEmpty() ? __ -> true : (assignment) -> assignment.getSlot().equals(slot.get());
+
+    final Predicate<CommitteeAssignment> committeeFilter =
+        committeeIndex.isEmpty()
+            ? __ -> true
+            : (assignment) -> assignment.getCommitteeIndex().compareTo(committeeIndex.get()) == 0;
+
+    final UInt64 stateEpoch = compute_epoch_at_slot(state.getSlot());
+    if (epoch.isPresent() && epoch.get().isGreaterThan(stateEpoch.plus(ONE))) {
+      throw new BadRequestException(
+          "Epoch " + epoch.get() + " is too far ahead of state epoch " + stateEpoch);
+    }
+    if (slot.isPresent() && !compute_epoch_at_slot(slot.get()).equals(epoch.orElse(stateEpoch))) {
+      throw new BadRequestException(
+          "Slot " + slot.get() + " is not in epoch " + epoch.orElse(stateEpoch));
+    }
+    return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
+        .filter(slotFilter)
+        .filter(committeeFilter)
+        .map(EpochCommitteeResponse::new)
+        .collect(toList());
   }
 
   private IntPredicate getStatusPredicate(

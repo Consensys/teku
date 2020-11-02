@@ -29,7 +29,11 @@ public class StateSelectorFactory {
 
   public StateSelector defaultStateSelector(final String selectorMethod) {
     if (selectorMethod.startsWith("0x")) {
-      return forStateRoot(Bytes32.fromHexString(selectorMethod));
+      try {
+        return forStateRoot(Bytes32.fromHexString(selectorMethod));
+      } catch (IllegalArgumentException ex) {
+        throw new BadRequestException("Invalid state: " + selectorMethod);
+      }
     }
     switch (selectorMethod) {
       case ("head"):
