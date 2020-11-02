@@ -47,6 +47,7 @@ import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -253,6 +254,13 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
   }
 
+  public SafeFuture<Optional<Root>> getStateRoot(final String stateIdParam) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(maybeState -> maybeState.map(state -> new Root(state.hashTreeRoot())));
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
@@ -278,17 +286,6 @@ public class ChainDataProvider {
       return chainUnavailable();
     }
 
-    return SafeFuture.of(
-        () ->
-            combinedChainDataClient
-                .getStateAtSlotExact(slot)
-                .thenApplyChecked(
-                    maybeState ->
-                        maybeState.map(
-                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
-  }
-
-  public SafeFuture<Optional<Bytes32>> getStateRootAtSlotV1(final UInt64 slot) {
     return SafeFuture.of(
         () ->
             combinedChainDataClient

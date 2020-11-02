@@ -56,6 +56,7 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Validator;
@@ -725,6 +726,19 @@ public class ChainDataProviderTest {
             new SignedBeaconBlockHeader(beaconBlockHeader, new BLSSignature(block.getSignature())));
 
     assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  public void getStateRoot_shouldGetRootAtGenesis()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    final Optional<tech.pegasys.teku.datastructures.state.BeaconState> state =
+        combinedChainDataClient.getStateAtSlotExact(ZERO).get();
+    final Optional<Root> maybeStateRoot = provider.getStateRoot("genesis").get();
+    assertThat(maybeStateRoot).isPresent();
+    assertThat(maybeStateRoot.orElseThrow().root).isEqualTo(state.orElseThrow().hash_tree_root());
   }
 
   @Test
