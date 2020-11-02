@@ -350,8 +350,8 @@ class RecentChainDataTest {
 
     // Update best block, but delay the resolution of the future
     final SignedBlockAndState chainHeadA = chain.get(0);
-    final SafeFuture<Optional<SignedBlockAndState>> chainHeadAFuture = new SafeFuture<>();
-    when(store.retrieveBlockAndState(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
+    final SafeFuture<Optional<StateAndBlockSummary>> chainHeadAFuture = new SafeFuture<>();
+    when(store.retrieveStateAndBlockSummary(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
     preGenesisStorageClient.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
     // We should still be at genesis while we wait on the future to resolve
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
