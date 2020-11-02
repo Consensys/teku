@@ -18,34 +18,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 
-public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+
   @BeforeEach
   public void setup() {
     startRestAPIAtGenesis();
   }
 
   @Test
-  public void shouldGetForkChoiceAtEmptyHeadSlot() throws IOException {
+  public void shouldStateRootAtEmptyHeadSlot() throws IOException {
     createBlocksAtSlots(10, 11, 12);
     setCurrentSlot(13);
+    final Bytes32 chainHeadStateRoot =
+        recentChainData.getBestState().map(state -> state.hashTreeRoot()).orElse(Bytes32.ZERO);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateForkResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateForkResponse.class);
-    final Fork data = body.data;
+    final GetStateRootResponse body =
+        jsonProvider.jsonToObject(response.body().string(), GetStateRootResponse.class);
 
-    final Fork expected = new Fork(recentChainData.getBestState().get().getFork());
-    assertThat(expected).isEqualTo(data);
+    assertThat(body.data.root.toHexString()).isEqualTo(chainHeadStateRoot.toHexString());
   }
 
   public Response get(final String stateIdString) throws IOException {
-    return getResponse(GetStateFork.ROUTE.replace(":state_id", stateIdString));
+    return getResponse(GetStateRoot.ROUTE.replace(":state_id", stateIdString));
   }
 }

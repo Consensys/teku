@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Validator;
@@ -728,6 +730,19 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getStateRoot_shouldGetRootAtGenesis()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    final Optional<tech.pegasys.teku.datastructures.state.BeaconState> state =
+        combinedChainDataClient.getStateAtSlotExact(ZERO).get();
+    final Optional<Root> maybeStateRoot = provider.getStateRoot("genesis").get();
+    assertThat(maybeStateRoot).isPresent();
+    assertThat(maybeStateRoot.orElseThrow().root).isEqualTo(state.orElseThrow().hash_tree_root());
+  }
+
+  @Test
   public void getBlockHeaders_shouldGetHeadBlockIfNoParameters()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -836,7 +851,6 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-
     assertThat(
             provider
                 .getStateCommittees(
@@ -879,6 +893,68 @@ public class ChainDataProviderTest {
                     Optional.of(internalState.getSlot()))
                 .size())
         .isEqualTo(1);
+  }
+
+  @Test
+  public void getStateFinalityCheckpoints_shouldGetEmptyCheckpointsBeforeFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(provider.getStateFinalityCheckpoints("genesis").get().get())
+        .isEqualTo(
+            new FinalityCheckpointsResponse(
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
+                tech.pegasys.teku.api.schema.Checkpoint.EMPTY));
+  }
+
+  @Test
+  public void getStateFinalityCheckpoints_shouldGetCheckpointsAfterFinalized()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
+    final DataStructureUtil data = new DataStructureUtil();
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(UInt64.valueOf(42));
+    final FinalityCheckpointsResponse expected =
+        new FinalityCheckpointsResponse(
+            new tech.pegasys.teku.api.schema.Checkpoint(
+                internalState.getPrevious_justified_checkpoint()),
+            new tech.pegasys.teku.api.schema.Checkpoint(
+                internalState.getCurrent_justified_checkpoint()),
+            new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
+
+    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    assertThat(provider.getStateFinalityCheckpoints("head").get().get()).isEqualTo(expected);
+    verify(mockCombinedChainDataClient).getBestState();
+  }
+
+  @Test
+  public void getStateFork_shouldGetForkAtGenesis()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    final Bytes4 bytes4 = Bytes4.fromHexString("0x00000001");
+    final Optional<Fork> response = provider.getStateFork("genesis").get();
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(new Fork(bytes4, bytes4, ZERO));
+  }
+
+  @Test
+  public void getValidatorBalancesFromState_shouldGetBalances() {
+    final DataStructureUtil data = new DataStructureUtil();
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+
+    assertThat(
+            provider.getValidatorBalancesFromState(
+                internalState, List.of("0", "100", "1023", "1024", "1024000")))
+        .hasSize(3);
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
