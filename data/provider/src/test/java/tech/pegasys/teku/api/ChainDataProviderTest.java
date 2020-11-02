@@ -893,6 +893,21 @@ public class ChainDataProviderTest {
     assertThat(response.get()).isEqualTo(new Fork(bytes4, bytes4, ZERO));
   }
 
+  @Test
+  public void getValidatorBalancesFromState_shouldGetBalances() {
+    final DataStructureUtil data = new DataStructureUtil();
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+        data.randomBeaconState(1024);
+    assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
+
+    assertThat(
+            provider.getValidatorBalancesFromState(
+                internalState, List.of("0", "100", "1023", "1024", "1024000")))
+        .hasSize(3);
+  }
+
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
       final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
     SafeFuture<Optional<ValidatorResponse>> response =
