@@ -37,5 +37,5 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
-  public void onAnchorPoint(AnchorPoint anchorPoint) {}
+  public void onChainInitialized(AnchorPoint initialAnchor) {}
 }
