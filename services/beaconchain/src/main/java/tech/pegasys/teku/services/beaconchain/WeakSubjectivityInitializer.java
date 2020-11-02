@@ -167,15 +167,31 @@ class WeakSubjectivityInitializer {
           } else {
             // Look up historical chain data to check for consistency
             return storageQueryChannel
-                // Query for state rather than block in case we initialized this chain from the
-                // current anchor state and the corresponding block is not available
-                .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
+                .getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot())
+                .thenCompose(
+                    maybeBlock -> {
+                      final SafeFuture<Optional<BeaconBlockSummary>> summary;
+                      if (maybeBlock.isPresent()) {
+                        summary =
+                            SafeFuture.completedFuture(
+                                maybeBlock.map(BeaconBlockSummary.class::cast));
+                      } else {
+                        // If block is unavailable, try looking up the corresponding state
+                        summary =
+                            storageQueryChannel
+                                .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
+                                .thenApply(
+                                    state ->
+                                        state
+                                            .map(BeaconBlockHeader::fromState)
+                                            .map(BeaconBlockSummary.class::cast));
+                      }
+                      return summary;
+                    })
                 .thenApply(
-                    stateAtAnchor -> {
+                    blockSummaryAtAnchor -> {
                       final Optional<Bytes32> storedBlockRoot =
-                          stateAtAnchor
-                              .map(BeaconBlockHeader::fromState)
-                              .map(BeaconBlockSummary::getRoot);
+                          blockSummaryAtAnchor.map(BeaconBlockSummary::getRoot);
                       final boolean storedBlockMatchesAnchor =
                           storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
                       if (!storedBlockMatchesAnchor) {
