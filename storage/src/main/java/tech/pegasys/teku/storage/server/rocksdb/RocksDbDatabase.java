@@ -450,6 +450,10 @@ public class RocksDbDatabase implements Database {
                       new CheckpointEpochs(block.getJustifiedEpoch(), block.getFinalizedEpoch())));
       hotUpdater.commit();
     }
+    try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
+      updater.deleteProtoArraySnapshot();
+      updater.commit();
+    }
   }
 
   @Override
