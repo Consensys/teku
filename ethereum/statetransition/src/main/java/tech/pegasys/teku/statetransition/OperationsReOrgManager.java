@@ -121,7 +121,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
     attestations.forEach(
         attestation -> {
           attestationManager
-              .onAttestation(ValidateableAttestation.from(attestation))
+              .onAttestation(ValidateableAttestation.fromAttestation(attestation))
               .finish(
                   result ->
                       result.ifInvalid(

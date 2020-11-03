@@ -23,39 +23,49 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final BlockValidator blockValidator =
+      new BlockValidator(recentChainData, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<SignedBeaconBlock> processor = mock(OperationProcessor.class);
+  private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
+      mock(GossipedItemConsumer.class);
 
   @BeforeEach
   public void setup() {
     doReturn(topicChannel)
         .when(gossipNetwork)
-        .subscribe(contains(BlockGossipManager.TOPIC_NAME), any());
+        .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
     new BlockGossipManager(
         asyncRunner,
         gossipNetwork,
         gossipEncoding,
         dataStructureUtil.randomForkInfo(),
+        blockValidator,
         eventBus,
-        processor);
+        gossipedBlockConsumer);
   }
 
   @Test
