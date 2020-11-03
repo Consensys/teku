@@ -253,7 +253,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     lock.readLock().lock();
     try {
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
-      store.blockTree.processAllInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
+      store.blockMetadata.processAllInOrder(
+          (root, slot, parent) -> blockRootsBySlot.put(slot, root));
       this.blockAndStates
           .values()
           .forEach(

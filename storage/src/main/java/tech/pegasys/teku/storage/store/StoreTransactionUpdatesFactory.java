@@ -129,7 +129,7 @@ class StoreTransactionUpdatesFactory {
   private Optional<UInt64> blockSlot(final Bytes32 root) {
     return Optional.ofNullable(hotBlockAndStates.get(root))
         .map(SignedBlockAndState::getSlot)
-        .or(() -> baseStore.blockTree.blockSlot(root));
+        .or(() -> baseStore.blockMetadata.blockSlot(root));
   }
 
   private Map<Bytes32, Bytes32> collectFinalizedRoots(
@@ -145,8 +145,8 @@ class StoreTransactionUpdatesFactory {
     }
 
     // Add existing hot blocks that are now finalized
-    if (baseStore.blockTree.contains(finalizedChainHeadRoot)) {
-      baseStore.blockTree.processHashesInChain(
+    if (baseStore.blockMetadata.contains(finalizedChainHeadRoot)) {
+      baseStore.blockMetadata.processHashesInChain(
           finalizedChainHeadRoot,
           (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
@@ -195,7 +195,7 @@ class StoreTransactionUpdatesFactory {
                     newBlockAndState.getParentRoot()))
         .forEach(newBlockAndState -> prunedHotBlockRoots.add(newBlockAndState.getRoot()));
 
-    baseStore.blockTree.processAllInOrder(
+    baseStore.blockMetadata.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
           if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
             prunedHotBlockRoots.add(blockRoot);

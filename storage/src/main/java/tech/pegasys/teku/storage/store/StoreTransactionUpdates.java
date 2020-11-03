@@ -98,8 +98,8 @@ class StoreTransactionUpdates {
           store.states.remove(root);
         });
 
-    store.blockTree =
-        store.blockTree.applyUpdate(
+    store.blockMetadata =
+        store.blockMetadata.applyUpdate(
             hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
   }
 }
