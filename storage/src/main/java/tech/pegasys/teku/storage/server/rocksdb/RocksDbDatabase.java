@@ -75,6 +75,7 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 
+  private static int TX_BATCH_SIZE = 500;
 
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
@@ -505,64 +506,78 @@ public class RocksDbDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
+    final BlockProvider blockProvider =
+        BlockProvider.withKnownBlocks(
+            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      final BlockProvider blockProvider =
-          BlockProvider.withKnownBlocks(
-              roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+    // Get previously finalized block to build on top of
+    final SignedBeaconBlock baseBlock = getFinalizedBlock();
 
-      // Get previously finalized block to build on top of
-      final SignedBeaconBlock baseBlock = getFinalizedBlock();
+    final List<Bytes32> finalizedRoots =
+        HashTree.builder()
+            .rootHash(baseBlock.getRoot())
+            .childAndParentRoots(finalizedChildToParentMap)
+            .build()
+            .preOrderStream()
+            .collect(Collectors.toList());
 
-      final HashTree blockTree =
-          HashTree.builder()
-              .rootHash(baseBlock.getRoot())
-              .childAndParentRoots(finalizedChildToParentMap)
-              .build();
+    int i = 0;
+    UInt64 lastSlot = baseBlock.getSlot();
+    while (i < finalizedRoots.size()) {
+      final int start = i;
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        final StateRootRecorder recorder =
+            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot);
 
-      final StateRootRecorder recorder =
-          new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
+        while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
+          final Bytes32 blockRoot = finalizedRoots.get(i);
 
-      blockTree
-          .preOrderStream()
-          .forEach(
-              blockRoot -> {
-                updater.addFinalizedBlock(
-                    blockProvider
-                        .getBlock(blockRoot)
-                        .join()
-                        .orElseThrow(() -> new IllegalStateException("Missing finalized block")));
-                Optional.ofNullable(finalizedStates.get(blockRoot))
-                    .or(() -> getHotState(blockRoot))
-                    .ifPresent(
-                        state -> {
-                          updater.addFinalizedState(blockRoot, state);
-                          recorder.acceptNextState(state);
-                        });
-              });
+          final SignedBeaconBlock block =
+              blockProvider
+                  .getBlock(blockRoot)
+                  .join()
+                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
+          updater.addFinalizedBlock(block);
+          Optional.ofNullable(finalizedStates.get(blockRoot))
+              .or(() -> getHotState(blockRoot))
+              .ifPresent(
+                  state -> {
+                    updater.addFinalizedState(blockRoot, state);
+                    recorder.acceptNextState(state);
+                  });
 
-      updater.commit();
+          lastSlot = block.getSlot();
+          i++;
+        }
+        updater.commit();
+      }
     }
   }
 
   private void updateFinalizedDataPruneMode(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      final BlockProvider blockProvider =
-          BlockProvider.withKnownBlocks(
-              roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+    final BlockProvider blockProvider =
+        BlockProvider.withKnownBlocks(
+            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
-      for (Bytes32 root : finalizedChildToParentMap.keySet()) {
-        SignedBeaconBlock block =
-            blockProvider
-                .getBlock(root)
-                .join()
-                .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
-        updater.addFinalizedBlock(block);
+    final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
+    int i = 0;
+    while (i < finalizedRoots.size()) {
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        final int start = i;
+        while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
+          final Bytes32 root = finalizedRoots.get(i);
+          SignedBeaconBlock block =
+              blockProvider
+                  .getBlock(root)
+                  .join()
+                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
+          updater.addFinalizedBlock(block);
+          i++;
+        }
+        updater.commit();
       }
-
-      updater.commit();
     }
   }
 
