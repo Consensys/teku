@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -48,11 +48,9 @@ public class ProtoArrayStorageTest {
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(
       final String storageType,
-      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
-      throws Exception {
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     setup(storageSystemSupplier);
     SafeFuture<Optional<ProtoArraySnapshot>> future = protoArrayStorage.getProtoArraySnapshot();
-    assertThat(future.isDone()).isTrue();
-    assertThat(future.get().isPresent()).isFalse();
+    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 }

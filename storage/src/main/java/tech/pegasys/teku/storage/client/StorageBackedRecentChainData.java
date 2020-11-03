@@ -154,7 +154,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();
-          return initForkChoiceStrategy(store, maybeStoreBuilder.get().buildProtoArray())
+          return initForkChoiceStrategy(
+                  store, maybeStoreBuilder.flatMap(StoreBuilder::buildProtoArray))
               .thenApply(
                   forkChoiceStrategy -> {
                     setStore(store, forkChoiceStrategy);

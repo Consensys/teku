@@ -117,7 +117,7 @@ public class DebugDbCommand implements Runnable {
               required = true,
               names = {"--slot", "-s"},
               description =
-                  "The slot to retrive the state for. If unavailable the closest available state will be returned")
+                  "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
     setConstants(networkOptions);
