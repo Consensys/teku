@@ -30,7 +30,7 @@ public class StoreAssertions {
             "readLock",
             "blockProvider",
             "blocks",
-            "blockTree",
+            "blockMetadata",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
             "stateRequestMissCounter",
