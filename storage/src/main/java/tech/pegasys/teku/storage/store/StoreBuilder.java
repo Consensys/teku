@@ -96,8 +96,6 @@ public class StoreBuilder {
   public UpdatableStore build() {
     assertValid();
 
-    // TODO: Use a .join to init a new ProtoArrayForkChoiceStrategy if one isn't provided.
-    // Don't create a new one in StorageBackedRecentChainData and just use the one from store
     return Store.create(
         asyncRunner,
         metricsSystem,
