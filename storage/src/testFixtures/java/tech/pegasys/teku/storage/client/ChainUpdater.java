@@ -84,7 +84,7 @@ public class ChainUpdater {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(checkpoint);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
 
     return blockAndState;
   }

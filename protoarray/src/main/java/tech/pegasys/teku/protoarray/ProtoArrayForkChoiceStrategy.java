@@ -334,7 +334,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         throw new IllegalArgumentException("Unknown root supplied: " + head);
       }
       ProtoNode currentNode = startingNode.orElseThrow();
-      while (true) {
+
+      while (protoArray.getIndices().containsKey(currentNode.getBlockRoot())) {
         final boolean shouldContinue =
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
