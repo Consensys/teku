@@ -124,7 +124,7 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
         block.getProposerIndex(),
         block.getParentRoot(),
         block.getStateRoot(),
-        block.getBody().hash_tree_root());
+        block.getBodyRoot());
   }
 
   public static BeaconBlockHeader fromBlock(final SignedBeaconBlock block) {

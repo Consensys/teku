@@ -17,7 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-/** An overarching interface for access summary fields (header fields) of a beacon block */
+/** An overarching interface for accessing summary fields (header fields) of a beacon block */
 public interface BeaconBlockSummary {
 
   UInt64 getSlot();
