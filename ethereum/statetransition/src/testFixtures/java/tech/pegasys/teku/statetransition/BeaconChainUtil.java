@@ -28,7 +28,6 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -269,8 +268,6 @@ public class BeaconChainUtil {
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
-      BeaconBlock headBlock =
-          recentChainData.getHeadBlock().map(SignedBeaconBlock::getMessage).orElseThrow();
       UInt64 slot = recentChainData.getHeadSlot();
       SSZList<Attestation> currentSlotAssignments =
           SSZList.createMutable(
