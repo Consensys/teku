@@ -469,26 +469,7 @@ class Store implements UpdatableStore {
 
   private SafeFuture<Optional<StateAndBlockSummary>> getAndCacheStateAndBlockSummary(
       final Bytes32 blockRoot) {
-    return getOrRegenerateBlockAndState(blockRoot)
-        .thenCompose(
-            maybeResult -> {
-              if (maybeResult.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              final StateAndBlockSummary result = maybeResult.get();
-
-              return result
-                  .getSignedBeaconBlock()
-                  .map(b -> SafeFuture.completedFuture(Optional.of(b)))
-                  .orElseGet(() -> blockProvider.getBlock(blockRoot))
-                  .thenPeek(block -> block.ifPresent(this::putBlock))
-                  .thenApply(
-                      block ->
-                          Optional.of(
-                              block
-                                  .map(b -> new StateAndBlockSummary(b, result.getState()))
-                                  .orElse(result)));
-            });
+    return getOrRegenerateBlockAndState(blockRoot);
   }
 
   private SafeFuture<Optional<StateAndBlockSummary>> getOrRegenerateBlockAndState(
