@@ -34,6 +34,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -74,8 +76,9 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
+  private static final Logger LOG = LogManager.getLogger();
 
-  private static int TX_BATCH_SIZE = 500;
+  private static final int TX_BATCH_SIZE = 500;
 
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
@@ -442,12 +445,14 @@ public class RocksDbDatabase implements Database {
   }
 
   private void doUpdate(final StorageUpdate update) {
+    LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
     updateFinalizedData(
         update.getFinalizedChildToParentMap(),
         update.getFinalizedBlocks(),
         update.getFinalizedStates());
 
+    LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -476,8 +481,10 @@ public class RocksDbDatabase implements Database {
       // Delete finalized data from hot db
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
+      LOG.trace("Committing hot db changes");
       updater.commit();
     }
+    LOG.trace("Update complete");
   }
 
   private void updateFinalizedData(
@@ -550,6 +557,9 @@ public class RocksDbDatabase implements Database {
           i++;
         }
         updater.commit();
+        if (i >= TX_BATCH_SIZE) {
+          LOG.info("Recorded {} of {} finalized blocks", i, finalizedRoots.size());
+        }
       }
     }
   }
@@ -577,6 +587,9 @@ public class RocksDbDatabase implements Database {
           i++;
         }
         updater.commit();
+        if (i >= TX_BATCH_SIZE) {
+          LOG.info("Recorded {} of {} finalized blocks", i, finalizedRoots.size());
+        }
       }
     }
   }
