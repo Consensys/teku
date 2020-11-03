@@ -208,31 +208,30 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    return getBlockAsOperation(slotParameter)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock>>
-      getBlockAsOperation(final String slotParameter) {
-    if (!isStoreAvailable()) {
-      return chainUnavailable();
-    }
-
-    return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getSingleBlock();
-  }
-
   public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
-    return getBlockAsOperation(slotParameter)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
   }
 
   public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
-    return getBlockAsOperation(slotParameter)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
-    return getBlockAsOperation(slotParameter)
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(
