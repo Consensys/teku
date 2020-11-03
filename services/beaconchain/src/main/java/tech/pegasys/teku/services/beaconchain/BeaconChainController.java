@@ -58,7 +58,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
@@ -346,21 +345,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
     if (beaconConfig.validatorConfig().isValidatorPerformanceTrackingEnabled()) {
-      Optional<ValidatorPerformanceMetrics> metrics = Optional.empty();
-      Optional<StatusLogger> logger = Optional.empty();
-      switch (beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode()) {
-        case ALL:
-          metrics = Optional.of(new ValidatorPerformanceMetrics(metricsSystem));
-          logger = Optional.of(STATUS_LOG);
-          break;
-        case METRICS:
-          metrics = Optional.of(new ValidatorPerformanceMetrics(metricsSystem));
-          break;
-        case LOGGING:
-          logger = Optional.of(STATUS_LOG);
-          break;
-      }
-      performanceTracker = new DefaultPerformanceTracker(combinedChainDataClient, logger, metrics);
+      performanceTracker =
+          new DefaultPerformanceTracker(
+              combinedChainDataClient,
+              STATUS_LOG,
+              new ValidatorPerformanceMetrics(metricsSystem),
+              beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode());
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
