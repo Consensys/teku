@@ -11,12 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.datastructures.state.BeaconState;
+public interface GossipedItemConsumer<T> {
+  void forward(T operation);
 
-public interface OperationValidator<T> {
-  InternalValidationResult validateFully(T operation);
+  GossipedItemConsumer<?> NOOP = (__) -> {};
 
-  boolean validateForStateTransition(BeaconState state, T operation);
+  @SuppressWarnings("unchecked")
+  static <T> GossipedItemConsumer<T> noop() {
+    return (GossipedItemConsumer<T>) NOOP;
+  }
 }

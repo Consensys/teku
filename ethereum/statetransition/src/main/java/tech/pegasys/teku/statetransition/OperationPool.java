@@ -16,16 +16,14 @@ package tech.pegasys.teku.statetransition;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import tech.pegasys.teku.core.operationvalidators.OperationStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T> {
@@ -37,10 +35,10 @@ public class OperationPool<T> {
           AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
 
   private final Set<T> operations = LimitedSet.create(Constants.OPERATION_POOL_SIZE);
+  private final OperationStateTransitionValidator<T> operationValidator;
   private final Class<T> clazz;
-  private final OperationValidator<T> operationValidator;
 
-  public OperationPool(Class<T> clazz, OperationValidator<T> operationValidator) {
+  public OperationPool(Class<T> clazz, OperationStateTransitionValidator<T> operationValidator) {
     this.clazz = clazz;
     this.operationValidator = operationValidator;
   }
@@ -55,7 +53,7 @@ public class OperationPool<T> {
     int numberOfElementsToGet = MAX_NUMBER_OF_ELEMENTS_IN_BLOCK.get(clazz);
     while (count < numberOfElementsToGet && iter.hasNext()) {
       T item = iter.next();
-      if (operationValidator.validateForStateTransition(stateAtBlockSlot, item)) {
+      if (operationValidator.validate(stateAtBlockSlot, item).isEmpty()) {
         itemsToPutInBlock.add(item);
         count++;
       }
@@ -63,13 +61,8 @@ public class OperationPool<T> {
     return itemsToPutInBlock;
   }
 
-  public SafeFuture<InternalValidationResult> add(T item) {
-    InternalValidationResult result = operationValidator.validateFully(item);
-    if (result.equals(InternalValidationResult.ACCEPT)
-        || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
-      operations.add(item);
-    }
-    return SafeFuture.completedFuture(result);
+  public void add(T item) {
+    operations.add(item);
   }
 
   public void addAll(SSZList<T> items) {

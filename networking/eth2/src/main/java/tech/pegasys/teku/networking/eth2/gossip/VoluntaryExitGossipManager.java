@@ -18,15 +18,15 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.VoluntaryExitTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class VoluntaryExitGossipManager {
-  public static String TOPIC_NAME = "voluntary_exit";
-
   private final TopicChannel channel;
+
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public VoluntaryExitGossipManager(
@@ -34,15 +34,15 @@ public class VoluntaryExitGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedVoluntaryExit> processor) {
-    final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
-        new Eth2TopicHandler<>(
+      final VoluntaryExitValidator voluntaryExitValidator,
+      final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+    final VoluntaryExitTopicHandler topicHandler =
+        new VoluntaryExitTopicHandler(
             asyncRunner,
-            processor,
             gossipEncoding,
-            forkInfo.getForkDigest(),
-            TOPIC_NAME,
-            SignedVoluntaryExit.class);
+            forkInfo,
+            voluntaryExitValidator,
+            gossipedVoluntaryExitConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
