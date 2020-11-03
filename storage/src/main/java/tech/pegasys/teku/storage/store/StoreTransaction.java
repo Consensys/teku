@@ -17,15 +17,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +36,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -245,23 +245,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Set<Bytes32> getBlockRoots() {
-    return Sets.union(blockAndStates.keySet(), store.getBlockRoots());
-  }
-
-  @Override
-  public List<Bytes32> getOrderedBlockRoots() {
+  public Collection<Bytes32> getOrderedBlockRoots() {
     if (this.blockAndStates.isEmpty()) {
       return store.getOrderedBlockRoots();
     }
 
     lock.readLock().lock();
     try {
-      final HashTree.Builder treeBuilder = store.blockTree.getHashTree().updater();
-      this.blockAndStates.values().stream()
-          .map(SignedBlockAndState::getBlock)
-          .forEach(treeBuilder::block);
-      return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
+      final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
+      store.blockTree.processAllInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
+      this.blockAndStates
+          .values()
+          .forEach(
+              blockAndState ->
+                  blockRootsBySlot.put(blockAndState.getSlot(), blockAndState.getRoot()));
+      return blockRootsBySlot.values();
     } finally {
       lock.readLock().unlock();
     }

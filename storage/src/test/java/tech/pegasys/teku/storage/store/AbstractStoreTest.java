@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
@@ -34,6 +35,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
@@ -125,21 +127,29 @@ public abstract class AbstractStoreTest {
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return Store.create(
-        SYNC_RUNNER,
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        StateAndBlockProvider.NOOP,
-        Optional.empty(),
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        AnchorPoint.create(genesisCheckpoint, genesis),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        Map.of(genesis.getRoot(), genesis.getSlot()),
-        Collections.emptyMap(),
-        pruningOptions);
+    return StoreBuilder.create()
+        .asyncRunner(SYNC_RUNNER)
+        .metricsSystem(new StubMetricsSystem())
+        .blockProvider(blockProviderFromChainBuilder())
+        .stateProvider(StateAndBlockProvider.NOOP)
+        .anchor(Optional.empty())
+        .genesisTime(genesis.getState().getGenesis_time())
+        .time(genesis.getState().getGenesis_time())
+        .latestFinalized(AnchorPoint.create(genesisCheckpoint, genesis))
+        .justifiedCheckpoint(genesisCheckpoint)
+        .bestJustifiedCheckpoint(genesisCheckpoint)
+        .blockInformation(
+            Map.of(
+                genesis.getRoot(),
+                new StoredBlockMetadata(
+                    genesis.getSlot(),
+                    genesis.getRoot(),
+                    genesis.getParentRoot(),
+                    genesis.getStateRoot(),
+                    Optional.empty())))
+        .storeConfig(pruningOptions)
+        .votes(emptyMap())
+        .build();
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

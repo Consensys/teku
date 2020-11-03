@@ -15,13 +15,13 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.BlockMetadataStore;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -64,8 +65,7 @@ class StoreTest extends AbstractStoreTest {
                     AnchorPoint.create(genesisCheckpoint, genesis),
                     genesisCheckpoint,
                     genesisCheckpoint,
-                    Map.of(genesis.getRoot(), genesis.getParentRoot()),
-                    Map.of(genesis.getRoot(), genesis.getSlot()),
+                    mock(BlockMetadataStore.class),
                     Collections.emptyMap(),
                     StoreConfig.createDefault()))
         .isInstanceOf(IllegalArgumentException.class)

@@ -127,11 +127,6 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
-  public Set<Bytes32> getBlockRoots() {
-    return blocks.keySet();
-  }
-
-  @Override
   public List<Bytes32> getOrderedBlockRoots() {
     return blocks.values().stream()
         .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))

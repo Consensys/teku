@@ -30,12 +30,16 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.BlockMetadataStore;
 import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBlockMetadataStore;
 import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 
 public class StoreBuilder {
@@ -100,6 +104,33 @@ public class StoreBuilder {
   public UpdatableStore build() {
     assertValid();
 
+    final Optional<ProtoArrayForkChoiceStrategy> maybeProtoArray =
+        buildProtoArray().map(ProtoArrayForkChoiceStrategy::initialize);
+    final BlockMetadataStore blockMetadataStore =
+        maybeProtoArray
+            .<BlockMetadataStore>map(ProtoArrayBlockMetadataStore::new)
+            .orElseGet(
+                () -> {
+                  // Build block tree structure
+                  final Map<Bytes32, Bytes32> childToParentRoot =
+                      Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getParentRoot);
+                  final Map<Bytes32, UInt64> rootToSlotMap =
+                      Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getBlockSlot);
+                  HashTree.Builder treeBuilder =
+                      HashTree.builder().rootHash(latestFinalized.getRoot());
+                  childToParentRoot.forEach(treeBuilder::childAndParentRoots);
+                  final BlockTree blockTree = BlockTree.create(treeBuilder.build(), rootToSlotMap);
+                  if (blockTree.size() < childToParentRoot.size()) {
+                    final int invalidBlockCount = childToParentRoot.size() - blockTree.size();
+                    throw new IllegalStateException(
+                        invalidBlockCount
+                            + " invalid non-canonical block(s) supplied to Store that do not descend from the latest finalized block.");
+                  }
+                  return blockTree;
+                });
+
+    // TODO: Use a .join to init a new ProtoArrayForkChoiceStrategy if one isn't provided.
+    // Don't create a new one in StorageBackedRecentChainData and just use the one from store
     return Store.create(
         asyncRunner,
         metricsSystem,
@@ -111,8 +142,7 @@ public class StoreBuilder {
         latestFinalized,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
-        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getParentRoot),
-        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getBlockSlot),
+        blockMetadataStore,
         votes,
         storeConfig);
   }

@@ -36,7 +36,6 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Set<Bytes32> prunedHotBlockRoots;
-  private final Optional<BlockTree> updatedBlockTree;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -45,7 +44,6 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
-      final Optional<BlockTree> updatedBlockTree,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
@@ -53,7 +51,6 @@ class StoreTransactionUpdates {
     checkNotNull(hotBlockAndStates, "Hot states are required");
     checkNotNull(hotStatesToPersist, "Hot states to persist are required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
-    checkNotNull(updatedBlockTree, "Update tree is required");
     checkNotNull(stateRoots, "State roots are required");
 
     this.tx = tx;
@@ -62,7 +59,6 @@ class StoreTransactionUpdates {
     this.hotBlockAndStates = hotBlockAndStates;
     this.hotStatesToPersist = hotStatesToPersist;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
-    this.updatedBlockTree = updatedBlockTree;
     this.stateRoots = stateRoots;
   }
 
@@ -87,7 +83,6 @@ class StoreTransactionUpdates {
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(hotBlockAndStates);
-    updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
     // Update finalized data
@@ -102,5 +97,9 @@ class StoreTransactionUpdates {
           store.blocks.remove(root);
           store.states.remove(root);
         });
+
+    store.blockTree =
+        store.blockTree.applyUpdate(
+            hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
   }
 }

@@ -22,14 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.BlockMetadataStore;
 
-public class BlockTree {
+public class BlockTree implements BlockMetadataStore {
   private final HashTree hashTree;
   final Map<Bytes32, UInt64> blockRootToSlot;
 
@@ -72,8 +76,32 @@ public class BlockTree {
     return hashTree.getRootHash();
   }
 
+  @Override
   public boolean contains(final Bytes32 blockRoot) {
     return hashTree.contains(blockRoot);
+  }
+
+  @Override
+  public void processHashesInChain(final Bytes32 head, final NodeProcessor processor) {
+    hashTree.processHashesInChain(
+        head, (root, parent) -> processor.process(root, getSlot(root), parent));
+  }
+
+  @Override
+  public void processHashesInChainWhile(
+      final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
+    hashTree.processHashesInChainWhile(
+        head, (root, parent) -> nodeProcessor.process(root, getSlot(root), parent));
+  }
+
+  @Override
+  public void processAllInOrder(final NodeProcessor nodeProcessor) {
+    hashTree
+        .preOrderStream()
+        .forEach(
+            blockRoot ->
+                nodeProcessor.process(
+                    blockRoot, getSlot(blockRoot), hashTree.getParent(blockRoot).orElseThrow()));
   }
 
   public Set<Bytes32> getAllRoots() {
@@ -96,6 +124,7 @@ public class BlockTree {
    * @param blockRoot The block root to check.
    * @return True if the block root is at an internal epoch boundary.
    */
+  // TODO: This can be deleted but need to move the tests over to store
   public boolean isRootAtNthEpochBoundary(Bytes32 blockRoot, final int n) {
     checkArgument(n > 0, "Parameter n must be greater than 0");
     assertBlockIsInTree(blockRoot);
@@ -108,9 +137,29 @@ public class BlockTree {
         .orElse(false);
   }
 
+  @Override
+  public BlockMetadataStore applyUpdate(
+      final Collection<BlockAndCheckpointEpochs> addedBlocks,
+      final Set<Bytes32> removedBlocks,
+      final Checkpoint finalizedCheckpoint) {
+
+    if (finalizedCheckpoint.getRoot().equals(hashTree.getRootHash()) && addedBlocks.isEmpty()) {
+      // No changes to apply
+      return this;
+    }
+    return updated(
+        finalizedCheckpoint.getRoot(),
+        addedBlocks.stream().map(BlockAndCheckpointEpochs::getBlock).collect(Collectors.toList()));
+  }
+
   public UInt64 getEpoch(Bytes32 blockRoot) {
     final UInt64 slot = getSlot(blockRoot);
     return compute_epoch_at_slot(slot);
+  }
+
+  @Override
+  public Optional<UInt64> blockSlot(Bytes32 blockRoot) {
+    return Optional.ofNullable(blockRootToSlot.get(blockRoot));
   }
 
   public UInt64 getSlot(Bytes32 blockRoot) {

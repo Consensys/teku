@@ -157,7 +157,7 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    checkArgument(deltas.size() == indices.size(), "ProtoArray: Invalid delta length");
+    checkArgument(deltas.size() == nodes.size(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
@@ -199,6 +199,7 @@ public class ProtoArray {
    * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
+    System.out.println("Prune: " + finalizedRoot);
     int finalizedIndex =
         checkNotNull(indices.get(finalizedRoot), "ProtoArray: Finalized root is unknown");
 
@@ -404,5 +405,9 @@ public class ProtoArray {
 
   public UInt64 getInitialEpoch() {
     return initialEpoch;
+  }
+
+  public void removeBlockRoot(final Bytes32 blockRoot) {
+    indices.remove(blockRoot);
   }
 }

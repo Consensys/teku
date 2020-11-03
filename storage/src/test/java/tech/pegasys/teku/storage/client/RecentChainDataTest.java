@@ -713,7 +713,7 @@ class RecentChainDataTest {
             .collect(Collectors.toSet());
 
     // Check expected blocks
-    assertThat(recentChainData.getStore().getBlockRoots())
+    assertThat(recentChainData.getStore().getOrderedBlockRoots())
         .containsExactlyInAnyOrderElementsOf(blockRoots);
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
       assertThat(recentChainData.retrieveSignedBlockByRoot(expectedBlock.getRoot()))

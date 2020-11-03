@@ -26,6 +26,7 @@ import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -455,7 +456,7 @@ public abstract class AbstractDatabaseTest {
 
     final Set<Bytes32> hotBlockRoots =
         hotBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
-    assertThat(result.getBlockRoots()).containsExactlyInAnyOrderElementsOf(hotBlockRoots);
+    assertThat(result.getOrderedBlockRoots()).containsExactlyInAnyOrderElementsOf(hotBlockRoots);
   }
 
   @Test
@@ -782,12 +783,12 @@ public abstract class AbstractDatabaseTest {
       final UpdatableStore store, final Collection<SignedBlockAndState> blocksAndStates) {
     final List<UpdatableStore> storesToCheck = List.of(store, recreateStore());
     for (UpdatableStore currentStore : storesToCheck) {
-      assertThat(currentStore.getBlockRoots())
+      assertThat(currentStore.getOrderedBlockRoots())
           .hasSameElementsAs(
               blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
       final List<BeaconState> hotStates =
-          currentStore.getBlockRoots().stream()
+          currentStore.getOrderedBlockRoots().stream()
               .map(currentStore::retrieveBlockState)
               .map(
                   f -> {
@@ -806,11 +807,11 @@ public abstract class AbstractDatabaseTest {
   protected void assertHotBlocksAndStatesInclude(
       final Collection<SignedBlockAndState> blocksAndStates) {
     final UpdatableStore memoryStore = recreateStore();
-    assertThat(memoryStore.getBlockRoots())
+    assertThat(memoryStore.getOrderedBlockRoots())
         .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
     final List<BeaconState> hotStates =
-        memoryStore.getBlockRoots().stream()
+        memoryStore.getOrderedBlockRoots().stream()
             .map(memoryStore::retrieveBlockState)
             .map(
                 f -> {
@@ -894,13 +895,16 @@ public abstract class AbstractDatabaseTest {
 
   protected void add(
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
-    for (SignedBlockAndState blockAndState : blocksAndStates) {
-      transaction.putBlockAndState(blockAndState);
-      recentChainData
-          .getForkChoiceStrategy()
-          .orElseThrow()
-          .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-    }
+    blocksAndStates.stream()
+        .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
+        .forEach(
+            blockAndState -> {
+              transaction.putBlockAndState(blockAndState);
+              recentChainData
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+            });
   }
 
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {

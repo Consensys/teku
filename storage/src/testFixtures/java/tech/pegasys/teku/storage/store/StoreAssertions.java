@@ -30,6 +30,7 @@ public class StoreAssertions {
             "readLock",
             "blockProvider",
             "blocks",
+            "blockTree",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
             "stateRequestMissCounter",
@@ -40,5 +41,7 @@ public class StoreAssertions {
             "states",
             "stateAndBlockProvider",
             "checkpointStates");
+    assertThat(actualState.getOrderedBlockRoots())
+        .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());
   }
 }
