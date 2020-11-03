@@ -122,7 +122,9 @@ class StateRegenerationBaseSelectorTest {
     when(stateAndBlockProvider.getStateAndBlock(fromEpochBoundary.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(Optional.of(fromStore));
+    final Optional<StateAndBlockSummary> expected =
+        Optional.of(StateAndBlockSummary.create(fromStore));
+    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(expected);
   }
 
   @Test
@@ -183,7 +185,9 @@ class StateRegenerationBaseSelectorTest {
   }
 
   private void assertSelectedBase(final SignedBlockAndState fromStore) {
-    assertThatSafeFuture(getBestBase()).isCompletedWithValue(Optional.of(fromStore));
+    final Optional<StateAndBlockSummary> expected =
+        Optional.of(StateAndBlockSummary.create(fromStore));
+    assertThatSafeFuture(getBestBase()).isCompletedWithValue(expected);
   }
 
   private SignedBlockAndState withClosestAvailableFromStoreAtSlot(final long slot) {

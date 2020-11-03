@@ -163,7 +163,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
                               .getHotBlock(blockRoot)
                               .map(b -> (BeaconBlockSummary) b)
                               .orElseGet(() -> BeaconBlockHeader.fromState(state));
-                      return new StateAndBlockSummary(block, state);
+                      return StateAndBlockSummary.create(block, state);
                     }));
   }
 

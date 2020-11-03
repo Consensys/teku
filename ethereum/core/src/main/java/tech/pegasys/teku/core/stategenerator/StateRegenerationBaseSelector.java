@@ -127,7 +127,7 @@ public class StateRegenerationBaseSelector {
             maybeBlock ->
                 maybeBlock.map(
                     block ->
-                        new StateAndBlockSummary(block, closestAvailableFromStore.getState())));
+                        StateAndBlockSummary.create(block, closestAvailableFromStore.getState())));
   }
 
   private Optional<UInt64> getLatestEpochBoundarySlotMinusTolerance(

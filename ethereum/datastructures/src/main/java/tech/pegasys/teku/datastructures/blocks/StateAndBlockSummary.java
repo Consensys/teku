@@ -26,7 +26,7 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   protected final BeaconState state;
   protected final BeaconBlockSummary blockSummary;
 
-  public StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
+  protected StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
     checkNotNull(blockSummary);
     checkNotNull(state);
     checkArgument(
@@ -34,6 +34,15 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
         "Block state root must match the supplied state");
     this.blockSummary = blockSummary;
     this.state = state;
+  }
+
+  public static StateAndBlockSummary create(
+      final BeaconBlockSummary blockSummary, final BeaconState state) {
+    return new StateAndBlockSummary(blockSummary, state);
+  }
+
+  public static StateAndBlockSummary create(final SignedBlockAndState blockAndState) {
+    return new StateAndBlockSummary(blockAndState.getBlock(), blockAndState.getState());
   }
 
   public BeaconState getState() {
