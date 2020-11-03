@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,16 +39,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -60,16 +61,16 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   static final UInt64 ATTESTATION_INCLUSION_RANGE = UInt64.valueOf(2);
 
   private final CombinedChainDataClient combinedChainDataClient;
-  private final StatusLogger statusLogger;
-  private final ValidatorPerformanceMetrics validatorPerformanceMetrics;
+  private final Optional<StatusLogger> statusLogger;
+  private final Optional<ValidatorPerformanceMetrics> validatorPerformanceMetrics;
 
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
   private AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
       CombinedChainDataClient combinedChainDataClient,
-      StatusLogger statusLogger,
-      ValidatorPerformanceMetrics validatorPerformanceMetrics) {
+      Optional<StatusLogger> statusLogger,
+      Optional<ValidatorPerformanceMetrics> validatorPerformanceMetrics) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.statusLogger = statusLogger;
     this.validatorPerformanceMetrics = validatorPerformanceMetrics;
@@ -104,10 +105,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       UInt64 analyzedEpoch = currentEpoch.minus(ATTESTATION_INCLUSION_RANGE);
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
-      statusLogger.performance(attestationPerformance.toString());
+      statusLogger.ifPresent(logger -> logger.performance(attestationPerformance.toString()));
+      validatorPerformanceMetrics.ifPresent(metrics -> metrics.updateAttestationPerformanceMetrics(attestationPerformance));
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
       attestationProductionAttemptsByEpoch.headMap(analyzedEpoch, true).clear();
-      validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
     }
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
@@ -117,10 +118,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         BlockPerformance blockPerformance =
             getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
         if (blockPerformance.numberOfExpectedBlocks > 0) {
-          statusLogger.performance(blockPerformance.toString());
+          statusLogger.ifPresent(logger -> logger.performance(blockPerformance.toString()));
+          validatorPerformanceMetrics.ifPresent(metrics -> metrics.updateBlockPerformanceMetrics(blockPerformance));
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
-          validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
         }
       }
     }
