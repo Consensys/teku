@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
@@ -558,7 +559,7 @@ public class RocksDbDatabase implements Database {
         }
         updater.commit();
         if (i >= TX_BATCH_SIZE) {
-          LOG.info("Recorded {} of {} finalized blocks", i, finalizedRoots.size());
+          STATUS_LOG.recordedFinalizedBlocks(i, finalizedRoots.size());
         }
       }
     }
@@ -588,7 +589,7 @@ public class RocksDbDatabase implements Database {
         }
         updater.commit();
         if (i >= TX_BATCH_SIZE) {
-          LOG.info("Recorded {} of {} finalized blocks", i, finalizedRoots.size());
+          STATUS_LOG.recordedFinalizedBlocks(i, finalizedRoots.size());
         }
       }
     }
