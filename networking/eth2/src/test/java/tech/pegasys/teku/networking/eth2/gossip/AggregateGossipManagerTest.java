@@ -27,22 +27,25 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class AggregateGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SignedAggregateAndProofValidator validator =
+      mock(SignedAggregateAndProofValidator.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
-      mock(OperationProcessor.class);
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedItemConsumer.class);
 
   private AggregateGossipManager gossipManager;
 
@@ -57,14 +60,15 @@ public class AggregateGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             dataStructureUtil.randomForkInfo(),
-            processor);
+            validator,
+            gossipedAttestationConsumer);
   }
 
   @Test
   public void onNewAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = gossipEncoding.encode(aggregate);
-    gossipManager.onNewAggregate(ValidateableAttestation.aggregateFromValidator(aggregate));
+    gossipManager.onNewAggregate(ValidateableAttestation.fromSignedAggregate(aggregate));
 
     verify(topicChannel).gossip(serialized);
   }
