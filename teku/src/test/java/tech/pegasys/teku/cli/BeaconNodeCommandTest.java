@@ -44,6 +44,7 @@ import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
@@ -308,7 +309,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pInterface("0.0.0.0")
                     .p2pPort(9000)
                     .p2pPrivateKeyFile(null))
-        .validator(b -> b.validatorKeystoreLockingEnabled(true));
+        .validator(
+            b ->
+                b.validatorKeystoreLockingEnabled(true)
+                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));
   }
 
   private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
@@ -339,7 +343,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .targetSubnetSubscriberCount(2)
                     .p2pStaticPeers(Collections.emptyList()))
         .validator(
-            b -> b.validatorExternalSignerTimeout(1000).validatorKeystoreLockingEnabled(true));
+            b ->
+                b.validatorExternalSignerTimeout(1000)
+                    .validatorKeystoreLockingEnabled(true)
+                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));
   }
 
   private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
