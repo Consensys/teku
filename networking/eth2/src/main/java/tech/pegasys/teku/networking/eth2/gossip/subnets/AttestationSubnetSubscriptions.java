@@ -24,9 +24,10 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -36,8 +37,9 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final AsyncRunner asyncRunner;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
+  private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final OperationProcessor<ValidateableAttestation> processor;
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -45,13 +47,15 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
+      final AttestationValidator attestationValidator,
       final RecentChainData recentChainData,
-      final OperationProcessor<ValidateableAttestation> processor) {
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     this.asyncRunner = asyncRunner;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
-    this.processor = processor;
+    this.attestationValidator = attestationValidator;
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -95,10 +99,14 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   private TopicChannel createChannelForSubnetId(final int subnetId) {
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
-    final String topicName = TopicNames.getAttestationSubnetTopicName(subnetId);
     final SingleAttestationTopicHandler topicHandler =
         new SingleAttestationTopicHandler(
-            asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
+            asyncRunner,
+            gossipEncoding,
+            forkInfo,
+            subnetId,
+            attestationValidator,
+            gossipedAttestationConsumer);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

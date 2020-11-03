@@ -126,11 +126,11 @@ public class OperationsReOrgManagerTest {
     List<ValidateableAttestation> attestationList = new ArrayList<>();
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::from)
+            .map(ValidateableAttestation::fromAttestation)
             .collect(Collectors.toList()));
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::from)
+            .map(ValidateableAttestation::fromAttestation)
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 

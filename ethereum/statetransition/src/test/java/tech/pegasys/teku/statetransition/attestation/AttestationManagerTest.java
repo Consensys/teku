@@ -49,8 +49,6 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
-import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -65,13 +63,7 @@ class AttestationManagerTest {
 
   private final AttestationManager attestationManager =
       new AttestationManager(
-          eventBus,
-          forkChoice,
-          pendingAttestations,
-          futureAttestations,
-          attestationPool,
-          mock(AttestationValidator.class),
-          mock(AggregateAttestationValidator.class));
+          eventBus, forkChoice, pendingAttestations, futureAttestations, attestationPool);
 
   @BeforeEach
   public void setup() {
@@ -86,7 +78,7 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.from(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
     attestationManager.onAttestation(attestation).reportExceptions();
 
@@ -99,7 +91,7 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+        ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
     attestationManager.onAttestation(aggregate).reportExceptions();
@@ -117,7 +109,7 @@ class AttestationManagerTest {
     attestationManager.onSlot(currentSlot);
 
     ValidateableAttestation attestation =
-        ValidateableAttestation.from(attestationFromSlot(futureSlot));
+        ValidateableAttestation.fromAttestation(attestationFromSlot(futureSlot));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
     attestationManager.onAttestation(attestation).reportExceptions();
@@ -147,7 +139,7 @@ class AttestationManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.from(attestationFromSlot(1, requiredBlockRoot));
+        ValidateableAttestation.fromAttestation(attestationFromSlot(1, requiredBlockRoot));
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(UNKNOWN_BLOCK))
         .thenReturn(completedFuture(SUCCESSFUL));
@@ -178,7 +170,7 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.from(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
     attestationManager.onAttestation(attestation).reportExceptions();
@@ -192,7 +184,7 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation aggregateAndProof =
-        ValidateableAttestation.aggregateFromValidator(
+        ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(forkChoice.onAttestation(any()))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));
