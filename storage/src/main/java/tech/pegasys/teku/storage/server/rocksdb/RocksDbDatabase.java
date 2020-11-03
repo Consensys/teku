@@ -34,6 +34,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -74,6 +76,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
@@ -440,12 +443,14 @@ public class RocksDbDatabase implements Database {
   }
 
   private void doUpdate(final StorageUpdate update) {
+    LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
     updateFinalizedData(
         update.getFinalizedChildToParentMap(),
         update.getFinalizedBlocks(),
         update.getFinalizedStates());
 
+    LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -463,17 +468,23 @@ public class RocksDbDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
+      LOG.trace("Adding hot blocks");
       updater.addHotBlocks(update.getHotBlocks());
+      LOG.trace("Adding hot states");
       updater.addHotStates(update.getHotStates());
 
+      LOG.trace("Adding hot state roots");
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
+      LOG.trace("Adding votes");
       updater.addVotes(update.getVotes());
 
+      LOG.trace("Deleting pruned hot blocks");
       // Delete finalized data from hot db
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
+      LOG.trace("Committing hot db changes");
       updater.commit();
     }
   }
@@ -494,6 +505,7 @@ public class RocksDbDatabase implements Database {
 
       switch (stateStorageMode) {
         case ARCHIVE:
+          LOG.trace("Recording finalized states and blocks in archive mode");
           // Get previously finalized block to build on top of
           final SignedBeaconBlock baseBlock = getFinalizedBlock();
 
@@ -527,12 +539,18 @@ public class RocksDbDatabase implements Database {
           break;
 
         case PRUNE:
+          LOG.trace("Recording blocks in prune mode");
+          int blockCount = 0;
           for (Bytes32 root : finalizedChildToParentMap.keySet()) {
             SignedBeaconBlock block =
                 blockProvider
                     .getBlock(root)
                     .join()
                     .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
+            blockCount++;
+            if ((blockCount % 100) == 0) {
+              LOG.info("Recorded {} finalized blocks", blockCount);
+            }
             updater.addFinalizedBlock(block);
           }
           break;
