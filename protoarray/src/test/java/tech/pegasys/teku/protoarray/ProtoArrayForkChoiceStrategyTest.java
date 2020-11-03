@@ -72,7 +72,6 @@ public class ProtoArrayForkChoiceStrategyTest {
         ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
 
     assertThat(future).isCompleted();
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
 
     final ArgumentCaptor<ProtoArraySnapshot> captor =
         ArgumentCaptor.forClass(ProtoArraySnapshot.class);
