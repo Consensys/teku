@@ -134,6 +134,9 @@ allprojects {
       '-Xlint:static',
       '-Werror',
     ]
+    options.forkOptions.jvmArgs += [
+        '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+    ]
 
     options.errorprone {
       disableWarningsInGeneratedCode
