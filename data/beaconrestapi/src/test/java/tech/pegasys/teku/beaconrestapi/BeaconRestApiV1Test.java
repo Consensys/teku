@@ -29,8 +29,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
@@ -104,6 +107,9 @@ public class BeaconRestApiV1Test {
     builder
         .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
         .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
+        .add(Arguments.of(GetBlock.ROUTE, GetBlock.class))
+        .add(Arguments.of(GetBlockRoot.ROUTE, GetBlockRoot.class))
+        .add(Arguments.of(GetBlockAttestations.ROUTE, GetBlockAttestations.class))
         .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
         .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
         .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))

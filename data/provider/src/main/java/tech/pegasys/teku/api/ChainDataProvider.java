@@ -13,7 +13,22 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -49,22 +64,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.IntPredicate;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 public class ChainDataProvider {
   private final BlockSelectorFactory defaultBlockSelectorFactory;
@@ -213,26 +212,34 @@ public class ChainDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock>> getBlockAsOperation(final String slotParameter) {
+  public SafeFuture<Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock>>
+      getBlockAsOperation(final String slotParameter) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
 
-    return defaultBlockSelectorFactory
-            .defaultBlockSelector(slotParameter)
-            .getSingleBlock();
+    return defaultBlockSelectorFactory.defaultBlockSelector(slotParameter).getSingleBlock();
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
     return getBlockAsOperation(slotParameter)
-            .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
+    return getBlockAsOperation(slotParameter)
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
     return getBlockAsOperation(slotParameter)
-            .thenApply(maybeBlock -> maybeBlock.map(block ->
-                    block.getMessage().getBody().getAttestations()
-                    .stream().map(Attestation::new).collect(toList())));
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    block ->
+                        block.getMessage().getBody().getAttestations().stream()
+                            .map(Attestation::new)
+                            .collect(toList())));
   }
 
   public boolean isStoreAvailable() {
