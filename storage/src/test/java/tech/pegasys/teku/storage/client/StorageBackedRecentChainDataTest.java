@@ -145,18 +145,17 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final AnchorPoint anchorPoint = AnchorPoint.fromGenesisState(INITIAL_STATE);
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(blockAndState);
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
+            .latestFinalized(anchorPoint)
             .justifiedCheckpoint(anchorPoint.getCheckpoint())
             .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
-            .finalizedCheckpoint(anchorPoint.getCheckpoint())
             .genesisTime(UInt64.ZERO)
             .time(UInt64.ZERO)
             .metricsSystem(new StubMetricsSystem())
             .votes(emptyMap())
-            .latestFinalized(blockAndState)
             .blockInformation(
                 Map.of(
                     block.getRoot(),
@@ -276,8 +275,7 @@ public class StorageBackedRecentChainDataTest {
   }
 
   @Test
-  public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException()
-      throws ExecutionException, InterruptedException {
+  public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException() {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new IOException()))
