@@ -13,18 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,12 +34,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -106,7 +105,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
       statusLogger.ifPresent(logger -> logger.performance(attestationPerformance.toString()));
-      validatorPerformanceMetrics.ifPresent(metrics -> metrics.updateAttestationPerformanceMetrics(attestationPerformance));
+      validatorPerformanceMetrics.ifPresent(
+          metrics -> metrics.updateAttestationPerformanceMetrics(attestationPerformance));
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
       attestationProductionAttemptsByEpoch.headMap(analyzedEpoch, true).clear();
     }
@@ -119,7 +119,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
         if (blockPerformance.numberOfExpectedBlocks > 0) {
           statusLogger.ifPresent(logger -> logger.performance(blockPerformance.toString()));
-          validatorPerformanceMetrics.ifPresent(metrics -> metrics.updateBlockPerformanceMetrics(blockPerformance));
+          validatorPerformanceMetrics.ifPresent(
+              metrics -> metrics.updateBlockPerformanceMetrics(blockPerformance));
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
         }

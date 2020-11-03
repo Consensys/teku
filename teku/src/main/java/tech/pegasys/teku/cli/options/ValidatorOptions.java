@@ -14,6 +14,12 @@
 package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
@@ -22,13 +28,6 @@ import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ValidatorOptions {
   @Option(
@@ -101,11 +100,12 @@ public class ValidatorOptions {
   private boolean validatorPerformanceTrackingEnabled = false;
 
   @Option(
-          names = {"--validators-performance-tracking-mode"},
-          paramLabel = "<TRACKING_MODE>",
-          description = "Set strategy for handling performance tracking",
-          arity = "1")
-  private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
+      names = {"--validators-performance-tracking-mode"},
+      paramLabel = "<TRACKING_MODE>",
+      description = "Set strategy for handling performance tracking",
+      arity = "1")
+  private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
+      ValidatorPerformanceTrackingMode.ALL;
 
   @Option(
       names = {"--validators-keystore-locking-enabled"},
