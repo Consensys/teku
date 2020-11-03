@@ -38,7 +38,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.BlockMetadataStore;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -65,9 +65,10 @@ class StoreTest extends AbstractStoreTest {
                     AnchorPoint.create(genesisCheckpoint, genesis),
                     genesisCheckpoint,
                     genesisCheckpoint,
-                    mock(BlockMetadataStore.class),
                     Collections.emptyMap(),
-                    StoreConfig.createDefault()))
+                    Collections.emptyMap(),
+                    StoreConfig.createDefault(),
+                    mock(ProtoArrayStorageChannel.class)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
   }

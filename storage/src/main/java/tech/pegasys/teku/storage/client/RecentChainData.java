@@ -21,7 +21,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -45,8 +44,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -81,7 +78,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final Counter reorgCounter;
 
   private volatile UpdatableStore store;
-  private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
@@ -133,10 +129,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .storeConfig(storeConfig)
             .build();
 
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-        ProtoArrayForkChoiceStrategy.initialize(ProtoArrayBuilder.fromAnchorPoint(anchorPoint));
-
-    final boolean result = setStore(store, forkChoiceStrategy);
+    final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
           "Failed to initialize from state: store has already been initialized");
@@ -171,14 +164,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.isEmpty();
   }
 
-  boolean setStore(UpdatableStore store, ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
+  boolean setStore(UpdatableStore store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
     }
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    this.forkChoiceStrategy = Optional.of(forkChoiceStrategy);
     storeInitializedFuture.complete(null);
     return true;
   }
@@ -193,16 +185,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .map(
             head ->
                 ForkChoiceUtil.getAncestors(
-                    forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
+                    store.getForkChoiceStrategy(), head.getRoot(), startSlot, step, count))
         .orElseGet(TreeMap::new);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
-    return ForkChoiceUtil.getAncestorsOnFork(forkChoiceStrategy.orElseThrow(), root, startSlot);
+    return ForkChoiceUtil.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
-    return forkChoiceStrategy.map(Function.identity());
+    return Optional.ofNullable(store).map(UpdatableStore::getForkChoiceStrategy);
   }
 
   public StoreTransaction startStoreTransaction() {
@@ -419,7 +411,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot, final Bytes32 headBlockRoot) {
-    return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
+    return getForkChoiceStrategy().flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
   public UInt64 getFinalizedEpoch() {
@@ -437,7 +429,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
-    forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {

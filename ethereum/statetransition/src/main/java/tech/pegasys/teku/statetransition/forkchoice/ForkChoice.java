@@ -149,20 +149,17 @@ public class ForkChoice {
                       forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
-              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
               .thenApply(__ -> result);
         });
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final ForkChoiceStrategy forkChoiceStrategy,
-      final BlockImportResult result) {
+      final SignedBeaconBlock block, final BlockImportResult result) {
     result
         .getBlockProcessingRecord()
         .ifPresent(
             record -> {
-              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
               // If the new block builds on our current chain head immediately make it the new head
               // Since fork choice works by walking down the tree selecting the child block with
               // the greatest weight, when a block has only one child it will automatically become

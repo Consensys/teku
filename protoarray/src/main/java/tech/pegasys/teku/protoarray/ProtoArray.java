@@ -199,7 +199,6 @@ public class ProtoArray {
    * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
-    System.out.println("Prune: " + finalizedRoot);
     int finalizedIndex =
         checkNotNull(indices.get(finalizedRoot), "ProtoArray: Finalized root is unknown");
 

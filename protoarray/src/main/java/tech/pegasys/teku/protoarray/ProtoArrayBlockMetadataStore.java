@@ -54,7 +54,7 @@ public class ProtoArrayBlockMetadataStore implements BlockMetadataStore {
       final Collection<BlockAndCheckpointEpochs> addedBlocks,
       final Set<Bytes32> removedBlocks,
       final Checkpoint finalizedCheckpoint) {
-    forkChoiceStrategy.applyTransaction(addedBlocks, removedBlocks);
+    forkChoiceStrategy.applyTransaction(addedBlocks, removedBlocks, finalizedCheckpoint);
     return this;
   }
 

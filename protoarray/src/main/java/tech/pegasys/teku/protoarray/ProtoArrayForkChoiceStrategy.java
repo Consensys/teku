@@ -368,7 +368,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   public void applyTransaction(
       final Collection<BlockAndCheckpointEpochs> newBlocks,
-      final Collection<Bytes32> removedBlockRoots) {
+      final Collection<Bytes32> removedBlockRoots,
+      final Checkpoint finalizedCheckpoint) {
     protoArrayLock.writeLock().lock();
     try {
       newBlocks.stream()
@@ -383,6 +384,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                       block.getCheckpointEpochs().getJustifiedEpoch(),
                       block.getCheckpointEpochs().getFinalizedEpoch()));
       removedBlockRoots.forEach(protoArray::removeBlockRoot);
+      maybePrune(finalizedCheckpoint.getRoot());
     } finally {
       protoArrayLock.writeLock().unlock();
     }

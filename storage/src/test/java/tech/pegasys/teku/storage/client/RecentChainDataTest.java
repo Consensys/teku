@@ -344,7 +344,7 @@ class RecentChainDataTest {
 
     // Set store and update best block to genesis
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).isEmpty();
-    preGenesisStorageClient.setStore(store, mock(ProtoArrayForkChoiceStrategy.class));
+    preGenesisStorageClient.setStore(store);
     preGenesisStorageClient.updateHead(genesis.getRoot(), genesis.getSlot());
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
 
