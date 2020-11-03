@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposerSlashingValidator implements OperationValidator<ProposerSlashing> {
+public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
@@ -50,8 +50,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     this.signatureValidator = proposerSlashingSignatureVerifier;
   }
 
-  @Override
-  public InternalValidationResult validateFully(ProposerSlashing slashing) {
+  public InternalValidationResult validate(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
@@ -72,23 +71,20 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     }
   }
 
-  @Override
-  public boolean validateForStateTransition(BeaconState state, ProposerSlashing slashing) {
+  private boolean passesProcessProposerSlashingConditions(ProposerSlashing slashing) {
+    BeaconState state =
+        recentChainData
+            .getBestState()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Unable to get best state for proposer slashing processing."));
     Optional<OperationInvalidReason> invalidReason = transitionValidator.validate(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing fails process proposer slashing conditions {}.",
           invalidReason.get().describe());
-      return false;
-    }
-
-    return true;
-  }
-
-  private boolean passesProcessProposerSlashingConditions(ProposerSlashing slashing) {
-    final BeaconState state = getState();
-    if (!validateForStateTransition(state, slashing)) {
       return false;
     }
 
@@ -102,14 +98,5 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
     return !receivedValidSlashingForProposerSet.contains(
         slashing.getHeader_1().getMessage().getProposer_index());
-  }
-
-  private BeaconState getState() {
-    return recentChainData
-        .getBestState()
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Unable to get best state for proposer slashing processing."));
   }
 }

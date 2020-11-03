@@ -148,7 +148,7 @@ public class BlockImporter {
     if (finalizedCheckpoint != null
         && recentChainData
             .getStore()
-            .getLatestFinalizedBlockAndState()
+            .getLatestFinalized()
             .getRoot()
             .equals(finalizedCheckpoint.getRoot())) {
       return SafeFuture.completedFuture(finalizedCheckpoint);

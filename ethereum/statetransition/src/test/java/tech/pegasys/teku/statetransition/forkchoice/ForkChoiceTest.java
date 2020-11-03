@@ -230,7 +230,7 @@ class ForkChoiceTest {
                 targetCheckpoint),
             BLSSignature.empty());
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(attestation));
+        forkChoice.onAttestation(ValidateableAttestation.fromAttestation(attestation));
     assertThat(result)
         .isCompletedWithValue(
             AttestationProcessingResult.invalid(
@@ -245,7 +245,7 @@ class ForkChoiceTest {
     // as pre-validated.
     final UInt64 updatedAttestationSlot = UInt64.valueOf(20);
     final ValidateableAttestation updatedVote =
-        ValidateableAttestation.from(
+        ValidateableAttestation.fromAttestation(
             new Attestation(
                 new Bitlist(16, 16),
                 new AttestationData(

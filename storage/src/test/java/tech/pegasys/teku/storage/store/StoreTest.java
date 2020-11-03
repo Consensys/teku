@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -60,12 +61,11 @@ class StoreTest extends AbstractStoreTest {
                     Optional.empty(),
                     genesisTime.minus(1),
                     genesisTime,
-                    genesisCheckpoint,
+                    AnchorPoint.create(genesisCheckpoint, genesis),
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Map.of(genesis.getRoot(), genesis.getParentRoot()),
                     Map.of(genesis.getRoot(), genesis.getSlot()),
-                    genesis,
                     Collections.emptyMap(),
                     StoreConfig.createDefault()))
         .isInstanceOf(IllegalArgumentException.class)
