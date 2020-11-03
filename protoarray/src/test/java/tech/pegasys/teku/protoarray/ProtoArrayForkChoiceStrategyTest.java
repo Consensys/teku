@@ -158,6 +158,7 @@ public class ProtoArrayForkChoiceStrategyTest {
       final BeaconState state = mock(BeaconState.class);
       when(state.getSlot()).thenReturn(slot);
       when(state.hash_tree_root()).thenReturn(blockHash);
+      when(state.hashTreeRoot()).thenReturn(blockHash);
       when(state.getCurrent_justified_checkpoint()).thenReturn(checkpoint);
       when(state.getFinalized_checkpoint()).thenReturn(checkpoint);
 
