@@ -134,6 +134,9 @@ allprojects {
       '-Xlint:static',
       '-Werror',
     ]
+    options.forkOptions.jvmArgs += [
+        '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+    ]
 
     options.errorprone {
       disableWarningsInGeneratedCode
@@ -198,7 +201,7 @@ allprojects {
       'root.log.level',
       'evm.log.level'
     ]
-    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = project.hasProperty("showOutput") ? project.property("showOutput") : false
     for (String name : toImport) {
       if (System.getProperty(name) != null) {
         systemProperty name, System.getProperty(name)
