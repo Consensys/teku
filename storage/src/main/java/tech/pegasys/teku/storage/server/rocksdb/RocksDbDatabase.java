@@ -207,7 +207,9 @@ public class RocksDbDatabase implements Database {
       hotUpdater.addHotBlock(
           new BlockAndCheckpointEpochs(
               anchorBlock,
-              new CheckpointEpochs(anchorCheckpoint.getEpoch(), anchorCheckpoint.getEpoch())));
+              new CheckpointEpochs(
+                  anchorState.getCurrent_justified_checkpoint().getEpoch(),
+                  anchorState.getFinalized_checkpoint().getEpoch())));
       // Save to cold storage
       finalizedUpdater.addFinalizedBlock(anchorBlock);
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
