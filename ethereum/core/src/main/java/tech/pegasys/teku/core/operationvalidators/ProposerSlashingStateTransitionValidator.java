@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.core.operationvalidators;
 
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+import java.util.Objects;
+import java.util.Optional;
+
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
-
-import java.util.Objects;
-import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<ProposerSlashing> {
@@ -45,7 +46,7 @@ public class ProposerSlashingStateTransitionValidator
                 ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT),
         () ->
             check(
-                !Objects.equals(proposerSlashing.getHeader_1(), proposerSlashing.getHeader_2()),
+                !Objects.equals(proposerSlashing.getHeader_1().getMessage(), proposerSlashing.getHeader_2().getMessage()),
                 ProposerSlashingInvalidReason.SAME_HEADER),
         () ->
             check(
