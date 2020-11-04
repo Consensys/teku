@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.io.IOException;
-import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +23,11 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+
+import java.io.IOException;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -48,6 +49,12 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
             new SignedBeaconBlock(
                 new BeaconBlock(block.getBlock().getMessage()),
                 new BLSSignature(block.getBlock().getSignature())));
+  }
+
+  @Test
+  public void shouldGetBlock_return404WhenBlockRootNotFound() throws IOException {
+    final Response response = get("0xdeadbeef");
+    assertNotFound(response);
   }
 
   public Response get(final String blockIdString) throws IOException {
