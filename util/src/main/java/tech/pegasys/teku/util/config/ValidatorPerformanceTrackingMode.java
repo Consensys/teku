@@ -18,7 +18,8 @@ import java.util.Objects;
 public enum ValidatorPerformanceTrackingMode {
   LOGGING,
   METRICS,
-  ALL;
+  ALL,
+  NONE;
 
   static ValidatorPerformanceTrackingMode fromString(final String value) {
     final String normalizedValue = value.trim().toUpperCase();

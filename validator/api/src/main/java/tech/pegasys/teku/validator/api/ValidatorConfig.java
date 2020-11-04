@@ -37,7 +37,6 @@ public class ValidatorConfig {
   private final URL validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
   private final Bytes32 graffiti;
-  private final boolean validatorPerformanceTrackingEnabled;
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
@@ -51,7 +50,7 @@ public class ValidatorConfig {
       final int validatorExternalSignerTimeout,
       final Optional<URI> beaconNodeApiEndpoint,
       final Bytes32 graffiti,
-      final boolean validatorPerformanceTrackingEnabled,
+      final Boolean validatorPerformanceTrackingEnabled,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled) {
     this.validatorKeys = validatorKeys;
@@ -61,18 +60,19 @@ public class ValidatorConfig {
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.graffiti = graffiti;
-    this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
-    this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    if (validatorPerformanceTrackingEnabled == null) {
+      this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
+    } else if (validatorPerformanceTrackingEnabled) {
+      this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
+    } else {
+      this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
+    }
   }
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public boolean isValidatorPerformanceTrackingEnabled() {
-    return validatorPerformanceTrackingEnabled;
   }
 
   public ValidatorPerformanceTrackingMode getValidatorPerformanceTrackingMode() {
@@ -136,7 +136,7 @@ public class ValidatorConfig {
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerTimeout;
     private Bytes32 graffiti;
-    private boolean validatorPerformanceTrackingEnabled;
+    private Boolean validatorPerformanceTrackingEnabled;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
@@ -191,7 +191,7 @@ public class ValidatorConfig {
     }
 
     public Builder validatorPerformanceTrackingEnabled(
-        boolean validatorPerformanceTrackingEnabled) {
+        Boolean validatorPerformanceTrackingEnabled) {
       this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
       return this;
     }

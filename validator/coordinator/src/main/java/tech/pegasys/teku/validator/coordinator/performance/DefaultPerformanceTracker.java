@@ -119,6 +119,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
           statusLogger.performance(attestationPerformance.toString());
           validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
           break;
+        case NONE:
+          throw new IllegalStateException(
+              "Performance Tracker should not be running in NONE mode.");
       }
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
       attestationProductionAttemptsByEpoch.headMap(analyzedEpoch, true).clear();
@@ -142,6 +145,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
               statusLogger.performance(blockPerformance.toString());
               validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
               break;
+            case NONE:
+              throw new IllegalStateException(
+                  "Performance Tracker should not be running in NONE mode.");
           }
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();

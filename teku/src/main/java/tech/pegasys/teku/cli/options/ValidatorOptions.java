@@ -96,8 +96,9 @@ public class ValidatorOptions {
       paramLabel = "<BOOLEAN>",
       description = "Enable validator performance tracking",
       fallbackValue = "true",
-      arity = "0..1")
-  private boolean validatorPerformanceTrackingEnabled = false;
+      arity = "0..1",
+      hidden = true)
+  private Boolean validatorPerformanceTrackingEnabled = null;
 
   @Option(
       names = {"--validators-performance-tracking-mode"},
