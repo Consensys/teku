@@ -13,6 +13,58 @@
 
 package tech.pegasys.teku.api;
 
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.response.GetBlockResponse;
+import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlockHeader;
+import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.BeaconValidators;
+import tech.pegasys.teku.api.schema.Committee;
+import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.schema.Root;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
+import tech.pegasys.teku.api.schema.Validator;
+import tech.pegasys.teku.api.schema.ValidatorWithIndex;
+import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.StateStorageMode;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
@@ -33,54 +85,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.GetBlockResponse;
-import tech.pegasys.teku.api.response.GetForkResponse;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.debug.ChainHead;
-import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlockHeader;
-import tech.pegasys.teku.api.schema.BeaconHead;
-import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.api.schema.BeaconValidators;
-import tech.pegasys.teku.api.schema.Committee;
-import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.Root;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
-import tech.pegasys.teku.api.schema.Validator;
-import tech.pegasys.teku.api.schema.ValidatorWithIndex;
-import tech.pegasys.teku.api.schema.ValidatorsRequest;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
@@ -303,7 +307,6 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
     final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockByBlockRoot(blockRoot);
     verify(mockCombinedChainDataClient).getBlockByBlockRoot(blockRoot);
-
     final SignedBeaconBlock result = future.get().get().signedBeaconBlock;
     assertThat(result)
         .usingRecursiveComparison()
@@ -908,6 +911,39 @@ public class ChainDataProviderTest {
             provider.getValidatorBalancesFromState(
                 internalState, List.of("0", "100", "1023", "1024", "1024000")))
         .hasSize(3);
+  }
+
+  @Test
+  public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
+    final ChainDataProvider provider =
+            new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final Optional<Root> response = provider.getBlockRoot("head").get();
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
+  }
+
+  @Test
+  public void getBlockAttestations_shouldReturnAttestationsOfBlock() throws Exception {
+    final ChainDataProvider provider =
+            new ChainDataProvider(recentChainData, combinedChainDataClient);
+    ChainBuilder chainBuilder = storageSystem.chainBuilder();
+
+    ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
+    AttestationGenerator attestationGenerator =
+            new AttestationGenerator(chainBuilder.getValidatorKeys());
+    tech.pegasys.teku.datastructures.operations.Attestation attestation1 =
+            attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
+    tech.pegasys.teku.datastructures.operations.Attestation attestation2 =
+            attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot().increment());
+    blockOptions.addAttestation(attestation1);
+    blockOptions.addAttestation(attestation2);
+    SignedBlockAndState newHead = storageSystem.chainBuilder().generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
+    storageSystem.chainUpdater().saveBlock(newHead);
+    storageSystem.chainUpdater().updateBestBlock(newHead);
+
+    final Optional<List<Attestation>> response = provider.getBlockAttestations("head").get();
+    assertThat(response).isPresent();
+    assertThat(response.get()).containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(

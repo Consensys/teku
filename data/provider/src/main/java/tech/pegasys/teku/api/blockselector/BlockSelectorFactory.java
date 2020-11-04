@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.api.blockselector;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -23,6 +20,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class BlockSelectorFactory {
   private final CombinedChainDataClient client;
@@ -42,7 +43,11 @@ public class BlockSelectorFactory {
    */
   public BlockSelector defaultBlockSelector(final String selectorMethod) {
     if (selectorMethod.startsWith("0x")) {
-      return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      try {
+        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid block: " + selectorMethod);
+      }
     }
     switch (selectorMethod) {
       case ("head"):
