@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.util.Objects;
-
 public enum ValidatorPerformanceTrackingMode {
   LOGGING,
   METRICS,
   ALL,
   NONE;
 
-  static ValidatorPerformanceTrackingMode fromString(final String value) {
-    final String normalizedValue = value.trim().toUpperCase();
-    for (ValidatorPerformanceTrackingMode mode : ValidatorPerformanceTrackingMode.values()) {
-      if (Objects.equals(mode.name(), normalizedValue)) {
-        return mode;
-      }
-    }
-    throw new IllegalArgumentException("Unknown value supplied: " + value);
+  public boolean isEnabled() {
+    return this != NONE;
+  }
+
+  public boolean isMetricsEnabled() {
+    return this != NONE && this != LOGGING;
+  }
+
+  public boolean isLoggingEnabled() {
+    return this != NONE && this != METRICS;
   }
 }
