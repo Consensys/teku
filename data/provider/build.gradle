@@ -23,7 +23,3 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':storage'))
 }
-
-test {
-    testLogging.showStandardStreams = true
-}
