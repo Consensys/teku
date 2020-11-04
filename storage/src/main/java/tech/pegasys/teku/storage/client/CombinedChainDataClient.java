@@ -423,7 +423,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
 
-    return Optional.ofNullable(getStore().getLatestFinalizedBlockAndState().getBlock());
+    return Optional.ofNullable(getStore().getLatestFinalized().getBlock());
   }
 
   public Optional<BeaconState> getFinalizedState() {
@@ -431,7 +431,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
 
-    return Optional.of(getStore().getLatestFinalizedBlockAndState().getState());
+    return Optional.of(getStore().getLatestFinalized().getState());
   }
 
   public SafeFuture<Optional<BeaconState>> getJustifiedState() {

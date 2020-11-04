@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -111,7 +112,7 @@ public class BlockValidatorTest {
     BLSSignature blockSignature =
         beaconChainUtil
             .getSigner(proposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().get().getForkInfo())
+            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
 
@@ -151,7 +152,7 @@ public class BlockValidatorTest {
     BLSSignature blockSignature =
         beaconChainUtil
             .getSigner(invalidProposerIndex.intValue())
-            .signBlock(block, recentChainData.getBestState().get().getForkInfo())
+            .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =
         new SignedBeaconBlock(block, blockSignature);
@@ -174,7 +175,7 @@ public class BlockValidatorTest {
   }
 
   @Test
-  void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() throws Exception {
+  void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
     List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(4);
 
     StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
@@ -200,7 +201,8 @@ public class BlockValidatorTest {
     SignedBlockAndState blockAndState =
         chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
     chainUpdater.saveBlockTime(blockAndState);
-    InternalValidationResult result = blockValidator.validate(blockAndState.getBlock()).join();
-    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
+    final SafeFuture<InternalValidationResult> result =
+        blockValidator.validate(blockAndState.getBlock());
+    assertThat(result).isCompletedWithValue(InternalValidationResult.REJECT);
   }
 }

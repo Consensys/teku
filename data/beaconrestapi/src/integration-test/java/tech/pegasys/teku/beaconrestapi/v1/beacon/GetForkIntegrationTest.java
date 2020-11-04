@@ -20,11 +20,12 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 
 public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-
   @BeforeEach
   public void setup() {
     startRestAPIAtGenesis();
@@ -36,13 +37,12 @@ public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegration
     setCurrentSlot(13);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
-  }
+    final GetStateForkResponse body =
+        jsonProvider.jsonToObject(response.body().string(), GetStateForkResponse.class);
+    final Fork data = body.data;
 
-  @Test
-  public void shouldGetForkChoiceAtHeadSlot() throws IOException {
-    createBlocksAtSlots(10, 11, 12);
-    final Response response = get("head");
-    assertThat(response.code()).isEqualTo(SC_OK);
+    final Fork expected = new Fork(recentChainData.getBestState().get().getFork());
+    assertThat(expected).isEqualTo(data);
   }
 
   public Response get(final String stateIdString) throws IOException {

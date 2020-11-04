@@ -33,7 +33,8 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -49,8 +50,8 @@ public class AttestationSubnetSubscriptionsTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
-      mock(OperationProcessor.class);
+  private final GossipedItemConsumer<ValidateableAttestation> attestationConsumer =
+      mock(GossipedItemConsumer.class);
 
   private AttestationSubnetSubscriptions subnetSubscriptions;
 
@@ -59,7 +60,12 @@ public class AttestationSubnetSubscriptionsTest {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            asyncRunner, gossipNetwork, gossipEncoding, recentChainData, processor);
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            mock(AttestationValidator.class),
+            recentChainData,
+            attestationConsumer);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

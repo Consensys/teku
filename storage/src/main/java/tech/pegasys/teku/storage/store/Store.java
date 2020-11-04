@@ -43,6 +43,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -69,18 +70,17 @@ class Store implements UpdatableStore {
 
   private final BlockProvider blockProvider;
 
-  private final Optional<Checkpoint> anchor;
+  private final Optional<Checkpoint> initialCheckpoint;
   BlockTree blockTree;
   UInt64 time;
   UInt64 genesis_time;
+  AnchorPoint finalizedAnchor;
   Checkpoint justified_checkpoint;
-  Checkpoint finalized_checkpoint;
   Checkpoint best_justified_checkpoint;
   final CachingTaskQueue<Bytes32, SignedBlockAndState> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates;
   final Map<UInt64, VoteTracker> votes;
-  SignedBlockAndState finalizedBlockAndState;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -88,14 +88,13 @@ class Store implements UpdatableStore {
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
       final CachingTaskQueue<Bytes32, SignedBlockAndState> states,
-      final Optional<Checkpoint> anchor,
+      final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesis_time,
+      final AnchorPoint finalizedAnchor,
       final Checkpoint justified_checkpoint,
-      final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
       final BlockTree blockTree,
-      final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates) {
@@ -113,27 +112,26 @@ class Store implements UpdatableStore {
     this.checkpointStates = checkpointStates;
 
     // Store instance variables
-    this.anchor = anchor;
+    this.initialCheckpoint = initialCheckpoint;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
-    this.finalized_checkpoint = finalized_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = blocks;
     this.votes = new HashMap<>(votes);
     this.blockTree = blockTree;
 
     // Track latest finalized block
-    this.finalizedBlockAndState = finalizedBlockAndState;
-    states.cache(finalizedBlockAndState.getRoot(), finalizedBlockAndState);
+    this.finalizedAnchor = finalizedAnchor;
+    states.cache(finalizedAnchor.getRoot(), finalizedAnchor.getBlockAndState());
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
         BlockProvider.combined(
             fromDynamicMap(
                 () -> {
-                  SignedBlockAndState finalized = this.getLatestFinalizedBlockAndState();
+                  SignedBlockAndState finalized = this.getLatestFinalized().getBlockAndState();
                   return Map.of(finalized.getRoot(), finalized.getBlock());
                 }),
             fromMap(this.blocks),
@@ -145,15 +143,14 @@ class Store implements UpdatableStore {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
-      final Optional<Checkpoint> anchor,
+      final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesisTime,
+      final AnchorPoint finalizedAnchor,
       final Checkpoint justifiedCheckpoint,
-      final Checkpoint finalizedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, Bytes32> childToParentRoot,
       final Map<Bytes32, UInt64> rootToSlotMap,
-      final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config) {
 
@@ -170,7 +167,7 @@ class Store implements UpdatableStore {
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
 
     // Build block tree structure
-    HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
+    HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedAnchor.getRoot());
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
     final BlockTree blockTree = BlockTree.create(treeBuilder.build(), rootToSlotMap);
     if (blockTree.size() < childToParentRoot.size()) {
@@ -186,14 +183,13 @@ class Store implements UpdatableStore {
         blockProvider,
         stateAndBlockProvider,
         stateTaskQueue,
-        anchor,
+        initialCheckpoint,
         time,
         genesisTime,
+        finalizedAnchor,
         justifiedCheckpoint,
-        finalizedCheckpoint,
         bestJustifiedCheckpoint,
         blockTree,
-        finalizedBlockAndState,
         votes,
         blocks,
         checkpointStateTaskQueue);
@@ -256,8 +252,8 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<Checkpoint> getAnchor() {
-    return anchor;
+  public Optional<Checkpoint> getInitialCheckpoint() {
+    return initialCheckpoint;
   }
 
   @Override
@@ -274,17 +270,17 @@ class Store implements UpdatableStore {
   public Checkpoint getFinalizedCheckpoint() {
     readLock.lock();
     try {
-      return finalized_checkpoint;
+      return finalizedAnchor.getCheckpoint();
     } finally {
       readLock.unlock();
     }
   }
 
   @Override
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+  public AnchorPoint getLatestFinalized() {
     readLock.lock();
     try {
-      return finalizedBlockAndState;
+      return finalizedAnchor;
     } finally {
       readLock.unlock();
     }
@@ -294,7 +290,7 @@ class Store implements UpdatableStore {
   public UInt64 getLatestFinalizedBlockSlot() {
     readLock.lock();
     try {
-      return finalizedBlockAndState.getSlot();
+      return finalizedAnchor.getBlockSlot();
     } finally {
       readLock.unlock();
     }
@@ -397,8 +393,8 @@ class Store implements UpdatableStore {
 
     readLock.lock();
     try {
-      finalizedCheckpoint = this.finalized_checkpoint;
-      finalizedBlockAndState = this.finalizedBlockAndState;
+      finalizedCheckpoint = this.finalizedAnchor.getCheckpoint();
+      finalizedBlockAndState = this.finalizedAnchor.getBlockAndState();
     } finally {
       readLock.unlock();
     }
@@ -491,7 +487,7 @@ class Store implements UpdatableStore {
                       null, new SlotAndBlockRoot(blockTree.getSlot(root), root));
                 }
               });
-      treeBuilder.rootHash(finalizedBlockAndState.getRoot());
+      treeBuilder.rootHash(finalizedAnchor.getRoot());
     } finally {
       readLock.unlock();
     }
@@ -547,7 +543,7 @@ class Store implements UpdatableStore {
     if (baseBlockRoot.get() == null) {
       // If we haven't found a base state yet, we must have walked back to the latest finalized
       // block, check here for the base state
-      final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
+      final AnchorPoint finalized = getLatestFinalized();
       if (!treeBuilder.contains(finalized.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
         return Optional.empty();

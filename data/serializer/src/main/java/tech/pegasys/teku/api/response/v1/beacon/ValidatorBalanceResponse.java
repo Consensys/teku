@@ -17,8 +17,10 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -44,8 +46,13 @@ public class ValidatorBalanceResponse {
     this.balance = balance;
   }
 
-  public static ValidatorBalanceResponse fromState(final BeaconState state, final Integer index) {
-    return new ValidatorBalanceResponse(UInt64.valueOf(index), state.getBalances().get(index));
+  public static Optional<ValidatorBalanceResponse> fromState(
+      final BeaconState state, final Integer index) {
+    if (index >= state.getValidators().size()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new ValidatorBalanceResponse(UInt64.valueOf(index), state.getBalances().get(index)));
   }
 
   @Override
@@ -59,5 +66,10 @@ public class ValidatorBalanceResponse {
   @Override
   public int hashCode() {
     return Objects.hashCode(index, balance);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("index", index).add("balance", balance).toString();
   }
 }

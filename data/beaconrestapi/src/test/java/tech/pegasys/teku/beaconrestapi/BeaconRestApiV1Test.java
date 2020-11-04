@@ -35,7 +35,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
@@ -131,12 +131,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
         .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
         .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
-        .add(
-            Arguments.of(
-                GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
-        .add(
-            Arguments.of(
-                GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class))
+        .add(Arguments.of(GetStateCommittees.ROUTE, GetStateCommittees.class))
         .add(Arguments.of(GetAttestations.ROUTE, GetAttestations.class))
         .add(Arguments.of(GetAttesterSlashings.ROUTE, GetAttesterSlashings.class))
         .add(Arguments.of(GetProposerSlashings.ROUTE, GetProposerSlashings.class))

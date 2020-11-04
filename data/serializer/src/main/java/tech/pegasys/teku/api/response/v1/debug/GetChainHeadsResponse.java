@@ -11,11 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.api.response.v1.debug;
 
-public enum InternalValidationResult {
-  ACCEPT,
-  SAVE_FOR_FUTURE,
-  IGNORE,
-  REJECT
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+
+public class GetChainHeadsResponse {
+  public final List<ChainHead> data;
+
+  @JsonCreator
+  public GetChainHeadsResponse(@JsonProperty("data") final List<ChainHead> data) {
+    this.data = data;
+  }
 }

@@ -11,12 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.api.response.v1.beacon;
 
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-public interface OperationValidator<T> {
-  InternalValidationResult validateFully(T operation);
+public class GetStateCommitteesResponse {
+  @JsonProperty("data")
+  public final List<EpochCommitteeResponse> data;
 
-  boolean validateForStateTransition(BeaconState state, T operation);
+  @JsonCreator
+  public GetStateCommitteesResponse(@JsonProperty("data") final List<EpochCommitteeResponse> data) {
+    this.data = data;
+  }
 }
