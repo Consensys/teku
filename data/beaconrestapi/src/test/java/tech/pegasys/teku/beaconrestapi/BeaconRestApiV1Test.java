@@ -44,6 +44,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalan
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -158,7 +159,9 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
 
     // config
-    builder.add(Arguments.of(GetSpec.ROUTE, GetSpec.class));
+    builder
+        .add(Arguments.of(GetSpec.ROUTE, GetSpec.class))
+        .add(Arguments.of(GetDepositContract.ROUTE, GetDepositContract.class));
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
