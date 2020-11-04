@@ -36,44 +36,34 @@ import tech.pegasys.teku.util.config.Constants;
  */
 public class AnchorPoint extends StateAndBlockSummary {
   private final Checkpoint checkpoint;
-  private final BeaconBlockHeader blockHeader;
-  private final Optional<SignedBeaconBlock> block;
   private final boolean isGenesis;
 
   private AnchorPoint(
-      final Checkpoint checkpoint,
-      final BeaconState state,
-      final BeaconBlockHeader header,
-      final Optional<SignedBeaconBlock> block) {
-    super(block.map(BeaconBlockSummary.class::cast).orElse(header), state);
+      final Checkpoint checkpoint, final BeaconState state, final BeaconBlockSummary blockSummary) {
+    super(blockSummary, state);
     checkArgument(
-        checkpoint.getRoot().equals(header.hashTreeRoot()), "Checkpoint and block must match");
+        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
 
-    this.blockHeader = header;
     this.checkpoint = checkpoint;
-    this.block = block;
     this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
   }
 
   public static AnchorPoint create(
       Checkpoint checkpoint, BeaconState state, Optional<SignedBeaconBlock> block) {
-    final BeaconBlockHeader header =
-        block.map(BeaconBlockHeader::fromBlock).orElseGet(() -> BeaconBlockHeader.fromState(state));
-    return new AnchorPoint(checkpoint, state, header, block);
+    final BeaconBlockSummary blockSummary =
+        block
+            .map(BeaconBlockSummary.class::cast)
+            .orElseGet(() -> BeaconBlockHeader.fromState(state));
+    return new AnchorPoint(checkpoint, state, blockSummary);
   }
 
   public static AnchorPoint create(
       Checkpoint checkpoint, SignedBeaconBlock block, BeaconState state) {
-    return new AnchorPoint(
-        checkpoint, state, BeaconBlockHeader.fromBlock(block), Optional.of(block));
+    return new AnchorPoint(checkpoint, state, block);
   }
 
   public static AnchorPoint create(Checkpoint checkpoint, SignedBlockAndState blockAndState) {
-    return new AnchorPoint(
-        checkpoint,
-        blockAndState.getState(),
-        BeaconBlockHeader.fromBlock(blockAndState.getBlock()),
-        Optional.of(blockAndState.getBlock()));
+    return new AnchorPoint(checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
@@ -89,11 +79,7 @@ public class AnchorPoint extends StateAndBlockSummary {
     final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 
-    return new AnchorPoint(
-        genesisCheckpoint,
-        genesisState,
-        BeaconBlockHeader.fromBlock(genesisBlock),
-        Optional.of(signedGenesisBlock));
+    return new AnchorPoint(genesisCheckpoint, genesisState, signedGenesisBlock);
   }
 
   public static AnchorPoint fromInitialBlockAndState(final SignedBlockAndState blockAndState) {
@@ -110,8 +96,7 @@ public class AnchorPoint extends StateAndBlockSummary {
     final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
 
-    return new AnchorPoint(
-        checkpoint, state, BeaconBlockHeader.fromBlock(block), Optional.of(block));
+    return new AnchorPoint(checkpoint, state, block);
   }
 
   public boolean isGenesis() {
@@ -122,12 +107,8 @@ public class AnchorPoint extends StateAndBlockSummary {
     return checkpoint;
   }
 
-  public BeaconBlockHeader getBlockHeader() {
-    return blockHeader;
-  }
-
   public UInt64 getBlockSlot() {
-    return blockHeader.getSlot();
+    return blockSummary.getSlot();
   }
 
   public UInt64 getEpoch() {
@@ -144,13 +125,11 @@ public class AnchorPoint extends StateAndBlockSummary {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     final AnchorPoint that = (AnchorPoint) o;
-    return Objects.equals(checkpoint, that.checkpoint)
-        && Objects.equals(blockHeader, that.blockHeader)
-        && Objects.equals(block, that.block);
+    return isGenesis == that.isGenesis && Objects.equals(checkpoint, that.checkpoint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), checkpoint, blockHeader, block);
+    return Objects.hash(super.hashCode(), checkpoint, isGenesis);
   }
 }
