@@ -28,6 +28,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.Eth1Address;
 
 public class GetDepositContract implements Handler {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
@@ -35,10 +36,14 @@ public class GetDepositContract implements Handler {
   private final String depositContractAddress;
   private final JsonProvider jsonProvider;
 
-  public GetDepositContract(final String depositContractAddress, final JsonProvider jsonProvider) {
+  public GetDepositContract(
+      final Optional<Eth1Address> depositContractAddress, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.depositContractResponse = Optional.empty();
-    this.depositContractAddress = depositContractAddress;
+    this.depositContractAddress =
+        depositContractAddress
+            .map(Eth1Address::toHexString)
+            .orElse("0xdddddddddddddddddddddddddddddddddddddddd");
   }
 
   @OpenApi(

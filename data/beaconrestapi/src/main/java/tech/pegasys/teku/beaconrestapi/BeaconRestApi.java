@@ -34,6 +34,7 @@ import io.swagger.v3.oas.models.info.License;
 import java.io.IOException;
 import java.net.BindException;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -157,7 +158,7 @@ public class BeaconRestApi {
     app.get(GetSpec.ROUTE, new GetSpec(jsonProvider));
     app.get(
         GetDepositContract.ROUTE,
-        new GetDepositContract(depositAddress.toHexString(), jsonProvider));
+        new GetDepositContract(Optional.ofNullable(depositAddress), jsonProvider));
   }
 
   private void addV1DebugHandlers(final DataProvider dataProvider) {
