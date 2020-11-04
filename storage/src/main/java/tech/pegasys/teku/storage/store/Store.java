@@ -412,7 +412,7 @@ class Store implements UpdatableStore {
             maybeState ->
                 CheckpointState.create(
                     finalized.getCheckpoint(),
-                    finalized.getBlockHeader(),
+                    finalized.getBlockSummary(),
                     maybeState.orElseThrow()));
   }
 

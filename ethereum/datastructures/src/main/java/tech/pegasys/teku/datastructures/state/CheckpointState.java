@@ -19,40 +19,33 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CheckpointState {
 
   private final Checkpoint checkpoint;
-  private final BeaconBlockHeader header;
+  private final BeaconBlockSummary block;
   private final BeaconState state;
 
   private CheckpointState(
-      final Checkpoint checkpoint, final BeaconBlockHeader header, final BeaconState state) {
+      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
     checkNotNull(checkpoint);
-    checkNotNull(header);
+    checkNotNull(block);
     checkNotNull(state);
-    checkArgument(
-        checkpoint.getRoot().equals(header.hashTreeRoot()), "Block must match checkpoint root");
+    checkArgument(checkpoint.getRoot().equals(block.getRoot()), "Block must match checkpoint root");
     checkArgument(
         state.getSlot().equals(checkpoint.getEpochStartSlot()),
         "State must be advanced to checkpoint epoch boundary slot");
 
     this.checkpoint = checkpoint;
-    this.header = header;
+    this.block = block;
     this.state = state;
   }
 
   public static CheckpointState create(
-      final Checkpoint checkpoint, final BeaconBlockHeader header, final BeaconState state) {
-    return new CheckpointState(checkpoint, header, state);
-  }
-
-  public static CheckpointState create(
-      final Checkpoint checkpoint, final SignedBeaconBlock block, final BeaconState state) {
-    return new CheckpointState(checkpoint, BeaconBlockHeader.fromBlock(block), state);
+      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
+    return new CheckpointState(checkpoint, block, state);
   }
 
   public Checkpoint getCheckpoint() {
@@ -64,11 +57,11 @@ public class CheckpointState {
   }
 
   public Bytes32 getRoot() {
-    return header.hashTreeRoot();
+    return block.getRoot();
   }
 
   public UInt64 getBlockSlot() {
-    return header.getSlot();
+    return block.getSlot();
   }
 
   /** @return The checkpoint state which is advanced to the checkpoint epoch boundary */
@@ -86,20 +79,20 @@ public class CheckpointState {
     }
     final CheckpointState that = (CheckpointState) o;
     return Objects.equals(checkpoint, that.checkpoint)
-        && Objects.equals(header, that.header)
+        && Objects.equals(block, that.block)
         && Objects.equals(state, that.state);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(checkpoint, header, state);
+    return Objects.hash(checkpoint, block, state);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("checkpoint", checkpoint)
-        .add("block", header)
+        .add("block", block)
         .add("state", state)
         .toString();
   }
