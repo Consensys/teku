@@ -52,8 +52,4 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testImplementation 'org.awaitility:awaitility'
-
-  test {
-    testLogging.showStandardStreams = true
-  }
 }

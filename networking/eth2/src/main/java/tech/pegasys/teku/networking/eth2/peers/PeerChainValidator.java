@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,9 +39,9 @@ public class PeerChainValidator {
   // If we're missing historical blocks and are unable to verify a peer's finalized checkpoint is on
   // our chain, this boolean determines whether we should allow them to connect or not.
   // TODO(#3064) - We should implement a historical sync backwards so we can support peers who are
-  //  behind our anchorPoint.  Disabling this for now since we won't be able to serve them blocks
+  //  behind our startup epoch.  Disabling this for now since we won't be able to serve them blocks
   //  they need.
-  private static final boolean ALLOW_NODES_PRIOR_TO_LOCAL_ANCHORPOINT_TO_CONNECT = false;
+  private static final boolean ALLOW_NODES_PRIOR_TO_INITIAL_EPOCH_TO_CONNECT = false;
 
   private final CombinedChainDataClient chainDataClient;
   private final Counter validationStartedCounter;
@@ -52,17 +51,17 @@ public class PeerChainValidator {
 
   private final Optional<Checkpoint> requiredCheckpoint;
   private final AtomicBoolean requiredCheckpointVerified = new AtomicBoolean(false);
-  private final boolean allowNodesPriorToLocalAnchorPointToConnect;
+  private final boolean allowNodesPriorToInitialEpochToConnect;
 
   @VisibleForTesting
   PeerChainValidator(
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
       final Optional<Checkpoint> requiredCheckpoint,
-      final boolean allowNodesPriorToLocalAnchorPointToConnect) {
+      final boolean allowNodesPriorToInitialEpochToConnect) {
     this.chainDataClient = chainDataClient;
     this.requiredCheckpoint = requiredCheckpoint;
-    this.allowNodesPriorToLocalAnchorPointToConnect = allowNodesPriorToLocalAnchorPointToConnect;
+    this.allowNodesPriorToInitialEpochToConnect = allowNodesPriorToInitialEpochToConnect;
 
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
@@ -84,7 +83,7 @@ public class PeerChainValidator {
         metricsSystem,
         chainDataClient,
         requiredCheckpoint,
-        ALLOW_NODES_PRIOR_TO_LOCAL_ANCHORPOINT_TO_CONNECT);
+        ALLOW_NODES_PRIOR_TO_INITIAL_EPOCH_TO_CONNECT);
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
@@ -183,13 +182,6 @@ public class PeerChainValidator {
       LOG.trace(
           "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
-          .exceptionally(
-              err -> {
-                if (Throwables.getRootCause(err) instanceof NullPointerException) {
-                  return Optional.empty();
-                }
-                throw new RuntimeException(err);
-              })
           // When requesting block by root, there is no explicit guarantee that the block is
           // canonical.
           // So, double-check by requesting the block by slot to make sure the peer considers this
@@ -286,14 +278,14 @@ public class PeerChainValidator {
                     .map(block -> validateBlockRootsMatch(peer, block, status.getFinalizedRoot()))
                     .orElseGet(
                         () -> {
-                          if (allowNodesPriorToLocalAnchorPointToConnect) {
+                          if (allowNodesPriorToInitialEpochToConnect) {
                             LOG.trace(
                                 "Missing finalized historical block corresponding to peer's latest finalized checkpoint.  Allow peer to connect without verifying remote finalized checkpoint.");
                           } else {
                             LOG.trace(
                                 "Missing finalized historical block corresponding to peer's latest finalized checkpoint.  Drop peer connection.");
                           }
-                          return allowNodesPriorToLocalAnchorPointToConnect;
+                          return allowNodesPriorToInitialEpochToConnect;
                         }));
   }
 

@@ -15,6 +15,8 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -40,11 +42,6 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public TreeNode getDefaultTree() {
-    return TreeUtil.ZERO_LEAF;
-  }
-
-  @Override
   public C createFromBackingNode(TreeNode node) {
     return createFromBackingNode(node, 0);
   }
@@ -53,10 +50,36 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract C createFromBackingNode(TreeNode node, int internalIndex);
 
   public TreeNode createBackingNode(C newValue) {
-    return updateBackingNode(TreeUtil.ZERO_LEAF, 0, newValue);
+    return updateBackingNode(TreeUtil.EMPTY_LEAF, 0, newValue);
   }
 
   @Override
   public abstract TreeNode updateBackingNode(
       TreeNode srcNode, int internalIndex, ViewRead newValue);
+
+  private int getSSZBytesSize() {
+    return (getBitsSize() + 7) / 8;
+  }
+
+  @Override
+  public boolean isFixedSize() {
+    return true;
+  }
+
+  @Override
+  public int getFixedPartSize() {
+    return getSSZBytesSize();
+  }
+
+  @Override
+  public int getVariablePartSize(TreeNode node) {
+    return 0;
+  }
+
+  @Override
+  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+    Bytes ret = node.hashTreeRoot().slice(0, getSSZBytesSize());
+    writer.accept(ret);
+    return ret.size();
+  }
 }

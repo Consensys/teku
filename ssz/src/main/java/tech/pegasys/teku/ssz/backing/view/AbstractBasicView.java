@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.BasicView;
 import tech.pegasys.teku.ssz.backing.ViewWrite;
@@ -25,6 +27,7 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   private final C value;
 
   protected AbstractBasicView(C value, BasicViewType<V> type) {
+    checkNotNull(value);
     this.type = type;
     this.value = value;
   }

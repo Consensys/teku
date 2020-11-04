@@ -36,7 +36,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public interface Database extends AutoCloseable {
 
-  void storeAnchorPoint(AnchorPoint genesis);
+  void storeInitialAnchor(AnchorPoint genesis);
 
   void update(StorageUpdate event);
 
@@ -59,6 +59,9 @@ public interface Database extends AutoCloseable {
    * @return Returns the finalized block proposed at this slot, if such a block exists
    */
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
+
+  /** @return The earliest available block's slot */
+  Optional<UInt64> getEarliestAvailableBlockSlot();
 
   /**
    * Returns the latest finalized block at or prior to the given slot

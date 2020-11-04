@@ -69,6 +69,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void setup() {
     when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(completedFuture(Optional.of(UInt64.valueOf(0))));
   }
 
   @Test
@@ -87,6 +89,46 @@ class BeaconBlocksByRangeMessageHandlerTest {
     requestBlocks(startBlock, count, skip);
 
     verifyNoBlocksReturned();
+  }
+
+  @Test
+  public void shouldReturnErrorWhenFirstBlockIsMissing() {
+    final int startBlock = 1;
+    final int count = 5;
+    final int skip = 1;
+    withCanonicalHeadBlock(BLOCKS.get(8));
+    withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
+
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(completedFuture(Optional.of(UInt64.valueOf(2))));
+
+    requestBlocks(startBlock, count, skip);
+
+    final RpcException expectedError =
+        new RpcException.HistoricalDataUnavailableException(
+            "Requested historical blocks are currently unavailable");
+    verify(listener).completeWithErrorResponse(expectedError);
+    verifyNoMoreInteractions(listener);
+  }
+
+  @Test
+  public void shouldReturnErrorWhenEarliestHistoricalBlockUnknown() {
+    final int startBlock = 1;
+    final int count = 5;
+    final int skip = 1;
+    withCanonicalHeadBlock(BLOCKS.get(8));
+    withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
+
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(completedFuture(Optional.empty()));
+
+    requestBlocks(startBlock, count, skip);
+
+    final RpcException expectedError =
+        new RpcException.HistoricalDataUnavailableException(
+            "Requested historical blocks are currently unavailable");
+    verify(listener).completeWithErrorResponse(expectedError);
+    verifyNoMoreInteractions(listener);
   }
 
   @Test

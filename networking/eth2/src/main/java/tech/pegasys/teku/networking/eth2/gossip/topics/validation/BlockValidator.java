@@ -78,7 +78,7 @@ public class BlockValidator {
     }
 
     if (!recentChainData.containsBlock(block.getParent_root())) {
-      LOG.trace("Block parent is not availalbe. It will be saved for future processing");
+      LOG.trace("Block parent is not available. It will be saved for future processing");
       return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 

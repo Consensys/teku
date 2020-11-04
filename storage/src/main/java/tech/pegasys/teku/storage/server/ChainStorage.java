@@ -103,8 +103,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public void onAnchorPoint(final AnchorPoint anchorPoint) {
-    database.storeAnchorPoint(anchorPoint);
+  public void onChainInitialized(final AnchorPoint initialAnchor) {
+    database.storeInitialAnchor(initialAnchor);
   }
 
   @Override
@@ -113,6 +113,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
         () -> {
           database.updateWeakSubjectivityState(weakSubjectivityUpdate);
         });
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return SafeFuture.of(database::getEarliestAvailableBlockSlot);
   }
 
   @Override

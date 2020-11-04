@@ -199,6 +199,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return of(CompletableFuture.anyOf(futures));
   }
 
+  public SafeFuture<Void> toVoid() {
+    return thenAccept(__ -> {});
+  }
+
   @Override
   public <U> SafeFuture<U> newIncompleteFuture() {
     return new SafeFuture<>();

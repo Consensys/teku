@@ -15,8 +15,11 @@ package tech.pegasys.teku.api.response.v1.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class FinalityCheckpointsResponse {
   @JsonProperty("previous_justified")
@@ -39,9 +42,36 @@ public class FinalityCheckpointsResponse {
   }
 
   public static FinalityCheckpointsResponse fromState(BeaconState state) {
+    if (state.getFinalized_checkpoint().getEpoch().equals(UInt64.ZERO)) {
+      return new FinalityCheckpointsResponse(Checkpoint.EMPTY, Checkpoint.EMPTY, Checkpoint.EMPTY);
+    }
     return new FinalityCheckpointsResponse(
         new Checkpoint(state.getPrevious_justified_checkpoint()),
         new Checkpoint(state.getCurrent_justified_checkpoint()),
         new Checkpoint(state.getFinalized_checkpoint()));
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final FinalityCheckpointsResponse that = (FinalityCheckpointsResponse) o;
+    return Objects.equals(previous_justified, that.previous_justified)
+        && Objects.equals(current_justified, that.current_justified)
+        && Objects.equals(finalized, that.finalized);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(previous_justified, current_justified, finalized);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("previous_justified", previous_justified)
+        .add("current_justified", current_justified)
+        .add("finalized", finalized)
+        .toString();
   }
 }
