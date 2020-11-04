@@ -16,6 +16,8 @@ package tech.pegasys.teku.api.schema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 public class ProposerSlashing {
   public final SignedBeaconBlockHeader header_1;
   public final SignedBeaconBlockHeader header_2;
@@ -37,5 +39,19 @@ public class ProposerSlashing {
   public tech.pegasys.teku.datastructures.operations.ProposerSlashing asInternalProposerSlashing() {
     return new tech.pegasys.teku.datastructures.operations.ProposerSlashing(
         header_1.asInternalSignedBeaconBlockHeader(), header_2.asInternalSignedBeaconBlockHeader());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ProposerSlashing)) return false;
+    ProposerSlashing that = (ProposerSlashing) o;
+    return Objects.equals(header_1, that.header_1) &&
+            Objects.equals(header_2, that.header_2);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(header_1, header_2);
   }
 }

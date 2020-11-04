@@ -13,13 +13,15 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+import java.util.Objects;
+
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
@@ -50,5 +52,20 @@ public class Eth1Data {
   public tech.pegasys.teku.datastructures.blocks.Eth1Data asInternalEth1Data() {
     return new tech.pegasys.teku.datastructures.blocks.Eth1Data(
         deposit_root, deposit_count, block_hash);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Eth1Data)) return false;
+    Eth1Data eth1Data = (Eth1Data) o;
+    return Objects.equals(deposit_root, eth1Data.deposit_root) &&
+            Objects.equals(deposit_count, eth1Data.deposit_count) &&
+            Objects.equals(block_hash, eth1Data.block_hash);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(deposit_root, deposit_count, block_hash);
   }
 }
