@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +20,14 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+
+import java.io.File;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class ValidatorConfig {
 
@@ -50,7 +51,6 @@ public class ValidatorConfig {
       final int validatorExternalSignerTimeout,
       final Optional<URI> beaconNodeApiEndpoint,
       final Bytes32 graffiti,
-      final Boolean validatorPerformanceTrackingEnabled,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled) {
     this.validatorKeys = validatorKeys;
@@ -62,13 +62,7 @@ public class ValidatorConfig {
     this.graffiti = graffiti;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
-    if (validatorPerformanceTrackingEnabled == null) {
-      this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
-    } else if (validatorPerformanceTrackingEnabled) {
-      this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
-    } else {
-      this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
-    }
+    this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
   }
 
   public static Builder builder() {
@@ -136,7 +130,6 @@ public class ValidatorConfig {
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerTimeout;
     private Bytes32 graffiti;
-    private Boolean validatorPerformanceTrackingEnabled;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
@@ -190,12 +183,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorPerformanceTrackingEnabled(
-        Boolean validatorPerformanceTrackingEnabled) {
-      this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
-      return this;
-    }
-
     public Builder validatorKeystoreLockingEnabled(boolean validatorKeystoreLockingEnabled) {
       this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
       return this;
@@ -212,7 +199,6 @@ public class ValidatorConfig {
           validatorExternalSignerTimeout,
           beaconNodeApiEndpoint,
           graffiti,
-          validatorPerformanceTrackingEnabled,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled);
     }

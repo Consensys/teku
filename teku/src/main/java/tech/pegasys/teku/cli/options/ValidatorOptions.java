@@ -14,12 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
@@ -28,6 +22,13 @@ import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ValidatorOptions {
   @Option(
@@ -116,6 +117,14 @@ public class ValidatorOptions {
   private boolean validatorKeystoreLockingEnabled = true;
 
   public void configure(TekuConfiguration.Builder builder) {
+    if (validatorPerformanceTrackingEnabled != null) {
+      if (validatorPerformanceTrackingEnabled) {
+        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
+      } else {
+        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
+      }
+    }
+
     builder.validator(
         config ->
             config
@@ -125,7 +134,6 @@ public class ValidatorOptions {
                 .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
-                .validatorPerformanceTrackingEnabled(validatorPerformanceTrackingEnabled)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .graffiti(graffiti)
                 .validatorKeys(validatorKeys));

@@ -133,7 +133,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
           if (mode.isLoggingEnabled()) {
             statusLogger.performance(blockPerformance.toString());
           }
-          
+
           if (mode.isMetricsEnabled()) {
             validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
           }
