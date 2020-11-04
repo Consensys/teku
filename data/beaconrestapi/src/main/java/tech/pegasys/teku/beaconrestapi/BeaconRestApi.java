@@ -77,6 +77,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalan
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
@@ -160,6 +161,7 @@ public class BeaconRestApi {
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
+    app.get(GetChainHeads.ROUTE, new GetChainHeads(dataProvider, jsonProvider));
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {

@@ -17,6 +17,8 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Collections;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -447,5 +449,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     return store.retrieveCheckpointState(checkpoint);
+  }
+
+  public Map<Bytes32, UInt64> getChainHeads() {
+    return forkChoiceStrategy
+        .map(ProtoArrayForkChoiceStrategy::getChainHeads)
+        .orElse(Collections.emptyMap());
   }
 }

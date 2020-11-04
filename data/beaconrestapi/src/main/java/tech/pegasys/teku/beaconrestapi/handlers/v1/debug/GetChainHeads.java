@@ -11,16 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_DEBUG;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -28,29 +24,27 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.response.v1.debug.GetChainHeadsResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetBlockHeader extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/headers/:block_id";
+public class GetChainHeads extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/eth/v1/debug/beacon/heads";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockHeader(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetChainHeads(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this(dataProvider.getChainDataProvider(), jsonProvider);
   }
 
-  public GetBlockHeader(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  public GetChainHeads(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
   }
@@ -58,28 +52,23 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get block header",
-      tags = {TAG_V1_BEACON},
-      description = "Retrieves block header for given block id.",
-      pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
+      summary = "Get fork choice leaves",
+      tags = {TAG_DEBUG},
+      description = "Retrieves all possible chain heads (leaves of fork choice tree).",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetBlockHeaderResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
+            content = @OpenApiContent(from = GetChainHeadsResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<BlockHeader>> future =
-        chainDataProvider.getBlockHeader(pathParams.get(PARAM_BLOCK_ID));
+    final SafeFuture<Optional<List<ChainHead>>> future = chainDataProvider.getChainHeads();
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final BlockHeader response)
+  private Optional<String> handleResult(Context ctx, final List<ChainHead> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockHeaderResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(new GetChainHeadsResponse(response)));
   }
 }
