@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Objects;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 public class SignedBeaconBlock {
   public final BeaconBlock message;
@@ -51,8 +50,7 @@ public class SignedBeaconBlock {
     if (this == o) return true;
     if (!(o instanceof SignedBeaconBlock)) return false;
     SignedBeaconBlock that = (SignedBeaconBlock) o;
-    return Objects.equals(message, that.message) &&
-            Objects.equals(signature, that.signature);
+    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
   }
 
   @Override

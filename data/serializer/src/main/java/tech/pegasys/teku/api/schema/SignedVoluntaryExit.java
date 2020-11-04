@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Objects;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 public class SignedVoluntaryExit {
   public final VoluntaryExit message;
@@ -50,8 +49,7 @@ public class SignedVoluntaryExit {
     if (this == o) return true;
     if (!(o instanceof SignedVoluntaryExit)) return false;
     SignedVoluntaryExit that = (SignedVoluntaryExit) o;
-    return Objects.equals(message, that.message) &&
-            Objects.equals(signature, that.signature);
+    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
   }
 
   @Override

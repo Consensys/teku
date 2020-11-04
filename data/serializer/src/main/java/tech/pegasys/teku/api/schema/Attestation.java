@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-
 import java.util.Objects;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
@@ -58,9 +57,9 @@ public class Attestation {
     if (this == o) return true;
     if (!(o instanceof Attestation)) return false;
     Attestation that = (Attestation) o;
-    return Objects.equals(aggregation_bits, that.aggregation_bits) &&
-            Objects.equals(data, that.data) &&
-            Objects.equals(signature, that.signature);
+    return Objects.equals(aggregation_bits, that.aggregation_bits)
+        && Objects.equals(data, that.data)
+        && Objects.equals(signature, that.signature);
   }
 
   @Override

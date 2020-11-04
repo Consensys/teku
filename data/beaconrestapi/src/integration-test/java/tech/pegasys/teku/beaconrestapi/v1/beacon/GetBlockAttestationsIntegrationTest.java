@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +26,6 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-
-import java.io.IOException;
-import java.util.List;
-
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class GetBlockAttestationsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -40,9 +39,12 @@ public class GetBlockAttestationsIntegrationTest extends AbstractDataBackedRestA
     final Response response = get("head");
 
     final GetBlockAttestationsResponse body =
-            jsonProvider.jsonToObject(response.body().string(), GetBlockAttestationsResponse.class);
+        jsonProvider.jsonToObject(response.body().string(), GetBlockAttestationsResponse.class);
     final List<Attestation> data = body.data;
-    final List<Attestation> attestations = created.get(0).getBlock().getMessage().getBody().getAttestations().asList().stream().map(Attestation::new).collect(toList());
+    final List<Attestation> attestations =
+        created.get(0).getBlock().getMessage().getBody().getAttestations().asList().stream()
+            .map(Attestation::new)
+            .collect(toList());
     assertThat(data).isEqualTo(attestations);
   }
 

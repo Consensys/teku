@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,11 +27,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-
-import java.io.IOException;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -41,13 +40,14 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final Response response = get("head");
 
     final GetBlockResponse body =
-            jsonProvider.jsonToObject(response.body().string(), GetBlockResponse.class);
+        jsonProvider.jsonToObject(response.body().string(), GetBlockResponse.class);
     final SignedBeaconBlock data = body.data;
     final SignedBlockAndState block = created.get(0);
-    assertThat(data).isEqualTo(new SignedBeaconBlock(
-            new BeaconBlock(block.getBlock().getMessage()),
-            new BLSSignature(block.getBlock().getSignature())
-    ));
+    assertThat(data)
+        .isEqualTo(
+            new SignedBeaconBlock(
+                new BeaconBlock(block.getBlock().getMessage()),
+                new BLSSignature(block.getBlock().getSignature())));
   }
 
   public Response get(final String blockIdString) throws IOException {

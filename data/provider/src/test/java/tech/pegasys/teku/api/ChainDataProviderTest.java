@@ -13,6 +13,31 @@
 
 package tech.pegasys.teku.api;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,32 +84,6 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
@@ -916,7 +915,7 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
-            new ChainDataProvider(recentChainData, combinedChainDataClient);
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
     final Optional<Root> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
     assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
@@ -925,25 +924,30 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockAttestations_shouldReturnAttestationsOfBlock() throws Exception {
     final ChainDataProvider provider =
-            new ChainDataProvider(recentChainData, combinedChainDataClient);
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
     ChainBuilder chainBuilder = storageSystem.chainBuilder();
 
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
-            new AttestationGenerator(chainBuilder.getValidatorKeys());
+        new AttestationGenerator(chainBuilder.getValidatorKeys());
     tech.pegasys.teku.datastructures.operations.Attestation attestation1 =
-            attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
+        attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
     tech.pegasys.teku.datastructures.operations.Attestation attestation2 =
-            attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot().increment());
+        attestationGenerator.validAttestation(
+            bestBlock.toUnsigned(), bestBlock.getSlot().increment());
     blockOptions.addAttestation(attestation1);
     blockOptions.addAttestation(attestation2);
-    SignedBlockAndState newHead = storageSystem.chainBuilder().generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
+    SignedBlockAndState newHead =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
     storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
     final Optional<List<Attestation>> response = provider.getBlockAttestations("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get()).containsExactly(new Attestation(attestation1), new Attestation(attestation2));
+    assertThat(response.get())
+        .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
