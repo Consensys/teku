@@ -47,9 +47,9 @@ public class GetForkSchedule implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get spec params",
+      summary = "Get scheduled forks",
       tags = {TAG_CONFIG},
-      description = "Retrieve specification configuration used on this node.",
+      description = "Retrieve all scheduled upcoming forks this node is aware of.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
