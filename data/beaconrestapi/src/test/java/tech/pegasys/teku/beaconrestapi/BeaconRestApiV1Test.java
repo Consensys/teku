@@ -29,9 +29,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
@@ -39,8 +42,10 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -58,8 +63,12 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -67,6 +76,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
+@SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
@@ -77,6 +87,9 @@ public class BeaconRestApiV1Test {
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
   @BeforeEach
   public void setup() {
@@ -85,7 +98,15 @@ public class BeaconRestApiV1Test {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient, combinedChainDataClient, null, syncService, null, attestationPool),
+            storageClient,
+            combinedChainDataClient,
+            null,
+            syncService,
+            null,
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool),
         config,
         eventChannels,
         new StubAsyncRunner(),
@@ -112,7 +133,11 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
         .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
         .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
-        .add(Arguments.of(GetStateCommittees.ROUTE, GetStateCommittees.class));
+        .add(Arguments.of(GetStateCommittees.ROUTE, GetStateCommittees.class))
+        .add(Arguments.of(GetAttestations.ROUTE, GetAttestations.class))
+        .add(Arguments.of(GetAttesterSlashings.ROUTE, GetAttesterSlashings.class))
+        .add(Arguments.of(GetProposerSlashings.ROUTE, GetProposerSlashings.class))
+        .add(Arguments.of(GetVoluntaryExits.ROUTE, GetVoluntaryExits.class));
 
     // events
     builder.add(Arguments.of(GetEvents.ROUTE, GetEvents.class));
@@ -137,7 +162,8 @@ public class BeaconRestApiV1Test {
     // config
     builder
         .add(Arguments.of(GetSpec.ROUTE, GetSpec.class))
-        .add(Arguments.of(GetForkSchedule.ROUTE, GetForkSchedule.class));
+        .add(Arguments.of(GetForkSchedule.ROUTE, GetForkSchedule.class))
+        .add(Arguments.of(GetDepositContract.ROUTE, GetDepositContract.class));
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
