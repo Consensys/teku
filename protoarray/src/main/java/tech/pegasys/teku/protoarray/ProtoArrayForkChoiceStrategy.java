@@ -144,6 +144,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  @Override
   public Map<Bytes32, UInt64> getChainHeads() {
     protoArrayLock.readLock().lock();
     try {

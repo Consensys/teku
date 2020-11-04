@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.protoarray;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -39,6 +40,8 @@ public interface ForkChoiceStrategy {
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
+
+  Map<Bytes32, UInt64> getChainHeads();
 
   boolean contains(Bytes32 blockRoot);
 }

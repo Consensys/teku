@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static java.util.Collections.emptyMap;
+
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -52,6 +55,11 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   @Override
   public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
     return Optional.empty();
+  }
+
+  @Override
+  public Map<Bytes32, UInt64> getChainHeads() {
+    return emptyMap();
   }
 
   @Override

@@ -46,7 +46,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -443,8 +442,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Map<Bytes32, UInt64> getChainHeads() {
-    return forkChoiceStrategy
-        .map(ProtoArrayForkChoiceStrategy::getChainHeads)
+    return getForkChoiceStrategy()
+        .map(ForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
   }
 }
