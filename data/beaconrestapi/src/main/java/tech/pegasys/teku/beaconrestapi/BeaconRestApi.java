@@ -74,6 +74,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeads;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -139,7 +140,7 @@ public class BeaconRestApi {
     addEventHandler(dataProvider, eventChannels, asyncRunner);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
-    addV1ConfigHandlers();
+    addV1ConfigHandlers(dataProvider);
     addV1DebugHandlers(dataProvider);
 
     // Endpoints from before standard API
@@ -151,7 +152,8 @@ public class BeaconRestApi {
     addCustomErrorPages(configuration);
   }
 
-  private void addV1ConfigHandlers() {
+  private void addV1ConfigHandlers(final DataProvider dataProvider) {
+    app.get(GetForkSchedule.ROUTE, new GetForkSchedule(dataProvider, jsonProvider));
     app.get(GetSpec.ROUTE, new GetSpec(jsonProvider));
   }
 
