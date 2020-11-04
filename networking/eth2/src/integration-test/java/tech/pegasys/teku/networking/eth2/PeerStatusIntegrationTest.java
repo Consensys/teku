@@ -23,8 +23,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -91,10 +89,9 @@ public class PeerStatusIntegrationTest {
     assertStatusMatchesStorage(recentChainData2, network1ViewOfPeer2.getStatus());
   }
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  public void shouldUpdatePeerStatus(final String encodingName, final RpcEncoding encoding)
-      throws Exception {
+  @Test
+  public void shouldUpdatePeerStatus() throws Exception {
+    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -126,10 +123,9 @@ public class PeerStatusIntegrationTest {
     assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus());
   }
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  public void shouldUpdatePeerStatusPeriodically(
-      final String encodingName, final RpcEncoding encoding) throws Exception {
+  @Test
+  public void shouldUpdatePeerStatusPeriodically() throws Exception {
+    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     Duration statusUpdateInterval = Duration.ofSeconds(2);
     final Eth2Network network1 =
         networkFactory
@@ -159,10 +155,7 @@ public class PeerStatusIntegrationTest {
     // Peer 1 advances
     beaconChainUtil1.createAndImportBlockAtSlot(10);
 
-    waitFor(
-        () -> {
-          assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus());
-        });
+    waitFor(() -> assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus()));
   }
 
   private void assertStatusMatchesStorage(

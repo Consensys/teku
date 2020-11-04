@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
@@ -101,10 +99,9 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipInvalidBlocks(final String testName, GossipEncoding gossipEncoding)
-      throws Exception {
+  @Test
+  public void shouldNotGossipInvalidBlocks() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
@@ -149,10 +146,9 @@ public class GossipMessageHandlerIntegrationTest {
     ensureConditionRemainsMet(() -> assertThat(network3Blocks.getBlocks()).isEmpty(), 10000);
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
@@ -197,10 +193,9 @@ public class GossipMessageHandlerIntegrationTest {
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
@@ -259,10 +254,9 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
