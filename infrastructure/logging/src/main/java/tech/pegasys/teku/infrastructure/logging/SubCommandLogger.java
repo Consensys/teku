@@ -37,10 +37,10 @@ public class SubCommandLogger {
     System.exit(exitCode);
   }
 
-  public void commandIsDeprecated() {
+  public void commandIsNotSafeForProduction() {
     error(
         print(
-            "WARNING: This command is deprecated and will be removed soon.",
+            "WARNING: This command is not safe for production use.",
             ColorConsolePrinter.Color.RED));
   }
 
