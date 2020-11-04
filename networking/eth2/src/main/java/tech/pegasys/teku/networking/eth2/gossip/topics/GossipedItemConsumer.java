@@ -13,22 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import io.libp2p.core.pubsub.ValidationResult;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+public interface GossipedItemConsumer<T> {
+  void forward(T operation);
 
-public class GossipSubValidationUtil {
+  GossipedItemConsumer<?> NOOP = (__) -> {};
 
-  public static ValidationResult fromInternalValidationResult(InternalValidationResult result) {
-    switch (result) {
-      case ACCEPT:
-        return ValidationResult.Valid;
-      case SAVE_FOR_FUTURE:
-      case IGNORE:
-        return ValidationResult.Ignore;
-      case REJECT:
-        return ValidationResult.Invalid;
-      default:
-        throw new IllegalArgumentException("Unexpected internal validation result: " + result);
-    }
+  @SuppressWarnings("unchecked")
+  static <T> GossipedItemConsumer<T> noop() {
+    return (GossipedItemConsumer<T>) NOOP;
   }
 }
