@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -694,5 +695,13 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return SafeFuture.completedFuture(Optional.of(result));
+  }
+
+  public List<Fork> getForkSchedule() {
+    final Optional<ForkInfo> maybeForkInfo = recentChainData.getForkInfoAtCurrentTime();
+
+    return maybeForkInfo
+        .map(forkInfo -> List.of(new Fork(forkInfo.getFork())))
+        .orElse(Collections.emptyList());
   }
 }

@@ -45,6 +45,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -161,6 +162,7 @@ public class BeaconRestApiV1Test {
     // config
     builder
         .add(Arguments.of(GetSpec.ROUTE, GetSpec.class))
+        .add(Arguments.of(GetForkSchedule.ROUTE, GetForkSchedule.class))
         .add(Arguments.of(GetDepositContract.ROUTE, GetDepositContract.class));
 
     // DEBUG
