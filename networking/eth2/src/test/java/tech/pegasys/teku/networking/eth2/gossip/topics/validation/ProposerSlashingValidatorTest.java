@@ -126,13 +126,11 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     stateTransitionValidator = new ProposerSlashingStateTransitionValidator();
-    SignedBeaconBlockHeader signedBeaconBlockHeader =
-        dataStructureUtil.randomSignedBeaconBlockHeader();
-    ProposerSlashing slashing =
-        new ProposerSlashing(
-            new SignedBeaconBlockHeader(
-                signedBeaconBlockHeader.getMessage(), BLSSignature.random(100)),
-            signedBeaconBlockHeader);
+    SignedBeaconBlockHeader header1 = dataStructureUtil.randomSignedBeaconBlockHeader();
+    SignedBeaconBlockHeader header2 =
+        new SignedBeaconBlockHeader(header1.getMessage(), BLSSignature.random(100));
+    assertThat(header2).isNotEqualTo(header1);
+    ProposerSlashing slashing = new ProposerSlashing(header1, header2);
     assertThat(
             stateTransitionValidator.validate(
                 recentChainData.getBestState().orElseThrow(), slashing))
