@@ -44,7 +44,3 @@ dependencies {
     integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
-
-test {
-    testLogging.showStandardStreams = true
-}
