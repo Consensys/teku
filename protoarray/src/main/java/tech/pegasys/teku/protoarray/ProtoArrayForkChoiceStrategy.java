@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -34,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+  private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
@@ -139,6 +145,25 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       protoArray.maybePrune(finalizedRoot);
     } finally {
       protoArrayLock.writeLock().unlock();
+    }
+  }
+
+  public Map<Bytes32, UInt64> getChainHeads() {
+    protoArrayLock.readLock().lock();
+    try {
+      final Map<Bytes32, UInt64> chainHeads = new HashMap<>();
+      protoArray.getNodes().stream()
+          .filter(
+              protoNode ->
+                  protoNode.getBestChildIndex().isEmpty()
+                      && protoArray.nodeIsViableForHead(protoNode))
+          .forEach(protoNode -> chainHeads.put(protoNode.getBlockRoot(), protoNode.getBlockSlot()));
+      return ImmutableMap.copyOf(chainHeads);
+    } catch (Throwable t) {
+      LOG.trace("Failed to get chain heads", t);
+      return Collections.emptyMap();
+    } finally {
+      protoArrayLock.readLock().unlock();
     }
   }
 

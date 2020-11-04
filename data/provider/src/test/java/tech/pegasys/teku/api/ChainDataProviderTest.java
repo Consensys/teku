@@ -48,6 +48,7 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
@@ -200,6 +201,17 @@ public class ChainDataProviderTest {
     assertEquals(blockRoot, head.block_root);
     assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
     assertEquals(recentChainData.getHeadSlot(), head.slot);
+  }
+
+  @Test
+  public void getChainHeads_shouldReturnChainHeads()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final SafeFuture<Optional<List<ChainHead>>> future = provider.getChainHeads();
+    final Optional<List<ChainHead>> maybeResult = future.get();
+    assertThat(maybeResult.orElse(emptyList()))
+        .containsExactly(new ChainHead(bestBlock.getSlot(), blockRoot));
   }
 
   @Test
