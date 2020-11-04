@@ -22,6 +22,7 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorI
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
@@ -207,10 +209,6 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    if (!isStoreAvailable()) {
-      return chainUnavailable();
-    }
-
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
@@ -686,5 +684,15 @@ public class ChainDataProvider {
             .flatMapToInt(
                 validatorParameter ->
                     validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
+  }
+
+  public SafeFuture<Optional<List<ChainHead>>> getChainHeads() {
+    List<ChainHead> result = new ArrayList<>();
+    recentChainData.getChainHeads().forEach((k, v) -> result.add(new ChainHead(v, k)));
+
+    if (result.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return SafeFuture.completedFuture(Optional.of(result));
   }
 }

@@ -33,9 +33,5 @@ dependencies {
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':util')
   testFixturesImplementation project(':infrastructure:async')
-
-  test {
-    testLogging.showStandardStreams = true
-  }
 }
 
