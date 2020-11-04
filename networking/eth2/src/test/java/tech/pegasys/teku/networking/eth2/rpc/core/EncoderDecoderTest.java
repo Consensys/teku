@@ -23,9 +23,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 public class EncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
-  private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ);
+  private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ_SNAPPY);
   private final RpcResponseDecoder<RpcException> decoder =
-      new RpcResponseDecoder<>(RpcException.class, RpcEncoding.SSZ);
+      new RpcResponseDecoder<>(RpcException.class, RpcEncoding.SSZ_SNAPPY);
 
   @Test
   public void shouldEncodeErrorResponse() {
@@ -33,7 +33,8 @@ public class EncoderDecoderTest extends RpcDecoderTestBase {
     final Bytes actual = encoder.encodeErrorResponse(ex);
 
     // sanity check that the encoded string is what we expect
-    assertThat(actual.toHexString().toLowerCase()).isEqualTo("0x010b4261642072657175657374");
+    assertThat(actual.toHexString().toLowerCase())
+        .isEqualTo("0x010bff060000734e61507059010f0000c839768d4261642072657175657374");
 
     // when we then decode the byte stream, the same RpcException that got encoded is raised
     assertThatThrownBy(
