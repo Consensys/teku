@@ -167,6 +167,7 @@ public class WeakSubjectivityValidatorTest {
     // Checkpoint is at the ws epoch, but has a different root
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
+    when(checkpointState.getBlockSlot()).thenReturn(wsCheckpoint.getEpochStartSlot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(true);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
 
@@ -217,6 +218,7 @@ public class WeakSubjectivityValidatorTest {
     // Checkpoint is at the ws epoch, but has a different root
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
+    when(checkpointState.getBlockSlot()).thenReturn(wsCheckpoint.getEpochStartSlot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
     when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
@@ -411,7 +413,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
-            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
+            wsCheckpoint, otherBlock.getRoot(), otherBlock.getSlot());
     verifyNoMoreInteractions(policy);
   }
 
