@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -285,6 +286,19 @@ public class RocksDbDatabase implements Database {
                     b.getStateRoot(),
                     checkpointEpochs));
           });
+    }
+    // If anchor block is missing, try to pull block info from the anchor state
+    final boolean shouldIncludeAnchorBlock =
+        anchor.isPresent()
+            && finalizedCheckpoint.getEpochStartSlot().equals(anchor.get().getEpochStartSlot());
+    if (shouldIncludeAnchorBlock && !blockInformation.containsKey(anchor.get().getRoot())) {
+      getLatestAvailableFinalizedState(anchor.get().getEpochStartSlot())
+          .map(StateAndBlockSummary::create)
+          .filter(a -> a.getRoot().equals(anchor.get().getRoot()))
+          .ifPresent(
+              a -> {
+                blockInformation.put(a.getRoot(), StoredBlockMetadata.fromBlockAndState(a));
+              });
     }
 
     // Validate finalized data is consistent and available
