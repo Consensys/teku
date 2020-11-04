@@ -209,10 +209,6 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    if (!isStoreAvailable()) {
-      return chainUnavailable();
-    }
-
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
