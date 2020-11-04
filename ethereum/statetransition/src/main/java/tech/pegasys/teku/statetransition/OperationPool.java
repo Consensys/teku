@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -71,5 +72,9 @@ public class OperationPool<T> {
 
   public void removeAll(SSZList<T> items) {
     operations.removeAll(items.asList());
+  }
+
+  public Set<T> getAll() {
+    return Collections.unmodifiableSet(operations);
   }
 }
