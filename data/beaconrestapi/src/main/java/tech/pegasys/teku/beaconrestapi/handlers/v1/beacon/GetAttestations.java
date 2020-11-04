@@ -20,7 +20,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -33,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.GetAttestationsResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils;
@@ -66,20 +64,15 @@ public class GetAttestations extends AbstractHandler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    try {
-      Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-      Optional<UInt64> maybeSlot =
-          SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParamMap, SLOT);
-      Optional<UInt64> maybeCommitteeIndex =
-          SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(
-              ctx.queryParamMap(), COMMITTEE_INDEX);
-      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      List<Attestation> attestations =
-          nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex);
-      ctx.result(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
-    } catch (BadRequestException e) {
-      ctx.result("The slot or committee index could not be parsed.");
-      ctx.status(SC_BAD_REQUEST);
-    }
+    Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+    Optional<UInt64> maybeSlot =
+        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParamMap, SLOT);
+    Optional<UInt64> maybeCommitteeIndex =
+        SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(
+            ctx.queryParamMap(), COMMITTEE_INDEX);
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    List<Attestation> attestations =
+        nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex);
+    ctx.result(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
   }
 }
