@@ -30,7 +30,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop.NoopCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 
@@ -41,8 +40,7 @@ public class RpcDecoderTestBase {
   protected static final RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> PAYLOAD_ENCODER =
       new BeaconBlocksByRootRequestMessageEncoder();
   protected static final RpcEncoding ENCODING = RpcEncoding.SSZ_SNAPPY;
-  protected static final Compressor COMPRESSOR =
-      ENCODING == RpcEncoding.SSZ ? new NoopCompressor() : new SnappyFramedCompressor();
+  protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
   protected static final Bytes MESSAGE_PLAIN_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_PLAIN_DATA.size());

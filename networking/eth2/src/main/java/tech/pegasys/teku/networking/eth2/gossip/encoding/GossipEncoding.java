@@ -17,8 +17,8 @@ import org.apache.tuweni.bytes.Bytes;
 
 public interface GossipEncoding {
 
-  GossipEncoding SSZ = new SszGossipEncoding();
-  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(SSZ, new SnappyBlockCompressor());
+  GossipEncoding SSZ_SNAPPY =
+      new SszSnappyEncoding(new SszGossipEncoding(), new SnappyBlockCompressor());
 
   /**
    * Get the name of the encoding. This is the name included as part of gossip topic strings.
