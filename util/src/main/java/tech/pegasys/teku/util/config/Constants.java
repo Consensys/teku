@@ -28,9 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Constants {
 
-  static final String[] NETWORK_DEFINITIONS = {
-    "mainnet", "minimal", "swift", "medalla", "spadina", "zinken"
-  };
+  static final String[] NETWORK_DEFINITIONS = {"mainnet", "minimal", "swift", "medalla"};
 
   // Non-configurable constants
   public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
