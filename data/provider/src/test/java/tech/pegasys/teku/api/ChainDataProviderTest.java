@@ -910,6 +910,15 @@ public class ChainDataProviderTest {
         .hasSize(3);
   }
 
+  @Test
+  public void getForkSchedule() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getForkSchedule())
+        .containsExactly(
+            new Fork(recentChainData.getForkInfoAtCurrentTime().orElseThrow().getFork()));
+  }
+
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
       final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
     SafeFuture<Optional<ValidatorResponse>> response =
