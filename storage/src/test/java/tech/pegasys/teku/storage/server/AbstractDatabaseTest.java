@@ -627,6 +627,47 @@ public abstract class AbstractDatabaseTest {
 
     // Add some blocks
     addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
+
+    // Restart and check data is what we expect
+    final UpdatableStore originalStore = recentChainData.getStore();
+    restartStorage();
+
+    StoreAssertions.assertStoresMatch(recentChainData.getStore(), originalStore);
+    assertThat(recentChainData.getFinalizedCheckpoint()).contains(anchor.getCheckpoint());
+
+    // Ensure anchor state is always stored
+    assertThat(database.getLatestAvailableFinalizedState(anchor.getEpochStartSlot()))
+        .contains(anchorBlockAndState.getState());
+  }
+
+  @Test
+  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_prune() {
+    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(StateStorageMode.PRUNE);
+  }
+
+  @Test
+  public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_archive() {
+    testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(StateStorageMode.ARCHIVE);
+  }
+
+  public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(
+      final StateStorageMode storageMode) {
+    createStorage(storageMode);
+
+    // Set up database from an anchor point
+    final UInt64 anchorEpoch = UInt64.valueOf(10);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+    final AnchorPoint anchor =
+        AnchorPoint.create(
+            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
+            anchorBlockAndState.getState(),
+            Optional.empty());
+    createStorage(storageMode);
+    initFromAnchor(anchor);
+
+    // Add some blocks
+    addBlocks(chainBuilder.generateNextBlock(), chainBuilder.generateNextBlock());
     // And finalize them
     final SignedBlockAndState newFinalizedBlockAndState = chainBuilder.getLatestBlockAndState();
     final UInt64 newFinalizedEpock = anchorEpoch.plus(1);
