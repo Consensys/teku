@@ -183,6 +183,13 @@ class StoreTransactionUpdatesFactory {
 
   private void calculatePrunedHotBlockRoots() {
     final SignedBeaconBlock finalizedBlock = tx.getLatestFinalized().getBlock();
+    baseStore.blockMetadata.processAllInOrder(
+        (blockRoot, slot, parentRoot) -> {
+          if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
+            prunedHotBlockRoots.add(blockRoot);
+          }
+        });
+
     tx.blockAndStates.values().stream()
         // Iterate new blocks in slot order to guarantee we see parents first
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
@@ -194,13 +201,6 @@ class StoreTransactionUpdatesFactory {
                     newBlockAndState.getSlot(),
                     newBlockAndState.getParentRoot()))
         .forEach(newBlockAndState -> prunedHotBlockRoots.add(newBlockAndState.getRoot()));
-
-    baseStore.blockMetadata.processAllInOrder(
-        (blockRoot, slot, parentRoot) -> {
-          if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
-            prunedHotBlockRoots.add(blockRoot);
-          }
-        });
   }
 
   private StoreTransactionUpdates createStoreTransactionUpdates(
