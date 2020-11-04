@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -168,6 +170,28 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .map(ValidateableAttestation::getAttestation)
         .forEach(attestations::add);
     return attestations;
+  }
+
+  public Stream<Attestation> getAttestations(
+      final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
+    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
+        (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
+
+    final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
+        (group) ->
+            maybeCommitteeIndex
+                .map(index -> group.getAttestationData().getIndex().equals(index))
+                .orElse(true);
+
+    return dataHashBySlot.descendingMap().entrySet().stream()
+        .filter(filterForSlot)
+        .map(Map.Entry::getValue)
+        .flatMap(Collection::stream)
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
+        .filter(filterForCommitteeIndex)
+        .flatMap(MatchingDataAttestationGroup::stream)
+        .map(ValidateableAttestation::getAttestation);
   }
 
   private boolean isValid(
