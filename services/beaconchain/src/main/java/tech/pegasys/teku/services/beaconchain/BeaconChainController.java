@@ -639,7 +639,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
-            attestationPool);
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool);
     if (config.isRestApiEnabled()) {
 
       beaconRestAPI =

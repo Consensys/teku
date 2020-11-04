@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,6 +128,15 @@ public class ProtoArrayForkChoiceStrategyTest {
     final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ancestor.getSlot()))
         .contains(ancestor.getRoot());
+  }
+
+  @Test
+  void getChainHeads() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
+    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    assertThat(protoArrayStrategy.getChainHeads())
+        .isEqualTo(Map.of(head.getBlock().getRoot(), head.getBlock().getSlot()));
   }
 
   @Test
