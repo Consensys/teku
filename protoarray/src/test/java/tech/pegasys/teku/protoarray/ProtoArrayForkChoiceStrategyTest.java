@@ -22,8 +22,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
