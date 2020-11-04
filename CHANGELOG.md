@@ -30,6 +30,29 @@ we recommend most users use the latest `master` branch of Teku.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 - Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
 
+## 0.12.13
+
+### Breaking Changes
+- `/eth/v1/beacon/{state}/committees` now specifies the epoch as a query parameter instead of a part of the path
+- Discovery has been updated to discv5.1
+
+### Additions and Improvements
+- Reduced memory usage when finalizing after a long period of non-finalization and provided progress messages while finalized blocks are stored
+- New standard API endpoints:
+  - GET `/eth/v1/debug/beacon/heads`
+- Updated discovery to use discv5.1 standard
+- Significantly reduced CPU usage, particularly during long periods of non-finalization by optimising the `get_ancestor` method in fork choice
+- Added `libp2p_gossip_messages_total` metric to report the number of gossip messages processed by gossip topic
+- Apache license notice is now displayed on startup
+
+### Bug Fixes
+- Handled retrieving states for `finalized` or `head` when the actual slot is empty
+- Fixed issue where EIP2335 keystores without a `path` or `uuid` field were rejected as invalid
+- Fixed error codes returned when validators were not found in standard API queries
+- Skip loading the latest finalized state on startup as it is not required to recreate the memory store
+- Fixed handling of empty responses from peers when requesting a single block that they do not have
+
+
 ## 0.12.12
 
 ### Breaking Changes
