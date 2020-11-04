@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
-
 import java.io.File;
 import java.net.URI;
 import java.net.URL;
@@ -27,6 +20,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.status.StatusLogger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
 
 public class ValidatorConfig {
 
