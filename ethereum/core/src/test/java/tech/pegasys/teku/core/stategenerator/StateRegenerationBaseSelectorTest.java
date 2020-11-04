@@ -185,9 +185,10 @@ class StateRegenerationBaseSelectorTest {
   }
 
   private void assertSelectedBase(final SignedBlockAndState fromStore) {
-    final Optional<StateAndBlockSummary> expected =
-        Optional.of(StateAndBlockSummary.create(fromStore));
-    assertThatSafeFuture(getBestBase()).isCompletedWithValue(expected);
+    final SafeFuture<Optional<StateAndBlockSummary>> actual = getBestBase();
+    assertThat(actual).isCompleted();
+    assertThat(actual.join()).isPresent();
+    assertThat(actual.join().get().getRoot()).isEqualTo(fromStore.getRoot());
   }
 
   private SignedBlockAndState withClosestAvailableFromStoreAtSlot(final long slot) {
