@@ -118,19 +118,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
     return latestHeader;
   }
 
-  public static BeaconBlockHeader fromBlock(final BeaconBlock block) {
-    return new BeaconBlockHeader(
-        block.getSlot(),
-        block.getProposerIndex(),
-        block.getParentRoot(),
-        block.getStateRoot(),
-        block.getBodyRoot());
-  }
-
-  public static BeaconBlockHeader fromBlock(final SignedBeaconBlock block) {
-    return fromBlock(block.getMessage());
-  }
-
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
