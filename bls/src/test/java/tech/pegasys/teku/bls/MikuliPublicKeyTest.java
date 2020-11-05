@@ -11,13 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.encoding;
+package tech.pegasys.teku.bls;
 
-public class SszGossipEncodingTest
-    extends tech.pegasys.teku.networking.eth2.gossip.encoding.AbstractGossipEncodingTest {
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
-  @Override
-  protected GossipEncoding createEncoding() {
-    return GossipEncoding.SSZ;
+public class MikuliPublicKeyTest extends BLSPublicKeyTest {
+
+  @BeforeAll
+  public static void init() {
+    BLS.setBlsImplementation(MikuliBLS12381.INSTANCE);
+  }
+
+  @AfterAll
+  public static void cleanup() {
+    BLS.resetBlsImplementation();
   }
 }

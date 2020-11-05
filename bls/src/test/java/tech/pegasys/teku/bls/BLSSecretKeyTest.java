@@ -17,40 +17,12 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 public abstract class BLSSecretKeyTest {
-
-  public static class BlstSecretKeyTest extends BLSSecretKeyTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
-
-  public static class MikuliSecretKeyTest extends BLSSecretKeyTest {
-    @BeforeAll
-    public static void init() {
-      BLS.setBlsImplementation(MikuliBLS12381.INSTANCE);
-    }
-
-    @AfterAll
-    public static void cleanup() {
-      BLS.resetBlsImplementation();
-    }
-  }
 
   @ParameterizedTest
   @ValueSource(

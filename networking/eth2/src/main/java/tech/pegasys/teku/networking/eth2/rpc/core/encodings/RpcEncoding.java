@@ -14,14 +14,9 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop.NoopCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public interface RpcEncoding {
-
-  RpcEncoding SSZ =
-      new LengthPrefixedEncoding(
-          "ssz", RpcPayloadEncoders.createSszEncoders(), new NoopCompressor());
 
   RpcEncoding SSZ_SNAPPY =
       new LengthPrefixedEncoding(
