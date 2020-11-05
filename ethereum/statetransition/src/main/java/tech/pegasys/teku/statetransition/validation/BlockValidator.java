@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -77,7 +77,7 @@ public class BlockValidator {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    if (!recentChainData.containsBlock(block.getParent_root())) {
+    if (!recentChainData.containsBlock(block.getParentRoot())) {
       LOG.trace("Block parent is not available. It will be saved for future processing");
       return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
@@ -88,7 +88,7 @@ public class BlockValidator {
     }
 
     return recentChainData
-        .retrieveBlockState(block.getMessage().getParent_root())
+        .retrieveBlockState(block.getMessage().getParentRoot())
         .thenApply(
             preState -> {
               if (preState.isEmpty()) {
@@ -154,7 +154,7 @@ public class BlockValidator {
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
-        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index())
+        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposerIndex())
             .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
             .orElse(false);
 
@@ -164,7 +164,7 @@ public class BlockValidator {
   private boolean blockIsProposedByTheExpectedProposer(
       SignedBeaconBlock block, BeaconState postState) {
     final int proposerIndex = get_beacon_proposer_index(postState, block.getSlot());
-    return proposerIndex == block.getMessage().getProposer_index().longValue();
+    return proposerIndex == block.getMessage().getProposerIndex().longValue();
   }
 
   private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
@@ -180,7 +180,7 @@ public class BlockValidator {
 
     public SlotAndProposer(SignedBeaconBlock block) {
       this.slot = block.getSlot();
-      this.proposer_index = block.getMessage().getProposer_index();
+      this.proposer_index = block.getMessage().getProposerIndex();
     }
 
     @Override

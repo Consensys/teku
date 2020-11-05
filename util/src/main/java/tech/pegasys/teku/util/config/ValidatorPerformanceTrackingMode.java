@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.util.config;
 
-import io.libp2p.core.pubsub.ValidationResult;
+public enum ValidatorPerformanceTrackingMode {
+  LOGGING,
+  METRICS,
+  ALL,
+  NONE;
 
-public enum InternalValidationResult {
-  ACCEPT(ValidationResult.Valid),
-  SAVE_FOR_FUTURE(ValidationResult.Ignore),
-  IGNORE(ValidationResult.Ignore),
-  REJECT(ValidationResult.Invalid);
-
-  private final ValidationResult gossipSubValidationResult;
-
-  InternalValidationResult(ValidationResult validationResult) {
-    this.gossipSubValidationResult = validationResult;
+  public boolean isEnabled() {
+    return this != NONE;
   }
 
-  public ValidationResult getGossipSubValidationResult() {
-    return this.gossipSubValidationResult;
+  public boolean isMetricsEnabled() {
+    return this != NONE && this != LOGGING;
+  }
+
+  public boolean isLoggingEnabled() {
+    return this != NONE && this != METRICS;
   }
 }

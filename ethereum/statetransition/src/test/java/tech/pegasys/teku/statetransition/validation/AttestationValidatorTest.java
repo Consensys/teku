@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,10 +22,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committe
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -44,6 +44,7 @@ import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -109,13 +110,13 @@ class AttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAttestation() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
 
   @Test
   public void shouldReturnValidForValidAttestation_whenManyBlocksHaveBeenSkipped() {
-    final BeaconBlockAndState head = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
     final UInt64 currentSlot = head.getSlot().plus(SLOTS_PER_EPOCH * 3);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
@@ -127,7 +128,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     final Bitlist validAggregationBits = attestation.getAggregation_bits();
     final Bitlist invalidAggregationBits =
         new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
@@ -141,7 +142,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationFromBeforeAttestationPropagationSlotRange() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
 
     // In the first slot after
     final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
@@ -155,7 +156,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldAcceptAttestationWithinClockDisparityOfEarliestPropagationSlot() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
@@ -168,8 +169,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldDeferAttestationFromAfterThePropagationSlotRange() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(
-            recentChainData.getHeadBlockAndState().orElseThrow(), ONE);
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     chainUpdater.setCurrentSlot(ZERO);
@@ -180,8 +180,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldAcceptAttestationWithinClockDisparityOfLatestPropagationSlot() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(
-            recentChainData.getHeadBlockAndState().orElseThrow(), ONE);
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     // Ideally we'd rewind the time by a few milliseconds but our Store only keeps time to second
@@ -196,7 +195,7 @@ class AttestationValidatorTest {
     final Attestation attestation =
         AttestationGenerator.groupAndAggregateAttestations(
                 attestationGenerator.getAttestationsForSlot(
-                    recentChainData.getHeadBlockAndState().orElseThrow()))
+                    recentChainData.getChainHead().orElseThrow()))
             .get(0);
 
     assertThat(validate(attestation)).isEqualTo(REJECT);
@@ -204,12 +203,12 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationForSameValidatorAndTargetEpoch() throws Exception {
-    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
     chainUpdater.advanceChain(ONE);
 
     // Slot 1 attestation for the block at slot 1
     final Attestation attestation1 =
-        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     // Slot 1 attestation from the same validator claiming no block at slot 1
     final Attestation attestation2 =
         attestationGenerator
@@ -229,7 +228,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
-    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
         chainUpdater.advanceChain(UInt64.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
 
@@ -240,7 +239,7 @@ class AttestationValidatorTest {
     final Attestation attestation2 =
         attestationGenerator
             .streamAttestations(
-                recentChainData.getHeadBlockAndState().orElseThrow(), nextEpochBlock.getSlot())
+                recentChainData.getChainHead().orElseThrow(), nextEpochBlock.getSlot())
             .filter(attestation -> hasSameValidators(attestation1, attestation))
             .findFirst()
             .orElseThrow();
@@ -256,7 +255,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameSlotButDifferentValidator() {
-    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
 
     // Slot 0 attestation from one validator
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis, ZERO);
@@ -281,7 +280,7 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationWithInvalidSignature() {
     final Attestation attestation =
         attestationGenerator.attestationWithInvalidSignature(
-            recentChainData.getHeadBlockAndState().orElseThrow());
+            recentChainData.getChainHead().orElseThrow());
 
     assertThat(validate(attestation)).isEqualTo(REJECT);
   }
@@ -298,28 +297,27 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId + 1))
+                ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
         .isCompletedWithValue(REJECT);
     assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(ACCEPT);
   }
 
   @Test
   public void shouldRejectAttestationsWithCommitteeIndexNotInTheExpectedRange() {
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromAttestation(
+                ValidateableAttestation.fromNetwork(
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -329,20 +327,20 @@ class AttestationValidatorTest {
                             data.getBeacon_block_root(),
                             data.getSource(),
                             data.getTarget()),
-                        attestation.getAggregate_signature())),
-                expectedSubnetId))
+                        attestation.getAggregate_signature()),
+                    expectedSubnetId)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   public void shouldRejectAttestationsThatHaveNonMatchingTargetEpochAndSlot() {
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromAttestation(
+                ValidateableAttestation.fromNetwork(
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -351,8 +349,8 @@ class AttestationValidatorTest {
                             data.getBeacon_block_root(),
                             data.getSource(),
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
-                        attestation.getAggregate_signature())),
-                expectedSubnetId))
+                        attestation.getAggregate_signature()),
+                    expectedSubnetId)))
         .isCompletedWithValue(REJECT);
   }
 
@@ -363,12 +361,11 @@ class AttestationValidatorTest {
         .thenReturn(Optional.of(Bytes32.ZERO));
     final AttestationValidator validator =
         new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(REJECT);
   }
 
@@ -377,15 +374,14 @@ class AttestationValidatorTest {
     ForkChoiceUtilWrapper forkChoiceUtilWrapper = mock(ForkChoiceUtilWrapper.class);
     final AttestationValidator validator =
         new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(forkChoiceUtilWrapper.get_ancestor(any(), any(), any()))
         .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
         .thenReturn(Optional.of(Bytes32.ZERO));
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-            validator.validate(
-                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(REJECT);
   }
 
@@ -393,8 +389,8 @@ class AttestationValidatorTest {
     final BeaconState state = recentChainData.getBestState().orElseThrow();
     return validator
         .validate(
-            ValidateableAttestation.fromAttestation(attestation),
-            computeSubnetForAttestation(state, attestation))
+            ValidateableAttestation.fromNetwork(
+                attestation, computeSubnetForAttestation(state, attestation)))
         .join();
   }
 

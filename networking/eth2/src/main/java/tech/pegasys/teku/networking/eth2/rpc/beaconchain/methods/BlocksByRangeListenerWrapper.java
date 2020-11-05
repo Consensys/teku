@@ -69,7 +69,7 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
                 peer, BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT);
           }
 
-          if (!blockParentRootMatches(response.getParent_root())) {
+          if (!blockParentRootMatches(response.getParentRoot())) {
             throw new BlocksByRangeResponseInvalidResponseException(
                 peer, BLOCK_PARENT_ROOT_DOES_NOT_MATCH);
           }

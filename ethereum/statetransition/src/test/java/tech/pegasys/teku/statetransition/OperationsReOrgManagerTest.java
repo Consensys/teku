@@ -103,11 +103,11 @@ public class OperationsReOrgManagerTest {
 
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
-        fork2Block2.getState_root(),
+        fork2Block2.getStateRoot(),
         fork2Block2.hash_tree_root(),
         false,
         ReorgContext.of(
-            fork1Block2.hash_tree_root(), fork1Block2.getState_root(), commonAncestorSlot));
+            fork1Block2.hash_tree_root(), fork1Block2.getStateRoot(), commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
 
@@ -126,11 +126,11 @@ public class OperationsReOrgManagerTest {
     List<ValidateableAttestation> attestationList = new ArrayList<>();
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::fromAttestation)
+            .map(ValidateableAttestation::from)
             .collect(Collectors.toList()));
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::fromAttestation)
+            .map(ValidateableAttestation::from)
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 
@@ -172,7 +172,7 @@ public class OperationsReOrgManagerTest {
 
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
-        block2.getState_root(),
+        block2.getStateRoot(),
         block2.hash_tree_root(),
         false,
         ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));

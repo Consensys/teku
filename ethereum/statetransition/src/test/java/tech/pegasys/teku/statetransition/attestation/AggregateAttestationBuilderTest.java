@@ -90,7 +90,7 @@ class AggregateAttestationBuilderTest {
 
     assertThat(builder.buildAggregate())
         .isEqualTo(
-            ValidateableAttestation.fromAttestation(
+            ValidateableAttestation.from(
                 new Attestation(expectedAggregationBits, attestationData, expectedSignature)));
   }
 
@@ -102,7 +102,7 @@ class AggregateAttestationBuilderTest {
   private ValidateableAttestation createAttestation(final int... validators) {
     final Bitlist aggregationBits = new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
-    return ValidateableAttestation.fromAttestation(
+    return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

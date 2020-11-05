@@ -118,9 +118,9 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
-            block.getProposer_index(),
-            block.getParent_root(),
-            block.getState_root(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
             block.getBody().hash_tree_root());
     assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
   }

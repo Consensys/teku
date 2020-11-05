@@ -187,7 +187,7 @@ public class CombinedChainDataClient {
         .thenApply(
             checkpointState -> {
               final SignedBeaconBlock block = latestBlockAndState.getBlock();
-              return new CheckpointState(checkpoint, block, checkpointState.orElseThrow());
+              return CheckpointState.create(checkpoint, block, checkpointState.orElseThrow());
             });
   }
 
@@ -423,7 +423,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
 
-    return Optional.ofNullable(getStore().getLatestFinalized().getBlock());
+    return getStore().getLatestFinalized().getSignedBeaconBlock();
   }
 
   public Optional<BeaconState> getFinalizedState() {

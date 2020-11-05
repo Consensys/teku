@@ -43,7 +43,7 @@ public class ProposerSlashingSignatureVerifier {
         BeaconStateCache.getTransitionCaches(state)
             .getValidatorsPubKeys()
             .get(
-                header1.getProposer_index(),
+                header1.getProposerIndex(),
                 idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
 
     if (!signatureVerifier.verify(

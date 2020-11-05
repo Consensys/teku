@@ -36,7 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -211,14 +211,14 @@ public class AttestationUtil {
 
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(
-      UInt64 slot, BeaconState state, BeaconBlock block, final UInt64 committeeIndex) {
+      UInt64 slot, BeaconState state, BeaconBlockSummary block, final UInt64 committeeIndex) {
     UInt64 epoch = compute_epoch_at_slot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beacon_block_root = block.hash_tree_root();
+    Bytes32 beacon_block_root = block.getRoot();
     UInt64 start_slot = compute_start_slot_at_epoch(epoch);
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
-            ? block.hash_tree_root()
+            ? block.getRoot()
             : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);

@@ -25,9 +25,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -41,7 +43,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
-  private final StateAndBlockProvider stateProvider;
+  private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
 
@@ -60,7 +62,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         metricsSystem,
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
-        storageQueryChannel::getHotBlockAndStateByBlockRoot,
+        storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
@@ -69,7 +71,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
-    this.stateProvider = storageQueryChannel::getHotBlockAndStateByBlockRoot;
+    this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
     eventBus.register(this);
   }
 
@@ -137,11 +139,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
+    return storeFuture.thenCompose(
         maybeStoreBuilder -> {
           if (maybeStoreBuilder.isEmpty()) {
             STATUS_LOG.finishInitializingChainData();
-            return this;
+            return SafeFuture.completedFuture(this);
           }
 
           final UpdatableStore store =
@@ -152,11 +154,24 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();
-
-          setStore(store);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+          return initForkChoiceStrategy(
+                  store, maybeStoreBuilder.flatMap(StoreBuilder::buildProtoArray))
+              .thenApply(
+                  forkChoiceStrategy -> {
+                    setStore(store, forkChoiceStrategy);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
+  }
+
+  private SafeFuture<ProtoArrayForkChoiceStrategy> initForkChoiceStrategy(
+      final UpdatableStore store, final Optional<ProtoArray> maybeProtoArray) {
+    return maybeProtoArray
+        .map(
+            protoArray ->
+                SafeFuture.completedFuture(ProtoArrayForkChoiceStrategy.initialize(protoArray)))
+        .orElseGet(() -> ProtoArrayForkChoiceStrategy.initialize(store, protoArrayStorageChannel));
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {

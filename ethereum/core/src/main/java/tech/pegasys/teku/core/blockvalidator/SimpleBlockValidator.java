@@ -104,13 +104,13 @@ public class SimpleBlockValidator implements BlockValidator {
   public SafeFuture<BlockValidationResult> validatePostState(
       BeaconState postState, SignedBeaconBlock block) {
     if (verifyPostStateRoot
-        && !block.getMessage().getState_root().equals(postState.hashTreeRoot())) {
+        && !block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
       return SafeFuture.completedFuture(
           new BlockValidationResult(
               new StateTransitionException(
                   "Block state root does NOT match the calculated state root!\n"
                       + "Block state root: "
-                      + block.getMessage().getState_root().toHexString()
+                      + block.getMessage().getStateRoot().toHexString()
                       + "New state root: "
                       + postState.hashTreeRoot().toHexString())));
     } else {

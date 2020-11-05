@@ -251,7 +251,7 @@ public class ForkChoiceTestExecutor {
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
-        fc.onAttestation(ValidateableAttestation.fromAttestation(step)).join();
+        fc.onAttestation(ValidateableAttestation.from(step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 
@@ -259,7 +259,7 @@ public class ForkChoiceTestExecutor {
       RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
-                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()))
+                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParentRoot()))
             .join();
     return blockImportResult.isSuccessful();
   }

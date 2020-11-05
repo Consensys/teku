@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -25,10 +25,10 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorM
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -111,8 +112,8 @@ class SignedAggregateAndProofValidatorTest {
       new AggregateGenerator(chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
-  private final SignedAggregateAndProofValidator validator =
-      new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
+  private final AggregateAttestationValidator validator =
+      new AggregateAttestationValidator(recentChainData, attestationValidator);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 
@@ -142,31 +143,31 @@ class SignedAggregateAndProofValidatorTest {
 
   @Test
   public void shouldReturnValidForValidAggregate() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
     whenAttestationIsValid(aggregate);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))
         .isCompletedWithValue(ACCEPT);
   }
 
   @Test
   public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final UInt64 currentSlot = chainHead.getSlot().plus(SLOTS_PER_EPOCH * 3);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(chainHead, currentSlot);
     whenAttestationIsValid(aggregate);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))
         .isCompletedWithValue(ACCEPT);
   }
 
   @Test
   public void shouldRejectWhenAttestationValidatorRejects() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(REJECT));
@@ -177,8 +178,8 @@ class SignedAggregateAndProofValidatorTest {
   @Test
   public void shouldIgnoreWhenAttestationValidatorIgnores() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(IGNORE));
@@ -189,8 +190,8 @@ class SignedAggregateAndProofValidatorTest {
   @Test
   public void shouldSaveForFutureWhenAttestationValidatorSavesForFuture() {
     final SignedAggregateAndProof aggregate =
-        generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
@@ -202,7 +203,7 @@ class SignedAggregateAndProofValidatorTest {
   public void shouldSaveForFutureWhenStateIsNotAvailable() throws Exception {
     final SignedBlockAndState target = bestBlock;
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
@@ -215,11 +216,11 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(recentChainData.getHeadBlockAndState().orElseThrow())
+            .blockAndState(recentChainData.getChainHead().orElseThrow())
             .aggregatorIndex(ONE)
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
@@ -236,8 +237,7 @@ class SignedAggregateAndProofValidatorTest {
         AttestationGenerator.groupAndAggregateAttestations(
             generator
                 .getAttestationGenerator()
-                .getAttestationsForSlot(
-                    chainHead.getState(), chainHead.getBlock(), chainHead.getSlot()));
+                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> hasSameCommitteeIndex(aggregateAndProof1, attestation))
@@ -252,15 +252,17 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1.getMessage().getAggregate()).isNotEqualTo(aggregate2);
     assertThat(aggregateAndProof1).isNotEqualTo(aggregateAndProof2);
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof1)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof1)))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof2)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof2)))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
   public void shouldOnlyAcceptFirstAggregateWithSameHashTreeRoot() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
@@ -276,9 +278,9 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1).isNotEqualTo(aggregateAndProof2);
 
     ValidateableAttestation attestation1 =
-        ValidateableAttestation.fromSignedAggregate(aggregateAndProof1);
+        ValidateableAttestation.aggregateFromValidator(aggregateAndProof1);
     ValidateableAttestation attestation2 =
-        ValidateableAttestation.fromSignedAggregate(aggregateAndProof2);
+        ValidateableAttestation.aggregateFromValidator(aggregateAndProof2);
 
     // Sanity check
     assertThat(attestation1.hash_tree_root()).isEqualTo(attestation2.hash_tree_root());
@@ -289,7 +291,7 @@ class SignedAggregateAndProofValidatorTest {
 
   @Test
   public void shouldOnlyAcceptFirstAggregateWithSameHashTreeRootWhenPassedSeenAggregates() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
@@ -305,9 +307,9 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1).isNotEqualTo(aggregateAndProof2);
 
     ValidateableAttestation attestation1 =
-        ValidateableAttestation.fromSignedAggregate(aggregateAndProof1);
+        ValidateableAttestation.aggregateFromValidator(aggregateAndProof1);
     ValidateableAttestation attestation2 =
-        ValidateableAttestation.fromSignedAggregate(aggregateAndProof2);
+        ValidateableAttestation.aggregateFromValidator(aggregateAndProof2);
 
     // Sanity check
     assertThat(attestation1.hash_tree_root()).isEqualTo(attestation2.hash_tree_root());
@@ -318,15 +320,14 @@ class SignedAggregateAndProofValidatorTest {
 
   @Test
   public void shouldAcceptAggregateWithSameSlotAndDifferentAggregatorIndex() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
         AttestationGenerator.groupAndAggregateAttestations(
             generator
                 .getAttestationGenerator()
-                .getAttestationsForSlot(
-                    chainHead.getState(), chainHead.getBlock(), chainHead.getSlot()));
+                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> !hasSameCommitteeIndex(aggregateAndProof1, attestation))
@@ -337,9 +338,11 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(aggregateAndProof1);
     whenAttestationIsValid(aggregateAndProof2);
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof1)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof1)))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof2)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof2)))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -375,15 +378,17 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1.getMessage().getIndex())
         .isEqualTo(aggregateAndProof2.getMessage().getIndex());
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof1)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof1)))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregateAndProof2)))
+    assertThat(
+            validator.validate(ValidateableAttestation.aggregateFromValidator(aggregateAndProof2)))
         .isCompletedWithValue(ACCEPT);
   }
 
   @Test
   public void shouldRejectAggregateWhenSelectionProofDoesNotSelectAsAggregator() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     int aggregatorIndex = 3;
     final CommitteeAssignment committeeAssignment =
         getCommitteeAssignment(chainHead, aggregatorIndex, ZERO);
@@ -401,13 +406,13 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   public void shouldRejectIfAggregatorIndexIsNotWithinTheCommittee() {
-    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final int aggregatorIndex = 60;
     final SignedAggregateAndProof aggregate =
         generator
@@ -426,7 +431,7 @@ class SignedAggregateAndProofValidatorTest {
       fail("Aggregator was in the committee");
     }
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))
         .isCompletedWithValue(REJECT);
   }
 
@@ -435,29 +440,29 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(recentChainData.getHeadBlockAndState().orElseThrow())
+            .blockAndState(recentChainData.getChainHead().orElseThrow())
             .aggregatorIndex(ONE)
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
     whenAttestationIsValid(aggregate);
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   public void shouldRejectIfAggregateAndProofSignatureIsNotValid() {
     final SignedAggregateAndProof validAggregate =
-        generator.validAggregateAndProof(recentChainData.getHeadBlockAndState().orElseThrow());
+        generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
     final SignedAggregateAndProof invalidAggregate =
         new SignedAggregateAndProof(
             validAggregate.getMessage(), dataStructureUtil.randomSignature());
     whenAttestationIsValid(invalidAggregate);
     whenAttestationIsValid(validAggregate);
 
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(invalidAggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(invalidAggregate)))
         .isCompletedWithValue(REJECT);
-    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(validAggregate)))
+    assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(validAggregate)))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -470,14 +475,14 @@ class SignedAggregateAndProofValidatorTest {
   }
 
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
-    ValidateableAttestation attestation = ValidateableAttestation.fromSignedAggregate(aggregate);
+    ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
   }
 
   private CommitteeAssignment getCommitteeAssignment(
-      final BeaconBlockAndState chainHead, final int aggregatorIndex, final UInt64 epoch) {
+      final StateAndBlockSummary chainHead, final int aggregatorIndex, final UInt64 epoch) {
     return get_committee_assignment(chainHead.getState(), epoch, aggregatorIndex).orElseThrow();
   }
 }
