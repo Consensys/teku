@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -99,7 +99,7 @@ public abstract class AbstractStoreTest {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
       allCheckpoints.add(
-          new CheckpointState(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
+          CheckpointState.create(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
@@ -133,7 +133,7 @@ public abstract class AbstractStoreTest {
         .asyncRunner(SYNC_RUNNER)
         .metricsSystem(new StubMetricsSystem())
         .blockProvider(blockProviderFromChainBuilder())
-        .stateProvider(StateAndBlockProvider.NOOP)
+        .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesis_time())
         .time(genesis.getState().getGenesis_time())

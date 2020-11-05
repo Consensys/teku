@@ -39,7 +39,7 @@ public class StoreAssertions {
             "checkpointStateRequestMissCounter",
             "metricsSystem",
             "states",
-            "stateAndBlockProvider",
+            "stateProvider",
             "checkpointStates",
             "forkChoiceStrategy");
     assertThat(actualState.getOrderedBlockRoots())

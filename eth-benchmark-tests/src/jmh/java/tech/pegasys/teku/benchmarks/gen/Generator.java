@@ -33,6 +33,7 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
@@ -87,23 +88,23 @@ public class Generator {
               localChain.createAndImportBlockAtSlotWithAttestations(
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
           writer.accept(block);
-          final BeaconState postState =
+          final StateAndBlockSummary postState =
               localStorage
-                  .retrieveBlockState(block.getMessage().hash_tree_root())
+                  .getStore()
+                  .retrieveStateAndBlockSummary(block.getMessage().hash_tree_root())
                   .join()
                   .orElseThrow();
 
           attestations =
               UInt64.ONE.equals(currentSlot)
                   ? Collections.emptyList()
-                  : attestationGenerator.getAttestationsForSlot(
-                      postState, block.getMessage(), currentSlot);
+                  : attestationGenerator.getAttestationsForSlot(postState, currentSlot);
 
           System.out.println(
               "Processed: "
                   + currentSlot
                   + ", "
-                  + getCommittees(postState)
+                  + getCommittees(postState.getState())
                   + ", "
                   + (System.currentTimeMillis() - s)
                   + " ms");

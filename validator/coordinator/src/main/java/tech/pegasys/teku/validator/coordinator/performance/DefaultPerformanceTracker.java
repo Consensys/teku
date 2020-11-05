@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -62,6 +63,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final CombinedChainDataClient combinedChainDataClient;
   private final StatusLogger statusLogger;
   private final ValidatorPerformanceMetrics validatorPerformanceMetrics;
+  private final ValidatorPerformanceTrackingMode mode;
 
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
   private AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
@@ -69,10 +71,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   public DefaultPerformanceTracker(
       CombinedChainDataClient combinedChainDataClient,
       StatusLogger statusLogger,
-      ValidatorPerformanceMetrics validatorPerformanceMetrics) {
+      ValidatorPerformanceMetrics validatorPerformanceMetrics,
+      ValidatorPerformanceTrackingMode mode) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.statusLogger = statusLogger;
     this.validatorPerformanceMetrics = validatorPerformanceMetrics;
+    this.mode = mode;
   }
 
   @Override
@@ -104,10 +108,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       UInt64 analyzedEpoch = currentEpoch.minus(ATTESTATION_INCLUSION_RANGE);
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
-      statusLogger.performance(attestationPerformance.toString());
+
+      if (mode.isLoggingEnabled()) {
+        statusLogger.performance(attestationPerformance.toString());
+      }
+
+      if (mode.isMetricsEnabled()) {
+        validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
+      }
+
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
       attestationProductionAttemptsByEpoch.headMap(analyzedEpoch, true).clear();
-      validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
     }
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
@@ -117,10 +128,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         BlockPerformance blockPerformance =
             getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
         if (blockPerformance.numberOfExpectedBlocks > 0) {
-          statusLogger.performance(blockPerformance.toString());
+
+          if (mode.isLoggingEnabled()) {
+            statusLogger.performance(blockPerformance.toString());
+          }
+
+          if (mode.isMetricsEnabled()) {
+            validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+          }
+
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
-          validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
         }
       }
     }

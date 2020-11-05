@@ -129,8 +129,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     processBlock(
         block.getSlot(),
         blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
+        block.getParentRoot(),
+        block.getStateRoot(),
         state.getCurrent_justified_checkpoint().getEpoch(),
         state.getFinalized_checkpoint().getEpoch());
   }
@@ -402,7 +402,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                   protoArray.onBlock(
                       block.getBlock().getSlot(),
                       block.getBlock().getRoot(),
-                      block.getBlock().getParent_root(),
+                      block.getBlock().getParentRoot(),
                       block.getBlock().getStateRoot(),
                       block.getCheckpointEpochs().getJustifiedEpoch(),
                       block.getCheckpointEpochs().getFinalizedEpoch()));

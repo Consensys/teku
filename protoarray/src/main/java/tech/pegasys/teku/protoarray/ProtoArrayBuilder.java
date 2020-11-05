@@ -37,10 +37,10 @@ public class ProtoArrayBuilder {
             .finalizedCheckpoint(anchor.getCheckpoint())
             .build();
     protoArray.onBlock(
-        anchor.getBlock().getSlot(),
+        anchor.getBlockSlot(),
         anchor.getRoot(),
         anchor.getParentRoot(),
-        anchor.getBlock().getStateRoot(),
+        anchor.getStateRoot(),
         anchor.getEpoch(),
         anchor.getEpoch());
     return protoArray;

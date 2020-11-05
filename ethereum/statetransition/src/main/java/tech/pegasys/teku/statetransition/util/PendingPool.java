@@ -102,7 +102,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         futureBlockTolerance,
         maxItems,
         block -> block.getMessage().hash_tree_root(),
-        block -> Collections.singleton(block.getParent_root()),
+        block -> Collections.singleton(block.getParentRoot()),
         SignedBeaconBlock::getSlot);
   }
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,7 +31,7 @@ class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
-      Checkpoint wsCheckpoint, SignedBeaconBlock block) {
+      Checkpoint wsCheckpoint, Bytes32 blockRoot, final UInt64 blockSlot) {
     exitClient();
   }
 

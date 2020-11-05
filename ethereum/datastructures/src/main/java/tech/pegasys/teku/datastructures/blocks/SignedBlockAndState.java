@@ -13,57 +13,25 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Helper datastructure that holds a signed block with its corresponding state */
-public class SignedBlockAndState {
+public class SignedBlockAndState extends StateAndBlockSummary {
   private final SignedBeaconBlock block;
-  private final BeaconState state;
 
   public SignedBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
-    checkNotNull(block);
-    checkNotNull(state);
-    checkArgument(
-        Objects.equals(block.getStateRoot(), state.hash_tree_root()),
-        "State must belong to the given block");
-
+    super(block, state);
     this.block = block;
-    this.state = state;
   }
 
   public BeaconBlockAndState toUnsigned() {
     return new BeaconBlockAndState(block.getMessage(), state);
   }
 
-  public Bytes32 getRoot() {
-    return block.getRoot();
-  }
-
-  public Bytes32 getParentRoot() {
-    return block.getParent_root();
-  }
-
-  public Bytes32 getStateRoot() {
-    return state.hash_tree_root();
-  }
-
-  public UInt64 getSlot() {
-    return getBlock().getSlot();
-  }
-
   public SignedBeaconBlock getBlock() {
     return block;
-  }
-
-  public BeaconState getState() {
-    return state;
   }
 
   @Override

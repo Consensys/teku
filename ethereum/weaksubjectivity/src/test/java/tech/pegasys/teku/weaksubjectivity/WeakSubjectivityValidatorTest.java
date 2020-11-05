@@ -167,6 +167,7 @@ public class WeakSubjectivityValidatorTest {
     // Checkpoint is at the ws epoch, but has a different root
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
+    when(checkpointState.getBlockSlot()).thenReturn(wsCheckpoint.getEpochStartSlot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(true);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
 
@@ -174,7 +175,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
-            wsCheckpoint, checkpointState.getBlock());
+            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verifyNoMoreInteractions(policy);
   }
 
@@ -217,6 +218,7 @@ public class WeakSubjectivityValidatorTest {
     // Checkpoint is at the ws epoch, but has a different root
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
+    when(checkpointState.getBlockSlot()).thenReturn(wsCheckpoint.getEpochStartSlot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
     when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
@@ -225,7 +227,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
-            wsCheckpoint, checkpointState.getBlock());
+            wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
             checkpointState, validatorCount, currentSlot, mockWsPeriod);
@@ -409,7 +411,9 @@ public class WeakSubjectivityValidatorTest {
     verify(chainData).isFinalizedEpoch(wsCheckpoint.getEpoch());
     verify(chainData).getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot());
 
-    verify(policy).onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, otherBlock);
+    verify(policy)
+        .onChainInconsistentWithWeakSubjectivityCheckpoint(
+            wsCheckpoint, otherBlock.getRoot(), otherBlock.getSlot());
     verifyNoMoreInteractions(policy);
   }
 
@@ -562,7 +566,7 @@ public class WeakSubjectivityValidatorTest {
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
     when(block.getSlot()).thenReturn(slot);
     when(block.getRoot()).thenReturn(root);
-    when(block.getParent_root()).thenReturn(parentRoot);
+    when(block.getParentRoot()).thenReturn(parentRoot);
 
     return block;
   }
@@ -575,7 +579,7 @@ public class WeakSubjectivityValidatorTest {
     for (SignedBeaconBlock block : blocks) {
       when(forkChoiceStrategy.blockSlot(block.getRoot())).thenReturn(Optional.of(block.getSlot()));
       when(forkChoiceStrategy.blockParentRoot(block.getRoot()))
-          .thenReturn(Optional.of(block.getParent_root()));
+          .thenReturn(Optional.of(block.getParentRoot()));
       when(forkChoiceStrategy.getAncestor(any(), eq(block.getSlot())))
           .thenReturn(Optional.of(block.getRoot()));
     }

@@ -25,7 +25,7 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -50,12 +50,12 @@ public class AggregateGenerator {
     return new Generator();
   }
 
-  public SignedAggregateAndProof validAggregateAndProof(final BeaconBlockAndState blockAndState) {
+  public SignedAggregateAndProof validAggregateAndProof(final StateAndBlockSummary blockAndState) {
     return generator().blockAndState(blockAndState, blockAndState.getSlot()).generate();
   }
 
   public SignedAggregateAndProof validAggregateAndProof(
-      final BeaconBlockAndState blockAndState, final UInt64 slot) {
+      final StateAndBlockSummary blockAndState, final UInt64 slot) {
     return generator().blockAndState(blockAndState, slot).generate();
   }
 
@@ -65,7 +65,7 @@ public class AggregateGenerator {
 
   public class Generator {
     // The latest block being attested to
-    private BeaconBlockAndState blockAndState;
+    private StateAndBlockSummary blockAndState;
     // The latest state processed through to the current slot
     private BeaconState stateAtSlot;
     private UInt64 slot;
@@ -74,11 +74,11 @@ public class AggregateGenerator {
     private Optional<BLSSignature> selectionProof = Optional.empty();
     private Optional<UInt64> committeeIndex = Optional.empty();
 
-    public Generator blockAndState(final BeaconBlockAndState blockAndState) {
+    public Generator blockAndState(final StateAndBlockSummary blockAndState) {
       return blockAndState(blockAndState, blockAndState.getSlot());
     }
 
-    public Generator blockAndState(final BeaconBlockAndState blockAndState, final UInt64 slot) {
+    public Generator blockAndState(final StateAndBlockSummary blockAndState, final UInt64 slot) {
       this.slot = slot;
       this.blockAndState = blockAndState;
       this.stateAtSlot = generateHeadState(blockAndState.getState(), slot);

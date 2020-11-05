@@ -30,11 +30,10 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -64,7 +63,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
-  private final StateAndBlockProvider stateProvider;
+  private final StateAndBlockSummaryProvider stateProvider;
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
@@ -88,7 +87,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
-      final StateAndBlockProvider stateProvider,
+      final StateAndBlockSummaryProvider stateProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -218,7 +217,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final UInt64 newForkChoiceSlot =
         currentSlot.max(originalChainHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO));
     store
-        .retrieveBlockAndState(root)
+        .retrieveStateAndBlockSummary(root)
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
@@ -344,17 +343,17 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return
    */
   public Optional<Bytes32> getBestBlockRoot() {
-    return chainHead.map(SignedBlockAndState::getRoot);
+    return chainHead.map(StateAndBlockSummary::getRoot);
   }
 
-  /** @return The block and state at the head of the chain. */
-  public Optional<BeaconBlockAndState> getHeadBlockAndState() {
-    return chainHead.map(SignedBlockAndState::toUnsigned);
+  /** @return The head of the chain. */
+  public Optional<StateAndBlockSummary> getChainHead() {
+    return chainHead.map(a -> a);
   }
 
   /** @return The block at the head of the chain. */
   public Optional<SignedBeaconBlock> getHeadBlock() {
-    return chainHead.map(SignedBlockAndState::getBlock);
+    return chainHead.flatMap(StateAndBlockSummary::getSignedBeaconBlock);
   }
 
   /**
@@ -363,7 +362,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return
    */
   public Optional<BeaconState> getBestState() {
-    return chainHead.map(SignedBlockAndState::getState);
+    return chainHead.map(StateAndBlockSummary::getState);
   }
 
   /**
@@ -372,7 +371,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return
    */
   public UInt64 getHeadSlot() {
-    return chainHead.map(SignedBlockAndState::getSlot).orElse(UInt64.ZERO);
+    return chainHead.map(StateAndBlockSummary::getSlot).orElse(UInt64.ZERO);
   }
 
   public boolean containsBlock(final Bytes32 root) {

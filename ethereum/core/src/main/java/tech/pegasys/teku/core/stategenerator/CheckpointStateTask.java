@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -118,6 +119,16 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
       return (Bytes32 root) -> {
         if (Objects.equals(root, blockAndState.getRoot())) {
           return SafeFuture.completedFuture(Optional.of(blockAndState.getState()));
+        } else {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
+    };
+
+    static AsyncStateProvider fromAnchor(final AnchorPoint anchor) {
+      return (Bytes32 root) -> {
+        if (Objects.equals(root, anchor.getRoot())) {
+          return SafeFuture.completedFuture(Optional.of(anchor.getState()));
         } else {
           return SafeFuture.completedFuture(Optional.empty());
         }

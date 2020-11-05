@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -99,7 +99,7 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
@@ -161,7 +161,7 @@ public class StorageBackedRecentChainDataTest {
                     new StoredBlockMetadata(
                         block.getSlot(),
                         block.getRoot(),
-                        block.getParent_root(),
+                        block.getParentRoot(),
                         block.getStateRoot(),
                         Optional.empty())));
     storeRequestFuture.complete(Optional.of(storeBuilder));
@@ -215,7 +215,7 @@ public class StorageBackedRecentChainDataTest {
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
                 BlockProvider.NOOP,
-                StateAndBlockProvider.NOOP,
+                StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
             .build();
@@ -260,7 +260,7 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();

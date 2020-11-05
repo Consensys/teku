@@ -208,7 +208,7 @@ public class HashTreeTest {
       // All blocks should be available
       for (SignedBeaconBlock block : chain) {
         assertThat(tree.contains(block.getRoot())).isTrue();
-        assertThat(tree.getParent(block.getRoot())).contains(block.getParent_root());
+        assertThat(tree.getParent(block.getRoot())).contains(block.getParentRoot());
       }
 
       // Validate children for simple case

@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics;
+package tech.pegasys.teku.core.lookup;
 
-public interface GossipedItemConsumer<T> {
-  void forward(T operation);
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-  GossipedItemConsumer<?> NOOP = (__) -> {};
+public interface StateAndBlockSummaryProvider {
+  StateAndBlockSummaryProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());
 
-  @SuppressWarnings("unchecked")
-  static <T> GossipedItemConsumer<T> noop() {
-    return (GossipedItemConsumer<T>) NOOP;
-  }
+  SafeFuture<Optional<StateAndBlockSummary>> getStateAndBlock(final Bytes32 blockRoot);
 }

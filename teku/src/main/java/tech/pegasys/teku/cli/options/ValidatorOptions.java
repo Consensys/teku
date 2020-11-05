@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
   @Option(
@@ -93,10 +94,19 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-performance-tracking-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Enable validator performance tracking and logging",
+      description = "Enable validator performance tracking",
       fallbackValue = "true",
-      arity = "0..1")
-  private boolean validatorPerformanceTrackingEnabled = false;
+      arity = "0..1",
+      hidden = true)
+  private Boolean validatorPerformanceTrackingEnabled = null;
+
+  @Option(
+      names = {"--validators-performance-tracking-mode"},
+      paramLabel = "<TRACKING_MODE>",
+      description = "Set strategy for handling performance tracking",
+      arity = "1")
+  private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
+      ValidatorPerformanceTrackingMode.ALL;
 
   @Option(
       names = {"--validators-keystore-locking-enabled"},
@@ -106,6 +116,14 @@ public class ValidatorOptions {
   private boolean validatorKeystoreLockingEnabled = true;
 
   public void configure(TekuConfiguration.Builder builder) {
+    if (validatorPerformanceTrackingEnabled != null) {
+      if (validatorPerformanceTrackingEnabled) {
+        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.ALL;
+      } else {
+        this.validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.NONE;
+      }
+    }
+
     builder.validator(
         config ->
             config
@@ -115,7 +133,7 @@ public class ValidatorOptions {
                 .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
-                .validatorPerformanceTrackingEnabled(validatorPerformanceTrackingEnabled)
+                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .graffiti(graffiti)
                 .validatorKeys(validatorKeys));
   }

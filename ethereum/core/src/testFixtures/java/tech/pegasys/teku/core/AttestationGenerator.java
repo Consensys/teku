@@ -36,8 +36,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalSigner;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -125,20 +125,20 @@ public class AttestationGenerator {
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
-  public Attestation validAttestation(final BeaconBlockAndState blockAndState) {
+  public Attestation validAttestation(final StateAndBlockSummary blockAndState) {
     return validAttestation(blockAndState, blockAndState.getSlot());
   }
 
-  public Attestation validAttestation(final BeaconBlockAndState blockAndState, final UInt64 slot) {
+  public Attestation validAttestation(final StateAndBlockSummary blockAndState, final UInt64 slot) {
     return createAttestation(blockAndState, true, slot);
   }
 
-  public Attestation attestationWithInvalidSignature(final BeaconBlockAndState blockAndState) {
+  public Attestation attestationWithInvalidSignature(final StateAndBlockSummary blockAndState) {
     return createAttestation(blockAndState, false, blockAndState.getSlot());
   }
 
   private Attestation createAttestation(
-      final BeaconBlockAndState blockAndState,
+      final StateAndBlockSummary blockAndState,
       final boolean withValidSignature,
       final UInt64 slot) {
     UInt64 assignedSlot = slot;
@@ -156,16 +156,14 @@ public class AttestationGenerator {
     return attestation.orElseThrow();
   }
 
-  public List<Attestation> getAttestationsForSlot(final BeaconBlockAndState blockAndState) {
-    return getAttestationsForSlot(
-        blockAndState.getState(), blockAndState.getBlock(), blockAndState.getSlot());
+  public List<Attestation> getAttestationsForSlot(final StateAndBlockSummary blockAndState) {
+    return getAttestationsForSlot(blockAndState, blockAndState.getSlot());
   }
 
   public List<Attestation> getAttestationsForSlot(
-      final BeaconState state, final BeaconBlock block, final UInt64 slot) {
+      final StateAndBlockSummary blockAndState, final UInt64 slot) {
 
-    return streamAttestations(new BeaconBlockAndState(block, state), slot)
-        .collect(Collectors.toList());
+    return streamAttestations(blockAndState, slot).collect(Collectors.toList());
   }
 
   /**
@@ -177,7 +175,7 @@ public class AttestationGenerator {
    * @return A stream of valid attestations to produce at the assigned slot
    */
   public Stream<Attestation> streamAttestations(
-      final BeaconBlockAndState headBlockAndState, final UInt64 assignedSlot) {
+      final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.create(headBlockAndState, assignedSlot, validatorKeys).toStream();
   }
 
@@ -190,7 +188,7 @@ public class AttestationGenerator {
    * @return A stream of invalid attestations produced at the assigned slot
    */
   private Stream<Attestation> streamInvalidAttestations(
-      final BeaconBlockAndState headBlockAndState, final UInt64 assignedSlot) {
+      final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.createWithInvalidSignatures(
             headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
         .toStream();
@@ -202,7 +200,7 @@ public class AttestationGenerator {
    */
   private static class AttestationIterator implements Iterator<Attestation> {
     // The latest block being attested to
-    private final BeaconBlock headBlock;
+    private final BeaconBlockSummary headBlock;
     // The latest state processed through to the current slot
     private final BeaconState headState;
     // The assigned slot to generate attestations for
@@ -217,11 +215,11 @@ public class AttestationGenerator {
     private int currentValidatorIndex = 0;
 
     private AttestationIterator(
-        final BeaconBlockAndState headBlockAndState,
+        final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final Function<Integer, BLSKeyPair> validatorKeySupplier) {
-      this.headBlock = headBlockAndState.getBlock();
+      this.headBlock = headBlockAndState;
       this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
       this.assignedSlot = assignedSlot;
@@ -244,7 +242,7 @@ public class AttestationGenerator {
     }
 
     public static AttestationIterator create(
-        final BeaconBlockAndState headBlockAndState,
+        final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys) {
       return new AttestationIterator(
@@ -252,7 +250,7 @@ public class AttestationGenerator {
     }
 
     public static AttestationIterator createWithInvalidSignatures(
-        final BeaconBlockAndState headBlockAndState,
+        final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final BLSKeyPair invalidKeyPair) {

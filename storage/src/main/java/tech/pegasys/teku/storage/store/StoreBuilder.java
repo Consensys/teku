@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -37,7 +37,7 @@ public class StoreBuilder {
   private AsyncRunner asyncRunner;
   private MetricsSystem metricsSystem;
   private BlockProvider blockProvider;
-  private StateAndBlockProvider stateAndBlockProvider;
+  private StateAndBlockSummaryProvider stateAndBlockProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
   private final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
@@ -60,7 +60,7 @@ public class StoreBuilder {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateAndBlockProvider stateAndBlockProvider,
+      final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
@@ -150,7 +150,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
+  public StoreBuilder stateProvider(final StateAndBlockSummaryProvider stateProvider) {
     checkNotNull(stateProvider);
     this.stateAndBlockProvider = stateProvider;
     return this;

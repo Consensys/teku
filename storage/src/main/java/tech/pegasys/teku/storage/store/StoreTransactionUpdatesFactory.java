@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -107,11 +108,7 @@ class StoreTransactionUpdatesFactory {
     return createStoreTransactionUpdates(finalizedChainData);
   }
 
-  /**
-   * Pull subset of hot states that sit at epoch boundaries to persist
-   *
-   * @return
-   */
+  /** Pull subset of hot states that sit at epoch boundaries to persist */
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
     final Map<Bytes32, BeaconState> statesToPersist =
         hotBlockAndStates.entrySet().stream()
@@ -140,8 +137,8 @@ class StoreTransactionUpdatesFactory {
     while (!baseStore.containsBlock(finalizedChainHeadRoot)) {
       // Blocks from the new transaction must all be in memory as they haven't been stored yet
       final SignedBeaconBlock block = hotBlocks.get(finalizedChainHeadRoot).getBlock();
-      childToParent.put(finalizedChainHeadRoot, block.getParent_root());
-      finalizedChainHeadRoot = block.getParent_root();
+      childToParent.put(finalizedChainHeadRoot, block.getParentRoot());
+      finalizedChainHeadRoot = block.getParentRoot();
     }
 
     // Add existing hot blocks that are now finalized
@@ -171,7 +168,7 @@ class StoreTransactionUpdatesFactory {
   }
 
   private boolean shouldPrune(
-      final SignedBeaconBlock finalizedBlock,
+      final BeaconBlockSummary finalizedBlock,
       final Bytes32 blockRoot,
       final UInt64 slot,
       final Bytes32 parentRoot) {
@@ -182,7 +179,7 @@ class StoreTransactionUpdatesFactory {
   }
 
   private void calculatePrunedHotBlockRoots() {
-    final SignedBeaconBlock finalizedBlock = tx.getLatestFinalized().getBlock();
+    final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore.blockMetadata.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
           if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {

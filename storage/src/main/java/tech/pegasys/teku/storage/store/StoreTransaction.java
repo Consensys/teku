@@ -35,6 +35,7 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -301,6 +302,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
+      final Bytes32 blockRoot) {
+    if (blockAndStates.containsKey(blockRoot)) {
+      final StateAndBlockSummary result = blockAndStates.get(blockRoot);
+      return SafeFuture.completedFuture(Optional.of(result));
+    }
+    return store.retrieveStateAndBlockSummary(blockRoot);
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
     if (blockAndStates.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
@@ -342,7 +353,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 return store.retrieveFinalizedCheckpointAndState();
               } else {
                 return SafeFuture.completedFuture(
-                    new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
+                    CheckpointState.create(finalizedCheckpoint, block.get(), state.get()));
               }
             });
   }

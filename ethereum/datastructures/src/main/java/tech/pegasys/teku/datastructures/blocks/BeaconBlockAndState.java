@@ -13,58 +13,35 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Helper datastructure that holds an unsigned block with its corresponding state */
-public class BeaconBlockAndState {
+public class BeaconBlockAndState extends StateAndBlockSummary {
   private final BeaconBlock block;
-  private final BeaconState state;
 
   public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
-    checkArgument(
-        Objects.equals(block.getState_root(), state.hash_tree_root()),
-        "State must belong to the given block");
+    super(block, state);
     this.block = block;
-    this.state = state;
   }
 
   public BeaconBlock getBlock() {
     return block;
   }
 
-  public BeaconState getState() {
-    return state;
-  }
-
-  public Bytes32 getRoot() {
-    return block.hash_tree_root();
-  }
-
-  public UInt64 getSlot() {
-    return block.getSlot();
-  }
-
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     final BeaconBlockAndState that = (BeaconBlockAndState) o;
-    return Objects.equals(block, that.block) && Objects.equals(state, that.state);
+    return Objects.equals(block, that.block);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(block, state);
+    return Objects.hash(super.hashCode(), block);
   }
 
   @Override

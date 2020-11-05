@@ -36,8 +36,8 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
@@ -119,10 +119,9 @@ class BlockFactoryTest {
   private void assertBlockCreated(final UInt64 newSlot)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final BeaconBlockAndState bestBlockAndState =
-        recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
-    final BeaconBlock previousBlock = bestBlockAndState.getBlock();
+    final BeaconBlock previousBlock = bestBlockAndState.getBeaconBlock().orElseThrow();
     final BeaconState previousState =
         recentChainData.retrieveBlockState(bestBlockRoot).join().orElseThrow();
     final BeaconBlock block =
