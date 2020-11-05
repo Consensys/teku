@@ -483,13 +483,9 @@ public class WeakSubjectivityInitializerTest {
             chain, anchor, queryChannel);
     verify(queryChannel).getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot());
     verify(queryChannel).getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot());
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get)
-        .hasCauseInstanceOf(IllegalStateException.class)
-        .hasMessageContaining(
-            "Supplied weak subjectivity state does not match stored block at epoch "
-                + anchor.getEpoch()
-                + ": (empty)");
+
+    // If we can't verify the state one way or the other, we'll just accept it
+    assertThat(result).isCompleted();
   }
 
   @Test

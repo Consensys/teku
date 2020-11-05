@@ -190,6 +190,16 @@ class WeakSubjectivityInitializer {
                     })
                 .thenApply(
                     blockSummaryAtAnchor -> {
+                      if (blockSummaryAtAnchor.isEmpty()) {
+                        // We must have moved passed the anchor point and not saved its state, just
+                        // log a warning
+                        LOG.warn(
+                            "Ignoring supplied weak subjectivity state. Local database is already initialized and cannot be validated against the supplied state (slot={}, blockRoot={}, stateRoot={}).",
+                            anchor.getBlockSlot(),
+                            anchor.getRoot(),
+                            anchor.getStateRoot());
+                        return null;
+                      }
                       final Optional<Bytes32> storedBlockRoot =
                           blockSummaryAtAnchor.map(BeaconBlockSummary::getRoot);
                       final boolean storedBlockMatchesAnchor =
