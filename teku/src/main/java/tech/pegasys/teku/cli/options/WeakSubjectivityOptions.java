@@ -18,33 +18,27 @@ import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class WeakSubjectivityOptions {
 
-  @CommandLine.ArgGroup(exclusive = false)
-  InitialStateArguments initialStateArguments;
+  @CommandLine.Option(
+      names = {"--Xws-initial-state"},
+      paramLabel = "<STRING>",
+      description =
+          "A recent state within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded state.",
+      arity = "1",
+      hidden = true)
+  private String weakSubjectivityState;
 
-  static class InitialStateArguments {
-    @CommandLine.Option(
-        required = true,
-        names = {"--Xws-initial-state"},
-        paramLabel = "<STRING>",
-        description =
-            "A recent state within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded state.",
-        arity = "1",
-        hidden = true)
-    private String weakSubjectivityState;
-
-    @CommandLine.Option(
-        required = true,
-        names = {"--Xws-initial-block"},
-        paramLabel = "<STRING>",
-        description =
-            "A recent block within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded block.",
-        arity = "1",
-        hidden = true)
-    private String weakSubjectivityBlock;
-  }
+  @CommandLine.Option(
+      names = {"--Xws-initial-block"},
+      paramLabel = "<STRING>",
+      description =
+          "A recent block within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded block.",
+      arity = "1",
+      hidden = true)
+  private String weakSubjectivityBlock;
 
   @CommandLine.Option(
       converter = CheckpointConverter.class,
@@ -66,9 +60,13 @@ public class WeakSubjectivityOptions {
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
-          if (initialStateArguments != null) {
-            wsBuilder.weakSubjectivityStateResource(initialStateArguments.weakSubjectivityState);
-            wsBuilder.weakSubjectivityBlockResource(initialStateArguments.weakSubjectivityBlock);
+          if (weakSubjectivityState != null || weakSubjectivityBlock != null) {
+            if (weakSubjectivityState == null || weakSubjectivityBlock == null) {
+              throw new InvalidConfigurationException(
+                  "Error: --Xws-initial-block and --Xws-initial-state must be specified together");
+            }
+            wsBuilder.weakSubjectivityStateResource(weakSubjectivityState);
+            wsBuilder.weakSubjectivityBlockResource(weakSubjectivityBlock);
           }
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);

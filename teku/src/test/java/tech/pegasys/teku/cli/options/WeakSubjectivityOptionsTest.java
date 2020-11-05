@@ -101,7 +101,8 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final int result = beaconNodeCommand.parse(args);
 
     String str = getCommandLineOutput();
-    assertThat(str).contains("Error: Missing required argument(s): --Xws-initial-block=<STRING>");
+    assertThat(str)
+        .contains("Error: --Xws-initial-block and --Xws-initial-state must be specified together");
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);
@@ -113,7 +114,8 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final int result = beaconNodeCommand.parse(args);
 
     String str = getCommandLineOutput();
-    assertThat(str).contains("Error: Missing required argument(s): --Xws-initial-state=<STRING>");
+    assertThat(str)
+        .contains("Error: --Xws-initial-block and --Xws-initial-state must be specified together");
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);
@@ -123,5 +125,13 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   public void weakSubjectivityState_shouldDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).isEmpty();
+  }
+
+  @Test
+  public void weakSubjectivityState_fromConfig() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromFile("weakSubjectivityOptions_config.yaml");
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).contains("state.ssz");
+    assertThat(config.weakSubjectivity().getWeakSubjectivityBlockResource()).contains("block.ssz");
   }
 }
