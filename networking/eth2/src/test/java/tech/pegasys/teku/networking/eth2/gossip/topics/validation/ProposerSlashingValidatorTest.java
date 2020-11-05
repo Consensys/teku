@@ -28,9 +28,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -116,5 +118,25 @@ public class ProposerSlashingValidatorTest {
         .thenReturn(true);
     assertThat(proposerSlashingValidator.validate(slashing1)).isEqualTo(ACCEPT);
     assertThat(proposerSlashingValidator.validate(slashing2)).isEqualTo(IGNORE);
+  }
+
+  @Test
+  public void shouldRejectProposerSlashingForTwoSignedHeadersWithSameMessageButDifferentSignature()
+      throws Exception {
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(6);
+    stateTransitionValidator = new ProposerSlashingStateTransitionValidator();
+    SignedBeaconBlockHeader header1 = dataStructureUtil.randomSignedBeaconBlockHeader();
+    SignedBeaconBlockHeader header2 =
+        new SignedBeaconBlockHeader(header1.getMessage(), BLSSignature.random(100));
+    assertThat(header2).isNotEqualTo(header1);
+    ProposerSlashing slashing = new ProposerSlashing(header1, header2);
+    assertThat(
+            stateTransitionValidator.validate(
+                recentChainData.getBestState().orElseThrow(), slashing))
+        .isEqualTo(
+            Optional.of(
+                ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
+                    .SAME_HEADER));
   }
 }
