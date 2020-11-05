@@ -301,7 +301,6 @@ public class RocksDbDatabase implements Database {
               });
     }
 
-    // Validate finalized data is consistent and available
     final Optional<SignedBeaconBlock> finalizedBlock =
         hotDao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
