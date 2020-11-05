@@ -16,17 +16,12 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -44,7 +39,7 @@ public class BeaconChainMethodsTest {
 
   private static final Bytes SSZ_RECORDED_STATUS_REQUEST_BYTES =
       Bytes.fromHexString(
-          "0x54000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E60000000000000000");
+          "0x54ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
   private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
       new StatusMessage(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
@@ -62,10 +57,9 @@ public class BeaconChainMethodsTest {
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  void testStatusRoundtripSerialization(String name, RpcEncoding encoding) throws Exception {
-    final BeaconChainMethods methods = getMethods(encoding);
+  @Test
+  void testStatusRoundtripSerialization() throws Exception {
+    final BeaconChainMethods methods = getMethods();
     final StatusMessage expected =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -83,19 +77,14 @@ public class BeaconChainMethodsTest {
 
   @Test
   public void shouldDecodeStatusMessageRequest() throws Exception {
-    final BeaconChainMethods methods = getMethods(RpcEncoding.SSZ);
+    final BeaconChainMethods methods = getMethods();
     final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();
     final Optional<StatusMessage> decodedRequest =
         decoder.decodeRequest(Utils.toByteBuf(SSZ_RECORDED_STATUS_REQUEST_BYTES));
     assertThat(decodedRequest).contains(RECORDED_STATUS_MESSAGE_DATA);
   }
 
-  public static Stream<Arguments> getEncodings() {
-    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
-  }
-
-  private BeaconChainMethods getMethods(final RpcEncoding rpcEncoding) {
+  private BeaconChainMethods getMethods() {
     return BeaconChainMethods.create(
         asyncRunner,
         peerLookup,
@@ -104,6 +93,6 @@ public class BeaconChainMethodsTest {
         metricsSystem,
         statusMessageFactory,
         metadataMessagesFactory,
-        rpcEncoding);
+        RpcEncoding.SSZ_SNAPPY);
   }
 }

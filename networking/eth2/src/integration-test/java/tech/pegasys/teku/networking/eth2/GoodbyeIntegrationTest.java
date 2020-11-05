@@ -14,16 +14,12 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding.SSZ_SNAPPY;
 
-import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class GoodbyeIntegrationTest {
@@ -31,10 +27,10 @@ public class GoodbyeIntegrationTest {
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 
-  private void setUp(final RpcEncoding rpcEncoding) throws Exception {
-    final Eth2Network network1 = networkFactory.builder().rpcEncoding(rpcEncoding).startNetwork();
+  private void setUp() throws Exception {
+    final Eth2Network network1 = networkFactory.builder().rpcEncoding(SSZ_SNAPPY).startNetwork();
     final Eth2Network network2 =
-        networkFactory.builder().rpcEncoding(rpcEncoding).peer(network1).startNetwork();
+        networkFactory.builder().rpcEncoding(SSZ_SNAPPY).peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
@@ -44,18 +40,11 @@ public class GoodbyeIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
-  public void shouldCloseConnectionAfterGoodbyeReceived(
-      final String encodingName, final RpcEncoding encoding) throws Exception {
-    setUp(encoding);
+  @Test
+  public void shouldCloseConnectionAfterGoodbyeReceived() throws Exception {
+    setUp();
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.SHUTTING_DOWN));
     Waiter.waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     Waiter.waitFor(() -> assertThat(peer2.isConnected()).isFalse());
-  }
-
-  public static Stream<Arguments> getEncodings() {
-    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
   }
 }

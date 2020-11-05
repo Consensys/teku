@@ -36,11 +36,12 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongExcep
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 class LengthPrefixedEncodingTest {
 
-  private final RpcEncoding encoding = RpcEncoding.SSZ;
+  private final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
   private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
   private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
       ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
@@ -247,7 +248,10 @@ class LengthPrefixedEncodingTest {
     final Bytes encoded =
         encoding.encodePayload(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
     // Just the length prefix and the hash itself.
-    assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
+    assertThat(encoded)
+        .isEqualTo(
+            Bytes.wrap(
+                Bytes.fromHexString("0x20"), new SnappyFramedCompressor().compress(Bytes32.ZERO)));
   }
 
   @Test
@@ -271,8 +275,10 @@ class LengthPrefixedEncodingTest {
             List.of(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
     final Bytes data = encoding.encodePayload(request);
     final int expectedLengthPrefixLength = 1;
-    assertThat(data.size())
-        .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
+    final Bytes uncompressedPayload =
+        Bytes.wrap(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02"));
+    final Bytes payload = new SnappyFramedCompressor().compress(uncompressedPayload);
+    assertThat(data.size()).isEqualTo(payload.size() + expectedLengthPrefixLength);
 
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(data);
 

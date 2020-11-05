@@ -38,7 +38,7 @@ import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
-public abstract class Eth2IncomingRequestHandlerTest
+public class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
@@ -109,20 +109,8 @@ public abstract class Eth2IncomingRequestHandlerTest
     verify(rpcStream, never()).closeAbruptly();
   }
 
-  public static class Eth2IncomingRequestHandlerTest_ssz extends Eth2IncomingRequestHandlerTest {
-
-    @Override
-    protected RpcEncoding getRpcEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class Eth2IncomingRequestHandlerTest_sszSnappy
-      extends Eth2IncomingRequestHandlerTest {
-
-    @Override
-    protected RpcEncoding getRpcEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
+  @Override
+  protected RpcEncoding getRpcEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 }

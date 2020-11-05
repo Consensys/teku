@@ -49,7 +49,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public abstract class BeaconBlocksByRootIntegrationTest {
+public class BeaconBlocksByRootIntegrationTest {
   protected final StorageSystem storageSystem1 =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   protected final StorageSystem storageSystem2 =
@@ -86,8 +86,6 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
-
-  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -240,20 +238,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     return blocks;
   }
 
-  public static class BeaconBlocksByRootIntegrationTest_ssz
-      extends BeaconBlocksByRootIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class BeaconBlocksByRootIntegrationTest_sszSnappy
-      extends BeaconBlocksByRootIntegrationTest {
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
+  private RpcEncoding getEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 }
