@@ -13,39 +13,61 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import com.google.common.base.Preconditions;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.pubsub.PubsubApi;
+import io.libp2p.core.pubsub.PubsubApiKt;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
+import io.libp2p.pubsub.PubsubRouterMessageValidator;
 import io.libp2p.pubsub.gossip.Gossip;
+import io.libp2p.pubsub.gossip.GossipParams;
+import io.libp2p.pubsub.gossip.GossipRouter;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
+public class LibP2PGossipNetwork implements GossipNetwork {
   private static final Logger LOG = LogManager.getLogger();
+  private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
+  private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
+  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
+  private static final Bytes MESSAGE_DOMAIN_INVALID_SNAPPY = Bytes.fromHexString("0x00000000");
+
 
   private final MetricsSystem metricsSystem;
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
+  private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
 
-  public LibP2PGossipNetwork(
-      final MetricsSystem metricsSystem, final Gossip gossip, final PubsubPublisherApi publisher) {
+  public LibP2PGossipNetwork(MetricsSystem metricsSystem, GossipConfig gossipConfig,
+      boolean logWireGossip) {
     this.metricsSystem = metricsSystem;
-    this.gossip = gossip;
-    this.publisher = publisher;
+    this.gossip = createGossip(gossipConfig, logWireGossip);
+    this.publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
   }
 
   @Override
@@ -57,6 +79,7 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     LOG.trace("Subscribe to topic: {}", topic);
+    topicHandlerMap.put(topic, topicHandler);
     final Topic libP2PTopic = new Topic(topic);
     final GossipHandler gossipHandler =
         new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
@@ -76,5 +99,60 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
               topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
     }
     return result;
+  }
+
+  private Optional<TopicHandler> getSubscribedHandler(String topic) {
+    return Optional.ofNullable(topicHandlerMap.get(topic));
+  }
+
+  public PreparedMessage prepareMessage(String topic, Bytes payload) {
+    Optional<TopicHandler> topicHandler = getSubscribedHandler(topic);
+    return topicHandler.map(handler -> handler.prepareMessage(payload))
+        .orElse(prepareNonSubscribedMessage(payload));
+  }
+
+  private PreparedMessage prepareNonSubscribedMessage(Bytes payload) {
+    return () -> Hash.sha2_256(Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, payload)).slice(0, 20);
+  }
+
+  private Gossip createGossip(GossipConfig gossipConfig, boolean gossipLogsEnabled) {
+    GossipParams gossipParams =
+        GossipParams.builder()
+            .D(gossipConfig.getD())
+            .DLow(gossipConfig.getDLow())
+            .DHigh(gossipConfig.getDHigh())
+            .DLazy(gossipConfig.getDLazy())
+            .fanoutTTL(gossipConfig.getFanoutTTL())
+            .gossipSize(gossipConfig.getAdvertise())
+            .gossipHistoryLength(gossipConfig.getHistory())
+            .heartbeatInterval(gossipConfig.getHeartbeatInterval())
+            .floodPublish(true)
+            .seenTTL(gossipConfig.getSeenTTL())
+            .build();
+
+    GossipRouter router = new GossipRouter(gossipParams);
+    router.setMessageFactory(
+        msg -> {
+          Preconditions.checkArgument(
+              msg.getTopicIDsCount() == 1,
+              "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
+          String topic = msg.getTopicIDs(0);
+          PreparedMessage preparedMessage = prepareMessage(topic,
+              Bytes.wrap(msg.getData().toByteArray()));
+          return new PreparedPubsubMessage(msg, preparedMessage);
+        });
+    router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
+
+    ChannelHandler debugHandler =
+        gossipLogsEnabled
+            ? new LoggingHandler("wire.gossip", LogLevel.DEBUG)
+            : null;
+    PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
+
+    return new Gossip(router, pubsubApi, debugHandler);
+  }
+
+  public Gossip getGossip() {
+    return gossip;
   }
 }

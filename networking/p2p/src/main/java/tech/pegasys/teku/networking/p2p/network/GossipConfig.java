@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.p2p.network;
 
 import java.time.Duration;
-import tech.pegasys.teku.networking.p2p.gossip.GossipMessageFactory;
-import tech.pegasys.teku.networking.p2p.libp2p.gossip.DefaultMessageFactory;
 
 /**
  * Gossip options
@@ -54,7 +52,6 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
-  private final GossipMessageFactory messageFactory = new DefaultMessageFactory();
 
   public GossipConfig(
       int d,
@@ -111,9 +108,5 @@ public class GossipConfig {
 
   public Duration getSeenTTL() {
     return seenTTL;
-  }
-
-  public GossipMessageFactory getMessageFactory() {
-    return messageFactory;
   }
 }

@@ -90,12 +90,12 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
     PubsubMessage pubsubMessage = message.getOriginalMessage();
-    if (!(pubsubMessage instanceof GossipPubsubMessage)) {
+    if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
       throw new IllegalArgumentException(
           "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
     }
-    GossipPubsubMessage gossipPubsubMessage = (GossipPubsubMessage) pubsubMessage;
-    return handler.handleMessage(gossipPubsubMessage.getGossipMessage());
+    PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
+    return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
   public void gossip(Bytes bytes) {

@@ -25,10 +25,10 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Eth2TopicHandlerTest {
@@ -38,16 +38,12 @@ public class Eth2TopicHandlerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final MockEth2TopicHandler topicHandler = new MockEth2TopicHandler(asyncRunner);
 
-  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
-    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
-  }
-
   @Test
   public void handleMessage_valid() {
     topicHandler.setValidationResult(InternalValidationResult.ACCEPT);
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -57,7 +53,7 @@ public class Eth2TopicHandlerTest {
     topicHandler.setValidationResult(InternalValidationResult.REJECT);
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -67,7 +63,7 @@ public class Eth2TopicHandlerTest {
     topicHandler.setValidationResult(InternalValidationResult.IGNORE);
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -76,7 +72,7 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_invalidBytes() {
     final Bytes invalidBytes = Bytes.fromHexString("0x0102");
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(invalidBytes));
+        .handleMessage(topicHandler.prepareMessage(invalidBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -90,7 +86,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -104,7 +100,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -118,7 +114,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -132,7 +128,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -146,7 +142,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -160,7 +156,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -174,7 +170,7 @@ public class Eth2TopicHandlerTest {
         });
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(blockBytes));
+        .handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -220,8 +216,8 @@ public class Eth2TopicHandlerTest {
     }
 
     @Override
-    public SignedBeaconBlock deserialize(Bytes bytes) throws DecodingException {
-      return deserializer.deserialize(bytes);
+    public SignedBeaconBlock deserialize(PreparedMessage message) throws DecodingException {
+      return deserializer.deserialize(message);
     }
 
     @Override
@@ -251,6 +247,6 @@ public class Eth2TopicHandlerTest {
   }
 
   private interface Deserializer<T> {
-    T deserialize(final Bytes bytes) throws DecodingException;
+    T deserialize(final PreparedMessage bytes) throws DecodingException;
   }
 }

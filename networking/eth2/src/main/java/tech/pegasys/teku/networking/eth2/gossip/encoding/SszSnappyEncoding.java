@@ -14,18 +14,15 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.util.LengthBounds;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "ssz_snappy";
   private final SnappyBlockCompressor snappyCompressor;
-  private final GossipEncoding sszEncoding;
+  private final SszGossipCodec sszCodec = new SszGossipCodec();
 
-  public SszSnappyEncoding(
-      final GossipEncoding sszEncoding, final SnappyBlockCompressor snappyCompressor) {
+  public SszSnappyEncoding(final SnappyBlockCompressor snappyCompressor) {
     this.snappyCompressor = snappyCompressor;
-    this.sszEncoding = sszEncoding;
   }
 
   @Override
@@ -35,11 +32,21 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public <T> Bytes encode(final T value) {
-    return snappyCompressor.compress(sszEncoding.encode(value));
+    return snappyCompressor.compress(sszCodec.encode(value));
   }
 
   @Override
-  public <T> T decode(Bytes uncompressedData, Class<T> valueType) throws DecodingException {
-    return sszEncoding.decode(uncompressedData, valueType);
+  public <T> T decode(PreparedMessage message, Class<T> valueType) throws DecodingException {
+    if (!(message instanceof LazyUncompressPreparedMessage)) {
+      throw new DecodingException("Unexpected PreparedMessage subclass: " + message.getClass());
+    }
+    LazyUncompressPreparedMessage lazyMessage = (LazyUncompressPreparedMessage) message;
+    return sszCodec.decode(lazyMessage.getUncompressedOrThrow(), valueType);
   }
+
+  @Override
+  public <T> PreparedMessage prepareMessage(Bytes data, Class<T> valueType) {
+    return new LazyUncompressPreparedMessage(data, valueType, snappyCompressor);
+  }
+
 }

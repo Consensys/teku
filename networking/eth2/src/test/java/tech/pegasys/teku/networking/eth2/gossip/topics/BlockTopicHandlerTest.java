@@ -31,8 +31,6 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -67,10 +65,6 @@ public class BlockTopicHandlerTest {
     beaconChainUtil.initializeStorage();
   }
 
-  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
-    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
-  }
-
   @Test
   public void handleMessage_validBlock() throws Exception {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
@@ -79,7 +73,7 @@ public class BlockTopicHandlerTest {
     beaconChainUtil.setSlot(nextSlot);
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(gossipedBlockConsumer).forward(block);
@@ -93,7 +87,7 @@ public class BlockTopicHandlerTest {
     beaconChainUtil.setSlot(recentChainData.getHeadSlot());
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedBlockConsumer).forward(block);
@@ -104,7 +98,7 @@ public class BlockTopicHandlerTest {
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(createMessageStub(serialized));
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedBlockConsumer).forward(block);
@@ -115,7 +109,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -128,7 +122,7 @@ public class BlockTopicHandlerTest {
     beaconChainUtil.setSlot(nextSlot);
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(gossipedBlockConsumer, never()).forward(block);

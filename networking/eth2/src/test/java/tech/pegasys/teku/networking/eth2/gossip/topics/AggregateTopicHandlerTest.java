@@ -20,14 +20,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -52,10 +50,6 @@ public class AggregateTopicHandlerTest {
           validator,
           attestationConsumer);
 
-  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
-    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
-  }
-
   @Test
   public void handleMessage_validAggregate() {
     final ValidateableAttestation aggregate =
@@ -65,8 +59,8 @@ public class AggregateTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(
-            createMessageStub(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+        topicHandler.handleMessage(topicHandler
+            .prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(attestationConsumer).forward(aggregate);
@@ -82,7 +76,7 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            createMessageStub(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer).forward(aggregate);
@@ -98,7 +92,7 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            createMessageStub(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer, never()).forward(aggregate);
@@ -114,7 +108,7 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            createMessageStub(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(attestationConsumer, never()).forward(aggregate);

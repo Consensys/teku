@@ -32,8 +32,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
-import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -64,17 +62,13 @@ public class AttesterSlashingTopicHandlerTest {
     beaconChainUtil.initializeStorage();
   }
 
-  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
-    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
-  }
-
   @Test
   public void handleMessage_validSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(validator.validate(slashing)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(consumer).forward(slashing);
@@ -86,7 +80,7 @@ public class AttesterSlashingTopicHandlerTest {
     when(validator.validate(slashing)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
@@ -98,7 +92,7 @@ public class AttesterSlashingTopicHandlerTest {
     when(validator.validate(slashing)).thenReturn(REJECT);
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
@@ -109,7 +103,7 @@ public class AttesterSlashingTopicHandlerTest {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);

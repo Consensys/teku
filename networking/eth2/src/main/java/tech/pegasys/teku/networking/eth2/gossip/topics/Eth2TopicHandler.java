@@ -13,21 +13,17 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import io.libp2p.core.pubsub.ValidationResult;
-import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
-import tech.pegasys.teku.networking.p2p.gossip.GossipMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -43,18 +39,8 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
   }
 
   @Override
-  public SafeFuture<ValidationResult> handleMessage(GossipMessage message) {
-    checkArgument(
-        message instanceof Eth2GossipMessage, "Unexpected message class: " + message.getClass());
-    Eth2GossipMessage eth2GossipMessage = (Eth2GossipMessage) message;
-    Optional<Bytes> decompressedPayload = eth2GossipMessage.getDecompressedPayload();
-    if (decompressedPayload.isEmpty()) {
-      // the message which couldn't be decompressed should fail earlier
-      LOG.warn("Unexpectedly failed decompressing: " + message);
-      return SafeFuture.completedFuture(ValidationResult.Invalid);
-    }
-
-    return SafeFuture.of(() -> deserialize(decompressedPayload.get()))
+  public SafeFuture<ValidationResult> handleMessage(PreparedMessage message) {
+    return SafeFuture.of(() -> deserialize(message))
         .thenApply(this::wrapMessage)
         .thenCompose(
             wrapped ->
@@ -93,8 +79,13 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
     return response;
   }
 
-  public T deserialize(Bytes bytes) throws DecodingException {
-    return getGossipEncoding().decode(bytes, getValueType());
+  @Override
+  public PreparedMessage prepareMessage(Bytes payload) {
+    return getGossipEncoding().prepareMessage(payload, getValueType());
+  }
+
+  public T deserialize(PreparedMessage message) throws DecodingException {
+    return getGossipEncoding().decode(message, getValueType());
   }
 
   public String getTopic() {
@@ -114,11 +105,6 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
 
     protected SimpleEth2TopicHandler(final AsyncRunner asyncRunner) {
       super(asyncRunner);
-    }
-
-    @Override
-    public T deserialize(Bytes bytes) throws DecodingException {
-      return getGossipEncoding().decode(bytes, getValueType());
     }
 
     @Override

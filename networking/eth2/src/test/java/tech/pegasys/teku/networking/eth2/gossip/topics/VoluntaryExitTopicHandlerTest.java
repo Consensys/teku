@@ -32,8 +32,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.Eth2GossipMessage;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -67,10 +65,6 @@ public class VoluntaryExitTopicHandlerTest {
     beaconChainUtil.initializeStorage();
   }
 
-  private Eth2GossipMessage createMessageStub(Bytes decompressedPayload) {
-    return new Eth2GossipMessage("/test/topic", Bytes.EMPTY, () -> decompressedPayload);
-  }
-
   @Test
   public void handleMessage_validExit() {
     final SignedVoluntaryExit exit =
@@ -78,7 +72,7 @@ public class VoluntaryExitTopicHandlerTest {
     when(validator.validate(exit)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(consumer).forward(exit);
@@ -91,7 +85,7 @@ public class VoluntaryExitTopicHandlerTest {
     when(validator.validate(exit)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(createMessageStub(serialized));
+        .handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
@@ -101,7 +95,8 @@ public class VoluntaryExitTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(createMessageStub(serialized))
+    final ValidationResult result = topicHandler
+        .handleMessage(topicHandler.prepareMessage(serialized))
         .join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
