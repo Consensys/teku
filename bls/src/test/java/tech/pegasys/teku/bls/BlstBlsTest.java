@@ -11,29 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
+package tech.pegasys.teku.bls;
 
-import java.util.Optional;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
 
-/**
- * Provides an abstract "data access object" interface for working with ETH1 data from the
- * underlying database.
- */
-public interface RocksDbProtoArrayDao extends AutoCloseable {
+public class BlstBlsTest extends BLSTest {
 
-  Optional<ProtoArraySnapshot> getProtoArraySnapshot();
+  @BeforeAll
+  public static void init() {
+    BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
+  }
 
-  ProtoArrayUpdater protoArrayUpdater();
-
-  interface ProtoArrayUpdater extends AutoCloseable {
-    void deleteProtoArraySnapshot();
-
-    void commit();
-
-    void cancel();
-
-    @Override
-    void close();
+  @AfterAll
+  public static void cleanup() {
+    BLS.resetBlsImplementation();
   }
 }
