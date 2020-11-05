@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -655,6 +656,23 @@ class Store implements UpdatableStore {
       }
     } finally {
       writeLock.unlock();
+    }
+  }
+
+  Bytes32 applyForkChoiceScoreChanges(
+      final MutableStore transaction,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+    // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
+    // protoArray lock first, and may deadlock when it later needs to get votes which requires the
+    // store lock.
+    lock.writeLock().lock();
+    try {
+      return forkChoiceStrategy.findHead(
+          transaction, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+    } finally {
+      lock.writeLock().unlock();
     }
   }
 }

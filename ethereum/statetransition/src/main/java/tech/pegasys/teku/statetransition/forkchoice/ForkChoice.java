@@ -93,8 +93,7 @@ public class ForkChoice {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
                       Bytes32 headBlockRoot =
-                          forkChoiceStrategy.findHead(
-                              transaction,
+                          transaction.applyForkChoiceScoreChanges(
                               finalizedCheckpoint,
                               justifiedCheckpoint,
                               justifiedCheckpointState.orElseThrow());

@@ -246,4 +246,12 @@ class TestStoreImpl implements MutableStore {
     this.votes.put(validatorIndex, vote);
     return vote;
   }
+
+  @Override
+  public Bytes32 applyForkChoiceScoreChanges(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
 }

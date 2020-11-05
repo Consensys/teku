@@ -136,6 +136,15 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return vote;
   }
 
+  @Override
+  public Bytes32 applyForkChoiceScoreChanges(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+    return store.applyForkChoiceScoreChanges(
+        this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+  }
+
   @CheckReturnValue
   @Override
   public SafeFuture<Void> commit() {
