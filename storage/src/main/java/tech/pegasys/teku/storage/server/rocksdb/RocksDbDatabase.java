@@ -40,6 +40,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -207,7 +210,12 @@ public class RocksDbDatabase implements Database {
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
       // Save to hot storage
-      hotUpdater.addHotBlock(anchorBlock);
+      hotUpdater.addHotBlock(
+          new BlockAndCheckpointEpochs(
+              anchorBlock,
+              new CheckpointEpochs(
+                  anchorState.getCurrent_justified_checkpoint().getEpoch(),
+                  anchorState.getFinalized_checkpoint().getEpoch())));
       // Save to cold storage
       finalizedUpdater.addFinalizedBlock(anchorBlock);
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
@@ -256,14 +264,21 @@ public class RocksDbDatabase implements Database {
 
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
-    // Build maps with block information
-    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
-    final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
+    // Build map with block information
+    final Map<Bytes32, StoredBlockMetadata> blockInformation = new HashMap<>();
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
-            childToParentLookup.put(b.getRoot(), b.getParent_root());
-            rootToSlot.put(b.getRoot(), b.getSlot());
+            final Optional<CheckpointEpochs> checkpointEpochs =
+                hotDao.getHotBlockCheckpointEpochs(b.getRoot());
+            blockInformation.put(
+                b.getRoot(),
+                new StoredBlockMetadata(
+                    b.getSlot(),
+                    b.getRoot(),
+                    b.getParent_root(),
+                    b.getStateRoot(),
+                    checkpointEpochs));
           });
     }
 
@@ -292,8 +307,7 @@ public class RocksDbDatabase implements Database {
             .latestFinalized(latestFinalized)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
-            .childToParentMap(childToParentLookup)
-            .rootToSlotMap(rootToSlot)
+            .blockInformation(blockInformation)
             .votes(votes));
   }
 
@@ -432,8 +446,18 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
+    try (final RocksDbHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
+      protoArraySnapshot
+          .getBlockInformationList()
+          .forEach(
+              block ->
+                  hotUpdater.addHotBlockCheckpointEpochs(
+                      block.getBlockRoot(),
+                      new CheckpointEpochs(block.getJustifiedEpoch(), block.getFinalizedEpoch())));
+      hotUpdater.commit();
+    }
     try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.putProtoArraySnapshot(protoArraySnapshot);
+      updater.deleteProtoArraySnapshot();
       updater.commit();
     }
   }

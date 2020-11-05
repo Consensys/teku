@@ -148,7 +148,6 @@ public class SlotProcessor {
   private void processSlotStart(final UInt64 nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
-      forkChoice.save();
       recentChainData
           .getFinalizedCheckpoint()
           .ifPresent(

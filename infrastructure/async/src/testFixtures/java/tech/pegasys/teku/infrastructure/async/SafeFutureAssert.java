@@ -55,7 +55,7 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
     isCompleted();
     T result = actual.join();
     assertThat(result).isInstanceOf(Optional.class);
-    assertThat(result).isNotEqualTo(Optional.empty());
+    assertThat((Optional<?>) result).isNotEmpty();
   }
 
   @SuppressWarnings("unchecked")
