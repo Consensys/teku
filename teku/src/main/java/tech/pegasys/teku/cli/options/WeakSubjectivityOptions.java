@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class WeakSubjectivityOptions {
 
   @CommandLine.Option(
-      required = true,
       names = {"--Xws-initial-state"},
       paramLabel = "<STRING>",
       description =
