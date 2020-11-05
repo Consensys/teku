@@ -43,7 +43,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -101,9 +100,7 @@ public class ChainBuilder {
   }
 
   public StateAndBlockSummaryProvider getStateAndBlockProvider() {
-    return blockRoot ->
-        SafeFuture.completedFuture(
-            getBlockAndState(blockRoot).map(StateAndBlockSummary.class::cast));
+    return blockRoot -> SafeFuture.completedFuture(getBlockAndState(blockRoot).map(a -> a));
   }
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This

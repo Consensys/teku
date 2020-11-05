@@ -177,8 +177,7 @@ class TestStoreImpl implements MutableStore {
   @Override
   public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
       final Bytes32 blockRoot) {
-    return retrieveBlockAndState(blockRoot)
-        .thenApply(res -> res.map(StateAndBlockSummary.class::cast));
+    return retrieveBlockAndState(blockRoot).thenApply(res -> res.map(a -> a));
   }
 
   @Override

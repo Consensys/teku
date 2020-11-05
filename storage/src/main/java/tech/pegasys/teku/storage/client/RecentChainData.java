@@ -356,7 +356,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   /** @return The head of the chain. */
   public Optional<StateAndBlockSummary> getChainHead() {
-    return chainHead.map(StateAndBlockSummary.class::cast);
+    return chainHead.map(a -> a);
   }
 
   /** @return The block at the head of the chain. */
