@@ -221,7 +221,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.0.0-rc.0'
+def refTestVersion = 'v1.0.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
