@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-public abstract class BeaconBlocksByRangeIntegrationTest {
+public class BeaconBlocksByRangeIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
@@ -68,8 +68,6 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
             .startNetwork();
     peer = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
-
-  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -183,21 +181,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     return blocks;
   }
 
-  public static class BeaconBlocksByRangeIntegrationTest_ssz
-      extends BeaconBlocksByRangeIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class BeaconBlocksByRangeIntegrationTest_sszSnappy
-      extends BeaconBlocksByRangeIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
+  protected RpcEncoding getEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 }
