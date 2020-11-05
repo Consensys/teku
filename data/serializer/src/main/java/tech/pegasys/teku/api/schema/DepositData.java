@@ -19,6 +19,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -60,5 +61,21 @@ public class DepositData {
         withdrawal_credentials,
         amount,
         signature.asInternalBLSSignature());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof DepositData)) return false;
+    DepositData that = (DepositData) o;
+    return Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
+        && Objects.equals(amount, that.amount)
+        && Objects.equals(signature, that.signature);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkey, withdrawal_credentials, amount, signature);
   }
 }
