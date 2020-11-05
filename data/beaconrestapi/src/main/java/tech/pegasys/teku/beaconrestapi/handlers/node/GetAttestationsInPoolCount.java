@@ -44,8 +44,9 @@ public class GetAttestationsInPoolCount implements Handler {
       method = HttpMethod.GET,
       summary = "Get the number of attestations in the pool.",
       tags = {TAG_NETWORK},
-      description = "Returns the number of pending attestations in the current pool.\n"
-      + "Deprecated - use `/eth/v1/beacon/pool/attestations` instead.",
+      description =
+          "Returns the number of pending attestations in the current pool.\n"
+              + "Deprecated - use `/eth/v1/beacon/pool/attestations` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

@@ -47,6 +47,7 @@ public class GetChainHead implements Handler {
   public static final String ROUTE = "/beacon/chainhead";
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get information about the chain head.",
