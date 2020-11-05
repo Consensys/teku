@@ -43,6 +43,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
@@ -95,7 +96,7 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
 
-    return recentChainData.getHeadBlockAndState().map(BeaconHead::new);
+    return recentChainData.getChainHead().map(BeaconHead::new);
   }
 
   public GetForkResponse getForkInfo() {
@@ -214,6 +215,33 @@ public class ChainDataProvider {
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
+  }
+
+  public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    block ->
+                        block.getMessage().getBody().getAttestations().stream()
+                            .map(Attestation::new)
+                            .collect(toList())));
   }
 
   public boolean isStoreAvailable() {
@@ -347,7 +375,7 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
+    return recentChainData.getChainHead().map(BeaconChainHead::new);
   }
 
   public Optional<UInt64> blockParameterToSlot(final String pathParam) {

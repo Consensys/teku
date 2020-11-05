@@ -11,15 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.lookup;
+package tech.pegasys.teku.api.response.v1.beacon;
 
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 
-public interface StateAndBlockProvider {
-  StateAndBlockProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());
+public class GetBlockResponse {
+  @JsonProperty("data")
+  public final SignedBeaconBlock data;
 
-  SafeFuture<Optional<SignedBlockAndState>> getBlockAndState(final Bytes32 blockRoot);
+  @JsonCreator
+  public GetBlockResponse(@JsonProperty("data") final SignedBeaconBlock data) {
+    this.data = data;
+  }
 }

@@ -18,6 +18,7 @@ import com.google.common.base.Suppliers;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,7 +32,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public final class BeaconBlock
+    implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
@@ -63,8 +65,8 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
   public BeaconBlock(BeaconBlock block, Bytes32 stateRoot) {
     this.slot = block.getSlot();
-    this.proposer_index = block.getProposer_index();
-    this.parent_root = block.getParent_root();
+    this.proposer_index = block.getProposerIndex();
+    this.parent_root = block.getParentRoot();
     this.body = block.getBody();
     this.state_root = stateRoot;
   }
@@ -127,9 +129,9 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
     BeaconBlock other = (BeaconBlock) obj;
     return Objects.equals(this.getSlot(), other.getSlot())
-        && Objects.equals(this.getProposer_index(), other.getProposer_index())
-        && Objects.equals(this.getParent_root(), other.getParent_root())
-        && Objects.equals(this.getState_root(), other.getState_root())
+        && Objects.equals(this.getProposerIndex(), other.getProposerIndex())
+        && Objects.equals(this.getParentRoot(), other.getParentRoot())
+        && Objects.equals(this.getStateRoot(), other.getStateRoot())
         && Objects.equals(this.getBody(), other.getBody());
   }
 
@@ -138,25 +140,44 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     return body;
   }
 
-  public Bytes32 getState_root() {
+  @Override
+  public Bytes32 getBodyRoot() {
+    return body.hash_tree_root();
+  }
+
+  @Override
+  public Bytes32 getStateRoot() {
     return state_root;
   }
 
-  public Bytes32 getParent_root() {
+  @Override
+  public Bytes32 getParentRoot() {
     return parent_root;
   }
 
+  @Override
   public UInt64 getSlot() {
     return slot;
   }
 
-  public UInt64 getProposer_index() {
+  @Override
+  public UInt64 getProposerIndex() {
     return proposer_index;
+  }
+
+  @Override
+  public Bytes32 getRoot() {
+    return hash_tree_root();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot.get();
+  }
+
+  @Override
+  public Optional<BeaconBlock> getBeaconBlock() {
+    return Optional.of(this);
   }
 
   public Bytes32 calculateRoot() {

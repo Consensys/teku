@@ -220,7 +220,7 @@ public class BatchSync implements Sync {
   }
 
   private boolean isChildOfStartingPoint(final SignedBeaconBlock firstBlock) {
-    return recentChainData.containsBlock(firstBlock.getParent_root());
+    return recentChainData.containsBlock(firstBlock.getParentRoot());
   }
 
   private void checkBatchesFormChain(final Batch firstBatch, final Batch secondBatch) {
@@ -359,7 +359,7 @@ public class BatchSync implements Sync {
 
   private Boolean blocksForChain(
       final SignedBeaconBlock lastBlock, final SignedBeaconBlock firstBlock) {
-    return lastBlock.getRoot().equals(firstBlock.getParent_root());
+    return lastBlock.getRoot().equals(firstBlock.getParentRoot());
   }
 
   private void progressSync() {

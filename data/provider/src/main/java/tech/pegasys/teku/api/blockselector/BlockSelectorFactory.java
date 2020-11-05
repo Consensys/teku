@@ -42,7 +42,11 @@ public class BlockSelectorFactory {
    */
   public BlockSelector defaultBlockSelector(final String selectorMethod) {
     if (selectorMethod.startsWith("0x")) {
-      return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      try {
+        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid block: " + selectorMethod);
+      }
     }
     switch (selectorMethod) {
       case ("head"):

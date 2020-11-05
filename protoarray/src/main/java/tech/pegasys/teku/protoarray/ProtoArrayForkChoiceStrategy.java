@@ -44,45 +44,46 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
-  private final ProtoArrayStorageChannel storageChannel;
 
   private List<UInt64> balances;
 
-  private ProtoArrayForkChoiceStrategy(
-      ProtoArray protoArray,
-      List<UInt64> balances,
-      ProtoArrayStorageChannel protoArrayStorageChannel) {
+  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UInt64> balances) {
     this.protoArray = protoArray;
     this.balances = balances;
-    this.storageChannel = protoArrayStorageChannel;
   }
 
   // Public
   public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
+    LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
     final UInt64 initialEpoch =
         store
             .getInitialCheckpoint()
             .map(Checkpoint::getEpoch)
             .orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
-    ProtoArray protoArray =
-        storageChannel
-            .getProtoArraySnapshot()
-            .join()
-            .map(ProtoArraySnapshot::toProtoArray)
-            .orElse(
-                new ProtoArray(
-                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                    store.getJustifiedCheckpoint().getEpoch(),
-                    store.getFinalizedCheckpoint().getEpoch(),
-                    initialEpoch,
-                    new ArrayList<>(),
-                    new HashMap<>()));
-
-    return processBlocksInStoreAtStartup(store, protoArray)
+    return storageChannel
+        .getProtoArraySnapshot()
         .thenApply(
-            __ -> new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel));
+            maybeSnapshot ->
+                maybeSnapshot
+                    .map(ProtoArraySnapshot::toProtoArray)
+                    .orElse(
+                        new ProtoArray(
+                            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+                            store.getJustifiedCheckpoint().getEpoch(),
+                            store.getFinalizedCheckpoint().getEpoch(),
+                            initialEpoch,
+                            new ArrayList<>(),
+                            new HashMap<>())))
+        .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
+        .thenPeek(
+            protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
+        .thenApply(ProtoArrayForkChoiceStrategy::initialize);
+  }
+
+  public static ProtoArrayForkChoiceStrategy initialize(final ProtoArray protoArray) {
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
   @Override
@@ -123,20 +124,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     processBlock(
         block.getSlot(),
         blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
+        block.getParentRoot(),
+        block.getStateRoot(),
         state.getCurrent_justified_checkpoint().getEpoch(),
         state.getFinalized_checkpoint().getEpoch());
-  }
-
-  @Override
-  public void save() {
-    protoArrayLock.readLock().lock();
-    try {
-      storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray));
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   public void maybePrune(Bytes32 finalizedRoot) {
@@ -168,7 +159,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
-  private static SafeFuture<Void> processBlocksInStoreAtStartup(
+  private static SafeFuture<ProtoArray> processBlocksInStoreAtStartup(
       ReadOnlyStore store, ProtoArray protoArray) {
     List<Bytes32> alreadyIncludedBlockRoots =
         protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
@@ -187,7 +178,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                           blockAndState ->
                               processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
     }
-    return future;
+    return future.thenApply(__ -> protoArray);
   }
 
   private static void processBlockAtStartup(

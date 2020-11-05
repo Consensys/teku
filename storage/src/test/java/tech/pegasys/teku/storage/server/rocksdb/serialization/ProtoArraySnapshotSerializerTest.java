@@ -96,8 +96,8 @@ public class ProtoArraySnapshotSerializerTest {
         new BlockInformation(
             block.getSlot(),
             block.hash_tree_root(),
-            block.getParent_root(),
-            block.getState_root(),
+            block.getParentRoot(),
+            block.getStateRoot(),
             UInt64.valueOf(101),
             UInt64.valueOf(100)));
   }

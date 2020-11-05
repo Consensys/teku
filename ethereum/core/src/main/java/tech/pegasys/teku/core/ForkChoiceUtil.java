@@ -348,7 +348,7 @@ public class ForkChoiceUtil {
     return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedCheckpoint.getEpochStartSlot())
         && hasAncestorAtSlot(
             forkChoiceStrategy,
-            block.getParent_root(),
+            block.getParentRoot(),
             finalizedCheckpoint.getEpochStartSlot(),
             finalizedCheckpoint.getRoot());
   }

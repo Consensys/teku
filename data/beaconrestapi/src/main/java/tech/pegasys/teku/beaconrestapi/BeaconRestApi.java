@@ -67,8 +67,10 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
@@ -349,6 +351,12 @@ public class BeaconRestApi {
     // Block header
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
     app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock(
+            dataProvider, jsonProvider));
+    app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
+    app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
 
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
 
