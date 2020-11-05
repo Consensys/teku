@@ -634,10 +634,6 @@ public abstract class AbstractDatabaseTest {
 
     StoreAssertions.assertStoresMatch(recentChainData.getStore(), originalStore);
     assertThat(recentChainData.getFinalizedCheckpoint()).contains(anchor.getCheckpoint());
-
-    // Ensure anchor state is always stored
-    assertThat(database.getLatestAvailableFinalizedState(anchor.getEpochStartSlot()))
-        .contains(anchorBlockAndState.getState());
   }
 
   @Test

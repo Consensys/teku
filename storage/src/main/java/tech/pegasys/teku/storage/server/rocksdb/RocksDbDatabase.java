@@ -261,7 +261,7 @@ public class RocksDbDatabase implements Database {
       return Optional.empty();
     }
     final UInt64 genesisTime = maybeGenesisTime.get();
-    final Optional<Checkpoint> anchor = hotDao.getAnchor();
+    final Optional<Checkpoint> maybeAnchor = hotDao.getAnchor();
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
@@ -288,16 +288,18 @@ public class RocksDbDatabase implements Database {
     }
     // If anchor block is missing, try to pull block info from the anchor state
     final boolean shouldIncludeAnchorBlock =
-        anchor.isPresent()
-            && finalizedCheckpoint.getEpochStartSlot().equals(anchor.get().getEpochStartSlot());
-    if (shouldIncludeAnchorBlock && !blockInformation.containsKey(anchor.get().getRoot())) {
-      getLatestAvailableFinalizedState(anchor.get().getEpochStartSlot())
-          .map(StateAndBlockSummary::create)
-          .filter(a -> a.getRoot().equals(anchor.get().getRoot()))
-          .ifPresent(
-              a -> {
-                blockInformation.put(a.getRoot(), StoredBlockMetadata.fromBlockAndState(a));
-              });
+        maybeAnchor.isPresent()
+            && finalizedCheckpoint
+                .getEpochStartSlot()
+                .equals(maybeAnchor.get().getEpochStartSlot());
+    if (shouldIncludeAnchorBlock && !blockInformation.containsKey(maybeAnchor.get().getRoot())) {
+      final Checkpoint anchor = maybeAnchor.orElseThrow();
+      final StateAndBlockSummary latestFinalized = StateAndBlockSummary.create(finalizedState);
+      if (!latestFinalized.getRoot().equals(anchor.getRoot())) {
+        throw new IllegalStateException("Anchor state (" + anchor + ") is unavailable");
+      }
+      blockInformation.put(
+          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(latestFinalized));
     }
 
     final Optional<SignedBeaconBlock> finalizedBlock =
@@ -315,7 +317,7 @@ public class RocksDbDatabase implements Database {
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
             .time(time)
-            .anchor(anchor)
+            .anchor(maybeAnchor)
             .genesisTime(genesisTime)
             .latestFinalized(latestFinalized)
             .justifiedCheckpoint(justifiedCheckpoint)
