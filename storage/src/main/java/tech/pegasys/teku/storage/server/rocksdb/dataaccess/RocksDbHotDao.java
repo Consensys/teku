@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -47,15 +49,15 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<Checkpoint> getWeakSubjectivityCheckpoint();
 
-  Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
+  Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
 
-  Optional<BeaconState> getHotState(final Bytes32 root);
+  Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(Bytes32 root);
 
-  Map<Bytes32, SignedBeaconBlock> getHotBlocks();
+  Optional<BeaconState> getHotState(Bytes32 root);
 
-  List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
+  List<Bytes32> getStateRootsBeforeSlot(UInt64 slot);
 
-  Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
+  Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(Bytes32 stateRoot);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
@@ -66,43 +68,45 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   interface HotUpdater extends AutoCloseable {
 
-    void setGenesisTime(final UInt64 genesisTime);
+    void setGenesisTime(UInt64 genesisTime);
 
-    void setAnchor(final Checkpoint anchorPoint);
+    void setAnchor(Checkpoint anchorPoint);
 
-    void setJustifiedCheckpoint(final Checkpoint checkpoint);
+    void setJustifiedCheckpoint(Checkpoint checkpoint);
 
-    void setBestJustifiedCheckpoint(final Checkpoint checkpoint);
+    void setBestJustifiedCheckpoint(Checkpoint checkpoint);
 
-    void setFinalizedCheckpoint(final Checkpoint checkpoint);
+    void setFinalizedCheckpoint(Checkpoint checkpoint);
 
-    void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint);
+    void setWeakSubjectivityCheckpoint(Checkpoint checkpoint);
 
     void clearWeakSubjectivityCheckpoint();
 
-    void setLatestFinalizedState(final BeaconState state);
+    void setLatestFinalizedState(BeaconState state);
 
-    void addHotBlock(final SignedBeaconBlock block);
+    void addHotBlock(BlockAndCheckpointEpochs blockAndCheckpointEpochs);
 
-    void addHotState(final Bytes32 blockRoot, final BeaconState state);
+    void addHotBlockCheckpointEpochs(Bytes32 blockRoot, CheckpointEpochs checkpointEpochs);
+
+    void addHotState(Bytes32 blockRoot, BeaconState state);
 
     default void addHotStates(final Map<Bytes32, BeaconState> states) {
       states.forEach(this::addHotState);
     }
 
-    void addVotes(final Map<UInt64, VoteTracker> states);
+    void addVotes(Map<UInt64, VoteTracker> states);
 
-    default void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks) {
+    default void addHotBlocks(final Map<Bytes32, BlockAndCheckpointEpochs> blocks) {
       blocks.values().forEach(this::addHotBlock);
     }
 
-    void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
+    void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
-    void pruneHotStateRoots(final List<Bytes32> stateRoots);
+    void pruneHotStateRoots(List<Bytes32> stateRoots);
 
-    void deleteHotBlock(final Bytes32 blockRoot);
+    void deleteHotBlock(Bytes32 blockRoot);
 
-    void deleteHotState(final Bytes32 blockRoot);
+    void deleteHotState(Bytes32 blockRoot);
 
     void commit();
 

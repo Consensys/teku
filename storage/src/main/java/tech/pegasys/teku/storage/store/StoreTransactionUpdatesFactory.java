@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
@@ -167,10 +169,22 @@ class StoreTransactionUpdatesFactory {
 
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData) {
+    final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocksAndCheckpointEpochs =
+        hotBlockAndStates.entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry ->
+                        new BlockAndCheckpointEpochs(
+                            entry
+                                .getValue()
+                                .getSignedBeaconBlock()
+                                .orElseThrow(() -> new IllegalStateException("Missing hot block")),
+                            CheckpointEpochs.fromBlockAndState(entry.getValue()))));
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
-        hotBlocks,
+        hotBlocksAndCheckpointEpochs,
         hotBlockAndStates,
         getHotStatesToPersist(),
         prunedHotBlockRoots,

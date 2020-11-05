@@ -122,6 +122,7 @@ import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -353,10 +354,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
-    if (beaconConfig.validatorConfig().isValidatorPerformanceTrackingEnabled()) {
+    ValidatorPerformanceTrackingMode mode =
+        beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode();
+    if (mode.isEnabled()) {
       performanceTracker =
           new DefaultPerformanceTracker(
-              combinedChainDataClient, STATUS_LOG, new ValidatorPerformanceMetrics(metricsSystem));
+              combinedChainDataClient,
+              STATUS_LOG,
+              new ValidatorPerformanceMetrics(metricsSystem),
+              beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode());
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
@@ -660,7 +666,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
-            attestationPool);
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool);
     if (config.isRestApiEnabled()) {
 
       beaconRestAPI =

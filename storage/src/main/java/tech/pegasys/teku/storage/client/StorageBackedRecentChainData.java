@@ -28,6 +28,8 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -137,11 +139,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
+    return storeFuture.thenCompose(
         maybeStoreBuilder -> {
           if (maybeStoreBuilder.isEmpty()) {
             STATUS_LOG.finishInitializingChainData();
-            return this;
+            return SafeFuture.completedFuture(this);
           }
 
           final UpdatableStore store =
@@ -152,11 +154,24 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();
-
-          setStore(store);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+          return initForkChoiceStrategy(
+                  store, maybeStoreBuilder.flatMap(StoreBuilder::buildProtoArray))
+              .thenApply(
+                  forkChoiceStrategy -> {
+                    setStore(store, forkChoiceStrategy);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
+  }
+
+  private SafeFuture<ProtoArrayForkChoiceStrategy> initForkChoiceStrategy(
+      final UpdatableStore store, final Optional<ProtoArray> maybeProtoArray) {
+    return maybeProtoArray
+        .map(
+            protoArray ->
+                SafeFuture.completedFuture(ProtoArrayForkChoiceStrategy.initialize(protoArray)))
+        .orElseGet(() -> ProtoArrayForkChoiceStrategy.initialize(store, protoArrayStorageChannel));
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {

@@ -17,6 +17,8 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Collections;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -131,7 +134,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .storeConfig(storeConfig)
             .build();
 
-    final boolean result = setStore(store);
+    final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
+        ProtoArrayForkChoiceStrategy.initialize(ProtoArrayBuilder.fromAnchorPoint(anchorPoint));
+
+    final boolean result = setStore(store, forkChoiceStrategy);
     if (!result) {
       throw new IllegalStateException(
           "Failed to initialize from state: store has already been initialized");
@@ -166,20 +172,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.isEmpty();
   }
 
-  boolean setStore(UpdatableStore store) {
+  boolean setStore(UpdatableStore store, ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
     }
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel)
-        .thenAccept(
-            forkChoiceStrategy -> {
-              this.forkChoiceStrategy = Optional.of(forkChoiceStrategy);
-              storeInitializedFuture.complete(null);
-            })
-        .join();
+    this.forkChoiceStrategy = Optional.of(forkChoiceStrategy);
+    storeInitializedFuture.complete(null);
     return true;
   }
 
@@ -446,5 +447,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     return store.retrieveCheckpointState(checkpoint);
+  }
+
+  public Map<Bytes32, UInt64> getChainHeads() {
+    return forkChoiceStrategy
+        .map(ProtoArrayForkChoiceStrategy::getChainHeads)
+        .orElse(Collections.emptyMap());
   }
 }

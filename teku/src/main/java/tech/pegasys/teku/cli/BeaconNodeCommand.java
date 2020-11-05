@@ -46,7 +46,6 @@ import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
-import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
+import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -81,7 +81,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
       ValidatorClientCommand.class,
-      DepositCommand.class,
+      InternalToolsCommand.class,
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,

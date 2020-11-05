@@ -206,10 +206,6 @@ public class ForkChoice {
             });
   }
 
-  public void save() {
-    getForkChoiceStrategy().save();
-  }
-
   public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
     onForkChoiceThread(
             () -> {

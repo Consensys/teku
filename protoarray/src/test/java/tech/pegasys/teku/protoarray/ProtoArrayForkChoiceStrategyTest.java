@@ -15,14 +15,19 @@ package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -38,7 +43,13 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ProtoArrayForkChoiceStrategyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ProtoArrayStorageChannel storageChannel = new StubProtoArrayStorageChannel();
+  private final ProtoArrayStorageChannel storageChannel = mock(ProtoArrayStorageChannel.class);
+
+  @BeforeEach
+  void setUp() {
+    when(storageChannel.getProtoArraySnapshot())
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+  }
 
   @Test
   public void initialize_withLargeChain() {
@@ -51,6 +62,24 @@ public class ProtoArrayForkChoiceStrategyTest {
     assertThat(future).isCompleted();
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
     assertThat(forkChoiceStrategy.size()).isEqualTo(chainSize + 1);
+  }
+
+  @Test
+  void initialize_shouldStoreProtoArraySnapshotToCompleteDataMigration() {
+    final MutableStore store = new TestStoreFactory().createGenesisStore();
+    final int chainSize = 5;
+    saveChainToStore(chainSize, store);
+    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
+        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
+
+    assertThat(future).isCompleted();
+
+    final ArgumentCaptor<ProtoArraySnapshot> captor =
+        ArgumentCaptor.forClass(ProtoArraySnapshot.class);
+    verify(storageChannel).onProtoArrayUpdate(captor.capture());
+
+    final ProtoArraySnapshot snapshot = captor.getValue();
+    assertThat(snapshot.getBlockInformationList()).hasSize(chainSize + 1);
   }
 
   @Test
@@ -99,6 +128,15 @@ public class ProtoArrayForkChoiceStrategyTest {
     final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ancestor.getSlot()))
         .contains(ancestor.getRoot());
+  }
+
+  @Test
+  void getChainHeads() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
+    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    assertThat(protoArrayStrategy.getChainHeads())
+        .isEqualTo(Map.of(head.getBlock().getRoot(), head.getBlock().getSlot()));
   }
 
   @Test

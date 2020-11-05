@@ -48,6 +48,8 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
@@ -62,6 +64,8 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -203,6 +207,17 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getChainHeads_shouldReturnChainHeads()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final SafeFuture<Optional<List<ChainHead>>> future = provider.getChainHeads();
+    final Optional<List<ChainHead>> maybeResult = future.get();
+    assertThat(maybeResult.orElse(emptyList()))
+        .containsExactly(new ChainHead(bestBlock.getSlot(), blockRoot));
+  }
+
+  @Test
   public void getGenesisTime_shouldThrowIfStoreNotAvailable() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
@@ -291,7 +306,6 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
     final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockByBlockRoot(blockRoot);
     verify(mockCombinedChainDataClient).getBlockByBlockRoot(blockRoot);
-
     final SignedBeaconBlock result = future.get().get().signedBeaconBlock;
     assertThat(result)
         .usingRecursiveComparison()
@@ -896,6 +910,53 @@ public class ChainDataProviderTest {
             provider.getValidatorBalancesFromState(
                 internalState, List.of("0", "100", "1023", "1024", "1024000")))
         .hasSize(3);
+  }
+
+  @Test
+  public void getForkSchedule() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getForkSchedule())
+        .containsExactly(
+            new Fork(recentChainData.getForkInfoAtCurrentTime().orElseThrow().getFork()));
+  }
+
+  @Test
+  public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final Optional<Root> response = provider.getBlockRoot("head").get();
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(new Root(bestBlock.getRoot()));
+  }
+
+  @Test
+  public void getBlockAttestations_shouldReturnAttestationsOfBlock() throws Exception {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    ChainBuilder chainBuilder = storageSystem.chainBuilder();
+
+    ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(chainBuilder.getValidatorKeys());
+    tech.pegasys.teku.datastructures.operations.Attestation attestation1 =
+        attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
+    tech.pegasys.teku.datastructures.operations.Attestation attestation2 =
+        attestationGenerator.validAttestation(
+            bestBlock.toUnsigned(), bestBlock.getSlot().increment());
+    blockOptions.addAttestation(attestation1);
+    blockOptions.addAttestation(attestation2);
+    SignedBlockAndState newHead =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(bestBlock.getSlot().plus(10), blockOptions);
+    storageSystem.chainUpdater().saveBlock(newHead);
+    storageSystem.chainUpdater().updateBestBlock(newHead);
+
+    final Optional<List<Attestation>> response = provider.getBlockAttestations("head").get();
+    assertThat(response).isPresent();
+    assertThat(response.get())
+        .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(

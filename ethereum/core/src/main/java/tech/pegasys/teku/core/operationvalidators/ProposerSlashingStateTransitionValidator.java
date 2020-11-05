@@ -43,10 +43,7 @@ public class ProposerSlashingStateTransitionValidator
             check(
                 header1.getProposerIndex().equals(header2.getProposerIndex()),
                 ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT),
-        () ->
-            check(
-                !Objects.equals(proposerSlashing.getHeader_1(), proposerSlashing.getHeader_2()),
-                ProposerSlashingInvalidReason.SAME_HEADER),
+        () -> check(!Objects.equals(header1, header2), ProposerSlashingInvalidReason.SAME_HEADER),
         () ->
             check(
                 UInt64.valueOf(state.getValidators().size()).compareTo(header1.getProposerIndex())

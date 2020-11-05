@@ -22,6 +22,8 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorI
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +42,8 @@ import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
@@ -207,14 +211,37 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
-    if (!isStoreAvailable()) {
-      return chainUnavailable();
-    }
-
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new Root(block.getRoot())));
+  }
+
+  public SafeFuture<Optional<List<Attestation>>> getBlockAttestations(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    block ->
+                        block.getMessage().getBody().getAttestations().stream()
+                            .map(Attestation::new)
+                            .collect(toList())));
   }
 
   public boolean isStoreAvailable() {
@@ -686,5 +713,23 @@ public class ChainDataProvider {
             .flatMapToInt(
                 validatorParameter ->
                     validatorParameterToIndex(state, validatorParameter).stream().mapToInt(a -> a));
+  }
+
+  public SafeFuture<Optional<List<ChainHead>>> getChainHeads() {
+    List<ChainHead> result = new ArrayList<>();
+    recentChainData.getChainHeads().forEach((k, v) -> result.add(new ChainHead(v, k)));
+
+    if (result.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return SafeFuture.completedFuture(Optional.of(result));
+  }
+
+  public List<Fork> getForkSchedule() {
+    final Optional<ForkInfo> maybeForkInfo = recentChainData.getForkInfoAtCurrentTime();
+
+    return maybeForkInfo
+        .map(forkInfo -> List.of(new Fork(forkInfo.getFork())))
+        .orElse(Collections.emptyList());
   }
 }

@@ -220,6 +220,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       attestationValidator.addSeenAttestation(attestation);
     }
 
+    notifyAttestationsToSendSubscribers(attestation);
     attestation.markGossiped();
   }
 

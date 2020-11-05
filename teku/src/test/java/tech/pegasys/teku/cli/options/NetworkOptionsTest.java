@@ -35,7 +35,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla", "spadina"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
