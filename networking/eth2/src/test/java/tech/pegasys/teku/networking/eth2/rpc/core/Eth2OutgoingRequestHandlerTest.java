@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppended
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
-public abstract class Eth2OutgoingRequestHandlerTest
+public class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
@@ -75,6 +75,11 @@ public abstract class Eth2OutgoingRequestHandlerTest
       createRequestHandler(final BeaconChainMethods beaconChainMethods) {
     return new Eth2OutgoingRequestHandler<>(
         asyncRequestRunner, timeoutRunner, beaconChainMethods.beaconBlocksByRange(), maxChunks);
+  }
+
+  @Override
+  protected RpcEncoding getRpcEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 
   @Test
@@ -338,22 +343,5 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
   private void close() {
     reqHandler.closed(nodeId, rpcStream);
-  }
-
-  public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {
-
-    @Override
-    protected RpcEncoding getRpcEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class Eth2OutgoingRequestHandlerTest_sszSnappy
-      extends Eth2OutgoingRequestHandlerTest {
-
-    @Override
-    protected RpcEncoding getRpcEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
   }
 }
