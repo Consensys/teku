@@ -51,9 +51,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   public static AnchorPoint create(
       Checkpoint checkpoint, BeaconState state, Optional<SignedBeaconBlock> block) {
     final BeaconBlockSummary blockSummary =
-        block
-            .map(BeaconBlockSummary.class::cast)
-            .orElseGet(() -> BeaconBlockHeader.fromState(state));
+        block.<BeaconBlockSummary>map(a -> a).orElseGet(() -> BeaconBlockHeader.fromState(state));
     return new AnchorPoint(checkpoint, state, blockSummary);
   }
 
