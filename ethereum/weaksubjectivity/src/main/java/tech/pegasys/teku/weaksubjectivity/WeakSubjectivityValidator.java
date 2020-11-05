@@ -146,7 +146,8 @@ public class WeakSubjectivityValidator {
     if (isAtWSCheckpoint(latestFinalizedCheckpoint)
         && !isWSCheckpointRoot(latestFinalizedCheckpoint.getRoot())) {
       // Finalized root is inconsistent with ws checkpoint
-      handleInconsistentWsCheckpoint(latestFinalizedCheckpoint.getBlock());
+      handleInconsistentWsCheckpoint(
+          latestFinalizedCheckpoint.getRoot(), latestFinalizedCheckpoint.getBlockSlot());
     }
 
     // Determine whether we should suppress ws period errors
@@ -183,8 +184,7 @@ public class WeakSubjectivityValidator {
     } else if (blockEpoch.isGreaterThanOrEqualTo(wsCheckpoint.getEpoch())) {
       // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
       final Optional<Bytes32> ancestor =
-          get_ancestor(
-              forkChoiceStrategy, block.getParent_root(), wsCheckpoint.getEpochStartSlot());
+          get_ancestor(forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot());
       // If ancestor is not present, the chain must have moved passed the wsCheckpoint
       return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);
     }
@@ -214,9 +214,14 @@ public class WeakSubjectivityValidator {
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {
+    handleInconsistentWsCheckpoint(inconsistentBlock.getRoot(), inconsistentBlock.getSlot());
+  }
+
+  private void handleInconsistentWsCheckpoint(
+      final Bytes32 inconsistentBlockRoot, final UInt64 inconsistentBlockSlot) {
     final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().orElseThrow();
     violationPolicy.onChainInconsistentWithWeakSubjectivityCheckpoint(
-        wsCheckpoint, inconsistentBlock);
+        wsCheckpoint, inconsistentBlockRoot, inconsistentBlockSlot);
   }
 
   @VisibleForTesting

@@ -30,7 +30,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -74,7 +74,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -90,7 +90,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_ignored() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -105,7 +105,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
@@ -120,7 +120,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);

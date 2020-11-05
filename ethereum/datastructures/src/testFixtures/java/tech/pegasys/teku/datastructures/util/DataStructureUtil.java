@@ -624,7 +624,7 @@ public final class DataStructureUtil {
         new BeaconBlock(
             anchorState.getSlot(),
             UInt64.ZERO,
-            anchorState.getLatest_block_header().getParent_root(),
+            anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
             new BeaconBlockBody());
     final SignedBeaconBlock signedAnchorBlock =

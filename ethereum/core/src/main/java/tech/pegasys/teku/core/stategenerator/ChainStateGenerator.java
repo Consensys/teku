@@ -31,7 +31,7 @@ class ChainStateGenerator {
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
         checkArgument(
-            chain.get(i).getParent_root().equals(chain.get(i - 1).getRoot()),
+            chain.get(i).getParentRoot().equals(chain.get(i - 1).getRoot()),
             "Blocks must form an ordered chain");
       }
     }

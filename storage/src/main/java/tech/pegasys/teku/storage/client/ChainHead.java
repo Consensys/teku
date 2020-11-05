@@ -17,22 +17,22 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_ro
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
-class ChainHead extends SignedBlockAndState {
+class ChainHead extends StateAndBlockSummary {
   private final UInt64 forkChoiceSlot;
 
-  public ChainHead(SignedBeaconBlock block, BeaconState state, UInt64 forkChoiceSlot) {
+  private ChainHead(BeaconBlockSummary block, BeaconState state, UInt64 forkChoiceSlot) {
     super(block, state);
     this.forkChoiceSlot = forkChoiceSlot;
   }
 
-  public static ChainHead create(SignedBlockAndState blockAndState, UInt64 forkChoiceSlot) {
-    return new ChainHead(blockAndState.getBlock(), blockAndState.getState(), forkChoiceSlot);
+  public static ChainHead create(StateAndBlockSummary blockAndState, UInt64 forkChoiceSlot) {
+    return new ChainHead(blockAndState.getBlockSummary(), blockAndState.getState(), forkChoiceSlot);
   }
 
   /** @return The slot at which the chain head was calculated */
@@ -74,20 +74,15 @@ class ChainHead extends SignedBlockAndState {
 
   @Override
   public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof ChainHead)) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     final ChainHead chainHead = (ChainHead) o;
-    return Objects.equals(getForkChoiceSlot(), chainHead.getForkChoiceSlot())
-        && Objects.equals(getBlock(), chainHead.getBlock())
-        && Objects.equals(getState(), chainHead.getState());
+    return Objects.equals(forkChoiceSlot, chainHead.forkChoiceSlot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), getForkChoiceSlot());
+    return Objects.hash(super.hashCode(), forkChoiceSlot);
   }
 }

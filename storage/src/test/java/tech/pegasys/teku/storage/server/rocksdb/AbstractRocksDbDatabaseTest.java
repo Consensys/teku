@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -96,7 +96,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .get()
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
-            .stateProvider(mock(StateAndBlockProvider.class))
+            .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .build();
 
     assertThat(store.getTime()).isEqualTo(genesisTime);

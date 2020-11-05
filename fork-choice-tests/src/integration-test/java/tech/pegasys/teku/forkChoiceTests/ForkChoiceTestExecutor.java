@@ -259,7 +259,7 @@ public class ForkChoiceTestExecutor {
       RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
-                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()))
+                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParentRoot()))
             .join();
     return blockImportResult.isSuccessful();
   }

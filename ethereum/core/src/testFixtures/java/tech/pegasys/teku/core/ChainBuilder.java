@@ -35,7 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -99,8 +99,8 @@ public class ChainBuilder {
         () -> Maps.transformValues(blocksByHash, SignedBlockAndState::getBlock));
   }
 
-  public StateAndBlockProvider getStateAndBlockProvider() {
-    return blockRoot -> SafeFuture.completedFuture(getBlockAndState(blockRoot));
+  public StateAndBlockSummaryProvider getStateAndBlockProvider() {
+    return blockRoot -> SafeFuture.completedFuture(getBlockAndState(blockRoot).map(a -> a));
   }
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This

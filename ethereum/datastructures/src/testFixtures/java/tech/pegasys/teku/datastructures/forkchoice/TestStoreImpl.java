@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -174,6 +175,12 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
+      final Bytes32 blockRoot) {
+    return retrieveBlockAndState(blockRoot).thenApply(res -> res.map(a -> a));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
   }
@@ -187,7 +194,7 @@ class TestStoreImpl implements MutableStore {
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    return SafeFuture.completedFuture(new CheckpointState(finalized_checkpoint, block, state));
+    return SafeFuture.completedFuture(CheckpointState.create(finalized_checkpoint, block, state));
   }
 
   @Override
