@@ -33,12 +33,14 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
 
@@ -63,14 +65,26 @@ public class GossipMessageHandlerIntegrationTest {
     // Setup network 2
     Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
-        b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node2ReceivedBlocks::add);
+        b ->
+            b.gossipEncoding(gossipEncoding)
+                .gossipedBlockProcessor(
+                    (block) -> {
+                      node2ReceivedBlocks.add(block);
+                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                    });
     NodeManager node2 = createNodeManager(networkBuilder2);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
     Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder3 =
-        b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node3ReceivedBlocks::add);
+        b ->
+            b.gossipEncoding(gossipEncoding)
+                .gossipedBlockProcessor(
+                    (block) -> {
+                      node3ReceivedBlocks.add(block);
+                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                    });
     NodeManager node3 = createNodeManager(networkBuilder3);
     node2.chainUtil().setSlot(blockSlot);
 
@@ -162,7 +176,11 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationConsumer(node2attestations::add);
+          b.gossipedAttestationProcessor(
+              (attestation) -> {
+                node2attestations.add(attestation);
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+              });
         };
 
     // Setup network 1
@@ -188,7 +206,7 @@ public class GossipMessageHandlerIntegrationTest {
         node1.storageClient().getHeadBlockAndState().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
-        s -> s.accept(ValidateableAttestation.fromAttestation(validAttestation)));
+        s -> s.accept(ValidateableAttestation.from(validAttestation)));
 
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
@@ -209,7 +227,11 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationConsumer(node2attestations::add);
+          b.gossipedAttestationProcessor(
+              (attestation) -> {
+                node2attestations.add(attestation);
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+              });
         };
 
     // Setup network 1
@@ -234,8 +256,7 @@ public class GossipMessageHandlerIntegrationTest {
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
-        ValidateableAttestation.fromAttestation(
-            attestationGenerator.validAttestation(bestBlockAndState));
+        ValidateableAttestation.from(attestationGenerator.validAttestation(bestBlockAndState));
 
     final int subnetId =
         computeSubnetForAttestation(
@@ -264,13 +285,19 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
         b -> {
           b.gossipEncoding(gossipEncoding);
+          b.gossipedAttestationProcessor(
+              (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
           b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
         };
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationConsumer(node2attestations::add);
+          b.gossipedAttestationProcessor(
+              (attestation) -> {
+                node2attestations.add(attestation);
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+              });
         };
 
     // Setup network 1
@@ -294,13 +321,13 @@ public class GossipMessageHandlerIntegrationTest {
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getHeadBlockAndState().orElseThrow();
-    ValidateableAttestation validAttestation =
-        ValidateableAttestation.fromAttestation(
-            attestationGenerator.validAttestation(bestBlockAndState));
+    Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
 
-    final int subnetId =
-        computeSubnetForAttestation(
-            bestBlockAndState.getState(), validAttestation.getAttestation());
+    final int subnetId = computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
+
+    ValidateableAttestation validAttestation =
+        ValidateableAttestation.fromNetwork(attestation, subnetId);
+
     node1.network().subscribeToAttestationSubnetId(subnetId);
     node2.network().subscribeToAttestationSubnetId(subnetId);
 
