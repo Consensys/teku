@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 
 public class AttesterSlashing {
   public final IndexedAttestation attestation_1;
@@ -37,5 +38,19 @@ public class AttesterSlashing {
   public tech.pegasys.teku.datastructures.operations.AttesterSlashing asInternalAttesterSlashing() {
     return new tech.pegasys.teku.datastructures.operations.AttesterSlashing(
         attestation_1.asInternalIndexedAttestation(), attestation_2.asInternalIndexedAttestation());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof AttesterSlashing)) return false;
+    AttesterSlashing that = (AttesterSlashing) o;
+    return Objects.equals(attestation_1, that.attestation_1)
+        && Objects.equals(attestation_2, that.attestation_2);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(attestation_1, attestation_2);
   }
 }
