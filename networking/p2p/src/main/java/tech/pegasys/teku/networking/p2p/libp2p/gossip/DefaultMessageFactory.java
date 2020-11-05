@@ -7,7 +7,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipMessageFactory;
 
 public class DefaultMessageFactory implements GossipMessageFactory {
 
-  private static class DefaultGossipMessage implements GossipMessage {
+  public static class DefaultGossipMessage implements GossipMessage {
     private final String topic;
     private final Bytes payload;
 

@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.DefaultMessageFactory.DefaultGossipMessage;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipPubsubMessage;
 
 public class MockMessageApi implements MessageApi {
 
@@ -63,10 +65,12 @@ public class MockMessageApi implements MessageApi {
 
   @NotNull
   @Override
-  public PubsubMessage getOriginalMessage() {
-    return new DefaultPubsubMessage(Message.newBuilder()
+  public GossipPubsubMessage getOriginalMessage() {
+    Message protoMessage = Message.newBuilder()
         .addAllTopicIDs(getTopics().stream().map(Topic::getTopic).collect(Collectors.toList()))
-        .setData(ByteString.copyFrom(getData().nioBuffer())).build());
+        .setData(ByteString.copyFrom(getData().nioBuffer())).build();
+    DefaultGossipMessage gossipMessage = new DefaultGossipMessage(
+        getTopics().get(0).getTopic(), Bytes.EMPTY);
+    return new GossipPubsubMessage(protoMessage, gossipMessage);
   }
-
 }
