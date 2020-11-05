@@ -40,6 +40,7 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class DefaultPerformanceTrackerTest {
 
@@ -55,7 +56,10 @@ public class DefaultPerformanceTrackerTest {
 
   private final DefaultPerformanceTracker performanceTracker =
       new DefaultPerformanceTracker(
-          storageSystem.combinedChainDataClient(), log, mock(ValidatorPerformanceMetrics.class));
+          storageSystem.combinedChainDataClient(),
+          log,
+          mock(ValidatorPerformanceMetrics.class),
+          ValidatorPerformanceTrackingMode.ALL);
 
   @BeforeAll
   static void setUp() {
