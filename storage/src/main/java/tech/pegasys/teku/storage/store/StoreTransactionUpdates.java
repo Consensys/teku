@@ -15,11 +15,13 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -31,7 +33,7 @@ class StoreTransactionUpdates {
 
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
-  private final Map<Bytes32, StateAndBlockSummary> hotBlockAndStates;
+  private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
@@ -42,7 +44,7 @@ class StoreTransactionUpdates {
       final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
-      final Map<Bytes32, StateAndBlockSummary> hotBlockAndStates,
+      final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
       final Optional<BlockTree> updatedBlockTree,
@@ -86,7 +88,7 @@ class StoreTransactionUpdates {
     tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
-    store.states.cacheAll(hotBlockAndStates);
+    store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
@@ -102,5 +104,9 @@ class StoreTransactionUpdates {
           store.blocks.remove(root);
           store.states.remove(root);
         });
+  }
+
+  private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
+    return blockAndState;
   }
 }
