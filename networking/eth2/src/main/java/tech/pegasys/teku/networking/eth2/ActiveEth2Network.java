@@ -75,7 +75,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-  private final GossipEncoding gossipEncoding;
   private final AttestationSubnetService attestationSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final VerifiedBlockAttestationsSubscriptionProvider
@@ -123,7 +122,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
-    this.gossipEncoding = gossipEncoding;
     this.attestationSubnetService = attestationSubnetService;
     this.gossipedBlockConsumer = gossipedBlockConsumer;
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
@@ -176,7 +174,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttestationSubnetSubscriptions(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             attestationValidator,
             recentChainData,
             gossipedAttestationConsumer);
@@ -185,7 +183,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new BlockGossipManager(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             forkInfo,
             blockValidator,
             eventBus,
@@ -198,7 +196,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AggregateGossipManager(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             forkInfo,
             aggregateValidator,
             gossipedAttestationConsumer);
@@ -207,7 +205,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new VoluntaryExitGossipManager(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             forkInfo,
             exitValidator,
             gossipedVoluntaryExitConsumer);
@@ -216,7 +214,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new ProposerSlashingGossipManager(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             forkInfo,
             proposerSlashingValidator,
             gossipedProposerSlashingConsumer);
@@ -225,7 +223,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttesterSlashingGossipManager(
             asyncRunner,
             discoveryNetwork,
-            gossipEncoding,
+            GossipEncoding.SSZ_SNAPPY,
             forkInfo,
             attesterSlashingValidator,
             gossipedAttesterSlashingConsumer);

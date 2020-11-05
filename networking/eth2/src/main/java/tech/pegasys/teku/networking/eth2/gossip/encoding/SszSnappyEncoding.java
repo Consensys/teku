@@ -39,11 +39,7 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
-    final LengthBounds lengthBounds =
-        SimpleOffsetSerializer.getLengthBounds(valueType)
-            .orElseThrow(() -> new DecodingException("Unknown message type: " + valueType));
-    final Bytes uncompressed = snappyCompressor.uncompress(data, lengthBounds);
-    return sszEncoding.decode(uncompressed, valueType);
+  public <T> T decode(Bytes uncompressedData, Class<T> valueType) throws DecodingException {
+    return sszEncoding.decode(uncompressedData, valueType);
   }
 }
