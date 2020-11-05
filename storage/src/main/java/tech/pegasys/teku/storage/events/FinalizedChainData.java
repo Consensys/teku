@@ -93,7 +93,11 @@ public class FinalizedChainData {
     public Builder latestFinalized(final AnchorPoint latestFinalized) {
       checkNotNull(latestFinalized);
       this.latestFinalized = latestFinalized;
-      this.finalizedBlocks.put(latestFinalized.getRoot(), latestFinalized.getBlock());
+      this.finalizedBlocks.put(
+          latestFinalized.getRoot(),
+          latestFinalized
+              .getSignedBeaconBlock()
+              .orElseThrow(() -> new IllegalStateException("Missing newly finalized block")));
       this.finalizedStates.put(latestFinalized.getRoot(), latestFinalized.getState());
       finalizedChildAndParent(latestFinalized.getRoot(), latestFinalized.getParentRoot());
       return this;
@@ -114,7 +118,7 @@ public class FinalizedChainData {
     public Builder finalizedBlock(final SignedBeaconBlock block) {
       checkNotNull(block);
       this.finalizedBlocks.put(block.getRoot(), block);
-      this.finalizedChildAndParent(block.getRoot(), block.getParent_root());
+      this.finalizedChildAndParent(block.getRoot(), block.getParentRoot());
       return this;
     }
 

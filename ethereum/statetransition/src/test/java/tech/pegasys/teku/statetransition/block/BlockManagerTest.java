@@ -155,7 +155,7 @@ public class BlockManagerTest {
     ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
 
     // Before nextNextBlock imports, it's parent becomes available
-    when(localRecentChainData.containsBlock(nextNextBlock.getParent_root())).thenReturn(true);
+    when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
 
     // So when the block import completes, it should be retried
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);

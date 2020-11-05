@@ -18,6 +18,7 @@ import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,7 +32,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class SignedBeaconBlock
+    implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   private final BeaconBlock message;
   private final BLSSignature signature;
@@ -70,21 +72,34 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return List.of(SimpleOffsetSerializer.serialize(message), Bytes.EMPTY);
   }
 
+  @Override
   public UInt64 getSlot() {
     return message.getSlot();
   }
 
-  public Bytes32 getParent_root() {
-    return message.getParent_root();
+  @Override
+  public Bytes32 getParentRoot() {
+    return message.getParentRoot();
   }
 
-  /**
-   * Get the root of the BeaconBlock that is being signed.
-   *
-   * @return The hashed tree root of the {@code BeaconBlock} being signed.
-   */
-  public Bytes32 getRoot() {
-    return message.hash_tree_root();
+  @Override
+  public UInt64 getProposerIndex() {
+    return message.getProposerIndex();
+  }
+
+  @Override
+  public Bytes32 getBodyRoot() {
+    return message.getBodyRoot();
+  }
+
+  @Override
+  public Optional<BeaconBlock> getBeaconBlock() {
+    return Optional.of(message);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.of(this);
   }
 
   /**
@@ -92,8 +107,19 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
    *
    * @return The hashed tree root of the {@code BeaconBlock} being signed.
    */
+  @Override
   public Bytes32 getStateRoot() {
-    return message.getState_root();
+    return message.getStateRoot();
+  }
+
+  /**
+   * Get the root of the BeaconBlock that is being signed.
+   *
+   * @return The hashed tree root of the {@code BeaconBlock} being signed.
+   */
+  @Override
+  public Bytes32 getRoot() {
+    return message.hash_tree_root();
   }
 
   @Override

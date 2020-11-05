@@ -198,7 +198,7 @@ public class RocksDbDatabase implements Database {
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
       final BeaconState anchorState = anchor.getState();
-      final SignedBeaconBlock anchorBlock = anchor.getBlock();
+      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
 
       hotUpdater.setAnchor(anchor.getCheckpoint());
       hotUpdater.setGenesisTime(anchorState.getGenesis_time());
@@ -209,15 +209,19 @@ public class RocksDbDatabase implements Database {
 
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
-      // Save to hot storage
-      hotUpdater.addHotBlock(
-          new BlockAndCheckpointEpochs(
-              anchorBlock,
-              new CheckpointEpochs(
-                  anchorState.getCurrent_justified_checkpoint().getEpoch(),
-                  anchorState.getFinalized_checkpoint().getEpoch())));
-      // Save to cold storage
-      finalizedUpdater.addFinalizedBlock(anchorBlock);
+      anchorBlock.ifPresent(
+          block -> {
+            // Save to hot storage
+            hotUpdater.addHotBlock(
+                new BlockAndCheckpointEpochs(
+                    block,
+                    new CheckpointEpochs(
+                        anchorState.getCurrent_justified_checkpoint().getEpoch(),
+                        anchorState.getFinalized_checkpoint().getEpoch())));
+            // Save to cold storage
+            finalizedUpdater.addFinalizedBlock(block);
+          });
+
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
 
       finalizedUpdater.commit();
@@ -276,7 +280,7 @@ public class RocksDbDatabase implements Database {
                 new StoredBlockMetadata(
                     b.getSlot(),
                     b.getRoot(),
-                    b.getParent_root(),
+                    b.getParentRoot(),
                     b.getStateRoot(),
                     checkpointEpochs));
           });
@@ -287,7 +291,7 @@ public class RocksDbDatabase implements Database {
         hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
     checkNotNull(finalizedBlock);
     checkState(
-        finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
+        finalizedBlock.getMessage().getStateRoot().equals(finalizedState.hash_tree_root()),
         "Latest finalized state does not match latest finalized block");
     final AnchorPoint latestFinalized =
         AnchorPoint.create(finalizedCheckpoint, finalizedBlock, finalizedState);

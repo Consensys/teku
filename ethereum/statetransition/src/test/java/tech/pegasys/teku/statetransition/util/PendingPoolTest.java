@@ -62,9 +62,9 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false))
         .containsExactlyInAnyOrder(block);
-    assertThat(requiredRootEvents).containsExactly(block.getParent_root());
+    assertThat(requiredRootEvents).containsExactly(block.getParentRoot());
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
 
@@ -76,9 +76,9 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false))
         .containsExactlyInAnyOrder(block);
-    assertThat(requiredRootEvents).containsExactly(block.getParent_root());
+    assertThat(requiredRootEvents).containsExactly(block.getParentRoot());
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
 
@@ -90,7 +90,7 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isFalse();
     assertThat(pendingPool.size()).isEqualTo(0);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false)).isEmpty();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
@@ -103,9 +103,9 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false))
         .containsExactlyInAnyOrder(block);
-    assertThat(requiredRootEvents).containsExactly(block.getParent_root());
+    assertThat(requiredRootEvents).containsExactly(block.getParentRoot());
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
 
@@ -117,7 +117,7 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isFalse();
     assertThat(pendingPool.size()).isEqualTo(0);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false)).isEmpty();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
@@ -135,9 +135,9 @@ public class PendingPoolTest {
     pendingPool.add(block);
     assertThat(pendingPool.contains(block)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false))
         .containsExactlyInAnyOrder(block);
-    assertThat(requiredRootEvents).containsExactly(block.getParent_root());
+    assertThat(requiredRootEvents).containsExactly(block.getParentRoot());
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
 
@@ -155,7 +155,7 @@ public class PendingPoolTest {
     pendingPool.add(block);
     assertThat(pendingPool.contains(block)).isFalse();
     assertThat(pendingPool.size()).isEqualTo(0);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false)).isEmpty();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
@@ -251,13 +251,13 @@ public class PendingPoolTest {
   public void add_duplicateBlock() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    final Bytes32 parentRoot = block.getParent_root();
+    final Bytes32 parentRoot = block.getParentRoot();
     pendingPool.add(block);
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false))
         .containsExactlyInAnyOrder(block);
     assertThat(requiredRootEvents).containsExactly(parentRoot);
     assertThat(requiredRootDroppedEvents).isEmpty();
@@ -267,7 +267,7 @@ public class PendingPoolTest {
   public void add_siblingBlocks() {
     final SignedBeaconBlock blockA =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    final Bytes32 parentRoot = blockA.getParent_root();
+    final Bytes32 parentRoot = blockA.getParentRoot();
     final SignedBeaconBlock blockB =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot);
     pendingPool.add(blockA);
@@ -276,7 +276,7 @@ public class PendingPoolTest {
     assertThat(pendingPool.contains(blockA)).isTrue();
     assertThat(pendingPool.contains(blockB)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(2);
-    assertThat(pendingPool.getItemsDependingOn(blockA.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(blockA.getParentRoot(), false))
         .containsExactlyInAnyOrder(blockA, blockB);
     assertThat(requiredRootEvents).containsExactly(parentRoot);
     assertThat(requiredRootDroppedEvents).isEmpty();
@@ -291,9 +291,9 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isFalse();
     assertThat(pendingPool.size()).isEqualTo(0);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
-    assertThat(requiredRootEvents).containsExactly(block.getParent_root());
-    assertThat(requiredRootDroppedEvents).containsExactly(block.getParent_root());
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false)).isEmpty();
+    assertThat(requiredRootEvents).containsExactly(block.getParentRoot());
+    assertThat(requiredRootDroppedEvents).containsExactly(block.getParentRoot());
   }
 
   @Test
@@ -304,7 +304,7 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(block)).isFalse();
     assertThat(pendingPool.size()).isEqualTo(0);
-    assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
+    assertThat(pendingPool.getItemsDependingOn(block.getParentRoot(), false)).isEmpty();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
   }
@@ -313,7 +313,7 @@ public class PendingPoolTest {
   public void remove_siblingBlock() {
     final SignedBeaconBlock blockA =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    final Bytes32 parentRoot = blockA.getParent_root();
+    final Bytes32 parentRoot = blockA.getParentRoot();
     final SignedBeaconBlock blockB =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot);
     pendingPool.add(blockA);
@@ -322,7 +322,7 @@ public class PendingPoolTest {
 
     assertThat(pendingPool.contains(blockB)).isTrue();
     assertThat(pendingPool.size()).isEqualTo(1);
-    assertThat(pendingPool.getItemsDependingOn(blockA.getParent_root(), false))
+    assertThat(pendingPool.getItemsDependingOn(blockA.getParentRoot(), false))
         .containsExactlyInAnyOrder(blockB);
     assertThat(requiredRootEvents).containsExactly(parentRoot);
     assertThat(requiredRootDroppedEvents).isEmpty();

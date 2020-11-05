@@ -162,7 +162,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
                 // so, remove from the pendingPool again and process now We must add the block to
                 // the pending pool before this check happens to avoid race conditions between
                 // performing the check and the parent importing.
-                if (recentChainData.containsBlock(block.getParent_root())) {
+                if (recentChainData.containsBlock(block.getParentRoot())) {
                   pendingBlocks.remove(block);
                   importBlockIgnoringResult(block);
                 }
@@ -195,7 +195,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
 
   private boolean blockIsInvalid(final SignedBeaconBlock block) {
     return invalidBlockRoots.contains(block.getRoot())
-        || invalidBlockRoots.contains(block.getParent_root());
+        || invalidBlockRoots.contains(block.getParentRoot());
   }
 
   private void dropInvalidBlock(final SignedBeaconBlock block) {

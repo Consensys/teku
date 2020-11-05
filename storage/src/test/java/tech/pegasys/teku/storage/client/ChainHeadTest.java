@@ -128,7 +128,8 @@ public class ChainHeadTest {
   }
 
   private ChainHead copy(ChainHead original) {
-    final SignedBeaconBlock blockCopy = copy(original.getBlock(), SignedBeaconBlock.class);
+    final SignedBeaconBlock blockCopy =
+        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.class);
     final BeaconState stateCopy =
         copy((BeaconStateImpl) original.getState(), BeaconStateImpl.class);
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);

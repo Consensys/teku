@@ -20,11 +20,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAndState> {
+public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlockSummary> {
   private static final Logger LOG = LogManager.getLogger();
   private final HashTree tree;
   private final BlockProvider blockProvider;
@@ -60,7 +60,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
   }
 
   @Override
-  public StateGenerationTask rebase(final SignedBlockAndState newBaseBlockAndState) {
+  public StateGenerationTask rebase(final StateAndBlockSummary newBaseBlockAndState) {
     final Bytes32 newBaseRoot = newBaseBlockAndState.getRoot();
     if (!tree.contains(newBaseRoot)) {
       LOG.warn(
@@ -78,18 +78,18 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
   }
 
   @Override
-  public SafeFuture<Optional<SignedBlockAndState>> performTask() {
+  public SafeFuture<Optional<StateAndBlockSummary>> performTask() {
     return baseSelector.getBestBase().thenCompose(this::regenerateState);
   }
 
-  protected SafeFuture<Optional<SignedBlockAndState>> regenerateState(
-      final Optional<SignedBlockAndState> maybeBase) {
+  protected SafeFuture<Optional<StateAndBlockSummary>> regenerateState(
+      final Optional<StateAndBlockSummary> maybeBase) {
     if (maybeBase.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final SignedBlockAndState base = maybeBase.get();
+    final StateAndBlockSummary base = maybeBase.get();
     return StateGenerator.create(
-            tree.withRoot(base.getRoot()).block(base.getBlock()).build(), base, blockProvider)
+            tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
         .regenerateStateForBlock(blockRoot)
         .thenApply(Optional::of);
   }

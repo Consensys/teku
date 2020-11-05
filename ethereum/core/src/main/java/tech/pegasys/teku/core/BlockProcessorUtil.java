@@ -89,10 +89,10 @@ public final class BlockProcessorUtil {
           block.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
       checkArgument(
-          block.getProposer_index().longValue() == get_beacon_proposer_index(state),
+          block.getProposerIndex().longValue() == get_beacon_proposer_index(state),
           "process_block_header: Verify that proposer index is the correct index");
       checkArgument(
-          block.getParent_root().equals(state.getLatest_block_header().hash_tree_root()),
+          block.getParentRoot().equals(state.getLatest_block_header().hash_tree_root()),
           "process_block_header: Verify that the parent matches");
       checkArgument(
           block.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
@@ -102,14 +102,14 @@ public final class BlockProcessorUtil {
       state.setLatest_block_header(
           new BeaconBlockHeader(
               block.getSlot(),
-              block.getProposer_index(),
-              block.getParent_root(),
+              block.getProposerIndex(),
+              block.getParentRoot(),
               Bytes32.ZERO, // Overwritten in the next `process_slot` call
               block.getBody().hash_tree_root()));
 
       // Only if we are processing blocks (not proposing them)
       Validator proposer =
-          state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
+          state.getValidators().get(toIntExact(block.getProposerIndex().longValue()));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
@@ -138,7 +138,7 @@ public final class BlockProcessorUtil {
     UInt64 epoch = compute_epoch_at_slot(block.getSlot());
     // Verify RANDAO reveal
     Validator proposer =
-        state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
+        state.getValidators().get(toIntExact(block.getProposerIndex().longValue()));
     final Bytes signing_root =
         compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
     bls.verifyAndThrow(
@@ -247,8 +247,7 @@ public final class BlockProcessorUtil {
 
         slash_validator(
             state,
-            toIntExact(
-                proposerSlashing.getHeader_1().getMessage().getProposer_index().longValue()));
+            toIntExact(proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
