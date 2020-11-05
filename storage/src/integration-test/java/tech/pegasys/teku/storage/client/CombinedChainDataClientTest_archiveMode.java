@@ -19,14 +19,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -34,60 +28,6 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
   @Override
   protected StateStorageMode getStorageMode() {
     return StateStorageMode.ARCHIVE;
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getQueryBySlotParameters")
-  public <T> void queryBySlot_shouldRetrieveHistoricalState(
-      final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UInt64 finalizedEpoch = UInt64.valueOf(2);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    // Setup chain with finalized block
-    chainUpdater.initializeGenesis();
-    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
-    chainUpdater.advanceChain(finalizedSlot);
-    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
-    chainUpdater.addNewBestBlock();
-
-    // Sanity check
-    assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
-
-    final UInt64 querySlot = historicalBlock.getSlot();
-    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
-    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
-    final Optional<T> expected =
-        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
-
-    assertThat(result).isCompletedWithValue(expected);
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getQueryBySlotParameters")
-  public <T> void queryBySlot_shouldRetrieveHistoricalStateInEffectAtSkippedSlot(
-      final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UInt64 finalizedEpoch = UInt64.valueOf(2);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    // Setup chain with finalized block
-    chainUpdater.initializeGenesis();
-    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
-    final UInt64 skippedSlot = historicalBlock.getSlot().plus(UInt64.ONE);
-    chainUpdater.advanceChain(skippedSlot.plus(UInt64.ONE));
-    chainUpdater.advanceChain(finalizedSlot);
-    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
-    chainUpdater.addNewBestBlock();
-
-    // Sanity check
-    assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
-
-    final UInt64 querySlot = skippedSlot;
-    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
-    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
-    final Optional<T> expected =
-        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
-
-    assertThat(result).isCompletedWithValue(expected);
   }
 
   @Test
@@ -133,50 +73,5 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
         client.getStateByStateRoot(skippedSlotState.hash_tree_root()).get();
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(skippedSlotState);
-  }
-
-  @Test
-  public void getCheckpointStateAtEpoch_historicalCheckpoint() {
-    final UInt64 finalizedEpoch = UInt64.valueOf(3);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    chainUpdater.initializeGenesis();
-    // Setup chain at epoch to be queried
-    final SignedBlockAndState checkpointBlockAndState = chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    chainUpdater.addNewBestBlock();
-
-    final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
-    final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
-
-    final SafeFuture<Optional<CheckpointState>> actual =
-        client.getCheckpointStateAtEpoch(finalizedEpoch);
-    assertThat(actual).isCompletedWithValue(Optional.of(expected));
-  }
-
-  @Test
-  public void getCheckpointStateAtEpoch_historicalCheckpointWithSkippedBoundarySlot() {
-    final UInt64 finalizedEpoch = UInt64.valueOf(3);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    final UInt64 nextEpoch = finalizedEpoch.plus(UInt64.ONE);
-
-    chainUpdater.initializeGenesis();
-    // Setup chain at epoch to be queried
-    final SignedBlockAndState checkpointBlockAndState =
-        chainUpdater.advanceChain(finalizedSlot.minus(UInt64.ONE));
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    // Bury queried epoch behind another finalized epoch
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
-    chainUpdater.finalizeEpoch(nextEpoch);
-    chainUpdater.addNewBestBlock();
-
-    final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
-    final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
-
-    final SafeFuture<Optional<CheckpointState>> actual =
-        client.getCheckpointStateAtEpoch(finalizedEpoch);
-    assertThat(actual).isCompletedWithValue(Optional.of(expected));
   }
 }

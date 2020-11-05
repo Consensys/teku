@@ -272,7 +272,13 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
         break;
       case PRUNE:
         assertStatesUnavailable(
-            historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
+            historicalStates.values().stream()
+                .map(BeaconState::getSlot)
+                // Anchor state should be saved
+                .filter(s -> !s.equals(genesisAnchor.getBlockSlot()))
+                .collect(toList()));
+        // Anchor state should be saved
+        assertFinalizedStatesAvailable(Map.of(genesisAnchor.getRoot(), genesisAnchor.getState()));
         break;
     }
   }

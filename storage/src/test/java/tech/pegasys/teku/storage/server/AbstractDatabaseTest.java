@@ -749,8 +749,14 @@ public abstract class AbstractDatabaseTest {
       case PRUNE:
         // Check pruned states
         final List<UInt64> unavailableSlots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
+            allBlocksAndStates.stream()
+                .map(SignedBlockAndState::getSlot)
+                // Filter out the anchor state, which should be saved
+                .filter(s -> !s.equals(genesisAnchor.getBlockSlot()))
+                .collect(toList());
         assertStatesUnavailable(unavailableSlots);
+        // Anchor state should be available
+        assertFinalizedStatesAvailable(Map.of(genesisAnchor.getRoot(), genesisAnchor.getState()));
         break;
     }
   }
