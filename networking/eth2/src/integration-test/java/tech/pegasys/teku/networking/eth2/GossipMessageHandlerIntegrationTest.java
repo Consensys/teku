@@ -23,11 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
@@ -36,14 +33,12 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
 
@@ -55,10 +50,9 @@ public class GossipMessageHandlerIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
     // Setup network 1
@@ -69,26 +63,14 @@ public class GossipMessageHandlerIntegrationTest {
     // Setup network 2
     Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
-        b ->
-            b.gossipEncoding(gossipEncoding)
-                .gossipedBlockProcessor(
-                    (block) -> {
-                      node2ReceivedBlocks.add(block);
-                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-                    });
+        b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node2ReceivedBlocks::add);
     NodeManager node2 = createNodeManager(networkBuilder2);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
     Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder3 =
-        b ->
-            b.gossipEncoding(gossipEncoding)
-                .gossipedBlockProcessor(
-                    (block) -> {
-                      node3ReceivedBlocks.add(block);
-                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-                    });
+        b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node3ReceivedBlocks::add);
     NodeManager node3 = createNodeManager(networkBuilder3);
     node2.chainUtil().setSlot(blockSlot);
 
@@ -117,10 +99,9 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipInvalidBlocks(final String testName, GossipEncoding gossipEncoding)
-      throws Exception {
+  @Test
+  public void shouldNotGossipInvalidBlocks() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
@@ -165,10 +146,9 @@ public class GossipMessageHandlerIntegrationTest {
     ensureConditionRemainsMet(() -> assertThat(network3Blocks.getBlocks()).isEmpty(), 10000);
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
@@ -182,11 +162,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationProcessor(
-              (attestation) -> {
-                node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-              });
+          b.gossipedAttestationConsumer(node2attestations::add);
         };
 
     // Setup network 1
@@ -212,15 +188,14 @@ public class GossipMessageHandlerIntegrationTest {
         node1.storageClient().getHeadBlockAndState().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
-        s -> s.accept(ValidateableAttestation.from(validAttestation)));
+        s -> s.accept(ValidateableAttestation.fromAttestation(validAttestation)));
 
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
@@ -234,11 +209,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationProcessor(
-              (attestation) -> {
-                node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-              });
+          b.gossipedAttestationConsumer(node2attestations::add);
         };
 
     // Setup network 1
@@ -263,7 +234,8 @@ public class GossipMessageHandlerIntegrationTest {
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
-        ValidateableAttestation.from(attestationGenerator.validAttestation(bestBlockAndState));
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(bestBlockAndState));
 
     final int subnetId =
         computeSubnetForAttestation(
@@ -282,10 +254,9 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodings")
-  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic(
-      final String testName, GossipEncoding gossipEncoding) throws Exception {
+  @Test
+  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
@@ -293,19 +264,13 @@ public class GossipMessageHandlerIntegrationTest {
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationProcessor(
-              (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
           b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
         };
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.gossipedAttestationProcessor(
-              (attestation) -> {
-                node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-              });
+          b.gossipedAttestationConsumer(node2attestations::add);
         };
 
     // Setup network 1
@@ -329,13 +294,13 @@ public class GossipMessageHandlerIntegrationTest {
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getHeadBlockAndState().orElseThrow();
-    Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
-
-    final int subnetId = computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
-
     ValidateableAttestation validAttestation =
-        ValidateableAttestation.fromNetwork(attestation, subnetId);
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(bestBlockAndState));
 
+    final int subnetId =
+        computeSubnetForAttestation(
+            bestBlockAndState.getState(), validAttestation.getAttestation());
     node1.network().subscribeToAttestationSubnetId(subnetId);
     node2.network().subscribeToAttestationSubnetId(subnetId);
 
@@ -365,11 +330,6 @@ public class GossipMessageHandlerIntegrationTest {
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
     return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
-  }
-
-  public static Stream<Arguments> getEncodings() {
-    final List<GossipEncoding> encodings = List.of(GossipEncoding.SSZ, GossipEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of("gossipEncoding: " + e.getName(), e));
   }
 
   private void waitForTopicRegistration() throws Exception {

@@ -31,8 +31,8 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -117,7 +117,7 @@ public class DebugDbCommand implements Runnable {
               required = true,
               names = {"--slot", "-s"},
               description =
-                  "The slot to retrive the state for. If unavailable the closest available state will be returned")
+                  "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
     setConstants(networkOptions);
@@ -160,7 +160,7 @@ public class DebugDbCommand implements Runnable {
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
-      final Optional<SignedBlockAndState> blockAndState =
+      final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
               .map(
@@ -170,10 +170,10 @@ public class DebugDbCommand implements Runnable {
                           .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockProvider.NOOP)
                           .build())
-              .map(UpdatableStore::getLatestFinalizedBlockAndState);
-      int result = writeState(outputFile, blockAndState.map(SignedBlockAndState::getState));
+              .map(UpdatableStore::getLatestFinalized);
+      int result = writeState(outputFile, finalizedAnchor.map(AnchorPoint::getState));
       if (result == 0 && blockOutputFile != null) {
-        result = writeBlock(blockOutputFile, blockAndState.map(SignedBlockAndState::getBlock));
+        result = writeBlock(blockOutputFile, finalizedAnchor.map(AnchorPoint::getBlock));
       }
       return result;
     } finally {

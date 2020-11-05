@@ -18,12 +18,9 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -47,17 +44,10 @@ public class BlockPropagationIntegrationTest {
     networkFactory.stopAll();
   }
 
-  public static Stream<Arguments> getEncodingArguments() {
-    return Stream.of(
-        Arguments.of("encoding: ssz", RpcEncoding.SSZ, GossipEncoding.SSZ),
-        Arguments.of("encoding: ssz_snappy", RpcEncoding.SSZ_SNAPPY, GossipEncoding.SSZ_SNAPPY));
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getEncodingArguments")
-  public void shouldFetchUnknownAncestorsOfPropagatedBlock(
-      final String testName, final RpcEncoding encoding, final GossipEncoding gossipEncoding)
-      throws Exception {
+  @Test
+  public void shouldFetchUnknownAncestorsOfPropagatedBlock() throws Exception {
+    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     UInt64 currentSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
 
     // Setup node 1

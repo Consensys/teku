@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -26,8 +27,9 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class StateSelectorFactoryTest {
 
@@ -65,11 +67,11 @@ public class StateSelectorFactoryTest {
   @Test
   public void genesisSelector_shouldGetStateAtSlotExact()
       throws ExecutionException, InterruptedException {
-    when(client.getStateAtSlotExact(UInt64.ZERO))
+    when(client.getStateAtSlotExact(ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<BeaconState> result = factory.genesisSelector().getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
-    verify(client).getStateAtSlotExact(UInt64.ZERO);
+    verify(client).getStateAtSlotExact(ZERO);
   }
 
   @Test
@@ -94,5 +96,25 @@ public class StateSelectorFactoryTest {
   @Test
   public void defaultBlockSelector_shouldThrowBadRequestException() {
     assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("a"));
+  }
+
+  @Test
+  public void stateSelector_shouldReturnEmptyWhenPreForkChoice()
+      throws ExecutionException, InterruptedException {
+    final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    final CombinedChainDataClient client1 =
+        new CombinedChainDataClient(recentChainData, historicalChainData);
+    final StateSelectorFactory factory = new StateSelectorFactory(client1);
+    when(recentChainData.isPreGenesis()).thenReturn(false);
+    when(recentChainData.isPreForkChoice()).thenReturn(true);
+    final SafeFuture<Optional<BeaconState>> future =
+        factory.defaultStateSelector(ZERO.toString()).getState();
+    assertThat(future.get()).isEmpty();
+  }
+
+  @Test
+  public void defaultBlockSelector_shouldThrowBadRequestForBadHexState() {
+    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("0xzz"));
   }
 }
