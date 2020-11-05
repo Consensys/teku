@@ -18,14 +18,14 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.ProposerSlashingTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class ProposerSlashingGossipManager {
   private final TopicChannel channel;
+  public static String TOPIC_NAME = "proposer_slashing";
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -34,15 +34,15 @@ public class ProposerSlashingGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final ProposerSlashingValidator proposerSlashingValidator,
-      final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
-    final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(
+      final OperationProcessor<ProposerSlashing> processor) {
+    final Eth2TopicHandler<ProposerSlashing> topicHandler =
+        new Eth2TopicHandler<>(
             asyncRunner,
+            processor,
             gossipEncoding,
-            forkInfo,
-            proposerSlashingValidator,
-            gossipedProposerSlashingConsumer);
+            forkInfo.getForkDigest(),
+            TOPIC_NAME,
+            ProposerSlashing.class);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
