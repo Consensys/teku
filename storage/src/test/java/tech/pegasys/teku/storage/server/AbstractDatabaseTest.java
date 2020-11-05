@@ -680,10 +680,6 @@ public abstract class AbstractDatabaseTest {
     StoreAssertions.assertStoresMatch(recentChainData.getStore(), originalStore);
     assertThat(recentChainData.getFinalizedCheckpoint())
         .contains(new Checkpoint(newFinalizedEpock, newFinalizedBlockAndState.getRoot()));
-
-    // Ensure anchor state is always stored
-    assertThat(database.getLatestAvailableFinalizedState(anchor.getEpochStartSlot()))
-        .contains(anchorBlockAndState.getState());
   }
 
   protected Bytes32 insertRandomSlotAndBlock(
