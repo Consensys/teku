@@ -26,7 +26,13 @@ public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
           .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
-          .put("mainnet", builder().constants("mainnet").build())
+          .put(
+              "mainnet",
+              builder()
+                  .constants("mainnet")
+                  .startupTimeoutSeconds(120)
+                  .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
+                  .build())
           .put(
               "medalla",
               builder()
