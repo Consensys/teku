@@ -44,6 +44,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -130,8 +134,9 @@ public class TekuNode extends Node {
   }
 
   private UInt64 fetchGenesisTime() throws IOException {
-    String genesisTime = httpClient.get(getRestApiUrl(), "/node/genesis_time");
-    return jsonProvider.jsonToObject(genesisTime, UInt64.class);
+    String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
+    final GetGenesisResponse response = jsonProvider.jsonToObject(genesisTime, GetGenesisResponse.class);
+    return response.data.genesisTime;
   }
 
   public UInt64 getGenesisTime() throws IOException {
@@ -140,16 +145,16 @@ public class TekuNode extends Node {
   }
 
   public void waitForNewBlock() {
-    final Bytes32 startingBlockRoot = waitForBeaconHead().block_root;
-    waitFor(() -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot));
+    final Bytes32 startingBlockRoot = waitForBeaconHead();
+    waitFor(() -> assertThat(fetchBeaconHead().get()).isNotEqualTo(startingBlockRoot));
   }
 
   public void waitForNewFinalization() {
-    UInt64 startingFinalizedEpoch = waitForChainHead().finalized_epoch;
+    UInt64 startingFinalizedEpoch = waitForChainHead().finalized.epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
         () ->
-            assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
+            assertThat(fetchStateFinalityCheckpoints().get().finalized.epoch).isNotEqualTo(startingFinalizedEpoch),
         9,
         MINUTES);
   }
@@ -158,9 +163,9 @@ public class TekuNode extends Node {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
         () -> {
-          final Optional<BeaconHead> beaconHead = fetchBeaconHead();
+          final Optional<Bytes32> beaconHead = fetchBeaconHead();
           assertThat(beaconHead).isPresent();
-          final Optional<BeaconHead> targetBeaconHead = targetNode.fetchBeaconHead();
+          final Optional<Bytes32> targetBeaconHead = targetNode.fetchBeaconHead();
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
@@ -168,12 +173,12 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  private BeaconHead waitForBeaconHead() {
+  private Bytes32 waitForBeaconHead() {
     LOG.debug("Waiting for beacon head");
-    final AtomicReference<BeaconHead> beaconHead = new AtomicReference<>(null);
+    final AtomicReference<Bytes32> beaconHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<BeaconHead> fetchedHead = fetchBeaconHead();
+          final Optional<Bytes32> fetchedHead = fetchBeaconHead();
           assertThat(fetchedHead).isPresent();
           beaconHead.set(fetchedHead.get());
         });
@@ -181,39 +186,38 @@ public class TekuNode extends Node {
     return beaconHead.get();
   }
 
-  private Optional<BeaconHead> fetchBeaconHead() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/beacon/head");
+  private Optional<Bytes32> fetchBeaconHead() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head/root");
     if (result.isEmpty()) {
       return Optional.empty();
     }
 
-    return Optional.of(
-        jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class));
+    final GetBlockRootResponse response =  jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
+
+
+    return Optional.of(response.data.root);
   }
 
-  private BeaconChainHead waitForChainHead() {
+  private FinalityCheckpointsResponse waitForChainHead() {
     LOG.debug("Waiting for chain head");
-    final AtomicReference<BeaconChainHead> chainHead = new AtomicReference<>(null);
+    final AtomicReference<FinalityCheckpointsResponse> chainHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<BeaconChainHead> fetchedHead = fetchChainHead();
-          assertThat(fetchedHead).isPresent();
-          chainHead.set(fetchedHead.get());
+          final Optional<FinalityCheckpointsResponse> fetchCheckpoints = fetchStateFinalityCheckpoints();
+          assertThat(fetchCheckpoints).isPresent();
+          chainHead.set(fetchCheckpoints.get());
         });
     LOG.debug("Retrieved chain head: {}", chainHead.get());
     return chainHead.get();
   }
 
-  private Optional<BeaconChainHead> fetchChainHead() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/beacon/chainhead");
+  private Optional<FinalityCheckpointsResponse> fetchStateFinalityCheckpoints() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
     if (result.isEmpty()) {
       return Optional.empty();
     }
-
-    return Optional.of(
-        jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class));
+    final GetStateFinalityCheckpointsResponse response = jsonProvider.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
+    return Optional.of(response.data);
   }
 
   /**
