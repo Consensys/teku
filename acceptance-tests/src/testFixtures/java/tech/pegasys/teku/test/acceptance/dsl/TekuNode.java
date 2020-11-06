@@ -48,8 +48,6 @@ import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.schema.BeaconChainHead;
-import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
@@ -135,7 +133,8 @@ public class TekuNode extends Node {
 
   private UInt64 fetchGenesisTime() throws IOException {
     String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
-    final GetGenesisResponse response = jsonProvider.jsonToObject(genesisTime, GetGenesisResponse.class);
+    final GetGenesisResponse response =
+        jsonProvider.jsonToObject(genesisTime, GetGenesisResponse.class);
     return response.data.genesisTime;
   }
 
@@ -154,7 +153,8 @@ public class TekuNode extends Node {
     LOG.debug("Wait for finalized block");
     waitFor(
         () ->
-            assertThat(fetchStateFinalityCheckpoints().get().finalized.epoch).isNotEqualTo(startingFinalizedEpoch),
+            assertThat(fetchStateFinalityCheckpoints().get().finalized.epoch)
+                .isNotEqualTo(startingFinalizedEpoch),
         9,
         MINUTES);
   }
@@ -192,8 +192,8 @@ public class TekuNode extends Node {
       return Optional.empty();
     }
 
-    final GetBlockRootResponse response =  jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
-
+    final GetBlockRootResponse response =
+        jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
 
     return Optional.of(response.data.root);
   }
@@ -203,7 +203,8 @@ public class TekuNode extends Node {
     final AtomicReference<FinalityCheckpointsResponse> chainHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<FinalityCheckpointsResponse> fetchCheckpoints = fetchStateFinalityCheckpoints();
+          final Optional<FinalityCheckpointsResponse> fetchCheckpoints =
+              fetchStateFinalityCheckpoints();
           assertThat(fetchCheckpoints).isPresent();
           chainHead.set(fetchCheckpoints.get());
         });
@@ -212,11 +213,13 @@ public class TekuNode extends Node {
   }
 
   private Optional<FinalityCheckpointsResponse> fetchStateFinalityCheckpoints() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
     if (result.isEmpty()) {
       return Optional.empty();
     }
-    final GetStateFinalityCheckpointsResponse response = jsonProvider.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
+    final GetStateFinalityCheckpointsResponse response =
+        jsonProvider.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
     return Optional.of(response.data);
   }
 
