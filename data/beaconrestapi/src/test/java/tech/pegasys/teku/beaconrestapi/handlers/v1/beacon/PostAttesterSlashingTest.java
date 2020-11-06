@@ -55,6 +55,18 @@ public class PostAttesterSlashingTest {
   }
 
   @Test
+  void shouldReturnBadRequestIfAttesterSlashingIsInvalid() throws Exception {
+    final AttesterSlashing slashing =
+        new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
+    when(provider.postAttesterSlashing(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
