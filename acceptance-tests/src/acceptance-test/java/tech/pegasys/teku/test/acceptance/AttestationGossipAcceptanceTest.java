@@ -10,6 +10,7 @@ public class AttestationGossipAcceptanceTest extends AcceptanceTestBase {
   public void shouldFinalizeWithTwoNodes() throws Exception {
     final TekuNode node1 = createTekuNode(config ->
             config.withRealNetwork()
+                    .withNetwork("minimal")
                     .withInteropValidators(0, 32)
     );
 
@@ -18,10 +19,11 @@ public class AttestationGossipAcceptanceTest extends AcceptanceTestBase {
 
     final TekuNode node2 = createTekuNode(config ->
             config
+                    .withNetwork("minimal")
                     .withGenesisTime(genesisTime.intValue())
                     .withRealNetwork()
                     .withPeers(node1)
-                    .withInteropValidators(33, 30));
+                    .withInteropValidators(32, 32));
     node2.start();
 
     node2.waitForAttestationBeingGossiped(32, 64);

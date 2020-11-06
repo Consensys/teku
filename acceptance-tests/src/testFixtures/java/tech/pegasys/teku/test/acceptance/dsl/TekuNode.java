@@ -410,6 +410,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withNetwork(String networkName) {
+      configMap.put("network", networkName);
+      return this;
+    }
+
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
