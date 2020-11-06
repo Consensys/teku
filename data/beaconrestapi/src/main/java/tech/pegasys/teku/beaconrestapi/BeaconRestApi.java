@@ -41,7 +41,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -75,15 +74,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -133,7 +123,6 @@ public class BeaconRestApi {
 
     // Endpoints from before standard API
     addAdminHandlers();
-    addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
   }
 
@@ -367,28 +356,6 @@ public class BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels, asyncRunner));
-  }
-
-  private void addValidatorHandlers(DataProvider dataProvider) {
-    final ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
-    app.get(GetAttestation.ROUTE, new GetAttestation(validatorDataProvider, jsonProvider));
-    app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
-    app.get(GetAggregate.ROUTE, new GetAggregate(validatorDataProvider, jsonProvider));
-
-    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
-    app.post(
-        PostBlock.ROUTE,
-        new PostBlock(validatorDataProvider, dataProvider.getSyncDataProvider(), jsonProvider));
-    app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
-    app.post(
-        PostAggregateAndProof.ROUTE,
-        new PostAggregateAndProof(validatorDataProvider, jsonProvider));
-    app.post(
-        PostSubscribeToBeaconCommittee.ROUTE,
-        new PostSubscribeToBeaconCommittee(validatorDataProvider, jsonProvider));
-    app.post(
-        PostSubscribeToPersistentSubnets.ROUTE,
-        new PostSubscribeToPersistentSubnets(validatorDataProvider, jsonProvider));
   }
 
   public void stop() {
