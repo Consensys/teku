@@ -37,7 +37,8 @@ public class ProposerSlashing {
 
   public tech.pegasys.teku.datastructures.operations.ProposerSlashing asInternalProposerSlashing() {
     return new tech.pegasys.teku.datastructures.operations.ProposerSlashing(
-        signed_header_1.asInternalSignedBeaconBlockHeader(), signed_header_2.asInternalSignedBeaconBlockHeader());
+        signed_header_1.asInternalSignedBeaconBlockHeader(),
+        signed_header_2.asInternalSignedBeaconBlockHeader());
   }
 
   @Override
@@ -45,7 +46,8 @@ public class ProposerSlashing {
     if (this == o) return true;
     if (!(o instanceof ProposerSlashing)) return false;
     ProposerSlashing that = (ProposerSlashing) o;
-    return Objects.equals(signed_header_1, that.signed_header_1) && Objects.equals(signed_header_2, that.signed_header_2);
+    return Objects.equals(signed_header_1, that.signed_header_1)
+        && Objects.equals(signed_header_2, that.signed_header_2);
   }
 
   @Override
