@@ -63,7 +63,7 @@ public class PostProposerSlashingTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     handler.handle(context);
 
-    verify(context).status(SC_OK);
+    verify(context).status(SC_BAD_REQUEST);
   }
 
   @Test
