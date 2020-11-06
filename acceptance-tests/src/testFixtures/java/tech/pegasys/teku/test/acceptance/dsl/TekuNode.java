@@ -51,13 +51,11 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
-import tech.pegasys.teku.api.schema.BeaconChainHead;
-import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -304,7 +302,6 @@ public class TekuNode extends Node {
   public Config getConfig() {
     return config;
   }
-
 
   /**
    * Copies data directory from node into a temporary directory.
