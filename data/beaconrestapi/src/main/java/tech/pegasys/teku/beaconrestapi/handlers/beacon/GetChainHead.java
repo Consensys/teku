@@ -47,13 +47,15 @@ public class GetChainHead implements Handler {
   public static final String ROUTE = "/beacon/chainhead";
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get information about the chain head.",
       tags = {TAG_BEACON},
       description =
           "Returns information about the head of the beacon chain including the finalized and "
-              + "justified information.",
+              + "justified information.\n"
+              + "Deprecated - use `/eth/v1/beacon/states/{state_id}/finality_checkpoints` and `/eth/v1/beacon/headers/{block_id}` instead.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconChainHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
