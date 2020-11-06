@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -87,8 +88,8 @@ class ForkChoiceUtilTest {
   void getAncestors_shouldGetSequenceOfRootsWhenStartIsPriorToFinalizedCheckpoint() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.applyTransaction(
-        emptyList(), emptyList(), createCheckpointFromBlock(chainBuilder.getBlockAtSlot(4)));
+    forkChoiceStrategy.applyUpdate(
+        emptyList(), emptySet(), createCheckpointFromBlock(chainBuilder.getBlockAtSlot(4)));
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(

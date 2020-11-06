@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -39,11 +40,9 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.BlockMetadataStore.HaltableNodeProcessor;
-import tech.pegasys.teku.protoarray.BlockMetadataStore.NodeProcessor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMetadataStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
@@ -327,8 +326,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
    * @param head The root defining the head of the chain to process
    * @param processor The callback to invoke for each child-parent pair
    */
-  public void processChain(final Bytes32 head, NodeProcessor processor) {
-    processChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
+  public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
+    processHashesInChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
   /**
@@ -339,7 +338,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
    * @param nodeProcessor The callback receiving hashes and determining whether to continue
    *     processing
    */
-  public void processChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+  public void processHashesInChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
       final Optional<ProtoNode> startingNode = getProtoNode(head);
@@ -380,9 +379,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  public void applyTransaction(
+  @Override
+  public BlockMetadataStore applyUpdate(
       final Collection<BlockAndCheckpointEpochs> newBlocks,
-      final Collection<Bytes32> removedBlockRoots,
+      final Set<Bytes32> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
     protoArrayLock.writeLock().lock();
     try {
@@ -402,6 +402,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     } finally {
       protoArrayLock.writeLock().unlock();
     }
+    return this;
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {

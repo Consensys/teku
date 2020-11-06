@@ -822,4 +822,11 @@ public class BeaconStateUtil {
     return slot.compareTo(state.getSlot()) < 0
         && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
   }
+
+  public static boolean isSlotAtNthEpochBoundary(
+      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
+    final UInt64 blockEpoch = compute_epoch_at_slot(blockSlot);
+    final UInt64 parentEpoch = compute_epoch_at_slot(parentSlot);
+    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+  }
 }

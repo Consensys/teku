@@ -116,27 +116,6 @@ public class BlockTree implements BlockMetadataStore {
     return hashTree.breadthFirstStream().collect(Collectors.toList());
   }
 
-  /**
-   * Returns true if the block root is at an epoch boundary where the epoch boundary spanned by this
-   * block is a multiple of n. The rootHash is not considered an epoch boundary. A block is at an
-   * epoch boundary if it is the first block at or after an epoch start slot.
-   *
-   * @param blockRoot The block root to check.
-   * @return True if the block root is at an internal epoch boundary.
-   */
-  // TODO: This can be deleted but need to move the tests over to store
-  public boolean isRootAtNthEpochBoundary(Bytes32 blockRoot, final int n) {
-    checkArgument(n > 0, "Parameter n must be greater than 0");
-    assertBlockIsInTree(blockRoot);
-    return hashTree
-        .getParent(blockRoot)
-        .filter(this::contains)
-        .map(this::getEpoch)
-        .map(
-            parentEpoch -> getEpoch(blockRoot).dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n)))
-        .orElse(false);
-  }
-
   @Override
   public BlockMetadataStore applyUpdate(
       final Collection<BlockAndCheckpointEpochs> addedBlocks,
@@ -149,7 +128,10 @@ public class BlockTree implements BlockMetadataStore {
     }
     return updated(
         finalizedCheckpoint.getRoot(),
-        addedBlocks.stream().map(BlockAndCheckpointEpochs::getBlock).collect(Collectors.toList()));
+        addedBlocks.stream()
+            .map(BlockAndCheckpointEpochs::getBlock)
+            .filter(block -> !removedBlocks.contains(block.getRoot()))
+            .collect(Collectors.toList()));
   }
 
   public UInt64 getEpoch(Bytes32 blockRoot) {

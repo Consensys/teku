@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromAnchor;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -56,6 +55,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -65,7 +65,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockMetadataStore;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArrayBlockMetadataStore;
 import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -190,7 +189,7 @@ class Store implements UpdatableStore {
 
     final BlockMetadataStore blockMetadataStore =
         maybeForkChoiceStrategy
-            .<BlockMetadataStore>map(ProtoArrayBlockMetadataStore::new)
+            .<BlockMetadataStore>map(a -> a)
             .orElseGet(
                 () -> {
                   // Build block tree structure
@@ -231,7 +230,7 @@ class Store implements UpdatableStore {
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
           ProtoArrayForkChoiceStrategy.initialize(store, protoArrayStorageChannel).join();
-      store.blockMetadata = new ProtoArrayBlockMetadataStore(forkChoiceStrategy);
+      store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {
       store.forkChoiceStrategy = maybeForkChoiceStrategy.get();
@@ -652,7 +651,8 @@ class Store implements UpdatableStore {
         && parentSlot
             .map(
                 slot ->
-                    isSlotAtNthEpochBoundary(blockSlot, slot, hotStatePersistenceFrequencyInEpochs))
+                    BeaconStateUtil.isSlotAtNthEpochBoundary(
+                        blockSlot, slot, hotStatePersistenceFrequencyInEpochs))
             .orElse(false);
   }
 
@@ -660,14 +660,8 @@ class Store implements UpdatableStore {
       final UInt64 blockSlot, final Bytes32 parentRoot, final int n) {
     return blockMetadata
         .blockSlot(parentRoot)
-        .map(parentSlot -> isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
+        .map(parentSlot -> BeaconStateUtil.isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
         .orElse(false);
-  }
-
-  boolean isSlotAtNthEpochBoundary(final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
-    final UInt64 blockEpoch = compute_epoch_at_slot(blockSlot);
-    final UInt64 parentEpoch = compute_epoch_at_slot(parentSlot);
-    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
   private void putBlock(final SignedBeaconBlock block) {

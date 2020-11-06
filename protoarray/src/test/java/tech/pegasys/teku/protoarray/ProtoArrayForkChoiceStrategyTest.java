@@ -14,6 +14,7 @@
 package tech.pegasys.teku.protoarray;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -31,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -46,7 +48,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public class ProtoArrayForkChoiceStrategyTest {
+public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ProtoArrayStorageChannel storageChannel = mock(ProtoArrayStorageChannel.class);
 
@@ -54,6 +56,28 @@ public class ProtoArrayForkChoiceStrategyTest {
   void setUp() {
     when(storageChannel.getProtoArraySnapshot())
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+  }
+
+  @Override
+  protected BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder) {
+    final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
+    final ProtoArray protoArray =
+        new ProtoArrayBuilder()
+            .finalizedCheckpoint(latestState.getFinalized_checkpoint())
+            .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
+            .build();
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                protoArray.onBlock(
+                    blockAndState.getSlot(),
+                    blockAndState.getRoot(),
+                    blockAndState.getParentRoot(),
+                    blockAndState.getStateRoot(),
+                    blockAndState.getState().getCurrent_justified_checkpoint().getEpoch(),
+                    blockAndState.getState().getFinalized_checkpoint().getEpoch()));
+    return ProtoArrayForkChoiceStrategy.initialize(protoArray);
   }
 
   @Test
@@ -166,7 +190,7 @@ public class ProtoArrayForkChoiceStrategyTest {
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
 
     final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
-    strategy.applyTransaction(
+    strategy.applyUpdate(
         emptyList(),
         Set.of(block2.getRoot()),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
@@ -183,11 +207,11 @@ public class ProtoArrayForkChoiceStrategyTest {
     final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
 
-    strategy.applyTransaction(
+    strategy.applyUpdate(
         List.of(
             BlockAndCheckpointEpochs.fromBlockAndState(block1),
             BlockAndCheckpointEpochs.fromBlockAndState(block2)),
-        emptyList(),
+        emptySet(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
 
     assertThat(strategy.contains(block1.getRoot())).isTrue();
@@ -207,14 +231,14 @@ public class ProtoArrayForkChoiceStrategyTest {
     strategy.setPruneThreshold(3);
 
     // Not pruned because threshold isn't reached.
-    strategy.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, block2.getRoot()));
+    strategy.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, block2.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isTrue();
     assertThat(strategy.contains(block2.getRoot())).isTrue();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
     assertThat(strategy.contains(block4.getRoot())).isTrue();
 
     // Prune when threshold is exceeded
-    strategy.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, block3.getRoot()));
+    strategy.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, block3.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isFalse();
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -231,9 +255,9 @@ public class ProtoArrayForkChoiceStrategyTest {
     final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
     final UInt64 block3Epoch = compute_epoch_at_slot(block3.getSlot());
 
-    strategy.applyTransaction(
+    strategy.applyUpdate(
         emptyList(),
-        List.of(block1.getRoot(), block2.getRoot()),
+        Set.of(block1.getRoot(), block2.getRoot()),
         new Checkpoint(ONE, block3.getRoot()));
 
     assertThat(strategy.contains(block3.getRoot())).isTrue();

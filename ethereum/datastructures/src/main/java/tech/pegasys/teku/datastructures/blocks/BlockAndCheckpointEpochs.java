@@ -15,10 +15,11 @@ package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlockAndCheckpointEpochs {
+public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
   private final SignedBeaconBlock block;
   private final CheckpointEpochs checkpointEpochs;
 
@@ -46,8 +47,38 @@ public class BlockAndCheckpointEpochs {
     return block.getSlot();
   }
 
+  @Override
+  public UInt64 getProposerIndex() {
+    return block.getProposerIndex();
+  }
+
+  @Override
+  public Bytes32 getParentRoot() {
+    return block.getParentRoot();
+  }
+
+  @Override
+  public Bytes32 getStateRoot() {
+    return block.getStateRoot();
+  }
+
+  @Override
+  public Bytes32 getBodyRoot() {
+    return block.getBodyRoot();
+  }
+
   public Bytes32 getRoot() {
     return block.getRoot();
+  }
+
+  @Override
+  public Optional<BeaconBlock> getBeaconBlock() {
+    return Optional.of(block.getMessage());
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.of(block);
   }
 
   @Override
