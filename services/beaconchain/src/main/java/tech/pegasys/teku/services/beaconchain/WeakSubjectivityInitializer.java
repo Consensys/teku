@@ -172,19 +172,14 @@ class WeakSubjectivityInitializer {
                     maybeBlock -> {
                       final SafeFuture<Optional<BeaconBlockSummary>> summary;
                       if (maybeBlock.isPresent()) {
-                        summary =
-                            SafeFuture.completedFuture(
-                                maybeBlock.map(BeaconBlockSummary.class::cast));
+                        summary = SafeFuture.completedFuture(maybeBlock.map(a -> a));
                       } else {
                         // If block is unavailable, try looking up the corresponding state
                         summary =
                             storageQueryChannel
                                 .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
                                 .thenApply(
-                                    state ->
-                                        state
-                                            .map(BeaconBlockHeader::fromState)
-                                            .map(BeaconBlockSummary.class::cast));
+                                    state -> state.map(BeaconBlockHeader::fromState).map(a -> a));
                       }
                       return summary;
                     })
