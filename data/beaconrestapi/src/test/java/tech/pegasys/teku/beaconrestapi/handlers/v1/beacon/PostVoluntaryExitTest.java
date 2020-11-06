@@ -55,7 +55,19 @@ public class PostVoluntaryExitTest {
   }
 
   @Test
-  void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
+  void shouldReturnBadRequest_ifVoluntaryExitInvalid() throws Exception {
+    final SignedVoluntaryExit slashing =
+        new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
+    when(provider.postVoluntaryExit(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  void shouldReturnBadRequest() throws Exception {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
 
