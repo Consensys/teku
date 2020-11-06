@@ -44,10 +44,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
@@ -137,7 +133,6 @@ public class BeaconRestApi {
 
     // Endpoints from before standard API
     addAdminHandlers();
-    addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
   }
@@ -372,14 +367,6 @@ public class BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels, asyncRunner));
-  }
-
-  private void addNodeHandlers(final DataProvider provider) {
-    app.get(GetFork.ROUTE, new GetFork(provider.getChainDataProvider(), jsonProvider));
-    app.get(
-        GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
-    app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
-    app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {

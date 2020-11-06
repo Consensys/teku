@@ -27,10 +27,6 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
@@ -91,26 +87,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveServerPortSet() {
     verify(server).setServerPort(THE_PORT);
-  }
-
-  @Test
-  public void shouldHaveGenesisTimeEndpoint() {
-    verify(app).get(eq(GetGenesisTime.ROUTE), any(GetGenesisTime.class));
-  }
-
-  @Test
-  public void shouldHaveVersionEndpoint() {
-    verify(app).get(eq(GetVersion.ROUTE), any(GetVersion.class));
-  }
-
-  @Test
-  public void shouldHaveSyncingEndpoint() {
-    verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
-  }
-
-  @Test
-  public void shouldHaveForkEndpoint() {
-    verify(app).get(eq(GetFork.ROUTE), any(GetFork.class));
   }
 
   @Test
