@@ -73,19 +73,14 @@ public class PostVoluntaryExit extends AbstractHandler {
     try {
       final SignedVoluntaryExit exit =
           jsonProvider.jsonToObject(ctx.body(), SignedVoluntaryExit.class);
-      nodeDataProvider
-          .postVoluntaryExit(exit)
-          .thenAccept(
-              result -> {
-                if (result.equals(InternalValidationResult.IGNORE)
-                    || result.equals(InternalValidationResult.REJECT)) {
-                  ctx.status(SC_BAD_REQUEST);
-                  ctx.result(
-                      "Invalid voluntary exit, it will never pass validation so it's rejected");
-                } else {
-                  ctx.status(SC_OK);
-                }
-              });
+      InternalValidationResult result = nodeDataProvider.postVoluntaryExit(exit).join();
+      if (result.equals(InternalValidationResult.IGNORE)
+          || result.equals(InternalValidationResult.REJECT)) {
+        ctx.status(SC_BAD_REQUEST);
+        ctx.result("Invalid voluntary exit, it will never pass validation so it's rejected");
+      } else {
+        ctx.status(SC_OK);
+      }
     } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
