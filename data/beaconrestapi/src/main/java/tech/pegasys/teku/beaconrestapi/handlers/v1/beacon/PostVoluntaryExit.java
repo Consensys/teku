@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -27,13 +34,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 public class PostVoluntaryExit extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/voluntary_exits";
@@ -56,7 +56,8 @@ public class PostVoluntaryExit extends AbstractHandler {
       tags = {TAG_V1_BEACON},
       description =
           "Submits signed voluntary exit object to node's pool and if passes validation node MUST broadcast it to network.",
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = SignedVoluntaryExit.class)}),
+      requestBody =
+          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedVoluntaryExit.class)}),
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -64,8 +65,7 @@ public class PostVoluntaryExit extends AbstractHandler {
                 "Signed voluntary exit has been successfully validated, added to the pool, and broadcast."),
         @OpenApiResponse(
             status = RES_BAD_REQUEST,
-            description =
-                "Invalid voluntary exit, it will never pass validation so it's rejected"),
+            description = "Invalid voluntary exit, it will never pass validation so it's rejected"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
       })
   @Override
