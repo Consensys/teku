@@ -13,29 +13,21 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
-import tech.pegasys.teku.api.schema.BeaconChainHead;
-import tech.pegasys.teku.api.schema.BeaconHead;
-import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -52,15 +44,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
+import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.schema.BeaconChainHead;
+import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
+import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -234,46 +233,52 @@ public class TekuNode extends Node {
     }
   }
 
-  public void waitForAttestationBeingGossiped(int validatorSeparationIndex,
-                                               int totalValidatorCount) {
-    List<UInt64> node1Validators = IntStream.range(0, validatorSeparationIndex).mapToObj(UInt64::valueOf).collect(toList());
-    List<UInt64> node2Validators = IntStream.range(validatorSeparationIndex, totalValidatorCount).mapToObj(UInt64::valueOf).collect(toList());
+  public void waitForAttestationBeingGossiped(
+      int validatorSeparationIndex, int totalValidatorCount) {
+    List<UInt64> node1Validators =
+        IntStream.range(0, validatorSeparationIndex).mapToObj(UInt64::valueOf).collect(toList());
+    List<UInt64> node2Validators =
+        IntStream.range(validatorSeparationIndex, totalValidatorCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(toList());
     waitFor(
-            () -> {
-              final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
-              final Optional<BeaconState> maybeState = fetchHeadState();
-              assertThat(maybeBlock).isPresent();
-              assertThat(maybeState).isPresent();
-              SignedBeaconBlock block = maybeBlock.get();
-              BeaconState state = maybeState.get();
+        () -> {
+          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
+          final Optional<BeaconState> maybeState = fetchHeadState();
+          assertThat(maybeBlock).isPresent();
+          assertThat(maybeState).isPresent();
+          SignedBeaconBlock block = maybeBlock.get();
+          BeaconState state = maybeState.get();
 
-              // Check that the fetched block and state are in sync
-              assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
+          // Check that the fetched block and state are in sync
+          assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
 
-              tech.pegasys.teku.datastructures.state.BeaconState internalBeaconState =
-                      state.asInternalBeaconState();
-              UInt64 proposerIndex = block.message.proposer_index;
+          tech.pegasys.teku.datastructures.state.BeaconState internalBeaconState =
+              state.asInternalBeaconState();
+          UInt64 proposerIndex = block.message.proposer_index;
 
-              Set<UInt64> attesterIndicesInAttestations = block.message.body.attestations.stream()
-                      .map(a -> get_attesting_indices(
+          Set<UInt64> attesterIndicesInAttestations =
+              block.message.body.attestations.stream()
+                  .map(
+                      a ->
+                          get_attesting_indices(
                               internalBeaconState,
                               a.asInternalAttestation().getData(),
-                              a.asInternalAttestation().getAggregation_bits())
-                      )
-                      .flatMap(Collection::stream)
-                      .map(UInt64::valueOf)
-                      .collect(toSet());
+                              a.asInternalAttestation().getAggregation_bits()))
+                  .flatMap(Collection::stream)
+                  .map(UInt64::valueOf)
+                  .collect(toSet());
 
-              if (node1Validators.contains(proposerIndex)) {
-                assertThat(attesterIndicesInAttestations.stream().anyMatch(node2Validators::contains)).isTrue();
-              } else if (node2Validators.contains(proposerIndex))  {
-                assertThat(attesterIndicesInAttestations.stream().anyMatch(node1Validators::contains)).isTrue();
-              } else {
-                throw new IllegalStateException("Proposer index greater than total validator count");
-              }
-            }
-    );
-
+          if (node1Validators.contains(proposerIndex)) {
+            assertThat(attesterIndicesInAttestations.stream().anyMatch(node2Validators::contains))
+                .isTrue();
+          } else if (node2Validators.contains(proposerIndex)) {
+            assertThat(attesterIndicesInAttestations.stream().anyMatch(node1Validators::contains))
+                .isTrue();
+          } else {
+            throw new IllegalStateException("Proposer index greater than total validator count");
+          }
+        });
   }
 
   public Config getConfig() {

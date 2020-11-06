@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
-
-import java.util.function.Consumer;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
