@@ -27,13 +27,6 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetEthereumNameRecord;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenAddresses;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerCount;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerId;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeers;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetAttestationsInPoolCount;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
@@ -111,16 +104,6 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void shouldHavePeerIdEndpoint() {
-    verify(app).get(eq(GetPeerId.ROUTE), any(GetPeerId.class));
-  }
-
-  @Test
-  public void shouldHavePeersEndpoint() {
-    verify(app).get(eq(GetPeers.ROUTE), any(GetPeers.class));
-  }
-
-  @Test
   public void shouldHaveSyncingEndpoint() {
     verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
   }
@@ -128,26 +111,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveForkEndpoint() {
     verify(app).get(eq(GetFork.ROUTE), any(GetFork.class));
-  }
-
-  @Test
-  public void shouldHaveNetworkEnrEndpoint() {
-    verify(app).get(eq(GetEthereumNameRecord.ROUTE), any(GetEthereumNameRecord.class));
-  }
-
-  @Test
-  public void shouldHaveNetworkListenAddressesEndpoint() {
-    verify(app).get(eq(GetListenAddresses.ROUTE), any(GetListenAddresses.class));
-  }
-
-  @Test
-  public void shouldHaveNetworkPeerCountEndpoint() {
-    verify(app).get(eq(GetPeerCount.ROUTE), any(GetPeerCount.class));
-  }
-
-  @Test
-  public void shouldHaveNetworkListenPortEndpoint() {
-    verify(app).get(eq(GetListenPort.ROUTE), any(GetListenPort.class));
   }
 
   @Test
@@ -168,11 +131,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveValidatorPostAggregateAndProofEndpoint() {
     verify(app).post(eq(PostAggregateAndProof.ROUTE), any(PostAggregateAndProof.class));
-  }
-
-  @Test
-  public void shouldHaveAttestationsInPoolCountEndpoint() {
-    verify(app).get(eq(GetAttestationsInPoolCount.ROUTE), any(GetAttestationsInPoolCount.class));
   }
 
   @Test

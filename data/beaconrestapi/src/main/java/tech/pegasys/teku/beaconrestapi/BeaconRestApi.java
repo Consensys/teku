@@ -41,17 +41,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetEthereumNameRecord;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenAddresses;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerCount;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerId;
-import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeers;
-import tech.pegasys.teku.beaconrestapi.handlers.node.GetAttestationsInPoolCount;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
@@ -145,7 +137,6 @@ public class BeaconRestApi {
 
     // Endpoints from before standard API
     addAdminHandlers();
-    addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
@@ -389,9 +380,6 @@ public class BeaconRestApi {
         GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
     app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
     app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
-    app.get(
-        GetAttestationsInPoolCount.ROUTE,
-        new GetAttestationsInPoolCount(provider.getNodeDataProvider(), jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
@@ -414,16 +402,6 @@ public class BeaconRestApi {
     app.post(
         PostSubscribeToPersistentSubnets.ROUTE,
         new PostSubscribeToPersistentSubnets(validatorDataProvider, jsonProvider));
-  }
-
-  private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
-    app.get(
-        GetEthereumNameRecord.ROUTE, new GetEthereumNameRecord(networkDataProvider, jsonProvider));
-    app.get(GetListenAddresses.ROUTE, new GetListenAddresses(networkDataProvider, jsonProvider));
-    app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
-    app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
-    app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));
-    app.get(GetListenPort.ROUTE, new GetListenPort(networkDataProvider, jsonProvider));
   }
 
   public void stop() {
