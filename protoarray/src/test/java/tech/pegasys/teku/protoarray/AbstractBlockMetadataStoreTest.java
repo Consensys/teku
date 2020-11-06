@@ -65,7 +65,7 @@ abstract class AbstractBlockMetadataStoreTest {
 
     chainBuilder
         .streamBlocksAndStates()
-        .forEach(block -> assertThat(updatedStore.contains(block.getRoot())));
+        .forEach(block -> assertThat(updatedStore.contains(block.getRoot())).isTrue());
   }
 
   @Test
