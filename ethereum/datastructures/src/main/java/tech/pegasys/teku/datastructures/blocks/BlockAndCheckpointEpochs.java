@@ -43,6 +43,7 @@ public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
     return checkpointEpochs;
   }
 
+  @Override
   public UInt64 getSlot() {
     return block.getSlot();
   }
@@ -67,6 +68,7 @@ public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
     return block.getBodyRoot();
   }
 
+  @Override
   public Bytes32 getRoot() {
     return block.getRoot();
   }
