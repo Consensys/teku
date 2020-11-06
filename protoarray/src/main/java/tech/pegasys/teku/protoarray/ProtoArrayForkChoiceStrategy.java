@@ -326,6 +326,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
    * @param head The root defining the head of the chain to process
    * @param processor The callback to invoke for each child-parent pair
    */
+  @Override
   public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
     processHashesInChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
@@ -338,6 +339,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
    * @param nodeProcessor The callback receiving hashes and determining whether to continue
    *     processing
    */
+  @Override
   public void processHashesInChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
@@ -363,6 +365,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     }
   }
 
+  @Override
   public void processAllInOrder(final NodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
