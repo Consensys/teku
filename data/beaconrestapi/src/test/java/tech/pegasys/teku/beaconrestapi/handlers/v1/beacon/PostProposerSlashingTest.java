@@ -55,7 +55,19 @@ public class PostProposerSlashingTest {
   }
 
   @Test
-  void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
+  void shouldReturnBadRequestIfProposerSlashingIsInvalid() throws Exception {
+    final ProposerSlashing slashing =
+        new ProposerSlashing(dataStructureUtil.randomProposerSlashing());
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
+    when(provider.postProposerSlashing(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+    handler.handle(context);
+
+    verify(context).status(SC_OK);
+  }
+
+  @Test
+  void shouldReturnBadRequestIfProserSlashingIsIncorrectlyFormatted() throws Exception {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
 
