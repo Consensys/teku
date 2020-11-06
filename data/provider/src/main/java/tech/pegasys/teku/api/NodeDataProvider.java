@@ -13,16 +13,19 @@
 
 package tech.pegasys.teku.api;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class NodeDataProvider {
 
@@ -76,5 +79,9 @@ public class NodeDataProvider {
 
   public int getAttestationPoolSize() {
     return attestationPool.getSize();
+  }
+
+  public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
+    return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
   }
 }
