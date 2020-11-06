@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -24,10 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ProtoArrayForkChoiceStrategyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -152,6 +157,101 @@ public class ProtoArrayForkChoiceStrategyTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
     final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ONE)).contains(head.getParentRoot());
+  }
+
+  @Test
+  void applyTransaction_shouldNotContainRemovedBlocks() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+
+    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    strategy.applyTransaction(
+        emptyList(),
+        Set.of(block2.getRoot()),
+        storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
+
+    assertThat(strategy.contains(block1.getRoot())).isTrue();
+    assertThat(strategy.contains(block2.getRoot())).isFalse();
+  }
+
+  @Test
+  void applyTransaction_shouldAddNewBlocks() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+
+    strategy.applyTransaction(
+        List.of(
+            BlockAndCheckpointEpochs.fromBlockAndState(block1),
+            BlockAndCheckpointEpochs.fromBlockAndState(block2)),
+        emptyList(),
+        storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
+
+    assertThat(strategy.contains(block1.getRoot())).isTrue();
+    assertThat(strategy.contains(block2.getRoot())).isTrue();
+  }
+
+  @Test
+  void applyTransaction_shouldPruneWhenFinalizedCheckpointExceedsPruningThreshold() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
+
+    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    // Genesis = 0, block1 = 1, block2 = 2, block3 = 3, block4 = 4
+    strategy.setPruneThreshold(3);
+
+    // Not pruned because threshold isn't reached.
+    strategy.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, block2.getRoot()));
+    assertThat(strategy.contains(block1.getRoot())).isTrue();
+    assertThat(strategy.contains(block2.getRoot())).isTrue();
+    assertThat(strategy.contains(block3.getRoot())).isTrue();
+    assertThat(strategy.contains(block4.getRoot())).isTrue();
+
+    // Prune when threshold is exceeded
+    strategy.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, block3.getRoot()));
+    assertThat(strategy.contains(block1.getRoot())).isFalse();
+    assertThat(strategy.contains(block2.getRoot())).isFalse();
+    assertThat(strategy.contains(block3.getRoot())).isTrue();
+    assertThat(strategy.contains(block4.getRoot())).isTrue();
+  }
+
+  @Test
+  void applyScoreChanges_shouldWorkAfterRemovingNodes() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
+    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    final UInt64 block3Epoch = compute_epoch_at_slot(block3.getSlot());
+
+    strategy.applyTransaction(
+        emptyList(),
+        List.of(block1.getRoot(), block2.getRoot()),
+        new Checkpoint(ONE, block3.getRoot()));
+
+    assertThat(strategy.contains(block3.getRoot())).isTrue();
+    assertThat(strategy.contains(block4.getRoot())).isTrue();
+
+    final StoreTransaction transaction = storageSystem.recentChainData().startStoreTransaction();
+    strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
+
+    final BeaconState block3State = block3.getState();
+    final Bytes32 bestHead =
+        strategy.findHead(
+            transaction,
+            storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
+            storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
+            block3State);
+    assertThat(transaction.commit()).isCompleted();
+
+    assertThat(bestHead).isEqualTo(block4.getRoot());
   }
 
   private StorageSystem initStorageSystem() {

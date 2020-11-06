@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -35,9 +36,11 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 
 class ForkChoiceUtilTest {
 
@@ -48,7 +51,7 @@ class ForkChoiceUtilTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel()).join();
+      ProtoArrayForkChoiceStrategy.initialize(store, ProtoArrayStorageChannel.NO_OP).join();
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
@@ -84,7 +87,8 @@ class ForkChoiceUtilTest {
   void getAncestors_shouldGetSequenceOfRootsWhenStartIsPriorToFinalizedCheckpoint() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.maybePrune(chainBuilder.getBlockAtSlot(4).getRoot());
+    forkChoiceStrategy.applyTransaction(
+        emptyList(), emptyList(), createCheckpointFromBlock(chainBuilder.getBlockAtSlot(4)));
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -95,6 +99,11 @@ class ForkChoiceUtilTest {
             UInt64.valueOf(4));
 
     assertThat(rootsBySlot).containsExactlyEntriesOf(getRootsForBlocks(5, 7));
+  }
+
+  private Checkpoint createCheckpointFromBlock(final SignedBeaconBlock block) {
+    final UInt64 epoch = BeaconStateUtil.compute_epoch_at_slot(block.getSlot()).plus(1);
+    return new Checkpoint(epoch, block.getRoot());
   }
 
   @Test

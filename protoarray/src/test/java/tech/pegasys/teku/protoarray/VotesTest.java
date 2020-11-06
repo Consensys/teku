@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -25,6 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class VotesTest {
@@ -427,7 +429,7 @@ public class VotesTest {
 
     // Ensure that pruning below the prune threshold does not prune.
     forkChoice.setPruneThreshold(Integer.MAX_VALUE);
-    forkChoice.maybePrune(getHash(5));
+    forkChoice.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.size()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
@@ -453,7 +455,7 @@ public class VotesTest {
     //         / \
     //        9  10
     forkChoice.setPruneThreshold(1);
-    forkChoice.maybePrune(getHash(5));
+    forkChoice.applyTransaction(emptyList(), emptyList(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.size()).isEqualTo(6);
 
     // Run find-head, ensure the prune didn't change the head.

@@ -135,15 +135,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         state.getFinalized_checkpoint().getEpoch());
   }
 
-  public void maybePrune(Bytes32 finalizedRoot) {
-    protoArrayLock.writeLock().lock();
-    try {
-      protoArray.maybePrune(finalizedRoot);
-    } finally {
-      protoArrayLock.writeLock().unlock();
-    }
-  }
-
   @Override
   public Map<Bytes32, UInt64> getChainHeads() {
     protoArrayLock.readLock().lock();
@@ -407,7 +398,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                       block.getCheckpointEpochs().getJustifiedEpoch(),
                       block.getCheckpointEpochs().getFinalizedEpoch()));
       removedBlockRoots.forEach(protoArray::removeBlockRoot);
-      maybePrune(finalizedCheckpoint.getRoot());
+      protoArray.maybePrune(finalizedCheckpoint.getRoot());
     } finally {
       protoArrayLock.writeLock().unlock();
     }
