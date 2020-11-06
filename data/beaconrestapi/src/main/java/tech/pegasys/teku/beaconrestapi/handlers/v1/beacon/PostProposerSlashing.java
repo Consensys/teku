@@ -73,19 +73,15 @@ public class PostProposerSlashing extends AbstractHandler {
     try {
       final ProposerSlashing proposerSlashing =
           jsonProvider.jsonToObject(ctx.body(), ProposerSlashing.class);
-      nodeDataProvider
-          .postProposerSlashing(proposerSlashing)
-          .thenAccept(
-              result -> {
-                if (result.equals(InternalValidationResult.IGNORE)
-                    || result.equals(InternalValidationResult.REJECT)) {
-                  ctx.status(SC_BAD_REQUEST);
-                  ctx.result(
-                      "Invalid proposer slashing, it will never pass validation so it's rejected");
-                } else {
-                  ctx.status(SC_OK);
-                }
-              });
+      InternalValidationResult result =
+          nodeDataProvider.postProposerSlashing(proposerSlashing).join();
+      if (result.equals(InternalValidationResult.IGNORE)
+          || result.equals(InternalValidationResult.REJECT)) {
+        ctx.status(SC_BAD_REQUEST);
+        ctx.result("Invalid proposer slashing, it will never pass validation so it's rejected");
+      } else {
+        ctx.status(SC_OK);
+      }
     } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
