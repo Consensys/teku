@@ -27,12 +27,6 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetChainHead;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetHead;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetStateRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetValidators;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetEthereumNameRecord;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenAddresses;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
@@ -122,38 +116,13 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void shouldHaveBeaconHeadEndpoint() {
-    verify(app).get(eq(GetHead.ROUTE), any(GetHead.class));
-  }
-
-  @Test
   public void shouldHavePeersEndpoint() {
     verify(app).get(eq(GetPeers.ROUTE), any(GetPeers.class));
   }
 
   @Test
-  public void shouldHaveChainHeadEndpoint() {
-    verify(app).get(eq(GetChainHead.ROUTE), any(GetChainHead.class));
-  }
-
-  @Test
-  public void shouldHaveBeaconStateEndpoint() {
-    verify(app).get(eq(GetState.ROUTE), any(GetState.class));
-  }
-
-  @Test
   public void shouldHaveSyncingEndpoint() {
     verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
-  }
-
-  @Test
-  public void shouldHaveBeaconValidatorsEndpoint() {
-    verify(app).get(eq(GetValidators.ROUTE), any(GetValidators.class));
-  }
-
-  @Test
-  public void shouldHaveBeaconStateRootEndpoint() {
-    verify(app).get(eq(GetStateRoot.ROUTE), any(GetStateRoot.class));
   }
 
   @Test
@@ -179,11 +148,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveNetworkListenPortEndpoint() {
     verify(app).get(eq(GetListenPort.ROUTE), any(GetListenPort.class));
-  }
-
-  @Test
-  public void shouldHaveBeaconValidatorsPostEndpoint() {
-    verify(app).post(eq(PostValidators.ROUTE), any(PostValidators.class));
   }
 
   @Test

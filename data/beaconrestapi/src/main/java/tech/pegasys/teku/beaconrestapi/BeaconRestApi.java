@@ -40,20 +40,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetChainHead;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetCommittees;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetHead;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetStateRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetValidators;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetEthereumNameRecord;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenAddresses;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
@@ -154,7 +145,6 @@ public class BeaconRestApi {
 
     // Endpoints from before standard API
     addAdminHandlers();
-    addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
@@ -404,23 +394,9 @@ public class BeaconRestApi {
         new GetAttestationsInPoolCount(provider.getNodeDataProvider(), jsonProvider));
   }
 
-  private void addBeaconHandlers(final DataProvider dataProvider) {
-    final ChainDataProvider provider = dataProvider.getChainDataProvider();
-    app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
-    app.get(GetChainHead.ROUTE, new GetChainHead(provider, jsonProvider));
-    app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));
-    app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
-    app.get(GetState.ROUTE, new GetState(provider, jsonProvider));
-    app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
-
-    app.post(PostValidators.ROUTE, new PostValidators(provider, jsonProvider));
-  }
-
   private void addValidatorHandlers(DataProvider dataProvider) {
-    final ChainDataProvider provider = dataProvider.getChainDataProvider();
     final ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
     app.get(GetAttestation.ROUTE, new GetAttestation(validatorDataProvider, jsonProvider));
-    app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
     app.get(GetAggregate.ROUTE, new GetAggregate(validatorDataProvider, jsonProvider));
 
