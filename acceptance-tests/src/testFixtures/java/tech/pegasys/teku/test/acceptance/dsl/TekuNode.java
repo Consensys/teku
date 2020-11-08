@@ -93,7 +93,7 @@ public class TekuNode extends Node {
         .waitingFor(
             new HttpWaitStrategy()
                 .forPort(REST_API_PORT)
-                .forPath("/eth/v1/node/health")
+                .forPath("/eth/v1/node/identity")
                 .withStartupTimeout(Duration.ofMinutes(2)))
         .withCommand("--config-file", CONFIG_FILE_PATH);
   }
