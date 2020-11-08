@@ -23,7 +23,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  //  @Disabled("This test currently takes too long to run.")
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
     final TekuNode primaryNode = createTekuNode(Config::withRealNetwork);
 

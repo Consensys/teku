@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_CONFIG;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,7 +46,7 @@ public class GetSpec implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get spec params",
-      tags = {TAG_CONFIG},
+      tags = {TAG_CONFIG, TAG_VALIDATOR_REQUIRED},
       description = "Retrieve specification configuration used on this node.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetSpecResponse.class)),

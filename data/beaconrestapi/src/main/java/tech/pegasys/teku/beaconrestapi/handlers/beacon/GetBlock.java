@@ -68,6 +68,7 @@ public class GetBlock implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the beacon chain block matching the criteria.",
@@ -78,7 +79,8 @@ public class GetBlock implements Handler {
         @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION)
       },
       description =
-          "Returns the beacon chain block that matches the specified epoch, slot, or block root.",
+          "Returns the beacon chain block that matches the specified epoch, slot, or block root.\n"
+              + "Deprecated - use `/eth/v1/beacon/blocks/{block_id}` instead.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetBlockResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
