@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.response.v1.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetDepositContractResponse {
   public final DepositContract data;
@@ -26,6 +25,6 @@ public class GetDepositContractResponse {
   }
 
   public GetDepositContractResponse(final int depositChainId, final String depositContractAddress) {
-    this.data = new DepositContract(UInt64.valueOf(depositChainId), depositContractAddress);
+    this.data = new DepositContract(depositChainId, depositContractAddress);
   }
 }
