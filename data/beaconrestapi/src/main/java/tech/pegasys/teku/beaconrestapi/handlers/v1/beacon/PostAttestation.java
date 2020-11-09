@@ -36,16 +36,15 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostAttestationData extends AbstractHandler {
+public class PostAttestation extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final ValidatorDataProvider provider;
 
-  public PostAttestationData(final DataProvider provider, final JsonProvider jsonProvider) {
+  public PostAttestation(final DataProvider provider, final JsonProvider jsonProvider) {
     this(provider.getValidatorDataProvider(), jsonProvider);
   }
 
-  public PostAttestationData(
-      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+  public PostAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.provider = provider;
   }

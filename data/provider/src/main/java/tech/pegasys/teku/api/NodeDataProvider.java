@@ -80,6 +80,14 @@ public class NodeDataProvider {
     return attestationPool.getSize();
   }
 
+  public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
+    return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
+  }
+
+  public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
+    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing());
+  }
+
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
     return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
   }
