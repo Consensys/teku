@@ -87,36 +87,9 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void weakSubjectivityStateAndBlock_shouldAcceptValue() {
     final String state = "state.ssz";
-    final String block = "block.ssz";
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments(
-            "--Xws-initial-state", state, "--Xws-initial-block", block);
+        getTekuConfigurationFromArguments("--Xws-initial-state", state);
     assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).contains(state);
-    assertThat(config.weakSubjectivity().getWeakSubjectivityBlockResource()).contains(block);
-  }
-
-  @Test
-  public void weakSubjectivityState_withoutBlock() {
-    final String[] args = {"--Xws-initial-state", "state.ssz"};
-    final int result = beaconNodeCommand.parse(args);
-
-    String str = getCommandLineOutput();
-    assertThat(str).contains("Error: Missing required argument(s): --Xws-initial-block=<STRING>");
-    assertThat(str).contains("To display full help:");
-    assertThat(str).contains("--help");
-    assertThat(result).isGreaterThan(0);
-  }
-
-  @Test
-  public void weakSubjectivityState_withoutState() {
-    final String[] args = {"--Xws-initial-block", "block.ssz"};
-    final int result = beaconNodeCommand.parse(args);
-
-    String str = getCommandLineOutput();
-    assertThat(str).contains("Error: Missing required argument(s): --Xws-initial-state=<STRING>");
-    assertThat(str).contains("To display full help:");
-    assertThat(str).contains("--help");
-    assertThat(result).isGreaterThan(0);
   }
 
   @Test
