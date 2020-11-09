@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,10 +48,11 @@ public class PostAttesterSlashingTest {
     final AttesterSlashing slashing =
         new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postAttesterSlashing(any()))
+    when(provider.postAttesterSlashing(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     handler.handle(context);
 
+    verify(provider).postAttesterSlashing(slashing);
     verify(context).status(SC_OK);
   }
 
@@ -59,10 +61,11 @@ public class PostAttesterSlashingTest {
     final AttesterSlashing slashing =
         new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postAttesterSlashing(any()))
+    when(provider.postAttesterSlashing(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     handler.handle(context);
 
+    verify(provider).postAttesterSlashing(slashing);
     verify(context).status(SC_BAD_REQUEST);
   }
 
@@ -71,6 +74,7 @@ public class PostAttesterSlashingTest {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
 
+    verify(provider, never()).postAttesterSlashing(any());
     verify(context).status(SC_BAD_REQUEST);
   }
 }

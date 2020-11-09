@@ -40,8 +40,7 @@ public class PostAttesterSlashing extends AbstractHandler {
   private final NodeDataProvider nodeDataProvider;
 
   public PostAttesterSlashing(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+    this(dataProvider.getNodeDataProvider(), jsonProvider);
   }
 
   public PostAttesterSlashing(final NodeDataProvider provider, final JsonProvider jsonProvider) {
@@ -78,7 +77,10 @@ public class PostAttesterSlashing extends AbstractHandler {
       if (result.equals(InternalValidationResult.IGNORE)
           || result.equals(InternalValidationResult.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
-        ctx.result("Invalid attester slashing, it will never pass validation so it's rejected");
+        ctx.result(
+            BadRequest.badRequest(
+                jsonProvider,
+                "Invalid attester slashing, it will never pass validation so it's rejected."));
       } else {
         ctx.status(SC_OK);
       }
