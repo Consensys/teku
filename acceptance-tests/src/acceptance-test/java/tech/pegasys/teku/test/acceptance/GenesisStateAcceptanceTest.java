@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -47,8 +45,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    createTekuDepositSender()
-        .partiallySendValidatorDeposits(eth1Node, 4, MAX_EFFECTIVE_BALANCE / 2);
+    createTekuDepositSender().partiallySendValidatorDeposits(eth1Node, 4);
 
     final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     firstTeku.start();
