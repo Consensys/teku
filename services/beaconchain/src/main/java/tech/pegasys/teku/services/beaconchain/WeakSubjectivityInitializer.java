@@ -21,7 +21,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -43,19 +44,12 @@ class WeakSubjectivityInitializer {
         .map(
             wsStateResource -> {
               try {
-                final String wsBlockResource =
-                    config
-                        .getWeakSubjectivityBlockResource()
-                        .orElseThrow(
-                            () ->
-                                new IllegalArgumentException(
-                                    "Weak subjectivity block must be supplied with state"));
-                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource, wsBlockResource);
+                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource);
                 final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final SignedBeaconBlock block = ChainDataLoader.loadBlock(wsBlockResource);
+                final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
                 STATUS_LOG.loadedWeakSubjectivityStateResources(
-                    state.hashTreeRoot(), block.getRoot(), state.getSlot());
-                return AnchorPoint.fromInitialBlockAndState(block, state);
+                    state.hashTreeRoot(), anchor.getRoot(), state.getSlot());
+                return anchor;
               } catch (IOException e) {
                 throw new IllegalStateException(
                     "Failed to load weak subjectivity initial state data", e);
@@ -171,13 +165,38 @@ class WeakSubjectivityInitializer {
                   "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint.");
             }
           } else {
-            // Look up historical block to check for consistency
+            // Look up historical chain data to check for consistency
             return storageQueryChannel
                 .getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot())
+                .thenCompose(
+                    maybeBlock -> {
+                      final SafeFuture<Optional<BeaconBlockSummary>> summary;
+                      if (maybeBlock.isPresent()) {
+                        summary = SafeFuture.completedFuture(maybeBlock.map(a -> a));
+                      } else {
+                        // If block is unavailable, try looking up the corresponding state
+                        summary =
+                            storageQueryChannel
+                                .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
+                                .thenApply(
+                                    state -> state.map(BeaconBlockHeader::fromState).map(a -> a));
+                      }
+                      return summary;
+                    })
                 .thenApply(
-                    blockAtAnchor -> {
+                    blockSummaryAtAnchor -> {
+                      if (blockSummaryAtAnchor.isEmpty()) {
+                        // We must have moved passed the anchor point and not saved its state, just
+                        // log a warning
+                        LOG.warn(
+                            "Ignoring supplied weak subjectivity state. Local database is already initialized and cannot be validated against the supplied state (slot={}, blockRoot={}, stateRoot={}).",
+                            anchor.getBlockSlot(),
+                            anchor.getRoot(),
+                            anchor.getStateRoot());
+                        return null;
+                      }
                       final Optional<Bytes32> storedBlockRoot =
-                          blockAtAnchor.map(SignedBeaconBlock::getRoot);
+                          blockSummaryAtAnchor.map(BeaconBlockSummary::getRoot);
                       final boolean storedBlockMatchesAnchor =
                           storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
                       if (!storedBlockMatchesAnchor) {

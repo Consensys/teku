@@ -80,6 +80,16 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(genesisCheckpoint, genesisState, signedGenesisBlock);
   }
 
+  public static AnchorPoint fromInitialState(final BeaconState state) {
+    final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+
+    // Calculate closest epoch boundary to use for the checkpoint
+    final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
+    final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
+
+    return new AnchorPoint(checkpoint, state, header);
+  }
+
   public static AnchorPoint fromInitialBlockAndState(final SignedBlockAndState blockAndState) {
     return fromInitialBlockAndState(blockAndState.getBlock(), blockAndState.getState());
   }

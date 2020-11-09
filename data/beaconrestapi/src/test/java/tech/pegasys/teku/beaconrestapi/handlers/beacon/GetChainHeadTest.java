@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -33,8 +32,7 @@ public class GetChainHeadTest {
   private Context context = mock(Context.class);
   private ChainDataProvider provider = mock(ChainDataProvider.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private BeaconState beaconState = dataStructureUtil.randomBeaconState();
-  private BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1, beaconState);
+  private BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1);
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
