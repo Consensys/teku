@@ -1,5 +1,7 @@
 # Toledo preset, variant of mainnet
 
+CONFIG_NAME: "toledo"
+
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
