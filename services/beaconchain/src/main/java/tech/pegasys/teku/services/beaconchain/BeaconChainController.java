@@ -112,13 +112,11 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.CoalescingChainHeadChannel;
 import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.gossip.NoopRecentBlockFetcher;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
-import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
-import tech.pegasys.teku.sync.noop.NoopSyncService;
-import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -700,22 +698,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
-    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
-      syncService = new NoopSyncService();
-    } else if (beaconConfig.p2pConfig().isMultiPeerSyncEnabled()) {
-      syncService =
-          MultipeerSyncService.create(
-              asyncRunnerFactory,
-              asyncRunner,
-              timeProvider,
-              recentChainData,
-              p2pNetwork,
-              blockImporter);
-    } else {
-      syncService =
-          SinglePeerSyncServiceFactory.create(
-              metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter);
-    }
+    syncService =
+        SyncServiceFactory.create(
+            beaconConfig.p2pConfig(),
+            metricsSystem,
+            asyncRunnerFactory,
+            asyncRunner,
+            timeProvider,
+            recentChainData,
+            p2pNetwork,
+            blockImporter);
+
     syncService.subscribeToSyncChanges(coalescingChainHeadChannel);
   }
 
