@@ -121,13 +121,20 @@ public class StateRegenerationBaseSelector {
             .isGreaterThan(closestAvailableFromStore.getSlot())) {
       return SafeFuture.completedFuture(rebasedStartingPoint);
     }
+
     return blockProvider
         .getBlock(closestAvailableFromStore.getBlockRoot())
         .thenApply(
-            maybeBlock ->
-                maybeBlock.map(
+            maybeBlock -> {
+              if (maybeBlock.isPresent()) {
+                return maybeBlock.map(
                     block ->
-                        StateAndBlockSummary.create(block, closestAvailableFromStore.getState())));
+                        StateAndBlockSummary.create(block, closestAvailableFromStore.getState()));
+              } else {
+                return Optional.of(
+                    StateAndBlockSummary.create(closestAvailableFromStore.getState()));
+              }
+            });
   }
 
   private Optional<UInt64> getLatestEpochBoundarySlotMinusTolerance(

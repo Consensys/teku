@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -169,7 +169,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
           future.thenCompose(
               __ ->
                   store
-                      .retrieveBlockAndState(blockRoot)
+                      .retrieveStateAndBlockSummary(blockRoot)
                       .thenAccept(
                           blockAndState ->
                               processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
@@ -178,7 +178,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   private static void processBlockAtStartup(
-      final ProtoArray protoArray, final SignedBlockAndState blockAndState) {
+      final ProtoArray protoArray, final StateAndBlockSummary blockAndState) {
     final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
         blockAndState.getSlot(),

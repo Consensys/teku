@@ -96,8 +96,12 @@ public class ScheduledDuties {
     }
     duty.performDuty()
         .finish(
-            result -> result.report(duty.getProducedType(), slot, VALIDATOR_LOGGER),
-            error -> VALIDATOR_LOGGER.dutyFailed(duty.getProducedType(), slot, error));
+            result ->
+                result.report(
+                    duty.getProducedType(), slot, duty.getValidatorIdString(), VALIDATOR_LOGGER),
+            error ->
+                VALIDATOR_LOGGER.dutyFailed(
+                    duty.getProducedType(), slot, duty.getValidatorIdString(), error));
   }
 
   private void discardDutiesBeforeSlot(
