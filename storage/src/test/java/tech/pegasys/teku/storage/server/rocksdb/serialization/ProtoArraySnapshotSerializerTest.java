@@ -87,7 +87,7 @@ public class ProtoArraySnapshotSerializerTest {
 
     // Deserialize and check that value matches the original
     final ProtoArraySnapshot deserialized = serializer.deserialize(serialized);
-    assertThat(deserialized.getAnchorEpoch()).isEqualTo(anchorEpoch);
+    assertThat(deserialized.getInitialEpoch()).isEqualTo(anchorEpoch);
     assertThat(deserialized).isEqualToComparingFieldByField(protoArraySnapshot);
   }
 
@@ -96,8 +96,8 @@ public class ProtoArraySnapshotSerializerTest {
         new BlockInformation(
             block.getSlot(),
             block.hash_tree_root(),
-            block.getParent_root(),
-            block.getState_root(),
+            block.getParentRoot(),
+            block.getStateRoot(),
             UInt64.valueOf(101),
             UInt64.valueOf(100)));
   }

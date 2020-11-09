@@ -15,13 +15,15 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -30,7 +32,7 @@ class StoreTransactionUpdates {
   private final StoreTransaction tx;
 
   private final Optional<FinalizedChainData> finalizedChainData;
-  private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
+  private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
@@ -41,7 +43,7 @@ class StoreTransactionUpdates {
   StoreTransactionUpdates(
       final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
-      final Map<Bytes32, SignedBeaconBlock> hotBlocks,
+      final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
@@ -85,16 +87,15 @@ class StoreTransactionUpdates {
     tx.genesis_time.ifPresent(value -> store.genesis_time = value);
     tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
-    store.blocks.putAll(hotBlocks);
-    store.states.cacheAll(hotBlockAndStates);
+    hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
+    store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
     // Update finalized data
     finalizedChainData.ifPresent(
         finalizedData -> {
-          store.finalized_checkpoint = finalizedData.getFinalizedCheckpoint();
-          store.finalizedBlockAndState = finalizedData.getLatestFinalizedBlockAndState();
+          store.finalizedAnchor = finalizedData.getLatestFinalized();
         });
 
     // Prune blocks and states
@@ -103,5 +104,9 @@ class StoreTransactionUpdates {
           store.blocks.remove(root);
           store.states.remove(root);
         });
+  }
+
+  private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
+    return blockAndState;
   }
 }

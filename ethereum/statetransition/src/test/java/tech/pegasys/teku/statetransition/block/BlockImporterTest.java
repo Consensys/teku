@@ -42,11 +42,10 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
@@ -143,10 +142,14 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UInt64.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state =
-        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
+    final StateAndBlockSummary stateAndBlock =
+        recentChainData
+            .getStore()
+            .retrieveStateAndBlockSummary(block1.getRoot())
+            .join()
+            .orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -163,10 +166,14 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UInt64.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state =
-        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
+    final StateAndBlockSummary stateAndBlock =
+        recentChainData
+            .getStore()
+            .retrieveStateAndBlockSummary(block1.getRoot())
+            .join()
+            .orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -248,11 +255,11 @@ public class BlockImporterTest {
     final BeaconBlock invalidAncestryUnsignedBlock =
         new BeaconBlock(
             block.getSlot(),
-            block.getMessage().getProposer_index(),
+            block.getMessage().getProposerIndex(),
             block.getMessage().hash_tree_root(),
-            block.getMessage().getState_root(),
+            block.getMessage().getStateRoot(),
             block.getMessage().getBody());
-    final Signer signer = localChain.getSigner(block.getMessage().getProposer_index().intValue());
+    final Signer signer = localChain.getSigner(block.getMessage().getProposerIndex().intValue());
     final SignedBeaconBlock invalidAncestryBlock =
         new SignedBeaconBlock(
             invalidAncestryUnsignedBlock,
@@ -307,9 +314,9 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
-    // Now create a new block that is not descendent from the finalized block
+    // Now create a new block that is not descendant from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = otherStorage.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary blockAndState = otherStorage.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
@@ -401,7 +408,7 @@ public class BlockImporterTest {
 
     // Verify ws period checks were run
     final CheckpointState finalizedCheckpointState =
-        new CheckpointState(
+        CheckpointState.create(
             new Checkpoint(UInt64.ZERO, genesis.getRoot()), genesis.getBlock(), genesis.getState());
     verify(weakSubjectivityValidator)
         .validateLatestFinalizedCheckpoint(finalizedCheckpointState, currentSlot);
@@ -443,7 +450,7 @@ public class BlockImporterTest {
 
     // Verify ws period checks were run
     final CheckpointState finalizedCheckpointState =
-        new CheckpointState(
+        CheckpointState.create(
             new Checkpoint(UInt64.ZERO, genesis.getRoot()), genesis.getBlock(), genesis.getState());
     verify(weakSubjectivityValidator)
         .validateLatestFinalizedCheckpoint(finalizedCheckpointState, currentSlot);

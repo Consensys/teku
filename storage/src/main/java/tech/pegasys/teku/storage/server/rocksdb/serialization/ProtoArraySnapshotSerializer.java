@@ -34,18 +34,18 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
           final List<BlockInformation> blockInformationList =
               reader.readBytesList().stream().map(BlockInformation::fromBytes).collect(toList());
 
-          final UInt64 anchorEpoch;
+          final UInt64 initialEpoch;
           if (reader.isComplete()) {
-            // Read earlier format which is missing an explicit anchorEpoch value
-            // Set anchor epoch to default of zero for genesis
-            anchorEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
+            // Read earlier format which is missing an explicit initial epoch value
+            // Set initial epoch to default of zero for genesis
+            initialEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
           } else {
-            // Read anchor epoch
-            anchorEpoch = UInt64.fromLongBits(reader.readUInt64());
+            // Read initial epoch
+            initialEpoch = UInt64.fromLongBits(reader.readUInt64());
           }
 
           return new ProtoArraySnapshot(
-              justifiedEpoch, finalizedEpoch, anchorEpoch, blockInformationList);
+              justifiedEpoch, finalizedEpoch, initialEpoch, blockInformationList);
         });
   }
 
@@ -60,7 +60,7 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
                   protoArraySnapshot.getBlockInformationList().stream()
                       .map(BlockInformation::toBytes)
                       .collect(toList()));
-              writer.writeUInt64(protoArraySnapshot.getAnchorEpoch().longValue());
+              writer.writeUInt64(protoArraySnapshot.getInitialEpoch().longValue());
             });
     return bytes.toArrayUnsafe();
   }

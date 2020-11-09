@@ -39,6 +39,7 @@ public class RestApiConstants {
   public static final String INDEX = "index";
   public static final String TOPICS = "topics";
   public static final String PARENT_ROOT = "parent_root";
+  public static final String STATUS = "status";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";
@@ -80,7 +81,7 @@ public class RestApiConstants {
 
   public static final String COMMITTEE_INDEX_QUERY = "index";
   public static final String COMMITTEE_INDEX_QUERY_DESCRIPTION =
-      "`string` Committee index to query.";
+      "`uint64` Committee index to query.";
 
   public static final String PARAM_BLOCK_ID = "block_id";
   public static final String PARAM_BLOCK_ID_DESCRIPTION =

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -22,13 +23,16 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -36,6 +40,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -93,13 +100,85 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     final UpdatableStore expectedStore = genesisStoreBuilder.storeConfig(storeConfig).build();
+    StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
+  }
+
+  @Test
+  void storageBackedClient_storeInitializeFromProtoArraySnapshot() throws Exception {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final SignedBeaconBlock block = blockAndState.getBlock();
+    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
+
+    final EventBus eventBus = new EventBus();
+    final StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
+    final ProtoArrayStorageChannel protoArrayStorageChannel = mock(ProtoArrayStorageChannel.class);
+    final SafeFuture<Optional<ProtoArraySnapshot>> protoArraySnapshotFuture = new SafeFuture<>();
+    when(protoArrayStorageChannel.getProtoArraySnapshot()).thenReturn(protoArraySnapshotFuture);
+
+    final SafeFuture<RecentChainData> client =
+        StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
+            storeConfig,
+            asyncRunner,
+            storageQueryChannel,
+            storageUpdateChannel,
+            protoArrayStorageChannel,
+            finalizedCheckpointChannel,
+            chainHeadChannel,
+            eventBus);
+
+    // We should have posted a request to get the store from storage
+    verify(storageQueryChannel).onStoreRequest();
+
+    // Client shouldn't be initialized yet
+    assertThat(client).isNotDone();
+
+    // Post a store response to complete initialization
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(blockAndState);
+
+    final StoreBuilder storeBuilder =
+        StoreBuilder.create()
+            .latestFinalized(anchorPoint)
+            .justifiedCheckpoint(anchorPoint.getCheckpoint())
+            .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
+            .genesisTime(UInt64.ZERO)
+            .time(UInt64.ZERO)
+            .metricsSystem(new StubMetricsSystem())
+            .votes(emptyMap())
+            .blockInformation(
+                Map.of(
+                    block.getRoot(),
+                    new StoredBlockMetadata(
+                        block.getSlot(),
+                        block.getRoot(),
+                        block.getParentRoot(),
+                        block.getStateRoot(),
+                        Optional.empty())));
+    storeRequestFuture.complete(Optional.of(storeBuilder));
+
+    // Block info didn't contain enough information to create protoarray so we need to load via the
+    // snapshot and trigger the migration
+    assertThat(client).isNotDone();
+    verify(protoArrayStorageChannel).getProtoArraySnapshot();
+
+    // In this case, no snapshot available so it reprocesses every block and the store is then ready
+    protoArraySnapshotFuture.complete(Optional.empty());
+    assertThat(client).isCompleted();
+
+    assertStoreInitialized(client.get());
+    assertStoreIsSet(client.get());
+    final UpdatableStore expectedStore = storeBuilder.storeConfig(storeConfig).build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
@@ -141,7 +220,7 @@ public class StorageBackedRecentChainDataTest {
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
                 BlockProvider.NOOP,
-                StateAndBlockProvider.NOOP,
+                StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
             .build();
@@ -186,7 +265,7 @@ public class StorageBackedRecentChainDataTest {
             SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateAndBlockProvider.NOOP,
+            StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
@@ -196,8 +275,7 @@ public class StorageBackedRecentChainDataTest {
   }
 
   @Test
-  public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException()
-      throws ExecutionException, InterruptedException {
+  public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException() {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new IOException()))

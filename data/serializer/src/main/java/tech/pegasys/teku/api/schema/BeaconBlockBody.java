@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -111,5 +112,33 @@ public class BeaconBlockBody {
             voluntary_exits.stream().map(SignedVoluntaryExit::asInternalSignedVoluntaryExit),
             MAX_VOLUNTARY_EXITS,
             tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit.class));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof BeaconBlockBody)) return false;
+    BeaconBlockBody that = (BeaconBlockBody) o;
+    return Objects.equals(randao_reveal, that.randao_reveal)
+        && Objects.equals(eth1_data, that.eth1_data)
+        && Objects.equals(graffiti, that.graffiti)
+        && Objects.equals(proposer_slashings, that.proposer_slashings)
+        && Objects.equals(attester_slashings, that.attester_slashings)
+        && Objects.equals(attestations, that.attestations)
+        && Objects.equals(deposits, that.deposits)
+        && Objects.equals(voluntary_exits, that.voluntary_exits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        randao_reveal,
+        eth1_data,
+        graffiti,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
   }
 }

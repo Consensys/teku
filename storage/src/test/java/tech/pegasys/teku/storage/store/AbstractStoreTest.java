@@ -26,9 +26,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -94,7 +95,7 @@ public abstract class AbstractStoreTest {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
       allCheckpoints.add(
-          new CheckpointState(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
+          CheckpointState.create(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
@@ -128,16 +129,15 @@ public abstract class AbstractStoreTest {
         SYNC_RUNNER,
         new StubMetricsSystem(),
         blockProviderFromChainBuilder(),
-        StateAndBlockProvider.NOOP,
+        StateAndBlockSummaryProvider.NOOP,
         Optional.empty(),
         genesis.getState().getGenesis_time(),
         genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
+        AnchorPoint.create(genesisCheckpoint, genesis),
         genesisCheckpoint,
         genesisCheckpoint,
         Map.of(genesis.getRoot(), genesis.getParentRoot()),
         Map.of(genesis.getRoot(), genesis.getSlot()),
-        genesis,
         Collections.emptyMap(),
         pruningOptions);
   }

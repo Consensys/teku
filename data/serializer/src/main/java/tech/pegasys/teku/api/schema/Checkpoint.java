@@ -17,6 +17,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,5 +59,10 @@ public class Checkpoint {
   @Override
   public int hashCode() {
     return Objects.hashCode(epoch, root);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("epoch", epoch).add("root", root).toString();
   }
 }

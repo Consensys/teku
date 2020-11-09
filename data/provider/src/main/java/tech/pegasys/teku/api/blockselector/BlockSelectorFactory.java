@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,7 +42,11 @@ public class BlockSelectorFactory {
    */
   public BlockSelector defaultBlockSelector(final String selectorMethod) {
     if (selectorMethod.startsWith("0x")) {
-      return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      try {
+        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("Invalid block: " + selectorMethod);
+      }
     }
     switch (selectorMethod) {
       case ("head"):
@@ -50,8 +55,11 @@ public class BlockSelectorFactory {
         return genesisSelector();
       case ("finalized"):
         return finalizedSelector();
-      default:
-        return forSlot(UInt64.valueOf(selectorMethod));
+    }
+    try {
+      return forSlot(UInt64.valueOf(selectorMethod));
+    } catch (NumberFormatException ex) {
+      throw new BadRequestException("Invalid block: " + selectorMethod);
     }
   }
 

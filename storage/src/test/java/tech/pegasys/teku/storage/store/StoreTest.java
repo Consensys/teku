@@ -26,11 +26,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -56,16 +57,15 @@ class StoreTest extends AbstractStoreTest {
                     SYNC_RUNNER,
                     new StubMetricsSystem(),
                     blockProviderFromChainBuilder(),
-                    StateAndBlockProvider.NOOP,
+                    StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),
                     genesisTime.minus(1),
                     genesisTime,
-                    genesisCheckpoint,
+                    AnchorPoint.create(genesisCheckpoint, genesis),
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Map.of(genesis.getRoot(), genesis.getParentRoot()),
                     Map.of(genesis.getRoot(), genesis.getSlot()),
-                    genesis,
                     Collections.emptyMap(),
                     StoreConfig.createDefault()))
         .isInstanceOf(IllegalArgumentException.class)
@@ -218,7 +218,7 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = store.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
     assertThat(result.join().getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));

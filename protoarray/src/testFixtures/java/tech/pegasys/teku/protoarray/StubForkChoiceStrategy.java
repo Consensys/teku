@@ -50,10 +50,12 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public boolean contains(Bytes32 blockRoot) {
-    return false;
+  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+    return Optional.empty();
   }
 
   @Override
-  public void save() {}
+  public boolean contains(Bytes32 blockRoot) {
+    return false;
+  }
 }

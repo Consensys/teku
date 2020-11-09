@@ -49,7 +49,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public abstract class BeaconBlocksByRootIntegrationTest {
+public class BeaconBlocksByRootIntegrationTest {
   protected final StorageSystem storageSystem1 =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   protected final StorageSystem storageSystem2 =
@@ -86,8 +86,6 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
-
-  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -148,7 +146,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
     peer1.disconnectImmediately(Optional.empty(), false);
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -162,7 +160,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
-    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
+    final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -206,6 +204,13 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
+  @Test
+  void requestBlockByRoot_shouldReturnEmptyWhenBlockIsNotKnown() throws Exception {
+    final Optional<SignedBeaconBlock> result =
+        waitFor(peer1.requestBlockByRoot(Bytes32.fromHexStringLenient("0x123456789")));
+    assertThat(result).isEmpty();
+  }
+
   private SignedBeaconBlock addBlock() {
     final SignedBlockAndState blockAndState = storageSystem1.chainUpdater().advanceChain();
     final StoreTransaction transaction = storageClient1.startStoreTransaction();
@@ -233,20 +238,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     return blocks;
   }
 
-  public static class BeaconBlocksByRootIntegrationTest_ssz
-      extends BeaconBlocksByRootIntegrationTest {
-
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ;
-    }
-  }
-
-  public static class BeaconBlocksByRootIntegrationTest_sszSnappy
-      extends BeaconBlocksByRootIntegrationTest {
-    @Override
-    protected RpcEncoding getEncoding() {
-      return RpcEncoding.SSZ_SNAPPY;
-    }
+  private RpcEncoding getEncoding() {
+    return RpcEncoding.SSZ_SNAPPY;
   }
 }

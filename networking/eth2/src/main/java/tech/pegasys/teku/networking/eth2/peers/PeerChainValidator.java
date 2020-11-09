@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +24,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -40,9 +40,9 @@ public class PeerChainValidator {
   // If we're missing historical blocks and are unable to verify a peer's finalized checkpoint is on
   // our chain, this boolean determines whether we should allow them to connect or not.
   // TODO(#3064) - We should implement a historical sync backwards so we can support peers who are
-  //  behind our anchorPoint.  Disabling this for now since we won't be able to serve them blocks
+  //  behind our startup epoch.  Disabling this for now since we won't be able to serve them blocks
   //  they need.
-  private static final boolean ALLOW_NODES_PRIOR_TO_LOCAL_ANCHORPOINT_TO_CONNECT = false;
+  private static final boolean ALLOW_NODES_PRIOR_TO_INITIAL_EPOCH_TO_CONNECT = false;
 
   private final CombinedChainDataClient chainDataClient;
   private final Counter validationStartedCounter;
@@ -52,17 +52,17 @@ public class PeerChainValidator {
 
   private final Optional<Checkpoint> requiredCheckpoint;
   private final AtomicBoolean requiredCheckpointVerified = new AtomicBoolean(false);
-  private final boolean allowNodesPriorToLocalAnchorPointToConnect;
+  private final boolean allowNodesPriorToInitialEpochToConnect;
 
   @VisibleForTesting
   PeerChainValidator(
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
       final Optional<Checkpoint> requiredCheckpoint,
-      final boolean allowNodesPriorToLocalAnchorPointToConnect) {
+      final boolean allowNodesPriorToInitialEpochToConnect) {
     this.chainDataClient = chainDataClient;
     this.requiredCheckpoint = requiredCheckpoint;
-    this.allowNodesPriorToLocalAnchorPointToConnect = allowNodesPriorToLocalAnchorPointToConnect;
+    this.allowNodesPriorToInitialEpochToConnect = allowNodesPriorToInitialEpochToConnect;
 
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
@@ -84,7 +84,7 @@ public class PeerChainValidator {
         metricsSystem,
         chainDataClient,
         requiredCheckpoint,
-        ALLOW_NODES_PRIOR_TO_LOCAL_ANCHORPOINT_TO_CONNECT);
+        ALLOW_NODES_PRIOR_TO_INITIAL_EPOCH_TO_CONNECT);
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
@@ -183,15 +183,6 @@ public class PeerChainValidator {
       LOG.trace(
           "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
-          // Map result to an optional block
-          .thenApply(Optional::of)
-          .exceptionally(
-              err -> {
-                if (Throwables.getRootCause(err) instanceof NullPointerException) {
-                  return Optional.empty();
-                }
-                throw new RuntimeException(err);
-              })
           // When requesting block by root, there is no explicit guarantee that the block is
           // canonical.
           // So, double-check by requesting the block by slot to make sure the peer considers this
@@ -205,9 +196,11 @@ public class PeerChainValidator {
                                   .thenApply(
                                       blockBySlot -> {
                                         final boolean blockMatches =
-                                            blockBySlot
-                                                .getRoot()
-                                                .equals(checkpointToVerify.getRoot());
+                                            blockBySlot.isPresent()
+                                                && blockBySlot
+                                                    .get()
+                                                    .getRoot()
+                                                    .equals(checkpointToVerify.getRoot());
                                         requiredCheckpointVerified.set(blockMatches);
                                         return blockMatches;
                                       }))
@@ -218,8 +211,8 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> isFinalizedCheckpointValid(
       final Eth2Peer peer, final PeerStatus status) {
     final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
-    final Checkpoint localFinalizedCheckpoint = chainDataClient.getStore().getFinalizedCheckpoint();
-    final UInt64 localFinalizedEpoch = localFinalizedCheckpoint.getEpoch();
+    final AnchorPoint localFinalized = chainDataClient.getStore().getLatestFinalized();
+    final UInt64 localFinalizedEpoch = localFinalized.getEpoch();
     final UInt64 currentEpoch = chainDataClient.getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
@@ -238,7 +231,7 @@ public class PeerChainValidator {
           "Finalized epoch for peer {} matches our own finalized epoch {}, verify blocks roots match",
           peer.getId(),
           localFinalizedEpoch);
-      return verifyFinalizedCheckpointsAreTheSame(localFinalizedCheckpoint, status);
+      return verifyFinalizedCheckpointsAreTheSame(localFinalized, status);
     } else if (localFinalizedEpoch.isGreaterThan(remoteFinalizedEpoch)) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
       LOG.trace(
@@ -254,7 +247,7 @@ public class PeerChainValidator {
           localFinalizedEpoch,
           peer.getId(),
           remoteFinalizedEpoch);
-      return verifyPeerAgreesWithOurFinalizedCheckpoint(peer, localFinalizedCheckpoint);
+      return verifyPeerAgreesWithOurFinalizedCheckpoint(peer, localFinalized);
     }
   }
 
@@ -268,7 +261,7 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(
-      Checkpoint finalizedCheckpoint, final PeerStatus status) {
+      AnchorPoint finalizedCheckpoint, final PeerStatus status) {
     final boolean chainsAreConsistent =
         Objects.equals(finalizedCheckpoint.getRoot(), status.getFinalizedRoot());
     return SafeFuture.completedFuture(chainsAreConsistent);
@@ -286,47 +279,43 @@ public class PeerChainValidator {
                     .map(block -> validateBlockRootsMatch(peer, block, status.getFinalizedRoot()))
                     .orElseGet(
                         () -> {
-                          if (allowNodesPriorToLocalAnchorPointToConnect) {
+                          if (allowNodesPriorToInitialEpochToConnect) {
                             LOG.trace(
                                 "Missing finalized historical block corresponding to peer's latest finalized checkpoint.  Allow peer to connect without verifying remote finalized checkpoint.");
                           } else {
                             LOG.trace(
                                 "Missing finalized historical block corresponding to peer's latest finalized checkpoint.  Drop peer connection.");
                           }
-                          return allowNodesPriorToLocalAnchorPointToConnect;
+                          return allowNodesPriorToInitialEpochToConnect;
                         }));
   }
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
-      final Eth2Peer peer, Checkpoint finalizedCheckpoint) {
-    final UInt64 finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
+      final Eth2Peer peer, AnchorPoint finalized) {
+    final UInt64 finalizedEpochSlot = finalized.getEpochStartSlot();
     if (finalizedEpochSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest.
       return SafeFuture.completedFuture(true);
     }
-    return chainDataClient
-        .getBlockInEffectAtSlot(finalizedEpochSlot)
-        .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
-        .thenCompose(
-            blockSlot -> {
-              if (blockSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
-                // Assume that our genesis blocks match because we've already verified the fork
-                // digest. Need to repeat this check in case we finalized a later epoch without
-                // producing blocks (eg the genesis block is still the one in effect at epoch 2)
-                return SafeFuture.completedFuture(true);
-              }
-              return peer.requestBlockBySlot(blockSlot)
-                  .thenApply(
-                      block -> validateBlockRootsMatch(peer, block, finalizedCheckpoint.getRoot()));
-            });
+
+    if (finalized.getBlockSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
+      // Assume that our genesis blocks match because we've already verified the fork
+      // digest. Need to repeat this check in case we finalized a later epoch without
+      // producing blocks (eg the genesis block is still the one in effect at epoch 2)
+      return SafeFuture.completedFuture(true);
+    }
+    return peer.requestBlockBySlot(finalized.getBlockSlot())
+        .thenApply(block -> validateBlockRootsMatch(peer, block, finalized.getRoot()));
   }
 
-  private UInt64 blockToSlot(UInt64 lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
-    return maybeBlock
-        .map(SignedBeaconBlock::getSlot)
-        .orElseThrow(
-            () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
+  private boolean validateBlockRootsMatch(
+      final Eth2Peer peer, final Optional<SignedBeaconBlock> mabyeBlock, final Bytes32 root) {
+    if (mabyeBlock.isEmpty()) {
+      LOG.debug("Peer validation failed because it did not provide requested finalized block");
+      return false;
+    }
+    return validateBlockRootsMatch(peer, mabyeBlock.get(), root);
   }
 
   private boolean validateBlockRootsMatch(

@@ -19,16 +19,16 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateAttestationTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class AggregateGossipManager {
+  public static String TOPIC_NAME = "beacon_aggregate_and_proof";
+
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
-  private final SignedAggregateAndProofValidator validator;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -37,13 +37,11 @@ public class AggregateGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final SignedAggregateAndProofValidator validator,
-      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
-    this.validator = validator;
+      final OperationProcessor<ValidateableAttestation> processor) {
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
         new AggregateAttestationTopicHandler(
-            asyncRunner, gossipEncoding, forkInfo, validator, gossipedAttestationConsumer);
+            asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest());
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);
@@ -53,7 +51,8 @@ public class AggregateGossipManager {
     if (!validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
       return;
     }
-    validator.addSeenAggregate(validateableAttestation);
+    // TODO: implement adding the on new aggregate to the validator
+    //    validator.addSeenAggregate(validateableAttestation);
     final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
     channel.gossip(data);
   }

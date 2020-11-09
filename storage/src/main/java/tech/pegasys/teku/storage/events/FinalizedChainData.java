@@ -21,25 +21,22 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class FinalizedChainData {
-  private final Checkpoint finalizedCheckpoint;
-  private final SignedBlockAndState latestFinalizedBlockAndState;
+  private final AnchorPoint latestFinalized;
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
   private final Map<Bytes32, BeaconState> finalizedStates;
 
   private FinalizedChainData(
-      final Checkpoint finalizedCheckpoint,
-      final SignedBlockAndState latestFinalizedBlockAndState,
+      final AnchorPoint latestFinalized,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
-    this.finalizedCheckpoint = finalizedCheckpoint;
-    this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
+    this.latestFinalized = latestFinalized;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
     this.finalizedStates = finalizedStates;
@@ -50,11 +47,11 @@ public class FinalizedChainData {
   }
 
   public Checkpoint getFinalizedCheckpoint() {
-    return finalizedCheckpoint;
+    return latestFinalized.getCheckpoint();
   }
 
   public BeaconState getLatestFinalizedState() {
-    return latestFinalizedBlockAndState.getState();
+    return latestFinalized.getState();
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
@@ -69,13 +66,12 @@ public class FinalizedChainData {
     return finalizedStates;
   }
 
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
-    return latestFinalizedBlockAndState;
+  public AnchorPoint getLatestFinalized() {
+    return latestFinalized;
   }
 
   public static class Builder {
-    private Checkpoint finalizedCheckpoint;
-    private SignedBlockAndState latestFinalizedBlockAndState;
+    private AnchorPoint latestFinalized;
     private final Map<Bytes32, Bytes32> finalizedChildToParentMap = new HashMap<>();
     private Map<Bytes32, SignedBeaconBlock> finalizedBlocks = new HashMap<>();
     private Map<Bytes32, BeaconState> finalizedStates = new HashMap<>();
@@ -83,42 +79,27 @@ public class FinalizedChainData {
     public FinalizedChainData build() {
       assertValid();
       return new FinalizedChainData(
-          finalizedCheckpoint,
-          latestFinalizedBlockAndState,
-          finalizedChildToParentMap,
-          finalizedBlocks,
-          finalizedStates);
+          latestFinalized, finalizedChildToParentMap, finalizedBlocks, finalizedStates);
     }
 
     private void assertValid() {
-      checkState(finalizedCheckpoint != null, "Finalized checkpoint must be set");
-      checkState(
-          latestFinalizedBlockAndState != null, "Latest finalized block and state must be set");
-      checkState(
-          finalizedCheckpoint.getRoot().equals(latestFinalizedBlockAndState.getRoot()),
-          "Latest finalized block and state must match finalized checkpoint");
+      checkState(latestFinalized != null, "Latest finalized data must be set");
       checkState(!finalizedChildToParentMap.isEmpty(), "Must supply finalized roots");
       checkState(
-          finalizedChildToParentMap.containsKey(finalizedCheckpoint.getRoot()),
+          finalizedChildToParentMap.containsKey(latestFinalized.getRoot()),
           "Must supply finalized parent");
     }
 
-    public Builder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-      checkNotNull(finalizedCheckpoint);
-      this.finalizedCheckpoint = finalizedCheckpoint;
-      return this;
-    }
-
-    public Builder latestFinalizedBlockAndState(
-        final SignedBlockAndState latestFinalizedBlockAndState) {
-      checkNotNull(latestFinalizedBlockAndState);
-      this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
+    public Builder latestFinalized(final AnchorPoint latestFinalized) {
+      checkNotNull(latestFinalized);
+      this.latestFinalized = latestFinalized;
       this.finalizedBlocks.put(
-          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getBlock());
-      this.finalizedStates.put(
-          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getState());
-      finalizedChildAndParent(
-          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getParentRoot());
+          latestFinalized.getRoot(),
+          latestFinalized
+              .getSignedBeaconBlock()
+              .orElseThrow(() -> new IllegalStateException("Missing newly finalized block")));
+      this.finalizedStates.put(latestFinalized.getRoot(), latestFinalized.getState());
+      finalizedChildAndParent(latestFinalized.getRoot(), latestFinalized.getParentRoot());
       return this;
     }
 
@@ -137,7 +118,7 @@ public class FinalizedChainData {
     public Builder finalizedBlock(final SignedBeaconBlock block) {
       checkNotNull(block);
       this.finalizedBlocks.put(block.getRoot(), block);
-      this.finalizedChildAndParent(block.getRoot(), block.getParent_root());
+      this.finalizedChildAndParent(block.getRoot(), block.getParentRoot());
       return this;
     }
 

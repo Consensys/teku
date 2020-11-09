@@ -14,7 +14,10 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import java.util.Objects;
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType implements CompositeViewType {
@@ -55,6 +58,68 @@ public abstract class CollectionViewType implements CompositeViewType {
   @Override
   public int getElementsPerChunk() {
     return 256 / getElementType().getBitsSize();
+  }
+
+  protected int getVariablePartSize(TreeNode vectorNode, int length) {
+    if (isFixedSize()) {
+      return 0;
+    } else {
+      int size = 0;
+      for (int i = 0; i < length; i++) {
+        size += getElementType().getSszSize(vectorNode.get(getGeneralizedIndex(i)));
+      }
+      return size;
+    }
+  }
+
+  /**
+   * Serializes {@code elementsCount} from the content of this collection
+   *
+   * @param vectorNode for a {@link VectorViewType} type - the node itself, for a {@link
+   *     ListViewType} - the left sibling node of list size node
+   */
+  protected int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+    if (getElementType().isFixedSize()) {
+      return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
+    } else {
+      return sszSerializeVariableVector(vectorNode, writer, elementsCount);
+    }
+  }
+
+  private int sszSerializeFixedVectorFast(
+      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+    if (elementsCount == 0) {
+      return 0;
+    }
+    int nodesCount = getChunks(elementsCount);
+    int[] bytesCnt = new int[1];
+    TreeUtil.iterateLeaves(
+        vectorNode,
+        getGeneralizedIndex(0),
+        getGeneralizedIndex(nodesCount - 1),
+        leaf -> {
+          Bytes ssz = leaf.getData();
+          writer.accept(ssz);
+          bytesCnt[0] += ssz.size();
+        });
+    return bytesCnt[0];
+  }
+
+  private int sszSerializeVariableVector(
+      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+    ViewType elementType = getElementType();
+    int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
+    for (int i = 0; i < elementsCount; i++) {
+      TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
+      int childSize = elementType.getSszSize(childSubtree);
+      writer.accept(SSZType.lengthToBytes(variableOffset));
+      variableOffset += childSize;
+    }
+    for (int i = 0; i < elementsCount; i++) {
+      TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
+      elementType.sszSerialize(childSubtree, writer);
+    }
+    return variableOffset;
   }
 
   @Override

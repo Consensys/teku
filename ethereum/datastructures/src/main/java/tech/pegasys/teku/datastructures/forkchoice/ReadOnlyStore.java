@@ -20,6 +20,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -33,12 +35,12 @@ public interface ReadOnlyStore {
   UInt64 getGenesisTime();
 
   /**
-   * Returns the anchor checkpoint from which the chain was started, if such an anchor exists. If
-   * the anchor is missing, the node was started up from genesis.
+   * Returns the initial checkpoint from which the chain was started. If the checkpoint is missing,
+   * the node was started up from genesis.
    *
-   * @return The anchor if it exists.
+   * @return The initial checkpoint if it exists.
    */
-  Optional<Checkpoint> getAnchor();
+  Optional<Checkpoint> getInitialCheckpoint();
 
   Checkpoint getJustifiedCheckpoint();
 
@@ -52,7 +54,7 @@ public interface ReadOnlyStore {
    */
   UInt64 getLatestFinalizedBlockSlot();
 
-  SignedBlockAndState getLatestFinalizedBlockAndState();
+  AnchorPoint getLatestFinalized();
 
   Checkpoint getBestJustifiedCheckpoint();
 
@@ -91,6 +93,8 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot);
 
   SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 

@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -32,12 +31,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
  */
 public interface TreeNode {
 
-  static TreeNode createLeafNode(Bytes32 val) {
-    return new LeafNodeImpl(val);
-  }
+  int NODE_BYTE_SIZE = 32;
+  int NODE_BIT_SIZE = NODE_BYTE_SIZE * 8;
 
-  static TreeNode createCompressedLeafNode(Bytes val) {
-    return new CompressedLeafNodeImpl(val);
+  static LeafNode createLeafNode(Bytes data) {
+    return new LeafNodeImpl(data);
   }
 
   /**
@@ -47,12 +45,18 @@ public interface TreeNode {
    */
   interface LeafNode extends TreeNode {
 
-    /** Returns node value */
-    Bytes32 getRoot();
+    /**
+     * Returns only data bytes without zero right padding (unlike {@link #hashTreeRoot()}) E.g. if a
+     * {@code LeafNode} corresponds to a contained UInt64 field, then {@code getData()} returns only
+     * 8 bytes corresponding to the field value If a {@code Vector[Byte, 48]} is stored across two
+     * {@code LeafNode}s then the second node {@code getData} would return just the last 16 bytes of
+     * the vector (while {@link #hashTreeRoot()} would return zero padded 32 bytes)
+     */
+    Bytes getData();
 
     @Override
     default Bytes32 hashTreeRoot() {
-      return getRoot();
+      return Bytes32.rightPad(getData());
     }
 
     /**
@@ -113,7 +117,7 @@ public interface TreeNode {
         return this;
       } else {
         long anchor = Long.highestOneBit(target);
-        long pivot = anchor >> 1;
+        long pivot = anchor >>> 1;
         return target < (target | pivot)
             ? left().get((target ^ anchor) | pivot)
             : right().get((target ^ anchor) | pivot);
@@ -126,7 +130,7 @@ public interface TreeNode {
         return nodeUpdater.apply(this);
       } else {
         long anchor = Long.highestOneBit(target);
-        long pivot = anchor >> 1;
+        long pivot = anchor >>> 1;
         if (target < (target | pivot)) {
           TreeNode newLeftChild = left().updated((target ^ anchor) | pivot, nodeUpdater);
           return rebind(true, newLeftChild);
@@ -138,7 +142,10 @@ public interface TreeNode {
     }
   }
 
-  /** Calculates (if necessary) and returns `hash_tree_root` of this tree node */
+  /**
+   * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
+   * `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
+   */
   Bytes32 hashTreeRoot();
 
   /**
@@ -157,8 +164,6 @@ public interface TreeNode {
    * a new node
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
-
-  boolean isZero();
 
   /** Updates the tree in a batch */
   default TreeNode updated(TreeUpdates newNodes) {

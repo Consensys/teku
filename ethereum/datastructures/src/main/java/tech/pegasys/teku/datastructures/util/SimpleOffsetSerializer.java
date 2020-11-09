@@ -74,6 +74,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -136,6 +137,10 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
+    if (value instanceof ViewRead) {
+      return ((ViewRead) value).sszSerialize();
+    }
+
     List<UInt64> variable_offsets = new ArrayList<>();
     List<Bytes> interleaved_values = new ArrayList<>();
     UInt64 fixedLengthSum = UInt64.ZERO;

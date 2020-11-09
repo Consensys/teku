@@ -16,6 +16,7 @@ package tech.pegasys.teku.datastructures.util;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import java.util.ArrayList;
@@ -346,10 +347,8 @@ public final class DataStructureUtil {
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
   }
 
-  public BeaconBlockAndState randomBlockAndState(final long slot, final BeaconState beaconState) {
-    final UInt64 unsignedSlot = UInt64.valueOf(slot);
-    final BeaconState state = beaconState.updated(b -> b.setSlot(unsignedSlot));
-    return randomBlockAndState(unsignedSlot, state);
+  public BeaconBlockAndState randomBlockAndState(final long slot) {
+    return randomBlockAndState(UInt64.valueOf(slot));
   }
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
@@ -357,14 +356,19 @@ public final class DataStructureUtil {
     return randomBlockAndState(slot, state);
   }
 
-  public BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
+  private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
     final Bytes32 parentRoot = randomBytes32();
-    final Bytes32 state_root = state.hash_tree_root();
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
-    final BeaconBlock block = new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+    final BeaconBlockHeader latestHeader =
+        new BeaconBlockHeader(
+            slot, proposer_index, parentRoot, Bytes32.ZERO, body.hash_tree_root());
 
-    return new BeaconBlockAndState(block, state);
+    final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
+    final BeaconBlock block =
+        new BeaconBlock(slot, proposer_index, parentRoot, matchingState.hashTreeRoot(), body);
+
+    return new BeaconBlockAndState(block, matchingState);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, boolean isFull) {
@@ -607,13 +611,23 @@ public final class DataStructureUtil {
     return randomBeaconState().updated(state -> state.setSlot(slot));
   }
 
+  public AnchorPoint randomAnchorPoint(final long epoch) {
+    return randomAnchorPoint(UInt64.valueOf(epoch));
+  }
+
+  public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
+    final SignedBlockAndState anchorBlockAndState =
+        randomSignedBlockAndState(compute_start_slot_at_epoch(epoch));
+    return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+  }
+
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
     // Create corresponding block
     final BeaconBlock anchorBlock =
         new BeaconBlock(
             anchorState.getSlot(),
             UInt64.ZERO,
-            anchorState.getLatest_block_header().getParent_root(),
+            anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
             new BeaconBlockBody());
     final SignedBeaconBlock signedAnchorBlock =

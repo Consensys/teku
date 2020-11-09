@@ -38,6 +38,10 @@ public class StatusLogger {
 
   public void onStartup(final String version) {
     log.info("Teku version: {}", version);
+    log.info(
+        "This software is licensed under the Apache License, Version 2.0 (the \"License\"); "
+            + "you may not use this software except in compliance with the License. "
+            + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
   public void fatalError(final String description, final Throwable cause) {
@@ -124,6 +128,10 @@ public class StatusLogger {
     log.info("Storage initialization complete");
   }
 
+  public void recordedFinalizedBlocks(final int numberRecorded, final int totalToRecord) {
+    log.info("Recorded {} of {} finalized blocks", numberRecorded, totalToRecord);
+  }
+
   public void generatingMockStartGenesis(final long genesisTime, final int size) {
     log.info(
         "Starting with mocked start interoperability mode with genesis time {} and {} validators",
@@ -142,10 +150,8 @@ public class StatusLogger {
     log.info("Loading genesis from {}", genesisFile);
   }
 
-  public void loadingWeakSubjectivityStateResources(
-      final String wsStateResource, final String wsBlockResource) {
-    log.info(
-        "Loading weak subjectivity state from {}, block from {}", wsBlockResource, wsBlockResource);
+  public void loadingWeakSubjectivityStateResources(final String wsBlockResource) {
+    log.info("Loading weak subjectivity state from {}", wsBlockResource);
   }
 
   public void loadedWeakSubjectivityStateResources(

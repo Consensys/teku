@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.HISTORICAL_DATA_UNAVAILABLE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SERVER_ERROR_CODE;
 
@@ -71,6 +72,14 @@ public class RpcException extends Exception {
   public static class ChunkTooLongException extends RpcException {
     public ChunkTooLongException() {
       super(INVALID_REQUEST_CODE, "Chunk exceeds maximum allowed length");
+    }
+  }
+
+  // Custom errors
+  public static class HistoricalDataUnavailableException extends RpcException {
+
+    public HistoricalDataUnavailableException(final String errorMessage) {
+      super(HISTORICAL_DATA_UNAVAILABLE, errorMessage);
     }
   }
 

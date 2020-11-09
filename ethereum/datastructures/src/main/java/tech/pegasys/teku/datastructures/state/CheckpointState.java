@@ -19,17 +19,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CheckpointState {
 
   private final Checkpoint checkpoint;
-  private final SignedBeaconBlock block;
+  private final BeaconBlockSummary block;
   private final BeaconState state;
 
-  public CheckpointState(
-      final Checkpoint checkpoint, final SignedBeaconBlock block, final BeaconState state) {
+  private CheckpointState(
+      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
     checkNotNull(checkpoint);
     checkNotNull(block);
     checkNotNull(state);
@@ -43,12 +43,13 @@ public class CheckpointState {
     this.state = state;
   }
 
-  public Checkpoint getCheckpoint() {
-    return checkpoint;
+  public static CheckpointState create(
+      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
+    return new CheckpointState(checkpoint, block, state);
   }
 
-  public SignedBeaconBlock getBlock() {
-    return block;
+  public Checkpoint getCheckpoint() {
+    return checkpoint;
   }
 
   public UInt64 getEpoch() {
@@ -56,7 +57,11 @@ public class CheckpointState {
   }
 
   public Bytes32 getRoot() {
-    return getBlock().getRoot();
+    return block.getRoot();
+  }
+
+  public UInt64 getBlockSlot() {
+    return block.getSlot();
   }
 
   /** @return The checkpoint state which is advanced to the checkpoint epoch boundary */

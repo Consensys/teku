@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 public class NoOpDatabase implements Database {
 
   @Override
-  public void storeAnchorPoint(final AnchorPoint genesis) {}
+  public void storeInitialAnchor(final AnchorPoint genesis) {}
 
   @Override
   public void update(final StorageUpdate event) {}
@@ -73,6 +73,11 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableBlockSlot() {
     return Optional.empty();
   }
 

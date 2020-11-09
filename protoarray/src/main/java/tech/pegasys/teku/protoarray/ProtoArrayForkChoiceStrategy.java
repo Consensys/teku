@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -34,46 +39,51 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+  private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
-  private final ProtoArrayStorageChannel storageChannel;
 
   private List<UInt64> balances;
 
-  private ProtoArrayForkChoiceStrategy(
-      ProtoArray protoArray,
-      List<UInt64> balances,
-      ProtoArrayStorageChannel protoArrayStorageChannel) {
+  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UInt64> balances) {
     this.protoArray = protoArray;
     this.balances = balances;
-    this.storageChannel = protoArrayStorageChannel;
   }
 
   // Public
   public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
-    // If no anchor is explicitly set, default to zero (genesis epoch)
-    final UInt64 anchorEpoch =
-        store.getAnchor().map(Checkpoint::getEpoch).orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
-    ProtoArray protoArray =
-        storageChannel
-            .getProtoArraySnapshot()
-            .join()
-            .map(ProtoArraySnapshot::toProtoArray)
-            .orElse(
-                new ProtoArray(
-                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                    store.getJustifiedCheckpoint().getEpoch(),
-                    store.getFinalizedCheckpoint().getEpoch(),
-                    anchorEpoch,
-                    new ArrayList<>(),
-                    new HashMap<>()));
-
-    return processBlocksInStoreAtStartup(store, protoArray)
+    LOG.info("Migrating protoarray storing from snapshot to block based");
+    // If no initialEpoch is explicitly set, default to zero (genesis epoch)
+    final UInt64 initialEpoch =
+        store
+            .getInitialCheckpoint()
+            .map(Checkpoint::getEpoch)
+            .orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
+    return storageChannel
+        .getProtoArraySnapshot()
         .thenApply(
-            __ -> new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel));
+            maybeSnapshot ->
+                maybeSnapshot
+                    .map(ProtoArraySnapshot::toProtoArray)
+                    .orElse(
+                        new ProtoArray(
+                            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+                            store.getJustifiedCheckpoint().getEpoch(),
+                            store.getFinalizedCheckpoint().getEpoch(),
+                            initialEpoch,
+                            new ArrayList<>(),
+                            new HashMap<>())))
+        .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
+        .thenPeek(
+            protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
+        .thenApply(ProtoArrayForkChoiceStrategy::initialize);
+  }
+
+  public static ProtoArrayForkChoiceStrategy initialize(final ProtoArray protoArray) {
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
   @Override
@@ -114,20 +124,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     processBlock(
         block.getSlot(),
         blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
+        block.getParentRoot(),
+        block.getStateRoot(),
         state.getCurrent_justified_checkpoint().getEpoch(),
         state.getFinalized_checkpoint().getEpoch());
-  }
-
-  @Override
-  public void save() {
-    protoArrayLock.readLock().lock();
-    try {
-      storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray));
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   public void maybePrune(Bytes32 finalizedRoot) {
@@ -139,8 +139,27 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  public Map<Bytes32, UInt64> getChainHeads() {
+    protoArrayLock.readLock().lock();
+    try {
+      final Map<Bytes32, UInt64> chainHeads = new HashMap<>();
+      protoArray.getNodes().stream()
+          .filter(
+              protoNode ->
+                  protoNode.getBestChildIndex().isEmpty()
+                      && protoArray.nodeIsViableForHead(protoNode))
+          .forEach(protoNode -> chainHeads.put(protoNode.getBlockRoot(), protoNode.getBlockSlot()));
+      return ImmutableMap.copyOf(chainHeads);
+    } catch (Throwable t) {
+      LOG.trace("Failed to get chain heads", t);
+      return Collections.emptyMap();
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   // Internal
-  private static SafeFuture<Void> processBlocksInStoreAtStartup(
+  private static SafeFuture<ProtoArray> processBlocksInStoreAtStartup(
       ReadOnlyStore store, ProtoArray protoArray) {
     List<Bytes32> alreadyIncludedBlockRoots =
         protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
@@ -154,16 +173,16 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
           future.thenCompose(
               __ ->
                   store
-                      .retrieveBlockAndState(blockRoot)
+                      .retrieveStateAndBlockSummary(blockRoot)
                       .thenAccept(
                           blockAndState ->
                               processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
     }
-    return future;
+    return future.thenApply(__ -> protoArray);
   }
 
   private static void processBlockAtStartup(
-      final ProtoArray protoArray, final SignedBlockAndState blockAndState) {
+      final ProtoArray protoArray, final StateAndBlockSummary blockAndState) {
     final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
         blockAndState.getSlot(),
@@ -271,6 +290,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+    protoArrayLock.readLock().lock();
+    try {
+      // Note: This code could be more succinct if currentNode were an Optional and we used flatMap
+      // and map but during long periods of finality this becomes a massive hot spot in the code and
+      // our performance is dominated by the time taken to create Optional instances within the map
+      // calls.
+      final Optional<ProtoNode> startingNode = getProtoNode(blockRoot);
+      if (startingNode.isEmpty()) {
+        return Optional.empty();
+      }
+      ProtoNode currentNode = startingNode.get();
+      while (currentNode.getBlockSlot().isGreaterThan(slot)) {
+        final Optional<Integer> parentIndex = currentNode.getParentIndex();
+        if (parentIndex.isEmpty()) {
+          return Optional.empty();
+        }
+        currentNode = protoArray.getNodes().get(parentIndex.get());
+      }
+      return Optional.of(currentNode.getBlockRoot());
     } finally {
       protoArrayLock.readLock().unlock();
     }

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconHead {
@@ -43,7 +43,7 @@ public class BeaconHead {
     this.state_root = state_root;
   }
 
-  public BeaconHead(final BeaconBlockAndState beaconBlockAndState) {
+  public BeaconHead(final StateAndBlockSummary beaconBlockAndState) {
     this.slot = beaconBlockAndState.getSlot();
     this.block_root = beaconBlockAndState.getRoot();
     this.state_root = beaconBlockAndState.getState().hash_tree_root();

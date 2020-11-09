@@ -17,37 +17,41 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
+import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 
 public class StoreBuilder {
   AsyncRunner asyncRunner;
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
-  StateAndBlockProvider stateAndBlockProvider;
+  StateAndBlockSummaryProvider stateAndBlockProvider;
   StoreConfig storeConfig = StoreConfig.createDefault();
 
-  final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
-  final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+  final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
   Optional<Checkpoint> anchor = Optional.empty();
   UInt64 time;
   UInt64 genesisTime;
+  AnchorPoint latestFinalized;
   Checkpoint justifiedCheckpoint;
-  Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  SignedBlockAndState latestFinalized;
   Map<UInt64, VoteTracker> votes;
 
   private StoreBuilder() {}
@@ -60,17 +64,23 @@ public class StoreBuilder {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateAndBlockProvider stateAndBlockProvider,
+      final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
-    Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
-
-    Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
-    rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
+    Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
+    blockInfo.put(
+        anchor.getRoot(),
+        new StoredBlockMetadata(
+            slot,
+            anchor.getRoot(),
+            anchor.getParentRoot(),
+            anchor.getState().hashTreeRoot(),
+            Optional.of(
+                new CheckpointEpochs(
+                    anchor.getCheckpoint().getEpoch(), anchor.getCheckpoint().getEpoch()))));
 
     return create()
         .asyncRunner(asyncRunner)
@@ -80,12 +90,10 @@ public class StoreBuilder {
         .anchor(anchor.getCheckpoint())
         .time(time)
         .genesisTime(genesisTime)
-        .finalizedCheckpoint(anchor.getCheckpoint())
+        .latestFinalized(anchor)
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
-        .childToParentMap(childToParentMap)
-        .rootToSlotMap(rootToSlotMap)
-        .latestFinalized(anchor.toSignedBlockAndState())
+        .blockInformation(blockInfo)
         .votes(new HashMap<>());
   }
 
@@ -100,14 +108,38 @@ public class StoreBuilder {
         anchor,
         time,
         genesisTime,
-        justifiedCheckpoint,
-        finalizedCheckpoint,
-        bestJustifiedCheckpoint,
-        childToParentRoot,
-        rootToSlotMap,
         latestFinalized,
+        justifiedCheckpoint,
+        bestJustifiedCheckpoint,
+        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getParentRoot),
+        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getBlockSlot),
         votes,
         storeConfig);
+  }
+
+  public Optional<ProtoArray> buildProtoArray() {
+    final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
+    blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
+    final ProtoArray protoArray =
+        new ProtoArrayBuilder()
+            .anchor(anchor)
+            .justifiedCheckpoint(justifiedCheckpoint)
+            .finalizedCheckpoint(latestFinalized.getCheckpoint())
+            .build();
+    for (StoredBlockMetadata block : blocks) {
+      if (block.getCheckpointEpochs().isEmpty()) {
+        // Checkpoint epochs aren't available, migration will be required
+        return Optional.empty();
+      }
+      protoArray.onBlock(
+          block.getBlockSlot(),
+          block.getBlockRoot(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          block.getCheckpointEpochs().get().getJustifiedEpoch(),
+          block.getCheckpointEpochs().get().getFinalizedEpoch());
+    }
+    return Optional.of(protoArray);
   }
 
   private void assertValid() {
@@ -118,15 +150,10 @@ public class StoreBuilder {
     checkState(time != null, "Time must be defined");
     checkState(genesisTime != null, "Genesis time must be defined");
     checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
-    checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
-    checkState(latestFinalized != null, "Latest finalized block state must be defined");
+    checkState(latestFinalized != null, "Latest finalized anchor must be defined");
     checkState(votes != null, "Votes must be defined");
-    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
-    checkState(
-        Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
-        "Child-parent and root-slot mappings must be consistent");
+    checkState(!blockInfoByRoot.isEmpty(), "Block data must be supplied");
   }
 
   public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
@@ -152,7 +179,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
+  public StoreBuilder stateProvider(final StateAndBlockSummaryProvider stateProvider) {
     checkNotNull(stateProvider);
     this.stateAndBlockProvider = stateProvider;
     return this;
@@ -187,9 +214,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-    checkNotNull(finalizedCheckpoint);
-    this.finalizedCheckpoint = finalizedCheckpoint;
+  public StoreBuilder latestFinalized(final AnchorPoint latestFinalized) {
+    checkNotNull(latestFinalized);
+    this.latestFinalized = latestFinalized;
     return this;
   }
 
@@ -199,21 +226,8 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
-    checkNotNull(childToParent);
-    this.childToParentRoot.putAll(childToParent);
-    return this;
-  }
-
-  public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
-    checkNotNull(rootToSlotMap);
-    this.rootToSlotMap.putAll(rootToSlotMap);
-    return this;
-  }
-
-  public StoreBuilder latestFinalized(final SignedBlockAndState latestFinalized) {
-    checkNotNull(latestFinalized);
-    this.latestFinalized = latestFinalized;
+  public StoreBuilder blockInformation(final Map<Bytes32, StoredBlockMetadata> blockInformation) {
+    this.blockInfoByRoot.putAll(blockInformation);
     return this;
   }
 

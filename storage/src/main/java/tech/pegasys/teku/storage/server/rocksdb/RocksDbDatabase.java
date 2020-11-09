@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
@@ -34,13 +33,18 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerator;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -51,6 +55,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -76,6 +81,9 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
+  private static final Logger LOG = LogManager.getLogger();
+
+  private static final int TX_BATCH_SIZE = 500;
 
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
@@ -184,14 +192,14 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeAnchorPoint(final AnchorPoint anchor) {
+  public void storeInitialAnchor(final AnchorPoint anchor) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
       final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
       final BeaconState anchorState = anchor.getState();
-      final SignedBeaconBlock anchorBlock = anchor.getBlock();
+      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
 
       hotUpdater.setAnchor(anchor.getCheckpoint());
       hotUpdater.setGenesisTime(anchorState.getGenesis_time());
@@ -202,10 +210,19 @@ public class RocksDbDatabase implements Database {
 
       // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
-      // Save to hot storage
-      hotUpdater.addHotBlock(anchorBlock);
-      // Save to cold storage
-      finalizedUpdater.addFinalizedBlock(anchorBlock);
+      anchorBlock.ifPresent(
+          block -> {
+            // Save to hot storage
+            hotUpdater.addHotBlock(
+                new BlockAndCheckpointEpochs(
+                    block,
+                    new CheckpointEpochs(
+                        anchorState.getCurrent_justified_checkpoint().getEpoch(),
+                        anchorState.getFinalized_checkpoint().getEpoch())));
+            // Save to cold storage
+            finalizedUpdater.addFinalizedBlock(block);
+          });
+
       putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
 
       finalizedUpdater.commit();
@@ -244,7 +261,7 @@ public class RocksDbDatabase implements Database {
       return Optional.empty();
     }
     final UInt64 genesisTime = maybeGenesisTime.get();
-    final Optional<Checkpoint> anchor = hotDao.getAnchor();
+    final Optional<Checkpoint> maybeAnchor = hotDao.getAnchor();
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
@@ -252,26 +269,43 @@ public class RocksDbDatabase implements Database {
 
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
-    // Build maps with block information
-    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
-    final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
+    // Build map with block information
+    final Map<Bytes32, StoredBlockMetadata> blockInformation = new HashMap<>();
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
       hotBlocks.forEach(
           b -> {
-            childToParentLookup.put(b.getRoot(), b.getParent_root());
-            rootToSlot.put(b.getRoot(), b.getSlot());
+            final Optional<CheckpointEpochs> checkpointEpochs =
+                hotDao.getHotBlockCheckpointEpochs(b.getRoot());
+            blockInformation.put(
+                b.getRoot(),
+                new StoredBlockMetadata(
+                    b.getSlot(),
+                    b.getRoot(),
+                    b.getParentRoot(),
+                    b.getStateRoot(),
+                    checkpointEpochs));
           });
     }
+    // If anchor block is missing, try to pull block info from the anchor state
+    final boolean shouldIncludeAnchorBlock =
+        maybeAnchor.isPresent()
+            && finalizedCheckpoint
+                .getEpochStartSlot()
+                .equals(maybeAnchor.get().getEpochStartSlot());
+    if (shouldIncludeAnchorBlock && !blockInformation.containsKey(maybeAnchor.get().getRoot())) {
+      final Checkpoint anchor = maybeAnchor.orElseThrow();
+      final StateAndBlockSummary latestFinalized = StateAndBlockSummary.create(finalizedState);
+      if (!latestFinalized.getRoot().equals(anchor.getRoot())) {
+        throw new IllegalStateException("Anchor state (" + anchor + ") is unavailable");
+      }
+      blockInformation.put(
+          anchor.getRoot(), StoredBlockMetadata.fromBlockAndState(latestFinalized));
+    }
 
-    // Validate finalized data is consistent and available
-    final SignedBeaconBlock finalizedBlock =
-        hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
-    checkNotNull(finalizedBlock);
-    checkState(
-        finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
-        "Latest finalized state does not match latest finalized block");
-    final SignedBlockAndState latestFinalized =
-        new SignedBlockAndState(finalizedBlock, finalizedState);
+    final Optional<SignedBeaconBlock> finalizedBlock =
+        hotDao.getHotBlock(finalizedCheckpoint.getRoot());
+    final AnchorPoint latestFinalized =
+        AnchorPoint.create(finalizedCheckpoint, finalizedState, finalizedBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -283,14 +317,12 @@ public class RocksDbDatabase implements Database {
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
             .time(time)
-            .anchor(anchor)
+            .anchor(maybeAnchor)
             .genesisTime(genesisTime)
-            .finalizedCheckpoint(finalizedCheckpoint)
+            .latestFinalized(latestFinalized)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
-            .childToParentMap(childToParentLookup)
-            .rootToSlotMap(rootToSlot)
-            .latestFinalized(latestFinalized)
+            .blockInformation(blockInformation)
             .votes(votes));
   }
 
@@ -317,6 +349,11 @@ public class RocksDbDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return finalizedDao.getFinalizedBlockAtSlot(slot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableBlockSlot() {
+    return finalizedDao.getEarliestFinalizedBlockSlot();
   }
 
   @Override
@@ -424,8 +461,18 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
+    try (final RocksDbHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
+      protoArraySnapshot
+          .getBlockInformationList()
+          .forEach(
+              block ->
+                  hotUpdater.addHotBlockCheckpointEpochs(
+                      block.getBlockRoot(),
+                      new CheckpointEpochs(block.getJustifiedEpoch(), block.getFinalizedEpoch())));
+      hotUpdater.commit();
+    }
     try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.putProtoArraySnapshot(protoArraySnapshot);
+      updater.deleteProtoArraySnapshot();
       updater.commit();
     }
   }
@@ -438,12 +485,14 @@ public class RocksDbDatabase implements Database {
   }
 
   private void doUpdate(final StorageUpdate update) {
+    LOG.trace("Applying finalized updates");
     // Update finalized blocks and states
     updateFinalizedData(
         update.getFinalizedChildToParentMap(),
         update.getFinalizedBlocks(),
         update.getFinalizedStates());
 
+    LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -472,8 +521,10 @@ public class RocksDbDatabase implements Database {
       // Delete finalized data from hot db
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
+      LOG.trace("Committing hot db changes");
       updater.commit();
     }
+    LOG.trace("Update complete");
   }
 
   private void updateFinalizedData(
@@ -485,59 +536,121 @@ public class RocksDbDatabase implements Database {
       return;
     }
 
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      final BlockProvider blockProvider =
-          BlockProvider.withKnownBlocks(
-              roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+    switch (stateStorageMode) {
+      case ARCHIVE:
+        updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+        break;
 
-      switch (stateStorageMode) {
-        case ARCHIVE:
-          // Get previously finalized block to build on top of
-          final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
-
-          final HashTree blockTree =
-              HashTree.builder()
-                  .rootHash(baseBlock.getRoot())
-                  .childAndParentRoots(finalizedChildToParentMap)
-                  .build();
-
-          final StateRootRecorder recorder =
-              new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
-          final StateGenerator stateGenerator =
-              StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-          // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
-          stateGenerator
-              .regenerateAllStates(
-                  (block, state) -> {
-                    updater.addFinalizedBlock(block);
-                    updater.addFinalizedState(block.getRoot(), state);
-                    recorder.acceptNextState(state);
-                  })
-              .join();
-          break;
-        case PRUNE:
-          for (Bytes32 root : finalizedChildToParentMap.keySet()) {
-            SignedBeaconBlock block =
-                blockProvider
-                    .getBlock(root)
-                    .join()
-                    .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
-            updater.addFinalizedBlock(block);
-          }
-          break;
-        default:
-          throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
-      }
-
-      updater.commit();
+      case PRUNE:
+        updateFinalizedDataPruneMode(finalizedChildToParentMap, finalizedBlocks);
+        break;
+      default:
+        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
   }
 
-  private SignedBlockAndState getFinalizedBlockAndState() {
+  private void updateFinalizedDataArchiveMode(
+      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, BeaconState> finalizedStates) {
+    final BlockProvider blockProvider =
+        BlockProvider.withKnownBlocks(
+            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+
+    final Optional<Checkpoint> initialCheckpoint = hotDao.getAnchor();
+    final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
+    // Get previously finalized block to build on top of
+    final BeaconBlockSummary baseBlock = getLatestFinalizedBlock();
+
+    final List<Bytes32> finalizedRoots =
+        HashTree.builder()
+            .rootHash(baseBlock.getRoot())
+            .childAndParentRoots(finalizedChildToParentMap)
+            .build()
+            .preOrderStream()
+            .collect(Collectors.toList());
+
+    int i = 0;
+    UInt64 lastSlot = baseBlock.getSlot();
+    while (i < finalizedRoots.size()) {
+      final int start = i;
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        final StateRootRecorder recorder =
+            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot);
+
+        while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
+          final Bytes32 blockRoot = finalizedRoots.get(i);
+
+          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(blockRoot).join();
+          maybeBlock.ifPresent(updater::addFinalizedBlock);
+          // If block is missing and doesn't match the initial anchor, throw
+          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
+            throw new IllegalStateException("Missing finalized block");
+          }
+
+          Optional.ofNullable(finalizedStates.get(blockRoot))
+              .or(() -> getHotState(blockRoot))
+              .ifPresent(
+                  state -> {
+                    updater.addFinalizedState(blockRoot, state);
+                    recorder.acceptNextState(state);
+                  });
+
+          lastSlot =
+              maybeBlock
+                  .map(SignedBeaconBlock::getSlot)
+                  .orElseGet(() -> initialCheckpoint.orElseThrow().getEpochStartSlot());
+          i++;
+        }
+        updater.commit();
+        if (i >= TX_BATCH_SIZE) {
+          STATUS_LOG.recordedFinalizedBlocks(i, finalizedRoots.size());
+        }
+      }
+    }
+  }
+
+  private void updateFinalizedDataPruneMode(
+      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
+    final Optional<Bytes32> initialBlockRoot = hotDao.getAnchor().map(Checkpoint::getRoot);
+    final BlockProvider blockProvider =
+        BlockProvider.withKnownBlocks(
+            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+
+    final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
+    int i = 0;
+    while (i < finalizedRoots.size()) {
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        final int start = i;
+        while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
+          final Bytes32 root = finalizedRoots.get(i);
+          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(root).join();
+          maybeBlock.ifPresent(updater::addFinalizedBlock);
+
+          // If block is missing and doesn't match the initial anchor, throw
+          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(root)).isEmpty()) {
+            throw new IllegalStateException("Missing finalized block");
+          }
+          i++;
+        }
+        updater.commit();
+        if (i >= TX_BATCH_SIZE) {
+          STATUS_LOG.recordedFinalizedBlocks(i, finalizedRoots.size());
+        }
+      }
+    }
+  }
+
+  private BeaconBlockSummary getLatestFinalizedBlock() {
     final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
-    final SignedBeaconBlock baseBlock = finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
-    final BeaconState baseState = hotDao.getLatestFinalizedState().orElseThrow();
-    return new SignedBlockAndState(baseBlock, baseState);
+    final Optional<BeaconBlockSummary> finalizedBlock =
+        finalizedDao
+            .getFinalizedBlock(baseBlockRoot)
+            .<BeaconBlockSummary>map(a -> a)
+            .or(() -> hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState));
+    return finalizedBlock.orElseThrow(
+        () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
   }
 
   private void putFinalizedState(

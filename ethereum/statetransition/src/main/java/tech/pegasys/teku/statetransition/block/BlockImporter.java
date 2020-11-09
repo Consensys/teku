@@ -84,7 +84,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParent_root()))
+        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParentRoot()))
         .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
             result -> {
@@ -148,7 +148,7 @@ public class BlockImporter {
     if (finalizedCheckpoint != null
         && recentChainData
             .getStore()
-            .getLatestFinalizedBlockAndState()
+            .getLatestFinalized()
             .getRoot()
             .equals(finalizedCheckpoint.getRoot())) {
       return SafeFuture.completedFuture(finalizedCheckpoint);

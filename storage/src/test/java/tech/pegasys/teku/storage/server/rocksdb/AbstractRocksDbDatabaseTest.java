@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import com.google.common.collect.Streams;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +34,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -42,6 +46,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
@@ -57,13 +63,13 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
     database.close();
-    assertThatThrownBy(() -> database.storeAnchorPoint(genesisAnchor))
+    assertThatThrownBy(() -> database.storeInitialAnchor(genesisAnchor))
         .isInstanceOf(ShuttingDownException.class);
   }
 
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_update() throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
@@ -79,7 +85,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void createMemoryStore_priorToGenesisTime() {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
 
     final Optional<StoreBuilder> storeBuilder =
         ((RocksDbDatabase) database).createMemoryStore(() -> 0L);
@@ -90,7 +96,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .get()
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
-            .stateProvider(mock(StateAndBlockProvider.class))
+            .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .build();
 
     assertThat(store.getTime()).isEqualTo(genesisTime);
@@ -98,7 +104,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore() throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     assertThatThrownBy(database::createMemoryStore).isInstanceOf(ShuttingDownException.class);
@@ -106,7 +112,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot() throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.getSlotForFinalizedBlockRoot(Bytes32.ZERO))
@@ -115,7 +121,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock() throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.getSignedBlock(genesisCheckpoint.getRoot()))
@@ -124,7 +130,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.streamFinalizedBlocks(UInt64.ZERO, UInt64.ONE))
@@ -134,7 +140,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown()
       throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     try (final Stream<SignedBeaconBlock> stream =
         database.streamFinalizedBlocks(UInt64.ZERO, UInt64.valueOf(1000L))) {
       database.close();
@@ -145,13 +151,14 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
       throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
 
     try (final RocksDbHotDao.HotUpdater updater =
         ((RocksDbDatabase) database).hotDao.hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
-      assertThatThrownBy(() -> updater.addHotBlock(newBlock.getBlock()))
+      assertThatThrownBy(
+              () -> updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock)))
           .isInstanceOf(ShuttingDownException.class);
     }
   }
@@ -159,7 +166,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
 
     try (final RocksDbFinalizedDao.FinalizedUpdater updater =
         ((RocksDbDatabase) database).finalizedDao.finalizedUpdater()) {
@@ -173,7 +180,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
       throws Exception {
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     try (final RocksDbEth1Dao.Eth1Updater updater =
@@ -189,7 +196,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
     // Store genesis
-    database.storeAnchorPoint(genesisAnchor);
+    database.storeInitialAnchor(genesisAnchor);
     // Add a new finalized block to supersede genesis
     final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
@@ -207,18 +214,18 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
-      @TempDir final Path tempDir) throws Exception {
+      @TempDir final Path tempDir) {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
   }
 
   @Test
   public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
-      @TempDir final Path tempDir) throws Exception {
+      @TempDir final Path tempDir) {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
   }
 
   private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
@@ -240,6 +247,12 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     // Close database and rebuild from disk
     restartStorage();
+
+    // Ensure all states are actually regenerated in memory since we expect every state to be stored
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState -> recentChainData.retrieveBlockState(blockAndState.getRoot()).join());
 
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
@@ -265,19 +278,17 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir)
-      throws Exception {
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir) {
     testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir)
-      throws Exception {
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir) {
     testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.PRUNE);
   }
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
-      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
@@ -328,5 +339,53 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .collect(Collectors.toList());
     assertStatesUnavailable(unavailableBlockSlots);
     assertBlocksUnavailable(unavailableBlockRoots);
+  }
+
+  public void shouldStoreProtoArraySnapshotAsCheckpointEpochs() {
+
+    // init ProtoArray
+    final ProtoArray protoArray =
+        new ProtoArray(
+            10000,
+            UInt64.valueOf(100),
+            UInt64.valueOf(99),
+            UInt64.ZERO,
+            new ArrayList<>(),
+            new HashMap<>());
+
+    // add block 1
+    final Bytes32 block1Root = Bytes32.fromHexString("0xdeadbeef");
+    final UInt64 block1JustifiedEpoch = UInt64.valueOf(102);
+    final UInt64 block1FinalizedEpoch = UInt64.valueOf(103);
+    protoArray.onBlock(
+        UInt64.valueOf(10000),
+        block1Root,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        block1JustifiedEpoch,
+        block1FinalizedEpoch);
+
+    // add block 2
+    final Bytes32 block2Root = Bytes32.fromHexString("0x1234");
+    final UInt64 block2JustifiedEpoch = UInt64.valueOf(101);
+    final UInt64 block2FinalizedEpoch = UInt64.valueOf(100);
+    protoArray.onBlock(
+        UInt64.valueOf(10001),
+        block2Root,
+        Bytes32.fromHexString("0xdeadbeef"),
+        Bytes32.ZERO,
+        block2JustifiedEpoch,
+        block2FinalizedEpoch);
+
+    final ProtoArraySnapshot protoArraySnapshot = ProtoArraySnapshot.create(protoArray);
+    database.putProtoArraySnapshot(protoArraySnapshot);
+
+    assertThat(((RocksDbDatabase) database).hotDao.getHotBlockCheckpointEpochs(block1Root))
+        .contains(new CheckpointEpochs(block1JustifiedEpoch, block1FinalizedEpoch));
+    assertThat(((RocksDbDatabase) database).hotDao.getHotBlockCheckpointEpochs(block2Root))
+        .contains(new CheckpointEpochs(block2JustifiedEpoch, block2FinalizedEpoch));
+
+    // No snapshot is recorded because we're using the new format.
+    assertThat(database.getProtoArraySnapshot()).isEmpty();
   }
 }

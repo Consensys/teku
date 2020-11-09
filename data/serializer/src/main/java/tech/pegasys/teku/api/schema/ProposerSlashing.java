@@ -15,27 +15,43 @@ package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 
 public class ProposerSlashing {
-  public final SignedBeaconBlockHeader header_1;
-  public final SignedBeaconBlockHeader header_2;
+  public final SignedBeaconBlockHeader signed_header_1;
+  public final SignedBeaconBlockHeader signed_header_2;
 
   public ProposerSlashing(
       tech.pegasys.teku.datastructures.operations.ProposerSlashing proposerSlashing) {
-    header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
-    header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
+    signed_header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
+    signed_header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
   }
 
   @JsonCreator
   public ProposerSlashing(
-      @JsonProperty("header_1") final SignedBeaconBlockHeader header_1,
-      @JsonProperty("header_2") final SignedBeaconBlockHeader header_2) {
-    this.header_1 = header_1;
-    this.header_2 = header_2;
+      @JsonProperty("signed_header_1") final SignedBeaconBlockHeader header_1,
+      @JsonProperty("signed_header_2") final SignedBeaconBlockHeader header_2) {
+    this.signed_header_1 = header_1;
+    this.signed_header_2 = header_2;
   }
 
   public tech.pegasys.teku.datastructures.operations.ProposerSlashing asInternalProposerSlashing() {
     return new tech.pegasys.teku.datastructures.operations.ProposerSlashing(
-        header_1.asInternalSignedBeaconBlockHeader(), header_2.asInternalSignedBeaconBlockHeader());
+        signed_header_1.asInternalSignedBeaconBlockHeader(),
+        signed_header_2.asInternalSignedBeaconBlockHeader());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ProposerSlashing)) return false;
+    ProposerSlashing that = (ProposerSlashing) o;
+    return Objects.equals(signed_header_1, that.signed_header_1)
+        && Objects.equals(signed_header_2, that.signed_header_2);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(signed_header_1, signed_header_2);
   }
 }

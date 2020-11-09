@@ -18,9 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -103,8 +106,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public void onAnchorPoint(final AnchorPoint anchorPoint) {
-    database.storeAnchorPoint(anchorPoint);
+  public void onChainInitialized(final AnchorPoint initialAnchor) {
+    database.storeInitialAnchor(initialAnchor);
   }
 
   @Override
@@ -113,6 +116,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
         () -> {
           database.updateWeakSubjectivityState(weakSubjectivityUpdate);
         });
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return SafeFuture.of(database::getEarliestAvailableBlockSlot);
   }
 
   @Override
@@ -139,6 +147,24 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
                 .getHotState(blockRoot)
                 .flatMap(
                     s -> database.getHotBlock(blockRoot).map(b -> new SignedBlockAndState(b, s))));
+  }
+
+  @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.of(
+        () ->
+            database
+                .getHotState(blockRoot)
+                .map(
+                    state -> {
+                      final BeaconBlockSummary block =
+                          database
+                              .getHotBlock(blockRoot)
+                              .map(b -> (BeaconBlockSummary) b)
+                              .orElseGet(() -> BeaconBlockHeader.fromState(state));
+                      return StateAndBlockSummary.create(block, state);
+                    }));
   }
 
   @Override

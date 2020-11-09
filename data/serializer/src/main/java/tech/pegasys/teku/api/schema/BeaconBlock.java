@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -38,9 +39,9 @@ public class BeaconBlock {
 
   public BeaconBlock(tech.pegasys.teku.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
-    this.proposer_index = message.getProposer_index();
-    this.parent_root = message.getParent_root();
-    this.state_root = message.getState_root();
+    this.proposer_index = message.getProposerIndex();
+    this.parent_root = message.getParentRoot();
+    this.state_root = message.getStateRoot();
     this.body = new BeaconBlockBody(message.getBody());
   }
 
@@ -61,5 +62,22 @@ public class BeaconBlock {
   public tech.pegasys.teku.datastructures.blocks.BeaconBlock asInternalBeaconBlock() {
     return new tech.pegasys.teku.datastructures.blocks.BeaconBlock(
         slot, proposer_index, parent_root, state_root, body.asInternalBeaconBlockBody());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof BeaconBlock)) return false;
+    BeaconBlock that = (BeaconBlock) o;
+    return Objects.equals(slot, that.slot)
+        && Objects.equals(proposer_index, that.proposer_index)
+        && Objects.equals(parent_root, that.parent_root)
+        && Objects.equals(state_root, that.state_root)
+        && Objects.equals(body, that.body);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(slot, proposer_index, parent_root, state_root, body);
   }
 }

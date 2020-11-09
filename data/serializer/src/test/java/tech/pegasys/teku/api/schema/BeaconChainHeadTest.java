@@ -18,16 +18,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconChainHeadTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final BeaconState beaconState = dataStructureUtil.randomBeaconState();
-  private final BeaconBlockAndState blockAndState =
-      dataStructureUtil.randomBlockAndState(1, beaconState);
+  private final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1);
 
   @Test
   public void shouldCreateFromBlockAndState() {

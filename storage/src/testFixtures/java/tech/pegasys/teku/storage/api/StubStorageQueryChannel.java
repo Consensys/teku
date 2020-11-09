@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,6 +41,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
@@ -56,6 +62,12 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
       final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }

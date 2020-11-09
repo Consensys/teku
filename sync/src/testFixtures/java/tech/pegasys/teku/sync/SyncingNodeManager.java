@@ -39,6 +39,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -91,11 +92,14 @@ public class SyncingNodeManager {
     BlockImporter blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
+
+    BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =
-        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
+        BlockManager.create(
+            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
@@ -107,7 +111,7 @@ public class SyncingNodeManager {
             .builder()
             .eventBus(eventBus)
             .recentChainData(recentChainData)
-            .gossipedBlockConsumer(blockManager::importBlock);
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock);
 
     configureNetwork.accept(networkBuilder);
 
