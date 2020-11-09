@@ -11,26 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.forward.multipeer.chains;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncingStatus;
+import java.util.stream.Stream;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 
-public interface SyncService {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
+public class TargetChainTestUtil {
+  public static TargetChain chainWith(final SlotAndBlockRoot chainHead, final SyncSource... peers) {
+    final TargetChain chain = new TargetChain(chainHead);
+    Stream.of(peers).forEach(chain::addPeer);
+    return chain;
   }
 }

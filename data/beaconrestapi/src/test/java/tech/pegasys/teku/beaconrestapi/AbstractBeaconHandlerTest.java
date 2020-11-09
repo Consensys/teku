@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public abstract class AbstractBeaconHandlerTest {
 
@@ -80,12 +81,12 @@ public abstract class AbstractBeaconHandlerTest {
     return jsonProvider.jsonToObject(data, BadRequest.class);
   }
 
-  protected tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
+  protected SyncingStatus getSyncStatus(
       final boolean isSyncing,
       final long startSlot,
       final long currentSlot,
       final long highestSlot) {
-    return new tech.pegasys.teku.sync.SyncingStatus(
+    return new SyncingStatus(
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),

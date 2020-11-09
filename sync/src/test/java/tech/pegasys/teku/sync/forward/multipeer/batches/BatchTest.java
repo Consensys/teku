@@ -11,26 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.forward.multipeer.batches;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncingStatus;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-public interface SyncService {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
+class BatchTest {
+  @Test
+  @Disabled
+  void shouldFailWhenBlocksDoNotFormAConsistentChain() {
+    Assertions.fail("Not implemented");
   }
+
+  @Test
+  @Disabled
+  void shouldMarkAsCompletedWhenRequestReturnsNoBlocks() {}
+
+  @Test
+  @Disabled
+  void shouldMarkAsCompleteWhenRequestReturnsBlockInLastSlot() {}
 }

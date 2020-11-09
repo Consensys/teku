@@ -11,26 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.events;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncingStatus;
+public enum SyncState {
+  START_UP,
+  SYNCING,
+  IN_SYNC;
 
-public interface SyncService {
+  public boolean isInSync() {
+    return this == IN_SYNC;
+  }
 
-  SafeFuture<?> start();
+  public boolean isStartingUp() {
+    return this == START_UP;
+  }
 
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
+  public boolean isSyncing() {
+    return this == SYNCING;
   }
 }

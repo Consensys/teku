@@ -32,8 +32,8 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
-import tech.pegasys.teku.sync.singlepeer.RetryDelayFunction;
 
 public class FetchRecentBlocksService extends Service implements RecentBlockFetcher {
   private static final Logger LOG = LogManager.getLogger();

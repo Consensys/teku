@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,26 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.forward.singlepeer;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncingStatus;
-
-public interface SyncService {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
-  }
+enum PeerSyncResult {
+  SUCCESSFUL_SYNC,
+  FAULTY_ADVERTISEMENT,
+  CANCELLED,
+  BAD_BLOCK,
+  IMPORT_FAILED,
+  EXCESSIVE_THROTTLING,
+  INVALID_RESPONSE
 }

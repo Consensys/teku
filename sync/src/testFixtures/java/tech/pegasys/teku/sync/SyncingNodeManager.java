@@ -43,9 +43,9 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.forward.singlepeer.SinglePeerSyncService;
+import tech.pegasys.teku.sync.forward.singlepeer.SyncManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
-import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 

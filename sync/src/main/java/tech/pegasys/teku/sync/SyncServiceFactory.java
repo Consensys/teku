@@ -21,9 +21,8 @@ import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
-import tech.pegasys.teku.sync.noop.NoopSyncService;
-import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
+import tech.pegasys.teku.sync.forward.multipeer.MultipeerSyncService;
+import tech.pegasys.teku.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 
 public class SyncServiceFactory {
 

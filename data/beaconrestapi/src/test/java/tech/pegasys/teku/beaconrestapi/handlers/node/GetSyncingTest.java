@@ -42,8 +42,8 @@ public class GetSyncingTest {
     final UInt64 startSlot = UInt64.ONE;
     final UInt64 currentSlot = UInt64.valueOf(5);
     final UInt64 highestSlot = UInt64.valueOf(10);
-    final tech.pegasys.teku.sync.SyncingStatus syncingStatus =
-        new tech.pegasys.teku.sync.SyncingStatus(
+    final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus =
+        new tech.pegasys.teku.sync.events.SyncingStatus(
             isSyncing, currentSlot, Optional.of(startSlot), Optional.of(highestSlot));
     final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
     final SyncingStatus expectedResponse =
@@ -58,8 +58,8 @@ public class GetSyncingTest {
   @Test
   public void shouldReturnFalseWhenNotSyncing() throws Exception {
     final boolean isSyncing = false;
-    final tech.pegasys.teku.sync.SyncingStatus syncingStatus =
-        new tech.pegasys.teku.sync.SyncingStatus(isSyncing, null);
+    final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus =
+        new tech.pegasys.teku.sync.events.SyncingStatus(isSyncing, null);
     final SyncingStatus expectedResponse =
         new SyncingStatus(false, new SyncStatus(null, null, null));
     final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);

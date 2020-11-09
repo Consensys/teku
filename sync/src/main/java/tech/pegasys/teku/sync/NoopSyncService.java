@@ -13,24 +13,38 @@
 
 package tech.pegasys.teku.sync;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 
-public interface SyncService {
+public class NoopSyncService implements SyncService {
 
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
+  @Override
+  public SafeFuture<?> start() {
+    return SafeFuture.completedFuture(null);
   }
+
+  @Override
+  public SafeFuture<?> stop() {
+    return SafeFuture.completedFuture(null);
+  }
+
+  @Override
+  public SyncingStatus getSyncStatus() {
+    return new SyncingStatus(false, ZERO);
+  }
+
+  @Override
+  public boolean isSyncActive() {
+    return false;
+  }
+
+  @Override
+  public long subscribeToSyncChanges(final SyncSubscriber subscriber) {
+    return 0;
+  }
+
+  @Override
+  public void unsubscribeFromSyncChanges(final long subscriberId) {}
 }

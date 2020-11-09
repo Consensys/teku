@@ -39,8 +39,8 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncState;
-import tech.pegasys.teku.sync.SyncStateTracker;
+import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.forward.SyncStateTracker;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 

@@ -11,26 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.forward.multipeer;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncingStatus;
+import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
 
-public interface SyncService {
+public interface Sync {
 
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
-  }
+  /**
+   * Sync to a target chain. This may be called while a previous sync is in progress to switch the
+   * sync target to a new chain.
+   *
+   * @param targetChain the chain to sync to
+   * @return a future that completes when the sync is complete
+   */
+  SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
 }
