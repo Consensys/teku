@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -55,6 +56,11 @@ public class BlockProductionDuty implements Duty {
   @Override
   public String getProducedType() {
     return "block";
+  }
+
+  @Override
+  public Optional<BLSPublicKey> getValidatorIdentifier() {
+    return Optional.of(validator.getPublicKey());
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
