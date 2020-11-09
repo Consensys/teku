@@ -50,6 +50,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
@@ -87,7 +88,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
-      final List<PeerHandler> peerHandlers) {
+      final List<PeerHandler> peerHandlers,
+      final PreparedMessageFactory defaultMessageFactory) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
@@ -98,7 +100,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
     // Setup gossip
     gossipNetwork = new LibP2PGossipNetwork(metricsSystem, config.getGossipConfig(),
-        config.getWireLogsConfig().isLogWireGossip());
+        defaultMessageFactory, config.getWireLogsConfig().isLogWireGossip());
 
     // Setup rpc methods
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));

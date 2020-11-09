@@ -205,7 +205,8 @@ public class Eth2NetworkFactory {
                     reputationManager,
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
-                    peerHandlers),
+                    peerHandlers,
+                    (__, msg) -> gossipEncoding.prepareUnknownMessage(msg)),
                 new Eth2PeerSelectionStrategy(
                     config.getTargetPeerRange(),
                     gossipNetwork ->

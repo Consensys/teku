@@ -49,4 +49,8 @@ public interface GossipEncoding {
   default <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
     return decode(prepareMessage(data, valueType), valueType);
   }
+
+  default PreparedMessage prepareUnknownMessage(Bytes data) {
+    return prepareMessage(data, null);
+  }
 }

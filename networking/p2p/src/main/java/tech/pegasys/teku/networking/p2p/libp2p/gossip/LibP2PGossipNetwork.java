@@ -44,6 +44,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
@@ -54,18 +55,18 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private static final Logger LOG = LogManager.getLogger();
   private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
   private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
-  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
-  private static final Bytes MESSAGE_DOMAIN_INVALID_SNAPPY = Bytes.fromHexString("0x00000000");
 
 
   private final MetricsSystem metricsSystem;
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
   private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
+  private final PreparedMessageFactory defaultMessageFactory;
 
   public LibP2PGossipNetwork(MetricsSystem metricsSystem, GossipConfig gossipConfig,
-      boolean logWireGossip) {
+      PreparedMessageFactory defaultMessageFactory, boolean logWireGossip) {
     this.metricsSystem = metricsSystem;
+    this.defaultMessageFactory = defaultMessageFactory;
     this.gossip = createGossip(gossipConfig, logWireGossip);
     this.publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
   }
@@ -108,11 +109,11 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   public PreparedMessage prepareMessage(String topic, Bytes payload) {
     Optional<TopicHandler> topicHandler = getSubscribedHandler(topic);
     return topicHandler.map(handler -> handler.prepareMessage(payload))
-        .orElse(prepareNonSubscribedMessage(payload));
+        .orElse(prepareNonSubscribedMessage(topic, payload));
   }
 
-  private PreparedMessage prepareNonSubscribedMessage(Bytes payload) {
-    return () -> Hash.sha2_256(Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, payload)).slice(0, 20);
+  private PreparedMessage prepareNonSubscribedMessage(String topic, Bytes payload) {
+    return defaultMessageFactory.create(topic, payload);
   }
 
   private Gossip createGossip(GossipConfig gossipConfig, boolean gossipLogsEnabled) {

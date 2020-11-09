@@ -44,7 +44,11 @@ class LazyUncompressPreparedMessage implements PreparedMessage {
 
   private Optional<Bytes> maybeUncompressPayload() {
     try {
-      return Optional.of(uncompressPayload());
+      if (valueType == null) {
+        return Optional.empty();
+      } else {
+        return Optional.of(uncompressPayload());
+      }
     } catch (DecodingException e) {
       uncompressException = e;
       return Optional.empty();
