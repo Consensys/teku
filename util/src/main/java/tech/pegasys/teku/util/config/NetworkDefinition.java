@@ -32,6 +32,9 @@ public class NetworkDefinition {
                   .constants("mainnet")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
+                  .discoveryBootnodes(
+                      // PegaSys Teku
+                      "enr:-KG4QJRlj4pHagfNIm-Fsx9EVjW4rviuZYzle3tyddm2KAWMJBDGAhxfM2g-pDaaiwE8q19uvLSH4jyvWjypLMr3TIcEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA")
                   .build())
           .put(
               "medalla",
