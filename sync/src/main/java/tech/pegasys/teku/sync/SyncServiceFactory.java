@@ -69,7 +69,7 @@ public class SyncServiceFactory {
     this.startupTimeout = startupTimeout;
   }
 
-  public static SyncService create(
+  public static SyncService createSyncService(
       final P2PConfig p2pConfig,
       final MetricsSystem metrics,
       final AsyncRunnerFactory asyncRunnerFactory,
