@@ -29,6 +29,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
+import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 
 class SyncStateTrackerTest {
@@ -71,14 +73,14 @@ class SyncStateTrackerTest {
 
   @Test
   public void shouldStartInSyncWhenTargetPeerCountIsZero() {
-    final SyncStateTracker tracker =
+    final SyncStateProvider tracker =
         new SyncStateTracker(asyncRunner, syncService, network, 0, STARTUP_TIMEOUT);
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
   @Test
   public void shouldStartInSyncWhenStartupTimeoutIsZero() {
-    final SyncStateTracker tracker =
+    final SyncStateProvider tracker =
         new SyncStateTracker(
             asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);

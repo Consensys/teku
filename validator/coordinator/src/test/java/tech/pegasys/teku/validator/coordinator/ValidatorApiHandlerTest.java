@@ -67,7 +67,8 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.sync.forward.SyncStateTracker;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
+import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -86,7 +87,7 @@ class ValidatorApiHandlerTest {
       compute_start_slot_at_epoch(PREVIOUS_EPOCH);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
-  private final SyncStateTracker syncStateTracker = mock(SyncStateTracker.class);
+  private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -102,7 +103,7 @@ class ValidatorApiHandlerTest {
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
           chainDataClient,
-          syncStateTracker,
+          syncStateProvider,
           stateTransition,
           blockFactory,
           blockImportChannel,
@@ -116,7 +117,7 @@ class ValidatorApiHandlerTest {
 
   @BeforeEach
   public void setUp() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
   }
 
   @Test
@@ -173,7 +174,7 @@ class ValidatorApiHandlerTest {
 
   private void setupSyncingState(
       final SyncState syncState, final UInt64 currentEpoch, final UInt64 headEpoch) {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(syncState);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(syncState);
     when(chainDataClient.getCurrentEpoch()).thenReturn(currentEpoch);
     when(chainDataClient.getHeadEpoch()).thenReturn(headEpoch);
   }

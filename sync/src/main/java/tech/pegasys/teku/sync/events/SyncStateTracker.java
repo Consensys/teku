@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.forward;
+package tech.pegasys.teku.sync.events;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -22,9 +22,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 
-public class SyncStateTracker extends Service {
+public class SyncStateTracker extends Service implements SyncStateProvider {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
@@ -60,6 +60,7 @@ public class SyncStateTracker extends Service {
     }
   }
 
+  @Override
   public SyncState getCurrentSyncState() {
     return currentState;
   }

@@ -113,7 +113,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.sync.forward.SyncStateTracker;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -177,7 +176,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
 
-  private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
   private BlockManager blockManager;
@@ -221,8 +219,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
-            syncService.start(),
-            syncStateTracker.start())
+            syncService.start())
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -246,7 +243,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
         SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
-        syncStateTracker.stop(),
         syncService.stop(),
         blockManager.stop(),
         attestationManager.stop(),
@@ -325,7 +321,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncService();
     initSlotProcessor();
     initMetrics();
-    initSyncStateTracker();
     initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
@@ -440,17 +435,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod());
   }
 
-  private void initSyncStateTracker() {
-    LOG.debug("BeaconChainController.initSyncStateTracker");
-    syncStateTracker =
-        new SyncStateTracker(
-            asyncRunner,
-            syncService.getForwardSync(),
-            p2pNetwork,
-            config.getStartupTargetPeerCount(),
-            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
-  }
-
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
@@ -477,7 +461,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
-            syncStateTracker,
+            syncService,
             stateTransition,
             blockFactory,
             blockImportChannel,
@@ -700,7 +684,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             p2pNetwork,
             blockImporter,
-            pendingBlocks);
+            pendingBlocks,
+            config.getStartupTargetPeerCount(),
+            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
@@ -75,5 +76,10 @@ public class NoopSyncService implements ForwardSync, RecentBlockFetcher, SyncSer
   @Override
   public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     // No-op
+  }
+
+  @Override
+  public SyncState getCurrentSyncState() {
+    return SyncState.IN_SYNC;
   }
 }

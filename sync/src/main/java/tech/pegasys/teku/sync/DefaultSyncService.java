@@ -15,6 +15,8 @@ package tech.pegasys.teku.sync;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
@@ -23,22 +25,27 @@ import tech.pegasys.teku.sync.gossip.RecentBlockFetcherService;
 public class DefaultSyncService extends Service implements SyncService {
   private final ForwardSyncService forwardSyncService;
   private final RecentBlockFetcherService blockFetcherService;
+  private final SyncStateTracker syncStateTracker;
 
   public DefaultSyncService(
       final ForwardSyncService forwardSyncService,
-      final RecentBlockFetcherService blockFetcherService) {
+      final RecentBlockFetcherService blockFetcherService,
+      final SyncStateTracker syncStateTracker) {
     this.forwardSyncService = forwardSyncService;
     this.blockFetcherService = blockFetcherService;
+    this.syncStateTracker = syncStateTracker;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOfFailFast(forwardSyncService.start(), blockFetcherService.start());
+    return SafeFuture.allOfFailFast(
+        forwardSyncService.start(), blockFetcherService.start(), syncStateTracker.start());
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(forwardSyncService.stop(), blockFetcherService.stop());
+    return SafeFuture.allOf(
+        forwardSyncService.stop(), blockFetcherService.stop(), syncStateTracker.stop());
   }
 
   @Override
@@ -49,5 +56,10 @@ public class DefaultSyncService extends Service implements SyncService {
   @Override
   public RecentBlockFetcher getRecentBlockFetcher() {
     return blockFetcherService;
+  }
+
+  @Override
+  public SyncState getCurrentSyncState() {
+    return syncStateTracker.getCurrentSyncState();
   }
 }

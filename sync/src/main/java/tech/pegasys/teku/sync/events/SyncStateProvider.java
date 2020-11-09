@@ -11,19 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.events;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.sync.forward.ForwardSync;
-import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
-
-public interface SyncService extends SyncStateProvider {
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  ForwardSync getForwardSync();
-
-  RecentBlockFetcher getRecentBlockFetcher();
+public interface SyncStateProvider {
+  SyncState getCurrentSyncState();
 }

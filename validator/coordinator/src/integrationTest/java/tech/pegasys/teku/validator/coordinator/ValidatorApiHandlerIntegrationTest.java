@@ -40,7 +40,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.sync.forward.SyncStateTracker;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
+import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -55,7 +56,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final StateTransition stateTransition = new StateTransition();
 
   // Other dependencies are mocked, but these can be updated as needed
-  private final SyncStateTracker syncStateTracker = mock(SyncStateTracker.class);
+  private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
@@ -70,7 +71,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
           combinedChainDataClient,
-          syncStateTracker,
+          syncStateProvider,
           stateTransition,
           blockFactory,
           blockImportChannel,
@@ -84,7 +85,7 @@ public class ValidatorApiHandlerIntegrationTest {
 
   @BeforeEach
   public void setup() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
   }
 
   @Test
