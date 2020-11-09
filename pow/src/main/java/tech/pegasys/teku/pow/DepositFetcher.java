@@ -84,7 +84,7 @@ public class DepositFetcher {
 
   private SafeFuture<Void> sendNextBatchRequest(final DepositFetchState fetchState) {
     final BigInteger nextBatchEnd = fetchState.getNextBatchEnd();
-    LOG.info(
+    LOG.debug(
         "Requesting deposits between {} and {}. Batch size: {}",
         fetchState.nextBatchStart,
         nextBatchEnd,
