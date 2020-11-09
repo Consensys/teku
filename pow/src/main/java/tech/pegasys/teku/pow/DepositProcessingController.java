@@ -100,16 +100,13 @@ public class DepositProcessingController {
   }
 
   private synchronized void fetchLatestSubscriptionDepositsOverRange() {
-    final BigInteger toBlock;
-    final BigInteger fromBlock;
-
     if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
       return;
     }
     active = true;
 
-    fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
-    toBlock = latestCanonicalBlockNumber.min(fromBlock.add(BigInteger.valueOf(500_000)));
+    final BigInteger fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
+    final BigInteger toBlock = latestCanonicalBlockNumber;
 
     depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)
