@@ -20,7 +20,11 @@ import io.libp2p.core.pubsub.PubsubApiKt;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
+import io.libp2p.core.pubsub.ValidationResult;
+import io.libp2p.pubsub.FastIdSeenCache;
 import io.libp2p.pubsub.PubsubRouterMessageValidator;
+import io.libp2p.pubsub.SeenCache;
+import io.libp2p.pubsub.TTLSeenCache;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
@@ -39,8 +43,8 @@ import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
@@ -52,6 +56,7 @@ import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class LibP2PGossipNetwork implements GossipNetwork {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
   private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
@@ -131,7 +136,20 @@ public class LibP2PGossipNetwork implements GossipNetwork {
             .seenTTL(gossipConfig.getSeenTTL())
             .build();
 
-    GossipRouter router = new GossipRouter(gossipParams);
+    GossipRouter router = new GossipRouter(gossipParams) {
+
+      final SeenCache<Optional<ValidationResult>> seenCache = new TTLSeenCache<>(
+          new FastIdSeenCache<>(
+              msg -> msg.getProtobufMessage().getData()), gossipParams.getSeenTTL(),
+          getCurTimeMillis());
+
+      @NotNull
+      @Override
+      protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
+        return seenCache;
+      }
+    };
+
     router.setMessageFactory(
         msg -> {
           Preconditions.checkArgument(
