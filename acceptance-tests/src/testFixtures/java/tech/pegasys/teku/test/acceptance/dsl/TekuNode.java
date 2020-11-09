@@ -233,6 +233,17 @@ public class TekuNode extends Node {
     }
   }
 
+  public void waitForValidators(int numberOfValidators) {
+    waitFor(
+        () -> {
+          Optional<BeaconState> maybeState = fetchHeadState();
+          assertThat(maybeState).isPresent();
+          BeaconState state = maybeState.get();
+          assertThat(state.asInternalBeaconState().getValidators().size())
+              .isEqualTo(numberOfValidators);
+        });
+  }
+
   public void waitForAttestationBeingGossiped(
       int validatorSeparationIndex, int totalValidatorCount) {
     List<UInt64> node1Validators =

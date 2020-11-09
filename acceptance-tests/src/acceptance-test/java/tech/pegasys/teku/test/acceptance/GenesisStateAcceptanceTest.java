@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -38,5 +40,20 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     // Even though the nodes aren't connected to each other they should generate the same genesis
     // state because they processed the same deposits from the same ETH1 chain.
     lateJoinTeku.waitUntilInSyncWith(firstTeku);
+  }
+
+  @Test
+  public void shouldCreateGenesisFromPartialDeposits() throws Exception {
+    final BesuNode eth1Node = createBesuNode();
+    eth1Node.start();
+
+    createTekuDepositSender()
+        .partiallySendValidatorDeposits(eth1Node, 4, MAX_EFFECTIVE_BALANCE / 2);
+
+    final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    firstTeku.start();
+    firstTeku.waitForGenesis();
+
+    firstTeku.waitForValidators(4);
   }
 }

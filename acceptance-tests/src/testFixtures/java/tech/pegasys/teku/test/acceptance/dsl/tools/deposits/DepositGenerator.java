@@ -48,6 +48,25 @@ public class DepositGenerator implements AutoCloseable {
         });
   }
 
+  public SafeFuture<Void> generate2transactions() {
+    return SafeFuture.of(
+        () -> {
+          final List<SafeFuture<Void>> transactionReceipts =
+              validatorKeyGenerator
+                  .generateKeysStream()
+                  .map(
+                      keys -> {
+                        SafeFuture<TransactionReceipt> future1 =
+                            depositSenderService.sendDeposit(keys);
+                        SafeFuture<TransactionReceipt> future2 =
+                            depositSenderService.sendDeposit(keys);
+                        return SafeFuture.allOf(future1, future2);
+                      })
+                  .collect(Collectors.toList());
+          return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
+        });
+  }
+
   @Override
   public void close() {
     depositSenderService.close();

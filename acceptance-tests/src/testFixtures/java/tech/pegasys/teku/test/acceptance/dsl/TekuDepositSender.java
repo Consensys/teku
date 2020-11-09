@@ -37,9 +37,15 @@ public class TekuDepositSender extends Node {
 
   public void sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators)
       throws InterruptedException, ExecutionException, TimeoutException {
+    sendValidatorDeposits(eth1Node, numberOfValidators, MAX_EFFECTIVE_BALANCE);
+  }
+
+  public void sendValidatorDeposits(
+      final BesuNode eth1Node, final int numberOfValidators, long amount)
+      throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
-    final UInt64 depositAmount = UInt64.valueOf(MAX_EFFECTIVE_BALANCE);
+    final UInt64 depositAmount = UInt64.valueOf(amount);
     try (final DepositGenerator depositGenerator =
         new DepositGenerator(
             eth1Node.getExternalJsonRpcUrl(),
@@ -48,6 +54,24 @@ public class TekuDepositSender extends Node {
             numberOfValidators,
             depositAmount)) {
       final SafeFuture<Void> future = depositGenerator.generate();
+      Waiter.waitFor(future, Duration.ofMinutes(2));
+    }
+  }
+
+  public void partiallySendValidatorDeposits(
+      final BesuNode eth1Node, final int numberOfValidators, long amount)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
+    final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
+    final UInt64 depositAmount = UInt64.valueOf(amount);
+    try (final DepositGenerator depositGenerator =
+        new DepositGenerator(
+            eth1Node.getExternalJsonRpcUrl(),
+            eth1Address,
+            eth1Credentials,
+            numberOfValidators,
+            depositAmount)) {
+      final SafeFuture<Void> future = depositGenerator.generate2transactions();
       Waiter.waitFor(future, Duration.ofMinutes(2));
     }
   }
