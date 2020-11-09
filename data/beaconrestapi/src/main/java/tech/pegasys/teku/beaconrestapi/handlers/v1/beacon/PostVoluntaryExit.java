@@ -40,8 +40,7 @@ public class PostVoluntaryExit extends AbstractHandler {
   private final NodeDataProvider nodeDataProvider;
 
   public PostVoluntaryExit(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+    this(dataProvider.getNodeDataProvider(), jsonProvider);
   }
 
   public PostVoluntaryExit(final NodeDataProvider provider, final JsonProvider jsonProvider) {
@@ -52,10 +51,10 @@ public class PostVoluntaryExit extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Submit signed voluntary exit object",
+      summary = "Submit signed voluntary exit",
       tags = {TAG_V1_BEACON},
       description =
-          "Submits signed voluntary exit object to node's pool and if passes validation node MUST broadcast it to network.",
+          "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.",
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedVoluntaryExit.class)}),
       responses = {
@@ -77,7 +76,10 @@ public class PostVoluntaryExit extends AbstractHandler {
       if (result.equals(InternalValidationResult.IGNORE)
           || result.equals(InternalValidationResult.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
-        ctx.result("Invalid voluntary exit, it will never pass validation so it's rejected");
+        ctx.result(
+            BadRequest.badRequest(
+                jsonProvider,
+                "Invalid voluntary exit, it will never pass validation so it's rejected"));
       } else {
         ctx.status(SC_OK);
       }

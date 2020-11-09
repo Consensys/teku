@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,25 +45,27 @@ public class PostVoluntaryExitTest {
 
   @Test
   void shouldBeAbleToSubmitSlashing() throws Exception {
-    final SignedVoluntaryExit slashing =
+    final SignedVoluntaryExit exit =
         new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postVoluntaryExit(any()))
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
+    when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     handler.handle(context);
 
+    verify(provider).postVoluntaryExit(exit);
     verify(context).status(SC_OK);
   }
 
   @Test
   void shouldReturnBadRequest_ifVoluntaryExitInvalid() throws Exception {
-    final SignedVoluntaryExit slashing =
+    final SignedVoluntaryExit exit =
         new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postVoluntaryExit(any()))
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
+    when(provider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     handler.handle(context);
 
+    verify(provider).postVoluntaryExit(exit);
     verify(context).status(SC_BAD_REQUEST);
   }
 
@@ -71,6 +74,7 @@ public class PostVoluntaryExitTest {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
 
+    verify(provider, never()).postVoluntaryExit(any());
     verify(context).status(SC_BAD_REQUEST);
   }
 }
