@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,10 +48,11 @@ public class PostProposerSlashingTest {
     final ProposerSlashing slashing =
         new ProposerSlashing(dataStructureUtil.randomProposerSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postProposerSlashing(any()))
+    when(provider.postProposerSlashing(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     handler.handle(context);
 
+    verify(provider).postProposerSlashing(slashing);
     verify(context).status(SC_OK);
   }
 
@@ -59,18 +61,20 @@ public class PostProposerSlashingTest {
     final ProposerSlashing slashing =
         new ProposerSlashing(dataStructureUtil.randomProposerSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
-    when(provider.postProposerSlashing(any()))
+    when(provider.postProposerSlashing(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     handler.handle(context);
 
+    verify(provider).postProposerSlashing(slashing);
     verify(context).status(SC_BAD_REQUEST);
   }
 
   @Test
-  void shouldReturnBadRequestIfProserSlashingIsIncorrectlyFormatted() throws Exception {
+  void shouldReturnBadRequestIfProposerSlashingIsIncorrectlyFormatted() throws Exception {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
     handler.handle(context);
 
+    verify(provider, never()).postProposerSlashing(any());
     verify(context).status(SC_BAD_REQUEST);
   }
 }

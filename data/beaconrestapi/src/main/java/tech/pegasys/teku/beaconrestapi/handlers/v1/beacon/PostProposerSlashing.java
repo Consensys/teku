@@ -40,8 +40,7 @@ public class PostProposerSlashing extends AbstractHandler {
   private final NodeDataProvider nodeDataProvider;
 
   public PostProposerSlashing(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.nodeDataProvider = dataProvider.getNodeDataProvider();
+    this(dataProvider.getNodeDataProvider(), jsonProvider);
   }
 
   public PostProposerSlashing(final NodeDataProvider provider, final JsonProvider jsonProvider) {
@@ -78,7 +77,10 @@ public class PostProposerSlashing extends AbstractHandler {
       if (result.equals(InternalValidationResult.IGNORE)
           || result.equals(InternalValidationResult.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
-        ctx.result("Invalid proposer slashing, it will never pass validation so it's rejected");
+        ctx.result(
+            BadRequest.badRequest(
+                jsonProvider,
+                "Invalid proposer slashing, it will never pass validation so it's rejected"));
       } else {
         ctx.status(SC_OK);
       }
