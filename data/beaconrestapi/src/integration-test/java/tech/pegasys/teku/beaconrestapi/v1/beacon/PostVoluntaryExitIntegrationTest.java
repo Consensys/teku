@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.validator;
+package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
@@ -49,8 +49,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
     final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit();
 
-    final SignedVoluntaryExit schemaExit =
-        new tech.pegasys.teku.api.schema.SignedVoluntaryExit(signedVoluntaryExit);
+    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
 
     doThrow(new RuntimeException()).when(voluntaryExitPool).add(signedVoluntaryExit);
 
@@ -63,8 +62,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
     final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit();
 
-    final SignedVoluntaryExit schemaExit =
-        new tech.pegasys.teku.api.schema.SignedVoluntaryExit(signedVoluntaryExit);
+    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
 
     when(voluntaryExitPool.add(signedVoluntaryExit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
