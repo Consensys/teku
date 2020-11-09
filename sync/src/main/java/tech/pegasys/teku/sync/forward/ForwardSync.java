@@ -11,18 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.forward;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.forward.ForwardSync;
-import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
+import tech.pegasys.teku.sync.events.SyncingStatus;
 
-public interface SyncService {
-  SafeFuture<?> start();
+public interface ForwardSync {
 
-  SafeFuture<?> stop();
+  SyncingStatus getSyncStatus();
 
-  ForwardSync getForwardSync();
+  boolean isSyncActive();
 
-  RecentBlockFetcher getRecentBlockFetcher();
+  long subscribeToSyncChanges(SyncSubscriber subscriber);
+
+  void unsubscribeFromSyncChanges(long subscriberId);
+
+  interface SyncSubscriber {
+    void onSyncingChange(boolean isSyncing);
+  }
 }

@@ -17,13 +17,13 @@ import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.api.schema.SyncStatus;
 import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public class SyncDataProvider {
 
-  private final SyncService syncService;
+  private final ForwardSync syncService;
 
-  public SyncDataProvider(SyncService syncService) {
+  public SyncDataProvider(ForwardSync syncService) {
     this.syncService = syncService;
   }
 

@@ -14,17 +14,51 @@
 package tech.pegasys.teku.sync;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 
 public class SyncServiceFactory {
+  private final P2PConfig p2pConfig;
+  private final MetricsSystem metrics;
+  private final AsyncRunnerFactory asyncRunnerFactory;
+  private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
+  private final RecentChainData recentChainData;
+  private final Eth2Network p2pNetwork;
+  private final BlockImporter blockImporter;
+  private final PendingPool<SignedBeaconBlock> pendingBlocks;
+
+  private SyncServiceFactory(
+      final P2PConfig p2pConfig,
+      final MetricsSystem metrics,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final Eth2Network p2pNetwork,
+      final BlockImporter blockImporter,
+      final PendingPool<SignedBeaconBlock> pendingBlocks) {
+    this.p2pConfig = p2pConfig;
+    this.metrics = metrics;
+    this.asyncRunnerFactory = asyncRunnerFactory;
+    this.asyncRunner = asyncRunner;
+    this.timeProvider = timeProvider;
+    this.recentChainData = recentChainData;
+    this.p2pNetwork = p2pNetwork;
+    this.blockImporter = blockImporter;
+    this.pendingBlocks = pendingBlocks;
+  }
 
   public static SyncService create(
       final P2PConfig p2pConfig,
@@ -34,12 +68,35 @@ public class SyncServiceFactory {
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
       final Eth2Network p2pNetwork,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final PendingPool<SignedBeaconBlock> pendingBlocks) {
+    final SyncServiceFactory factory =
+        new SyncServiceFactory(
+            p2pConfig,
+            metrics,
+            asyncRunnerFactory,
+            asyncRunner,
+            timeProvider,
+            recentChainData,
+            p2pNetwork,
+            blockImporter,
+            pendingBlocks);
+    return factory.create();
+  }
+
+  private SyncService create() {
     if (!p2pConfig.isP2pEnabled()) {
       return new NoopSyncService();
     }
 
-    final SyncService forwardSync;
+    final ForwardSyncService forwardSyncService = createForwardSyncService();
+    final FetchRecentBlocksService recentBlockFetcher =
+        FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
+    return new DefaultSyncService(forwardSyncService, recentBlockFetcher);
+  }
+
+  private ForwardSyncService createForwardSyncService() {
+    final ForwardSyncService forwardSync;
     if (p2pConfig.isMultiPeerSyncEnabled()) {
       forwardSync =
           MultipeerSyncService.create(
@@ -54,7 +111,6 @@ public class SyncServiceFactory {
           SinglePeerSyncServiceFactory.create(
               metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter);
     }
-
     return forwardSync;
   }
 }

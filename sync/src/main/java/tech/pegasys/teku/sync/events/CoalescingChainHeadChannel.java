@@ -22,8 +22,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
-import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
+import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 
 public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscriber {
   private static final Logger LOG = LogManager.getLogger();
@@ -38,7 +38,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
   }
 
   public static ChainHeadChannel create(
-      final ChainHeadChannel delegate, final SyncService syncService) {
+      final ChainHeadChannel delegate, final ForwardSync syncService) {
     final CoalescingChainHeadChannel channel = new CoalescingChainHeadChannel(delegate);
     syncService.subscribeToSyncChanges(channel);
     return channel;

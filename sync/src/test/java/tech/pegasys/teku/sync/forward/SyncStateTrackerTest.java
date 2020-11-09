@@ -28,9 +28,8 @@ import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
 import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 
 class SyncStateTrackerTest {
 
@@ -41,7 +40,7 @@ class SyncStateTrackerTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
 
   private final SyncStateTracker tracker =
       new SyncStateTracker(

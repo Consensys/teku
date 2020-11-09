@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
 import tech.pegasys.teku.sync.events.SyncingStatus;
+import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
 
 class SyncControllerTest {

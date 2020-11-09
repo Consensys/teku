@@ -22,13 +22,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.events.SyncState;
 
 public class SyncStateTracker extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
-  private final SyncService syncService;
+  private final ForwardSync syncService;
   private final P2PNetwork<? extends Peer> network;
 
   private final Duration startupTimeout;
@@ -43,7 +42,7 @@ public class SyncStateTracker extends Service {
 
   public SyncStateTracker(
       final AsyncRunner asyncRunner,
-      final SyncService syncService,
+      final ForwardSync syncService,
       final P2PNetwork<? extends Peer> network,
       final int startupTargetPeerCount,
       final Duration startupTimeout) {

@@ -19,10 +19,10 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSyncService;
 
 public class SinglePeerSyncServiceFactory {
-  public static SyncService create(
+  public static ForwardSyncService create(
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> p2pNetwork,

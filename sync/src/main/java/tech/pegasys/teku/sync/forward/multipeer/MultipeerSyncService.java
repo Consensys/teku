@@ -27,8 +27,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.events.SyncingStatus;
+import tech.pegasys.teku.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.forward.multipeer.batches.PeerScoringConflictResolutionStrategy;
 import tech.pegasys.teku.sync.forward.multipeer.chains.PeerChainTracker;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.sync.forward.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
 
-public class MultipeerSyncService extends Service implements SyncService {
+public class MultipeerSyncService extends Service implements ForwardSyncService {
   private static final Logger LOG = LogManager.getLogger();
   private final EventThread eventThread;
   private final RecentChainData recentChainData;

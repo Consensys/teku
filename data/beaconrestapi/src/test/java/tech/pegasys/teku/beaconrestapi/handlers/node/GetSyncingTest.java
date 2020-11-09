@@ -27,13 +27,13 @@ import tech.pegasys.teku.api.schema.SyncStatus;
 import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public class GetSyncingTest {
 
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
   private final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
 
   @Test

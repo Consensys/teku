@@ -13,30 +13,11 @@
 
 package tech.pegasys.teku.sync.gossip;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.BlockSubscriber;
 
-public class NoopRecentBlockFetcher implements RecentBlockFetcher {
+public interface RecentBlockFetcherService extends RecentBlockFetcher {
 
-  @Override
-  public SafeFuture<?> start() {
-    return SafeFuture.COMPLETE;
-  }
+  SafeFuture<?> start();
 
-  @Override
-  public SafeFuture<?> stop() {
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public long subscribeBlockFetched(final BlockSubscriber subscriber) {
-    return 0;
-  }
-
-  @Override
-  public void requestRecentBlock(final Bytes32 blockRoot) {}
-
-  @Override
-  public void cancelRecentBlockRequest(final Bytes32 blockRoot) {}
+  SafeFuture<?> stop();
 }

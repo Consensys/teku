@@ -16,10 +16,10 @@ package tech.pegasys.teku.sync.forward.singlepeer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.events.SyncingStatus;
+import tech.pegasys.teku.sync.forward.ForwardSyncService;
 
-public class SinglePeerSyncService extends Service implements SyncService {
+public class SinglePeerSyncService extends Service implements ForwardSyncService {
 
   private final SyncManager syncManager;
   private final RecentChainData storageClient;

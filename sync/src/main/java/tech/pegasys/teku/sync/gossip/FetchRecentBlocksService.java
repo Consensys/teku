@@ -35,7 +35,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 
-public class FetchRecentBlocksService extends Service implements RecentBlockFetcher {
+public class FetchRecentBlocksService extends Service implements RecentBlockFetcherService {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
