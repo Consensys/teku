@@ -27,16 +27,16 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostAttestationDataTest {
+public class PostAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private PostAttestationData handler;
+  private PostAttestation handler;
 
   @BeforeEach
   public void setup() {
-    handler = new PostAttestationData(provider, jsonProvider);
+    handler = new PostAttestation(provider, jsonProvider);
   }
 
   @Test
