@@ -104,9 +104,10 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
-          if (result.equals(InternalValidationResult.ACCEPT)
-              || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+          if (result.equals(InternalValidationResult.ACCEPT)) {
             importBlock(block).finish(err -> LOG.error("Failed to process received block.", err));
+          } else if (result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+            futureBlocks.add(block);
           }
         });
     return validationResult;

@@ -114,14 +114,15 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       SafeFuture<InternalValidationResult> validationResult, ValidateableAttestation attestation) {
     validationResult.thenAccept(
         internalValidationResult -> {
-          if (internalValidationResult.equals(InternalValidationResult.ACCEPT)
-              || internalValidationResult.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+          if (internalValidationResult.equals(InternalValidationResult.ACCEPT)) {
             onAttestation(attestation)
                 .finish(
                     result ->
                         result.ifInvalid(
                             reason -> LOG.debug("Rejected received attestation: " + reason)),
                     err -> LOG.error("Failed to process received attestation.", err));
+          } else if (internalValidationResult.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+            futureAttestations.add(attestation);
           }
         });
   }
