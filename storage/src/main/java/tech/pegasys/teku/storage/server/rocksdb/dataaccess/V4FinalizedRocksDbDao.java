@@ -53,6 +53,11 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getEarliestFinalizedBlock() {
+    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
         .map(ColumnEntry::getValue);
