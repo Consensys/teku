@@ -36,6 +36,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
     this.state = state;
   }
 
+  public static StateAndBlockSummary create(final BeaconState state) {
+    return create(BeaconBlockHeader.fromState(state), state);
+  }
+
   public static StateAndBlockSummary create(
       final BeaconBlockSummary blockSummary, final BeaconState state) {
     return new StateAndBlockSummary(blockSummary, state);
