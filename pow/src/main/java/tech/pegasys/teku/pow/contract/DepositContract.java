@@ -140,6 +140,10 @@ public class DepositContract extends Contract {
             .thenApply(
                 logs -> {
                   if (logs.getLogs() == null) {
+                    // We got a response from the node but it didn't include even an empty list
+                    // of logs.  This happens with Infura when more than 10,000 log entries match
+                    // so treat as an explicit rejection of the request to allow the requested block
+                    // range to be reduced.
                     throw new RejectedRequestException("No logs returned by ETH1 node");
                   }
                   return logs.getLogs().stream()
