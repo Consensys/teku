@@ -150,10 +150,8 @@ public class StatusLogger {
     log.info("Loading genesis from {}", genesisFile);
   }
 
-  public void loadingWeakSubjectivityStateResources(
-      final String wsStateResource, final String wsBlockResource) {
-    log.info(
-        "Loading weak subjectivity state from {}, block from {}", wsBlockResource, wsBlockResource);
+  public void loadingWeakSubjectivityStateResources(final String wsBlockResource) {
+    log.info("Loading weak subjectivity state from {}", wsBlockResource);
   }
 
   public void loadedWeakSubjectivityStateResources(
