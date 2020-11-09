@@ -138,11 +138,15 @@ public class DepositContract extends Contract {
             .ethGetLogs(filter)
             .sendAsync()
             .thenApply(
-                logs ->
-                    logs.getLogs().stream()
-                        .map(log -> (Log) log.get())
-                        .map(this::convertLogToDepositEventEventResponse)
-                        .collect(Collectors.toList())));
+                logs -> {
+                  if (logs.getLogs() == null) {
+                    throw new RejectedRequestException("No logs returned by ETH1 node");
+                  }
+                  return logs.getLogs().stream()
+                      .map(log -> (Log) log.get())
+                      .map(this::convertLogToDepositEventEventResponse)
+                      .collect(Collectors.toList());
+                }));
   }
 
   private DepositEventEventResponse convertLogToDepositEventEventResponse(final Log log) {
