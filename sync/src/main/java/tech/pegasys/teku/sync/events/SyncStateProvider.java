@@ -14,5 +14,14 @@
 package tech.pegasys.teku.sync.events;
 
 public interface SyncStateProvider {
+
   SyncState getCurrentSyncState();
+
+  long subscribeToSyncStateChanges(SyncStateSubscriber subscriber);
+
+  boolean unsubscribeFromSyncStateChanges(long subscriberId);
+
+  interface SyncStateSubscriber {
+    void onSyncStateChange(final SyncState syncState);
+  }
 }

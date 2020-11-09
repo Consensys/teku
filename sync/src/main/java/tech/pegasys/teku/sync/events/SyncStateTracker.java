@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -29,6 +30,7 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
   private final P2PNetwork<? extends Peer> network;
+  private final Subscribers<SyncStateSubscriber> subscribers = Subscribers.create(true);
 
   private final Duration startupTimeout;
   private final int startupTargetPeerCount;
@@ -65,13 +67,28 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
     return currentState;
   }
 
+  @Override
+  public long subscribeToSyncStateChanges(final SyncStateSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
+  }
+
+  @Override
+  public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
+    return subscribers.unsubscribe(subscriberId);
+  }
+
   private void updateCurrentState() {
+    final SyncState previousState = currentState;
     if (syncActive) {
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;
     } else {
       currentState = SyncState.IN_SYNC;
+    }
+
+    if (currentState != previousState) {
+      subscribers.deliver(SyncStateSubscriber::onSyncStateChange, currentState);
     }
   }
 
