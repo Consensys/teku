@@ -238,7 +238,8 @@ public class DepositFetcher {
       nextBatchStart = getNextBatchEnd().add(BigInteger.ONE);
       if (batchSize < DEFAULT_BATCH_SIZE) {
         // Grow the batch size slowly as we may be past a large blob of logs that caused trouble
-        batchSize = Math.min(DEFAULT_BATCH_SIZE, (int) (batchSize * 1.1));
+        // +1 to guarantee it grows by at least 1
+        batchSize = Math.min(DEFAULT_BATCH_SIZE, (int) (batchSize * 1.1 + 1));
       }
     }
 
