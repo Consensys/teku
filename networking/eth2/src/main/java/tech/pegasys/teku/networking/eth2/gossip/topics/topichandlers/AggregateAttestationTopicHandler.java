@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -37,6 +38,11 @@ public class AggregateAttestationTopicHandler extends Eth2TopicHandler<Validatea
         forkDigest,
         TOPIC_NAME,
         ValidateableAttestation.class);
+  }
+
+  @Override
+  public PreparedMessage prepareMessage(Bytes payload) {
+    return getGossipEncoding().prepareMessage(payload, SignedAggregateAndProof.class);
   }
 
   @Override

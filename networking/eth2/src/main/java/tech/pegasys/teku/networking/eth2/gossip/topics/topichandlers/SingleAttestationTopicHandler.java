@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -40,6 +41,11 @@ public class SingleAttestationTopicHandler extends Eth2TopicHandler<Validateable
         topicName,
         ValidateableAttestation.class);
     this.subnetId = subnetId;
+  }
+
+  @Override
+  public PreparedMessage prepareMessage(Bytes payload) {
+    return getGossipEncoding().prepareMessage(payload, Attestation.class);
   }
 
   @Override
