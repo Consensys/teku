@@ -205,7 +205,7 @@ public class KeyStoreFilesLocatorTest {
     try {
       Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
       Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
-    } catch (UnsupportedOperationException e) {
+    } catch (IOException e) {
       throw new TestAbortedException("Symbolic links not supported on this file system");
     }
 
