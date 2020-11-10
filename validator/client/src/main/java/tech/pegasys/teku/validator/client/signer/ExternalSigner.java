@@ -185,9 +185,15 @@ public class ExternalSigner implements Signer {
     }
 
     try {
-      final Bytes signature = Bytes.fromHexString(response.body());
+      final String returnedContentType = response.headers().firstValue("Content-Type").orElse("");
+      final String signatureHexStr =
+          returnedContentType.startsWith("application/json")
+              ? jsonProvider.jsonToObject(response.body(), SigningResponseBody.class).getSignature()
+              : response.body();
+
+      final Bytes signature = Bytes.fromHexString(signatureHexStr);
       return BLSSignature.fromBytesCompressed(signature);
-    } catch (final IllegalArgumentException e) {
+    } catch (final IllegalArgumentException | JsonProcessingException e) {
       throw new ExternalSignerException(
           "External signer returned an invalid signature: " + e.getMessage(), e);
     }
