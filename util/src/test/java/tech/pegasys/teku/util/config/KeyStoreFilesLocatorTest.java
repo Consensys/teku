@@ -28,8 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 
 public class KeyStoreFilesLocatorTest {
-  private static final String PATH_SEP = ":";
-  private static final String PATH_SEP_WIN = ";";
+  private static final String PATH_SEP = System.getProperty("path.separator");
 
   @Test
   public void shouldFindPairsAtDepth(@TempDir final Path tempDir) throws IOException {
@@ -73,8 +72,8 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, "key", "pass");
     createFiles(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt"));
     final String p1 =
-        generatePath(tempDir, PATH_SEP_WIN, List.of("key", "a"), List.of("pass", "a.txt"));
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
 
     assertThat(locator.getFilePairs())
@@ -92,8 +91,8 @@ public class KeyStoreFilesLocatorTest {
         Path.of("key", "ignored"),
         Path.of("key", "a.json"),
         Path.of("pass", "a.txt"));
-    final String p1 = generatePath(tempDir, PATH_SEP_WIN, "key", "pass");
-    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+    final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
+    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
 
     assertThat(locator.getFilePairs())
@@ -130,8 +129,8 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, Path.of("key"), Path.of("pass", "a.txt"));
     createFiles(tempDir, Path.of("key", "a"));
     final String p1 =
-        generatePath(tempDir, PATH_SEP_WIN, List.of("key", "a"), List.of("pass", "a.txt"));
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThatThrownBy(locator::parse).isInstanceOf(InvalidConfigurationException.class);
   }
