@@ -38,7 +38,7 @@ public class SignedBlockTest {
   public void shouldSerialize() throws JsonProcessingException {
     final SignedBlock signedBlock = new SignedBlock(slot, signingRoot);
     String str = jsonProvider.objectToPrettyJSON(signedBlock);
-    assertThat(str).isEqualTo(jsonData);
+    assertThat(str).isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
