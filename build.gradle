@@ -645,14 +645,12 @@ def calculatePublishVersion() {
   if (!grgit) {
     return 'UNKNOWN'
   }
+  def specificVersion = calculateVersion()
   def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
-  String version = grgit.describe(tags: true)
-  def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
-  def matcher = version =~ versionPattern
-  if (matcher.find()) {
-    return isReleaseBranch ? "${matcher.group("lastVersion")}+develop" : "develop"
+  if (specificVersion.contains('+')) {
+    return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
   }
-  return version
+  return specificVersion
 }
 
 // Calculate the version that teku --version will report (among other places)
