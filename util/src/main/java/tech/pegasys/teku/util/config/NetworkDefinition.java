@@ -74,8 +74,20 @@ public class NetworkDefinition {
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x47709dC7a8c18688a1f051761fc34ac253970bC0")
                   .discoveryBootnodes(
-                      // @protolambda
-                      "enr:-Ku4QL5E378NT4-vqP6v1mZ7kHxiTHJvuBvQixQsuTTCffa0PJNWMBlG3Mduvsvd6T2YP1U3l5tBKO5H-9wyX2SCtPkBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC4EvfsAHAe0P__________gmlkgnY0gmlwhDaetEeJc2VjcDI1NmsxoQKtGC2CAuba7goLLdle899M3esUmoWRvzi7GBVhq6ViCYN1ZHCCIyg")
+                      // discv5.1-only bootnode @protolambda
+                      "enr:-Ku4QL5E378NT4-vqP6v1mZ7kHxiTHJvuBvQixQsuTTCffa0PJNWMBlG3Mduvsvd6T2YP1U3l5tBKO5H-9wyX2SCtPkBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC4EvfsAHAe0P__________gmlkgnY0gmlwhDaetEeJc2VjcDI1NmsxoQKtGC2CAuba7goLLdle899M3esUmoWRvzi7GBVhq6ViCYN1ZHCCIyg",
+
+                      // lighthouse (Canada) @protolambda
+                      "enr:-LK4QHLujdDjOwm2siyFJ2XGz19_ip-qTtozG3ceZ3_56G-LMWb4um67gTSYRJg0WsSkyvRMBEpz8uuIYl-7HfWvktgBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhCO3C5OJc2VjcDI1NmsxoQKXw9BLDY6YwmqTtfkzUnlJQb82UrlX4lIAnSSYWHFRlYN0Y3CCIyiDdWRwgiMo",
+
+                      // lighthouse (Sao Paulo) @protolambda
+                      "enr:-LK4QMxmk7obupScBebKFaasSH3QmYUg-HaEmMAljfmGQCLbKwdOhszzx-VfVPvlH7bZZbOmg3-SNWbJsFfytdjD7a4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhBLkdWuJc2VjcDI1NmsxoQOwYsJyLOjJcDIqiQSSZtDi_EwwSaUjPBSnLVY_PYu-HoN0Y3CCIyiDdWRwgiMo",
+
+                      // Teku @protolambda
+                      "enr:-KG4QKqo0mG4C35ntJg8icO54wd973aZ7aBiAnC2t1XkGvgqNDOEHwNe2ykxYVUj9AWjm_lKD7brlhXKCZEskGbie2cDhGV0aDKQl5uvZwBwHtD__________4JpZIJ2NIJpcIQNOThwiXNlY3AyNTZrMaECn1dwC8MRt8rk2VUT8RjzEBaceF09d4CEQI20O_SWYcqDdGNwgiMog3VkcIIjKA",
+
+                      // Prysm @protolambda
+                      "enr:-LK4QAhU5smiLgU0AgrdFv8eCKmDPCBkXCMCIy8Aktaci5qvCYOsW98xVqJS6OoPWt4Sz_YoTdLQBWxd-RZ756vmGPMBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhDTTDL2Jc2VjcDI1NmsxoQOmSJ0mKsQjab7Zralm1Hi0AEReZ2SEqYdKoOPmoA98DoN0Y3CCIyiDdWRwgiMo")
                   .build())
           .build();
 
