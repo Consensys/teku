@@ -72,8 +72,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(gossipedBlockConsumer).forward(block);
@@ -86,8 +86,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(recentChainData.getHeadSlot());
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedBlockConsumer).forward(block);
@@ -98,7 +98,8 @@ public class BlockTopicHandlerTest {
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(gossipedBlockConsumer).forward(block);
@@ -108,8 +109,8 @@ public class BlockTopicHandlerTest {
   public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -121,8 +122,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(gossipedBlockConsumer, never()).forward(block);

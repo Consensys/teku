@@ -99,8 +99,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.listenPort = config.getListenPort();
 
     // Setup gossip
-    gossipNetwork = new LibP2PGossipNetwork(metricsSystem, config.getGossipConfig(),
-        defaultMessageFactory, config.getWireLogsConfig().isLogWireGossip());
+    gossipNetwork =
+        new LibP2PGossipNetwork(
+            metricsSystem,
+            config.getGossipConfig(),
+            defaultMessageFactory,
+            config.getWireLogsConfig().isLogWireGossip());
 
     // Setup rpc methods
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));

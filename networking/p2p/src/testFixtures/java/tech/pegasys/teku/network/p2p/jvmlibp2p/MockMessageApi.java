@@ -16,7 +16,6 @@ package tech.pegasys.teku.network.p2p.jvmlibp2p;
 import com.google.protobuf.ByteString;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.Topic;
-import io.libp2p.etc.types.WBytes;
 import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -67,15 +66,18 @@ public class MockMessageApi implements MessageApi {
   @NotNull
   @Override
   public PubsubMessage getOriginalMessage() {
-    Message protoMessage = Message.newBuilder()
-        .addAllTopicIDs(getTopics().stream().map(Topic::getTopic).collect(Collectors.toList()))
-        .setData(ByteString.copyFrom(getData().nioBuffer())).build();
-    PreparedMessage preparedMessage = new PreparedMessage() {
-      @Override
-      public Bytes getMessageId() {
-        return Bytes.wrap(Hash.sha2_256(protoMessage.getData().toByteArray()));
-      }
-    };
+    Message protoMessage =
+        Message.newBuilder()
+            .addAllTopicIDs(getTopics().stream().map(Topic::getTopic).collect(Collectors.toList()))
+            .setData(ByteString.copyFrom(getData().nioBuffer()))
+            .build();
+    PreparedMessage preparedMessage =
+        new PreparedMessage() {
+          @Override
+          public Bytes getMessageId() {
+            return Bytes.wrap(Hash.sha2_256(protoMessage.getData().toByteArray()));
+          }
+        };
     return new PreparedPubsubMessage(protoMessage, preparedMessage);
   }
 }

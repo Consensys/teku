@@ -59,8 +59,9 @@ public class AggregateTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler
-            .prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+        topicHandler.handleMessage(
+            topicHandler.prepareMessage(
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(attestationConsumer).forward(aggregate);
@@ -76,7 +77,8 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer).forward(aggregate);
@@ -92,7 +94,8 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer, never()).forward(aggregate);
@@ -108,7 +111,8 @@ public class AggregateTopicHandlerTest {
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
-            topicHandler.prepareMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+            topicHandler.prepareMessage(
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(attestationConsumer, never()).forward(aggregate);

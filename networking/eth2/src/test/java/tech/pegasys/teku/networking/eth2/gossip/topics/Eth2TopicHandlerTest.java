@@ -42,8 +42,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_valid() {
     topicHandler.setValidationResult(InternalValidationResult.ACCEPT);
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -52,8 +52,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_invalid() {
     topicHandler.setValidationResult(InternalValidationResult.REJECT);
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -62,8 +62,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_ignore() {
     topicHandler.setValidationResult(InternalValidationResult.IGNORE);
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -71,8 +71,8 @@ public class Eth2TopicHandlerTest {
   @Test
   public void handleMessage_invalidBytes() {
     final Bytes invalidBytes = Bytes.fromHexString("0x0102");
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(invalidBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(invalidBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -85,8 +85,8 @@ public class Eth2TopicHandlerTest {
           throw new DecodingException("oops");
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -99,8 +99,8 @@ public class Eth2TopicHandlerTest {
           throw new CompletionException(new DecodingException("oops"));
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -113,8 +113,8 @@ public class Eth2TopicHandlerTest {
           throw new DecodingException("oops", new RuntimeException("oops"));
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -127,8 +127,8 @@ public class Eth2TopicHandlerTest {
           throw new RejectedExecutionException("No more capacity");
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -141,8 +141,8 @@ public class Eth2TopicHandlerTest {
           throw new CompletionException(new RejectedExecutionException("No more capacity"));
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -155,8 +155,8 @@ public class Eth2TopicHandlerTest {
           throw new RejectedExecutionException("No more capacity", new NullPointerException());
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Ignore);
@@ -169,8 +169,8 @@ public class Eth2TopicHandlerTest {
           throw new NullPointerException();
         });
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(blockBytes));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);

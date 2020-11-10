@@ -67,8 +67,8 @@ public class AttesterSlashingTopicHandlerTest {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(validator.validate(slashing)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(consumer).forward(slashing);
@@ -79,8 +79,8 @@ public class AttesterSlashingTopicHandlerTest {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(validator.validate(slashing)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
@@ -91,8 +91,8 @@ public class AttesterSlashingTopicHandlerTest {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(validator.validate(slashing)).thenReturn(REJECT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
@@ -102,8 +102,8 @@ public class AttesterSlashingTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final SafeFuture<ValidationResult> result = topicHandler
-        .handleMessage(topicHandler.prepareMessage(serialized));
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);

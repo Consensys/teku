@@ -139,11 +139,17 @@ public class Eth2NetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
-    PreparedMessageFactory defaultMessageFactory = (__, msg) -> gossipEncoding
-        .prepareUnknownMessage(msg);
-    final LibP2PNetwork p2pNetwork = new LibP2PNetwork(
-        asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers,
-        defaultMessageFactory);
+    PreparedMessageFactory defaultMessageFactory =
+        (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
+    final LibP2PNetwork p2pNetwork =
+        new LibP2PNetwork(
+            asyncRunner,
+            config,
+            reputationManager,
+            metricsSystem,
+            rpcMethods,
+            peerHandlers,
+            defaultMessageFactory);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(

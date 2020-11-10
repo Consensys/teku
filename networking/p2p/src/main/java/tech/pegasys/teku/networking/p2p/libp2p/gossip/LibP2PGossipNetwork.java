@@ -58,9 +58,9 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 public class LibP2PGossipNetwork implements GossipNetwork {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
+  private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR =
+      new GossipWireValidator();
   private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
-
 
   private final MetricsSystem metricsSystem;
   private final Gossip gossip;
@@ -68,8 +68,11 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
   private final PreparedMessageFactory defaultMessageFactory;
 
-  public LibP2PGossipNetwork(MetricsSystem metricsSystem, GossipConfig gossipConfig,
-      PreparedMessageFactory defaultMessageFactory, boolean logWireGossip) {
+  public LibP2PGossipNetwork(
+      MetricsSystem metricsSystem,
+      GossipConfig gossipConfig,
+      PreparedMessageFactory defaultMessageFactory,
+      boolean logWireGossip) {
     this.metricsSystem = metricsSystem;
     this.defaultMessageFactory = defaultMessageFactory;
     this.gossip = createGossip(gossipConfig, logWireGossip);
@@ -113,7 +116,8 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   public PreparedMessage prepareMessage(String topic, Bytes payload) {
     Optional<TopicHandler> topicHandler = getSubscribedHandler(topic);
-    return topicHandler.map(handler -> handler.prepareMessage(payload))
+    return topicHandler
+        .map(handler -> handler.prepareMessage(payload))
         .orElse(prepareNonSubscribedMessage(topic, payload));
   }
 
@@ -136,19 +140,21 @@ public class LibP2PGossipNetwork implements GossipNetwork {
             .seenTTL(gossipConfig.getSeenTTL())
             .build();
 
-    GossipRouter router = new GossipRouter(gossipParams) {
+    GossipRouter router =
+        new GossipRouter(gossipParams) {
 
-      final SeenCache<Optional<ValidationResult>> seenCache = new TTLSeenCache<>(
-          new FastIdSeenCache<>(
-              msg -> msg.getProtobufMessage().getData()), gossipParams.getSeenTTL(),
-          getCurTimeMillis());
+          final SeenCache<Optional<ValidationResult>> seenCache =
+              new TTLSeenCache<>(
+                  new FastIdSeenCache<>(msg -> msg.getProtobufMessage().getData()),
+                  gossipParams.getSeenTTL(),
+                  getCurTimeMillis());
 
-      @NotNull
-      @Override
-      protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
-        return seenCache;
-      }
-    };
+          @NotNull
+          @Override
+          protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
+            return seenCache;
+          }
+        };
 
     router.setMessageFactory(
         msg -> {
@@ -156,16 +162,14 @@ public class LibP2PGossipNetwork implements GossipNetwork {
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
           String topic = msg.getTopicIDs(0);
-          PreparedMessage preparedMessage = prepareMessage(topic,
-              Bytes.wrap(msg.getData().toByteArray()));
+          PreparedMessage preparedMessage =
+              prepareMessage(topic, Bytes.wrap(msg.getData().toByteArray()));
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
     router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
 
     ChannelHandler debugHandler =
-        gossipLogsEnabled
-            ? new LoggingHandler("wire.gossip", LogLevel.DEBUG)
-            : null;
+        gossipLogsEnabled ? new LoggingHandler("wire.gossip", LogLevel.DEBUG) : null;
     PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
 
     return new Gossip(router, pubsubApi, debugHandler);

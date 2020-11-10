@@ -18,8 +18,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 
 public interface GossipEncoding {
 
-  GossipEncoding SSZ_SNAPPY =
-      new SszSnappyEncoding(new SnappyBlockCompressor());
+  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(new SnappyBlockCompressor());
 
   /**
    * Get the name of the encoding. This is the name included as part of gossip topic strings.
@@ -37,7 +36,7 @@ public interface GossipEncoding {
   <T> Bytes encode(T value);
 
   /**
-   * @param data Data received over gossip to be deserialized
+   * @param message Data received over gossip to be deserialized
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails

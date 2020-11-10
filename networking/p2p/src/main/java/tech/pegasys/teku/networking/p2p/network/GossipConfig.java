@@ -30,7 +30,6 @@ public class GossipConfig {
   public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
   public static final Duration DEFAULT_SEEN_TTL = Duration.ofMillis(550);
 
-
   public static final GossipConfig DEFAULT_CONFIG =
       new GossipConfig(
           DEFAULT_D,

@@ -48,5 +48,4 @@ class SszSnappyEncoding implements GossipEncoding {
   public <T> PreparedMessage prepareMessage(Bytes data, Class<T> valueType) {
     return new LazyUncompressPreparedMessage(data, valueType, snappyCompressor);
   }
-
 }
