@@ -25,6 +25,8 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 
@@ -190,6 +192,7 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // creating symlinks on Win requires elevated privileges
   public void shouldHandleSymlinkedDirectories(@TempDir final Path tempDir) throws IOException {
     Path realKeyDir = Path.of("actualKey");
     Path realPassDir = Path.of("actualPass");
@@ -199,8 +202,8 @@ public class KeyStoreFilesLocatorTest {
     try {
       Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
       Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
-    } catch (IOException e) {
-      throw new TestAbortedException("Symbolic links not supported on this file system");
+    } catch (UnsupportedOperationException e) {
+      throw new TestAbortedException("Couldn't create symlink on this system");
     }
 
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
