@@ -671,7 +671,7 @@ def calculateVersion() {
 
 task printVersion() {
   doFirst {
-    print "${specificVersion} (${project.version})"
+    print "Specific version: ${specificVersion}  Publish version: ${project.version}"
   }
 }
 
