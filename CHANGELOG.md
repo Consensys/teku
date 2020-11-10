@@ -1,7 +1,48 @@
 # Changelog
 
-Due to the rapidly changing nature of ETH2 testnets and rapid rate of improvements to Teku, 
-we recommend most users use the latest `master` branch of Teku.
+## Timeline to Mainnet
+
+With the announcement of the Eth2 deposit contract and setting the minimum genesis time to 
+Tuesday, December 1, 2020 12:00:00 PM UTC the journey to launching the beacon chain is in its final stage.
+Teku is ready to be a part of the Mainnet launch and we are working with other client teams to coordinate 
+all the details required to make the launch a success. Here's a timeline of key events, including the
+Teku releases that will lead up to Mainnet launch.
+
+Note that the exact genesis time depends on when enough deposits are received. If it takes longer
+to reach the minimum validators required, then the date the Mainnet genesis is set will be delayed 
+until enough validators are registered.  The Mainnet chain will then start 7 days after the genesis 
+is set. There will be a Teku release in the 7 days prior to the Mainnet chain starting and users 
+should ensure they upgrade to it.
+
+----------------------------------------------------------------------------------------------------
+Event                            | Scheduled Date       | Notes
+---------------------------------|----------------------|-------------------------------------------
+Teku 0.12.14 release             | 11 November          | Includes the Mainnet ready specification available with `--network mainnet`.
+Teku 20.11.0-RC1 release         | 18 November          | Makes `mainnet` the default network. Legacy options and APIs will be removed, see [Upcoming Breaking Changes](#upcoming-breaking-changes)
+Earliest date for Mainnet genesis state to be set | 24 November | If enough deposits are received by this time, the Mainnet genesis state will be generated. Otherwise this will be delayed until enough deposits are received
+Teku 20.11.0 release             | Around 26 November   | First full production ready release of Teku.
+Earliest date for Mainnet launch | 1 December   | This will be delayed if not enough deposits are received by 24 November. The chain will always launch 7 days after the genesis state is set 
+
+### Mainnet Genesis Release
+
+Regardless of when enough deposits are received to set the Mainnet genesis state, users 
+should expect a Teku release in the week between the genesis state being set and the chain actually starting.
+It is important to upgrade your nodes to this version prior to the chain starting to ensure a smooth
+launch.
+
+### CalVer Versioning
+
+Teku will adopt CalVer versioning for our production ready releases using the YY.M.patch format. 
+YY for year (20, 21, 22 etc), M for month (1, 2, 3, …, 11, 12) and patch is patch release number.
+
+The final release on the old versioning system will be 0.12.14.
+
+The first production ready release will be 20.11.0  
+
+#### Backward Compatibility Policy
+
+Only versions with a 0 patch number may contain backwards incompatible changes (e.g. 20.11.0, 20.12.0 etc).
+Upcoming backwards incompatible changes will be noted in the changelog at least one month prior to being applied.
 
 ## Upcoming Breaking Changes
 
@@ -27,8 +68,12 @@ we recommend most users use the latest `master` branch of Teku.
   - `/validator/aggregate_and_proofs` replaced by `/eth/v1/validator/aggregate_and_proofs`
   - `/validator/beacon_committee_subscription` replaced by `/eth/v1/validator/beacon_committee_subscriptions`
   - `/validator/persistent_subnets_subscription` deprecated. The beacon node now automatically establishes persistent subnet subscriptions based on calls to `/eth/v1/validator/beacon_committee_subscriptions`
-- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
+- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 - Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+
+
+## 0.12.14
+
 
 ## 0.12.13
 
