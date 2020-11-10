@@ -13,6 +13,10 @@ plugins {
   id 'org.ajoberstar.grgit' version '4.0.2'
 }
 
+rootProject.version = calculatePublishVersion()
+def specificVersion = calculateVersion()
+def isDevelopBuild = rootProject.version.contains('develop')
+
 apply plugin: 'application'
 
 defaultTasks 'build','checkLicenses'
@@ -356,7 +360,7 @@ tasks.register("dockerDistUntar") {
 task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
+  def dockerBuildVersion = rootProject.version
   def image = "consensys/teku:develop"
   def dockerBuildDir = "build/docker-teku/"
   workingDir "${dockerBuildDir}"
@@ -490,7 +494,7 @@ subprojects {
       key = bintrayKey
 
       publications = ['mavenJava']
-      override = version.endsWith('SNAPSHOT')
+      override = isDevelopBuild
 
       publish = true
 
@@ -526,7 +530,7 @@ subprojects {
           'Specification-Title': jarName,
           'Specification-Version': project.version,
           'Implementation-Title': jarName,
-          'Implementation-Version': calculateVersion()
+          'Implementation-Version': specificVersion
       )
     }
   }
@@ -633,15 +637,46 @@ def buildTime() {
   return df.format(new Date())
 }
 
-// Takes the version, and if -SNAPSHOT is part of it replaces SNAPSHOT
-// with the git commit version.
-def calculateVersion() {
-  String version = rootProject.version
-  if (version.endsWith("-SNAPSHOT")) {
-    version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
+// Calculate the version that this build would be published under (if it is published)
+// If this exact commit is tagged, use the tag
+// If this is on master, use develop
+// Otherwise use the most recent tag appended with +develop (e.g. 0.1.1-RC1+develop)
+def calculatePublishVersion() {
+  if (!grgit) {
+    return 'UNKNOWN'
+  }
+  def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
+  String version = grgit.describe(tags: true)
+  def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
+  def matcher = version =~ versionPattern
+  if (matcher.find()) {
+    return isReleaseBranch ? "${matcher.group("lastVersion")}+develop" : "develop"
   }
   return version
 }
+
+// Calculate the version that teku --version will report (among other places)
+// If this exact commit is tagged, use the tag
+// Otherwise use git describe --tags and replace the - after the tag with a +
+def calculateVersion() {
+  if (!grgit) {
+    return 'UNKNOWN'
+  }
+  String version = grgit.describe(tags: true)
+  def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
+  def matcher = version =~ versionPattern
+  if (matcher.find()) {
+    return "${matcher.group("lastVersion")}+${matcher.group("devVersion")}"
+  }
+  return version
+}
+
+task printVersion() {
+  doFirst {
+    print "${specificVersion} (${project.version})"
+  }
+}
+
 
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
@@ -687,7 +722,7 @@ bintray {
   }
 
   publish = true
-  override = version.endsWith('SNAPSHOT')
+  override = isDevelopBuild
 
   pkg = bintrayPackage
 }
@@ -697,7 +732,7 @@ bintrayUpload.mustRunAfter(distZip)
 
 task dockerUpload(type: Exec) {
   dependsOn([distDocker])
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
+  def dockerBuildVersion = "${rootProject.version}"
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
   def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
@@ -711,7 +746,7 @@ task dockerUpload(type: Exec) {
     additionalTags.add('develop')
   }
 
-  if (!(dockerBuildVersion ==~ /.*-SNAPSHOT/)) {
+  if (!isDevelopBuild) {
     additionalTags.add('latest')
     additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }

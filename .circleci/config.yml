@@ -451,7 +451,6 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
           requires:
             - unitTests
             - integrationTests
@@ -468,7 +467,6 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
           requires:
             - unitTests
             - integrationTests
