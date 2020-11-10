@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -86,11 +87,15 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, "key", "pass");
     createFiles(
         tempDir,
-        Path.of("key", ".asdf.json"),
-        Path.of("key", ".hidden2"),
         Path.of("key", "ignored"),
         Path.of("key", "a.json"),
         Path.of("pass", "a.txt"));
+    if (!SystemUtils.IS_OS_WINDOWS) {
+      createFiles(
+          tempDir,
+          Path.of("key", ".asdf.json"),
+          Path.of("key", ".hidden2"));
+    }
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
