@@ -88,7 +88,11 @@ class AttestationProductionDutyTest {
 
     assertThat(attestationFuture).isCompletedWithValue(Optional.empty());
     verify(validatorLogger)
-        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(duty.getProducedType()),
+            eq(SLOT),
+            eq(duty.getValidatorIdString()),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -129,7 +133,11 @@ class AttestationProductionDutyTest {
         .dutyCompleted(
             duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
-        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(duty.getProducedType()),
+            eq(SLOT),
+            eq(duty.getValidatorIdString()),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -172,7 +180,8 @@ class AttestationProductionDutyTest {
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, failure);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), failure);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -209,7 +218,8 @@ class AttestationProductionDutyTest {
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, signingFailure);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), signingFailure);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -377,6 +387,8 @@ class AttestationProductionDutyTest {
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result.join().report(duty.getProducedType(), SLOT, validatorLogger);
+    result
+        .join()
+        .report(duty.getProducedType(), SLOT, duty.getValidatorIdString(), validatorLogger);
   }
 }
