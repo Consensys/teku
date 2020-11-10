@@ -136,11 +136,20 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, recentChainData, attestationProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            GossipEncoding.SSZ_SNAPPY,
+            recentChainData,
+            attestationProcessor);
 
     blockGossipManager =
         new BlockGossipManager(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, forkInfo, eventBus, blockProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            GossipEncoding.SSZ_SNAPPY,
+            forkInfo,
+            eventBus,
+            blockProcessor);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -151,15 +160,27 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, forkInfo, voluntaryExitProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            GossipEncoding.SSZ_SNAPPY,
+            forkInfo,
+            voluntaryExitProcessor);
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, forkInfo, proposerSlashingProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            GossipEncoding.SSZ_SNAPPY,
+            forkInfo,
+            proposerSlashingProcessor);
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, forkInfo, attesterSlashingProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            GossipEncoding.SSZ_SNAPPY,
+            forkInfo,
+            attesterSlashingProcessor);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(

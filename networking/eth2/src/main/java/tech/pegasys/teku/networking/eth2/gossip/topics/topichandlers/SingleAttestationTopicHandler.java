@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SingleAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
@@ -43,8 +43,8 @@ public class SingleAttestationTopicHandler extends Eth2TopicHandler<Validateable
   }
 
   @Override
-  protected ValidateableAttestation deserialize(Bytes bytes) throws DecodingException {
-    Attestation attestation = getGossipEncoding().decode(bytes, Attestation.class);
+  public ValidateableAttestation deserialize(PreparedMessage message) throws DecodingException {
+    Attestation attestation = getGossipEncoding().decode(message, Attestation.class);
     return ValidateableAttestation.fromNetwork(attestation, subnetId);
   }
 }
