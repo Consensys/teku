@@ -20,9 +20,19 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.datastructures.util.LengthBounds;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
-class LazyUncompressPreparedMessage implements PreparedMessage {
+/**
+ * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id'
+ * according to Eth2 spec based on uncompressed gossip message payload:
+ * <code>
+ *   SHA256(MESSAGE_DOMAIN_VALID_SNAPPY + snappy_decompress(message.data))[:20]
+ * </code>
+ *
+ * The message payload is uncompressed lazily and cached for the final message
+ * handling: {@link tech.pegasys.teku.networking.p2p.gossip.TopicHandler#handleMessage(PreparedGossipMessage)}
+ */
+class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
   public static final Bytes MESSAGE_DOMAIN_INVALID_SNAPPY = Bytes.fromHexString("0x00000000");
   // 4-byte domain for gossip message-id isolation of *valid* snappy messages
@@ -35,7 +45,7 @@ class LazyUncompressPreparedMessage implements PreparedMessage {
       Suppliers.memoize(this::maybeUncompressPayload);
   private DecodingException uncompressException;
 
-  public LazyUncompressPreparedMessage(
+  public SnappyPreparedGossipMessage(
       Bytes compressedData, Class<?> valueType, SnappyBlockCompressor snappyCompressor) {
     this.compressedData = compressedData;
     this.valueType = valueType;

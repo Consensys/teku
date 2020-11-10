@@ -25,7 +25,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -56,7 +56,7 @@ public class Eth2TopicHandler<T> implements TopicHandler {
   }
 
   @Override
-  public SafeFuture<ValidationResult> handleMessage(PreparedMessage message) {
+  public SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message) {
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
             deserialized ->
@@ -116,11 +116,11 @@ public class Eth2TopicHandler<T> implements TopicHandler {
   }
 
   @Override
-  public PreparedMessage prepareMessage(Bytes payload) {
+  public PreparedGossipMessage prepareMessage(Bytes payload) {
     return getGossipEncoding().prepareMessage(payload, getValueType());
   }
 
-  public T deserialize(PreparedMessage message) throws DecodingException {
+  public T deserialize(PreparedGossipMessage message) throws DecodingException {
     return getGossipEncoding().decode(message, getValueType());
   }
 

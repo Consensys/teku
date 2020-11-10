@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
 public interface GossipEncoding {
 
@@ -41,15 +41,15 @@ public interface GossipEncoding {
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T> T decode(PreparedMessage message, Class<T> valueType) throws DecodingException;
+  <T> T decode(PreparedGossipMessage message, Class<T> valueType) throws DecodingException;
 
-  <T> PreparedMessage prepareMessage(Bytes data, Class<T> valueType);
+  <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType);
 
   default <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
     return decode(prepareMessage(data, valueType), valueType);
   }
 
-  default PreparedMessage prepareUnknownMessage(Bytes data) {
+  default PreparedGossipMessage prepareUnknownMessage(Bytes data) {
     return prepareMessage(data, null);
   }
 }

@@ -19,13 +19,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface TopicHandler {
 
-  PreparedMessage prepareMessage(Bytes payload);
+  /**
+   * Preprocess 'raw' Gossip message returning the instance which may calculate
+   * Gossip 'message-id' and cache intermediate data for later message handling
+   * with {@link #handleMessage(PreparedGossipMessage)}
+   */
+  PreparedGossipMessage prepareMessage(Bytes payload);
 
   /**
-   * Validate and process gossip message
+   * Validates and handles gossip message preprocessed earlier by {@link #prepareMessage(Bytes)}
    *
-   * @param bytes The gossip message
-   * @return {@code true} if the message is valid, {@code false} otherwise
+   * @param message The preprocessed gossip message
+   * @return Message validation promise
    */
-  SafeFuture<ValidationResult> handleMessage(PreparedMessage bytes);
+  SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message);
 }

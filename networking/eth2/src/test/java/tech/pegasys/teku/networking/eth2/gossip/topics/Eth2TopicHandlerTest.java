@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -218,7 +218,7 @@ public class Eth2TopicHandlerTest {
     }
 
     @Override
-    public SignedBeaconBlock deserialize(PreparedMessage message) throws DecodingException {
+    public SignedBeaconBlock deserialize(PreparedGossipMessage message) throws DecodingException {
       return deserializer.deserialize(message);
     }
 
@@ -234,6 +234,6 @@ public class Eth2TopicHandlerTest {
   }
 
   private interface Deserializer<T> {
-    T deserialize(final PreparedMessage bytes) throws DecodingException;
+    T deserialize(final PreparedGossipMessage bytes) throws DecodingException;
   }
 }

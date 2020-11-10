@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.PreparedPubsubMessage;
 
 public class MockMessageApi implements MessageApi {
@@ -71,8 +71,8 @@ public class MockMessageApi implements MessageApi {
             .addAllTopicIDs(getTopics().stream().map(Topic::getTopic).collect(Collectors.toList()))
             .setData(ByteString.copyFrom(getData().nioBuffer()))
             .build();
-    PreparedMessage preparedMessage =
-        new PreparedMessage() {
+    PreparedGossipMessage preparedMessage =
+        new PreparedGossipMessage() {
           @Override
           public Bytes getMessageId() {
             return Bytes.wrap(Hash.sha2_256(protoMessage.getData().toByteArray()));

@@ -47,8 +47,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessageFactory;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
@@ -66,12 +66,12 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
   private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
-  private final PreparedMessageFactory defaultMessageFactory;
+  private final PreparedGossipMessageFactory defaultMessageFactory;
 
   public LibP2PGossipNetwork(
       MetricsSystem metricsSystem,
       GossipConfig gossipConfig,
-      PreparedMessageFactory defaultMessageFactory,
+      PreparedGossipMessageFactory defaultMessageFactory,
       boolean logWireGossip) {
     this.metricsSystem = metricsSystem;
     this.defaultMessageFactory = defaultMessageFactory;
@@ -114,14 +114,14 @@ public class LibP2PGossipNetwork implements GossipNetwork {
     return Optional.ofNullable(topicHandlerMap.get(topic));
   }
 
-  public PreparedMessage prepareMessage(String topic, Bytes payload) {
+  public PreparedGossipMessage prepareMessage(String topic, Bytes payload) {
     Optional<TopicHandler> topicHandler = getSubscribedHandler(topic);
     return topicHandler
         .map(handler -> handler.prepareMessage(payload))
         .orElse(prepareNonSubscribedMessage(topic, payload));
   }
 
-  private PreparedMessage prepareNonSubscribedMessage(String topic, Bytes payload) {
+  private PreparedGossipMessage prepareNonSubscribedMessage(String topic, Bytes payload) {
     return defaultMessageFactory.create(topic, payload);
   }
 
@@ -162,7 +162,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
           String topic = msg.getTopicIDs(0);
-          PreparedMessage preparedMessage =
+          PreparedGossipMessage preparedMessage =
               prepareMessage(topic, Bytes.wrap(msg.getData().toByteArray()));
           return new PreparedPubsubMessage(msg, preparedMessage);
         });

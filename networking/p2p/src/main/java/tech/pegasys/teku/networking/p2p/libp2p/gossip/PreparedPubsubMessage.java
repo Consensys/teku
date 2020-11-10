@@ -13,18 +13,27 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.etc.types.WBytes;
 import io.libp2p.pubsub.PubsubMessage;
+import io.libp2p.pubsub.gossip.GossipRouter;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
+/**
+ * The bridge class between outer Libp2p {@link PubsubMessage} and inner
+ * {@link PreparedGossipMessage}
+ *
+ * The {@link PreparedGossipMessage} instance created during {@link GossipRouter#getMessageFactory()}
+ * invocation can later be accessed when the gossip message is handled: {@link MessageApi#getOriginalMessage()}
+ */
 public class PreparedPubsubMessage implements PubsubMessage {
 
   private final Message protobufMessage;
-  private final PreparedMessage preparedMessage;
+  private final PreparedGossipMessage preparedMessage;
 
-  public PreparedPubsubMessage(Message protobufMessage, PreparedMessage preparedMessage) {
+  public PreparedPubsubMessage(Message protobufMessage, PreparedGossipMessage preparedMessage) {
     this.protobufMessage = protobufMessage;
     this.preparedMessage = preparedMessage;
   }
@@ -41,7 +50,7 @@ public class PreparedPubsubMessage implements PubsubMessage {
     return protobufMessage;
   }
 
-  public PreparedMessage getPreparedMessage() {
+  public PreparedGossipMessage getPreparedMessage() {
     return preparedMessage;
   }
 }
