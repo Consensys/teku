@@ -49,8 +49,9 @@ public class SingleAttestationTopicHandler extends Eth2TopicHandler<Validateable
   }
 
   @Override
-  public ValidateableAttestation deserialize(PreparedGossipMessage message) throws DecodingException {
-    Attestation attestation = getGossipEncoding().decode(message, Attestation.class);
+  public ValidateableAttestation deserialize(PreparedGossipMessage message)
+      throws DecodingException {
+    Attestation attestation = getGossipEncoding().decodeMessage(message, Attestation.class);
     return ValidateableAttestation.fromNetwork(attestation, subnetId);
   }
 }

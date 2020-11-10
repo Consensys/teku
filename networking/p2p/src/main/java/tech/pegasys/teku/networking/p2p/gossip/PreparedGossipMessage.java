@@ -23,9 +23,8 @@ import org.apache.tuweni.bytes.Bytes;
 public interface PreparedGossipMessage {
 
   /**
-   * Returns the Gossip 'message-id'
-   * If the 'message-id' calculation is resource consuming operation is should
-   * performed lazily by implementation class
+   * Returns the Gossip 'message-id' If the 'message-id' calculation is resource consuming operation
+   * is should performed lazily by implementation class
    */
   Bytes getMessageId();
 }

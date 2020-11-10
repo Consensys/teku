@@ -121,7 +121,7 @@ public class Eth2TopicHandler<T> implements TopicHandler {
   }
 
   public T deserialize(PreparedGossipMessage message) throws DecodingException {
-    return getGossipEncoding().decode(message, getValueType());
+    return getGossipEncoding().decodeMessage(message, getValueType());
   }
 
   public String getTopic() {

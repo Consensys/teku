@@ -15,13 +15,9 @@ package tech.pegasys.teku.networking.p2p.gossip;
 
 import org.apache.tuweni.bytes.Bytes;
 
-/**
- * Factory for {@link PreparedGossipMessage} instances
- */
+/** Factory for {@link PreparedGossipMessage} instances */
 public interface PreparedGossipMessageFactory {
 
-  /**
-   * Creates a {@link PreparedGossipMessage} instance
-   */
+  /** Creates a {@link PreparedGossipMessage} instance */
   PreparedGossipMessage create(String topic, Bytes payload);
 }

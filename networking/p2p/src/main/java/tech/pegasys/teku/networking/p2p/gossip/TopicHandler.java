@@ -20,9 +20,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public interface TopicHandler {
 
   /**
-   * Preprocess 'raw' Gossip message returning the instance which may calculate
-   * Gossip 'message-id' and cache intermediate data for later message handling
-   * with {@link #handleMessage(PreparedGossipMessage)}
+   * Preprocess 'raw' Gossip message returning the instance which may calculate Gossip 'message-id'
+   * and cache intermediate data for later message handling with {@link
+   * #handleMessage(PreparedGossipMessage)}
    */
   PreparedGossipMessage prepareMessage(Bytes payload);
 

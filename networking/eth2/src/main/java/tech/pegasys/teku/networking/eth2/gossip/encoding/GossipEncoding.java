@@ -36,20 +36,34 @@ public interface GossipEncoding {
   <T> Bytes encode(T value);
 
   /**
-   * @param message Data received over gossip to be deserialized
+   * Preprocess the raw Gossip message. The returned preprocessed message is be passed later to
+   * {@link #decodeMessage(PreparedGossipMessage, Class)}
+   *
+   * <p>If there is a problem while preprocessing a message the error should be memorized and later
+   * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
+   * Class)}
+   *
+   * @param data Data received over gossip to be deserialized
+   * @param valueType The concrete type to deserialize to
+   */
+  <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType);
+
+  /**
+   * Fallback for {@link #prepareMessage(Bytes, Class)} for the case when decoded {@code valueType}
+   * is unknown
+   *
+   * @param data raw Gossip message data
+   */
+  PreparedGossipMessage prepareUnknownMessage(Bytes data);
+
+  /**
+   * Decodes preprocessed message
+   *
+   * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
+   *     Class)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T> T decode(PreparedGossipMessage message, Class<T> valueType) throws DecodingException;
-
-  <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType);
-
-  default <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
-    return decode(prepareMessage(data, valueType), valueType);
-  }
-
-  default PreparedGossipMessage prepareUnknownMessage(Bytes data) {
-    return prepareMessage(data, null);
-  }
+  <T> T decodeMessage(PreparedGossipMessage message, Class<T> valueType) throws DecodingException;
 }

@@ -46,9 +46,10 @@ public class AggregateAttestationTopicHandler extends Eth2TopicHandler<Validatea
   }
 
   @Override
-  public ValidateableAttestation deserialize(PreparedGossipMessage message) throws DecodingException {
+  public ValidateableAttestation deserialize(PreparedGossipMessage message)
+      throws DecodingException {
     SignedAggregateAndProof aggregate =
-        getGossipEncoding().decode(message, SignedAggregateAndProof.class);
+        getGossipEncoding().decodeMessage(message, SignedAggregateAndProof.class);
     return ValidateableAttestation.aggregateFromValidator(aggregate);
   }
 }

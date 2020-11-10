@@ -204,7 +204,7 @@ public class Eth2TopicHandlerTest {
 
   private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     private Deserializer<SignedBeaconBlock> deserializer =
-        (bytes) -> getGossipEncoding().decode(bytes, SignedBeaconBlock.class);
+        (bytes) -> getGossipEncoding().decodeMessage(bytes, SignedBeaconBlock.class);
     private static GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private static Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 

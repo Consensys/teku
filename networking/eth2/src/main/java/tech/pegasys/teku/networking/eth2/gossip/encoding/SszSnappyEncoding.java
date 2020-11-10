@@ -36,7 +36,8 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T> T decode(PreparedGossipMessage message, Class<T> valueType) throws DecodingException {
+  public <T> T decodeMessage(PreparedGossipMessage message, Class<T> valueType)
+      throws DecodingException {
     if (!(message instanceof SnappyPreparedGossipMessage)) {
       throw new DecodingException("Unexpected PreparedMessage subclass: " + message.getClass());
     }
@@ -46,6 +47,11 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType) {
-    return new SnappyPreparedGossipMessage(data, valueType, snappyCompressor);
+    return SnappyPreparedGossipMessage.create(data, valueType, snappyCompressor);
+  }
+
+  @Override
+  public PreparedGossipMessage prepareUnknownMessage(Bytes data) {
+    return SnappyPreparedGossipMessage.createUnknown(data);
   }
 }

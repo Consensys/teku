@@ -22,11 +22,12 @@ import pubsub.pb.Rpc.Message;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
 /**
- * The bridge class between outer Libp2p {@link PubsubMessage} and inner
- * {@link PreparedGossipMessage}
+ * The bridge class between outer Libp2p {@link PubsubMessage} and inner {@link
+ * PreparedGossipMessage}
  *
- * The {@link PreparedGossipMessage} instance created during {@link GossipRouter#getMessageFactory()}
- * invocation can later be accessed when the gossip message is handled: {@link MessageApi#getOriginalMessage()}
+ * <p>The {@link PreparedGossipMessage} instance created during {@link
+ * GossipRouter#getMessageFactory()} invocation can later be accessed when the gossip message is
+ * handled: {@link MessageApi#getOriginalMessage()}
  */
 public class PreparedPubsubMessage implements PubsubMessage {
 
