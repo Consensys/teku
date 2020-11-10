@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -35,11 +36,14 @@ class DutyResultTest {
   private static final String TYPE = "type";
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+  private final Optional<String> validatorId =
+      Optional.of(
+          dataStructureUtil.randomValidator().getPubkey().toBytesCompressed().toShortHexString());
 
   @Test
   void shouldReportSuccess() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    DutyResult.success(root).report(TYPE, SLOT, validatorLogger);
+    DutyResult.success(root).report(TYPE, SLOT, validatorId, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 1, Set.of(root));
     verifyNoMoreInteractions(validatorLogger);
@@ -48,15 +52,16 @@ class DutyResultTest {
   @Test
   void shouldReportError() {
     final RuntimeException error = new RuntimeException("Oh no");
-    DutyResult.forError(error).report(TYPE, SLOT, validatorLogger);
+    DutyResult.forError(error).report(TYPE, SLOT, validatorId, validatorLogger);
 
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, error);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, error);
     verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
   void shouldReportNodeSyncing() {
-    DutyResult.forError(new NodeSyncingException()).report(TYPE, SLOT, validatorLogger);
+    DutyResult.forError(new NodeSyncingException())
+        .report(TYPE, SLOT, validatorId, validatorLogger);
 
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 1);
     verifyNoMoreInteractions(validatorLogger);
@@ -71,7 +76,7 @@ class DutyResultTest {
         DutyResult.success(root1)
             .combine(DutyResult.success(root2))
             .combine(DutyResult.success(root1));
-    combined.report(TYPE, SLOT, validatorLogger);
+    combined.report(TYPE, SLOT, validatorId, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 3, Set.of(root1, root2));
     verifyNoMoreInteractions(validatorLogger);
@@ -86,10 +91,10 @@ class DutyResultTest {
         DutyResult.forError(exception1)
             .combine(DutyResult.forError(exception2))
             .combine(DutyResult.forError(exception1));
-    combined.report(TYPE, SLOT, validatorLogger);
+    combined.report(TYPE, SLOT, validatorId, validatorLogger);
 
-    verify(validatorLogger, times(2)).dutyFailed(TYPE, SLOT, exception1);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, exception2);
+    verify(validatorLogger, times(2)).dutyFailed(TYPE, SLOT, validatorId, exception1);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception2);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -99,7 +104,7 @@ class DutyResultTest {
         DutyResult.forError(new NodeSyncingException())
             .combine(DutyResult.forError(new NodeSyncingException()))
             .combine(DutyResult.forError(new NodeSyncingException()));
-    combined.report(TYPE, SLOT, validatorLogger);
+    combined.report(TYPE, SLOT, validatorId, validatorLogger);
 
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 3);
     verifyNoMoreInteractions(validatorLogger);
@@ -120,12 +125,12 @@ class DutyResultTest {
             .combine(DutyResult.forError(new NodeSyncingException()))
             .combine(DutyResult.success(root2))
             .combine(DutyResult.success(root1));
-    combined.report(TYPE, SLOT, validatorLogger);
+    combined.report(TYPE, SLOT, validatorId, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 3, Set.of(root1, root2));
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 2);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, exception1);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, exception2);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception2);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -146,10 +151,10 @@ class DutyResultTest {
                 SafeFuture.completedFuture(DutyResult.success(root2))));
 
     assertThat(combinedFuture).isCompleted();
-    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
+    combinedFuture.join().report(TYPE, SLOT, validatorId, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root1, root2));
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, exception1);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, exception2);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception2);
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -168,7 +173,7 @@ class DutyResultTest {
     future2.complete(DutyResult.success(root));
     assertThat(combinedFuture).isCompleted();
 
-    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
+    combinedFuture.join().report(TYPE, SLOT, validatorId, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root));
     verifyNoMoreInteractions(validatorLogger);
   }

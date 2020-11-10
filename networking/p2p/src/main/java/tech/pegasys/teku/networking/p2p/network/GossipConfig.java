@@ -28,6 +28,7 @@ public class GossipConfig {
   public static final int DEFAULT_ADVERTISE = 3;
   public static final int DEFAULT_HISTORY = 6;
   public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
+  public static final Duration DEFAULT_SEEN_TTL = Duration.ofMillis(550);
 
   public static final GossipConfig DEFAULT_CONFIG =
       new GossipConfig(
@@ -38,7 +39,8 @@ public class GossipConfig {
           DEFAULT_FANOUT_TTL,
           DEFAULT_ADVERTISE,
           DEFAULT_HISTORY,
-          DEFAULT_HEARTBEAT_INTERVAL);
+          DEFAULT_HEARTBEAT_INTERVAL,
+          DEFAULT_SEEN_TTL);
 
   private final int d;
   private final int dLow;
@@ -48,6 +50,7 @@ public class GossipConfig {
   private final int advertise;
   private final int history;
   private final Duration heartbeatInterval;
+  private final Duration seenTTL;
 
   public GossipConfig(
       int d,
@@ -57,7 +60,8 @@ public class GossipConfig {
       Duration fanoutTTL,
       int advertise,
       int history,
-      Duration heartbeatInterval) {
+      Duration heartbeatInterval,
+      Duration seenTTL) {
     this.d = d;
     this.dLow = dLow;
     this.dHigh = dHigh;
@@ -66,6 +70,7 @@ public class GossipConfig {
     this.advertise = advertise;
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
+    this.seenTTL = seenTTL;
   }
 
   public int getD() {
@@ -98,5 +103,9 @@ public class GossipConfig {
 
   public Duration getHeartbeatInterval() {
     return heartbeatInterval;
+  }
+
+  public Duration getSeenTTL() {
+    return seenTTL;
   }
 }

@@ -128,6 +128,23 @@ class StateRegenerationBaseSelectorTest {
   }
 
   @Test
+  void shouldUseBaseFromStoreEvenIfBlockIsUnavailable() {
+    final SignedBlockAndState fromStore = withClosestAvailableFromStoreAtSlot(100);
+    final SignedBlockAndState fromEpochBoundary = withLatestEpochBoundaryAtSlot(90);
+    withRebasedStartingPointAtSlot(80);
+
+    final StateRegenerationBaseSelector selector = createSelector(false);
+
+    // Make the epoch boundary state unavailable
+    when(stateAndBlockProvider.getStateAndBlock(fromEpochBoundary.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Optional<StateAndBlockSummary> expected =
+        Optional.of(StateAndBlockSummary.create(fromStore.getState()));
+    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(expected);
+  }
+
+  @Test
   void shouldUseRebasedStartingPointWhenItIsTheBestOption() {
     final SignedBlockAndState rebasedStartingPoint = withRebasedStartingPointAtSlot(150);
     withClosestAvailableFromStoreAtSlot(100);
@@ -217,6 +234,11 @@ class StateRegenerationBaseSelectorTest {
   }
 
   private StateRegenerationBaseSelector createSelector() {
+    return createSelector(true);
+  }
+
+  private StateRegenerationBaseSelector createSelector(
+      final boolean withClosestStoreBlockAvailable) {
     final Optional<BlockRootAndState> closestStateFromStore =
         closestBlockAndStateFromStore.map(
             blockAndState ->
@@ -226,7 +248,10 @@ class StateRegenerationBaseSelectorTest {
     closestBlockAndStateFromStore.ifPresent(
         blockAndState ->
             when(blockProvider.getBlock(blockAndState.getRoot()))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState.getBlock()))));
+                .thenReturn(
+                    SafeFuture.completedFuture(
+                        Optional.of(blockAndState.getBlock())
+                            .filter(__ -> withClosestStoreBlockAvailable))));
 
     latestEpochBoundary.ifPresent(
         blockAndState ->

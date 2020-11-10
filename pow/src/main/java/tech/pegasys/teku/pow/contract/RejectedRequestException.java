@@ -11,21 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.pow.contract;
 
-import java.util.Optional;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+public class RejectedRequestException extends RuntimeException {
 
-public interface Duty {
-  SafeFuture<DutyResult> performDuty();
-
-  String getProducedType();
-
-  Optional<BLSPublicKey> getValidatorIdentifier();
-
-  default Optional<String> getValidatorIdString() {
-    return getValidatorIdentifier()
-        .map(publicKey -> publicKey.toBytesCompressed().toShortHexString());
+  public RejectedRequestException(final String message) {
+    super(message);
   }
 }
