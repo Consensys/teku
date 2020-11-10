@@ -43,10 +43,7 @@ class FileResourceLoaderTest {
   }
 
   @Test
-  public void shouldCreateInputStreamWhenPathIsADirectory(@TempDir Path tempDir) throws Exception {
-    // We could potentially return empty for directories, but it is going to be confusing for users
-    // to say we couldn't find something that exists. We should report that we couldn't read it.
-    assertThat(loader.load(tempDir.toAbsolutePath().toString())).isNotEmpty();
+  public void shouldThrowWhenPathIsADirectory(@TempDir Path tempDir) throws Exception {
     assertThatThrownBy(() -> loader.loadBytes(tempDir.toAbsolutePath().toString()))
         .isInstanceOf(IOException.class);
   }

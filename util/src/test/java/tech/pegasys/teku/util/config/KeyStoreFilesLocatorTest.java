@@ -21,15 +21,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 
 public class KeyStoreFilesLocatorTest {
-  private static final String PATH_SEP = ":";
-  private static final String PATH_SEP_WIN = ";";
+  private static final String PATH_SEP = System.getProperty("path.separator");
 
   @Test
   public void shouldFindPairsAtDepth(@TempDir final Path tempDir) throws IOException {
@@ -73,8 +75,8 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, "key", "pass");
     createFiles(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt"));
     final String p1 =
-        generatePath(tempDir, PATH_SEP_WIN, List.of("key", "a"), List.of("pass", "a.txt"));
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
 
     assertThat(locator.getFilePairs())
@@ -86,14 +88,12 @@ public class KeyStoreFilesLocatorTest {
   public void shouldIgnoreSomeFiles(@TempDir final Path tempDir) throws IOException {
     createFolders(tempDir, "key", "pass");
     createFiles(
-        tempDir,
-        Path.of("key", ".asdf.json"),
-        Path.of("key", ".hidden2"),
-        Path.of("key", "ignored"),
-        Path.of("key", "a.json"),
-        Path.of("pass", "a.txt"));
-    final String p1 = generatePath(tempDir, PATH_SEP_WIN, "key", "pass");
-    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+        tempDir, Path.of("key", "ignored"), Path.of("key", "a.json"), Path.of("pass", "a.txt"));
+    if (!SystemUtils.IS_OS_WINDOWS) {
+      createFiles(tempDir, Path.of("key", ".asdf.json"), Path.of("key", ".hidden2"));
+    }
+    final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
+    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
 
     assertThat(locator.getFilePairs())
@@ -130,8 +130,8 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, Path.of("key"), Path.of("pass", "a.txt"));
     createFiles(tempDir, Path.of("key", "a"));
     final String p1 =
-        generatePath(tempDir, PATH_SEP_WIN, List.of("key", "a"), List.of("pass", "a.txt"));
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP_WIN);
+        generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
+    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
 
     assertThatThrownBy(locator::parse).isInstanceOf(InvalidConfigurationException.class);
   }
@@ -192,6 +192,7 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // creating symlinks on Win requires elevated privileges
   public void shouldHandleSymlinkedDirectories(@TempDir final Path tempDir) throws IOException {
     Path realKeyDir = Path.of("actualKey");
     Path realPassDir = Path.of("actualPass");
@@ -202,7 +203,7 @@ public class KeyStoreFilesLocatorTest {
       Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
       Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
     } catch (UnsupportedOperationException e) {
-      throw new TestAbortedException("Symbolic links not supported on this file system");
+      throw new TestAbortedException("Couldn't create symlink on this system");
     }
 
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
