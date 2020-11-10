@@ -86,15 +86,9 @@ public class KeyStoreFilesLocatorTest {
   public void shouldIgnoreSomeFiles(@TempDir final Path tempDir) throws IOException {
     createFolders(tempDir, "key", "pass");
     createFiles(
-        tempDir,
-        Path.of("key", "ignored"),
-        Path.of("key", "a.json"),
-        Path.of("pass", "a.txt"));
+        tempDir, Path.of("key", "ignored"), Path.of("key", "a.json"), Path.of("pass", "a.txt"));
     if (!SystemUtils.IS_OS_WINDOWS) {
-      createFiles(
-          tempDir,
-          Path.of("key", ".asdf.json"),
-          Path.of("key", ".hidden2"));
+      createFiles(tempDir, Path.of("key", ".asdf.json"), Path.of("key", ".hidden2"));
     }
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
