@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -44,12 +45,12 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     return getResponse(GetSyncing.ROUTE);
   }
 
-  private tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
+  private SyncingStatus getSyncStatus(
       final boolean isSyncing,
       final long startSlot,
       final long currentSlot,
       final long highestSlot) {
-    return new tech.pegasys.teku.sync.SyncingStatus(
+    return new SyncingStatus(
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),

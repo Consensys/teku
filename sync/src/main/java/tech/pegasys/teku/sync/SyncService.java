@@ -14,22 +14,16 @@
 package tech.pegasys.teku.sync;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
+import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
 
-public interface SyncService {
-
+public interface SyncService extends SyncStateProvider {
   SafeFuture<?> start();
 
   SafeFuture<?> stop();
 
-  SyncingStatus getSyncStatus();
+  ForwardSync getForwardSync();
 
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
-  }
+  RecentBlockFetcher getRecentBlockFetcher();
 }
