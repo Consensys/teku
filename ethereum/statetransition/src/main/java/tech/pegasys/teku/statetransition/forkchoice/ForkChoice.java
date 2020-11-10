@@ -171,7 +171,7 @@ public class ForkChoice {
               // child of the current chain head we'd have already selected it as head.
               if (recentChainData
                   .getHeadBlock()
-                  .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
+                  .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
                   .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
                 result.markAsCanonical();

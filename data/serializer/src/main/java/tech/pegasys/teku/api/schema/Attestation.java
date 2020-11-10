@@ -19,6 +19,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 public class Attestation {
@@ -49,5 +50,20 @@ public class Attestation {
   public tech.pegasys.teku.datastructures.operations.Attestation asInternalAttestation() {
     return new tech.pegasys.teku.datastructures.operations.Attestation(
         aggregation_bits, data.asInternalAttestationData(), signature.asInternalBLSSignature());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Attestation)) return false;
+    Attestation that = (Attestation) o;
+    return Objects.equals(aggregation_bits, that.aggregation_bits)
+        && Objects.equals(data, that.data)
+        && Objects.equals(signature, that.signature);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(aggregation_bits, data, signature);
   }
 }

@@ -24,6 +24,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -210,8 +211,8 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> isFinalizedCheckpointValid(
       final Eth2Peer peer, final PeerStatus status) {
     final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
-    final Checkpoint localFinalizedCheckpoint = chainDataClient.getStore().getFinalizedCheckpoint();
-    final UInt64 localFinalizedEpoch = localFinalizedCheckpoint.getEpoch();
+    final AnchorPoint localFinalized = chainDataClient.getStore().getLatestFinalized();
+    final UInt64 localFinalizedEpoch = localFinalized.getEpoch();
     final UInt64 currentEpoch = chainDataClient.getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
@@ -230,7 +231,7 @@ public class PeerChainValidator {
           "Finalized epoch for peer {} matches our own finalized epoch {}, verify blocks roots match",
           peer.getId(),
           localFinalizedEpoch);
-      return verifyFinalizedCheckpointsAreTheSame(localFinalizedCheckpoint, status);
+      return verifyFinalizedCheckpointsAreTheSame(localFinalized, status);
     } else if (localFinalizedEpoch.isGreaterThan(remoteFinalizedEpoch)) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
       LOG.trace(
@@ -246,7 +247,7 @@ public class PeerChainValidator {
           localFinalizedEpoch,
           peer.getId(),
           remoteFinalizedEpoch);
-      return verifyPeerAgreesWithOurFinalizedCheckpoint(peer, localFinalizedCheckpoint);
+      return verifyPeerAgreesWithOurFinalizedCheckpoint(peer, localFinalized);
     }
   }
 
@@ -260,7 +261,7 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(
-      Checkpoint finalizedCheckpoint, final PeerStatus status) {
+      AnchorPoint finalizedCheckpoint, final PeerStatus status) {
     final boolean chainsAreConsistent =
         Objects.equals(finalizedCheckpoint.getRoot(), status.getFinalizedRoot());
     return SafeFuture.completedFuture(chainsAreConsistent);
@@ -290,35 +291,22 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
-      final Eth2Peer peer, Checkpoint finalizedCheckpoint) {
-    final UInt64 finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
+      final Eth2Peer peer, AnchorPoint finalized) {
+    final UInt64 finalizedEpochSlot = finalized.getEpochStartSlot();
     if (finalizedEpochSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest.
       return SafeFuture.completedFuture(true);
     }
-    return chainDataClient
-        .getBlockInEffectAtSlot(finalizedEpochSlot)
-        .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
-        .thenCompose(
-            blockSlot -> {
-              if (blockSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
-                // Assume that our genesis blocks match because we've already verified the fork
-                // digest. Need to repeat this check in case we finalized a later epoch without
-                // producing blocks (eg the genesis block is still the one in effect at epoch 2)
-                return SafeFuture.completedFuture(true);
-              }
-              return peer.requestBlockBySlot(blockSlot)
-                  .thenApply(
-                      block -> validateBlockRootsMatch(peer, block, finalizedCheckpoint.getRoot()));
-            });
-  }
 
-  private UInt64 blockToSlot(UInt64 lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
-    return maybeBlock
-        .map(SignedBeaconBlock::getSlot)
-        .orElseThrow(
-            () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
+    if (finalized.getBlockSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
+      // Assume that our genesis blocks match because we've already verified the fork
+      // digest. Need to repeat this check in case we finalized a later epoch without
+      // producing blocks (eg the genesis block is still the one in effect at epoch 2)
+      return SafeFuture.completedFuture(true);
+    }
+    return peer.requestBlockBySlot(finalized.getBlockSlot())
+        .thenApply(block -> validateBlockRootsMatch(peer, block, finalized.getRoot()));
   }
 
   private boolean validateBlockRootsMatch(

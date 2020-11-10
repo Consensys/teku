@@ -269,7 +269,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
     assertThat(result.join().getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
@@ -293,7 +293,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
     assertThat(result.join().getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
@@ -317,7 +317,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
     assertThat(result.join().getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
@@ -356,7 +356,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
     assertThat(result.join().getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
-    assertThat(result.join().getBlock()).isEqualTo(newerFinalizedBlockAndState.getBlock());
+    assertThat(result.join().getRoot()).isEqualTo(newerFinalizedBlockAndState.getRoot());
     assertThat(result.join().getState()).isEqualTo(newerFinalizedBlockAndState.getState());
   }
 

@@ -33,7 +33,7 @@ public abstract class CheckpointStateGenerator {
 
     // Derive checkpoint state
     final BeaconState state = regenerateCheckpointState(checkpoint, blockAndState.getState());
-    return new CheckpointState(checkpoint, blockAndState.getBlock(), state);
+    return CheckpointState.create(checkpoint, blockAndState.getBlock(), state);
   }
 
   public static BeaconState regenerateCheckpointState(

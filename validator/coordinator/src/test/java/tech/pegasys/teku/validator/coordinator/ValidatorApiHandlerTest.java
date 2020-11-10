@@ -427,9 +427,8 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UInt64 newSlot = UInt64.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final BeaconState previousState = dataStructureUtil.randomBeaconState();
-    final BeaconBlockAndState previousBlockAndState =
-        dataStructureUtil.randomBlockAndState(previousState.getSlot(), previousState);
+    final BeaconBlockAndState previousBlockAndState = dataStructureUtil.randomBlockAndState(99);
+    final BeaconState previousState = previousBlockAndState.getState();
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
@@ -448,6 +447,13 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty());
 
+    verify(blockFactory)
+        .createUnsignedBlock(
+            previousState,
+            previousBlockAndState.getBlock(),
+            newSlot,
+            randaoReveal,
+            Optional.empty());
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
@@ -510,7 +516,7 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
-        .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
+        .thenReturn(aggregate.map(ValidateableAttestation::from));
 
     assertThat(
             validatorApiHandler.createAggregate(
@@ -556,7 +562,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(SUCCESSFUL));
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationManager).onAttestation(ValidateableAttestation.fromAttestation(attestation));
+    verify(attestationManager).onAttestation(ValidateableAttestation.from(attestation));
   }
 
   @Test
@@ -612,7 +618,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.aggregateFromValidator(aggregateAndProof));
   }
 
   @Test

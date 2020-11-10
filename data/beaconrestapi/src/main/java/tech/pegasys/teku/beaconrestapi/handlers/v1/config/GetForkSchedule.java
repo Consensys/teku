@@ -30,7 +30,7 @@ import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetForkSchedule implements Handler {
-  public static final String ROUTE = "/eth/v1/config/spec/fork_schedule";
+  public static final String ROUTE = "/eth/v1/config/fork_schedule";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 

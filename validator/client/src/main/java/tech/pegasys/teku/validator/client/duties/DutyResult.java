@@ -20,6 +20,7 @@ import static java.util.Collections.singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
@@ -87,14 +88,18 @@ public class DutyResult {
         combinedSuccessCount, combinedSyncingCount, combinedRoots, combinedErrors);
   }
 
-  public void report(final String producedType, final UInt64 slot, final ValidatorLogger logger) {
+  public void report(
+      final String producedType,
+      final UInt64 slot,
+      final Optional<String> validatorKey,
+      final ValidatorLogger logger) {
     if (successCount > 0) {
       logger.dutyCompleted(producedType, slot, successCount, roots);
     }
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);
     }
-    errors.forEach(error -> logger.dutyFailed(producedType, slot, error));
+    errors.forEach(error -> logger.dutyFailed(producedType, slot, validatorKey, error));
   }
 
   @Override

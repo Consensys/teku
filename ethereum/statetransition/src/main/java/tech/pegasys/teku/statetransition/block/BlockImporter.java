@@ -84,7 +84,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParent_root()))
+        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParentRoot()))
         .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
             result -> {

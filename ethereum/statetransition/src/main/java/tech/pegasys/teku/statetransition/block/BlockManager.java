@@ -35,6 +35,8 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -45,6 +47,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final BlockValidator validator;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
@@ -56,12 +59,14 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks) {
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final BlockValidator validator) {
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
+    this.validator = validator;
   }
 
   public static BlockManager create(
@@ -69,8 +74,10 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final RecentChainData recentChainData,
-      final BlockImporter blockImporter) {
-    return new BlockManager(eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks);
+      final BlockImporter blockImporter,
+      final BlockValidator validator) {
+    return new BlockManager(
+        eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
   }
 
   @Override
@@ -89,6 +96,20 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", () -> formatBlock(block.getSlot(), block.getRoot()));
     return doImportBlock(block);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<InternalValidationResult> validateAndImportBlock(
+      final SignedBeaconBlock block) {
+    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
+    validationResult.thenAccept(
+        result -> {
+          if (result.equals(InternalValidationResult.ACCEPT)
+              || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+            importBlock(block).finish(err -> LOG.error("Failed to process received block.", err));
+          }
+        });
+    return validationResult;
   }
 
   @Override
@@ -141,7 +162,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
                 // so, remove from the pendingPool again and process now We must add the block to
                 // the pending pool before this check happens to avoid race conditions between
                 // performing the check and the parent importing.
-                if (recentChainData.containsBlock(block.getParent_root())) {
+                if (recentChainData.containsBlock(block.getParentRoot())) {
                   pendingBlocks.remove(block);
                   importBlockIgnoringResult(block);
                 }
@@ -174,7 +195,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
 
   private boolean blockIsInvalid(final SignedBeaconBlock block) {
     return invalidBlockRoots.contains(block.getRoot())
-        || invalidBlockRoots.contains(block.getParent_root());
+        || invalidBlockRoots.contains(block.getParentRoot());
   }
 
   private void dropInvalidBlock(final SignedBeaconBlock block) {

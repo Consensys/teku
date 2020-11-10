@@ -161,14 +161,14 @@ public class StateTransition {
 
           // Cache latest block header state root
           BeaconBlockHeader latest_block_header = state.getLatest_block_header();
-          if (latest_block_header.getState_root().equals(ZERO_HASH)) {
+          if (latest_block_header.getStateRoot().equals(ZERO_HASH)) {
             BeaconBlockHeader latest_block_header_new =
                 new BeaconBlockHeader(
                     latest_block_header.getSlot(),
-                    latest_block_header.getProposer_index(),
-                    latest_block_header.getParent_root(),
+                    latest_block_header.getProposerIndex(),
+                    latest_block_header.getParentRoot(),
                     previous_state_root,
-                    latest_block_header.getBody_root());
+                    latest_block_header.getBodyRoot());
             state.setLatest_block_header(latest_block_header_new);
           }
 

@@ -17,11 +17,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -30,33 +34,34 @@ import tech.pegasys.teku.util.config.Constants;
  * Represents an "anchor" - a trusted, finalized (block, state, checkpoint) tuple from which we can
  * sync.
  */
-public class AnchorPoint {
+public class AnchorPoint extends StateAndBlockSummary {
   private final Checkpoint checkpoint;
-  private final SignedBeaconBlock block;
-  private final BeaconState state;
   private final boolean isGenesis;
-  private final SignedBlockAndState blockAndState;
 
   private AnchorPoint(
-      final Checkpoint checkpoint, final SignedBeaconBlock block, final BeaconState state) {
+      final Checkpoint checkpoint, final BeaconState state, final BeaconBlockSummary blockSummary) {
+    super(blockSummary, state);
     checkArgument(
-        block.getStateRoot().equals(state.hash_tree_root()), "Block and state must match");
-    checkArgument(checkpoint.getRoot().equals(block.getRoot()), "Checkpoint and block must match");
+        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
 
     this.checkpoint = checkpoint;
-    this.block = block;
-    this.state = state;
     this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
-    this.blockAndState = new SignedBlockAndState(block, state);
+  }
+
+  public static AnchorPoint create(
+      Checkpoint checkpoint, BeaconState state, Optional<SignedBeaconBlock> block) {
+    final BeaconBlockSummary blockSummary =
+        block.<BeaconBlockSummary>map(a -> a).orElseGet(() -> BeaconBlockHeader.fromState(state));
+    return new AnchorPoint(checkpoint, state, blockSummary);
   }
 
   public static AnchorPoint create(
       Checkpoint checkpoint, SignedBeaconBlock block, BeaconState state) {
-    return new AnchorPoint(checkpoint, block, state);
+    return new AnchorPoint(checkpoint, state, block);
   }
 
   public static AnchorPoint create(Checkpoint checkpoint, SignedBlockAndState blockAndState) {
-    return new AnchorPoint(checkpoint, blockAndState.getBlock(), blockAndState.getState());
+    return new AnchorPoint(checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
@@ -72,7 +77,17 @@ public class AnchorPoint {
     final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 
-    return new AnchorPoint(genesisCheckpoint, signedGenesisBlock, genesisState);
+    return new AnchorPoint(genesisCheckpoint, genesisState, signedGenesisBlock);
+  }
+
+  public static AnchorPoint fromInitialState(final BeaconState state) {
+    final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+
+    // Calculate closest epoch boundary to use for the checkpoint
+    final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
+    final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
+
+    return new AnchorPoint(checkpoint, state, header);
   }
 
   public static AnchorPoint fromInitialBlockAndState(final SignedBlockAndState blockAndState) {
@@ -89,7 +104,7 @@ public class AnchorPoint {
     final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
 
-    return new AnchorPoint(checkpoint, block, state);
+    return new AnchorPoint(checkpoint, state, block);
   }
 
   public boolean isGenesis() {
@@ -100,20 +115,8 @@ public class AnchorPoint {
     return checkpoint;
   }
 
-  public SignedBeaconBlock getBlock() {
-    return block;
-  }
-
-  public SignedBlockAndState getBlockAndState() {
-    return blockAndState;
-  }
-
   public UInt64 getBlockSlot() {
-    return block.getSlot();
-  }
-
-  public BeaconState getState() {
-    return state;
+    return blockSummary.getSlot();
   }
 
   public UInt64 getEpoch() {
@@ -124,28 +127,17 @@ public class AnchorPoint {
     return checkpoint.getEpochStartSlot();
   }
 
-  public Bytes32 getRoot() {
-    return block.getRoot();
-  }
-
-  public Bytes32 getParentRoot() {
-    return block.getParent_root();
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     final AnchorPoint that = (AnchorPoint) o;
-    return isGenesis == that.isGenesis
-        && Objects.equals(checkpoint, that.checkpoint)
-        && Objects.equals(block, that.block)
-        && Objects.equals(state, that.state)
-        && Objects.equals(blockAndState, that.blockAndState);
+    return isGenesis == that.isGenesis && Objects.equals(checkpoint, that.checkpoint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(checkpoint, block, state, isGenesis, blockAndState);
+    return Objects.hash(super.hashCode(), checkpoint, isGenesis);
   }
 }

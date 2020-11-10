@@ -30,6 +30,8 @@ public class MockStoreHelper {
     for (SignedBlockAndState blockAndState : chainData) {
       when(store.retrieveBlockAndState(blockAndState.getRoot()))
           .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
+      when(store.retrieveStateAndBlockSummary(blockAndState.getRoot()))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
       when(store.retrieveSignedBlock(blockAndState.getRoot()))
           .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState.getBlock())));
       when(store.retrieveBlock(blockAndState.getRoot()))

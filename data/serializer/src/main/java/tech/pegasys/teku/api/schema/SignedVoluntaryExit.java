@@ -17,6 +17,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 
 public class SignedVoluntaryExit {
   public final VoluntaryExit message;
@@ -41,5 +42,18 @@ public class SignedVoluntaryExit {
       asInternalSignedVoluntaryExit() {
     return new tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit(
         message.asInternalVoluntaryExit(), signature.asInternalBLSSignature());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SignedVoluntaryExit)) return false;
+    SignedVoluntaryExit that = (SignedVoluntaryExit) o;
+    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(message, signature);
   }
 }
