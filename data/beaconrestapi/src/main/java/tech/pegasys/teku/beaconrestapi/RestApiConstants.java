@@ -42,14 +42,10 @@ public class RestApiConstants {
   public static final String STATUS = "status";
 
   public static final String TAG_ADMIN = "Admin";
-  public static final String TAG_BEACON = "Beacon";
-  public static final String TAG_NODE = "Node";
-  public static final String TAG_NETWORK = "Network";
-  public static final String TAG_VALIDATOR = "Validator";
 
-  public static final String TAG_V1_NODE = "Node V1";
-  public static final String TAG_V1_VALIDATOR = "Validator V1";
-  public static final String TAG_V1_BEACON = "Beacon V1";
+  public static final String TAG_V1_NODE = "Node";
+  public static final String TAG_V1_VALIDATOR = "Validator";
+  public static final String TAG_V1_BEACON = "Beacon";
   public static final String TAG_CONFIG = "Config";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
