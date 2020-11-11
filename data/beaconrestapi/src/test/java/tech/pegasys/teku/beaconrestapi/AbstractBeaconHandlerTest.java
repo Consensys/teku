@@ -30,7 +30,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.events.SyncingStatus;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public abstract class AbstractBeaconHandlerTest {
 
@@ -40,7 +41,7 @@ public abstract class AbstractBeaconHandlerTest {
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2Network);
 
-  protected final SyncService syncService = mock(SyncService.class);
+  protected final ForwardSync syncService = mock(ForwardSync.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
@@ -80,12 +81,12 @@ public abstract class AbstractBeaconHandlerTest {
     return jsonProvider.jsonToObject(data, BadRequest.class);
   }
 
-  protected tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
+  protected SyncingStatus getSyncStatus(
       final boolean isSyncing,
       final long startSlot,
       final long currentSlot,
       final long highestSlot) {
-    return new tech.pegasys.teku.sync.SyncingStatus(
+    return new SyncingStatus(
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
