@@ -36,7 +36,7 @@ public class ProtoArray {
   /**
    * Lists all the known nodes. It is guaranteed that a node will be after its parent in the list.
    *
-   * <p>The list may contain nodes which have been removed from the array either because they are
+   * <p>The list may contain nodes which have been removed from the indices collection either because they are
    * now before the finalized checkpoint but pruning has not yet occurred or because they extended
    * from a now-invalid chain and were removed. This avoids having to update the indices to entries
    * in the list too often.
