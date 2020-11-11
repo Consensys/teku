@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
@@ -524,6 +525,20 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(attestationData).isPresent();
     assertThat(attestationData.get()).usingRecursiveComparison().isEqualTo(expectedAttestationData);
+  }
+
+  @Test
+  public void sendVoluntaryExit_makesExpectedRequest() throws Exception {
+    final SignedVoluntaryExit exit = schemaObjects.signedVoluntaryExit();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    apiClient.sendVoluntaryExit(exit);
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT.getPath(emptyMap()));
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(asJson(exit));
   }
 
   @Test

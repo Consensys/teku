@@ -52,6 +52,7 @@ import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.VoluntaryExitCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
@@ -81,6 +82,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
       ValidatorClientCommand.class,
+      VoluntaryExitCommand.class,
       InternalToolsCommand.class,
     },
     showDefaultValues = true,

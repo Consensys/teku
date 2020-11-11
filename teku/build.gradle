@@ -1,7 +1,9 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
+  implementation project(':data:serializer')
   implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:io')
   implementation project(':data:recorder')
   implementation project(':data:dataexchange')
   implementation project(':data:yaml')
@@ -27,6 +29,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
+  implementation project(':validator:remote')
 
   api 'com.google.guava:guava'
 

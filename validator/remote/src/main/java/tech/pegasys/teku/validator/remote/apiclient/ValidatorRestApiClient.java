@@ -29,6 +29,7 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
@@ -61,6 +62,8 @@ public interface ValidatorRestApiClient {
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
   void sendSignedAttestation(Attestation attestation);
+
+  void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
