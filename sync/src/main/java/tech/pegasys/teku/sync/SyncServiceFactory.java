@@ -132,7 +132,12 @@ public class SyncServiceFactory {
     final AsyncRunner asyncRunner =
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
     return new HistoricalBlockSyncService(
-        storageUpdateChannel, asyncRunner, p2pNetwork, combinedChainDataClient, syncStateProvider);
+        metrics,
+        storageUpdateChannel,
+        asyncRunner,
+        p2pNetwork,
+        combinedChainDataClient,
+        syncStateProvider);
   }
 
   private SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {

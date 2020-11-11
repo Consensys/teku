@@ -23,9 +23,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -40,6 +43,7 @@ public class HistoricalBlockSyncService extends Service {
   private static final Duration RETRY_TIMEOUT = Duration.ofMinutes(1);
   private static final UInt64 BATCH_SIZE = UInt64.valueOf(50);
 
+  private final SettableGauge historicSyncGauge;
   private final StorageUpdateChannel storageUpdateChannel;
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<Eth2Peer> network;
@@ -53,6 +57,7 @@ public class HistoricalBlockSyncService extends Service {
   final Set<Eth2Peer> badPeerCache;
 
   public HistoricalBlockSyncService(
+      final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
@@ -72,6 +77,13 @@ public class HistoricalBlockSyncService extends Service {
                 .expireAfterWrite(Duration.ofMinutes(5))
                 .<Eth2Peer, Boolean>build()
                 .asMap());
+
+    this.historicSyncGauge =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "historical_block_sync_earliest_block",
+            "The slot of the earliest block retrieved by the historical block sync service");
   }
 
   @Override
@@ -98,11 +110,18 @@ public class HistoricalBlockSyncService extends Service {
               if (earliestBlock.getSlot().isGreaterThan(UInt64.ZERO)) {
                 LOG.info(
                     "Begin historical sync of blocks prior to slot {}", earliestBlock.getSlot());
+                updateSyncMetrics();
               }
               syncStateSubscription.set(
                   syncStateProvider.subscribeToSyncStateChanges(
                       __ -> requestBlocksIfAppropriate()));
             });
+  }
+
+  private void updateSyncMetrics() {
+    if (earliestBlock.getBeaconBlock().isPresent()) {
+      historicSyncGauge.set(earliestBlock.getSlot().bigIntegerValue().doubleValue());
+    }
   }
 
   private void requestBlocksIfAppropriate() {
@@ -142,6 +161,7 @@ public class HistoricalBlockSyncService extends Service {
               if (newValue != null && newValue.getSlot().isLessThan(earliestBlock.getSlot())) {
                 LOG.trace("Synced historical blocks to slot {}", newValue.getSlot());
                 earliestBlock = newValue;
+                updateSyncMetrics();
               }
             });
   }
