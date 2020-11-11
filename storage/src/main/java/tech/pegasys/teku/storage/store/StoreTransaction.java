@@ -142,8 +142,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final BeaconState justifiedCheckpointState) {
-    return store.applyForkChoiceScoreChanges(
-        this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+
+    // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
+    // protoArray lock first, and may deadlock when it later needs to get votes which requires the
+    // store lock.
+    lock.writeLock().lock();
+    try {
+      return store
+          .getForkChoiceStrategy()
+          .findHead(this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   @CheckReturnValue
