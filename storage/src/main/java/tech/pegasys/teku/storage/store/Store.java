@@ -228,7 +228,8 @@ class Store implements UpdatableStore {
             checkpointStateTaskQueue);
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-          ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel).join();
+          ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel)
+              .join();
       store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {

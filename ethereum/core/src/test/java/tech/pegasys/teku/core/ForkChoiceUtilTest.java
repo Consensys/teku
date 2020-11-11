@@ -53,7 +53,9 @@ class ForkChoiceUtilTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, ProtoArrayStorageChannel.NO_OP).join();
+      ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
+              store, ProtoArrayStorageChannel.NO_OP)
+          .join();
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
