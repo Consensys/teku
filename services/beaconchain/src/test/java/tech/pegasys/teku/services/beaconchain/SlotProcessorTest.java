@@ -37,7 +37,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -51,7 +51,7 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final Eth2Network p2pNetwork = mock(Eth2Network.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);

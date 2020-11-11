@@ -47,7 +47,7 @@ public class SignedAttestationTest {
   public void shouldSerialize() throws JsonProcessingException {
     final SignedAttestation signedAttestation = new SignedAttestation(source, target, signingRoot);
     String str = jsonProvider.objectToPrettyJSON(signedAttestation);
-    assertThat(str).isEqualTo(jsonData);
+    assertThat(str).isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
