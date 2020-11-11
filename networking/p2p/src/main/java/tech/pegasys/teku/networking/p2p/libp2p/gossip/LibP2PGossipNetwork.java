@@ -63,18 +63,30 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final MetricsSystem metricsSystem;
-  private final Gossip gossip;
-  private final PubsubPublisherApi publisher;
+  private Gossip gossip;
+  private PubsubPublisherApi publisher;
   private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
   private final PreparedGossipMessageFactory defaultMessageFactory;
 
-  public LibP2PGossipNetwork(
+  public static LibP2PGossipNetwork create(
       MetricsSystem metricsSystem,
       GossipConfig gossipConfig,
       PreparedGossipMessageFactory defaultMessageFactory,
       boolean logWireGossip) {
+
+    LibP2PGossipNetwork gossipNetwork =
+        new LibP2PGossipNetwork(metricsSystem, defaultMessageFactory);
+    gossipNetwork.initGossip(gossipConfig, logWireGossip);
+    return gossipNetwork;
+  }
+
+  private LibP2PGossipNetwork(
+      MetricsSystem metricsSystem, PreparedGossipMessageFactory defaultMessageFactory) {
     this.metricsSystem = metricsSystem;
     this.defaultMessageFactory = defaultMessageFactory;
+  }
+
+  private void initGossip(GossipConfig gossipConfig, boolean logWireGossip) {
     this.gossip = createGossip(gossipConfig, logWireGossip);
     this.publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
   }

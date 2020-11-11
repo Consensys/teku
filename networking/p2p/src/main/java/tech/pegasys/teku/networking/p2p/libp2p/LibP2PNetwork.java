@@ -100,7 +100,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
     // Setup gossip
     gossipNetwork =
-        new LibP2PGossipNetwork(
+        LibP2PGossipNetwork.create(
             metricsSystem,
             config.getGossipConfig(),
             defaultMessageFactory,
