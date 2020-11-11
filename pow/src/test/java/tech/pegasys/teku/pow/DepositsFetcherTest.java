@@ -13,11 +13,18 @@
 
 package tech.pegasys.teku.pow;
 
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.pow.DepositFetcher.DEFAULT_BATCH_SIZE;
 
 import com.google.common.primitives.Longs;
 import java.math.BigInteger;
@@ -26,14 +33,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.pow.contract.RejectedRequestException;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 
 public class DepositsFetcherTest {
@@ -42,7 +50,7 @@ public class DepositsFetcherTest {
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositContract depositContract = mock(DepositContract.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
-  private final AsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DepositFetcher depositFetcher =
       new DepositFetcher(
@@ -73,6 +81,108 @@ public class DepositsFetcherTest {
     inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(3), BigInteger.valueOf(4));
     inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(5, 1)));
     inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(6), BigInteger.valueOf(10));
+  }
+
+  @Test
+  void shouldUseMultipleBatchesWhenRangeIsLarge() {
+    final BigInteger fromBlockNumber = BigInteger.ZERO;
+    final BigInteger toBlockNumber = BigInteger.valueOf(3 * DEFAULT_BATCH_SIZE - 10);
+
+    final BigInteger batch1End = fromBlockNumber.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE));
+    final BigInteger batch2Start = batch1End.add(BigInteger.ONE);
+    final BigInteger batch2End = batch2Start.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE));
+    final BigInteger batch3Start = batch2End.add(BigInteger.ONE);
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> batch1Response =
+        new SafeFuture<>();
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> batch2Response =
+        new SafeFuture<>();
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> batch3Response =
+        new SafeFuture<>();
+
+    when(depositContract.depositEventInRange(any(), any()))
+        .thenReturn(batch1Response)
+        .thenReturn(batch2Response)
+        .thenReturn(batch3Response);
+
+    final SafeFuture<Void> result =
+        depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
+    assertThat(result).isNotDone();
+
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(fromBlockNumber)),
+            refEq(DefaultBlockParameter.valueOf(batch1End)));
+    verifyNoMoreInteractions(depositContract);
+
+    batch1Response.complete(emptyList());
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(batch2Start)),
+            refEq(DefaultBlockParameter.valueOf(batch2End)));
+    verifyNoMoreInteractions(depositContract);
+
+    batch2Response.complete(emptyList());
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(batch3Start)),
+            refEq(DefaultBlockParameter.valueOf(toBlockNumber)));
+    verifyNoMoreInteractions(depositContract);
+
+    batch3Response.complete(emptyList());
+    verifyNoMoreInteractions(depositContract);
+  }
+
+  @Test
+  void shouldReduceBatchSizeWhenRequestIsRejected() {
+    final BigInteger fromBlockNumber = BigInteger.ZERO;
+    final BigInteger toBlockNumber = BigInteger.valueOf(DEFAULT_BATCH_SIZE + 1000);
+
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> request1Response =
+        new SafeFuture<>();
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> request2Response =
+        new SafeFuture<>();
+    final SafeFuture<List<DepositContract.DepositEventEventResponse>> request3Response =
+        new SafeFuture<>();
+
+    when(depositContract.depositEventInRange(any(), any()))
+        .thenReturn(request1Response)
+        .thenReturn(request2Response)
+        .thenReturn(request3Response);
+
+    final SafeFuture<Void> result =
+        depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
+    assertThat(result).isNotDone();
+
+    // First tries to request a full size batch
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(fromBlockNumber)),
+            refEq(DefaultBlockParameter.valueOf(BigInteger.valueOf(DEFAULT_BATCH_SIZE))));
+    verifyNoMoreInteractions(depositContract);
+
+    // But there are too many results
+    request1Response.completeExceptionally(new RejectedRequestException("Nah mate"));
+
+    // So it halves the batch size and retries
+    asyncRunner.executeQueuedActions();
+    final BigInteger endSuccessfulRange =
+        fromBlockNumber.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE / 2));
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(fromBlockNumber)),
+            refEq(DefaultBlockParameter.valueOf(endSuccessfulRange)));
+    verifyNoMoreInteractions(depositContract);
+
+    // And that works
+    request2Response.complete(emptyList());
+
+    // So it increases the batch size by 10% to avoid getting stuck with a very small batch size
+    asyncRunner.executeQueuedActions();
+    verify(depositContract)
+        .depositEventInRange(
+            refEq(DefaultBlockParameter.valueOf(endSuccessfulRange.add(BigInteger.ONE))),
+            refEq(DefaultBlockParameter.valueOf(toBlockNumber)));
+    verifyNoMoreInteractions(depositContract);
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {

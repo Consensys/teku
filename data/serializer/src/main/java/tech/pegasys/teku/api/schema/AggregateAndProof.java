@@ -23,33 +23,35 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class AggregateAndProof {
 
   @Schema(type = "string", format = "uint64")
-  public final UInt64 index;
+  public final UInt64 aggregator_index;
 
-  public final Attestation attestation;
+  public final Attestation aggregate;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature selection_proof;
 
   @JsonCreator
   public AggregateAndProof(
-      @JsonProperty("index") final UInt64 index,
-      @JsonProperty("attestation") final Attestation attestation,
+      @JsonProperty("aggregator_index") final UInt64 aggregator_index,
+      @JsonProperty("aggregate") final Attestation aggregate,
       @JsonProperty("selection_proof") final BLSSignature selection_proof) {
-    this.index = index;
-    this.attestation = attestation;
+    this.aggregator_index = aggregator_index;
+    this.aggregate = aggregate;
     this.selection_proof = selection_proof;
   }
 
   public AggregateAndProof(
       tech.pegasys.teku.datastructures.operations.AggregateAndProof aggregateAndProof) {
-    index = aggregateAndProof.getIndex();
-    attestation = new Attestation(aggregateAndProof.getAggregate());
+    aggregator_index = aggregateAndProof.getIndex();
+    aggregate = new Attestation(aggregateAndProof.getAggregate());
     selection_proof = new BLSSignature(aggregateAndProof.getSelection_proof());
   }
 
   public tech.pegasys.teku.datastructures.operations.AggregateAndProof
       asInternalAggregateAndProof() {
     return new tech.pegasys.teku.datastructures.operations.AggregateAndProof(
-        index, attestation.asInternalAttestation(), selection_proof.asInternalBLSSignature());
+        aggregator_index,
+        aggregate.asInternalAttestation(),
+        selection_proof.asInternalBLSSignature());
   }
 }

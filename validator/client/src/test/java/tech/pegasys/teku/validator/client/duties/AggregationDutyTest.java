@@ -219,7 +219,11 @@ class AggregationDutyTest {
     performAndReportDuty();
 
     verify(validatorLogger)
-        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(duty.getProducedType()),
+            eq(SLOT),
+            eq(duty.getValidatorIdString()),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -231,7 +235,8 @@ class AggregationDutyTest {
 
     performAndReportDuty();
 
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -268,13 +273,16 @@ class AggregationDutyTest {
 
     performAndReportDuty();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result.join().report(duty.getProducedType(), SLOT, validatorLogger);
+    result
+        .join()
+        .report(duty.getProducedType(), SLOT, duty.getValidatorIdString(), validatorLogger);
   }
 }

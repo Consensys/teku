@@ -75,7 +75,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @SuppressWarnings("unchecked")
@@ -85,7 +85,7 @@ public class BeaconRestApiV1Test {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);

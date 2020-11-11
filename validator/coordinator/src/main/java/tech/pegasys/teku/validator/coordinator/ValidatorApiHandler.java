@@ -71,8 +71,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.sync.SyncState;
-import tech.pegasys.teku.sync.SyncStateTracker;
+import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -93,7 +93,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final CombinedChainDataClient combinedChainDataClient;
-  private final SyncStateTracker syncStateTracker;
+  private final SyncStateProvider syncStateProvider;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
@@ -107,7 +107,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
-      final SyncStateTracker syncStateTracker,
+      final SyncStateProvider syncStateProvider,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -119,7 +119,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
     this.combinedChainDataClient = combinedChainDataClient;
-    this.syncStateTracker = syncStateTracker;
+    this.syncStateProvider = syncStateProvider;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
@@ -458,7 +458,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @VisibleForTesting
   boolean isSyncActive() {
-    final SyncState syncState = syncStateTracker.getCurrentSyncState();
+    final SyncState syncState = syncStateProvider.getCurrentSyncState();
     return syncState.isStartingUp() || (syncState.isSyncing() && headBlockIsTooFarBehind());
   }
 

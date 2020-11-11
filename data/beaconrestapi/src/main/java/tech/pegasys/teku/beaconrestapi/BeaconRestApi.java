@@ -60,8 +60,11 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
@@ -303,7 +306,6 @@ public class BeaconRestApi {
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
             dataProvider, jsonProvider));
-    app.post(PostAttestationData.ROUTE, new PostAttestationData(dataProvider, jsonProvider));
     app.get(GetAttestationData.ROUTE, new GetAttestationData(dataProvider, jsonProvider));
     app.get(GetAggregateAttestation.ROUTE, new GetAggregateAttestation(dataProvider, jsonProvider));
     app.post(PostAggregateAndProofs.ROUTE, new PostAggregateAndProofs(dataProvider, jsonProvider));
@@ -325,8 +327,8 @@ public class BeaconRestApi {
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
 
-    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
     app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
+    app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
@@ -334,9 +336,14 @@ public class BeaconRestApi {
     app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
 
     app.get(GetAttestations.ROUTE, new GetAttestations(dataProvider, jsonProvider));
+    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
+
     app.get(GetAttesterSlashings.ROUTE, new GetAttesterSlashings(dataProvider, jsonProvider));
+    app.post(PostAttesterSlashing.ROUTE, new PostAttesterSlashing(dataProvider, jsonProvider));
     app.get(GetProposerSlashings.ROUTE, new GetProposerSlashings(dataProvider, jsonProvider));
+    app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));
     app.get(GetVoluntaryExits.ROUTE, new GetVoluntaryExits(dataProvider, jsonProvider));
+    app.post(PostVoluntaryExit.ROUTE, new PostVoluntaryExit(dataProvider, jsonProvider));
   }
 
   private void addEventHandler(
