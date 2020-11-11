@@ -23,13 +23,17 @@ import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.historical.HistoricalBlockSyncService;
 
 public class SyncServiceFactory {
   private final P2PConfig p2pConfig;
@@ -38,6 +42,8 @@ public class SyncServiceFactory {
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final RecentChainData recentChainData;
+  private final CombinedChainDataClient combinedChainDataClient;
+  private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2Network p2pNetwork;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -51,6 +57,8 @@ public class SyncServiceFactory {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final StorageUpdateChannel storageUpdateChannel,
       final Eth2Network p2pNetwork,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
@@ -62,6 +70,8 @@ public class SyncServiceFactory {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -76,6 +86,8 @@ public class SyncServiceFactory {
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final StorageUpdateChannel storageUpdateChannel,
       final Eth2Network p2pNetwork,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
@@ -89,6 +101,8 @@ public class SyncServiceFactory {
             asyncRunner,
             timeProvider,
             recentChainData,
+            combinedChainDataClient,
+            storageUpdateChannel,
             p2pNetwork,
             blockImporter,
             pendingBlocks,
@@ -106,7 +120,19 @@ public class SyncServiceFactory {
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
-    return new DefaultSyncService(forwardSyncService, recentBlockFetcher, syncStateTracker);
+    final HistoricalBlockSyncService historicalBlockSyncService =
+        createHistoricalSyncService(syncStateTracker);
+
+    return new DefaultSyncService(
+        forwardSyncService, recentBlockFetcher, syncStateTracker, historicalBlockSyncService);
+  }
+
+  private HistoricalBlockSyncService createHistoricalSyncService(
+      final SyncStateProvider syncStateProvider) {
+    final AsyncRunner asyncRunner =
+        asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
+    return new HistoricalBlockSyncService(
+        storageUpdateChannel, asyncRunner, p2pNetwork, combinedChainDataClient, syncStateProvider);
   }
 
   private SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {
