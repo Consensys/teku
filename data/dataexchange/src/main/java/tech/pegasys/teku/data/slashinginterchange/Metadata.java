@@ -21,10 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Metadata {
 
-  public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(4);
-
-  @JsonProperty("interchange_format")
-  public final InterchangeFormat interchangeFormat;
+  public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(5);
 
   @JsonProperty("interchange_format_version")
   public final UInt64 interchangeFormatVersion;
@@ -34,10 +31,8 @@ public class Metadata {
 
   @JsonCreator
   public Metadata(
-      @JsonProperty("interchange_format") final InterchangeFormat interchangeFormat,
       @JsonProperty("interchange_format_version") final UInt64 interchangeFormatVersion,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot) {
-    this.interchangeFormat = interchangeFormat;
     this.interchangeFormatVersion = interchangeFormatVersion;
     this.genesisValidatorsRoot = genesisValidatorsRoot;
   }
@@ -47,13 +42,12 @@ public class Metadata {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final Metadata metadata = (Metadata) o;
-    return interchangeFormat == metadata.interchangeFormat
-        && Objects.equals(interchangeFormatVersion, metadata.interchangeFormatVersion)
+    return Objects.equals(interchangeFormatVersion, metadata.interchangeFormatVersion)
         && Objects.equals(genesisValidatorsRoot, metadata.genesisValidatorsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(interchangeFormat, interchangeFormatVersion, genesisValidatorsRoot);
+    return Objects.hash(interchangeFormatVersion, genesisValidatorsRoot);
   }
 }
