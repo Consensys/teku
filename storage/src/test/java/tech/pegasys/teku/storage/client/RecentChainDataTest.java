@@ -738,14 +738,7 @@ class RecentChainDataTest {
     final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(
-            blockAndState -> {
-              transaction.putBlockAndState(blockAndState);
-              client
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-            });
+        .forEach(transaction::putBlockAndState);
     transaction.commit().join();
   }
 
@@ -789,10 +782,6 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 
   private void disableForkChoicePruneThreshold() {

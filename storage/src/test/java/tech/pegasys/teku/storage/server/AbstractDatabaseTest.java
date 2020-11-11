@@ -958,10 +958,6 @@ public abstract class AbstractDatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(block);
-      recentChainData
-          .getForkChoiceStrategy()
-          .orElseThrow()
-          .onBlock(block.getBlock().getMessage(), block.getState());
     }
     commit(transaction);
   }
@@ -976,14 +972,7 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     blocksAndStates.stream()
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
-        .forEach(
-            blockAndState -> {
-              transaction.putBlockAndState(blockAndState);
-              recentChainData
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-            });
+        .forEach(transaction::putBlockAndState);
   }
 
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {

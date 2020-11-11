@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
@@ -32,13 +33,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -103,7 +104,7 @@ class ForkChoiceUtilTest {
   }
 
   private Checkpoint createCheckpointFromBlock(final SignedBeaconBlock block) {
-    final UInt64 epoch = BeaconStateUtil.compute_epoch_at_slot(block.getSlot()).plus(1);
+    final UInt64 epoch = compute_next_epoch_boundary(block.getSlot());
     return new Checkpoint(epoch, block.getRoot());
   }
 
@@ -213,6 +214,11 @@ class ForkChoiceUtilTest {
   }
 
   private void addBlock(final SignedBlockAndState blockAndState) {
-    forkChoiceStrategy.onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+
+    forkChoiceStrategy.applyUpdate(
+        List.of(BlockAndCheckpointEpochs.fromBlockAndState(blockAndState)),
+        emptySet(),
+        new Checkpoint(
+            compute_next_epoch_boundary(blockAndState.getSlot()), blockAndState.getRoot()));
   }
 }

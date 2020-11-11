@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +30,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -123,18 +123,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   @Override
-  public void onBlock(final BeaconBlock block, final BeaconState state) {
-    Bytes32 blockRoot = block.hash_tree_root();
-    processBlock(
-        block.getSlot(),
-        blockRoot,
-        block.getParentRoot(),
-        block.getStateRoot(),
-        state.getCurrent_justified_checkpoint().getEpoch(),
-        state.getFinalized_checkpoint().getEpoch());
-  }
-
-  @Override
   public Map<Bytes32, UInt64> getChainHeads() {
     protoArrayLock.readLock().lock();
     try {
@@ -196,22 +184,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
-    }
-  }
-
-  void processBlock(
-      UInt64 blockSlot,
-      Bytes32 blockRoot,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch) {
-    protoArrayLock.writeLock().lock();
-    try {
-      protoArray.onBlock(
-          blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
-    } finally {
-      protoArrayLock.writeLock().unlock();
     }
   }
 
@@ -393,7 +365,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
           .sorted(Comparator.comparing(BlockAndCheckpointEpochs::getSlot))
           .forEach(
               block ->
-                  protoArray.onBlock(
+                  processBlock(
                       block.getBlock().getSlot(),
                       block.getBlock().getRoot(),
                       block.getBlock().getParentRoot(),
@@ -406,6 +378,17 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       protoArrayLock.writeLock().unlock();
     }
     return this;
+  }
+
+  @VisibleForTesting
+  void processBlock(
+      UInt64 blockSlot,
+      Bytes32 blockRoot,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
+      UInt64 justifiedEpoch,
+      UInt64 finalizedEpoch) {
+    protoArray.onBlock(blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
