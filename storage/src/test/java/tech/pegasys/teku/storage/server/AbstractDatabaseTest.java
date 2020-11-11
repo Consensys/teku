@@ -259,6 +259,60 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void shouldPruneHotBlocksInCurrentTransactionFromChainThatIsInvalided() {
+    final UInt64 commonAncestorSlot = UInt64.valueOf(5);
+
+    chainBuilder.generateBlocksUpToSlot(commonAncestorSlot);
+    final ChainBuilder forkA = chainBuilder;
+    final ChainBuilder forkB = chainBuilder.fork();
+
+    // Add base blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+
+    // Forks diverge - generate block options to make each block unique
+    final UInt64 divergingSlot = commonAncestorSlot.plus(1);
+    final List<BlockOptions> blockOptions =
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(divergingSlot)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
+
+    // Create several different blocks at the same slot
+    final SignedBlockAndState blockA =
+        forkA.generateBlockAtSlot(divergingSlot, blockOptions.get(0));
+    final SignedBlockAndState blockB =
+        forkB.generateBlockAtSlot(divergingSlot, blockOptions.get(1));
+
+    // Add diverging blocks sequentially
+    add(List.of(blockA));
+    add(List.of(blockB));
+
+    // Then build on both chains, into the next epoch
+    final SignedBlockAndState blockA2 =
+        forkA.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 + 2);
+    final SignedBlockAndState blockB2 =
+        forkB.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 + 2);
+
+    // Add blocks while finalizing blockA at the same time
+    StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putBlockAndState(blockA2);
+    tx.putBlockAndState(blockB2);
+    justifyAndFinalizeEpoch(UInt64.ONE, blockA, tx);
+    assertThat(tx.commit()).isCompleted();
+
+    // Verify all fork B blocks were pruned
+    assertThatSafeFuture(store.retrieveBlock(blockB.getRoot())).isCompletedWithEmptyOptional();
+    assertThatSafeFuture(store.retrieveBlock(blockB2.getRoot())).isCompletedWithEmptyOptional();
+
+    // And fork A should be available.
+    assertThat(store.retrieveSignedBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock()));
+    assertThat(store.retrieveSignedBlock(blockA2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA2.getBlock()));
+  }
+
+  @Test
   public void getFinalizedState() {
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(UInt64.ONE);
