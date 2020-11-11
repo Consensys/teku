@@ -59,7 +59,9 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   }
 
   public Bytes getUncompressedOrThrow() throws DecodingException {
-    return getMaybeUncompressed().orElseThrow(() -> new DecodingException("Couldn't uncompress the message", uncompressException));
+    return getMaybeUncompressed()
+        .orElseThrow(
+            () -> new DecodingException("Couldn't uncompress the message", uncompressException));
   }
 
   public Optional<Bytes> getMaybeUncompressed() {
