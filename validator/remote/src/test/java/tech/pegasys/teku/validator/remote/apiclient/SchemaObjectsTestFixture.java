@@ -26,6 +26,7 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
@@ -49,6 +50,10 @@ public class SchemaObjectsTestFixture {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes4()));
+  }
+
+  public SignedVoluntaryExit signedVoluntaryExit() {
+    return new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
   }
 
   public BLSPubKey BLSPubKey() {
