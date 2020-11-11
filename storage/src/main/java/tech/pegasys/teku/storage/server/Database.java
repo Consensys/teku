@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,8 @@ public interface Database extends AutoCloseable {
   void storeInitialAnchor(AnchorPoint genesis);
 
   void update(StorageUpdate event);
+
+  void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 

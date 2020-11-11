@@ -24,6 +24,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +238,38 @@ public class RocksDbDatabase implements Database {
       return;
     }
     doUpdate(event);
+  }
+
+  @Override
+  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {
+    if (blocks.isEmpty()) {
+      return;
+    }
+
+    // Sort blocks and verify that they are contiguous with the oldestBlock
+    final List<SignedBeaconBlock> sorted =
+        blocks.stream()
+            .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
+            .collect(Collectors.toList());
+
+    // The new block should be just prior to our earliest block if available, and otherwise should
+    // match our latest finalized block
+    Bytes32 expectedRoot =
+        getEarliestAvailableBlock()
+            .map(SignedBeaconBlock::getParentRoot)
+            .orElseGet(() -> this.getLatestFinalizedBlock().getRoot());
+    for (SignedBeaconBlock block : sorted) {
+      if (!block.getRoot().equals(expectedRoot)) {
+        throw new IllegalArgumentException(
+            "Blocks must be contiguous with the earliest known block.");
+      }
+      expectedRoot = block.getParentRoot();
+    }
+
+    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      sorted.forEach(updater::addFinalizedBlock);
+      updater.commit();
+    }
   }
 
   @Override
