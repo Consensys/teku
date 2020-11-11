@@ -2,11 +2,9 @@
 
 ## Timeline to Mainnet
 
-With the announcement of the Eth2 deposit contract and setting the minimum genesis time to 
-Tuesday, December 1, 2020 12:00:00 PM UTC the journey to launching the beacon chain is in its final stage.
-Teku is ready to be a part of the Mainnet launch and we are working with other client teams to coordinate 
-all the details required to make the launch a success. Here's a timeline of key events, including the
-Teku releases that will lead up to Mainnet launch.
+The journey to launching the beacon chain is in its final stage with the announcement of the Eth2 deposit contract, and minimum genesis time of Tuesday, December 1, 2020 12:00:00 PM UTC.
+
+Teku is ready to be a part of the Mainnet launch, and we're coordinating with other client teams to make the launch a success. Here's a timeline of key events, including the Teku releases that will lead up to Mainnet launch.
 
 Note that the exact genesis time depends on when enough deposits are received. If it takes longer
 to reach the minimum validators required, then the date the Mainnet genesis is set will be delayed 
