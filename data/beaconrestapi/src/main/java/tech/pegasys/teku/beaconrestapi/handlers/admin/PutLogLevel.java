@@ -37,7 +37,6 @@ import tech.pegasys.teku.provider.JsonProvider;
 public class PutLogLevel implements Handler {
 
   public static final String ROUTE = "/teku/v1/admin/log_level";
-  public static final String OLD_ROUTE = "/admin/log_level";
 
   private final JsonProvider jsonProvider;
 
