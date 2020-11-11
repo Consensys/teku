@@ -91,11 +91,11 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   @Override
   public Bytes getMessageId() {
     return Hash.sha2_256(
-        getMaybeUncompressed()
-            .map(
-                validSnappyUncompressed ->
-                    Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, validSnappyUncompressed))
-            .orElse(Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, compressedData))
-            .slice(0, 20));
+            getMaybeUncompressed()
+                .map(
+                    validSnappyUncompressed ->
+                        Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, validSnappyUncompressed))
+                .orElse(Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, compressedData)))
+        .slice(0, 20);
   }
 }
