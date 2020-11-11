@@ -61,6 +61,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+  private final GossipEncoding gossipEncoding;
   private final AttestationSubnetService attestationSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
@@ -106,6 +107,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
+    this.gossipEncoding = gossipEncoding;
     this.attestationSubnetService = attestationSubnetService;
     this.blockProcessor = blockProcessor;
     this.attestationProcessor = attestationProcessor;
@@ -136,51 +138,30 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            asyncRunner,
-            discoveryNetwork,
-            GossipEncoding.SSZ_SNAPPY,
-            recentChainData,
-            attestationProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, recentChainData, attestationProcessor);
 
     blockGossipManager =
         new BlockGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            GossipEncoding.SSZ_SNAPPY,
-            forkInfo,
-            eventBus,
-            blockProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, eventBus, blockProcessor);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
 
     aggregateGossipManager =
         new AggregateGossipManager(
-            asyncRunner, discoveryNetwork, GossipEncoding.SSZ_SNAPPY, forkInfo, aggregateProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, aggregateProcessor);
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            GossipEncoding.SSZ_SNAPPY,
-            forkInfo,
-            voluntaryExitProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, voluntaryExitProcessor);
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            GossipEncoding.SSZ_SNAPPY,
-            forkInfo,
-            proposerSlashingProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingProcessor);
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            GossipEncoding.SSZ_SNAPPY,
-            forkInfo,
-            attesterSlashingProcessor);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, attesterSlashingProcessor);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
