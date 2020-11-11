@@ -172,7 +172,7 @@ public class HistoricalBatchFetcher {
 
   private RequestParameters calculateRequestParams() {
     final UInt64 startSlot = getStartSlot();
-    final UInt64 count = maxSlot.minus(startSlot).plus(1);
+    final UInt64 count = maxSlot.plus(1).minus(startSlot);
     return new RequestParameters(startSlot, count);
   }
 
