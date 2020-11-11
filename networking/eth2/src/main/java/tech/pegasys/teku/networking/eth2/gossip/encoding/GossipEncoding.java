@@ -36,7 +36,7 @@ public interface GossipEncoding {
   <T> Bytes encode(T value);
 
   /**
-   * Preprocess the raw Gossip message. The returned preprocessed message is be passed later to
+   * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
    * {@link #decodeMessage(PreparedGossipMessage, Class)}
    *
    * <p>If there is a problem while preprocessing a message the error should be memorized and later
