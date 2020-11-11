@@ -281,7 +281,9 @@ public class BeaconRestApi {
   }
 
   private void addAdminHandlers() {
-    app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
+    final PutLogLevel putLogLevel = new PutLogLevel(jsonProvider);
+    app.put(PutLogLevel.ROUTE, putLogLevel);
+    app.put(PutLogLevel.OLD_ROUTE, putLogLevel);
   }
 
   private void addV1NodeHandlers(final DataProvider provider) {
