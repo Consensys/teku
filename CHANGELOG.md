@@ -6,36 +6,35 @@ The journey to launching the beacon chain is in its final stage with the announc
 
 Teku is ready to be a part of the Mainnet launch, and we're coordinating with other client teams to make the launch a success. Here's a timeline of key events, including the Teku releases that will lead up to Mainnet launch.
 
-Note that the exact genesis time depends on when enough deposits are received. If it takes longer
-to reach the minimum validators required, then the date the Mainnet genesis is set will be delayed 
-until enough validators are registered.  The Mainnet chain will then start 7 days after the genesis 
-is set. There will be a Teku release in the 7 days prior to the Mainnet chain starting and users 
+**Note**: The exact genesis time depends on when enough deposits are received. If it takes longer
+to reach the minimum validators required, then the Mainnet genesis won't be set until enough 
+validators are registered.  The Mainnet chain will then start 7 days after the genesis 
+is set. There will be a Teku release within the 7 days before the Mainnet chain starts, and users 
 should ensure they upgrade to it.
 
 ----------------------------------------------------------------------------------------------------
 Event                            | Scheduled Date       | Notes
 ---------------------------------|----------------------|-------------------------------------------
-Teku 0.12.14 release             | 11 November          | Includes the Mainnet ready specification available with `--network mainnet`.
+Teku 0.12.14 release             | 11 November          | Includes the Mainnet ready specification available with the `--network mainnet` command line option.
 Teku 20.11.0-RC1 release         | 18 November          | Makes `mainnet` the default network. Legacy options and APIs will be removed, see [Upcoming Breaking Changes](#upcoming-breaking-changes)
 Earliest date for Mainnet genesis state to be set | 24 November | If enough deposits are received by this time, the Mainnet genesis state will be generated. Otherwise this will be delayed until enough deposits are received
-Teku 20.11.0 release             | Around 26 November   | First full production ready release of Teku.
-Earliest date for Mainnet launch | 1 December   | This will be delayed if not enough deposits are received by 24 November. The chain will always launch 7 days after the genesis state is set 
+Teku 20.11.0 release             | Around 26 November   | First full production-ready release of Teku.
+Earliest date for Mainnet launch | 1 December   | This will be delayed if required deposit amounts are not received by 24 November. The chain will always launch 7 days after the genesis state is set. 
 
 ### Mainnet Genesis Release
 
-Regardless of when enough deposits are received to set the Mainnet genesis state, users 
-should expect a Teku release in the week between the genesis state being set and the chain actually starting.
-It is important to upgrade your nodes to this version prior to the chain starting to ensure a smooth
-launch.
+Regardless of the Mainnet launch date, users should expect a Teku release in the week leading up to 
+the chain starting. It is important to upgrade your nodes to this version before the chain starts to
+ensure a smooth launch.
 
 ### CalVer Versioning
 
-Teku will adopt CalVer versioning for our production ready releases using the YY.M.patch format. 
-YY for year (20, 21, 22 etc), M for month (1, 2, 3, …, 11, 12) and patch is patch release number.
+Teku will adopt the CalVer versioning convention for our production ready releases using the 
+`YY.M.patch` format. `YY` for year (20, 21, 22 etc), `M` for month (1, 2, 3, …, 11, 12) and `patch` for patch release number.
 
 The final release on the old versioning system will be 0.12.14.
 
-The first production ready release will be 20.11.0  
+The first production-ready release will be 20.11.0.  
 
 #### Backward Compatibility Policy
 
@@ -75,7 +74,7 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
 
 ### Breaking Changes
 - In post data for `/eth/v1/validator/aggregate_and_proofs`, `index` has been renamed to `aggregator_index` and `attestation` has been renamed to `aggregate` reflecting the latest version of the standard API spec.
-- Removed network definitions for `spadina` and `zinken` testnets which are no longer active
+- Removed network definitions for `spadina` and `zinken` testnets which are no longer active.
 - The `validator` subcommands to generate validator keys and send deposit transactions have been removed. Use the Eth2 Launchpad to register validators.
 
 ### Additions and Improvements
@@ -91,13 +90,13 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
   - GET `/eth/v1/config/deposit_contract`
 - Added support for the Toledo devnet.
 - Early access: Weak subjectivity sync no longer requires the initial block.  Only the state needs to be provided via `--Xws-initial-state`. Additionally the `Xws-initial-state` option can be specified via a config file.
-- Support either plain text or JSON responses from external signers
-- Identify which validator was affected when validator duties fail
+- Support either plain text or JSON responses from external signers.
+- Identify which validator was affected when validator duties fail.
 - Removed support for uncompressed `SSZ` encoding for gossip and p2p RPC. All networks have been using `SSZ_SNAPPY` encoding for some time.
 
 ### Bug Fixes
-- Fixed issue where deposit events were retrieved from too large a range of blocks. This resulted in overloading local Geth nodes running on Mainnet and exceeding the 10,000 log event limit in Infura responses
-- Reduce log level for `RpcTimeoutException` during sync
+- Fixed an issue where deposit events were retrieved from a range of blocks that was too large. This resulted in overloading local Geth nodes running on Mainnet, and exceeding the 10,000 log event limit in Infura responses.
+- Reduce log level for `RpcTimeoutException` during sync.
 - Check equality of the header in proposer slashings, not the signed wrapper. Fixes a potential state transition incompatibility found by fuzz testing.
 
 
