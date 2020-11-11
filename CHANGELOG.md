@@ -68,11 +68,39 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
   - `/validator/aggregate_and_proofs` replaced by `/eth/v1/validator/aggregate_and_proofs`
   - `/validator/beacon_committee_subscription` replaced by `/eth/v1/validator/beacon_committee_subscriptions`
   - `/validator/persistent_subnets_subscription` deprecated. The beacon node now automatically establishes persistent subnet subscriptions based on calls to `/eth/v1/validator/beacon_committee_subscriptions`
+  - `/beacon/block` deprecated. Replaced by `/eth/v1/beacon/blocks/{block_id}`
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 - Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
 
 
 ## 0.12.14
+
+### Breaking Changes
+- In post data for `/eth/v1/validator/aggregate_and_proofs`, `index` has been renamed to `aggregator_index` and `attestation` has been renamed to `aggregate` reflecting the latest version of the standard API spec.
+- Removed network definitions for `spadina` and `zinken` testnets which are no longer active
+- The `validator` subcommands to generate validator keys and send deposit transactions have been removed. Use the Eth2 Launchpad to register validators.
+
+### Additions and Improvements
+- Added the Mainnet network definition. To use Mainnet, ensure the ETH1 node is connected to Eth1 Mainnet and specify `--network mainnet`.
+- New standard API endpoints:
+  - GET `/eth/v1/config/fork_schedule`
+  - GET `/eth/v1/beacon/blocks/{block_id}`
+  - GET `/eth/v1/beacon/blocks/{block_id}/attestations`
+  - GET `/eth/v1/beacon/blocks/{block_id}/root`
+  - POST `/eth/v1/beacon/pool/voluntary_exits`
+  - POST `/eth/v1/beacon/pool/proposer_slashings`
+  - POST `/eth/v1/beacon/pool/attester_slashings`
+  - GET `/eth/v1/config/deposit_contract`
+- Added support for the Toledo devnet.
+- Early access: Weak subjectivity sync no longer requires the initial block.  Only the state needs to be provided via `--Xws-initial-state`. Additionally the `Xws-initial-state` option can be specified via a config file.
+- Support either plain text or JSON responses from external signers
+- Identify which validator was affected when validator duties fail
+- Removed support for uncompressed `SSZ` encoding for gossip and p2p RPC. All networks have been using `SSZ_SNAPPY` encoding for some time.
+
+### Bug Fixes
+- Fixed issue where deposit events were retrieved from too large a range of blocks. This resulted in overloading local Geth nodes running on Mainnet and exceeding the 10,000 log event limit in Infura responses
+- Reduce log level for `RpcTimeoutException` during sync
+- Check equality of the header in proposer slashings, not the signed wrapper. Fixes a potential state transition incompatibility found by fuzz testing.
 
 
 ## 0.12.13
