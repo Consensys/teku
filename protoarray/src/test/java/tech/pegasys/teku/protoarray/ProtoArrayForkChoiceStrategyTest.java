@@ -86,11 +86,11 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final int chainSize = 2_000;
     saveChainToStore(chainSize, store);
     final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
+        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
 
     assertThat(future).isCompleted();
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
-    assertThat(forkChoiceStrategy.size()).isEqualTo(chainSize + 1);
+    assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(chainSize + 1);
   }
 
   @Test
@@ -99,7 +99,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final int chainSize = 5;
     saveChainToStore(chainSize, store);
     final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
+        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
 
     assertThat(future).isCompleted();
 
@@ -127,11 +127,11 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     MutableStore store = new TestStoreFactory().createAnchorStore(anchor);
 
     final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(store, storageChannel);
+        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
     assertThat(future).isCompleted();
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
 
-    assertThat(forkChoiceStrategy.size()).isEqualTo(1);
+    assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
     final Bytes32 head =
         forkChoiceStrategy.findHead(
             store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
@@ -286,7 +286,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
 
   private ProtoArrayForkChoiceStrategy createProtoArray(final StorageSystem storageSystem) {
     final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initialize(
+        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
             storageSystem.recentChainData().getStore(), storageSystem.createProtoArrayStorage());
     assertThat(future).isCompleted();
     return future.join();

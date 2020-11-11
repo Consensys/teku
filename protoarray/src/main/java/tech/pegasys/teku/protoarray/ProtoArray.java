@@ -101,7 +101,7 @@ public class ProtoArray {
       return;
     }
 
-    int nodeIndex = nodes.size();
+    int nodeIndex = getTotalTrackedNodeCount();
 
     ProtoNode node =
         new ProtoNode(
@@ -174,7 +174,7 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    checkArgument(deltas.size() == nodes.size(), "ProtoArray: Invalid delta length");
+    checkArgument(deltas.size() == getTotalTrackedNodeCount(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
@@ -183,7 +183,7 @@ public class ProtoArray {
     }
 
     // Iterate backwards through all indices in `this.nodes`.
-    for (int nodeIndex = nodes.size() - 1; nodeIndex >= 0; nodeIndex--) {
+    for (int nodeIndex = getTotalTrackedNodeCount() - 1; nodeIndex >= 0; nodeIndex--) {
       ProtoNode node = nodes.get(nodeIndex);
 
       // There is no need to adjust the balances or manage parent of the zero hash since it
@@ -202,6 +202,10 @@ public class ProtoArray {
         maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
       }
     }
+  }
+
+  public int getTotalTrackedNodeCount() {
+    return nodes.size();
   }
 
   /**

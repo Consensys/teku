@@ -57,7 +57,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   // Public
-  public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
+  public static SafeFuture<ProtoArrayForkChoiceStrategy> initializeAndMigrateStorage(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
@@ -202,11 +202,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
 
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
-              store,
-              protoArray.getNodes().size(),
-              protoArray.getIndices(),
-              oldBalances,
-              newBalances);
+              store, getTotalTrackedNodeCount(), protoArray.getIndices(), oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
@@ -228,10 +224,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     }
   }
 
-  public int size() {
+  public int getTotalTrackedNodeCount() {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getNodes().size();
+      return protoArray.getTotalTrackedNodeCount();
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -395,7 +391,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
         .flatMap(
             blockIndex -> {
-              if (blockIndex < protoArray.getNodes().size()) {
+              if (blockIndex < getTotalTrackedNodeCount()) {
                 return Optional.of(protoArray.getNodes().get(blockIndex));
               }
               return Optional.empty();

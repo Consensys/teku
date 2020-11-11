@@ -431,7 +431,7 @@ public class VotesTest {
     // Ensure that pruning below the prune threshold does not prune.
     forkChoice.setPruneThreshold(Integer.MAX_VALUE);
     forkChoice.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, getHash(5)));
-    assertThat(forkChoice.size()).isEqualTo(11);
+    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
     assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
@@ -457,7 +457,7 @@ public class VotesTest {
     //        9  10
     forkChoice.setPruneThreshold(1);
     forkChoice.applyUpdate(emptyList(), emptySet(), new Checkpoint(ONE, getHash(5)));
-    assertThat(forkChoice.size()).isEqualTo(6);
+    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(6);
 
     // Run find-head, ensure the prune didn't change the head.
     assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
