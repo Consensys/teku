@@ -28,6 +28,7 @@ public enum ValidatorApiMethod {
   GET_UNSIGNED_ATTESTATION("validator/attestation"),
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),
   SEND_SIGNED_ATTESTATION("eth/v1/beacon/pool/attestations"),
+  SEND_SIGNED_VOLUNTARY_EXIT("eth/v1/beacon/pool/voluntary_exits"),
   GET_AGGREGATE("eth/v1/validator/aggregate_attestation"),
   SEND_SIGNED_AGGREGATE_AND_PROOF("/eth/v1/validator/aggregate_and_proofs"),
   SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET("eth/v1/validator/beacon_committee_subscriptions"),

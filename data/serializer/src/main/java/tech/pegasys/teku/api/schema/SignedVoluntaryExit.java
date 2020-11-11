@@ -38,6 +38,13 @@ public class SignedVoluntaryExit {
     this.signature = signature;
   }
 
+  public SignedVoluntaryExit(
+      final tech.pegasys.teku.datastructures.operations.VoluntaryExit message,
+      final tech.pegasys.teku.bls.BLSSignature signature) {
+    this.message = new VoluntaryExit(message);
+    this.signature = new BLSSignature(signature);
+  }
+
   public tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit
       asInternalSignedVoluntaryExit() {
     return new tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit(
