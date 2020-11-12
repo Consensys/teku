@@ -190,7 +190,7 @@ public class VoluntaryExitCommand implements Runnable {
     genesisRoot = maybeRoot.get();
 
     final ValidatorLoader validatorLoader =
-        new ValidatorLoader(new RejectingSlashingProtector(), asyncRunner);
+        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner);
 
     try {
       blsPublicKeyValidatorMap =
