@@ -30,6 +30,7 @@ import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSi
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
@@ -73,7 +74,10 @@ public class ExternalSignerIntegrationTest {
     this.client = client;
     externalSigner =
         new ExternalSigner(
-            new URL("http://127.0.0.1:" + client.getLocalPort()), KEYPAIR.getPublicKey(), TIMEOUT);
+            HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build(),
+            new URL("http://127.0.0.1:" + client.getLocalPort()),
+            KEYPAIR.getPublicKey(),
+            TIMEOUT);
   }
 
   @AfterEach

@@ -16,6 +16,9 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Suppliers;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -41,10 +45,25 @@ public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
+  private final Supplier<HttpClient> remoteValidatorHttpClientFactory;
 
-  public ValidatorLoader(final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
+  @VisibleForTesting
+  ValidatorLoader(
+      final SlashingProtector slashingProtector,
+      final AsyncRunner asyncRunner,
+      final Supplier<HttpClient> remoteValidatorHttpClientFactory) {
     this.slashingProtector = slashingProtector;
     this.asyncRunner = asyncRunner;
+    this.remoteValidatorHttpClientFactory = remoteValidatorHttpClientFactory;
+  }
+
+  public static ValidatorLoader create(
+      final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
+    return new ValidatorLoader(
+        slashingProtector,
+        asyncRunner,
+        Suppliers.memoize(
+            () -> HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()));
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(
@@ -81,14 +100,19 @@ public class ValidatorLoader {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
-            publicKey ->
-                new Validator(
-                    publicKey,
-                    createSlashingProtectedSigner(
-                        publicKey,
-                        new ExternalSigner(
-                            config.getValidatorExternalSignerUrl(), publicKey, timeout)),
-                    Optional.ofNullable(config.getGraffiti())))
+            publicKey -> {
+              final ExternalSigner externalSigner =
+                  new ExternalSigner(
+                      remoteValidatorHttpClientFactory.get(),
+                      config.getValidatorExternalSignerUrl(),
+                      publicKey,
+                      timeout);
+              final Signer signer =
+                  config.isValidatorExternalSignerSlashingProtectionEnabled()
+                      ? createSlashingProtectedSigner(publicKey, externalSigner)
+                      : externalSigner;
+              return new Validator(publicKey, signer, Optional.ofNullable(config.getGraffiti()));
+            })
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 

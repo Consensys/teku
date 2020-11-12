@@ -57,4 +57,21 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
     assertThat(config.getGraffiti()).isNull();
   }
+
+  @Test
+  void shouldEnableSlashingProtectionForExternalSignersByDefault() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisableSlashingProtectionForExternalSigners() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments(
+                "--validators-external-signer-slashing-protection-enabled=false")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isFalse();
+  }
 }

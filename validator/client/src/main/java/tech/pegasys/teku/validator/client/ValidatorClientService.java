@@ -66,7 +66,7 @@ public class ValidatorClientService extends Service {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
-    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
+    final ValidatorLoader validatorLoader = ValidatorLoader.create(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getGlobalConfiguration());
