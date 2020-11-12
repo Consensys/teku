@@ -18,6 +18,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 
 public interface ProtoArrayStorageChannel extends ChannelInterface {
+  ProtoArrayStorageChannel NO_OP =
+      new ProtoArrayStorageChannel() {
+        @Override
+        public void onProtoArrayUpdate(final ProtoArraySnapshot protoArraySnapshot) {}
+
+        @Override
+        public SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot() {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
 
   void onProtoArrayUpdate(ProtoArraySnapshot protoArraySnapshot);
 
