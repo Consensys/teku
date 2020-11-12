@@ -93,8 +93,9 @@ public class VoluntaryExitCommand implements Runnable {
   private void confirmExits() {
     SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
+    SUB_COMMAND_LOG.display("");
     SUB_COMMAND_LOG.display(
-        "\nThese validators won't be able to be re-activated, and withdrawals aren't likely to be possible until Phase 2 of eth2 Mainnet.");
+        "These validators won't be able to be re-activated, and withdrawals aren't likely to be possible until Phase 2 of eth2 Mainnet.");
     SUB_COMMAND_LOG.display("Are you sure you wish to continue (yes/no)? ");
     Scanner scanner = new Scanner(System.in, Charset.defaultCharset().name());
     final String confirmation = scanner.next();
