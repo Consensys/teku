@@ -13,67 +13,17 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
-
-  @Option(
-      names = {"--validators-key-files"},
-      paramLabel = "<FILENAMES>",
-      description = "The list of encrypted keystore files to load the validator keys from",
-      split = ",",
-      hidden = true,
-      arity = "0..*")
-  private List<String> validatorKeystoreFiles = new ArrayList<>();
-
-  @Option(
-      names = {"--validators-key-password-files"},
-      paramLabel = "<FILENAMES>",
-      description = "The list of password files to decrypt the validator keystore files",
-      split = ",",
-      hidden = true,
-      arity = "0..*")
-  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
-
-  @Option(
-      names = {"--validators-external-signer-public-keys"},
-      paramLabel = "<STRINGS>",
-      description = "The list of external signer public keys",
-      split = ",",
-      arity = "0..*")
-  private List<String> validatorExternalSignerPublicKeys = new ArrayList<>();
-
-  @Option(
-      names = {"--validators-external-signer-url"},
-      paramLabel = "<NETWORK>",
-      description = "URL for the external signing service",
-      arity = "1")
-  private String validatorExternalSignerUrl = null;
-
-  @Option(
-      names = {"--validators-external-signer-timeout"},
-      paramLabel = "<INTEGER>",
-      description = "Timeout (in milliseconds) for the external signing service",
-      arity = "1")
-  private int validatorExternalSignerTimeout = 1000;
 
   @Option(
       names = {"--validators-graffiti"},
@@ -121,39 +71,8 @@ public class ValidatorOptions {
         config ->
             config
                 .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorKeystoreFiles(validatorKeystoreFiles)
-                .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
-                .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
-                .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
-                .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .graffiti(graffiti));
     validatorKeysOptions.configure(builder);
-  }
-
-  private List<BLSPublicKey> parseExternalSignerPublicKeys() {
-    if (validatorExternalSignerPublicKeys == null) {
-      return Collections.emptyList();
-    }
-    try {
-      return validatorExternalSignerPublicKeys.stream()
-          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
-          .collect(Collectors.toList());
-    } catch (IllegalArgumentException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Signer public key is invalid", e);
-    }
-  }
-
-  public URL parseValidatorExternalSignerUrl() {
-    if (Strings.isNullOrEmpty(validatorExternalSignerUrl)) {
-      return null;
-    }
-    try {
-      return new URL(validatorExternalSignerUrl);
-    } catch (MalformedURLException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Signer URL has invalid syntax", e);
-    }
   }
 }
