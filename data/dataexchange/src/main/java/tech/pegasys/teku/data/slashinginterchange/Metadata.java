@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,18 +24,30 @@ public class Metadata {
 
   public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(5);
 
+  @JsonProperty("interchange_format")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public final String interchangeFormat;
+
   @JsonProperty("interchange_format_version")
   public final UInt64 interchangeFormatVersion;
 
   @JsonProperty("genesis_validators_root")
   public final Bytes32 genesisValidatorsRoot;
 
+  public Metadata(final UInt64 interchangeFormatVersion, final Bytes32 genesisValidatorsRoot) {
+    this.interchangeFormat = null;
+    this.interchangeFormatVersion = interchangeFormatVersion;
+    this.genesisValidatorsRoot = genesisValidatorsRoot;
+  }
+
   @JsonCreator
   public Metadata(
+      @JsonProperty("interchange_format") final String interchangeFormat,
       @JsonProperty("interchange_format_version") final UInt64 interchangeFormatVersion,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot) {
     this.interchangeFormatVersion = interchangeFormatVersion;
     this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.interchangeFormat = interchangeFormat;
   }
 
   @Override

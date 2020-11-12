@@ -81,9 +81,6 @@ public class SlashingProtectionImporter {
 
     } catch (JsonMappingException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-      if (cause.contains("\"interchange_format\"")) {
-        cause = "Required version is " + INTERCHANGE_VERSION;
-      }
       log.exit(1, "Failed to load data from " + inputFile.getName() + ". " + cause);
     } catch (JsonParseException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
