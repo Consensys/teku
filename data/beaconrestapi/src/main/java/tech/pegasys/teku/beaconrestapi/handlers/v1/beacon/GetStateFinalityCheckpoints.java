@@ -69,7 +69,7 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetStateRootResponse.class)),
+            content = @OpenApiContent(from = GetStateFinalityCheckpointsResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
