@@ -35,7 +35,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class SlashingProtectorTest {
+class LocalSlashingProtectorTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
   private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
   private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
@@ -49,8 +49,8 @@ class SlashingProtectorTest {
   private final Path signingRecordPath =
       baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
 
-  private final SlashingProtector slashingProtectionStorage =
-      new SlashingProtector(dataWriter, baseDir);
+  private final LocalSlashingProtector slashingProtectionStorage =
+      new LocalSlashingProtector(dataWriter, baseDir);
 
   @ParameterizedTest(name = "maySignBlock({0})")
   @MethodSource("blockCases")

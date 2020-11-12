@@ -407,51 +407,76 @@ workflows:
     jobs:
       - assemble:
           context: 
-            - dockerhub-quorumengineering-ro  
+            - dockerhub-quorumengineering-ro
+          filters:
+            tags: &filters-release-tags
+              only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - spotless:
+          filters:
+            tags:
+              <<: *filters-release-tags
           context: 
-            - dockerhub-quorumengineering-ro  
+            - dockerhub-quorumengineering-ro
       - referenceTests:
           requires:
             - assemble
             - spotless
+          filters:
+            tags:
+              <<: *filters-release-tags
           context: 
             - dockerhub-quorumengineering-ro               
       - unitTests:
           requires:
             - assemble
             - spotless
-          context: 
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
             - dockerhub-quorumengineering-ro              
       - integrationTests:
           requires:
             - assemble
             - spotless
-          context: 
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
             - dockerhub-quorumengineering-ro        
       - acceptanceTests:
           requires:
             - assemble
             - spotless
-          context: 
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
             - dockerhub-quorumengineering-ro           
       - docker:
           requires:
             - assemble
             - spotless
-          context: 
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
             - dockerhub-quorumengineering-ro             
       - extractAPISpec:
           requires:
             - assemble
-          context: dockerhub-quorumengineering-ro            
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context: dockerhub-quorumengineering-ro
       - publish:
           filters:
             branches:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
+            tags:
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -468,7 +493,8 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
+            tags:
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -477,7 +503,7 @@ workflows:
             - docker
             - extractAPISpec
           context: 
-            - dockerhub-quorumengineering-rw 
+            - dockerhub-quorumengineering-rw
       - publishAPIDoc:
           filters:
             branches:
@@ -485,7 +511,7 @@ workflows:
                 - master
                 - /^release-.*/
             tags: # stable doc is published only on tags to prevent confusion on the doc site.
-              only: /.*/
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -494,18 +520,4 @@ workflows:
             - docker
             - extractAPISpec
           context: 
-            - dockerhub-quorumengineering-ro        
-
-#  nightly:
-#    triggers:
-#      - schedule:
-#          cron: "0 0 * * *"
-#          filters:
-#            branches:
-#              only:
-#                - master
-#    jobs:
-#      - assemble
-#      - compatibilityTests:
-#          requires:
-#            - assemble
+            - dockerhub-quorumengineering-ro

@@ -57,7 +57,7 @@ public class ProtoArrayScoreCalculatorTest {
       newBalances.add(ZERO);
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(validatorCount);
 
     // Deltas should all be zero
@@ -76,7 +76,7 @@ public class ProtoArrayScoreCalculatorTest {
       newBalances.add(BALANCE);
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(validatorCount);
 
     for (int i = 0; i < deltas.size(); i++) {
@@ -105,7 +105,7 @@ public class ProtoArrayScoreCalculatorTest {
       newBalances.add(BALANCE);
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(validatorCount);
 
     // Each root should have the same delta
@@ -128,7 +128,7 @@ public class ProtoArrayScoreCalculatorTest {
       newBalances.add(BALANCE);
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
 
     assertThat(deltas).hasSize(validatorCount);
     long totalDelta = BALANCE.longValue() * Integer.toUnsignedLong(validatorCount);
@@ -171,7 +171,7 @@ public class ProtoArrayScoreCalculatorTest {
     validator2vote.setCurrentRoot(getHash(1));
     validator2vote.setNextRoot(getHash(1337));
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(1);
 
     // The block should have lost both balances
@@ -197,7 +197,7 @@ public class ProtoArrayScoreCalculatorTest {
       newBalances.add(NEW_BALANCE);
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(validatorCount);
 
     for (int i = 0; i < deltas.size(); i++) {
@@ -238,7 +238,7 @@ public class ProtoArrayScoreCalculatorTest {
       vote.setNextRoot(getHash(2));
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have only lost one balance
@@ -271,7 +271,7 @@ public class ProtoArrayScoreCalculatorTest {
       vote.setNextRoot(getHash(2));
     }
 
-    List<Long> deltas = computeDeltas(store, indices, oldBalances, newBalances);
+    List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(2);
 
     // Block 1 should have lost both balances

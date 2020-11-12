@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -64,7 +65,7 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
