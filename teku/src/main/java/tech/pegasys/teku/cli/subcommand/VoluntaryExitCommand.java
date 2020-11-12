@@ -183,7 +183,7 @@ public class VoluntaryExitCommand implements Runnable {
     final Path slashProtectionPath = getSlashingProtectionPath(dataOptions);
     final SlashingProtector slashingProtector =
         new SlashingProtector(new SyncDataAccessor(), slashProtectionPath);
-    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
+    final ValidatorLoader validatorLoader = ValidatorLoader.create(slashingProtector, asyncRunner);
 
     try {
       blsPublicKeyValidatorMap =

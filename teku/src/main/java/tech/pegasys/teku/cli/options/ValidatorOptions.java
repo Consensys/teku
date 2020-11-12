@@ -76,6 +76,14 @@ public class ValidatorOptions {
   private String validatorExternalSignerUrl = null;
 
   @Option(
+      names = {"--validators-external-signer-slashing-protection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable internal slashing protection for external signers. Default: true",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean validatorExternalSignerSlashingProtectionEnabled = true;
+
+  @Option(
       names = {"--validators-external-signer-timeout"},
       paramLabel = "<INTEGER>",
       description = "Timeout (in milliseconds) for the external signing service",
@@ -131,6 +139,8 @@ public class ValidatorOptions {
                 .validatorKeystoreFiles(validatorKeystoreFiles)
                 .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
                 .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
+                .validatorExternalSignerSlashingProtectionEnabled(
+                    validatorExternalSignerSlashingProtectionEnabled)
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
