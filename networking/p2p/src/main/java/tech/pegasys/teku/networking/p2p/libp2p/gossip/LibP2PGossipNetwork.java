@@ -58,15 +58,15 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 public class LibP2PGossipNetwork implements GossipNetwork {
 
   private static final Logger LOG = LogManager.getLogger();
+
   private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR =
       new GossipWireValidator();
   private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final MetricsSystem metricsSystem;
-  private Gossip gossip;
-  private PubsubPublisherApi publisher;
-  private final Map<String, TopicHandler> topicHandlerMap = new ConcurrentHashMap<>();
-  private final PreparedGossipMessageFactory defaultMessageFactory;
+  private final Gossip gossip;
+  private final PubsubPublisherApi publisher;
+  private final TopicHandlers topicHandlers;
 
   public static LibP2PGossipNetwork create(
       MetricsSystem metricsSystem,
@@ -74,70 +74,18 @@ public class LibP2PGossipNetwork implements GossipNetwork {
       PreparedGossipMessageFactory defaultMessageFactory,
       boolean logWireGossip) {
 
-    LibP2PGossipNetwork gossipNetwork =
-        new LibP2PGossipNetwork(metricsSystem, defaultMessageFactory);
-    gossipNetwork.initGossip(gossipConfig, logWireGossip);
-    return gossipNetwork;
+    TopicHandlers topicHandlers = new TopicHandlers();
+    Gossip gossip = createGossip(gossipConfig, logWireGossip, defaultMessageFactory, topicHandlers);
+    PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
+
+    return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
   }
 
-  private LibP2PGossipNetwork(
-      MetricsSystem metricsSystem, PreparedGossipMessageFactory defaultMessageFactory) {
-    this.metricsSystem = metricsSystem;
-    this.defaultMessageFactory = defaultMessageFactory;
-  }
-
-  private void initGossip(GossipConfig gossipConfig, boolean logWireGossip) {
-    this.gossip = createGossip(gossipConfig, logWireGossip);
-    this.publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
-  }
-
-  @Override
-  public SafeFuture<?> gossip(final String topic, final Bytes data) {
-    return SafeFuture.of(
-        publisher.publish(Unpooled.wrappedBuffer(data.toArrayUnsafe()), new Topic(topic)));
-  }
-
-  @Override
-  public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
-    LOG.trace("Subscribe to topic: {}", topic);
-    topicHandlerMap.put(topic, topicHandler);
-    final Topic libP2PTopic = new Topic(topic);
-    final GossipHandler gossipHandler =
-        new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
-    PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);
-    return new LibP2PTopicChannel(gossipHandler, subscription);
-  }
-
-  @Override
-  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
-    Map<PeerId, Set<Topic>> peerTopics = gossip.getPeerTopics().join();
-    final Map<String, Collection<NodeId>> result = new HashMap<>();
-    for (Map.Entry<PeerId, Set<Topic>> peerTopic : peerTopics.entrySet()) {
-      final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey());
-      peerTopic
-          .getValue()
-          .forEach(
-              topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
-    }
-    return result;
-  }
-
-  private Optional<TopicHandler> getSubscribedHandler(String topic) {
-    return Optional.ofNullable(topicHandlerMap.get(topic));
-  }
-
-  public PreparedGossipMessage prepareMessage(String topic, Bytes payload) {
-    Optional<TopicHandler> topicHandler = getSubscribedHandler(topic);
-    return topicHandler
-        .map(handler -> handler.prepareMessage(payload))
-        .orElse(prepareNonSubscribedMessage(topic, payload));
-  }
-
-  private PreparedGossipMessage prepareNonSubscribedMessage(String topic, Bytes payload) {
-    return defaultMessageFactory.create(topic, payload);
-  }
-
-  private Gossip createGossip(GossipConfig gossipConfig, boolean gossipLogsEnabled) {
+  private static Gossip createGossip(
+      GossipConfig gossipConfig,
+      boolean gossipLogsEnabled,
+      PreparedGossipMessageFactory defaultMessageFactory,
+      TopicHandlers topicHandlers) {
     GossipParams gossipParams =
         GossipParams.builder()
             .D(gossipConfig.getD())
@@ -174,8 +122,14 @@ public class LibP2PGossipNetwork implements GossipNetwork {
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
           String topic = msg.getTopicIDs(0);
+          Bytes payload = Bytes.wrap(msg.getData().toByteArray());
+
           PreparedGossipMessage preparedMessage =
-              prepareMessage(topic, Bytes.wrap(msg.getData().toByteArray()));
+              topicHandlers
+                  .getHandlerForTopic(topic)
+                  .map(handler -> handler.prepareMessage(payload))
+                  .orElse(defaultMessageFactory.create(topic, payload));
+
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
     router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
@@ -187,7 +141,62 @@ public class LibP2PGossipNetwork implements GossipNetwork {
     return new Gossip(router, pubsubApi, debugHandler);
   }
 
+  public LibP2PGossipNetwork(
+      MetricsSystem metricsSystem,
+      Gossip gossip,
+      PubsubPublisherApi publisher,
+      TopicHandlers topicHandlers) {
+    this.metricsSystem = metricsSystem;
+    this.gossip = gossip;
+    this.publisher = publisher;
+    this.topicHandlers = topicHandlers;
+  }
+
+  @Override
+  public SafeFuture<?> gossip(final String topic, final Bytes data) {
+    return SafeFuture.of(
+        publisher.publish(Unpooled.wrappedBuffer(data.toArrayUnsafe()), new Topic(topic)));
+  }
+
+  @Override
+  public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
+    LOG.trace("Subscribe to topic: {}", topic);
+    topicHandlers.add(topic, topicHandler);
+    final Topic libP2PTopic = new Topic(topic);
+    final GossipHandler gossipHandler =
+        new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
+    PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);
+    return new LibP2PTopicChannel(gossipHandler, subscription);
+  }
+
+  @Override
+  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
+    Map<PeerId, Set<Topic>> peerTopics = gossip.getPeerTopics().join();
+    final Map<String, Collection<NodeId>> result = new HashMap<>();
+    for (Map.Entry<PeerId, Set<Topic>> peerTopic : peerTopics.entrySet()) {
+      final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey());
+      peerTopic
+          .getValue()
+          .forEach(
+              topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
+    }
+    return result;
+  }
+
   public Gossip getGossip() {
     return gossip;
+  }
+
+  private static class TopicHandlers {
+
+    private final Map<String, TopicHandler> topicToHandlerMap = new ConcurrentHashMap<>();
+
+    public void add(String topic, TopicHandler handler) {
+      topicToHandlerMap.put(topic, handler);
+    }
+
+    public Optional<TopicHandler> getHandlerForTopic(String topic) {
+      return Optional.ofNullable(topicToHandlerMap.get(topic));
+    }
   }
 }
