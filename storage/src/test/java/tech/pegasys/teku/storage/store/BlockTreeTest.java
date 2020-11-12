@@ -16,18 +16,12 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -107,124 +101,6 @@ public class BlockTreeTest {
     assertThatThrownBy(() -> BlockTree.create(hashTree, slotLookup))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Slot lookup and hash tree must contain the same roots");
-  }
-
-  @Test
-  public void isRootAtNthEpochBoundary_invalidNParameter_zero() {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block = chainBuilder.generateNextBlock();
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    assertThatThrownBy(() -> blockTree.isRootAtNthEpochBoundary(block.getRoot(), 0))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @Test
-  public void isRootAtNthEpochBoundary_invalidNParameter_negative() {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block = chainBuilder.generateNextBlock();
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    assertThatThrownBy(() -> blockTree.isRootAtNthEpochBoundary(block.getRoot(), -1))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isRootAtNthEpochBoundary_treeRootedAtGenesis(final int n) {
-    final UInt64 epochs = UInt64.valueOf(n * 3);
-
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    while (chainBuilder.getLatestEpoch().isLessThan(epochs)) {
-      chainBuilder.generateNextBlock();
-    }
-
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    for (int i = 0; i < chainBuilder.getLatestSlot().intValue(); i++) {
-      final boolean expected = i % (n * SLOTS_PER_EPOCH) == 0 && i != 0;
-      final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(i);
-      assertThat(blockTree.isRootAtNthEpochBoundary(block.getRoot(), n))
-          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
-          .isEqualTo(expected);
-    }
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isRootAtNthEpochBoundary_treeRootedAfterGenesis(final int n) {
-    final UInt64 epochs = UInt64.valueOf(3 * n);
-
-    chainBuilder.generateGenesis();
-    while (chainBuilder.getLatestEpoch().isLessThan(epochs)) {
-      chainBuilder.generateNextBlock();
-    }
-
-    final UInt64 rootSlot = compute_start_slot_at_epoch(UInt64.ONE);
-    final BlockTree blockTree = createBlockTree(rootSlot);
-
-    for (int i = rootSlot.intValue(); i < chainBuilder.getLatestSlot().intValue(); i++) {
-      final boolean expected = i % (n * SLOTS_PER_EPOCH) == 0 && i != rootSlot.intValue();
-      final SignedBeaconBlock block = chainBuilder.getBlockAtSlot(i);
-      assertThat(blockTree.isRootAtNthEpochBoundary(block.getRoot(), n))
-          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
-          .isEqualTo(expected);
-    }
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isRootAtNthEpochBoundary_withSkippedBlock(final int n) {
-    final int nthStartSlot = compute_start_slot_at_epoch(UInt64.valueOf(n)).intValue();
-
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(nthStartSlot + 1);
-    final SignedBlockAndState block2 = chainBuilder.generateNextBlock();
-
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    assertThat(blockTree.isRootAtNthEpochBoundary(block1.getRoot(), 1)).isTrue();
-    assertThat(blockTree.isRootAtNthEpochBoundary(block2.getRoot(), 1)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isRootAtNthEpochBoundary_withSkippedEpochs_oneEpochAndSlotSkipped(final int n) {
-    final int nthStartSlot = compute_start_slot_at_epoch(UInt64.valueOf(n)).intValue();
-
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block1 =
-        chainBuilder.generateBlockAtSlot(nthStartSlot + SLOTS_PER_EPOCH + 1);
-    final SignedBlockAndState block2 = chainBuilder.generateNextBlock();
-
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    assertThat(blockTree.isRootAtNthEpochBoundary(block1.getRoot(), n)).isTrue();
-    assertThat(blockTree.isRootAtNthEpochBoundary(block2.getRoot(), n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isRootAtNthEpochBoundary_withSkippedEpochs_nearlyNEpochsSkipped(final int n) {
-    final int startSlotAt2N = compute_start_slot_at_epoch(UInt64.valueOf(n * 2)).intValue();
-
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(startSlotAt2N - 1);
-    final SignedBlockAndState block2 = chainBuilder.generateNextBlock();
-    final SignedBlockAndState block3 = chainBuilder.generateNextBlock();
-
-    final BlockTree blockTree = createBlockTree(genesis.getSlot());
-
-    assertThat(blockTree.isRootAtNthEpochBoundary(block1.getRoot(), n)).isTrue();
-    assertThat(blockTree.isRootAtNthEpochBoundary(block2.getRoot(), n)).isTrue();
-    assertThat(blockTree.isRootAtNthEpochBoundary(block3.getRoot(), n)).isFalse();
-  }
-
-  public static Stream<Arguments> getNValues() {
-    return Stream.of(
-        Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
   }
 
   @Test
