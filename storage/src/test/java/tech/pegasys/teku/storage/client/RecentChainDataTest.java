@@ -347,7 +347,7 @@ class RecentChainDataTest {
 
     // Set store and update best block to genesis
     assertThat(preGenesisStorageClient.getChainHead()).isEmpty();
-    preGenesisStorageClient.setStore(store, mock(ProtoArrayForkChoiceStrategy.class));
+    preGenesisStorageClient.setStore(store);
     preGenesisStorageClient.updateHead(genesis.getRoot(), genesis.getSlot());
     assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(genesis.getRoot());
 
@@ -716,7 +716,7 @@ class RecentChainDataTest {
             .collect(Collectors.toSet());
 
     // Check expected blocks
-    assertThat(recentChainData.getStore().getBlockRoots())
+    assertThat(recentChainData.getStore().getOrderedBlockRoots())
         .containsExactlyInAnyOrderElementsOf(blockRoots);
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
       assertThat(recentChainData.retrieveSignedBlockByRoot(expectedBlock.getRoot()))
@@ -738,14 +738,7 @@ class RecentChainDataTest {
     final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(
-            blockAndState -> {
-              transaction.putBlockAndState(blockAndState);
-              client
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-            });
+        .forEach(transaction::putBlockAndState);
     transaction.commit().join();
   }
 
@@ -789,10 +782,6 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 
   private void disableForkChoicePruneThreshold() {

@@ -125,11 +125,6 @@ public class ChainUpdater {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block.getBlock(), block.getState());
     assertThat(tx.commit()).isCompleted();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
-
     saveBlockTime(block);
   }
 
