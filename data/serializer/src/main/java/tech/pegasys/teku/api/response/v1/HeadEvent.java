@@ -35,32 +35,54 @@ public class HeadEvent {
   @JsonProperty("epoch_transition")
   public final boolean epochTransition;
 
+  @JsonProperty("proposer_shuffling_pivot_root")
+  public final Bytes32 proposerShufflingPivotRoot;
+
+  @JsonProperty("attester_shuffling_pivot_root")
+  public final Bytes32 attesterShufflingPivotRoot;
+
   @JsonCreator
   public HeadEvent(
       @JsonProperty(value = "slot", required = true) final UInt64 slot,
       @JsonProperty("block") final Bytes32 block,
       @JsonProperty("state") final Bytes32 state,
-      @JsonProperty("epoch_transition") final boolean epochTransition) {
+      @JsonProperty("epoch_transition") final boolean epochTransition,
+      @JsonProperty("proposer_shuffling_pivot_root") final Bytes32 proposerShufflingPivotRoot,
+      @JsonProperty("attester_shuffling_pivot_root") final Bytes32 attesterShufflingPivotRoot) {
     this.slot = slot;
     this.block = block;
     this.state = state;
     this.epochTransition = epochTransition;
+    this.proposerShufflingPivotRoot = proposerShufflingPivotRoot;
+    this.attesterShufflingPivotRoot = attesterShufflingPivotRoot;
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final HeadEvent headEvent = (HeadEvent) o;
     return epochTransition == headEvent.epochTransition
         && Objects.equals(slot, headEvent.slot)
         && Objects.equals(block, headEvent.block)
-        && Objects.equals(state, headEvent.state);
+        && Objects.equals(state, headEvent.state)
+        && Objects.equals(proposerShufflingPivotRoot, headEvent.proposerShufflingPivotRoot)
+        && Objects.equals(attesterShufflingPivotRoot, headEvent.attesterShufflingPivotRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, block, state, epochTransition);
+    return Objects.hash(
+        slot,
+        block,
+        state,
+        epochTransition,
+        proposerShufflingPivotRoot,
+        attesterShufflingPivotRoot);
   }
 
   @Override
@@ -70,6 +92,8 @@ public class HeadEvent {
         .add("block", block)
         .add("state", state)
         .add("epochTransition", epochTransition)
+        .add("proposerShufflingPivotRoot", proposerShufflingPivotRoot)
+        .add("attesterShufflingPivotRoot", attesterShufflingPivotRoot)
         .toString();
   }
 }

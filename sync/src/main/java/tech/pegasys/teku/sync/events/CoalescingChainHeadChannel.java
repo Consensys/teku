@@ -50,6 +50,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final Bytes32 proposerShufflingPivotRoot,
+      final Bytes32 attesterShufflingPivotRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
       optionalReorgContext.ifPresent(
@@ -61,14 +63,26 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                   formatHashRoot(bestBlockRoot),
                   reorg.getCommonAncestorSlot()));
       delegate.chainHeadUpdated(
-          slot, stateRoot, bestBlockRoot, epochTransition, optionalReorgContext);
+          slot,
+          stateRoot,
+          bestBlockRoot,
+          epochTransition,
+          proposerShufflingPivotRoot,
+          attesterShufflingPivotRoot,
+          optionalReorgContext);
     } else {
       pendingEvent =
           pendingEvent
               .map(
                   current ->
                       current.update(
-                          slot, stateRoot, bestBlockRoot, epochTransition, optionalReorgContext))
+                          slot,
+                          stateRoot,
+                          bestBlockRoot,
+                          epochTransition,
+                          proposerShufflingPivotRoot,
+                          attesterShufflingPivotRoot,
+                          optionalReorgContext))
               .or(
                   () ->
                       Optional.of(
@@ -95,6 +109,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     private Bytes32 stateRoot;
     private Bytes32 bestBlockRoot;
     private boolean epochTransition;
+    private Bytes32 proposerShufflingPivotRoot;
+    private Bytes32 attesterShufflingPivotRoot;
     private Optional<ReorgContext> reorgContext;
 
     private PendingEvent(
@@ -111,7 +127,14 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     }
 
     public void send() {
-      delegate.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+      delegate.chainHeadUpdated(
+          slot,
+          stateRoot,
+          bestBlockRoot,
+          epochTransition,
+          proposerShufflingPivotRoot,
+          attesterShufflingPivotRoot,
+          reorgContext);
     }
 
     public PendingEvent update(
@@ -119,6 +142,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final Bytes32 proposerShufflingPivotRoot,
+        final Bytes32 attesterShufflingPivotRoot,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
@@ -126,6 +151,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       if (epochTransition) {
         this.epochTransition = true;
       }
+      this.proposerShufflingPivotRoot = proposerShufflingPivotRoot;
+      this.attesterShufflingPivotRoot = attesterShufflingPivotRoot;
       if (reorgContext.isPresent() && hasEarlierCommonAncestor(reorgContext)) {
         this.reorgContext = reorgContext;
       }

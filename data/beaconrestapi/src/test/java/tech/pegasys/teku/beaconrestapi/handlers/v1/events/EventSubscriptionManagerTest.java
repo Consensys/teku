@@ -69,7 +69,13 @@ public class EventSubscriptionManagerTest {
           epoch);
 
   private final HeadEvent headEvent =
-      new HeadEvent(slot, data.randomBytes32(), data.randomBytes32(), false);
+      new HeadEvent(
+          slot,
+          data.randomBytes32(),
+          data.randomBytes32(),
+          false,
+          data.randomBytes32(),
+          data.randomBytes32());
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
@@ -205,6 +211,8 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
         chainReorgEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
+        headEvent.proposerShufflingPivotRoot,
+        headEvent.attesterShufflingPivotRoot,
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.oldHeadBlock,
@@ -215,7 +223,13 @@ public class EventSubscriptionManagerTest {
 
   private void triggerHeadEvent() {
     manager.chainHeadUpdated(
-        headEvent.slot, headEvent.state, headEvent.block, false, Optional.empty());
+        headEvent.slot,
+        headEvent.state,
+        headEvent.block,
+        false,
+        headEvent.proposerShufflingPivotRoot,
+        headEvent.attesterShufflingPivotRoot,
+        Optional.empty());
     asyncRunner.executeQueuedActions();
   }
 }

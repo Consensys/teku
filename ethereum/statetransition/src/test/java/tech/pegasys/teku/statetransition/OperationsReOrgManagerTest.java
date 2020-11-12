@@ -106,6 +106,8 @@ public class OperationsReOrgManagerTest {
         fork2Block2.getStateRoot(),
         fork2Block2.hash_tree_root(),
         false,
+        fork2Block2.getRoot(),
+        fork2Block2.getRoot(),
         ReorgContext.of(
             fork1Block2.hash_tree_root(), fork1Block2.getStateRoot(), commonAncestorSlot));
 
@@ -175,6 +177,8 @@ public class OperationsReOrgManagerTest {
         block2.getStateRoot(),
         block2.hash_tree_root(),
         false,
+        block2.getRoot(),
+        block2.getRoot(),
         ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());

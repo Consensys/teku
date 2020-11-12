@@ -24,5 +24,7 @@ public class StubChainHeadChannel implements ChainHeadChannel {
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final Bytes32 proposerShufflingPivotRoot,
+      final Bytes32 attesterShufflingPivotRoot,
       final Optional<ReorgContext> optionalReorgContext) {}
 }
