@@ -46,19 +46,14 @@ class ProtoArrayScoreCalculator {
    *   <li>If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this
    *       is always valid).
    * </ul>
-   *
-   * @param indices
-   * @param store
-   * @param oldBalances
-   * @param newBalances
-   * @return
    */
   static List<Long> computeDeltas(
       MutableStore store,
+      int protoArraySize,
       Map<Bytes32, Integer> indices,
       List<UInt64> oldBalances,
       List<UInt64> newBalances) {
-    List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
+    List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
 
     for (UInt64 validatorIndex : store.getVotedValidatorIndices()) {
       VoteTracker vote = store.getVote(validatorIndex);

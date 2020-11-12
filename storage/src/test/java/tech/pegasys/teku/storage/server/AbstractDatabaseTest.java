@@ -26,6 +26,7 @@ import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -258,6 +259,60 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void shouldPruneHotBlocksInCurrentTransactionFromChainThatIsInvalided() {
+    final UInt64 commonAncestorSlot = UInt64.valueOf(5);
+
+    chainBuilder.generateBlocksUpToSlot(commonAncestorSlot);
+    final ChainBuilder forkA = chainBuilder;
+    final ChainBuilder forkB = chainBuilder.fork();
+
+    // Add base blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+
+    // Forks diverge - generate block options to make each block unique
+    final UInt64 divergingSlot = commonAncestorSlot.plus(1);
+    final List<BlockOptions> blockOptions =
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(divergingSlot)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
+
+    // Create several different blocks at the same slot
+    final SignedBlockAndState blockA =
+        forkA.generateBlockAtSlot(divergingSlot, blockOptions.get(0));
+    final SignedBlockAndState blockB =
+        forkB.generateBlockAtSlot(divergingSlot, blockOptions.get(1));
+
+    // Add diverging blocks sequentially
+    add(List.of(blockA));
+    add(List.of(blockB));
+
+    // Then build on both chains, into the next epoch
+    final SignedBlockAndState blockA2 =
+        forkA.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 + 2);
+    final SignedBlockAndState blockB2 =
+        forkB.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 + 2);
+
+    // Add blocks while finalizing blockA at the same time
+    StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putBlockAndState(blockA2);
+    tx.putBlockAndState(blockB2);
+    justifyAndFinalizeEpoch(UInt64.ONE, blockA, tx);
+    assertThat(tx.commit()).isCompleted();
+
+    // Verify all fork B blocks were pruned
+    assertThatSafeFuture(store.retrieveBlock(blockB.getRoot())).isCompletedWithEmptyOptional();
+    assertThatSafeFuture(store.retrieveBlock(blockB2.getRoot())).isCompletedWithEmptyOptional();
+
+    // And fork A should be available.
+    assertThat(store.retrieveSignedBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock()));
+    assertThat(store.retrieveSignedBlock(blockA2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA2.getBlock()));
+  }
+
+  @Test
   public void getFinalizedState() {
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(UInt64.ONE);
@@ -456,7 +511,7 @@ public abstract class AbstractDatabaseTest {
 
     final Set<Bytes32> hotBlockRoots =
         hotBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
-    assertThat(result.getBlockRoots()).containsExactlyInAnyOrderElementsOf(hotBlockRoots);
+    assertThat(result.getOrderedBlockRoots()).containsExactlyInAnyOrderElementsOf(hotBlockRoots);
   }
 
   @Test
@@ -861,12 +916,12 @@ public abstract class AbstractDatabaseTest {
       final UpdatableStore store, final Collection<SignedBlockAndState> blocksAndStates) {
     final List<UpdatableStore> storesToCheck = List.of(store, recreateStore());
     for (UpdatableStore currentStore : storesToCheck) {
-      assertThat(currentStore.getBlockRoots())
+      assertThat(currentStore.getOrderedBlockRoots())
           .hasSameElementsAs(
               blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
       final List<BeaconState> hotStates =
-          currentStore.getBlockRoots().stream()
+          currentStore.getOrderedBlockRoots().stream()
               .map(currentStore::retrieveBlockState)
               .map(
                   f -> {
@@ -885,11 +940,11 @@ public abstract class AbstractDatabaseTest {
   protected void assertHotBlocksAndStatesInclude(
       final Collection<SignedBlockAndState> blocksAndStates) {
     final UpdatableStore memoryStore = recreateStore();
-    assertThat(memoryStore.getBlockRoots())
+    assertThat(memoryStore.getOrderedBlockRoots())
         .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
     final List<BeaconState> hotStates =
-        memoryStore.getBlockRoots().stream()
+        memoryStore.getOrderedBlockRoots().stream()
             .map(memoryStore::retrieveBlockState)
             .map(
                 f -> {
@@ -957,10 +1012,6 @@ public abstract class AbstractDatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(block);
-      recentChainData
-          .getForkChoiceStrategy()
-          .orElseThrow()
-          .onBlock(block.getBlock().getMessage(), block.getState());
     }
     commit(transaction);
   }
@@ -973,13 +1024,9 @@ public abstract class AbstractDatabaseTest {
 
   protected void add(
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
-    for (SignedBlockAndState blockAndState : blocksAndStates) {
-      transaction.putBlockAndState(blockAndState);
-      recentChainData
-          .getForkChoiceStrategy()
-          .orElseThrow()
-          .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-    }
+    blocksAndStates.stream()
+        .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
+        .forEach(transaction::putBlockAndState);
   }
 
   protected void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {
