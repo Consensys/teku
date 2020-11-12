@@ -29,7 +29,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
@@ -100,9 +99,7 @@ public class SlashingProtectionExporter {
     final String prettyJson =
         jsonProvider.objectToPrettyJSON(
             new SlashingProtectionInterchangeFormat(
-                new Metadata(
-                    InterchangeFormat.complete, INTERCHANGE_VERSION, genesisValidatorsRoot),
-                signingHistoryList));
+                new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
     return Bytes.of(prettyJson.getBytes(StandardCharsets.UTF_8));
   }
 }

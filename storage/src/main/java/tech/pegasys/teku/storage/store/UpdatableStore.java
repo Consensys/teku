@@ -18,6 +18,7 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 public interface UpdatableStore extends ReadOnlyStore {
@@ -28,6 +29,8 @@ public interface UpdatableStore extends ReadOnlyStore {
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler);
 
   void startMetrics();
+
+  ForkChoiceStrategy getForkChoiceStrategy();
 
   interface StoreTransaction extends MutableStore {
     SafeFuture<Void> commit();

@@ -28,6 +28,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
@@ -69,6 +70,7 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.TemporaryAttestationData;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
@@ -195,6 +197,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     post(SEND_SIGNED_ATTESTATION, attestation, createHandler());
+  }
+
+  @Override
+  public void sendVoluntaryExit(final SignedVoluntaryExit voluntaryExit) {
+    post(SEND_SIGNED_VOLUNTARY_EXIT, voluntaryExit, createHandler());
   }
 
   @Override

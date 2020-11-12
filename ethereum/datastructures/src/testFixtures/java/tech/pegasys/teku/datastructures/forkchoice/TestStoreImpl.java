@@ -128,11 +128,6 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
-  public Set<Bytes32> getBlockRoots() {
-    return blocks.keySet();
-  }
-
-  @Override
   public List<Bytes32> getOrderedBlockRoots() {
     return blocks.values().stream()
         .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
@@ -257,5 +252,13 @@ class TestStoreImpl implements MutableStore {
     }
     this.votes.put(validatorIndex, vote);
     return vote;
+  }
+
+  @Override
+  public Bytes32 applyForkChoiceScoreChanges(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+    throw new UnsupportedOperationException("Not implemented");
   }
 }
