@@ -93,7 +93,11 @@ public class HistoricalBatchFetcher {
   }
 
   private void requestBlocks(RequestParameters requestParams) {
-    LOG.trace("Request {} blocks from {}", requestParams.getCount(), requestParams.getStartSlot());
+    LOG.trace(
+        "Request {} blocks from {} to {}",
+        requestParams.getCount(),
+        requestParams.getStartSlot(),
+        requestParams.getEndSlot());
     final RequestManager requestManager =
         new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
     peer.requestBlocksByRange(
@@ -113,7 +117,7 @@ public class HistoricalBatchFetcher {
       // Disconnect misbehaving peer
       LOG.debug("Received invalid response from peer. Disconnecting: " + peer, throwable);
       peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
-      complete();
+      future.completeExceptionally(throwable);
     } else {
       future.completeExceptionally(throwable);
     }
@@ -141,7 +145,8 @@ public class HistoricalBatchFetcher {
         // It appears our peer is on a different chain
         LOG.warn("Received invalid blocks from a different chain. Disconnecting peer: " + peer);
         peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
-        complete();
+        future.completeExceptionally(
+            new InvalidResponseException("Received invalid blocks from a different chain"));
       } else {
         requestBlocks();
       }
@@ -178,7 +183,7 @@ public class HistoricalBatchFetcher {
 
   private UInt64 getStartSlot() {
     if (blocksToImport.isEmpty()) {
-      return maxSlot.safeMinus(batchSize).orElse(UInt64.ZERO);
+      return maxSlot.plus(1).safeMinus(batchSize).orElse(UInt64.ZERO);
     }
 
     return blocksToImport.getLast().getSlot().plus(1);
@@ -242,6 +247,10 @@ public class HistoricalBatchFetcher {
 
     public UInt64 getCount() {
       return count;
+    }
+
+    public UInt64 getEndSlot() {
+      return startSlot.plus(count).safeMinus(1).orElse(startSlot);
     }
   }
 }

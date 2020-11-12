@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -54,7 +55,7 @@ public class HistoricalBlockSyncService extends Service {
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
 
   private volatile BeaconBlockSummary earliestBlock;
-  final Set<Eth2Peer> badPeerCache;
+  final Set<NodeId> badPeerCache;
 
   public HistoricalBlockSyncService(
       final MetricsSystem metricsSystem,
@@ -75,7 +76,7 @@ public class HistoricalBlockSyncService extends Service {
             CacheBuilder.newBuilder()
                 .maximumSize(100)
                 .expireAfterWrite(Duration.ofMinutes(5))
-                .<Eth2Peer, Boolean>build()
+                .<NodeId, Boolean>build()
                 .asMap());
 
     this.historicSyncGauge =
@@ -153,7 +154,11 @@ public class HistoricalBlockSyncService extends Service {
               // We ran into trouble with this peer - ignore it for a while
               LOG.debug(
                   "Encountered a problem requesting historical blocks from peer: " + peer, err);
-              badPeerCache.add(peer);
+              if (peer.isConnected()) {
+                // If we didn't disconnect the peer altogether, avoid making new requests for a
+                // while
+                badPeerCache.add(peer.getId());
+              }
               return null;
             })
         .thenAccept(
@@ -188,7 +193,7 @@ public class HistoricalBlockSyncService extends Service {
   private Optional<Eth2Peer> findPeer() {
     return network
         .streamPeers()
-        .filter(p -> !badPeerCache.contains(p))
+        .filter(p -> !badPeerCache.contains(p.getId()))
         .filter(
             p ->
                 p.getStatus()
