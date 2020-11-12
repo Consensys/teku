@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
@@ -30,17 +31,9 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
-  @Option(
-      names = {"--validator-keys"},
-      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
-      description =
-          "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
-              + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
-              + "and the file containing the password for it is <PASS_FILE>.\n"
-              + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
-      split = ",",
-      arity = "1..*")
-  private List<String> validatorKeys = new ArrayList<>();
+
+  @CommandLine.Mixin(name = "Validator Keys")
+  private ValidatorKeysOptions validatorKeysOptions;
 
   @Option(
       names = {"--validators-key-files"},
@@ -134,8 +127,8 @@ public class ValidatorOptions {
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .graffiti(graffiti)
-                .validatorKeys(validatorKeys));
+                .graffiti(graffiti));
+    validatorKeysOptions.configure(builder);
   }
 
   private List<BLSPublicKey> parseExternalSignerPublicKeys() {

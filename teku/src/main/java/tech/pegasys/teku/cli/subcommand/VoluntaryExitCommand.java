@@ -29,11 +29,8 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.InteropOptions;
-import tech.pegasys.teku.cli.options.NetworkOptions;
-import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
-import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
@@ -44,13 +41,10 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -73,17 +67,8 @@ public class VoluntaryExitCommand implements Runnable {
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
 
-  @CommandLine.Mixin(name = "Validator")
-  private ValidatorOptions validatorOptions;
-
-  @CommandLine.Mixin(name = "Network")
-  private NetworkOptions networkOptions;
-
-  @CommandLine.Mixin(name = "Interop")
-  private InteropOptions interopOptions;
-
-  @CommandLine.Mixin(name = "Data")
-  private ValidatorClientDataOptions dataOptions;
+  @CommandLine.Mixin(name = "Validator Keys")
+  private ValidatorKeysOptions validatorKeysOptions;
 
   @CommandLine.Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
@@ -179,10 +164,10 @@ public class VoluntaryExitCommand implements Runnable {
     }
     genesisRoot = maybeRoot.get();
 
-    // get the validator
-    final Path slashProtectionPath = getSlashingProtectionPath(dataOptions);
+    // slashing protection won't be looked at, but it is required to create a validator loader.
+    // No files will be created in the path
     final SlashingProtector slashingProtector =
-        new SlashingProtector(new SyncDataAccessor(), slashProtectionPath);
+        new SlashingProtector(new SyncDataAccessor(), Path.of("."));
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
 
     try {
@@ -198,27 +183,16 @@ public class VoluntaryExitCommand implements Runnable {
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
     builder.globalConfig(this::buildGlobalConfiguration);
-    validatorOptions.configure(builder);
+    validatorKeysOptions.configure(builder);
 
     validatorClientOptions.configure(builder);
+    // we don't use the data path, but keep configuration happy.
+    builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
-    dataOptions.configure(builder);
     return builder.build();
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
-        .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
-        .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
-        .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
-        .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setMetricsEnabled(false);
-  }
-
-  private Path getSlashingProtectionPath(final ValidatorClientDataOptions dataOptions) {
-    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
-    return ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
+    builder.setMetricsEnabled(false);
   }
 }
