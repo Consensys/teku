@@ -63,7 +63,8 @@ public class SlashingProtectionImporter {
                 + " does not appear to have metadata information, and cannot be loaded.");
         return; // Testing mocks log.exit
       }
-      if (!INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
+      if (!INTERCHANGE_VERSION.equals(UInt64.valueOf(4))
+          && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
         log.exit(
             1,
             "Import file "

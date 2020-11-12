@@ -47,8 +47,7 @@ public class MinimalSigningHistoryTest {
     JsonNode jsonNode = mapper.readTree(minimalJson);
     JsonNode metadataJson = jsonNode.get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-    assertThat(metadata)
-        .isEqualTo(new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, GENESIS_ROOT));
+    assertThat(metadata).isEqualTo(new Metadata(INTERCHANGE_VERSION, GENESIS_ROOT));
 
     List<SigningHistory> minimalSigningHistoryList =
         Arrays.asList(mapper.readValue(jsonNode.get("data").toString(), SigningHistory[].class));
