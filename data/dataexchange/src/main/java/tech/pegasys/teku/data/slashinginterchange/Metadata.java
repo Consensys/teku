@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,10 +22,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Metadata {
 
-  public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(4);
+  public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(5);
 
   @JsonProperty("interchange_format")
-  public final InterchangeFormat interchangeFormat;
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public final String interchangeFormat;
 
   @JsonProperty("interchange_format_version")
   public final UInt64 interchangeFormatVersion;
@@ -32,14 +34,20 @@ public class Metadata {
   @JsonProperty("genesis_validators_root")
   public final Bytes32 genesisValidatorsRoot;
 
-  @JsonCreator
-  public Metadata(
-      @JsonProperty("interchange_format") final InterchangeFormat interchangeFormat,
-      @JsonProperty("interchange_format_version") final UInt64 interchangeFormatVersion,
-      @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot) {
-    this.interchangeFormat = interchangeFormat;
+  public Metadata(final UInt64 interchangeFormatVersion, final Bytes32 genesisValidatorsRoot) {
+    this.interchangeFormat = null;
     this.interchangeFormatVersion = interchangeFormatVersion;
     this.genesisValidatorsRoot = genesisValidatorsRoot;
+  }
+
+  @JsonCreator
+  public Metadata(
+      @JsonProperty("interchange_format") final String interchangeFormat,
+      @JsonProperty("interchange_format_version") final UInt64 interchangeFormatVersion,
+      @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot) {
+    this.interchangeFormatVersion = interchangeFormatVersion;
+    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.interchangeFormat = interchangeFormat;
   }
 
   @Override
@@ -47,13 +55,12 @@ public class Metadata {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final Metadata metadata = (Metadata) o;
-    return interchangeFormat == metadata.interchangeFormat
-        && Objects.equals(interchangeFormatVersion, metadata.interchangeFormatVersion)
+    return Objects.equals(interchangeFormatVersion, metadata.interchangeFormatVersion)
         && Objects.equals(genesisValidatorsRoot, metadata.genesisValidatorsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(interchangeFormat, interchangeFormatVersion, genesisValidatorsRoot);
+    return Objects.hash(interchangeFormatVersion, genesisValidatorsRoot);
   }
 }
