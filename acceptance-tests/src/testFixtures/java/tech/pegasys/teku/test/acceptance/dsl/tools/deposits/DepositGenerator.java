@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,31 +41,18 @@ public class DepositGenerator implements AutoCloseable {
     return SafeFuture.of(
         () -> {
           final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-              validatorKeyGenerator
-                  .generateKeysStream()
-                  .map(depositSenderService::sendDeposit)
-                  .collect(Collectors.toList());
+              generateKeysStream().map(this::sendDeposit).collect(Collectors.toList());
           return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
         });
   }
 
-  public SafeFuture<Void> generate2transactions() {
-    return SafeFuture.of(
-        () -> {
-          final List<SafeFuture<Void>> transactionReceipts =
-              validatorKeyGenerator
-                  .generateKeysStream()
-                  .map(
-                      keys -> {
-                        SafeFuture<TransactionReceipt> future1 =
-                            depositSenderService.sendDeposit(keys);
-                        SafeFuture<TransactionReceipt> future2 =
-                            depositSenderService.sendDeposit(keys);
-                        return SafeFuture.allOf(future1, future2);
-                      })
-                  .collect(Collectors.toList());
-          return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
-        });
+  public Stream<ValidatorKeyGenerator.ValidatorKeys> generateKeysStream() {
+    return validatorKeyGenerator.generateKeysStream();
+  }
+
+  public SafeFuture<TransactionReceipt> sendDeposit(
+      ValidatorKeyGenerator.ValidatorKeys validatorKeys) {
+    return depositSenderService.sendDeposit(validatorKeys);
   }
 
   @Override
