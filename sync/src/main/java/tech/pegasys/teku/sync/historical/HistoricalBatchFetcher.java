@@ -223,7 +223,8 @@ public class HistoricalBatchFetcher {
             // Only process blocks up to the last block - ignore any extra blocks
             if (!foundLastBlock.get()) {
               blockProcessor.accept(block);
-            } else if (block.getRoot().equals(lastBlockRoot)) {
+            }
+            if (block.getRoot().equals(lastBlockRoot)) {
               foundLastBlock.set(true);
             }
 

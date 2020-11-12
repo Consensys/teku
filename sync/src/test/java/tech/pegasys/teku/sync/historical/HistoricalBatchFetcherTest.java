@@ -123,6 +123,45 @@ public class HistoricalBatchFetcherTest {
   }
 
   @Test
+  public void run_requestBatchWithSkippedSlots() {
+    final ChainBuilder chain = ChainBuilder.createDefault();
+    final int batchSize = 20;
+    final SignedBlockAndState genesis = chain.generateGenesis();
+    chain.generateBlockAtSlot(5);
+    chain.generateBlocksUpToSlot(10);
+    chain.generateBlockAtSlot(15);
+    chain.generateBlocksUpToSlot(30);
+
+    final SignedBeaconBlock latestBlock = chain.getBlockAtSlot(19);
+    final List<SignedBeaconBlock> targetBatch =
+        chain
+            .streamBlocksAndStates(0, latestBlock.getSlot().longValue())
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    peer = RespondingEth2Peer.create(chain);
+    fetcher =
+        new HistoricalBatchFetcher(
+            storageUpdateChannel,
+            peer,
+            latestBlock.getSlot(),
+            latestBlock.getRoot(),
+            UInt64.valueOf(batchSize),
+            maxRequests);
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(genesis.getBlock());
+
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactlyElementsOf(targetBatch);
+  }
+
+  @Test
   public void run_requestBatchForRangeOfEmptyBlocks() {
     final int batchSize = 10;
     fetcher =
