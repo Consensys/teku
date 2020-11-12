@@ -45,7 +45,6 @@ public class MikuliSecretKey implements SecretKey {
     }
   }
 
-
   private final Scalar scalarValue;
 
   public MikuliSecretKey(Scalar value) {

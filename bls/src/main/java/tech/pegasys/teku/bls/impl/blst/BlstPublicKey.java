@@ -26,7 +26,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p1;
 import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliPublicKey;
 
 public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
@@ -86,7 +85,6 @@ public class BlstPublicKey implements PublicKey {
       return fromBytes(publicKey.toBytesCompressed());
     }
   }
-
 
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);

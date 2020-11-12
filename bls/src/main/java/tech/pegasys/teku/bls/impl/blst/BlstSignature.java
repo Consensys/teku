@@ -28,7 +28,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p2;
 import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.pairing;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
