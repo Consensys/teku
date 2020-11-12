@@ -39,6 +39,10 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 
+/**
+ * Service responsible for syncing missing historical blocks. Blocks are pulled in order from the
+ * newest unknown block back to genesis.
+ */
 public class HistoricalBlockSyncService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 

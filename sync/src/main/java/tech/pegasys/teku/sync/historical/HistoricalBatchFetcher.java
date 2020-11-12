@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
+/** Fetches a target batch of blocks from a peer. */
 public class HistoricalBatchFetcher {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -51,6 +52,14 @@ public class HistoricalBatchFetcher {
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private volatile boolean requestedBlockDirectly = false;
 
+  /**
+   * @param storageUpdateChannel The storage channel where finalized blocks will be imported
+   * @param peer The peer to request blocks from
+   * @param maxSlot The maxSlot to pull
+   * @param lastBlockRoot The block root that defines the last block in our batch
+   * @param batchSize The number of blocks to sync (assuming all slots are filled)
+   * @param maxRequests The number of blocksByRange requests allowed to pull this batch
+   */
   @VisibleForTesting
   HistoricalBatchFetcher(
       final StorageUpdateChannel storageUpdateChannel,
