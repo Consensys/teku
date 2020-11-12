@@ -124,6 +124,7 @@ public class HistoricalBlockSyncService extends Service {
   protected SafeFuture<?> doStop() {
     LOG.debug("Stop {}", getClass().getSimpleName());
     syncStateProvider.unsubscribeFromSyncStateChanges(syncStateSubscription.get());
+    badPeerCache.clear();
     return SafeFuture.COMPLETE;
   }
 
@@ -153,28 +154,29 @@ public class HistoricalBlockSyncService extends Service {
   }
 
   private void requestBlocksIfAppropriate() {
-    if (earliestBlock.getSlot().equals(UInt64.ZERO)) {
+    final Optional<MaxMissingBlockParams> blockParams = getMaxMissingBlockParams();
+    if (blockParams.isEmpty()) {
       // Nothing to do - we're caught up to genesis
       LOG.info("Historical block sync is complete");
       this.stop().reportExceptions();
     } else if (isRunning() && syncStateProvider.getCurrentSyncState().isInSync()) {
       // Pull the next batch of blocks
-      findPeerAndRequestBlocks();
+      findPeerAndRequestBlocks(blockParams.get());
     }
   }
 
-  private void findPeerAndRequestBlocks() {
+  private void findPeerAndRequestBlocks(final MaxMissingBlockParams params) {
     if (requestInProgress.compareAndSet(false, true)) {
       findPeer()
-          .map(this::requestBlocks)
+          .map(peer -> requestBlocks(peer, params))
           .orElseGet(this::waitToRetry)
           .alwaysRun(() -> requestInProgress.set(false))
           .always(this::requestBlocksIfAppropriate);
     }
   }
 
-  private SafeFuture<Void> requestBlocks(final Eth2Peer peer) {
-    return createFetcher(peer)
+  private SafeFuture<Void> requestBlocks(final Eth2Peer peer, final MaxMissingBlockParams params) {
+    return createFetcher(peer, params)
         .run()
         .exceptionally(
             (err) -> {
@@ -191,7 +193,7 @@ public class HistoricalBlockSyncService extends Service {
             })
         .thenAccept(
             newValue -> {
-              if (newValue != null && newValue.getSlot().isLessThan(earliestBlock.getSlot())) {
+              if (newValue != null && newValue.getSlot().isLessThanOrEqualTo(params.getMaxSlot())) {
                 LOG.trace("Synced historical blocks to slot {}", newValue.getSlot());
                 earliestBlock = newValue;
                 updateSyncMetrics();
@@ -199,10 +201,19 @@ public class HistoricalBlockSyncService extends Service {
             });
   }
 
-  private HistoricalBatchFetcher createFetcher(final Eth2Peer peer) {
+  private HistoricalBatchFetcher createFetcher(
+      final Eth2Peer peer, final MaxMissingBlockParams params) {
+    return HistoricalBatchFetcher.create(
+        storageUpdateChannel, peer, params.getMaxSlot(), params.getBlockRoot(), batchSize);
+  }
+
+  private final Optional<MaxMissingBlockParams> getMaxMissingBlockParams() {
     final UInt64 maxSlot;
     final Bytes32 lastBlockRoot;
     if (earliestBlock.getBeaconBlock().isPresent()) {
+      if (earliestBlock.getSlot().equals(UInt64.ZERO)) {
+        return Optional.empty();
+      }
       maxSlot = earliestBlock.getSlot().minus(1);
       lastBlockRoot = earliestBlock.getParentRoot();
     } else {
@@ -210,8 +221,7 @@ public class HistoricalBlockSyncService extends Service {
       lastBlockRoot = earliestBlock.getRoot();
     }
 
-    return HistoricalBatchFetcher.create(
-        storageUpdateChannel, peer, maxSlot, lastBlockRoot, batchSize);
+    return Optional.of(new MaxMissingBlockParams(lastBlockRoot, maxSlot));
   }
 
   private SafeFuture<Void> waitToRetry() {
@@ -236,6 +246,24 @@ public class HistoricalBlockSyncService extends Service {
       LOG.trace("Peer added to bad peer cache, current size: {}", badPeerCache.size());
     } else {
       LOG.trace("Peer removed from bad peer cache, current size: {}", badPeerCache.size());
+    }
+  }
+
+  private static class MaxMissingBlockParams {
+    private final Bytes32 blockRoot;
+    private final UInt64 maxSlot;
+
+    private MaxMissingBlockParams(final Bytes32 blockRoot, final UInt64 maxSlot) {
+      this.maxSlot = maxSlot;
+      this.blockRoot = blockRoot;
+    }
+
+    public Bytes32 getBlockRoot() {
+      return blockRoot;
+    }
+
+    public UInt64 getMaxSlot() {
+      return maxSlot;
     }
   }
 }

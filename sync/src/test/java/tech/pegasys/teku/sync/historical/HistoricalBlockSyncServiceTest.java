@@ -235,6 +235,31 @@ public class HistoricalBlockSyncServiceTest {
   }
 
   @Test
+  public void shouldRetrieveGenesisWhenMissing() {
+    currentSyncState.set(SyncState.IN_SYNC);
+
+    // Setup chain
+    final int epochHeight = 10;
+    final SignedBlockAndState genesis = storageSystem.chainBuilder().generateGenesis();
+    storageSystem.chainBuilder().generateBlocksUpToSlot(6);
+    initializeChainAtEpoch(UInt64.ZERO);
+    final List<SignedBeaconBlock> expectedBlocks = List.of(genesis.getBlock());
+
+    // Set up a peer to respond
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    peer.updateStatus(
+        new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
+        new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
+    when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));
+
+    startService();
+
+    // We should start sending requests to pull data
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    finishSyncing(peer, expectedBlocks);
+  }
+
+  @Test
   public void shouldOnlySendOneRequestAtATime() {
     currentSyncState.set(SyncState.IN_SYNC);
 
