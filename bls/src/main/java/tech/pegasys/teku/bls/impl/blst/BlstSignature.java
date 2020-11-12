@@ -28,6 +28,7 @@ import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p2;
 import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.pairing;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
@@ -61,6 +62,14 @@ public class BlstSignature implements Signature {
     } catch (Exception e) {
       ec2Point.delete();
       throw e;
+    }
+  }
+
+  static BlstSignature fromSignature(Signature signature) {
+    if (signature instanceof BlstSignature) {
+      return (BlstSignature) signature;
+    } else {
+      return fromBytes(signature.toBytesCompressed());
     }
   }
 
@@ -148,7 +157,7 @@ public class BlstSignature implements Signature {
 
     List<BlstPublicKey> blstPKeys =
         keysToMessages.stream()
-            .map(km -> (BlstPublicKey) km.getPublicKey())
+            .map(km -> BlstPublicKey.fromPublicKey(km.getPublicKey()))
             .collect(Collectors.toList());
 
     List<BlstPublicKey> finitePublicKeys =
@@ -168,7 +177,7 @@ public class BlstSignature implements Signature {
     try {
       blst.pairing_init(ctx);
       for (int i = 0; i < keysToMessages.size(); i++) {
-        BlstPublicKey publicKey = (BlstPublicKey) keysToMessages.get(i).getPublicKey();
+        BlstPublicKey publicKey = BlstPublicKey.fromPublicKey(keysToMessages.get(i).getPublicKey());
         Bytes message = keysToMessages.get(i).getMessage();
         BlstSignature signature = i == 0 ? this : null;
         blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
@@ -183,18 +192,18 @@ public class BlstSignature implements Signature {
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
     return verify(
         BlstPublicKey.aggregate(
-            publicKeys.stream().map(k -> (BlstPublicKey) k).collect(Collectors.toList())),
+            publicKeys.stream().map(BlstPublicKey::fromPublicKey).collect(Collectors.toList())),
         message);
   }
 
   @Override
   public boolean verify(PublicKey publicKey, Bytes message) {
-    return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this);
+    return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this);
   }
 
   @Override
   public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
-    return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this, dst);
+    return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
   }
 
   @SuppressWarnings("ReferenceEquality")
@@ -212,11 +221,9 @@ public class BlstSignature implements Signature {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof Signature)) {
       return false;
     }
-
-    BlstSignature that = (BlstSignature) o;
-    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
+    return Objects.equals(toBytesCompressed(), ((Signature) o).toBytesCompressed());
   }
 }

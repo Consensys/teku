@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p1;
 import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliPublicKey;
 
 public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
@@ -77,6 +78,15 @@ public class BlstPublicKey implements PublicKey {
       throw new DeserializeException("Invalid PublicKey bytes: " + compressed);
     }
   }
+
+  static BlstPublicKey fromPublicKey(PublicKey publicKey) {
+    if (publicKey instanceof BlstPublicKey) {
+      return (BlstPublicKey) publicKey;
+    } else {
+      return fromBytes(publicKey.toBytesCompressed());
+    }
+  }
+
 
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
@@ -148,12 +158,11 @@ public class BlstPublicKey implements PublicKey {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof PublicKey)) {
       return false;
     }
 
-    BlstPublicKey that = (BlstPublicKey) o;
-    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
+    return Objects.equals(toBytesCompressed(), ((PublicKey) o).toBytesCompressed());
   }
 
   @Override

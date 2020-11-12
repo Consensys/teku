@@ -209,11 +209,11 @@ public class MikuliSignature implements Signature {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof MikuliSignature)) {
+    if (!(obj instanceof Signature)) {
       return false;
     }
-    MikuliSignature other = (MikuliSignature) obj;
     try {
+      MikuliSignature other = MikuliSignature.fromSignature((Signature) obj);
       return point.equals(other.point);
     } catch (final IllegalArgumentException e) {
       // Invalid points are only equal if they have the exact some data.
