@@ -34,13 +34,12 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.core.signatures.RejectingSlashingProtector;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -189,11 +188,8 @@ public class VoluntaryExitCommand implements Runnable {
     }
     genesisRoot = maybeRoot.get();
 
-    // slashing protection won't be looked at, but it is required to create a validator loader.
-    // No files will be created in the path
-    final SlashingProtector slashingProtector =
-        new SlashingProtector(new SyncDataAccessor(), Path.of("."));
-    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
+    final ValidatorLoader validatorLoader =
+        new ValidatorLoader(new RejectingSlashingProtector(), asyncRunner);
 
     try {
       blsPublicKeyValidatorMap =
