@@ -131,7 +131,7 @@ public class SyncServiceFactory {
       final SyncStateProvider syncStateProvider) {
     final AsyncRunner asyncRunner =
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
-    return new HistoricalBlockSyncService(
+    return HistoricalBlockSyncService.create(
         metrics,
         storageUpdateChannel,
         asyncRunner,

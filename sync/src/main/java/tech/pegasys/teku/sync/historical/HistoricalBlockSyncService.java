@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.historical;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import java.time.Duration;
 import java.util.Collections;
@@ -50,6 +51,7 @@ public class HistoricalBlockSyncService extends Service {
   private final P2PNetwork<Eth2Peer> network;
   private final CombinedChainDataClient chainData;
   private final SyncStateProvider syncStateProvider;
+  private final UInt64 batchSize;
 
   private final AtomicLong syncStateSubscription = new AtomicLong(-1);
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
@@ -57,19 +59,22 @@ public class HistoricalBlockSyncService extends Service {
   private volatile BeaconBlockSummary earliestBlock;
   final Set<NodeId> badPeerCache;
 
-  public HistoricalBlockSyncService(
+  @VisibleForTesting
+  HistoricalBlockSyncService(
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final CombinedChainDataClient chainData,
-      final SyncStateProvider syncStateProvider) {
+      final SyncStateProvider syncStateProvider,
+      final UInt64 batchSize) {
     this.storageUpdateChannel = storageUpdateChannel;
 
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.chainData = chainData;
     this.syncStateProvider = syncStateProvider;
+    this.batchSize = batchSize;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -86,6 +91,23 @@ public class HistoricalBlockSyncService extends Service {
             TekuMetricCategory.BEACON,
             "historical_block_sync_earliest_block",
             "The slot of the earliest block retrieved by the historical block sync service");
+  }
+
+  public static HistoricalBlockSyncService create(
+      final MetricsSystem metricsSystem,
+      final StorageUpdateChannel storageUpdateChannel,
+      final AsyncRunner asyncRunner,
+      final P2PNetwork<Eth2Peer> network,
+      final CombinedChainDataClient chainData,
+      final SyncStateProvider syncStateProvider) {
+    return new HistoricalBlockSyncService(
+        metricsSystem,
+        storageUpdateChannel,
+        asyncRunner,
+        network,
+        chainData,
+        syncStateProvider,
+        BATCH_SIZE);
   }
 
   @Override
@@ -185,7 +207,7 @@ public class HistoricalBlockSyncService extends Service {
     }
 
     return HistoricalBatchFetcher.create(
-        storageUpdateChannel, peer, maxSlot, lastBlockRoot, BATCH_SIZE);
+        storageUpdateChannel, peer, maxSlot, lastBlockRoot, batchSize);
   }
 
   private SafeFuture<Void> waitToRetry() {

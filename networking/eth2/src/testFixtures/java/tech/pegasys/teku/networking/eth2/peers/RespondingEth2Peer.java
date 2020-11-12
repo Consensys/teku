@@ -95,6 +95,19 @@ public class RespondingEth2Peer implements Eth2Peer {
         head.getSlot());
   }
 
+  private static PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
+    return new PeerStatus(
+        forkDigest,
+        finalized.getRoot(),
+        finalized.getEpoch(),
+        head.getRoot(),
+        head.getEpochStartSlot());
+  }
+
+  public void updateStatus(final Checkpoint head, final Checkpoint finalized) {
+    updateStatus(createStatus(head, finalized));
+  }
+
   @Override
   public int getOutstandingRequests() {
     return pendingRequests.size();
