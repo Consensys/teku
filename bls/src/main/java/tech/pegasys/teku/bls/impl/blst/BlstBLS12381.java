@@ -136,13 +136,13 @@ public class BlstBLS12381 implements BLS12381 {
   @Override
   public BlstPublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
     return BlstPublicKey.aggregate(
-        publicKeys.stream().map(k -> (BlstPublicKey) k).collect(Collectors.toList()));
+        publicKeys.stream().map(BlstPublicKey::fromPublicKey).collect(Collectors.toList()));
   }
 
   @Override
   public BlstSignature aggregateSignatures(List<? extends Signature> signatures) {
     return BlstSignature.aggregate(
-        signatures.stream().map(s -> (BlstSignature) s).collect(Collectors.toList()));
+        signatures.stream().map(BlstSignature::fromSignature).collect(Collectors.toList()));
   }
 
   @Override
@@ -150,7 +150,7 @@ public class BlstBLS12381 implements BLS12381 {
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
-    BlstSignature blstSignature = (BlstSignature) signature;
+    BlstSignature blstSignature = BlstSignature.fromSignature(signature);
     if (aggrPubKey.isInfinity()) {
       return new BlstInfiniteSemiAggregate(false);
     }

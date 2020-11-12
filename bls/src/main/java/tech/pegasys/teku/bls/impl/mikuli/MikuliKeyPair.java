@@ -69,25 +69,21 @@ public final class MikuliKeyPair extends KeyPair {
     this(secretKey, secretKey.derivePublicKey());
   }
 
-  public MikuliKeyPair(Scalar secretKey) {
-    this(new MikuliSecretKey(secretKey));
-  }
-
   @Override
   public MikuliPublicKey getPublicKey() {
-    return (MikuliPublicKey) super.getPublicKey();
+    return MikuliPublicKey.fromPublicKey(super.getPublicKey());
   }
 
   @Override
   public MikuliSecretKey getSecretKey() {
-    return (MikuliSecretKey) super.getSecretKey();
+    return MikuliSecretKey.fromSecretKey(super.getSecretKey());
   }
 
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final MikuliKeyPair keyPair = (MikuliKeyPair) o;
+    if (!(o instanceof KeyPair)) return false;
+    final KeyPair keyPair = (KeyPair) o;
     return getSecretKey().equals(keyPair.getSecretKey())
         && getPublicKey().equals(keyPair.getPublicKey());
   }
