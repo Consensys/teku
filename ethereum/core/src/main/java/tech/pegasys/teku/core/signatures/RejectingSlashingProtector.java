@@ -18,13 +18,19 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SlashingProtector {
-  SafeFuture<Boolean> maySignBlock(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot);
+public class RejectingSlashingProtector implements SlashingProtector {
+  @Override
+  public SafeFuture<Boolean> maySignBlock(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
+    return SafeFuture.completedFuture(false);
+  }
 
-  SafeFuture<Boolean> maySignAttestation(
+  @Override
+  public SafeFuture<Boolean> maySignAttestation(
       final BLSPublicKey validator,
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
-      final UInt64 targetEpoch);
+      final UInt64 targetEpoch) {
+    return SafeFuture.completedFuture(false);
+  }
 }

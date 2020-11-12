@@ -1,5 +1,4 @@
 {
-  "interchange_format" : "complete",
-  "interchange_format_version" : "4",
+  "interchange_format_version" : "5",
   "genesis_validators_root" : "0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70"
 }
