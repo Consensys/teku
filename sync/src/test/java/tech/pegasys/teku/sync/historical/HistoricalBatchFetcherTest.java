@@ -13,34 +13,296 @@
 
 package tech.pegasys.teku.sync.historical;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+
 public class HistoricalBatchFetcherTest {
-  //  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
-  //
-  //  @SuppressWarnings("unchecked")
-  //  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-  //  private final Eth2Peer peer = mock(Eth2Peer.class);
-  //
-  //  public void run_returnAllBlocksOnFirstRequest() {
-  //    // Create set of blocks to be retrieved
-  //    chainBuilder.generateGenesis();
-  //    chainBuilder.generateBlocksUpToSlot(20);
-  //    final List<SignedBeaconBlock> blocks = chainBuilder.streamBlocksAndStates(10, 20)
-  //      .map(SignedBlockAndState::getBlock)
-  //      .collect(Collectors.toList());
-  //    final SignedBeaconBlock lastBlock = chainBuilder.getLatestBlockAndState().getBlock();
-  //
-  //    final HistoricalBatchFetcher fetcher = new HistoricalBatchFetcher(storageUpdateChannel,
-  // peer, lastBlock.getSlot(), lastBlock.getRoot(), UInt64.valueOf(blocks.size()), 5);
-  //
-  //  }
-  //
-  //  private void setupBlockByRangeResults(List<SignedBeaconBlock> ... blockSets) {
-  //    for (List<SignedBeaconBlock> blocks : blockSets) {
-  //      final SafeFuture<Void> blocksFuture = new SafeFuture<>();
-  //      when(peer.requestBlocksByRange(eq(UInt64.valueOf(10)), eq(UInt64.valueOf(blocks.size())),
-  // eq(UInt64.ONE), any()))
-  //        .thenReturn(blocksFuture);
-  //    }
-  //
-  //  }
+  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private ChainBuilder forkBuilder;
+
+  @SuppressWarnings("unchecked")
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
+      ArgumentCaptor.forClass(Collection.class);
+
+  private final int maxRequests = 5;
+  private List<SignedBeaconBlock> blockBatch;
+  private SignedBeaconBlock firstBlockInBatch;
+  private SignedBeaconBlock lastBlockInBatch;
+  private HistoricalBatchFetcher fetcher;
+  private RespondingEth2Peer peer;
+
+  @BeforeEach
+  public void setup() {
+    when(storageUpdateChannel.onFinalizedBlocks(any())).thenReturn(SafeFuture.COMPLETE);
+
+    // Set up main chain and fork chain
+    chainBuilder.generateGenesis();
+    forkBuilder = chainBuilder.fork();
+    chainBuilder.generateBlocksUpToSlot(20);
+    // Fork skips one block then creates a chain of the same size
+    forkBuilder.generateBlockAtSlot(2);
+    forkBuilder.generateBlocksUpToSlot(20);
+
+    blockBatch =
+        chainBuilder
+            .streamBlocksAndStates(10, 20)
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+    lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
+    firstBlockInBatch = blockBatch.get(0);
+
+    peer = RespondingEth2Peer.create(chainBuilder);
+    fetcher =
+        new HistoricalBatchFetcher(
+            storageUpdateChannel,
+            peer,
+            lastBlockInBatch.getSlot(),
+            lastBlockInBatch.getRoot(),
+            UInt64.valueOf(blockBatch.size()),
+            maxRequests);
+  }
+
+  @Test
+  public void run_returnAllBlocksOnFirstRequest() {
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(firstBlockInBatch);
+
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+  }
+
+  @Test
+  public void run_returnAllBlocksAcrossMultipleRequests() {
+    // Limit the number of blocks to return
+    final int limit = (int) Math.ceil(blockBatch.size() / 2.0);
+    peer.setBlockRequestFilter(
+        allBlocks -> allBlocks.stream().limit(limit).collect(Collectors.toList()));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(firstBlockInBatch);
+
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+  }
+
+  @Test
+  public void run_requestBatchForRangeOfEmptyBlocks() {
+    final int batchSize = 10;
+    fetcher =
+        new HistoricalBatchFetcher(
+            storageUpdateChannel,
+            peer,
+            // Slot & batch size define an empty set of blocks
+            lastBlockInBatch.getSlot().plus(batchSize * 2),
+            lastBlockInBatch.getRoot(),
+            UInt64.valueOf(batchSize),
+            maxRequests);
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // Request by range will return nothing
+    for (int i = 0; i < maxRequests; i++) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      peer.completePendingRequests();
+    }
+    // Request by hash should return the final block
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(lastBlockInBatch);
+
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
+  }
+
+  @Test
+  public void run_peerReturnBlockFromADifferentChain() {
+    peer = RespondingEth2Peer.create(forkBuilder);
+    fetcher =
+        new HistoricalBatchFetcher(
+            storageUpdateChannel,
+            peer,
+            lastBlockInBatch.getSlot(),
+            lastBlockInBatch.getRoot(),
+            UInt64.valueOf(blockBatch.size()),
+            maxRequests);
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(InvalidResponseException.class)
+        .hasMessageContaining("Received invalid blocks from a different chain");
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  @Test
+  public void run_throttleExcessivelyAcrossMultipleRequest() {
+    // Only return one block at a time, and fail to return the last block altogether
+    final int limit = 1;
+    peer.setBlockRequestFilter(
+        allBlocks ->
+            allBlocks.stream()
+                .filter(b -> !b.equals(lastBlockInBatch))
+                .limit(limit)
+                .collect(Collectors.toList()));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // We should exhaust blocks-by-range requests and then fail
+    for (int i = 0; i < maxRequests; i++) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      peer.completePendingRequests();
+    }
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(InvalidResponseException.class)
+        .hasMessageContaining("Failed to deliver full batch");
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  @Test
+  public void run_peerReturnsError() {
+    // Only return one block at a time, and fail to return the last block altogether
+    final RuntimeException error = new RuntimeException("oops");
+    peer.setBlockRequestFilter(
+        allBlocks -> {
+          throw error;
+        });
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // First request should return an error
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(error.getClass())
+        .hasMessageContaining(error.getMessage());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  @Test
+  public void run_peerWithholdsFinalBlock() {
+    // Withhold final block
+    peer.setBlockRequestFilter(
+        allBlocks ->
+            allBlocks.stream()
+                .filter(b -> !b.equals(lastBlockInBatch))
+                .collect(Collectors.toList()));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // We should exhaust blocks-by-range requests and then fail
+    for (int i = 0; i < maxRequests; i++) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      peer.completePendingRequests();
+    }
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(InvalidResponseException.class)
+        .hasMessageContaining("Failed to deliver full batch");
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  @Test
+  public void run_unresponsivePeer() {
+    // Return nothing
+    peer.setBlockRequestFilter(allBlocks -> Collections.emptyList());
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // We should exhaust blocks-by-range requests
+    for (int i = 0; i < maxRequests; i++) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      peer.completePendingRequests();
+    }
+    // Then a final block-by-hash request before failing
+    assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(InvalidResponseException.class)
+        .hasMessageContaining("Failed to deliver full batch");
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  @Test
+  public void run_peerReturnsInvalidResponsesWithGaps() {
+    // Skip blocks on the boundary between requests
+    final int limit = (int) Math.ceil(blockBatch.size() / 2.0);
+    peer.setBlockRequestFilter(
+        allBlocks -> allBlocks.stream().limit(limit).skip(1).collect(Collectors.toList()));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    // We should fail on the second request
+    for (int i = 0; i < 2; i++) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      peer.completePendingRequests();
+    }
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get)
+        .hasCauseInstanceOf(InvalidResponseException.class)
+        .hasMessageContaining("Expected first block to descend from last received block");
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
 }
