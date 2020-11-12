@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -36,6 +37,11 @@ public interface TreeNode {
 
   static LeafNode createLeafNode(Bytes data) {
     return new LeafNodeImpl(data);
+  }
+
+  static BranchNode createBranchNode(TreeNode left, TreeNode right) {
+    assert left != null && right != null;
+    return new BranchNodeImpl(left, right);
   }
 
   /**

@@ -20,26 +20,35 @@ import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
+
+  private final TypeHints hints;
 
   public ListViewType(VectorViewType<C> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
   public ListViewType(ViewType elementType, long maxLength) {
+    this(elementType, maxLength, new TypeHints());
+  }
+
+  public ListViewType(ViewType elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType);
+    this.hints = hints;
   }
 
   @Override
   protected TreeNode createDefaultTree() {
-    return getDefault().getBackingNode();
+    return TreeNode
+        .createBranchNode(getCompatibleVectorType().createDefaultTree(), TreeUtil.ZERO_LEAVES[8]);
   }
 
   @Override
   public ListViewRead<C> getDefault() {
-    return new ListViewReadImpl<C>(this);
+    return new ListViewReadImpl<C>(this, createDefaultTree());
   }
 
   @Override
@@ -48,7 +57,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true);
+    return new VectorViewType<>(getElementType(), getMaxLength(), true, hints);
   }
 
   @Override

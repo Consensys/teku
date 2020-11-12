@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.tree.SuperLeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
@@ -25,14 +26,20 @@ import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 public class VectorViewType<C> extends CollectionViewType {
 
   private final boolean isListBacking;
+  private final TypeHints hints;
 
   public VectorViewType(ViewType elementType, long maxLength) {
     this(elementType, maxLength, false);
   }
 
   VectorViewType(ViewType elementType, long maxLength, boolean isListBacking) {
+    this(elementType, maxLength, isListBacking, new TypeHints());
+  }
+
+  VectorViewType(ViewType elementType, long maxLength, boolean isListBacking, TypeHints hints) {
     super(maxLength, elementType);
     this.isListBacking = isListBacking;
+    this.hints = hints;
   }
 
   @Override
@@ -43,7 +50,11 @@ public class VectorViewType<C> extends CollectionViewType {
   @Override
   protected TreeNode createDefaultTree() {
     if (isListBacking) {
-      return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
+      if (hints.isSuperLeafNode()) {
+        return new SuperLeafNode(treeDepth(), Bytes.EMPTY);
+      } else {
+        return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
+      }
     } else if (getElementType().getBitsSize() == TreeNode.NODE_BIT_SIZE) {
       return TreeUtil.createDefaultTree(maxChunks(), getElementType().getDefaultTree());
     } else {

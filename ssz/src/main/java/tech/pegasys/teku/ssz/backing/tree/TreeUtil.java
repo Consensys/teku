@@ -68,7 +68,7 @@ public class TreeUtil {
   /** The {@link LeafNode} with empty data */
   public static final TreeNode EMPTY_LEAF = ZERO_LEAVES[0];
 
-  private static final TreeNode[] ZERO_TREES;
+  static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
@@ -161,18 +161,36 @@ public class TreeUtil {
    */
   public static void iterateLeaves(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+    iterateNodes(node, fromGeneralIndex, toGeneralIndex, n -> {
+      if (n instanceof LeafNode) {
+        visitor.accept((LeafNode) n);
+      }
+    });
+  }
+
+  public static void iterateLeavesData(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
+    iterateNodes(node, fromGeneralIndex, toGeneralIndex, n -> {
+      if (n instanceof LeafNode) {
+        visitor.accept(((LeafNode) n).getData());
+      } else if (n instanceof SuperLeafNode) {
+        visitor.accept(((SuperLeafNode) n).getData());
+      }
+    });
+  }
+
+  public static void iterateNodes(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
     long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
     int shiftN = 63 - treeDepth(toGeneralIndex);
     long rightmostToIndex = (toGeneralIndex << shiftN) | ((1L << shiftN) - 1);
-    iterateLeavesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
+    iterateNodesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
   }
 
-  private static void iterateLeavesPriv(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
-    if (node instanceof LeafNode) {
-      visitor.accept((LeafNode) node);
-    } else {
-
+  private static void iterateNodesPriv(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
+    visitor.accept(node);
+    if (node instanceof BranchNode) {
       BranchNode bNode = (BranchNode) node;
       long anchorF = Long.highestOneBit(fromGeneralIndex);
       long pivotF = anchorF >>> 1;
@@ -185,12 +203,12 @@ public class TreeUtil {
       long toChildIdx = (toGeneralIndex ^ anchorT) | pivotT;
 
       if (fromLeft && !toLeft) {
-        iterateLeavesPriv(bNode.left(), fromChildIdx, -1, visitor);
-        iterateLeavesPriv(bNode.right(), 1L << 63, toChildIdx, visitor);
+        iterateNodesPriv(bNode.left(), fromChildIdx, -1, visitor);
+        iterateNodesPriv(bNode.right(), 1L << 63, toChildIdx, visitor);
       } else if (fromLeft && toLeft) {
-        iterateLeavesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
+        iterateNodesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
       } else if (!fromLeft && !toLeft) {
-        iterateLeavesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
+        iterateNodesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
       } else {
         throw new IllegalArgumentException(
             "fromGeneralIndex < toGeneralIndex: " + fromGeneralIndex + " < " + toGeneralIndex);

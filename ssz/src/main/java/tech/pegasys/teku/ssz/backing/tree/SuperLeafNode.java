@@ -35,14 +35,18 @@ public class SuperLeafNode implements TreeNode {
     this.totalLeafCount = 1L << depth;
   }
 
+  public Bytes getData() {
+    return data;
+  }
+
   @Override
   public Bytes32 hashTreeRoot() {
-    return hashTreeRoot(1, 0, totalLeafCount);
+    return hashTreeRoot(0, 0, totalLeafCount);
   }
 
   private Bytes32 hashTreeRoot(int curDepth, long fromNodeIdx, long toNodeIdx) {
     if (fromNodeIdx >= dataLeafCount) {
-      return TreeUtil.ZERO_LEAVES[depth - curDepth].hashTreeRoot();
+      return TreeUtil.ZERO_TREES[depth - curDepth].hashTreeRoot();
     } else if (curDepth == depth) {
       assert toNodeIdx - fromNodeIdx == 1;
       if (fromNodeIdx + 1 < dataLeafCount) {
@@ -51,7 +55,7 @@ public class SuperLeafNode implements TreeNode {
         return Bytes32.rightPad(data.slice((int) (fromNodeIdx * 32)));
       }
     } else {
-      long midNodeIdx = fromNodeIdx + (1 << (depth - curDepth));
+      long midNodeIdx = fromNodeIdx + (1 << (depth - curDepth - 1));
       assert midNodeIdx - fromNodeIdx == toNodeIdx - midNodeIdx;
       return Hash.sha2_256(Bytes.wrap(hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
           hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
@@ -61,6 +65,9 @@ public class SuperLeafNode implements TreeNode {
   @NotNull
   @Override
   public TreeNode get(long generalizedIndex) {
+    if (generalizedIndex == 1) {
+      return this;
+    }
     if (generalizedIndex < totalLeafCount) {
       throw new UnsupportedOperationException("Getting branch node not supported yet");
     }
@@ -81,7 +88,11 @@ public class SuperLeafNode implements TreeNode {
 
   @Override
   public TreeNode updated(TreeUpdates newNodes) {
-    int lastUpdatedIndex = (int) (newNodes.getGIndex(newNodes.size() - 1) - totalLeafCount);
+    if (newNodes.isFinal()) {
+      return newNodes.getNode(0);
+    }
+    long lastUpdatedGIndex = newNodes.getGIndex(newNodes.size() - 1);
+    int lastUpdatedIndex = (int) (lastUpdatedGIndex - totalLeafCount);
     if (lastUpdatedIndex < 0) {
       throw new UnsupportedOperationException("Not yet supported updating branch nodes");
     }
@@ -113,7 +124,10 @@ public class SuperLeafNode implements TreeNode {
         leafNode.getData().copyTo(newData, leafIdx * 32);
         updateIdx++;
       } else {
-        data.slice(leafIdx * 32, 32).copyTo(newData, leafIdx * 32);
+        if (leafIdx + 1 < dataLeafCount) {
+          data.slice(leafIdx * 32, 32).copyTo(newData, leafIdx * 32);
+        }
+        // else leaving zeroes
       }
     }
     return new SuperLeafNode(depth, newData);

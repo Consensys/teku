@@ -21,9 +21,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -70,5 +72,56 @@ public class ListViewTest {
     lw3.append(new SubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
     ListViewRead<SubContainer> lr3 = lw3.commitChanges();
     assertThat(lr3.size()).isEqualTo(1);
+  }
+
+  @Test
+  void superNodeListTest() {
+    ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10);
+    ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10,
+        new TypeHints(true));
+
+    ListViewRead<UInt64View> l1_0 = lt1.getDefault();
+    ListViewRead<UInt64View> l2_0 = lt2.getDefault();
+
+    assertThat(l2_0.hashTreeRoot()).isEqualTo(l1_0.hashTreeRoot());
+
+    ListViewWrite<UInt64View> l1w_0 = l1_0.createWritableCopy();
+    l1w_0.append(UInt64View.fromLong(0x77889900));
+    ListViewRead<UInt64View> l1_1 = l1w_0.commitChanges();
+
+    ListViewWrite<UInt64View> l2w_0 = l2_0.createWritableCopy();
+    l2w_0.append(UInt64View.fromLong(0x77889900));
+    ListViewRead<UInt64View> l2_1 = l2w_0.commitChanges();
+
+    assertThat(l2_1.hashTreeRoot()).isEqualTo(l1_1.hashTreeRoot());
+
+    ListViewWrite<UInt64View> l1w_1 = l1_1.createWritableCopy();
+    l1w_1.append(UInt64View.fromLong(0x111111));
+    l1w_1.append(UInt64View.fromLong(0x222222));
+    l1w_1.append(UInt64View.fromLong(0x333333));
+    l1w_1.append(UInt64View.fromLong(0x444444));
+    ListViewRead<UInt64View> l1_2 = l1w_1.commitChanges();
+
+    ListViewWrite<UInt64View> l2w_1 = l2_1.createWritableCopy();
+    l2w_1.append(UInt64View.fromLong(0x111111));
+    l2w_1.append(UInt64View.fromLong(0x222222));
+    l2w_1.append(UInt64View.fromLong(0x333333));
+    l2w_1.append(UInt64View.fromLong(0x444444));
+    ListViewRead<UInt64View> l2_2 = l2w_1.commitChanges();
+
+    assertThat(l2_2.hashTreeRoot()).isEqualTo(l1_2.hashTreeRoot());
+
+    ListViewWrite<UInt64View> l1w_2 = l1_2.createWritableCopy();
+    l1w_2.set(0, UInt64View.fromLong(0x555555));
+    l1w_2.set(4, UInt64View.fromLong(0x666666));
+    ListViewRead<UInt64View> l1_3 = l1w_2.commitChanges();
+
+    ListViewWrite<UInt64View> l2w_2 = l2_2.createWritableCopy();
+    l2w_2.set(0, UInt64View.fromLong(0x555555));
+    l2w_2.set(4, UInt64View.fromLong(0x666666));
+    ListViewRead<UInt64View> l2_3 = l2w_2.commitChanges();
+
+    assertThat(l2_3.hashTreeRoot()).isEqualTo(l1_3.hashTreeRoot());
+    assertThat(l2_3.sszSerialize()).isEqualTo(l1_3.sszSerialize());
   }
 }
