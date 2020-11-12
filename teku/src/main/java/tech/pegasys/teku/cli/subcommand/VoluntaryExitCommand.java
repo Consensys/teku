@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
@@ -83,8 +85,31 @@ public class VoluntaryExitCommand implements Runnable {
 
   @Override
   public void run() {
+    SUB_COMMAND_LOG.display("Loading configuration...");
     initialise();
+    confirmExits();
     getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+  }
+
+  private void confirmExits() {
+    SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
+    SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
+    SUB_COMMAND_LOG.display(
+        "\nThese validators won't be able to be re-activated, and withdrawals aren't likely to be possible until Phase 2 of eth2 Mainnet.");
+    SUB_COMMAND_LOG.display("Are you sure you wish to continue (yes/no)? ");
+    Scanner scanner = new Scanner(System.in, Charset.defaultCharset().name());
+    final String confirmation = scanner.next();
+
+    if (!confirmation.toLowerCase().equals("yes")) {
+      SUB_COMMAND_LOG.display("Cancelled sending voluntary exit.");
+      System.exit(1);
+    }
+  }
+
+  private String getValidatorAbbreviatedKeys() {
+    return blsPublicKeyValidatorMap.keySet().stream()
+        .map(key -> key.toAbbreviatedString())
+        .collect(Collectors.joining(", "));
   }
 
   private Map<BLSPublicKey, Integer> getValidatorIndices(
