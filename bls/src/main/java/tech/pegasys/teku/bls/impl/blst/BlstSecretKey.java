@@ -116,11 +116,9 @@ public class BlstSecretKey implements SecretKey {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof SecretKey)) {
       return false;
     }
-
-    BlstSecretKey that = (BlstSecretKey) o;
-    return Objects.equals(toBytes(), that.toBytes());
+    return Objects.equals(toBytes(), ((SecretKey) o).toBytes());
   }
 }
