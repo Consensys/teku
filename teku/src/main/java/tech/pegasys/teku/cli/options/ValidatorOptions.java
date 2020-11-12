@@ -58,6 +58,14 @@ public class ValidatorOptions {
       arity = "1")
   private boolean validatorKeystoreLockingEnabled = true;
 
+  @Option(
+      names = {"--validators-external-signer-slashing-protection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable internal slashing protection for external signers. Default: true",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean validatorExternalSignerSlashingProtectionEnabled = true;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -72,6 +80,8 @@ public class ValidatorOptions {
             config
                 .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                .validatorExternalSignerSlashingProtectionEnabled(
+                    validatorExternalSignerSlashingProtectionEnabled)
                 .graffiti(graffiti));
     validatorKeysOptions.configure(builder);
   }
