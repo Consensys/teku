@@ -76,6 +76,7 @@ public class HistoricalBlockSyncService extends Service {
             CacheBuilder.newBuilder()
                 .maximumSize(100)
                 .expireAfterWrite(Duration.ofMinutes(5))
+                .removalListener(__ -> logBadPeerCacheSize(false))
                 .<NodeId, Boolean>build()
                 .asMap());
 
@@ -158,6 +159,7 @@ public class HistoricalBlockSyncService extends Service {
                 // If we didn't disconnect the peer altogether, avoid making new requests for a
                 // while
                 badPeerCache.add(peer.getId());
+                logBadPeerCacheSize(true);
               }
               return null;
             })
@@ -201,5 +203,13 @@ public class HistoricalBlockSyncService extends Service {
                     .getEpochStartSlot()
                     .isGreaterThan(earliestBlock.getSlot()))
         .findAny();
+  }
+
+  private void logBadPeerCacheSize(final boolean peerAdded) {
+    if (peerAdded) {
+      LOG.trace("Peer added to bad peer cache, current size: {}", badPeerCache.size());
+    } else {
+      LOG.trace("Peer removed from bad peer cache, current size: {}", badPeerCache.size());
+    }
   }
 }
