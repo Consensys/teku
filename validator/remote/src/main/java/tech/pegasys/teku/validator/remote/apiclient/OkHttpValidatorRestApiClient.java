@@ -72,7 +72,6 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
-import tech.pegasys.teku.api.schema.TemporaryAttestationData;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -190,8 +189,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("committee_index", String.valueOf(committeeIndex));
 
-    return get(GET_ATTESTATION_DATA, queryParams, createHandler(TemporaryAttestationData.class))
-        .map(TemporaryAttestationData::getAttestationData);
+    return get(GET_ATTESTATION_DATA, queryParams, createHandler(AttestationData.class));
   }
 
   @Override
