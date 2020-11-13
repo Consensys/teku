@@ -363,6 +363,14 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new tech.pegasys.teku.validator.api.AttesterDuties(
+                        currentTargetRoot, previousTargetRoot, emptyList()))));
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
     assertThat(future).isCompleted();
