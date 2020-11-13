@@ -264,9 +264,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
 
     assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get)
-        .hasCauseInstanceOf(error.getClass())
-        .hasMessageContaining(error.getMessage());
+    assertThatThrownBy(future::get).hasCause(error);
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
   }
 

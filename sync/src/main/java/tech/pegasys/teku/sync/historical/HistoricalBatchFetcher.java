@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 /** Fetches a target batch of blocks from a peer. */
@@ -119,9 +118,6 @@ public class HistoricalBatchFetcher {
 
   private void handleRequestError(final Throwable throwable) {
     final Throwable rootCause = Throwables.getRootCause(throwable);
-    if (rootCause instanceof PeerDisconnectedException) {
-      complete();
-    }
     if (rootCause instanceof InvalidResponseException) {
       // Disconnect misbehaving peer
       LOG.debug("Received invalid response from peer. Disconnecting: " + peer, throwable);
