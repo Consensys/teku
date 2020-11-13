@@ -32,7 +32,6 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @Command(
     name = "validator-client",
@@ -105,7 +104,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
-        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setNetwork(networkOptions.getNetwork())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())

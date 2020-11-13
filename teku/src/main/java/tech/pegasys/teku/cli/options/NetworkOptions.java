@@ -14,15 +14,18 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.NetworkDefinitionConverter;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class NetworkOptions {
 
   @Option(
+      converter = NetworkDefinitionConverter.class,
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
-  private String network = "medalla";
+  private NetworkDefinition network = NetworkDefinition.fromCliArg("medalla");
 
   @Option(
       names = {"--initial-state"},
@@ -64,7 +67,7 @@ public class NetworkOptions {
       hidden = true)
   private Integer peerRequestLimit = 50;
 
-  public String getNetwork() {
+  public NetworkDefinition getNetwork() {
     return network;
   }
 
