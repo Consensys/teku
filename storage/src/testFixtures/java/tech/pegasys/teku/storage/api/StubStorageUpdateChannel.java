@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Collection;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -22,6 +24,11 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
     return SafeFuture.COMPLETE;
   }
 

@@ -277,6 +277,40 @@ class UInt64Test {
   }
 
   @Test
+  void safeMinus_shouldReturnEmptyWhenResultUnderflows() {
+    assertThat(UInt64.ZERO.safeMinus(UInt64.ONE)).isEmpty();
+    assertThat(UInt64.ZERO.safeMinus(UInt64.MAX_VALUE)).isEmpty();
+    assertThat(UInt64.valueOf(14521245234L).safeMinus(UInt64.MAX_VALUE)).isEmpty();
+  }
+
+  @Test
+  void safeMinus_shouldReturnEmptyWhenResultUnderflows_withLongArg() {
+    assertThat(UInt64.ZERO.safeMinus(1)).isEmpty();
+    assertThat(UInt64.ZERO.safeMinus(Long.MAX_VALUE)).isEmpty();
+    assertThat(UInt64.valueOf(14521245234L).safeMinus(Long.MAX_VALUE)).isEmpty();
+  }
+
+  @Test
+  void safeMinus_shouldThrowWhenArgumentIsNegative() {
+    assertThatThrownBy(() -> UInt64.MAX_VALUE.safeMinus(-4))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void safeMinus_shouldReturnValueWhenArgumentsAreSafe() {
+    assertThat(UInt64.ONE.safeMinus(UInt64.ONE)).contains(UInt64.ZERO);
+    assertThat(UInt64.MAX_VALUE.safeMinus(UInt64.MAX_VALUE)).contains(UInt64.ZERO);
+    assertThat(UInt64.valueOf(5).safeMinus(UInt64.valueOf(2))).contains(UInt64.valueOf(3));
+  }
+
+  @Test
+  void safeMinus_shouldReturnValueWhenArgumentsAreSafe_withLongArg() {
+    assertThat(UInt64.ONE.safeMinus(1)).contains(UInt64.ZERO);
+    assertThat(UInt64.valueOf(Long.MAX_VALUE).safeMinus(Long.MAX_VALUE)).contains(UInt64.ZERO);
+    assertThat(UInt64.valueOf(5).safeMinus(2)).contains(UInt64.valueOf(3));
+  }
+
+  @Test
   void minusMinZero_shouldReturnZeroWhenResultUnderflows() {
     assertThat(UInt64.valueOf(10).minusMinZero(11)).isEqualTo(UInt64.ZERO);
   }

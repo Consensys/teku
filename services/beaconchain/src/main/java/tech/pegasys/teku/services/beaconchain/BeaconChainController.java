@@ -143,7 +143,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final GlobalConfiguration config;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final AsyncRunner asyncRunner;
+  private final AsyncRunner beaconAsyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -186,7 +186,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
-    this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
@@ -259,20 +259,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
     StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+        eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
                 StorageBackedRecentChainData.create(
                     metricsSystem,
                     storeConfig,
-                    asyncRunner,
+                    beaconAsyncRunner,
                     storageQueryChannel,
                     storageUpdateChannel,
-                    eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
-                    eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
+                    eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
+                    eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
                     eventBus))
         .thenCompose(
@@ -386,7 +386,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     combinedChainDataClient =
         new CombinedChainDataClient(
             recentChainData,
-            eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
+            eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
             stateTransition);
   }
 
@@ -457,7 +457,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final ActiveValidatorTracker activeValidatorTracker =
         new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
-        eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
+        eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
@@ -570,7 +570,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
-                  eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
+                  eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
@@ -639,7 +639,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             combinedChainDataClient,
             p2pNetwork,
             syncService.getForwardSync(),
-            eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
+            eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
             attestationPool,
             attesterSlashingPool,
             proposerSlashingPool,
@@ -679,9 +679,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             beaconConfig.p2pConfig(),
             metricsSystem,
             asyncRunnerFactory,
-            asyncRunner,
+            beaconAsyncRunner,
             timeProvider,
             recentChainData,
+            combinedChainDataClient,
+            eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
             p2pNetwork,
             blockImporter,
             pendingBlocks,

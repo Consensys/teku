@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.noop;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void update(final StorageUpdate event) {}
+
+  @Override
+  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}
 
   @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
@@ -78,6 +82,11 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestAvailableBlockSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
     return Optional.empty();
   }
 
