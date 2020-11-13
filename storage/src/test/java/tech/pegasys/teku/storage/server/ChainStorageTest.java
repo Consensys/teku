@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 import tech.pegasys.teku.util.config.Constants;
 
+@Disabled("TODO(#3064) - debug intermittent test failures")
 public class ChainStorageTest {
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
