@@ -326,7 +326,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
       builder.globalConfig(globalBuilder -> buildGlobalConfiguration(globalBuilder));
-      weakSubjectivityOptions.configure(builder);
+      weakSubjectivityOptions.configure(builder, networkOptions.getNetwork());
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
       p2POptions.configure(builder, networkOptions.getNetwork());
@@ -347,7 +347,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())

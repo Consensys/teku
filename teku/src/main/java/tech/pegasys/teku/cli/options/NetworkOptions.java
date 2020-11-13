@@ -28,13 +28,6 @@ public class NetworkOptions {
   private NetworkDefinition network = NetworkDefinition.fromCliArg("medalla");
 
   @Option(
-      names = {"--initial-state"},
-      paramLabel = "<STRING>",
-      description = "Initial BeaconState to load",
-      arity = "1")
-  private String initialState = null;
-
-  @Option(
       names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
@@ -69,10 +62,6 @@ public class NetworkOptions {
 
   public NetworkDefinition getNetwork() {
     return network;
-  }
-
-  public String getInitialState() {
-    return initialState;
   }
 
   public Integer getStartupTargetPeerCount() {
