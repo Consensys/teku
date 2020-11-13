@@ -351,7 +351,7 @@ public class WeakSubjectivityInitializerTest {
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
-            "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint");
+            "Configured initial state is incompatible with stored latest finalized checkpoint");
   }
 
   @Test
@@ -393,7 +393,7 @@ public class WeakSubjectivityInitializerTest {
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
-            "Supplied weak subjectivity state does not match stored block at epoch "
+            "Configured initial state does not match stored block at epoch "
                 + anchor.getEpoch()
                 + ": "
                 + historicalBlock.getRoot());
@@ -444,7 +444,7 @@ public class WeakSubjectivityInitializerTest {
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
-            "Supplied weak subjectivity state does not match stored block at epoch "
+            "Configured initial state does not match stored block at epoch "
                 + anchor.getEpoch()
                 + ": "
                 + historicalBlock.getRoot());
@@ -490,6 +490,6 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Cannot set future weak subjectivity state for an existing database");
+        .hasMessageContaining("Cannot set future initial state for an existing database");
   }
 }
