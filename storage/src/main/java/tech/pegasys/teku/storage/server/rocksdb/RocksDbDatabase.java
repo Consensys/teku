@@ -257,7 +257,7 @@ public class RocksDbDatabase implements Database {
     Bytes32 expectedRoot =
         getEarliestAvailableBlock()
             .map(SignedBeaconBlock::getParentRoot)
-            .orElseGet(() -> this.getLatestFinalizedBlock().getRoot());
+            .orElseGet(() -> this.getLatestFinalizedBlockSummary().getRoot());
     for (SignedBeaconBlock block : sorted) {
       if (!block.getRoot().equals(expectedRoot)) {
         throw new IllegalArgumentException(
@@ -599,7 +599,7 @@ public class RocksDbDatabase implements Database {
     final Optional<Checkpoint> initialCheckpoint = hotDao.getAnchor();
     final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
     // Get previously finalized block to build on top of
-    final BeaconBlockSummary baseBlock = getLatestFinalizedBlock();
+    final BeaconBlockSummary baseBlock = getLatestFinalizedBlockOrSummary();
 
     final List<Bytes32> finalizedRoots =
         HashTree.builder()
@@ -681,13 +681,17 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private BeaconBlockSummary getLatestFinalizedBlock() {
+  private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {
     final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
+    return finalizedDao
+        .getFinalizedBlock(baseBlockRoot)
+        .<BeaconBlockSummary>map(a -> a)
+        .orElseGet(this::getLatestFinalizedBlockSummary);
+  }
+
+  private BeaconBlockSummary getLatestFinalizedBlockSummary() {
     final Optional<BeaconBlockSummary> finalizedBlock =
-        finalizedDao
-            .getFinalizedBlock(baseBlockRoot)
-            .<BeaconBlockSummary>map(a -> a)
-            .or(() -> hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState));
+        hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState);
     return finalizedBlock.orElseThrow(
         () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
   }
