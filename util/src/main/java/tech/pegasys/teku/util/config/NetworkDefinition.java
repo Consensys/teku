@@ -94,7 +94,7 @@ public class NetworkDefinition {
               builder()
                   .constants("pyrmont")
                   .startupTimeoutSeconds(120)
-                  .eth1DepositContractAddress("0x2c539a95d2a3f9b10681D9c0dD7cCE37D40c7B79")
+                  .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
                   .initialStateFromClasspath("pyrmont-genesis.ssz")
                   .discoveryBootnodes(
                       // @protolambda bootnode 1
