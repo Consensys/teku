@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.admin;
+package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -19,7 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPP
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_ADMIN;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
@@ -48,7 +48,7 @@ public class PutLogLevel implements Handler {
       path = ROUTE,
       method = HttpMethod.PUT,
       summary = "Changes the log level without restarting.",
-      tags = {TAG_ADMIN},
+      tags = {TAG_TEKU},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = LogLevel.class)},
