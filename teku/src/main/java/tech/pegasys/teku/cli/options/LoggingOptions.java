@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
@@ -25,11 +24,6 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LoggingOptions {
 
   private static final String SEP = System.getProperty("file.separator");
-  private static final String DEFAULT_LOG_DIR = VersionProvider.defaultStoragePath() + SEP + "logs";
-
-  @VisibleForTesting
-  public static final String DEFAULT_LOG_FILE = DEFAULT_LOG_DIR + SEP + "teku.log";
-
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
       StringUtils.joinWith(
           SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
