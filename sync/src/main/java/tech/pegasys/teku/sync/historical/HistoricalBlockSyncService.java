@@ -117,7 +117,7 @@ public class HistoricalBlockSyncService extends Service {
   @Override
   protected SafeFuture<?> doStart() {
     LOG.debug("Start {}", getClass().getSimpleName());
-    return initialize().thenAccept(__ -> requestBlocksIfAppropriate());
+    return initialize().thenRun(this::requestBlocksIfAppropriate);
   }
 
   @Override
