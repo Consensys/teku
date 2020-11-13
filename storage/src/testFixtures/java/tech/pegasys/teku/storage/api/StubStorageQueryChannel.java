@@ -46,6 +46,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }

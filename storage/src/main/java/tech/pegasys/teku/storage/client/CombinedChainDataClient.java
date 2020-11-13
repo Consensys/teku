@@ -32,9 +32,12 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -443,5 +446,18 @@ public class CombinedChainDataClient {
 
   public Optional<GenesisData> getGenesisData() {
     return recentChainData.getGenesisData();
+  }
+
+  public SafeFuture<Optional<BeaconBlockSummary>> getEarliestAvailableBlockSummary() {
+    // Pull the latest finalized first, so that we're sure to return a consistent result if the
+    // Store is updated while we're pulling historical data
+    final Optional<BeaconBlockSummary> latestFinalized =
+        Optional.ofNullable(getStore())
+            .map(ReadOnlyStore::getLatestFinalized)
+            .map(StateAndBlockSummary::getBlockSummary);
+
+    return historicalChainData
+        .getEarliestAvailableBlock()
+        .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 }

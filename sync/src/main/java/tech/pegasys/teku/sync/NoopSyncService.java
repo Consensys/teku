@@ -82,4 +82,14 @@ public class NoopSyncService implements ForwardSync, RecentBlockFetcher, SyncSer
   public SyncState getCurrentSyncState() {
     return SyncState.IN_SYNC;
   }
+
+  @Override
+  public long subscribeToSyncStateChanges(final SyncStateSubscriber subscriber) {
+    return 0;
+  }
+
+  @Override
+  public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
+    return false;
+  }
 }

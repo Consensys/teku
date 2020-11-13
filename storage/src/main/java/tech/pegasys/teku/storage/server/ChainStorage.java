@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -106,6 +107,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
+    return SafeFuture.fromRunnable(() -> database.storeFinalizedBlocks(finalizedBlocks));
+  }
+
+  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     database.storeInitialAnchor(initialAnchor);
   }
@@ -121,6 +127,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return SafeFuture.of(database::getEarliestAvailableBlockSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock() {
+    return SafeFuture.of(database::getEarliestAvailableBlock);
   }
 
   @Override
