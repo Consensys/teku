@@ -82,7 +82,8 @@ public class SingleAttestationTopicHandlerTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -97,7 +98,8 @@ public class SingleAttestationTopicHandlerTest {
     when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(IGNORE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -112,7 +114,8 @@ public class SingleAttestationTopicHandlerTest {
     when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -127,7 +130,8 @@ public class SingleAttestationTopicHandlerTest {
     when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(REJECT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -136,7 +140,8 @@ public class SingleAttestationTopicHandlerTest {
   public void handleMessage_invalidAttestation_invalidSSZ() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
