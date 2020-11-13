@@ -53,8 +53,8 @@ SECONDS_PER_ETH1_BLOCK: 14
 # Ethereum Goerli testnet
 DEPOSIT_CHAIN_ID: 5
 DEPOSIT_NETWORK_ID: 5
-# Pyrmont test deposit contract on Goerli
-DEPOSIT_CONTRACT_ADDRESS: 0x2c539a95d2a3f9b10681D9c0dD7cCE37D40c7B79
+# Pyrmont test deposit contract on Goerli (2nd edition, 0x00002009 fork version)
+DEPOSIT_CONTRACT_ADDRESS: 0x8c5fecdC472E27Bc447696F431E425D02dd46a8c
 
 
 # Gwei values
@@ -71,15 +71,15 @@ EFFECTIVE_BALANCE_INCREMENT: 1000000000
 
 # Initial values
 # ---------------------------------------------------------------
-# Mainnet initial fork version, recommend altering for testnets
-GENESIS_FORK_VERSION: 0x00000000
+# Pyrmont area code
+GENESIS_FORK_VERSION: 0x00002009
 BLS_WITHDRAWAL_PREFIX: 0x00
 
 
 # Time parameters
 # ---------------------------------------------------------------
-# 604800 seconds (7 days)
-GENESIS_DELAY: 604800
+# Customized for Pyrmont: 432000 seconds (5 days)
+GENESIS_DELAY: 432000
 # 12 seconds
 SECONDS_PER_SLOT: 12
 # 2**0 (= 1) slots 12 seconds
