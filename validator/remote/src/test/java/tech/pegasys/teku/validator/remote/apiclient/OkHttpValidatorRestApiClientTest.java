@@ -45,7 +45,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -493,36 +492,14 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void createAttestationData_WhenSuccessWithData_ReturnsAttestationData() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-    final GetAttestationDataResponse expectedAttestationData =
-        new GetAttestationDataResponse(schemaObjects.attestation().data);
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestationData)));
-
-    Optional<AttestationData> attestationData =
-        apiClient.createAttestationData(slot, committeeIndex);
-
-    assertThat(attestationData).isPresent();
-    assertThat(attestationData.get())
-        .usingRecursiveComparison()
-        .isEqualTo(expectedAttestationData.data);
-  }
-
-  @Test
   public void createAttestationData_WhenSuccessWithNonData_ReturnsAttestationData() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
     final AttestationData expectedAttestationData = schemaObjects.attestation().data;
-
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestationData)));
-
     Optional<AttestationData> attestationData =
         apiClient.createAttestationData(slot, committeeIndex);
-
     assertThat(attestationData).isPresent();
     assertThat(attestationData.get()).usingRecursiveComparison().isEqualTo(expectedAttestationData);
   }
