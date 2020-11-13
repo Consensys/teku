@@ -15,7 +15,6 @@ package tech.pegasys.teku.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,7 +49,7 @@ public class JsonProvider {
     module.addDeserializer(UInt64.class, new UInt64Deserializer());
     module.addSerializer(UInt64.class, new UInt64Serializer());
 
-    objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
+    objectMapper.registerModule(module);
   }
 
   private final ObjectMapper objectMapper;

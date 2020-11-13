@@ -19,20 +19,12 @@ import tech.pegasys.teku.datastructures.util.LengthBounds;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-class SszGossipEncoding implements GossipEncoding {
-  private final String NAME = "ssz";
+class SszGossipCodec {
 
-  @Override
-  public String getName() {
-    return NAME;
-  }
-
-  @Override
   public <T> Bytes encode(final T value) {
     return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) value);
   }
 
-  @Override
   public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {
     try {
       final LengthBounds lengthBounds =

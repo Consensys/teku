@@ -25,10 +25,13 @@ import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -125,6 +128,11 @@ public class BeaconRestApiV1Test {
     verify(app).get(eq(route), any(type));
   }
 
+  @Test
+  void shouldHavePutLogLevel() {
+    verify(app).put(eq(PutLogLevel.ROUTE), any(PutLogLevel.class));
+  }
+
   static Stream<Arguments> getParameters() {
     Stream.Builder<Arguments> builder = Stream.builder();
 
@@ -175,6 +183,9 @@ public class BeaconRestApiV1Test {
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
+
+    // TEKU
+    builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
 
     return builder.build();
   }

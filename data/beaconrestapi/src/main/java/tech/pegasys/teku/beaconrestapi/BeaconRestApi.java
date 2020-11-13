@@ -15,13 +15,11 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
 import com.google.common.base.Throwables;
-import com.google.common.io.Resources;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
@@ -31,18 +29,16 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import java.io.IOException;
 import java.net.BindException;
-import java.nio.charset.Charset;
 import java.util.Optional;
-import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.beaconrestapi.handlers.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -127,8 +123,7 @@ public class BeaconRestApi {
     addV1DebugHandlers(dataProvider);
 
     // Endpoints from before standard API
-    addAdminHandlers();
-    addCustomErrorPages(configuration);
+    addTekuSpecificHandlers(dataProvider);
   }
 
   private void addV1ConfigHandlers(
@@ -156,26 +151,6 @@ public class BeaconRestApi {
             throw new ForbiddenResponse("Host not authorized");
           }
         });
-  }
-
-  private void addCustomErrorPages(final GlobalConfiguration configuration) {
-    if (configuration.isRestApiDocsEnabled()) {
-      try {
-        String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
-        app.error(
-            SC_NOT_FOUND,
-            ctx -> {
-              ctx.result(content);
-              ctx.contentType("text/html");
-            });
-      } catch (IOException ex) {
-        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex);
-      }
-    }
-  }
-
-  private String readResource(final String fileName, Charset charset) throws IOException {
-    return Resources.toString(Resources.getResource(fileName), charset);
   }
 
   private void addExceptionHandlers() {
@@ -280,8 +255,9 @@ public class BeaconRestApi {
     return options;
   }
 
-  private void addAdminHandlers() {
+  private void addTekuSpecificHandlers(final DataProvider provider) {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
+    app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
   }
 
   private void addV1NodeHandlers(final DataProvider provider) {

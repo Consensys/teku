@@ -70,7 +70,8 @@ public class BlockTopicHandlerTest {
     when(processor.process(block))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -84,7 +85,8 @@ public class BlockTopicHandlerTest {
     when(processor.process(block))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -97,7 +99,8 @@ public class BlockTopicHandlerTest {
     when(processor.process(block))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -106,7 +109,8 @@ public class BlockTopicHandlerTest {
   public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -118,7 +122,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

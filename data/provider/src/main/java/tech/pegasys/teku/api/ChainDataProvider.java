@@ -22,6 +22,7 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorI
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.StateSszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
@@ -62,6 +64,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -294,6 +297,20 @@ public class ChainDataProvider {
         .defaultStateSelector(stateIdParam)
         .getState()
         .thenApply(state -> state.map(BeaconState::new));
+  }
+
+  public SafeFuture<Optional<StateSszResponse>> getBeaconStateSsz(final String stateIdParam) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state ->
+                        new StateSszResponse(
+                            new ByteArrayInputStream(
+                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
+                            state.hash_tree_root().toUnprefixedHexString())));
   }
 
   // TODO remove when removing old rest api
