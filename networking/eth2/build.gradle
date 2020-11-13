@@ -46,6 +46,7 @@ dependencies {
   integrationTestImplementation testFixtures(project(':infrastructure:events'))
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+  testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))

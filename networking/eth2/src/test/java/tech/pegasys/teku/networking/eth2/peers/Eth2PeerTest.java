@@ -45,7 +45,7 @@ class Eth2PeerTest {
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
   private final Eth2Peer peer =
-      new Eth2Peer(
+      Eth2Peer.create(
           delegate,
           rpcMethods,
           statusMessageFactory,

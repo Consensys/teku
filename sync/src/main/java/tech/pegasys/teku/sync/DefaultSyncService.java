@@ -21,31 +21,41 @@ import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcherService;
+import tech.pegasys.teku.sync.historical.HistoricalBlockSyncService;
 
 public class DefaultSyncService extends Service implements SyncService {
   private final ForwardSyncService forwardSyncService;
   private final RecentBlockFetcherService blockFetcherService;
   private final SyncStateTracker syncStateTracker;
+  private final HistoricalBlockSyncService historicalBlockSyncService;
 
   public DefaultSyncService(
       final ForwardSyncService forwardSyncService,
       final RecentBlockFetcherService blockFetcherService,
-      final SyncStateTracker syncStateTracker) {
+      final SyncStateTracker syncStateTracker,
+      final HistoricalBlockSyncService historicalBlockSyncService) {
     this.forwardSyncService = forwardSyncService;
     this.blockFetcherService = blockFetcherService;
     this.syncStateTracker = syncStateTracker;
+    this.historicalBlockSyncService = historicalBlockSyncService;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     return SafeFuture.allOfFailFast(
-        forwardSyncService.start(), blockFetcherService.start(), syncStateTracker.start());
+        forwardSyncService.start(),
+        blockFetcherService.start(),
+        syncStateTracker.start(),
+        historicalBlockSyncService.start());
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
-        forwardSyncService.stop(), blockFetcherService.stop(), syncStateTracker.stop());
+        forwardSyncService.stop(),
+        blockFetcherService.stop(),
+        syncStateTracker.stop(),
+        historicalBlockSyncService.stop());
   }
 
   @Override
@@ -61,5 +71,15 @@ public class DefaultSyncService extends Service implements SyncService {
   @Override
   public SyncState getCurrentSyncState() {
     return syncStateTracker.getCurrentSyncState();
+  }
+
+  @Override
+  public long subscribeToSyncStateChanges(final SyncStateSubscriber subscriber) {
+    return syncStateTracker.subscribeToSyncStateChanges(subscriber);
+  }
+
+  @Override
+  public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
+    return syncStateTracker.unsubscribeFromSyncStateChanges(subscriberId);
   }
 }
