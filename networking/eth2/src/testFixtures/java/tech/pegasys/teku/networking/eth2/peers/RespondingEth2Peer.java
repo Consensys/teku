@@ -299,8 +299,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   private void disconnect(Optional<DisconnectReason> reason, boolean locallyInitiated) {
     disconnected = true;
-    disconnectSubscribers.deliver(
-        PeerDisconnectedSubscriber::onDisconnected, reason, locallyInitiated);
+    disconnectSubscribers.forEach(s -> s.onDisconnected(reason, locallyInitiated));
   }
 
   @Override

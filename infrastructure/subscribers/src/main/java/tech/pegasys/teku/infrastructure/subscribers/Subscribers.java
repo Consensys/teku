@@ -20,7 +20,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.util.TriConsumer;
 
 /**
  * Tracks subscribers that should be notified when some event occurred. This class is safe to use
@@ -116,20 +115,6 @@ public class Subscribers<T> {
    */
   public <E> void deliver(final BiConsumer<T, E> eventMethod, final E event) {
     forEach(subscriber -> eventMethod.accept(subscriber, event));
-  }
-
-  /**
-   * Deliver an event to each subscriber by calling eventMethod.
-   *
-   * @param eventMethod the method to call
-   * @param arg1 the first event argument to provide as a parameter
-   * @param arg2 the second event argument to provide as a parameter
-   * @param <A1> the type of the first argument
-   * @param <A2> the type of the second argument
-   */
-  public <A1, A2> void deliver(
-      final TriConsumer<T, A1, A2> eventMethod, final A1 arg1, final A2 arg2) {
-    forEach(subscriber -> eventMethod.accept(subscriber, arg1, arg2));
   }
 
   /**
