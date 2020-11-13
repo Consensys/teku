@@ -14,7 +14,9 @@
 package tech.pegasys.teku.api.response.v1.validator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
@@ -34,5 +36,33 @@ public class AttesterDuties {
     this.currentTargetRoot = currentTargetRoot;
     this.previousTargetRoot = previousTargetRoot;
     this.duties = duties;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final AttesterDuties that = (AttesterDuties) o;
+    return Objects.equals(currentTargetRoot, that.currentTargetRoot)
+        && Objects.equals(previousTargetRoot, that.previousTargetRoot)
+        && Objects.equals(duties, that.duties);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(currentTargetRoot, previousTargetRoot, duties);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("currentTargetRoot", currentTargetRoot)
+        .add("previousTargetRoot", previousTargetRoot)
+        .add("duties", duties)
+        .toString();
   }
 }

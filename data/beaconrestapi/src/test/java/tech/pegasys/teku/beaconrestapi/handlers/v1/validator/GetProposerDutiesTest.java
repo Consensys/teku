@@ -46,17 +46,20 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     when(syncService.isSyncActive()).thenReturn(false);
     when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(100));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
+    final Bytes32 currentTargetRoot = Bytes32.fromHexString("0x12");
+    final Bytes32 previousTargetRoot = Bytes32.fromHexString("0x34");
 
     List<ProposerDuty> duties =
         List.of(getProposerDuty(2, compute_start_slot_at_epoch(UInt64.valueOf(100))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new ProposerDuties(Bytes32.ZERO, Bytes32.ZERO, duties))));
+                Optional.of(new ProposerDuties(currentTargetRoot, previousTargetRoot, duties))));
 
     handler.handle(context);
     GetProposerDutiesResponse response = getResponseFromFuture(GetProposerDutiesResponse.class);
-    assertThat(response.data).isEqualTo(duties);
+    assertThat(response.data)
+        .isEqualTo(new ProposerDuties(currentTargetRoot, previousTargetRoot, duties));
   }
 
   @Test

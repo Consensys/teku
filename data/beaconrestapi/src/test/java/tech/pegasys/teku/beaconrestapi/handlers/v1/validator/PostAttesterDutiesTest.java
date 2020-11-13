@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,7 +44,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   }
 
   @Test
-  public void shouldReturnEmptyListIfValidatorIndexOutOfBounds() throws Exception {
+  public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
     when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
@@ -53,8 +54,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
-    GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data.duties).isEmpty();
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
@@ -66,14 +66,17 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(context.body()).thenReturn("[\"2\"]");
     List<AttesterDuty> duties =
         List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
+    final Bytes32 currentTargetRoot = Bytes32.fromHexString("0x12");
+    final Bytes32 previousTargetRoot = Bytes32.fromHexString("0x34");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new AttesterDuties(Bytes32.ZERO, Bytes32.ZERO, duties))));
+                Optional.of(new AttesterDuties(currentTargetRoot, previousTargetRoot, duties))));
 
     handler.handle(context);
     GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data).isEqualTo(duties);
+    assertThat(response.data)
+        .isEqualTo(new AttesterDuties(currentTargetRoot, previousTargetRoot, duties));
   }
 
   @Test

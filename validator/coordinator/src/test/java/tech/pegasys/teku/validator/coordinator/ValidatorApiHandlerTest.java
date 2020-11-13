@@ -318,9 +318,10 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void getAttestationDuties_shouldFailWhenNoIndexesSpecified() {
+  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());

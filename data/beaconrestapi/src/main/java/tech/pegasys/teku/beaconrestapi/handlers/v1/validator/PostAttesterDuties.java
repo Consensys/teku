@@ -23,7 +23,10 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -110,7 +113,8 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
-      handleOptionalResult(ctx, future, SC_SERVICE_UNAVAILABLE);
+      handleOptionalResult(
+          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
@@ -121,6 +125,21 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       LOG.trace("Illegal argument in PostAttesterDuties", ex);
       ctx.status(SC_BAD_REQUEST);
       ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+    }
+  }
+
+  private Optional<String> handleResult(Context ctx, final AttesterDuties response)
+      throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
+  }
+
+  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
+    } else {
+      return failedFuture(error);
     }
   }
 }
