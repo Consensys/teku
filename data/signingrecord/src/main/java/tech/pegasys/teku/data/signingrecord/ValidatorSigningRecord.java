@@ -126,29 +126,15 @@ public class ValidatorSigningRecord {
       return Optional.of(
           new ValidatorSigningRecord(genesisValidatorsRoot, blockSlot, sourceEpoch, targetEpoch));
     } else {
-      if (!sourceEpochIsSafe && targetEpochIsSafe) {
-        LOG.error(
-            "Refusing to sign attestation because source epoch "
-                + sourceEpoch
-                + " is less than the previously signed source epoch "
-                + attestationSourceEpoch);
-      } else if (sourceEpochIsSafe) {
-        LOG.error(
-            "Refusing to sign attestation because target epoch "
-                + targetEpoch
-                + " is less than or equal to the previously signed target epoch "
-                + attestationTargetEpoch);
-      } else {
-        LOG.error(
-            "Refusing to sign attestation because source epoch "
-                + sourceEpoch
-                + " is less than the previously signed source epoch "
-                + attestationSourceEpoch
-                + " and target epoch "
-                + targetEpoch
-                + " is less than or equal to the previously signed target epoch "
-                + attestationTargetEpoch);
-      }
+      LOG.error(
+          "Refusing to sign attestation:  source epoch ({}) is {}, target epoch ({}) is {}.  "
+              + "Previously signed source epoch {}, target epoch {}",
+          sourceEpoch,
+          sourceEpochIsSafe ? "safe" : "unsafe",
+          targetEpoch,
+          targetEpochIsSafe ? "safe" : "unsafe",
+          attestationSourceEpoch,
+          attestationTargetEpoch);
     }
     return Optional.empty();
   }
