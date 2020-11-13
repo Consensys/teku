@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
@@ -24,8 +26,10 @@ public class LoggingOptions {
 
   private static final String SEP = System.getProperty("file.separator");
   private static final String DEFAULT_LOG_DIR = VersionProvider.defaultStoragePath() + SEP + "logs";
+
+  @VisibleForTesting
   public static final String DEFAULT_LOG_FILE = DEFAULT_LOG_DIR + SEP + "teku.log";
-  public static final String DEFAULT_VC_LOG_FILE = DEFAULT_LOG_DIR + SEP + "teku-validator.log";
+
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
       StringUtils.joinWith(
           SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
@@ -67,7 +71,7 @@ public class LoggingOptions {
       paramLabel = "<FILENAME>",
       description = "Path containing the location (relative or absolute) and the log filename.",
       arity = "1")
-  private String logFile = DEFAULT_LOG_FILE;
+  private String logFile = null;
 
   @CommandLine.Option(
       names = {"--log-file-name-pattern"},
@@ -112,14 +116,6 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
 
-  public LoggingOptions() {
-    this(DEFAULT_LOG_FILE);
-  }
-
-  public LoggingOptions(final String defaultLogFile) {
-    this.logFile = defaultLogFile;
-  }
-
   public boolean isLogColorEnabled() {
     return logColorEnabled;
   }
@@ -136,8 +132,8 @@ public class LoggingOptions {
     return logDestination;
   }
 
-  public String getLogFile() {
-    return logFile;
+  public Optional<String> getMaybeLogFile() {
+    return Optional.ofNullable(logFile);
   }
 
   public String getLogFileNamePattern() {
@@ -158,5 +154,13 @@ public class LoggingOptions {
 
   public boolean isLogWireGossipEnabled() {
     return logWireGossipEnabled;
+  }
+
+  public static String getDefaultLogFileGivenDataDir(String dataPath, boolean isValidator) {
+    if (isValidator) {
+      return dataPath + SEP + "logs" + SEP + "teku-validator.log";
+    } else {
+      return dataPath + SEP + "logs" + SEP + "teku.log";
+    }
   }
 }
