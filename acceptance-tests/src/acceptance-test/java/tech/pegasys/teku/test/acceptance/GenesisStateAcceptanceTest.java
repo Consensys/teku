@@ -14,15 +14,15 @@
 package tech.pegasys.teku.test.acceptance;
 
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.web3j.crypto.Credentials;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositGenerator;
-import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
@@ -52,24 +52,12 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
     int numberOfValidators = 4;
 
-    final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
-    final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
-    DepositGenerator depositGenerator =
-        new DepositGenerator(
-            eth1Node.getExternalJsonRpcUrl(),
-            eth1Address,
-            eth1Credentials,
-            numberOfValidators,
-            UInt64.valueOf(MAX_EFFECTIVE_BALANCE / 2));
-
-    depositGenerator
-        .generateKeysStream()
-        .forEach(
-            key -> {
-              // For each key send deposit twice, since these are partial deposits
-              depositGenerator.sendDeposit(key).join();
-              depositGenerator.sendDeposit(key).join();
-            });
+    final TekuDepositSender depositSender = createTekuDepositSender();
+    final List<ValidatorKeyGenerator.ValidatorKeys> validatorKeys =
+        depositSender.generateValidatorKeys(numberOfValidators);
+    depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MIN_DEPOSIT_AMOUNT);
+    depositSender.sendValidatorDeposits(
+        eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE - MIN_DEPOSIT_AMOUNT);
 
     final TekuNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     teku.start();
