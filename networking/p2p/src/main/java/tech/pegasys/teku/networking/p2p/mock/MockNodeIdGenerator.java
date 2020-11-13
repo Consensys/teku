@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,17 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.events;
+package tech.pegasys.teku.networking.p2p.mock;
 
-public interface SyncStateProvider {
+import java.util.concurrent.atomic.AtomicInteger;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-  SyncState getCurrentSyncState();
+public class MockNodeIdGenerator {
+  private final AtomicInteger nextId = new AtomicInteger(0);
 
-  long subscribeToSyncStateChanges(SyncStateSubscriber subscriber);
-
-  boolean unsubscribeFromSyncStateChanges(long subscriberId);
-
-  interface SyncStateSubscriber {
-    void onSyncStateChange(final SyncState syncState);
+  public NodeId next() {
+    return new MockNodeId(nextId.incrementAndGet());
   }
 }
