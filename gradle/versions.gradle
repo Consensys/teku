@@ -27,7 +27,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.11.0') {
+    dependencySet(group: 'io.javalin', version: '3.11.2') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -49,7 +49,8 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.11.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.4') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.1.3') {
+      entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
