@@ -33,13 +33,12 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.StateSszResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -79,7 +78,7 @@ public class GetSszState implements Handler {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
-    SafeFuture<Optional<Bytes>> future =
+    SafeFuture<Optional<StateSszResponse>> future =
         chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
     ctx.result(
         future.thenApplyChecked(
@@ -93,11 +92,12 @@ public class GetSszState implements Handler {
                         "State not found: " + pathParamMap.get(PARAM_STATE_ID)));
                 return null;
               }
+              final StateSszResponse stateSszResponse = result.get();
               ctx.header(
                   "Content-Disposition",
-                  "filename=\"" + pathParamMap.get(PARAM_STATE_ID) + ".ssz\"");
+                  "filename=\"" + stateSszResponse.stateAbbreviatedHash + ".ssz\"");
               ctx.contentType("application/octet-stream");
-              return new ByteArrayInputStream(result.get().toArray());
+              return stateSszResponse.byteStream;
             }));
   }
 }
