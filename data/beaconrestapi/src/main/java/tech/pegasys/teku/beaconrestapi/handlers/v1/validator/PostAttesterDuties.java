@@ -23,10 +23,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -35,7 +32,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,7 +40,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuties;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -110,11 +106,11 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64[] indexes = jsonProvider.jsonToObject(ctx.body(), UInt64[].class);
 
-      SafeFuture<Optional<List<AttesterDuty>>> future =
+      SafeFuture<Optional<AttesterDuties>> future =
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
-      handleOptionalResult(ctx, future, this::handleResult, this::handleError, List.of());
+      handleOptionalResult(ctx, future, SC_SERVICE_UNAVAILABLE);
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
@@ -125,21 +121,6 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       LOG.trace("Illegal argument in PostAttesterDuties", ex);
       ctx.status(SC_BAD_REQUEST);
       ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
-  }
-
-  private Optional<String> handleResult(Context ctx, final List<AttesterDuty> response)
-      throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
-  }
-
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else {
-      return failedFuture(error);
     }
   }
 }

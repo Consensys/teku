@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
@@ -59,7 +60,7 @@ class AttestationDutyLoaderTest {
       new AttestationDutyLoader(
           validatorApiChannel,
           forkProvider,
-          () -> scheduledDuties,
+          targetRoot -> scheduledDuties,
           validators,
           validatorIndexProvider,
           beaconCommitteeSubscriptions);
@@ -77,8 +78,8 @@ class AttestationDutyLoaderTest {
     final int committeeLength = 1;
     final int committeeIndex = 3;
     final int committeesAtSlot = 4;
-    final AttesterDuties duty =
-        new AttesterDuties(
+    final AttesterDuty duty =
+        new AttesterDuty(
             validatorKey,
             validatorIndex,
             committeeLength,
@@ -87,7 +88,13 @@ class AttestationDutyLoaderTest {
             0,
             slot);
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(duty))));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        List.of(duty)))));
 
     when(scheduledDuties.scheduleAttestationProduction(
             any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
@@ -112,8 +119,8 @@ class AttestationDutyLoaderTest {
     final int committeeLength = 10000000;
     final int committeeIndex = 3;
     final int committeesAtSlot = 4;
-    final AttesterDuties duty =
-        new AttesterDuties(
+    final AttesterDuty duty =
+        new AttesterDuty(
             validatorKey,
             validatorIndex,
             committeeLength,
@@ -122,7 +129,13 @@ class AttestationDutyLoaderTest {
             0,
             slot);
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(duty))));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        List.of(duty)))));
 
     when(scheduledDuties.scheduleAttestationProduction(
             any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
@@ -143,7 +156,13 @@ class AttestationDutyLoaderTest {
   @Test
   void shouldSendSubscriptionRequestsWhenAllDutiesAreScheduled() {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        emptyList()))));
     final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();

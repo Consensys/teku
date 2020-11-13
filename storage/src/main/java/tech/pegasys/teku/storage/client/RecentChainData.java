@@ -15,9 +15,8 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentTargetRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousTargetRoot;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Collections;
@@ -59,7 +58,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
-import tech.pegasys.teku.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
@@ -274,21 +272,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                           .isLessThan(compute_epoch_at_slot(newChainHead.getForkChoiceSlot())))
               .orElse(false);
       final BeaconState newHeadState = newChainHead.getState();
-      final UInt64 newHeadEpoch = get_current_epoch(newHeadState);
-      final Bytes32 proposerShufflingPivotRoot =
-          get_block_root_at_slot(newHeadState, compute_start_slot_at_epoch(newHeadEpoch));
-      final Bytes32 attesterShufflingPivotRoot =
-          get_block_root_at_slot(
-              newHeadState,
-              compute_start_slot_at_epoch(newHeadEpoch.minusMinZero(Constants.MIN_SEED_LOOKAHEAD))
-                  .minusMinZero(1));
       chainHeadChannel.chainHeadUpdated(
           newChainHead.getForkChoiceSlot(),
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,
-          proposerShufflingPivotRoot,
-          attesterShufflingPivotRoot,
+          getCurrentTargetRoot(newHeadState),
+          getPreviousTargetRoot(newHeadState),
           optionalReorgContext);
     }
 

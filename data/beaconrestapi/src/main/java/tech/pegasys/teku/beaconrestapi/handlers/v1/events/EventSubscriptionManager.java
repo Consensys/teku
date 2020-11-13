@@ -84,8 +84,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
-      final Bytes32 proposerShufflingPivotRoot,
-      final Bytes32 attesterShufflingPivotRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
       final Optional<ReorgContext> optionalReorgContext) {
 
     optionalReorgContext.ifPresent(
@@ -115,8 +115,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   bestBlockRoot,
                   stateRoot,
                   epochTransition,
-                  proposerShufflingPivotRoot,
-                  attesterShufflingPivotRoot));
+                  currentTargetRoot,
+                  previousTargetRoot));
       notifySubscribersOfEvent(EventType.head, headEventString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);

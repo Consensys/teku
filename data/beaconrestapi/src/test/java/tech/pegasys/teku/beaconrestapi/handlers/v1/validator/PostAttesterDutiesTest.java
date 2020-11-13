@@ -23,8 +23,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuties;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -52,7 +54,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
 
     handler.handle(context);
     GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data).isEmpty();
+    assertThat(response.data.duties).isEmpty();
   }
 
   @Test
@@ -65,7 +67,9 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     List<AttesterDuty> duties =
         List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(Bytes32.ZERO, Bytes32.ZERO, duties))));
 
     handler.handle(context);
     GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);

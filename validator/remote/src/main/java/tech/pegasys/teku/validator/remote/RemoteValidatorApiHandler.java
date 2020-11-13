@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
@@ -29,8 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -49,8 +48,10 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -117,9 +118,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       final List<BLSPublicKey> batch) {
     return apiClient
         .getValidators(
-            batch.stream()
-                .map(key -> key.toBytesCompressed().toHexString())
-                .collect(Collectors.toList()))
+            batch.stream().map(key -> key.toBytesCompressed().toHexString()).collect(toList()))
         .map(this::convertToValidatorIndexMap);
   }
 
@@ -142,55 +141,63 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     return sendRequest(
         () -> {
           final List<BLSPubKey> blsPubKeys =
-              publicKeys.stream().map(BLSPubKey::new).collect(Collectors.toList());
+              publicKeys.stream().map(BLSPubKey::new).collect(toList());
           final ValidatorDutiesRequest validatorDutiesRequest =
               new ValidatorDutiesRequest(epoch, blsPubKeys);
 
           final List<ValidatorDuties> validatorDuties =
               apiClient.getDuties(validatorDutiesRequest).stream()
                   .map(this::mapToApiValidatorDuties)
-                  .collect(Collectors.toList());
+                  .collect(toList());
 
           return Optional.of(validatorDuties);
         });
   }
 
   @Override
-  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return sendRequest(
-        () -> {
-          final List<AttesterDuties> duties =
-              apiClient.getAttestationDuties(epoch, validatorIndexes).stream()
-                  .map(this::mapToApiAttesterDuties)
-                  .collect(Collectors.toList());
-
-          return Optional.of(duties);
-        });
+        () ->
+            apiClient
+                .getAttestationDuties(epoch, validatorIndexes)
+                .map(
+                    response ->
+                        new AttesterDuties(
+                            response.currentTargetRoot,
+                            response.previousTargetRoot,
+                            response.duties.stream()
+                                .map(this::mapToApiAttesterDuties)
+                                .collect(toList()))));
   }
 
   @Override
-  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return sendRequest(
-        () -> {
-          final List<ProposerDuties> duties =
-              apiClient.getProposerDuties(epoch).stream()
-                  .map(this::mapToProposerDuties)
-                  .collect(Collectors.toList());
-
-          return Optional.of(duties);
-        });
+        () ->
+            apiClient
+                .getProposerDuties(epoch)
+                .map(
+                    response ->
+                        new ProposerDuties(
+                            response.currentTargetRoot,
+                            response.previousTargetRoot,
+                            response.duties.stream()
+                                .map(this::mapToProposerDuties)
+                                .collect(toList()))));
   }
 
-  private ProposerDuties mapToProposerDuties(final ProposerDuty proposerDuty) {
-    return new ProposerDuties(
+  private ProposerDuty mapToProposerDuties(
+      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
+    return new ProposerDuty(
         proposerDuty.pubkey.asBLSPublicKey(),
         proposerDuty.validatorIndex.intValue(),
         proposerDuty.slot);
   }
 
-  private AttesterDuties mapToApiAttesterDuties(final AttesterDuty attesterDuty) {
-    return new AttesterDuties(
+  private AttesterDuty mapToApiAttesterDuties(
+      final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
+    return new AttesterDuty(
         attesterDuty.pubkey.asBLSPublicKey(),
         attesterDuty.validatorIndex.intValue(),
         attesterDuty.committeeLength.intValue(),

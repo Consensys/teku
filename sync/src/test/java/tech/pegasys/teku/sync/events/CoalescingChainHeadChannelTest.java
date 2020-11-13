@@ -39,16 +39,16 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
     channel.chainHeadUpdated(
         slot,
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -56,8 +56,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext);
   }
 
@@ -67,8 +67,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(false);
@@ -78,8 +78,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -87,8 +87,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext);
   }
 
@@ -98,8 +98,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
@@ -109,8 +109,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
     verifyNoInteractions(delegate);
   }
@@ -121,8 +121,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
@@ -141,8 +141,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
 
     verifyNoInteractions(delegate);
@@ -154,8 +154,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext);
     verifyNoMoreInteractions(delegate);
   }
@@ -166,8 +166,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.chainHeadUpdated(
@@ -175,8 +175,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
     verify(delegate)
         .chainHeadUpdated(
@@ -184,8 +184,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext);
 
     channel.onSyncingChange(true);
@@ -200,8 +200,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
@@ -210,8 +210,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext);
     channel.onSyncingChange(false);
     verify(delegate)
@@ -220,8 +220,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext);
 
     channel.onSyncingChange(true);
@@ -236,8 +236,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
-    final Bytes32 proposerShufflingPivotRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 attesterShufflingPivotRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext1 =
         Optional.of(
             new ReorgContext(
@@ -267,8 +267,8 @@ class CoalescingChainHeadChannelTest {
         stateRoot,
         bestBlockRoot,
         epochTransition,
-        proposerShufflingPivotRoot,
-        attesterShufflingPivotRoot,
+        currentTargetRoot,
+        previousTargetRoot,
         reorgContext1);
 
     verifyNoInteractions(delegate);
@@ -280,8 +280,8 @@ class CoalescingChainHeadChannelTest {
             stateRoot,
             bestBlockRoot,
             epochTransition,
-            proposerShufflingPivotRoot,
-            attesterShufflingPivotRoot,
+            currentTargetRoot,
+            previousTargetRoot,
             reorgContext2);
     verifyNoMoreInteractions(delegate);
   }

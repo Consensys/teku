@@ -15,12 +15,15 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -30,7 +33,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
-  private Optional<UInt64> currentEpoch = Optional.empty();
+  protected Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
       final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
@@ -56,6 +59,44 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     removePriorEpochs(currentEpoch);
     recalculateDuties(currentEpoch);
   }
+
+  @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 headBlockRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot) {
+    final UInt64 headEpoch = compute_epoch_at_slot(slot);
+
+    final NavigableMap<UInt64, DutyQueue> potentiallyAffectedEpochs =
+        dutiesByEpoch.tailMap(headEpoch, true);
+    for (Iterator<Map.Entry<UInt64, DutyQueue>> iterator =
+            potentiallyAffectedEpochs.entrySet().iterator();
+        iterator.hasNext(); ) {
+      final Map.Entry<UInt64, DutyQueue> entry = iterator.next();
+      final UInt64 currentEpoch = entry.getKey();
+      final DutyQueue dutyQueue = entry.getValue();
+      final Bytes32 targetRoot =
+          getExpectedTargetRoot(
+              headBlockRoot, currentTargetRoot, previousTargetRoot, headEpoch, currentEpoch);
+      final Optional<Bytes32> dutiesTargetRoot = dutyQueue.getTargetRoot();
+      if (dutiesTargetRoot.isEmpty() || !dutiesTargetRoot.get().equals(targetRoot)) {
+        // Invalidate epoch.
+        // We invalidate if the duties haven't yet been calculated as the request has already been
+        // sent, prior to getting the new head
+        dutyQueue.cancel();
+        iterator.remove();
+      }
+    }
+    recalculateDuties(headEpoch);
+  }
+
+  protected abstract Bytes32 getExpectedTargetRoot(
+      final Bytes32 headBlockRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
+      final UInt64 headEpoch,
+      final UInt64 currentEpoch);
 
   @Override
   public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {

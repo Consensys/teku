@@ -43,8 +43,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -63,8 +61,10 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
@@ -282,20 +282,20 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<List<AttesterDuties>>> future =
+    SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, emptyList());
 
-    assertThat(unwrapToValue(future)).isEmpty();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void getAttestationDuties_WhenNoneFound_ReturnsEmpty() {
-    when(apiClient.getAttestationDuties(any(), any())).thenReturn(Collections.emptyList());
+    when(apiClient.getAttestationDuties(any(), any())).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<List<AttesterDuties>>> future =
+    SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, List.of(1234));
 
-    assertThat(unwrapToValue(future)).isEmpty();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
@@ -306,8 +306,8 @@ class RemoteValidatorApiHandlerTest {
     final int committeeIndex = 1;
     final int validatorCommitteeIndex = 3;
     final int committeesAtSlot = 15;
-    final AttesterDuty schemaValidatorDuties =
-        new AttesterDuty(
+    final tech.pegasys.teku.api.response.v1.validator.AttesterDuty schemaValidatorDuties =
+        new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
             new BLSPubKey(blsPublicKey),
             UInt64.valueOf(validatorIndex),
             UInt64.valueOf(committeeIndex),
@@ -315,8 +315,8 @@ class RemoteValidatorApiHandlerTest {
             UInt64.valueOf(committeesAtSlot),
             UInt64.valueOf(validatorCommitteeIndex),
             UInt64.ZERO);
-    final AttesterDuties expectedValidatorDuties =
-        new AttesterDuties(
+    final AttesterDuty expectedValidatorDuties =
+        new AttesterDuty(
             blsPublicKey,
             validatorIndex,
             committeeLength,
@@ -324,52 +324,61 @@ class RemoteValidatorApiHandlerTest {
             committeesAtSlot,
             validatorCommitteeIndex,
             UInt64.ZERO);
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
 
     when(apiClient.getAttestationDuties(UInt64.ONE, List.of(validatorIndex)))
-        .thenReturn(List.of(schemaValidatorDuties));
+        .thenReturn(
+            Optional.of(
+                new tech.pegasys.teku.api.response.v1.validator.AttesterDuties(
+                    currentTargetRoot, previousTargetRoot, List.of(schemaValidatorDuties))));
 
-    SafeFuture<Optional<List<AttesterDuties>>> future =
+    SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, List.of(validatorIndex));
 
-    List<AttesterDuties> validatorDuties = unwrapToValue(future);
+    AttesterDuties validatorDuties = unwrapToValue(future);
 
-    assertThat(validatorDuties.get(0))
+    assertThat(validatorDuties.getCurrentTargetRoot()).isEqualTo(currentTargetRoot);
+    assertThat(validatorDuties.getPreviousTargetRoot()).isEqualTo(previousTargetRoot);
+    assertThat(validatorDuties.getAttesterDuties().get(0))
         .usingRecursiveComparison()
         .isEqualTo(expectedValidatorDuties);
   }
 
   @Test
-  public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
+  public void getProposerDuties_WhenSyncing_ReturnsEmpty() {
+    when(apiClient.getProposerDuties(any())).thenReturn(Optional.empty());
 
-    assertThat(unwrapToValue(future)).isEmpty();
-  }
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
-  @Test
-  public void getProposerDuties_WhenNoneFound_ReturnsEmpty() {
-    when(apiClient.getProposerDuties(any())).thenReturn(Collections.emptyList());
-
-    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
-
-    assertThat(unwrapToValue(future)).isEmpty();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void getProposerDuties_WhenFound_ReturnsDuties() {
     final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
     final int validatorIndex = 472;
-    final ProposerDuty schemaValidatorDuties =
-        new ProposerDuty(new BLSPubKey(blsPublicKey), validatorIndex, UInt64.ZERO);
-    final ProposerDuties expectedValidatorDuties =
-        new ProposerDuties(blsPublicKey, validatorIndex, UInt64.ZERO);
+    final tech.pegasys.teku.api.response.v1.validator.ProposerDuty schemaValidatorDuties =
+        new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
+            new BLSPubKey(blsPublicKey), validatorIndex, UInt64.ZERO);
+    final ProposerDuty expectedValidatorDuties =
+        new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
 
-    when(apiClient.getProposerDuties(UInt64.ONE)).thenReturn(List.of(schemaValidatorDuties));
+    when(apiClient.getProposerDuties(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new tech.pegasys.teku.api.response.v1.validator.ProposerDuties(
+                    currentTargetRoot, previousTargetRoot, List.of(schemaValidatorDuties))));
 
-    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
-    List<ProposerDuties> validatorDuties = unwrapToValue(future);
+    ProposerDuties validatorDuties = unwrapToValue(future);
 
-    assertThat(validatorDuties.get(0))
+    assertThat(validatorDuties.getCurrentTargetRoot()).isEqualTo(currentTargetRoot);
+    assertThat(validatorDuties.getPreviousTargetRoot()).isEqualTo(previousTargetRoot);
+    assertThat(validatorDuties.getProposerDuties().get(0))
         .usingRecursiveComparison()
         .isEqualTo(expectedValidatorDuties);
   }

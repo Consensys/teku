@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -47,14 +48,14 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
               asyncRunner,
               new BlockProductionDutyLoader(
                   validatorApiChannel,
-                  () -> new ScheduledDuties(dutyFactory),
+                  targetRoot -> new ScheduledDuties(dutyFactory, targetRoot),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider)));
 
   @Test
   public void shouldFetchDutiesForCurrentEpoch() {
     when(validatorApiChannel.getProposerDuties(any()))
-        .thenReturn(completedFuture(Optional.of(emptyList())));
+        .thenReturn(completedFuture(Optional.empty()));
 
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
@@ -65,16 +66,18 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
-    final ProposerDuties validator1Duties =
-        new ProposerDuties(VALIDATOR1_KEY, 5, blockProposerSlot);
+    final ProposerDuty validator1Duties = new ProposerDuty(VALIDATOR1_KEY, 5, blockProposerSlot);
     when(validatorApiChannel.getProposerDuties(eq(ZERO)))
         .thenReturn(
             completedFuture(
                 Optional.of(
-                    List.of(
-                        validator1Duties,
-                        new ProposerDuties(
-                            dataStructureUtil.randomPublicKey(), 6, UInt64.valueOf(4))))));
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        List.of(
+                            validator1Duties,
+                            new ProposerDuty(
+                                dataStructureUtil.randomPublicKey(), 6, UInt64.valueOf(4)))))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -97,10 +100,15 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldScheduleBlockProposalDuty() {
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
-    final ProposerDuties validator1Duties =
-        new ProposerDuties(VALIDATOR1_KEY, 5, blockProposerSlot);
+    final ProposerDuty validator1Duties = new ProposerDuty(VALIDATOR1_KEY, 5, blockProposerSlot);
     when(validatorApiChannel.getProposerDuties(ZERO))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties)))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -126,21 +134,32 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
-                    () -> scheduledDuties,
+                    targetRoot -> scheduledDuties,
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                     validatorIndexProvider)));
-    final SafeFuture<Optional<List<ProposerDuties>>> epoch0Duties = new SafeFuture<>();
+    final SafeFuture<Optional<ProposerDuties>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getProposerDuties(ZERO)).thenReturn(epoch0Duties);
     when(validatorApiChannel.getProposerDuties(ONE))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes32(),
+                        emptyList()))));
     dutyScheduler.onSlot(ZERO);
 
     dutyScheduler.onBlockProductionDue(ZERO);
     // Duties haven't been loaded yet.
     verify(scheduledDuties, never()).produceBlock(ZERO);
 
-    epoch0Duties.complete(Optional.of(emptyList()));
+    epoch0Duties.complete(
+        Optional.of(
+            new ProposerDuties(
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                emptyList())));
     verify(scheduledDuties).produceBlock(ZERO);
   }
 

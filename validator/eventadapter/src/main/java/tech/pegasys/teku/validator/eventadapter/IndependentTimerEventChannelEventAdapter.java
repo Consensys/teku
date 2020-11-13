@@ -66,12 +66,13 @@ public class IndependentTimerEventChannelEventAdapter
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
-      final Bytes32 proposerShufflingPivotRoot,
-      final Bytes32 attesterShufflingPivotRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         reorgContext ->
             validatorTimingChannel.onChainReorg(slot, reorgContext.getCommonAncestorSlot()));
+    validatorTimingChannel.onHeadUpdate(slot, bestBlockRoot, currentTargetRoot, previousTargetRoot);
     validatorTimingChannel.onAttestationCreationDue(slot);
   }
 }

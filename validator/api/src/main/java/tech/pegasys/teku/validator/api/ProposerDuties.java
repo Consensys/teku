@@ -13,29 +13,32 @@
 
 package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class ProposerDuties {
-  private final BLSPublicKey publicKey;
-  private final int validatorIndex;
-  private final UInt64 slot;
+  private final Bytes32 currentTargetRoot;
+  private final Bytes32 previousTargetRoot;
+  private final List<ProposerDuty> proposerDuties;
 
-  public ProposerDuties(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
-    this.publicKey = publicKey;
-    this.validatorIndex = validatorIndex;
-    this.slot = slot;
+  public ProposerDuties(
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
+      final List<ProposerDuty> proposerDuties) {
+    this.currentTargetRoot = currentTargetRoot;
+    this.previousTargetRoot = previousTargetRoot;
+    this.proposerDuties = proposerDuties;
   }
 
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
+  public Bytes32 getCurrentTargetRoot() {
+    return currentTargetRoot;
   }
 
-  public int getValidatorIndex() {
-    return validatorIndex;
+  public Bytes32 getPreviousTargetRoot() {
+    return previousTargetRoot;
   }
 
-  public UInt64 getSlot() {
-    return slot;
+  public List<ProposerDuty> getProposerDuties() {
+    return proposerDuties;
   }
 }

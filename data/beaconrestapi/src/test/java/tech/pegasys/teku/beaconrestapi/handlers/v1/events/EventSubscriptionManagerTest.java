@@ -211,8 +211,8 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
         chainReorgEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
-        headEvent.proposerShufflingPivotRoot,
-        headEvent.attesterShufflingPivotRoot,
+        headEvent.currentTargetRoot,
+        headEvent.previousTargetRoot,
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.oldHeadBlock,
@@ -227,8 +227,8 @@ public class EventSubscriptionManagerTest {
         headEvent.state,
         headEvent.block,
         false,
-        headEvent.proposerShufflingPivotRoot,
-        headEvent.attesterShufflingPivotRoot,
+        headEvent.currentTargetRoot,
+        headEvent.previousTargetRoot,
         Optional.empty());
     asyncRunner.executeQueuedActions();
   }

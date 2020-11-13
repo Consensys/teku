@@ -50,8 +50,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
-      final Bytes32 proposerShufflingPivotRoot,
-      final Bytes32 attesterShufflingPivotRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
       optionalReorgContext.ifPresent(
@@ -67,8 +67,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           stateRoot,
           bestBlockRoot,
           epochTransition,
-          proposerShufflingPivotRoot,
-          attesterShufflingPivotRoot,
+          currentTargetRoot,
+          previousTargetRoot,
           optionalReorgContext);
     } else {
       pendingEvent =
@@ -80,8 +80,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                           stateRoot,
                           bestBlockRoot,
                           epochTransition,
-                          proposerShufflingPivotRoot,
-                          attesterShufflingPivotRoot,
+                          currentTargetRoot,
+                          previousTargetRoot,
                           optionalReorgContext))
               .or(
                   () ->
@@ -91,6 +91,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                               stateRoot,
                               bestBlockRoot,
                               epochTransition,
+                              currentTargetRoot,
+                              previousTargetRoot,
                               optionalReorgContext)));
     }
   }
@@ -109,8 +111,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     private Bytes32 stateRoot;
     private Bytes32 bestBlockRoot;
     private boolean epochTransition;
-    private Bytes32 proposerShufflingPivotRoot;
-    private Bytes32 attesterShufflingPivotRoot;
+    private Bytes32 currentTargetRoot;
+    private Bytes32 previousTargetRoot;
     private Optional<ReorgContext> reorgContext;
 
     private PendingEvent(
@@ -118,11 +120,15 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final Bytes32 currentTargetRoot,
+        final Bytes32 previousTargetRoot,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
       this.bestBlockRoot = bestBlockRoot;
       this.epochTransition = epochTransition;
+      this.currentTargetRoot = currentTargetRoot;
+      this.previousTargetRoot = previousTargetRoot;
       this.reorgContext = reorgContext;
     }
 
@@ -132,8 +138,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
           stateRoot,
           bestBlockRoot,
           epochTransition,
-          proposerShufflingPivotRoot,
-          attesterShufflingPivotRoot,
+          currentTargetRoot,
+          previousTargetRoot,
           reorgContext);
     }
 
@@ -142,8 +148,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
-        final Bytes32 proposerShufflingPivotRoot,
-        final Bytes32 attesterShufflingPivotRoot,
+        final Bytes32 currentTargetRoot,
+        final Bytes32 previousTargetRoot,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
@@ -151,8 +157,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       if (epochTransition) {
         this.epochTransition = true;
       }
-      this.proposerShufflingPivotRoot = proposerShufflingPivotRoot;
-      this.attesterShufflingPivotRoot = attesterShufflingPivotRoot;
+      this.currentTargetRoot = currentTargetRoot;
+      this.previousTargetRoot = previousTargetRoot;
       if (reorgContext.isPresent() && hasEarlierCommonAncestor(reorgContext)) {
         this.reorgContext = reorgContext;
       }

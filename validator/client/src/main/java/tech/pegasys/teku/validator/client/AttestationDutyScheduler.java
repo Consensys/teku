@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,6 +30,24 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
+  }
+
+  @Override
+  protected Bytes32 getExpectedTargetRoot(
+      final Bytes32 headBlockRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
+      final UInt64 headEpoch,
+      final UInt64 currentEpoch) {
+    final Bytes32 targetRoot;
+    if (headEpoch.equals(currentEpoch)) {
+      targetRoot = previousTargetRoot;
+    } else if (headEpoch.plus(1).equals(currentEpoch)) {
+      targetRoot = currentTargetRoot;
+    } else {
+      targetRoot = headBlockRoot;
+    }
+    return targetRoot;
   }
 
   @Override

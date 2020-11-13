@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,7 +34,7 @@ class ScheduledDutiesTest {
   private final Validator validator = mock(Validator.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
 
-  private final ScheduledDuties duties = new ScheduledDuties(dutyFactory);
+  private final ScheduledDuties duties = new ScheduledDuties(dutyFactory, Bytes32.ZERO);
 
   @Test
   public void shouldDiscardMissedBlockProductionDuties() {

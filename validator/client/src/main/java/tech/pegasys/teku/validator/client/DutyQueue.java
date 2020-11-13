@@ -21,6 +21,7 @@ import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -41,6 +42,10 @@ class DutyQueue {
             LOG.error("Failed to load duties", error);
           }
         });
+  }
+
+  public Optional<Bytes32> getTargetRoot() {
+    return duties.map(ScheduledDuties::getTargetRoot);
   }
 
   public void onBlockProductionDue(final UInt64 slot) {

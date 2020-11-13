@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.launchdarkly.eventsource.MessageEvent;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -46,16 +47,21 @@ class EventSourceHandlerTest {
   @Test
   void onMessage_shouldHandleHeadEvent() throws Exception {
     final UInt64 slot = UInt64.valueOf(134);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     final HeadEvent event =
         new HeadEvent(
             slot,
-            dataStructureUtil.randomBytes32(),
+            blockRoot,
             dataStructureUtil.randomBytes32(),
             false,
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32());
+            currentTargetRoot,
+            previousTargetRoot);
     handler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
 
+    verify(validatorTimingChannel)
+        .onHeadUpdate(slot, blockRoot, currentTargetRoot, previousTargetRoot);
     verify(validatorTimingChannel).onAttestationCreationDue(slot);
     verifyNoMoreInteractions(validatorTimingChannel);
   }

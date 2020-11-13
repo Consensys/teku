@@ -22,9 +22,11 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuties;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -48,7 +50,9 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     List<ProposerDuty> duties =
         List.of(getProposerDuty(2, compute_start_slot_at_epoch(UInt64.valueOf(100))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new ProposerDuties(Bytes32.ZERO, Bytes32.ZERO, duties))));
 
     handler.handle(context);
     GetProposerDutiesResponse response = getResponseFromFuture(GetProposerDutiesResponse.class);

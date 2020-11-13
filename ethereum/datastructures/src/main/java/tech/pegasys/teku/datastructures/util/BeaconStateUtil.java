@@ -817,10 +817,20 @@ public class BeaconStateUtil {
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
+  public static Bytes32 getCurrentTargetRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
+    return get_block_root_at_slot(state, slot);
+  }
+
+  public static Bytes32 getPreviousTargetRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
+    return get_block_root_at_slot(state, slot);
+  }
+
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
     UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
-    return slot.compareTo(state.getSlot()) < 0
-        && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
+    return slot.isLessThan(state.getSlot())
+        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
   }
 
   public static boolean isSlotAtNthEpochBoundary(

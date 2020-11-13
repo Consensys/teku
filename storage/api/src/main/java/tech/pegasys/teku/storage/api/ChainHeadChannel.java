@@ -29,10 +29,9 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
    * @param stateRoot the state root of the state containing the new chain head
    * @param bestBlockRoot the block root of the new chain head
    * @param epochTransition if a new epoch has begun
-   * @param proposerShufflingPivotRoot the block root at the start of the epoch which contains the
-   *     head block
-   * @param attesterShufflingPivotRoot the block root in the lsat slot of the penultimate epoch,
-   *     relative to the head block
+   * @param currentTargetRoot the block_root from the first slot in the head epoch
+   * @param previousTargetRoot the block_root from the first slot in the epoch previous to the head
+   *     (or genesis)
    * @param optionalReorgContext Roots and common ancestor if a re-org occured
    */
   void chainHeadUpdated(
@@ -40,7 +39,7 @@ public interface ChainHeadChannel extends VoidReturningChannelInterface {
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
-      final Bytes32 proposerShufflingPivotRoot,
-      final Bytes32 attesterShufflingPivotRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot,
       Optional<ReorgContext> optionalReorgContext);
 }

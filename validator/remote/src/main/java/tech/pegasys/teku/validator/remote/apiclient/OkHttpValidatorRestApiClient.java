@@ -57,12 +57,12 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuties;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuties;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -129,26 +129,24 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public List<AttesterDuty> getAttestationDuties(
+  public Optional<AttesterDuties> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return post(
             GET_ATTESTATION_DUTIES,
             Map.of("epoch", epoch.toString()),
             validatorIndexes.toArray(),
             createHandler(GetAttesterDutiesResponse.class))
-        .map(response -> response.data)
-        .orElse(Collections.emptyList());
+        .map(response -> response.data);
   }
 
   @Override
-  public List<ProposerDuty> getProposerDuties(final UInt64 epoch) {
+  public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
     return get(
             GET_PROPOSER_DUTIES,
             Map.of("epoch", epoch.toString()),
             emptyMap(),
             createHandler(GetProposerDutiesResponse.class))
-        .map(response -> response.data)
-        .orElse(Collections.emptyList());
+        .map(response -> response.data);
   }
 
   @Override

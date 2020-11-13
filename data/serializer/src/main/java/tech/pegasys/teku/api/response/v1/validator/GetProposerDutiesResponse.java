@@ -15,13 +15,12 @@ package tech.pegasys.teku.api.response.v1.validator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 public class GetProposerDutiesResponse {
-  public final List<ProposerDuty> data;
+  public final ProposerDuties data;
 
   @JsonCreator
-  public GetProposerDutiesResponse(@JsonProperty("data") final List<ProposerDuty> data) {
+  public GetProposerDutiesResponse(@JsonProperty("data") final ProposerDuties data) {
     this.data = data;
   }
 }

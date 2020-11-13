@@ -94,7 +94,7 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                targetRoot -> new ScheduledDuties(validatorDutyFactory, targetRoot),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions));
@@ -103,7 +103,7 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                targetRoot -> new ScheduledDuties(validatorDutyFactory, targetRoot),
                 validators,
                 validatorIndexProvider));
     final AttestationDutyScheduler attestationDutyScheduler =

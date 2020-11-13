@@ -13,14 +13,26 @@
 
 package tech.pegasys.teku.api.response.v1.validator;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class GetAttesterDutiesResponse {
-  public final AttesterDuties data;
+public class ProposerDuties {
 
-  @JsonCreator
-  public GetAttesterDutiesResponse(@JsonProperty("data") final AttesterDuties data) {
-    this.data = data;
+  @JsonProperty("current_target_root")
+  public final Bytes32 currentTargetRoot;
+
+  @JsonProperty("previous_target_root")
+  public final Bytes32 previousTargetRoot;
+
+  public final List<ProposerDuty> duties;
+
+  public ProposerDuties(
+      @JsonProperty("current_target_root") final Bytes32 currentTargetRoot,
+      @JsonProperty("previous_target_root") final Bytes32 previousTargetRoot,
+      @JsonProperty("duties") final List<ProposerDuty> duties) {
+    this.currentTargetRoot = currentTargetRoot;
+    this.previousTargetRoot = previousTargetRoot;
+    this.duties = duties;
   }
 }

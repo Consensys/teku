@@ -13,23 +13,29 @@
 
 package tech.pegasys.teku.validator.api;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
-  void onSlot(UInt64 slot);
+public class ProposerDuty {
+  private final BLSPublicKey publicKey;
+  private final int validatorIndex;
+  private final UInt64 slot;
 
-  void onHeadUpdate(
-      UInt64 slot, Bytes32 headBlockRoot, Bytes32 currentTargetRoot, Bytes32 previousTargetRoot);
+  public ProposerDuty(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
+    this.publicKey = publicKey;
+    this.validatorIndex = validatorIndex;
+    this.slot = slot;
+  }
 
-  void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
+  }
 
-  void onPossibleMissedEvents();
+  public int getValidatorIndex() {
+    return validatorIndex;
+  }
 
-  void onBlockProductionDue(UInt64 slot);
-
-  void onAttestationCreationDue(UInt64 slot);
-
-  void onAttestationAggregationDue(UInt64 slot);
+  public UInt64 getSlot() {
+    return slot;
+  }
 }

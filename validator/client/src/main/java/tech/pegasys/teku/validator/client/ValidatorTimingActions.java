@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -35,6 +36,16 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     validatorIndexProvider.lookupValidators();
     blockDuties.onSlot(slot);
     attestationDuties.onSlot(slot);
+  }
+
+  @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 headBlockRoot,
+      final Bytes32 currentTargetRoot,
+      final Bytes32 previousTargetRoot) {
+    blockDuties.onHeadUpdate(slot, headBlockRoot, currentTargetRoot, previousTargetRoot);
+    attestationDuties.onHeadUpdate(slot, headBlockRoot, currentTargetRoot, previousTargetRoot);
   }
 
   @Override

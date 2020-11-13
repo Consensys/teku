@@ -70,6 +70,7 @@ import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
@@ -310,7 +311,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<AttesterDuties>>> duties =
+    final SafeFuture<Optional<AttesterDuties>> duties =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -321,17 +322,17 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get()).isEmpty();
+    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getAttesterDuties()).isEmpty();
   }
 
   @Test
   public void getAttestationDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -345,11 +346,11 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
+    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getAttesterDuties())
+        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -360,17 +361,17 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
+    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getAttesterDuties())
+        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<ProposerDuties>>> duties =
+    final SafeFuture<Optional<ProposerDuties>> duties =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -380,7 +381,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -393,10 +394,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getProposerDuties()).hasSize(Constants.SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -406,10 +407,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getProposerDuties()).hasSize(Constants.SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -642,8 +643,7 @@ class ValidatorApiHandlerTest {
         .isCompletedWithValue(Map.of(validator0, 0));
   }
 
-  private <T> Optional<List<T>> assertCompletedSuccessfully(
-      final SafeFuture<Optional<List<T>>> result) {
+  private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
     assertThat(result).isCompleted();
     return result.join();
   }
