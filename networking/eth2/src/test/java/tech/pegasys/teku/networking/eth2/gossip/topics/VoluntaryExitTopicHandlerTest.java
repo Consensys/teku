@@ -73,7 +73,8 @@ public class VoluntaryExitTopicHandlerTest {
     when(processor.process(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -84,7 +85,8 @@ public class VoluntaryExitTopicHandlerTest {
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
     when(processor.process(exit)).thenReturn(SafeFuture.completedFuture(IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -93,7 +95,8 @@ public class VoluntaryExitTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
+    final ValidationResult result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized)).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 
