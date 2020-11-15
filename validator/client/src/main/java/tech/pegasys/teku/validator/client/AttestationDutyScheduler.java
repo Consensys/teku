@@ -23,7 +23,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler, 1);
+    super(metricsSystem, "attestations", epochDutiesScheduler, 1);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,

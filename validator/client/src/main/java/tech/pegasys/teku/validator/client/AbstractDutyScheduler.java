@@ -24,6 +24,10 @@ import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -33,10 +37,20 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private final Counter targetRootInvalidationCounter;
+  private final Counter reorgInvalidationCounter;
   protected Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
-      final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
+      final MetricsSystem metricsSystem,
+      final String dutyType,
+      final DutyLoader epochDutiesScheduler,
+      final int lookAheadEpochs) {
+    final LabelledMetric<Counter> invalidationCounters =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR, "invalidated_duties_epochs", "type", "cause");
+    targetRootInvalidationCounter = invalidationCounters.labels(dutyType, "targetRootChange");
+    reorgInvalidationCounter = invalidationCounters.labels(dutyType, "reorg");
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
   }
@@ -84,6 +98,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
         // Invalidate epoch.
         // We invalidate if the duties haven't yet been calculated as the request has already been
         // sent, prior to getting the new head
+        targetRootInvalidationCounter.inc();
         dutyQueue.cancel();
         iterator.remove();
       }
@@ -108,8 +123,11 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     LOG.debug(
         "Chain reorganisation detected. Invalidating validator duties after epoch {}",
         lastUnaffectedEpoch);
-    removeEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
-    recalculateDuties(compute_epoch_at_slot(newSlot));
+    final NavigableMap<UInt64, DutyQueue> epochsToInvalidate =
+        dutiesByEpoch.tailMap(lastUnaffectedEpoch, false);
+    reorgInvalidationCounter.inc(epochsToInvalidate.size());
+    //    removeEpochs(epochsToInvalidate);
+    //    recalculateDuties(compute_epoch_at_slot(newSlot));
   }
 
   @Override
