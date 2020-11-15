@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import io.libp2p.pubsub.PubsubMessageValidator;
+import io.libp2p.pubsub.PubsubMessage;
+import io.libp2p.pubsub.PubsubRouterMessageValidator;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc;
-import pubsub.pb.Rpc.RPC;
 
 /**
  * Validates Gossip messages at the level of Protobuf structures Rejects messages with prohibited
  * Gossip fields: {@code from, signature, seqno}
  */
-public class GossipWireValidator implements PubsubMessageValidator {
+public class GossipWireValidator implements PubsubRouterMessageValidator {
 
   public static class InvalidGossipMessageException extends IllegalArgumentException {
     public InvalidGossipMessageException(String s) {
@@ -31,12 +31,8 @@ public class GossipWireValidator implements PubsubMessageValidator {
   }
 
   @Override
-  public void validate(@NotNull RPC rpc) throws InvalidGossipMessageException {
-    rpc.getPublishList().forEach(this::validate);
-  }
-
-  @Override
-  public void validate(Rpc.Message message) throws InvalidGossipMessageException {
+  public void validate(@NotNull PubsubMessage pubsubMessage) {
+    Rpc.Message message = pubsubMessage.getProtobufMessage();
     if (message.hasFrom()) {
       throw new InvalidGossipMessageException("The message has prohibited 'from' field: ");
     }

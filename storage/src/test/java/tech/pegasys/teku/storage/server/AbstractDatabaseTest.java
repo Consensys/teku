@@ -92,7 +92,6 @@ public abstract class AbstractDatabaseTest {
 
   @BeforeEach
   public void setup() {
-    Constants.SLOTS_PER_EPOCH = 3;
     createStorage(StateStorageMode.ARCHIVE);
 
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
@@ -105,7 +104,6 @@ public abstract class AbstractDatabaseTest {
 
   @AfterEach
   public void tearDown() throws Exception {
-    Constants.setConstants("minimal");
     for (StorageSystem storageSystem : storageSystems) {
       storageSystem.close();
     }

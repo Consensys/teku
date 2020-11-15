@@ -123,10 +123,10 @@ public final class MikuliPublicKey implements PublicKey {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof MikuliPublicKey)) {
+    if (!(obj instanceof PublicKey)) {
       return false;
     }
-    MikuliPublicKey other = (MikuliPublicKey) obj;
+    MikuliPublicKey other = MikuliPublicKey.fromPublicKey((PublicKey) obj);
     try {
       return point.equals(other.point);
     } catch (final IllegalArgumentException e) {

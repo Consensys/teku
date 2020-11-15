@@ -14,18 +14,15 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.util.LengthBounds;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "ssz_snappy";
   private final SnappyBlockCompressor snappyCompressor;
-  private final GossipEncoding sszEncoding;
+  private final SszGossipCodec sszCodec = new SszGossipCodec();
 
-  public SszSnappyEncoding(
-      final GossipEncoding sszEncoding, final SnappyBlockCompressor snappyCompressor) {
+  public SszSnappyEncoding(final SnappyBlockCompressor snappyCompressor) {
     this.snappyCompressor = snappyCompressor;
-    this.sszEncoding = sszEncoding;
   }
 
   @Override
@@ -35,15 +32,26 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public <T> Bytes encode(final T value) {
-    return snappyCompressor.compress(sszEncoding.encode(value));
+    return snappyCompressor.compress(sszCodec.encode(value));
   }
 
   @Override
-  public <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
-    final LengthBounds lengthBounds =
-        SimpleOffsetSerializer.getLengthBounds(valueType)
-            .orElseThrow(() -> new DecodingException("Unknown message type: " + valueType));
-    final Bytes uncompressed = snappyCompressor.uncompress(data, lengthBounds);
-    return sszEncoding.decode(uncompressed, valueType);
+  public <T> T decodeMessage(PreparedGossipMessage message, Class<T> valueType)
+      throws DecodingException {
+    if (!(message instanceof SnappyPreparedGossipMessage)) {
+      throw new DecodingException("Unexpected PreparedMessage subclass: " + message.getClass());
+    }
+    SnappyPreparedGossipMessage lazyMessage = (SnappyPreparedGossipMessage) message;
+    return sszCodec.decode(lazyMessage.getUncompressedOrThrow(), valueType);
+  }
+
+  @Override
+  public <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType) {
+    return SnappyPreparedGossipMessage.create(data, valueType, snappyCompressor);
+  }
+
+  @Override
+  public PreparedGossipMessage prepareUnknownMessage(Bytes data) {
+    return SnappyPreparedGossipMessage.createUnknown(data);
   }
 }
