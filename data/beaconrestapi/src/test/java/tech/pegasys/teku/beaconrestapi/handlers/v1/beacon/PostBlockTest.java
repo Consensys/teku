@@ -32,12 +32,9 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SyncStatus;
-import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 class PostBlockTest {
@@ -56,7 +53,7 @@ class PostBlockTest {
 
   @Test
   void shouldReturnUnavailableIfSyncing() throws Exception {
-    when(syncDataProvider.getSyncStatus()).thenReturn(buildSyncStatus(true));
+    when(syncDataProvider.isSyncing()).thenReturn(true);
 
     handler.handle(context);
 
@@ -65,7 +62,7 @@ class PostBlockTest {
 
   @Test
   void shouldReturnBadRequestIfArgumentNotJSON() throws Exception {
-    when(syncDataProvider.getSyncStatus()).thenReturn(buildSyncStatus(false));
+    when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn("Not a beacon block.");
 
     handler.handle(context);
@@ -78,7 +75,7 @@ class PostBlockTest {
     final String notASignedBlock =
         jsonProvider.objectToJSON(new BeaconBlock(dataStructureUtil.randomBeaconBlock(3)));
 
-    when(syncDataProvider.getSyncStatus()).thenReturn(buildSyncStatus(false));
+    when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(notASignedBlock);
 
     handler.handle(context);
@@ -94,7 +91,7 @@ class PostBlockTest {
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         SafeFuture.completedFuture(successResult);
 
-    when(syncDataProvider.getSyncStatus()).thenReturn(buildSyncStatus(false));
+    when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(buildSignedBeaconBlock());
     when(validatorDataProvider.submitSignedBlock(any())).thenReturn(validatorBlockResultSafeFuture);
 
@@ -113,7 +110,7 @@ class PostBlockTest {
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         SafeFuture.completedFuture(failResult);
 
-    when(syncDataProvider.getSyncStatus()).thenReturn(buildSyncStatus(false));
+    when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(buildSignedBeaconBlock());
     when(validatorDataProvider.submitSignedBlock(any())).thenReturn(validatorBlockResultSafeFuture);
 
@@ -123,10 +120,6 @@ class PostBlockTest {
     verify(context).result(args.capture());
     SafeFuture<String> data = args.getValue();
     assertThat(data.get()).isEqualTo("");
-  }
-
-  private SyncingStatus buildSyncStatus(final boolean isSyncing) {
-    return new SyncingStatus(isSyncing, new SyncStatus(UInt64.ZERO, UInt64.ONE, UInt64.MAX_VALUE));
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
