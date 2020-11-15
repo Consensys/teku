@@ -23,8 +23,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SignedAttestation {
+  @JsonProperty("source_epoch")
   public final UInt64 sourceEpoch;
+
+  @JsonProperty("target_epoch")
   public final UInt64 targetEpoch;
+
+  @JsonProperty("signing_root")
   public final Bytes32 signingRoot;
 
   @JsonCreator
