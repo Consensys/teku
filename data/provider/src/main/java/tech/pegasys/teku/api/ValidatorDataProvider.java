@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -21,7 +20,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committe
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.validator.api.ValidatorApiChannel.UKNOWN_VALIDATOR_ID;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,9 +38,6 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,7 +47,6 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
 
@@ -123,47 +117,6 @@ public class ValidatorDataProvider {
                             attestation.getAggregation_bits(),
                             new AttestationData(attestation.getData()),
                             new BLSSignature(attestation.getAggregate_signature()))));
-  }
-
-  public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
-      final ValidatorDutiesRequest validatorDutiesRequest) {
-    checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
-    if (validatorDutiesRequest.pubkeys.isEmpty()) {
-      // Short-cut if there's nothing to look up
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
-    }
-    if (!combinedChainDataClient.isStoreAvailable()
-        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return SafeFuture.of(
-            () -> {
-              final List<BLSPublicKey> publicKeys =
-                  validatorDutiesRequest.pubkeys.stream()
-                      .map(key -> BLSPublicKey.fromSSZBytes(key.toBytes()))
-                      .collect(toList());
-              return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
-            })
-        .thenApply(
-            res ->
-                res.map(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList())));
-  }
-
-  private ValidatorDuties mapToSchemaDuties(
-      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
-    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
-    if (duty.getDuties().isEmpty()) {
-      return new ValidatorDuties(pubKey, null, null, null, null, emptyList(), null);
-    }
-    final Duties duties = duty.getDuties().get();
-    return new ValidatorDuties(
-        pubKey,
-        duties.getValidatorIndex(),
-        duties.getAttestationCommitteeIndex(),
-        duties.getAttestationCommitteePosition(),
-        duties.getAggregatorModulo(),
-        duties.getBlockProposalSlots(),
-        duties.getAttestationSlot());
   }
 
   public void submitAttestation(Attestation attestation) {

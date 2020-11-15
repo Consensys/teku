@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
@@ -34,7 +33,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,8 +70,6 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -117,14 +113,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("id", String.join(",", validatorIds));
     return get(GET_VALIDATORS, queryParams, createHandler(GetStateValidatorsResponse.class))
         .map(response -> response.data);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public List<ValidatorDuties> getDuties(final ValidatorDutiesRequest request) {
-    return post(GET_DUTIES, request, createHandler(ValidatorDuties[].class))
-        .map(Arrays::asList)
-        .orElse(Collections.EMPTY_LIST);
   }
 
   @Override
