@@ -262,7 +262,6 @@ public class ValidatorDataProvider {
                 res.map(
                     duties ->
                         new AttesterDuties(
-                            duties.getCurrentTargetRoot(),
                             duties.getPreviousTargetRoot(),
                             duties.getAttesterDuties().stream()
                                 .filter(duty -> duty.getPublicKey() != null)
@@ -278,7 +277,6 @@ public class ValidatorDataProvider {
                     duties ->
                         new ProposerDuties(
                             duties.getCurrentTargetRoot(),
-                            duties.getPreviousTargetRoot(),
                             duties.getProposerDuties().stream()
                                 .filter(duty -> duty.getPublicKey() != null)
                                 .map(this::mapToProposerDuties)

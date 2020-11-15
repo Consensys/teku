@@ -21,19 +21,14 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
 
-  @JsonProperty("current_target_root")
-  public final Bytes32 currentTargetRoot;
-
   @JsonProperty("previous_target_root")
   public final Bytes32 previousTargetRoot;
 
   public final List<AttesterDuty> duties;
 
   public AttesterDuties(
-      @JsonProperty("current_target_root") final Bytes32 currentTargetRoot,
       @JsonProperty("previous_target_root") final Bytes32 previousTargetRoot,
       @JsonProperty("duties") final List<AttesterDuty> duties) {
-    this.currentTargetRoot = currentTargetRoot;
     this.previousTargetRoot = previousTargetRoot;
     this.duties = duties;
   }
@@ -47,20 +42,18 @@ public class AttesterDuties {
       return false;
     }
     final AttesterDuties that = (AttesterDuties) o;
-    return Objects.equals(currentTargetRoot, that.currentTargetRoot)
-        && Objects.equals(previousTargetRoot, that.previousTargetRoot)
+    return Objects.equals(previousTargetRoot, that.previousTargetRoot)
         && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(currentTargetRoot, previousTargetRoot, duties);
+    return Objects.hash(previousTargetRoot, duties);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("currentTargetRoot", currentTargetRoot)
         .add("previousTargetRoot", previousTargetRoot)
         .add("duties", duties)
         .toString();

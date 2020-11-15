@@ -324,21 +324,19 @@ class RemoteValidatorApiHandlerTest {
             committeesAtSlot,
             validatorCommitteeIndex,
             UInt64.ZERO);
-    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
     final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
 
     when(apiClient.getAttestationDuties(UInt64.ONE, List.of(validatorIndex)))
         .thenReturn(
             Optional.of(
                 new tech.pegasys.teku.api.response.v1.validator.AttesterDuties(
-                    currentTargetRoot, previousTargetRoot, List.of(schemaValidatorDuties))));
+                    previousTargetRoot, List.of(schemaValidatorDuties))));
 
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, List.of(validatorIndex));
 
     AttesterDuties validatorDuties = unwrapToValue(future);
 
-    assertThat(validatorDuties.getCurrentTargetRoot()).isEqualTo(currentTargetRoot);
     assertThat(validatorDuties.getPreviousTargetRoot()).isEqualTo(previousTargetRoot);
     assertThat(validatorDuties.getAttesterDuties().get(0))
         .usingRecursiveComparison()
@@ -364,20 +362,18 @@ class RemoteValidatorApiHandlerTest {
     final ProposerDuty expectedValidatorDuties =
         new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
     final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
 
     when(apiClient.getProposerDuties(UInt64.ONE))
         .thenReturn(
             Optional.of(
                 new tech.pegasys.teku.api.response.v1.validator.ProposerDuties(
-                    currentTargetRoot, previousTargetRoot, List.of(schemaValidatorDuties))));
+                    currentTargetRoot, List.of(schemaValidatorDuties))));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 
     assertThat(validatorDuties.getCurrentTargetRoot()).isEqualTo(currentTargetRoot);
-    assertThat(validatorDuties.getPreviousTargetRoot()).isEqualTo(previousTargetRoot);
     assertThat(validatorDuties.getProposerDuties().get(0))
         .usingRecursiveComparison()
         .isEqualTo(expectedValidatorDuties);

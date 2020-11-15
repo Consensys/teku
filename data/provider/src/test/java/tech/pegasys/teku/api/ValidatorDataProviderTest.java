@@ -363,14 +363,13 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
-    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
     final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(
             completedFuture(
                 Optional.of(
                     new tech.pegasys.teku.validator.api.AttesterDuties(
-                        currentTargetRoot, previousTargetRoot, emptyList()))));
+                        previousTargetRoot, emptyList()))));
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
     assertThat(future).isCompleted();
@@ -383,14 +382,13 @@ public class ValidatorDataProviderTest {
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
     AttesterDuty v1 = new AttesterDuty(BLSPublicKey.random(0), 1, 2, 3, 15, 4, ONE);
     AttesterDuty v2 = new AttesterDuty(BLSPublicKey.random(1), 11, 12, 13, 15, 14, ZERO);
-    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
     final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(
             completedFuture(
                 Optional.of(
                     new tech.pegasys.teku.validator.api.AttesterDuties(
-                        currentTargetRoot, previousTargetRoot, List.of(v1, v2)))));
+                        previousTargetRoot, List.of(v1, v2)))));
 
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(ONE, List.of(1, 11));
@@ -398,7 +396,6 @@ public class ValidatorDataProviderTest {
     final Optional<AttesterDuties> maybeDuties = future.join();
     final List<tech.pegasys.teku.api.response.v1.validator.AttesterDuty> list =
         maybeDuties.orElseThrow().duties;
-    assertThat(maybeDuties.orElseThrow().currentTargetRoot).isEqualTo(currentTargetRoot);
     assertThat(maybeDuties.orElseThrow().previousTargetRoot).isEqualTo(previousTargetRoot);
     assertThat(list).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
   }

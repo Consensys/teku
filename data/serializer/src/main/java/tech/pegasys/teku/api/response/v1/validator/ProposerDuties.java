@@ -24,17 +24,12 @@ public class ProposerDuties {
   @JsonProperty("current_target_root")
   public final Bytes32 currentTargetRoot;
 
-  @JsonProperty("previous_target_root")
-  public final Bytes32 previousTargetRoot;
-
   public final List<ProposerDuty> duties;
 
   public ProposerDuties(
       @JsonProperty("current_target_root") final Bytes32 currentTargetRoot,
-      @JsonProperty("previous_target_root") final Bytes32 previousTargetRoot,
       @JsonProperty("duties") final List<ProposerDuty> duties) {
     this.currentTargetRoot = currentTargetRoot;
-    this.previousTargetRoot = previousTargetRoot;
     this.duties = duties;
   }
 
@@ -48,20 +43,18 @@ public class ProposerDuties {
     }
     final ProposerDuties that = (ProposerDuties) o;
     return Objects.equals(currentTargetRoot, that.currentTargetRoot)
-        && Objects.equals(previousTargetRoot, that.previousTargetRoot)
         && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(currentTargetRoot, previousTargetRoot, duties);
+    return Objects.hash(currentTargetRoot, duties);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("currentTargetRoot", currentTargetRoot)
-        .add("previousTargetRoot", previousTargetRoot)
         .add("duties", duties)
         .toString();
   }

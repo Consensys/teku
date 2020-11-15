@@ -18,24 +18,15 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class ProposerDuties {
   private final Bytes32 currentTargetRoot;
-  private final Bytes32 previousTargetRoot;
   private final List<ProposerDuty> proposerDuties;
 
-  public ProposerDuties(
-      final Bytes32 currentTargetRoot,
-      final Bytes32 previousTargetRoot,
-      final List<ProposerDuty> proposerDuties) {
+  public ProposerDuties(final Bytes32 currentTargetRoot, final List<ProposerDuty> proposerDuties) {
     this.currentTargetRoot = currentTargetRoot;
-    this.previousTargetRoot = previousTargetRoot;
     this.proposerDuties = proposerDuties;
   }
 
   public Bytes32 getCurrentTargetRoot() {
     return currentTargetRoot;
-  }
-
-  public Bytes32 getPreviousTargetRoot() {
-    return previousTargetRoot;
   }
 
   public List<ProposerDuty> getProposerDuties() {

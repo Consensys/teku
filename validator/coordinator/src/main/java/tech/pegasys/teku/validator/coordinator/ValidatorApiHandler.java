@@ -529,7 +529,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
               result.add(new ProposerDuty(publicKey, maybeIndex.get(), slot));
             });
-    return new ProposerDuties(getCurrentTargetRoot(state), getPreviousTargetRoot(state), result);
+    return new ProposerDuties(getCurrentTargetRoot(state), result);
   }
 
   private AttesterDuties getAttesterDutiesFromIndexesAndState(
@@ -540,7 +540,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(toList());
-    return new AttesterDuties(getCurrentTargetRoot(state), getPreviousTargetRoot(state), duties);
+    return new AttesterDuties(getPreviousTargetRoot(state), duties);
   }
 
   private Optional<AttesterDuty> createAttesterDuties(

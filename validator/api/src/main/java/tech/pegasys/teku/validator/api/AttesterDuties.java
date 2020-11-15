@@ -17,21 +17,12 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
-  private final Bytes32 currentTargetRoot;
   private final Bytes32 previousTargetRoot;
   private final List<AttesterDuty> attesterDuties;
 
-  public AttesterDuties(
-      final Bytes32 currentTargetRoot,
-      final Bytes32 previousTargetRoot,
-      final List<AttesterDuty> attesterDuties) {
-    this.currentTargetRoot = currentTargetRoot;
+  public AttesterDuties(final Bytes32 previousTargetRoot, final List<AttesterDuty> attesterDuties) {
     this.previousTargetRoot = previousTargetRoot;
     this.attesterDuties = attesterDuties;
-  }
-
-  public Bytes32 getCurrentTargetRoot() {
-    return currentTargetRoot;
   }
 
   public Bytes32 getPreviousTargetRoot() {

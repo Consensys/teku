@@ -164,7 +164,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                 .map(
                     response ->
                         new AttesterDuties(
-                            response.currentTargetRoot,
                             response.previousTargetRoot,
                             response.duties.stream()
                                 .map(this::mapToApiAttesterDuties)
@@ -181,7 +180,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     response ->
                         new ProposerDuties(
                             response.currentTargetRoot,
-                            response.previousTargetRoot,
                             response.duties.stream()
                                 .map(this::mapToProposerDuties)
                                 .collect(toList()))));

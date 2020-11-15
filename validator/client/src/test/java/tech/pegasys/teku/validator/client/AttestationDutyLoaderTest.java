@@ -90,11 +90,7 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        List.of(duty)))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleAttestationProduction(
             any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
@@ -131,11 +127,7 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        List.of(duty)))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleAttestationProduction(
             any(), any(), anyInt(), anyInt(), anyInt(), anyInt()))
@@ -158,11 +150,7 @@ class AttestationDutyLoaderTest {
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        emptyList()))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
     final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();

@@ -73,7 +73,6 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 Optional.of(
                     new ProposerDuties(
                         dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
                         List.of(
                             validator1Duties,
                             new ProposerDuty(
@@ -106,9 +105,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        List.of(validator1Duties)))));
+                        dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -143,11 +140,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getProposerDuties(ONE))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        emptyList()))));
+                Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList()))));
     dutyScheduler.onSlot(ZERO);
 
     dutyScheduler.onBlockProductionDue(ZERO);
@@ -155,11 +148,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(scheduledDuties, never()).produceBlock(ZERO);
 
     epoch0Duties.complete(
-        Optional.of(
-            new ProposerDuties(
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                emptyList())));
+        Optional.of(new ProposerDuties(dataStructureUtil.randomBytes32(), emptyList())));
     verify(scheduledDuties).produceBlock(ZERO);
   }
 

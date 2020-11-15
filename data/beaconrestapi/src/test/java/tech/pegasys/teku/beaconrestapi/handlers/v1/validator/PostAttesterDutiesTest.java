@@ -66,17 +66,15 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(context.body()).thenReturn("[\"2\"]");
     List<AttesterDuty> duties =
         List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
-    final Bytes32 currentTargetRoot = Bytes32.fromHexString("0x12");
     final Bytes32 previousTargetRoot = Bytes32.fromHexString("0x34");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(new AttesterDuties(currentTargetRoot, previousTargetRoot, duties))));
+                Optional.of(new AttesterDuties(previousTargetRoot, duties))));
 
     handler.handle(context);
     GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data)
-        .isEqualTo(new AttesterDuties(currentTargetRoot, previousTargetRoot, duties));
+    assertThat(response.data).isEqualTo(new AttesterDuties(previousTargetRoot, duties));
   }
 
   @Test

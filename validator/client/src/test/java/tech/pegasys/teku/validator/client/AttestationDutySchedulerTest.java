@@ -67,11 +67,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(any(), any()))
         .thenReturn(
             completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        emptyList()))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
   }
 
   @Test
@@ -79,11 +75,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(any(), any()))
         .thenReturn(
             completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        emptyList()))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
 
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
@@ -263,11 +255,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        emptyList()))));
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
     dutyScheduler.onSlot(ZERO);
 
     dutyScheduler.onBlockProductionDue(ZERO);
@@ -278,11 +266,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(scheduledDuties, never()).performAggregation(ZERO);
 
     epoch0Duties.complete(
-        Optional.of(
-            new AttesterDuties(
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                emptyList())));
+        Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList())));
     verify(scheduledDuties).produceAttestations(ZERO);
     verify(scheduledDuties).performAggregation(ZERO);
   }
@@ -298,9 +282,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
-                        List.of(validator1Duties)))));
+                        dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -356,7 +338,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
 
@@ -424,7 +405,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                 Optional.of(
                     new AttesterDuties(
                         dataStructureUtil.randomBytes32(),
-                        dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -490,7 +470,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
 
@@ -561,7 +540,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
 

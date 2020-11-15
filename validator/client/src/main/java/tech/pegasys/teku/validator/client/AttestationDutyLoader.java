@@ -63,7 +63,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   @Override
   protected SafeFuture<ScheduledDuties> scheduleAllDuties(final AttesterDuties duties) {
     final ScheduledDuties scheduledDuties =
-        scheduledDutiesFactory.apply(duties.getCurrentTargetRoot());
+        scheduledDutiesFactory.apply(duties.getPreviousTargetRoot());
     return SafeFuture.allOf(
             duties.getAttesterDuties().stream()
                 .map(duty -> scheduleDuties(scheduledDuties, duty))
