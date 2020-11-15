@@ -822,14 +822,14 @@ public class BeaconStateUtil {
 
   public static Bytes32 getCurrentTargetRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
-    return slot.equals(UInt64.ZERO)
+    return slot.equals(state.getSlot())
         ? state.getFinalized_checkpoint().getRoot()
         : get_block_root_at_slot(state, slot);
   }
 
   public static Bytes32 getPreviousTargetRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
-    return slot.equals(UInt64.ZERO)
+    return slot.equals(state.getSlot())
         ? state.getFinalized_checkpoint().getRoot()
         : get_block_root_at_slot(state, slot);
   }
