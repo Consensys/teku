@@ -31,8 +31,6 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -44,8 +42,6 @@ public interface ValidatorRestApiClient {
   Optional<GetGenesisResponse> getGenesis();
 
   Optional<List<ValidatorResponse>> getValidators(List<String> validatorIds);
-
-  List<ValidatorDuties> getDuties(ValidatorDutiesRequest request);
 
   List<AttesterDuty> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes);
