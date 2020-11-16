@@ -419,10 +419,6 @@ workflows:
           requires:
             - assemble
           filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
             tags:
               <<: *filters-release-tags
           context: dockerhub-quorumengineering-ro
