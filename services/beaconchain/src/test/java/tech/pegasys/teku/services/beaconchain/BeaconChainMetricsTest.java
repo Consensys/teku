@@ -81,6 +81,10 @@ class BeaconChainMetricsTest {
     when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
     when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
+    List<Bytes32> blockRootsList =
+        new ArrayList<>(Collections.nCopies(1000, dataStructureUtil.randomBytes32()));
+    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
+    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
   }
 
   @Test
