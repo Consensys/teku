@@ -20,7 +20,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
@@ -30,7 +29,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +69,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.sync.SyncState;
-import tech.pegasys.teku.sync.SyncStateTracker;
+import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -80,7 +78,6 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
@@ -93,7 +90,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final CombinedChainDataClient combinedChainDataClient;
-  private final SyncStateTracker syncStateTracker;
+  private final SyncStateProvider syncStateProvider;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
@@ -107,7 +104,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
-      final SyncStateTracker syncStateTracker,
+      final SyncStateProvider syncStateProvider,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -119,7 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
     this.combinedChainDataClient = combinedChainDataClient;
-    this.syncStateTracker = syncStateTracker;
+    this.syncStateProvider = syncStateProvider;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
@@ -159,26 +156,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   return results;
                 })
             .orElse(emptyMap()));
-  }
-
-  @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
-    if (isSyncActive()) {
-      return NodeSyncingException.failedFuture();
-    }
-    if (publicKeys.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
-    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
-    return combinedChainDataClient
-        .getLatestStateAtSlot(slot)
-        .thenApply(
-            optionalState ->
-                optionalState
-                    .map(state -> processSlots(state, slot))
-                    .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
   }
 
   @Override
@@ -458,7 +435,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @VisibleForTesting
   boolean isSyncActive() {
-    final SyncState syncState = syncStateTracker.getCurrentSyncState();
+    final SyncState syncState = syncStateProvider.getCurrentSyncState();
     return syncState.isStartingUp() || (syncState.isSyncing() && headBlockIsTooFarBehind());
   }
 
@@ -466,52 +443,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 headEpoch = combinedChainDataClient.getHeadEpoch();
     return headEpoch.plus(1).isLessThan(currentEpoch);
-  }
-
-  private List<ValidatorDuties> getValidatorDutiesFromState(
-      final BeaconState state, final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
-    final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex =
-        getBeaconProposalSlotsByValidatorIndex(state, epoch);
-    return publicKeys.stream()
-        .map(key -> getDutiesForValidator(key, state, epoch, proposalSlotsByValidatorIndex))
-        .collect(toList());
-  }
-
-  private ValidatorDuties getDutiesForValidator(
-      final BLSPublicKey key,
-      final BeaconState state,
-      final UInt64 epoch,
-      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex) {
-    return ValidatorsUtil.getValidatorIndex(state, key)
-        .map(
-            index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, epoch, index))
-        .orElseGet(() -> ValidatorDuties.noDuties(key));
-  }
-
-  private ValidatorDuties createValidatorDuties(
-      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex,
-      final BLSPublicKey key,
-      final BeaconState state,
-      final UInt64 epoch,
-      final Integer index) {
-    return createAttesterDuties(state, epoch, index)
-        .map(duties -> createValidatorDuties(key, duties, proposalSlotsByValidatorIndex))
-        .orElse(ValidatorDuties.noDuties(key));
-  }
-
-  private ValidatorDuties createValidatorDuties(
-      final BLSPublicKey key,
-      final AttesterDuties duties,
-      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex) {
-    return ValidatorDuties.withDuties(
-        key,
-        duties.getValidatorIndex(),
-        duties.getCommitteeIndex(),
-        duties.getValidatorCommitteeIndex(),
-        getAggregatorModulo(duties.getCommitteeLength()),
-        proposalSlotsByValidatorIndex.getOrDefault(
-            duties.getValidatorIndex(), Collections.emptyList()),
-        duties.getSlot());
   }
 
   private List<ProposerDuties> getProposerDutiesFromIndexesAndState(
@@ -561,20 +492,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       LOG.debug(ex);
       return Optional.empty();
     }
-  }
-
-  private Map<Integer, List<UInt64>> getBeaconProposalSlotsByValidatorIndex(
-      final BeaconState state, final UInt64 epoch) {
-    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
-    // Don't calculate a proposer for the genesis slot
-    final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
-    final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
-    final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex = new HashMap<>();
-    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
-      final Integer proposer = get_beacon_proposer_index(state, slot);
-      proposalSlotsByValidatorIndex.computeIfAbsent(proposer, key -> new ArrayList<>()).add(slot);
-    }
-    return proposalSlotsByValidatorIndex;
   }
 
   private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(

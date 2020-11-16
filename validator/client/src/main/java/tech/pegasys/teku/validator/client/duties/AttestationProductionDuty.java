@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -43,6 +44,7 @@ public class AttestationProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private BLSPublicKey validatorPublicKey;
 
   public AttestationProductionDuty(
       final UInt64 slot,
@@ -73,6 +75,7 @@ public class AttestationProductionDuty implements Duty {
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new Committee());
     committee.addValidator(validator, committeePosition, validatorIndex, committeeSize);
+    validatorPublicKey = validator.getPublicKey();
     return committee.attestationDataFuture;
   }
 
@@ -88,6 +91,11 @@ public class AttestationProductionDuty implements Duty {
   @Override
   public String getProducedType() {
     return "attestation";
+  }
+
+  @Override
+  public Optional<BLSPublicKey> getValidatorIdentifier() {
+    return Optional.ofNullable(validatorPublicKey);
   }
 
   private SafeFuture<DutyResult> produceAttestations(final ForkInfo forkInfo) {

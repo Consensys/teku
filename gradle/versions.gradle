@@ -27,7 +27,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.11.0') {
+    dependencySet(group: 'io.javalin', version: '3.12.0') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -38,18 +38,19 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.5.7-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.6.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.3.72'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.4.10'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.11.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.4') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.1.5') {
+      entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'

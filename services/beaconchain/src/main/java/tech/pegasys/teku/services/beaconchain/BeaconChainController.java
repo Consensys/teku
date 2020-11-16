@@ -110,15 +110,9 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.sync.CoalescingChainHeadChannel;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncStateTracker;
-import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.gossip.NoopRecentBlockFetcher;
-import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
-import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
-import tech.pegasys.teku.sync.noop.NoopSyncService;
-import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
+import tech.pegasys.teku.sync.SyncServiceFactory;
+import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -149,7 +143,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final GlobalConfiguration config;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final AsyncRunner asyncRunner;
+  private final AsyncRunner beaconAsyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -179,11 +173,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile Optional<AnchorPoint> weakSubjectivityAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
-  private volatile RecentBlockFetcher recentBlockFetcher;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
 
-  private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
   private BlockManager blockManager;
@@ -194,7 +186,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
-    this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
@@ -214,19 +206,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void startServices() {
-    recentBlockFetcher.subscribeBlockFetched(
-        (block) ->
-            blockManager
-                .importBlock(block)
-                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
-    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
+    syncService
+        .getRecentBlockFetcher()
+        .subscribeBlockFetched(
+            (block) ->
+                blockManager
+                    .importBlock(block)
+                    .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+    blockManager.subscribeToReceivedBlocks(
+        (root) -> syncService.getRecentBlockFetcher().cancelRecentBlockRequest(root));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
-            recentBlockFetcher.start(),
             blockManager.start(),
-            syncService.start(),
-            syncStateTracker.start())
+            syncService.start())
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -250,7 +243,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
         SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
-        syncStateTracker.stop(),
         syncService.stop(),
         blockManager.stop(),
         attestationManager.stop(),
@@ -267,20 +259,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
     StorageQueryChannel storageQueryChannel =
-        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+        eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
-        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+        eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
                 StorageBackedRecentChainData.create(
                     metricsSystem,
                     storeConfig,
-                    asyncRunner,
+                    beaconAsyncRunner,
                     storageQueryChannel,
                     storageUpdateChannel,
-                    eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
-                    eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
+                    eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
+                    eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
                     eventBus))
         .thenCompose(
@@ -326,11 +318,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initPendingBlocks();
     initBlockManager();
     initP2PNetwork();
-    initRecentBlockFetcher();
-    initSyncManager();
+    initSyncService();
     initSlotProcessor();
     initMetrics();
-    initSyncStateTracker();
     initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
@@ -341,15 +331,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initPendingBlocks()");
     pendingBlocks = PendingPool.createForBlocks();
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
-  }
-
-  private void initRecentBlockFetcher() {
-    LOG.debug("BeaconChainController.initRecentBlockFetcher()");
-    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
-      recentBlockFetcher = new NoopRecentBlockFetcher();
-    } else {
-      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
-    }
   }
 
   private void initPerformanceTracker() {
@@ -405,7 +386,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     combinedChainDataClient =
         new CombinedChainDataClient(
             recentChainData,
-            eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
+            eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
             stateTransition);
   }
 
@@ -454,17 +435,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod());
   }
 
-  private void initSyncStateTracker() {
-    LOG.debug("BeaconChainController.initSyncStateTracker");
-    syncStateTracker =
-        new SyncStateTracker(
-            asyncRunner,
-            syncService,
-            p2pNetwork,
-            config.getStartupTargetPeerCount(),
-            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
-  }
-
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
@@ -487,11 +457,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final ActiveValidatorTracker activeValidatorTracker =
         new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
-        eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
+        eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
-            syncStateTracker,
+            syncService,
             stateTransition,
             blockFactory,
             blockImportChannel,
@@ -600,7 +570,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
-                  eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
+                  eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
@@ -614,7 +584,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSlotProcessor() {
     slotProcessor =
         new SlotProcessor(
-            recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannelPublisher);
+            recentChainData,
+            syncService.getForwardSync(),
+            forkChoice,
+            p2pNetwork,
+            slotEventsChannelPublisher);
   }
 
   @VisibleForTesting
@@ -664,8 +638,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             combinedChainDataClient,
             p2pNetwork,
-            syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
+            syncService.getForwardSync(),
+            eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
             attestationPool,
             attesterSlashingPool,
             proposerSlashingPool,
@@ -698,25 +672,25 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(BlockImportChannel.class, blockManager);
   }
 
-  public void initSyncManager() {
-    LOG.debug("BeaconChainController.initSyncManager()");
-    if (!beaconConfig.p2pConfig().isP2pEnabled()) {
-      syncService = new NoopSyncService();
-    } else if (beaconConfig.p2pConfig().isMultiPeerSyncEnabled()) {
-      syncService =
-          MultipeerSyncService.create(
-              asyncRunnerFactory,
-              asyncRunner,
-              timeProvider,
-              recentChainData,
-              p2pNetwork,
-              blockImporter);
-    } else {
-      syncService =
-          SinglePeerSyncServiceFactory.create(
-              metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter);
-    }
-    syncService.subscribeToSyncChanges(coalescingChainHeadChannel);
+  public void initSyncService() {
+    LOG.debug("BeaconChainController.initSyncService()");
+    syncService =
+        SyncServiceFactory.createSyncService(
+            beaconConfig.p2pConfig(),
+            metricsSystem,
+            asyncRunnerFactory,
+            beaconAsyncRunner,
+            timeProvider,
+            recentChainData,
+            combinedChainDataClient,
+            eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner),
+            p2pNetwork,
+            blockImporter,
+            pendingBlocks,
+            config.getStartupTargetPeerCount(),
+            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
+
+    syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }
 
   private void initOperationsReOrgManager() {

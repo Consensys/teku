@@ -27,12 +27,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessor {
   private final RecentChainData recentChainData;
-  private final SyncService syncService;
+  private final ForwardSync syncService;
   private final ForkChoice forkChoice;
   private final Eth2Network p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -46,7 +46,7 @@ public class SlotProcessor {
   @VisibleForTesting
   SlotProcessor(
       final RecentChainData recentChainData,
-      final SyncService syncService,
+      final ForwardSync syncService,
       final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -61,7 +61,7 @@ public class SlotProcessor {
 
   public SlotProcessor(
       final RecentChainData recentChainData,
-      final SyncService syncService,
+      final ForwardSync syncService,
       final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher) {

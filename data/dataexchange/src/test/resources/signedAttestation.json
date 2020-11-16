@@ -1,5 +1,5 @@
 {
-  "sourceEpoch" : "2048",
-  "targetEpoch" : "1024",
-  "signingRoot" : "0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70"
+  "source_epoch" : "2048",
+  "target_epoch" : "1024",
+  "signing_root" : "0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70"
 }

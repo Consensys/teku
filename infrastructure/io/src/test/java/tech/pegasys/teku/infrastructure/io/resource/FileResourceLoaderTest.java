@@ -17,9 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -43,10 +45,25 @@ class FileResourceLoaderTest {
   }
 
   @Test
-  public void shouldCreateInputStreamWhenPathIsADirectory(@TempDir Path tempDir) throws Exception {
-    // We could potentially return empty for directories, but it is going to be confusing for users
-    // to say we couldn't find something that exists. We should report that we couldn't read it.
-    assertThat(loader.load(tempDir.toAbsolutePath().toString())).isNotEmpty();
+  public void shouldThrowWhenPathIsADirectory(@TempDir Path tempDir) throws Exception {
+
+    // should throw either on opening InputStream from directory or reading from created InputStream
+    assertThatThrownBy(
+            () -> {
+              Optional<InputStream> inputStream = loader.load(tempDir.toAbsolutePath().toString());
+
+              // if load() call didn't cause exception then InputStream should exist
+              // We could potentially return empty for directories, but it is going to be confusing
+              // for users
+              // to say we couldn't find something that exists. We should report that we couldn't
+              // read it.
+              assertThat(inputStream).isNotEmpty();
+
+              // At least the read() call should throw
+              inputStream.get().read();
+            })
+        .isInstanceOf(IOException.class);
+
     assertThatThrownBy(() -> loader.loadBytes(tempDir.toAbsolutePath().toString()))
         .isInstanceOf(IOException.class);
   }

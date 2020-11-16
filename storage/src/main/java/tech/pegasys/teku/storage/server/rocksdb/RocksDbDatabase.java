@@ -24,6 +24,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -239,6 +241,38 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {
+    if (blocks.isEmpty()) {
+      return;
+    }
+
+    // Sort blocks and verify that they are contiguous with the oldestBlock
+    final List<SignedBeaconBlock> sorted =
+        blocks.stream()
+            .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
+            .collect(Collectors.toList());
+
+    // The new block should be just prior to our earliest block if available, and otherwise should
+    // match our latest finalized block
+    Bytes32 expectedRoot =
+        getEarliestAvailableBlock()
+            .map(SignedBeaconBlock::getParentRoot)
+            .orElseGet(() -> this.getLatestFinalizedBlockSummary().getRoot());
+    for (SignedBeaconBlock block : sorted) {
+      if (!block.getRoot().equals(expectedRoot)) {
+        throw new IllegalArgumentException(
+            "Blocks must be contiguous with the earliest known block.");
+      }
+      expectedRoot = block.getParentRoot();
+    }
+
+    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      sorted.forEach(updater::addFinalizedBlock);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
@@ -354,6 +388,11 @@ public class RocksDbDatabase implements Database {
   @Override
   public Optional<UInt64> getEarliestAvailableBlockSlot() {
     return finalizedDao.getEarliestFinalizedBlockSlot();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
+    return finalizedDao.getEarliestFinalizedBlock();
   }
 
   @Override
@@ -560,7 +599,7 @@ public class RocksDbDatabase implements Database {
     final Optional<Checkpoint> initialCheckpoint = hotDao.getAnchor();
     final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
     // Get previously finalized block to build on top of
-    final BeaconBlockSummary baseBlock = getLatestFinalizedBlock();
+    final BeaconBlockSummary baseBlock = getLatestFinalizedBlockOrSummary();
 
     final List<Bytes32> finalizedRoots =
         HashTree.builder()
@@ -642,13 +681,17 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private BeaconBlockSummary getLatestFinalizedBlock() {
+  private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {
     final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
+    return finalizedDao
+        .getFinalizedBlock(baseBlockRoot)
+        .<BeaconBlockSummary>map(a -> a)
+        .orElseGet(this::getLatestFinalizedBlockSummary);
+  }
+
+  private BeaconBlockSummary getLatestFinalizedBlockSummary() {
     final Optional<BeaconBlockSummary> finalizedBlock =
-        finalizedDao
-            .getFinalizedBlock(baseBlockRoot)
-            .<BeaconBlockSummary>map(a -> a)
-            .or(() -> hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState));
+        hotDao.getLatestFinalizedState().map(BeaconBlockHeader::fromState);
     return finalizedBlock.orElseThrow(
         () -> new IllegalStateException("Unable to reconstruct latest finalized block summary"));
   }

@@ -40,10 +40,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -83,7 +81,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus);
@@ -123,8 +121,8 @@ public class StorageBackedRecentChainDataTest {
     final StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final ProtoArrayStorageChannel protoArrayStorageChannel = mock(ProtoArrayStorageChannel.class);
-    final SafeFuture<Optional<ProtoArraySnapshot>> protoArraySnapshotFuture = new SafeFuture<>();
-    when(protoArrayStorageChannel.getProtoArraySnapshot()).thenReturn(protoArraySnapshotFuture);
+    when(protoArrayStorageChannel.getProtoArraySnapshot())
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
@@ -169,12 +167,8 @@ public class StorageBackedRecentChainDataTest {
 
     // Block info didn't contain enough information to create protoarray so we need to load via the
     // snapshot and trigger the migration
-    assertThat(client).isNotDone();
-    verify(protoArrayStorageChannel).getProtoArraySnapshot();
-
-    // In this case, no snapshot available so it reprocesses every block and the store is then ready
-    protoArraySnapshotFuture.complete(Optional.empty());
     assertThat(client).isCompleted();
+    verify(protoArrayStorageChannel).getProtoArraySnapshot();
 
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -198,7 +192,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus);
@@ -246,7 +240,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus);
@@ -289,7 +283,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus);

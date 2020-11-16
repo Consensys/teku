@@ -17,11 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
-import com.google.common.collect.Maps;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,25 +30,25 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 
 public class StoreBuilder {
-  AsyncRunner asyncRunner;
-  MetricsSystem metricsSystem;
-  BlockProvider blockProvider;
-  StateAndBlockSummaryProvider stateAndBlockProvider;
-  StoreConfig storeConfig = StoreConfig.createDefault();
+  private AsyncRunner asyncRunner;
+  private MetricsSystem metricsSystem;
+  private BlockProvider blockProvider;
+  private StateAndBlockSummaryProvider stateAndBlockProvider;
+  private StoreConfig storeConfig = StoreConfig.createDefault();
 
-  final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
-  Optional<Checkpoint> anchor = Optional.empty();
-  UInt64 time;
-  UInt64 genesisTime;
-  AnchorPoint latestFinalized;
-  Checkpoint justifiedCheckpoint;
-  Checkpoint bestJustifiedCheckpoint;
-  Map<UInt64, VoteTracker> votes;
+  private final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
+  private Optional<Checkpoint> anchor = Optional.empty();
+  private UInt64 time;
+  private UInt64 genesisTime;
+  private AnchorPoint latestFinalized;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint bestJustifiedCheckpoint;
+  private Map<UInt64, VoteTracker> votes;
+  private ProtoArrayStorageChannel protoArrayStorageChannel = ProtoArrayStorageChannel.NO_OP;
 
   private StoreBuilder() {}
 
@@ -111,35 +107,10 @@ public class StoreBuilder {
         latestFinalized,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
-        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getParentRoot),
-        Maps.transformValues(blockInfoByRoot, StoredBlockMetadata::getBlockSlot),
+        blockInfoByRoot,
         votes,
-        storeConfig);
-  }
-
-  public Optional<ProtoArray> buildProtoArray() {
-    final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
-    blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
-    final ProtoArray protoArray =
-        new ProtoArrayBuilder()
-            .anchor(anchor)
-            .justifiedCheckpoint(justifiedCheckpoint)
-            .finalizedCheckpoint(latestFinalized.getCheckpoint())
-            .build();
-    for (StoredBlockMetadata block : blocks) {
-      if (block.getCheckpointEpochs().isEmpty()) {
-        // Checkpoint epochs aren't available, migration will be required
-        return Optional.empty();
-      }
-      protoArray.onBlock(
-          block.getBlockSlot(),
-          block.getBlockRoot(),
-          block.getParentRoot(),
-          block.getStateRoot(),
-          block.getCheckpointEpochs().get().getJustifiedEpoch(),
-          block.getCheckpointEpochs().get().getFinalizedEpoch());
-    }
-    return Optional.of(protoArray);
+        storeConfig,
+        protoArrayStorageChannel);
   }
 
   private void assertValid() {
@@ -234,6 +205,12 @@ public class StoreBuilder {
   public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
+    return this;
+  }
+
+  public StoreBuilder protoArrayStorageChannel(
+      final ProtoArrayStorageChannel protoArrayStorageChannel) {
+    this.protoArrayStorageChannel = protoArrayStorageChannel;
     return this;
   }
 }

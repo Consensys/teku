@@ -25,10 +25,13 @@ import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -46,7 +49,11 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetVoluntaryExits;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
@@ -60,7 +67,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
@@ -76,7 +82,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @SuppressWarnings("unchecked")
@@ -86,7 +92,7 @@ public class BeaconRestApiV1Test {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -120,6 +126,11 @@ public class BeaconRestApiV1Test {
   @MethodSource("getParameters")
   void getRouteExists(final String route, final Class<Handler> type) {
     verify(app).get(eq(route), any(type));
+  }
+
+  @Test
+  void shouldHavePutLogLevel() {
+    verify(app).put(eq(PutLogLevel.ROUTE), any(PutLogLevel.class));
   }
 
   static Stream<Arguments> getParameters() {
@@ -161,7 +172,6 @@ public class BeaconRestApiV1Test {
     builder
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
-        .add(Arguments.of(GetAttesterDuties.ROUTE, GetAttesterDuties.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
 
@@ -173,6 +183,9 @@ public class BeaconRestApiV1Test {
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
+
+    // TEKU
+    builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
 
     return builder.build();
   }
@@ -189,12 +202,16 @@ public class BeaconRestApiV1Test {
     // beacon
     builder
         .add(Arguments.of(PostAttesterDuties.ROUTE, PostAttesterDuties.class))
+        .add(Arguments.of(PostAttesterSlashing.ROUTE, PostAttesterSlashing.class))
+        .add(Arguments.of(PostProposerSlashing.ROUTE, PostProposerSlashing.class))
+        .add(Arguments.of(PostVoluntaryExit.ROUTE, PostVoluntaryExit.class))
         .add(Arguments.of(PostBlock.ROUTE, PostBlock.class));
 
     // validator
     builder
         .add(Arguments.of(PostAggregateAndProofs.ROUTE, PostAggregateAndProofs.class))
         .add(Arguments.of(PostAttesterDuties.ROUTE, PostAttesterDuties.class))
+        .add(Arguments.of(PostAttestation.ROUTE, PostAttestation.class))
         .add(
             Arguments.of(
                 PostSubscribeToBeaconCommitteeSubnet.ROUTE,
