@@ -26,6 +26,7 @@ import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSi
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableAttestationMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableBlockMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableGenericMessage;
@@ -121,7 +122,7 @@ public class ExternalSignerIntegrationTest {
   @Test
   void failsSigningBlockWhenSigningServiceRefusesToSignDueToSlashingCondition() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
-    client.when(request()).respond(response().withStatusCode(412));
+    client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
@@ -131,7 +132,7 @@ public class ExternalSignerIntegrationTest {
   @Test
   void failsSigningAttestationDataWhenSigningServiceRefusesToSignDueToSlashingCondition() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    client.when(request()).respond(response().withStatusCode(412));
+    client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
     assertThatThrownBy(() -> externalSigner.signAttestationData(attestationData, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)

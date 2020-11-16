@@ -19,6 +19,8 @@ import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSi
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
@@ -195,11 +197,11 @@ public class ExternalSigner implements Signer {
           "External signer failed to sign due to " + throwable.getMessage(), throwable);
     }
 
-    if (response.statusCode() == 412) {
+    if (response.statusCode() == SC_PRECONDITION_FAILED) {
       throw new ExternalSignerException(slashableMessage.get());
     }
 
-    if (response.statusCode() != 200) {
+    if (response.statusCode() != SC_OK) {
       throw new ExternalSignerException(
           "External signer failed to sign and returned invalid response status code: "
               + response.statusCode());
