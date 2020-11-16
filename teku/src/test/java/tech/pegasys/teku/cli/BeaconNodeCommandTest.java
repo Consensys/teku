@@ -16,8 +16,8 @@ package tech.pegasys.teku.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
+import static tech.pegasys.teku.cli.options.LoggingOptions.getDefaultLogFileGivenDataDir;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
@@ -36,10 +36,12 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -191,7 +193,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(expectedConfigurationBuilder().build());
+    TekuConfiguration configuration = expectedConfigurationBuilder().build();
+    assertTekuConfiguration(configuration);
   }
 
   @Test
@@ -239,6 +242,43 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
   }
 
+  @Test
+  public void shouldSetLogFileToTheOptionProvided() {
+    final String[] args = {"--log-file", "/hello/world.log"};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFile())
+        .isEqualTo("/hello/world.log");
+  }
+
+  @Test
+  public void shouldSetLogFileToTheOptionProvidedRegardlessOfDataPath() {
+    final String[] args = {
+      "--log-file", "/hello/world.log",
+      "--data-path", "/yo"
+    };
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFile())
+        .isEqualTo("/hello/world.log");
+  }
+
+  @Test
+  public void shouldSetLogFileRelativeToSetDataDirectory() {
+    final String[] args = {"--data-path", "/yo"};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFile())
+        .isEqualTo("/yo/logs/teku.log");
+  }
+
+  @Test
+  public void shouldSetLogFileToDefaultDataDirectory() {
+    final String[] args = {};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFile())
+        .isEqualTo(
+            LoggingOptions.getDefaultLogFileGivenDataDir(
+                VersionProvider.defaultStoragePath(), false));
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -282,7 +322,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("medalla");
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
     return expectedConfigurationBuilder()
         .globalConfig(
             b ->
@@ -299,7 +339,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .setInteropGenesisTime(0)
                     .setInteropOwnedValidatorCount(0)
                     .setLogDestination(DEFAULT_BOTH)
-                    .setLogFile(DEFAULT_LOG_FILE)
+                    .setLogFile(getDefaultLogFileGivenDataDir(dataPath.toString(), false))
                     .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN))
         .p2p(
             b ->
@@ -371,7 +411,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_BOTH)
-        .setLogFile(DEFAULT_LOG_FILE)
+        .setLogFile(getDefaultLogFileGivenDataDir(dataPath.toString(), false))
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
         .setLogIncludeValidatorDutiesEnabled(true)
