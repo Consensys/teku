@@ -3,6 +3,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:http')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:events')
