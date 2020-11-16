@@ -40,7 +40,7 @@ public class StorageSystem implements AutoCloseable {
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
   private final EventBus eventBus;
-  private final TrackingChainHeadChannel reorgEventChannel;
+  private final TrackingChainHeadChannel chainHeadChannel;
   private final StubMetricsSystem metricsSystem;
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
@@ -52,7 +52,7 @@ public class StorageSystem implements AutoCloseable {
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
       final EventBus eventBus,
-      final TrackingChainHeadChannel reorgEventChannel,
+      final TrackingChainHeadChannel chainHeadChannel,
       final StateStorageMode storageMode,
       final ChainStorage chainStorage,
       final Database database,
@@ -63,7 +63,7 @@ public class StorageSystem implements AutoCloseable {
     this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
     this.eventBus = eventBus;
-    this.reorgEventChannel = reorgEventChannel;
+    this.chainHeadChannel = chainHeadChannel;
     this.storageMode = storageMode;
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -170,8 +170,8 @@ public class StorageSystem implements AutoCloseable {
     return eventBus;
   }
 
-  public TrackingChainHeadChannel reorgEventChannel() {
-    return reorgEventChannel;
+  public TrackingChainHeadChannel chainHeadChannel() {
+    return chainHeadChannel;
   }
 
   public TrackingEth1EventsChannel eth1EventsChannel() {

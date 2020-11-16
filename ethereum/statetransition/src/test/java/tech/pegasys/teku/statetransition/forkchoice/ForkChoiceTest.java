@@ -83,7 +83,7 @@ class ForkChoiceTest {
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
     forkChoice.processHead(ONE);
 
-    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
+    final List<ReorgEvent> reorgEvents = storageSystem.chainHeadChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
     assertThat(reorgEvents.get(0).getNewBestBlockRoot()).isEqualTo(slot1Block.getRoot());
@@ -113,7 +113,7 @@ class ForkChoiceTest {
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents())
         .contains(
             new ReorgEvent(
                 blockAndState.getRoot(),

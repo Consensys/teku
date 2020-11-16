@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentTargetRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousTargetRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -89,13 +92,25 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateHead_validUpdate() throws Exception {
+  public void updateHead_validUpdate() {
+    // Ensure the current and previous target root blocks are different
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(recentChainData.getChainHead().map(StateAndBlockSummary::getRoot))
         .contains(bestBlock.getRoot());
+    assertThat(storageSystem.chainHeadChannel().getHeadEvents())
+        .contains(
+            new HeadEvent(
+                bestBlock.getSlot(),
+                bestBlock.getStateRoot(),
+                bestBlock.getRoot(),
+                true,
+                getCurrentTargetRoot(bestBlock.getState()),
+                getPreviousTargetRoot(bestBlock.getState())));
   }
 
   @Test
@@ -186,7 +201,7 @@ class RecentChainDataTest {
   public void updateHead_noReorgEventWhenBestBlockFirstSet() {
     preGenesisStorageClient.initializeFromGenesis(genesisState);
 
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(preGenesisStorageSystem)).isZero();
   }
 
@@ -197,7 +212,7 @@ class RecentChainDataTest {
 
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
     recentChainData.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
@@ -210,15 +225,15 @@ class RecentChainDataTest {
     final SignedBlockAndState block3 = chainBuilder.getBlockAndStateAtSlot(3);
     // Head updated to block1 followed by empty slots up to slot 11
     recentChainData.updateHead(block1.getRoot(), UInt64.valueOf(11));
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Head updated to block2 but should preserve empty slots up to slot 11
     recentChainData.updateHead(block2.getRoot(), block2.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(1);
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).hasSize(1);
 
     // Block 3 is imported and should still trigger a reorg because its filling an empty slot
     recentChainData.updateHead(block3.getRoot(), UInt64.valueOf(12));
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(2);
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).hasSize(2);
   }
 
   @Test
@@ -226,13 +241,13 @@ class RecentChainDataTest {
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), UInt64.valueOf(2));
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(storageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isZero();
 
     final SignedBlockAndState slot2Block = chainBuilder.generateBlockAtSlot(2);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot2Block.getRoot(), slot2Block.getSlot());
-    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
+    final List<ReorgEvent> reorgEvents = storageSystem.chainHeadChannel().getReorgEvents();
     assertThat(reorgEvents)
         .containsExactly(
             new ReorgEvent(
@@ -250,7 +265,7 @@ class RecentChainDataTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     preGenesisStorageClient.initializeFromGenesis(genesis.getState());
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -272,13 +287,13 @@ class RecentChainDataTest {
     // Update to head block of original chain.
     preGenesisStorageClient.updateHead(
         latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     preGenesisStorageClient.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),
@@ -294,7 +309,7 @@ class RecentChainDataTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     preGenesisStorageClient.initializeFromGenesis(genesis.getState());
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -319,13 +334,13 @@ class RecentChainDataTest {
     // Update to head block of original chain.
     preGenesisStorageClient.updateHead(
         latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     preGenesisStorageClient.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
+    assertThat(preGenesisStorageSystem.chainHeadChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),

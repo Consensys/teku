@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TrackingChainHeadChannel implements ChainHeadChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
+  private final List<HeadEvent> headEvents = new ArrayList<>();
 
   @Override
   public void chainHeadUpdated(
@@ -33,6 +34,14 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       final Bytes32 currentTargetRoot,
       final Bytes32 previousTargetRoot,
       final Optional<ReorgContext> optionalReorgContext) {
+    headEvents.add(
+        new HeadEvent(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            currentTargetRoot,
+            previousTargetRoot));
     optionalReorgContext.ifPresent(
         context -> {
           reorgEvents.add(
@@ -46,8 +55,79 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
         });
   }
 
+  public List<HeadEvent> getHeadEvents() {
+    return headEvents;
+  }
+
   public List<ReorgEvent> getReorgEvents() {
     return reorgEvents;
+  }
+
+  public static class HeadEvent {
+    private final UInt64 slot;
+    private final Bytes32 stateRoot;
+    private final Bytes32 bestBlockRoot;
+    private final boolean epochTransition;
+    private final Bytes32 currentTargetRoot;
+    private final Bytes32 previousTargetRoot;
+
+    public HeadEvent(
+        final UInt64 slot,
+        final Bytes32 stateRoot,
+        final Bytes32 bestBlockRoot,
+        final boolean epochTransition,
+        final Bytes32 currentTargetRoot,
+        final Bytes32 previousTargetRoot) {
+      this.slot = slot;
+      this.stateRoot = stateRoot;
+      this.bestBlockRoot = bestBlockRoot;
+      this.epochTransition = epochTransition;
+      this.currentTargetRoot = currentTargetRoot;
+      this.previousTargetRoot = previousTargetRoot;
+    }
+
+    public Bytes32 getCurrentTargetRoot() {
+      return currentTargetRoot;
+    }
+
+    public Bytes32 getPreviousTargetRoot() {
+      return previousTargetRoot;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final HeadEvent headEvent = (HeadEvent) o;
+      return epochTransition == headEvent.epochTransition
+          && Objects.equals(slot, headEvent.slot)
+          && Objects.equals(stateRoot, headEvent.stateRoot)
+          && Objects.equals(bestBlockRoot, headEvent.bestBlockRoot)
+          && Objects.equals(currentTargetRoot, headEvent.currentTargetRoot)
+          && Objects.equals(previousTargetRoot, headEvent.previousTargetRoot);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(
+          slot, stateRoot, bestBlockRoot, epochTransition, currentTargetRoot, previousTargetRoot);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("slot", slot)
+          .add("stateRoot", stateRoot)
+          .add("bestBlockRoot", bestBlockRoot)
+          .add("epochTransition", epochTransition)
+          .add("currentTargetRoot", currentTargetRoot)
+          .add("previousTargetRoot", previousTargetRoot)
+          .toString();
+    }
   }
 
   public static class ReorgEvent {
