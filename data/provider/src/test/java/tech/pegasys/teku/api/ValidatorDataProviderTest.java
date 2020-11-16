@@ -60,9 +60,10 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.teku.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private ValidatorDataProvider provider =
+  private final ValidatorDataProvider provider =
       new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
@@ -138,7 +139,7 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnAttestation() throws Exception {
+  void getUnsignedAttestationAtSlot_shouldReturnAttestation() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
@@ -276,7 +277,7 @@ public class ValidatorDataProviderTest {
         provider.getAttesterDuties(ONE, List.of(1, 11));
     assertThat(future).isCompleted();
     final Optional<List<AttesterDuty>> maybeList = future.join();
-    final List<AttesterDuty> list = maybeList.get();
+    final List<AttesterDuty> list = maybeList.orElseThrow();
     assertThat(list).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
   }
 
