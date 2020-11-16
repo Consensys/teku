@@ -76,7 +76,8 @@ function calculateSpecVersion(specFile) {
 }
 
 function isReleaseVersion(specVersion) {
-  // our main project's gradle's build calculateVersion puts -dev- for snapshot version
+  // our main project's gradle's build calculateVersion adds "+<new commits since stable>-<hash>"
+  // after the version for dev builds
   return !specVersion.includes("+");
 }
 
