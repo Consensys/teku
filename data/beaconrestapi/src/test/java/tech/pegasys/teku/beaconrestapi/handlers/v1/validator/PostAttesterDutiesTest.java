@@ -47,7 +47,6 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
@@ -61,7 +60,6 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   public void shouldGetAttesterDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     List<AttesterDuty> duties =

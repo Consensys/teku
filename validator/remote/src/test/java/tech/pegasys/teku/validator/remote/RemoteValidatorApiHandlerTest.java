@@ -30,7 +30,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +43,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -66,7 +64,6 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -216,68 +213,6 @@ class RemoteValidatorApiHandlerTest {
     verify(apiClient).getValidators(expectedBatch1);
     verify(apiClient).getValidators(expectedBatch2);
     verify(apiClient).getValidators(expectedBatch3);
-  }
-
-  @Test
-  public void getDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        apiHandler.getDuties(UInt64.ONE, emptyList());
-
-    assertThat(unwrapToValue(future)).isEmpty();
-  }
-
-  @Test
-  public void getDuties_WhenNoneFound_ReturnsEmpty() {
-    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
-
-    when(apiClient.getDuties(any())).thenReturn(Collections.emptyList());
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        apiHandler.getDuties(UInt64.ONE, List.of(blsPublicKey));
-
-    assertThat(unwrapToValue(future)).isEmpty();
-  }
-
-  @Test
-  public void getDuties_WhenFound_ReturnsDuties() {
-    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
-    final tech.pegasys.teku.api.schema.ValidatorDuties schemaValidatorDuties =
-        new tech.pegasys.teku.api.schema.ValidatorDuties(
-            new BLSPubKey(blsPublicKey), 0, 0, 0, 0, List.of(UInt64.ZERO), UInt64.ZERO);
-    final ValidatorDuties expectedValidatorDuties =
-        ValidatorDuties.withDuties(blsPublicKey, 0, 0, 0, 0, List.of(UInt64.ZERO), UInt64.ZERO);
-
-    when(apiClient.getDuties(any())).thenReturn(List.of(schemaValidatorDuties));
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        apiHandler.getDuties(UInt64.ONE, List.of(blsPublicKey));
-
-    List<ValidatorDuties> validatorDuties = unwrapToValue(future);
-
-    assertThat(validatorDuties.get(0))
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidatorDuties);
-  }
-
-  @Test
-  public void getDuties_MapsRequestToApiCorrectly() {
-    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
-    final BLSPubKey schemaBlsPubKey = new BLSPubKey(blsPublicKey);
-    final ValidatorDutiesRequest request =
-        new ValidatorDutiesRequest(UInt64.ONE, List.of(schemaBlsPubKey));
-
-    final ArgumentCaptor<ValidatorDutiesRequest> requestArgumentCaptor =
-        ArgumentCaptor.forClass(ValidatorDutiesRequest.class);
-
-    when(apiClient.getDuties(any())).thenReturn(Collections.emptyList());
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        apiHandler.getDuties(UInt64.ONE, List.of(blsPublicKey));
-
-    assertThat(unwrapToOptional(future)).isPresent();
-
-    verify(apiClient).getDuties(requestArgumentCaptor.capture());
-    assertThat(requestArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(request);
   }
 
   @Test

@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -43,10 +41,7 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -67,9 +62,10 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.teku.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private ValidatorDataProvider provider =
+  private final ValidatorDataProvider provider =
       new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
@@ -77,9 +73,6 @@ public class ValidatorDataProviderTest {
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       tech.pegasys.teku.bls.BLSSignature.random(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
-  private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
-      dataStructureUtil.randomBeaconState();
-  private final BeaconState beaconState = new BeaconState(beaconStateInternal);
 
   @Test
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
@@ -148,7 +141,7 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnAttestation() throws Exception {
+  void getUnsignedAttestationAtSlot_shouldReturnAttestation() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
@@ -165,102 +158,6 @@ public class ValidatorDataProviderTest {
     assertThat(attestation.data.slot).isEqualTo(internalAttestation.getData().getSlot());
     assertThat(attestation.data.beacon_block_root)
         .isEqualTo(internalAttestation.getData().getBeacon_block_root());
-  }
-
-  @Test
-  void getValidatorsDutiesByRequest_shouldIncludeMissingValidators()
-      throws ExecutionException, InterruptedException {
-    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(combinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    ValidatorDutiesRequest smallRequest =
-        new ValidatorDutiesRequest(
-            compute_epoch_at_slot(beaconState.slot),
-            List.of(new BLSPubKey(publicKey.toBytesCompressed())));
-    when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    List.of(tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(publicKey)))));
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        provider.getValidatorDutiesByRequest(smallRequest);
-    assertThat(future.get().get()).isNotEmpty();
-    List<ValidatorDuties> validatorDuties = future.get().get();
-
-    assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected =
-        new ValidatorDuties(
-            new BLSPubKey(publicKey.toBytesCompressed()),
-            null,
-            null,
-            null,
-            null,
-            emptyList(),
-            null);
-    assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
-  }
-
-  @Test
-  void getValidatorDutiesByRequest_shouldIncludeValidatorDuties()
-      throws ExecutionException, InterruptedException {
-    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(combinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    ValidatorDutiesRequest smallRequest =
-        new ValidatorDutiesRequest(
-            compute_epoch_at_slot(beaconState.slot),
-            List.of(new BLSPubKey(publicKey.toBytesCompressed())));
-    final int validatorIndex = 4;
-    final int attestationCommitteeIndex = 2;
-    final int attestationCommitteePosition = 5;
-    final int aggregatorModulo = 12;
-    final List<UInt64> blockProposalSlots = List.of(UInt64.valueOf(66), UInt64.valueOf(77));
-    final UInt64 attestationSlot = UInt64.valueOf(50);
-    when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    List.of(
-                        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
-                            publicKey,
-                            validatorIndex,
-                            attestationCommitteeIndex,
-                            attestationCommitteePosition,
-                            aggregatorModulo,
-                            blockProposalSlots,
-                            attestationSlot)))));
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        provider.getValidatorDutiesByRequest(smallRequest);
-    assertThat(future.get().get()).isNotEmpty();
-    List<ValidatorDuties> validatorDuties = future.get().get();
-
-    assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected =
-        new ValidatorDuties(
-            new BLSPubKey(publicKey.toBytesCompressed()),
-            validatorIndex,
-            attestationCommitteeIndex,
-            attestationCommitteePosition,
-            aggregatorModulo,
-            blockProposalSlots,
-            attestationSlot);
-    assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
-  }
-
-  @Test
-  void getValidatorDutiesByRequest_shouldReturnChainDataUnavailableExceptionWhenStoreIsNotSet() {
-    when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
-
-    final SafeFuture<Optional<List<ValidatorDuties>>> result =
-        provider.getValidatorDutiesByRequest(
-            new ValidatorDutiesRequest(ONE, generatePublicKeys(1)));
-
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -411,13 +308,5 @@ public class ValidatorDataProviderTest {
         UInt64.valueOf(duties.getCommiteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
-  }
-
-  private List<BLSPubKey> generatePublicKeys(final int count) {
-    return Stream.generate(dataStructureUtil::randomPublicKey)
-        .map(BLSPublicKey::toBytesCompressed)
-        .map(BLSPubKey::new)
-        .limit(count)
-        .collect(Collectors.toList());
   }
 }
