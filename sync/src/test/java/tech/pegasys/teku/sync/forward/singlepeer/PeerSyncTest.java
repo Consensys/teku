@@ -114,9 +114,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
-
-    when(peer.requestBlocksByRange(any(), any(), any(), any()))
-        .thenReturn(SafeFuture.failedFuture(new DecompressFailedException()));
+    when(peer.requestBlocksByRange(any(), any(), any(), any())).thenReturn(requestFuture);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
