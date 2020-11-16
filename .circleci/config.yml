@@ -292,7 +292,7 @@ jobs:
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
-  extractOpenAPISpec:
+  extractAPISpec:
     executor: medium_executor
     steps:
       - prepare
@@ -327,7 +327,7 @@ jobs:
           paths:
             - .openapidoc/spec/teku.json
 
-  publishOpenAPISpec:
+  publishAPISpec:
     executor: node_executor
     steps:
       - checkout
@@ -415,7 +415,7 @@ workflows:
               <<: *filters-release-tags
           context:
             - dockerhub-quorumengineering-ro
-      - extractOpenAPISpec:
+      - extractAPISpec:
           requires:
             - assemble
           filters:
@@ -440,7 +440,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-            - extractOpenAPISpec
+            - extractAPISpec
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -458,10 +458,10 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-            - extractOpenAPISpec
+            - extractAPISpec
           context:
             - dockerhub-quorumengineering-rw
-      - publishOpenAPISpec:
+      - publishAPISpec:
           filters:
             branches:
               only:
@@ -475,6 +475,6 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-            - extractOpenAPISpec
+            - extractAPISpec
           context:
             - dockerhub-quorumengineering-ro
