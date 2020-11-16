@@ -440,7 +440,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-            - extractAPISpec
+            - extractOpenAPISpec
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -458,7 +458,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-            - extractAPISpec
+            - extractOpenAPISpec
           context:
             - dockerhub-quorumengineering-rw
       - publishOpenAPISpec:
