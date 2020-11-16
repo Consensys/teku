@@ -14,22 +14,18 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.NetworkDefinitionConverter;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class NetworkOptions {
 
   @Option(
+      converter = NetworkDefinitionConverter.class,
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
-  private String network = "mainnet";
-
-  @Option(
-      names = {"--initial-state"},
-      paramLabel = "<STRING>",
-      description = "Initial BeaconState to load",
-      arity = "1")
-  private String initialState = null;
+  private NetworkDefinition network = NetworkDefinition.fromCliArg("mainnet");
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -64,12 +60,8 @@ public class NetworkOptions {
       hidden = true)
   private Integer peerRequestLimit = 50;
 
-  public String getNetwork() {
+  public NetworkDefinition getNetwork() {
     return network;
-  }
-
-  public String getInitialState() {
-    return initialState;
   }
 
   public Integer getStartupTargetPeerCount() {

@@ -38,21 +38,20 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 class WeakSubjectivityInitializer {
   private static final Logger LOG = LogManager.getLogger();
 
-  public Optional<AnchorPoint> loadAnchorPoint(final WeakSubjectivityConfig config) {
+  public Optional<AnchorPoint> loadInitialAnchorPoint(final WeakSubjectivityConfig config) {
     return config
         .getWeakSubjectivityStateResource()
         .map(
             wsStateResource -> {
               try {
-                STATUS_LOG.loadingWeakSubjectivityStateResources(wsStateResource);
+                STATUS_LOG.loadingInitialStateResource(wsStateResource);
                 final BeaconState state = ChainDataLoader.loadState(wsStateResource);
                 final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
-                STATUS_LOG.loadedWeakSubjectivityStateResources(
+                STATUS_LOG.loadedInitialStateResource(
                     state.hashTreeRoot(), anchor.getRoot(), state.getSlot());
                 return anchor;
               } catch (IOException e) {
-                throw new IllegalStateException(
-                    "Failed to load weak subjectivity initial state data", e);
+                throw new IllegalStateException("Failed to load initial state", e);
               }
             });
   }
@@ -98,7 +97,7 @@ class WeakSubjectivityInitializer {
                 configToPersist = Optional.empty();
                 if (newWsCheckpoint.isPresent()) {
                   LOG.info(
-                      "Ignoring configured weak subjectivity checkpoint which is prior to supplied weak subjectivity state");
+                      "Ignoring weak subjectivity checkpoint which is prior to configured initial state");
                 }
                 if (storedWsCheckpoint.isPresent()) {
                   shouldClearStoredState = true;
@@ -140,7 +139,7 @@ class WeakSubjectivityInitializer {
    * @return A future that completes successfully if the anchor is consitent with the stored chain
    *     data, otherwise returns an exceptional future
    */
-  public SafeFuture<Void> assertWeakSubjectivityAnchorIsConsistentWithExistingData(
+  public SafeFuture<Void> assertInitialAnchorIsConsistentWithExistingData(
       final RecentChainData client,
       final AnchorPoint anchor,
       final StorageQueryChannel storageQueryChannel) {
@@ -155,14 +154,14 @@ class WeakSubjectivityInitializer {
           // For now, disallow fast-forwarding an existing chain with a new anchor
           if (anchor.getEpoch().isGreaterThan(finalizedCheckpoint.getEpoch())) {
             throw new IllegalStateException(
-                "Cannot set future weak subjectivity state for an existing database.");
+                "Cannot set future initial state for an existing database.");
           }
 
           // Validate state is consistent with stored data
           if (anchor.getEpoch().equals(finalizedCheckpoint.getEpoch())) {
             if (!anchor.getRoot().equals(finalizedCheckpoint.getRoot())) {
               throw new IllegalStateException(
-                  "Supplied weak subjectivity state is incompatible with stored latest finalized checkpoint.");
+                  "Configured initial state is incompatible with stored latest finalized checkpoint.");
             }
           } else {
             // Look up historical chain data to check for consistency
@@ -189,7 +188,7 @@ class WeakSubjectivityInitializer {
                         // We must have moved passed the anchor point and not saved its state, just
                         // log a warning
                         LOG.warn(
-                            "Ignoring supplied weak subjectivity state. Local database is already initialized and cannot be validated against the supplied state (slot={}, blockRoot={}, stateRoot={}).",
+                            "Ignoring configured initial state. Local database is already initialized and cannot be validated against the configured state (slot={}, blockRoot={}, stateRoot={}).",
                             anchor.getBlockSlot(),
                             anchor.getRoot(),
                             anchor.getStateRoot());
@@ -201,7 +200,7 @@ class WeakSubjectivityInitializer {
                           storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
                       if (!storedBlockMatchesAnchor) {
                         throw new IllegalStateException(
-                            "Supplied weak subjectivity state does not match stored block at epoch "
+                            "Configured initial state does not match stored block at epoch "
                                 + anchor.getEpoch()
                                 + ": "
                                 + storedBlockRoot.map(Object::toString).orElse("(empty)"));

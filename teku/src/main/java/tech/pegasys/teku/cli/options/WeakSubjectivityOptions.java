@@ -13,19 +13,21 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.Optional;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class WeakSubjectivityOptions {
 
   @CommandLine.Option(
-      names = {"--Xws-initial-state"},
+      names = {"--initial-state"},
       paramLabel = "<STRING>",
       description =
-          "A recent state within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded state.",
+          "The initial state. This value should be a file or URL pointing to an SSZ encoded state.",
       arity = "1",
       hidden = true)
   private String weakSubjectivityState;
@@ -47,12 +49,14 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private UInt64 suppressWSPeriodChecksUntilEpoch = null;
 
-  public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
+  public TekuConfiguration.Builder configure(
+      TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
     return builder.weakSubjectivity(
         wsBuilder -> {
-          if (weakSubjectivityState != null) {
-            wsBuilder.weakSubjectivityStateResource(weakSubjectivityState);
-          }
+          final Optional<String> initialStateResource =
+              Optional.ofNullable(weakSubjectivityState).or(networkDefinition::getInitialState);
+          initialStateResource.ifPresent(wsBuilder::weakSubjectivityStateResource);
+
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }
