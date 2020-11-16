@@ -168,15 +168,6 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {
-    final Set<tech.pegasys.teku.datastructures.validator.SubnetSubscription>
-        internalSubnetSubscriptions =
-            subnetSubscriptions.stream()
-                .map(SubnetSubscription::asInternalSubnetSubscription)
-                .collect(Collectors.toSet());
-    validatorApiChannel.subscribeToPersistentSubnets(internalSubnetSubscriptions);
-  }
-
   public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
     if (indexes.isEmpty()) {
