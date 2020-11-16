@@ -461,7 +461,7 @@ workflows:
             - extractAPISpec
           context:
             - dockerhub-quorumengineering-rw
-      - publishAPIDoc:
+      - publishOpenAPISpec:
           filters:
             branches:
               only:
