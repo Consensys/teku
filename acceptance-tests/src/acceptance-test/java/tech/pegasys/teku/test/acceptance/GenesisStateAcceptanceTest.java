@@ -13,10 +13,16 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
@@ -38,5 +44,25 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     // Even though the nodes aren't connected to each other they should generate the same genesis
     // state because they processed the same deposits from the same ETH1 chain.
     lateJoinTeku.waitUntilInSyncWith(firstTeku);
+  }
+
+  @Test
+  public void shouldCreateGenesisFromPartialDeposits() throws Exception {
+    final BesuNode eth1Node = createBesuNode();
+    eth1Node.start();
+    int numberOfValidators = 4;
+
+    final TekuDepositSender depositSender = createTekuDepositSender();
+    final List<ValidatorKeyGenerator.ValidatorKeys> validatorKeys =
+        depositSender.generateValidatorKeys(numberOfValidators);
+    depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MIN_DEPOSIT_AMOUNT);
+    depositSender.sendValidatorDeposits(
+        eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE - MIN_DEPOSIT_AMOUNT);
+
+    final TekuNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    teku.start();
+    teku.waitForGenesis();
+
+    teku.waitForValidators(numberOfValidators);
   }
 }
