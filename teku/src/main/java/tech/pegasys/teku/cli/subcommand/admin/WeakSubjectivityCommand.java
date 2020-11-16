@@ -26,7 +26,6 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @CommandLine.Command(
     name = "weak-subjectivity",
@@ -111,9 +110,7 @@ public class WeakSubjectivityCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            NetworkDefinition.fromCliArg(networkOptions.getNetwork())
-                .getEth1DepositContractAddress()
-                .orElse(null));
+            networkOptions.getNetwork().getEth1DepositContractAddress().orElse(null));
     return databaseFactory.createDatabase();
   }
 

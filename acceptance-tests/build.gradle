@@ -1,4 +1,5 @@
 dependencies {
+  acceptanceTestImplementation project(":util")
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
