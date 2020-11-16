@@ -142,7 +142,7 @@ public class ExternalSignerIntegrationTest {
   @Test
   void failsSigningRandaoRevealWhenSigningServiceRefusesToSignDueToSlashingCondition() {
     final UInt64 epoch = UInt64.valueOf(7);
-    client.when(request()).respond(response().withStatusCode(412));
+    client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
     assertThatThrownBy(() -> externalSigner.createRandaoReveal(epoch, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
