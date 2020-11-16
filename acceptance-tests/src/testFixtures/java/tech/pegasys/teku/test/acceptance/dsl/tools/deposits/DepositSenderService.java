@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Eth1Address;
 
-class DepositSenderService implements AutoCloseable {
+public class DepositSenderService implements AutoCloseable {
   private final UInt64 amount;
   private final DepositTransactionSender sender;
   private final OkHttpClient httpClient;
