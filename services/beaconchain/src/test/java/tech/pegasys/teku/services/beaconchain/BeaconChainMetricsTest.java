@@ -17,12 +17,15 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -41,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -324,6 +328,33 @@ class BeaconChainMetricsTest {
     assertThat(metricsSystem.getGauge(BEACON, "previous_live_validators").getValue()).isEqualTo(6);
   }
 
+  @Test
+  void currentCorrectValidators_onlyCountValidatorsWithCorrectTarget() {
+    Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    Checkpoint target = new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot);
+
+    List<Bytes32> blockRootsList = new ArrayList<>(Collections.nCopies(33, blockRoot));
+    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
+    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final Bitlist bitlist2 = bitlistOf(2, 4, 6, 8);
+    List<PendingAttestation> allAttestations =
+        Stream.concat(
+                createAttestationsWithTargetCheckpoint(13, 1, target, bitlist1),
+                createAttestationsWithTargetCheckpoint(
+                    13,
+                    1,
+                    new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot.not()),
+                    bitlist2))
+            .collect(toList());
+
+    withCurrentEpochAttestations(allAttestations);
+
+    beaconChainMetrics.onSlot(UInt64.valueOf(20));
+    assertThat(metricsSystem.getGauge(BEACON, "current_correct_validators").getValue())
+        .isEqualTo(4);
+  }
+
   private void withCurrentEpochAttestations(final List<PendingAttestation> attestations) {
     when(state.getCurrent_epoch_attestations())
         .thenReturn(
@@ -358,6 +389,23 @@ class BeaconChainMetricsTest {
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomCheckpoint(),
                         dataStructureUtil.randomCheckpoint()),
+                    dataStructureUtil.randomUInt64(),
+                    dataStructureUtil.randomUInt64()));
+  }
+
+  private Stream<PendingAttestation> createAttestationsWithTargetCheckpoint(
+      final int slot, final int index, final Checkpoint target, final Bitlist... bitlists) {
+    return Stream.of(bitlists)
+        .map(
+            bitlist1 ->
+                new PendingAttestation(
+                    bitlist1,
+                    new AttestationData(
+                        UInt64.valueOf(slot),
+                        UInt64.valueOf(index),
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomCheckpoint(),
+                        target),
                     dataStructureUtil.randomUInt64(),
                     dataStructureUtil.randomUInt64()));
   }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -22,6 +23,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
@@ -46,6 +48,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
   private final SettableGauge currentLiveValidators;
+  private final SettableGauge previousCorrectValidators;
+  private final SettableGauge currentCorrectValidators;
   private final SettableGauge finalizedEpoch;
   private final SettableGauge finalizedRoot;
   private final SettableGauge currentJustifiedEpoch;
@@ -144,6 +148,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_active_validators",
             "Number of active validators in the previous epoch");
+
+    currentCorrectValidators =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_correct_validators",
+            "Number of validators who voted for correct source and target checkpoints in the current epoch");
+    previousCorrectValidators =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "previous_correct_validators",
+            "Number of validators who voted for correct source and target checkpoints in the previous epoch");
   }
 
   @Override
@@ -155,9 +172,14 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     currentLiveValidators.set(getLiveValidators(state.getCurrent_epoch_attestations()));
     currentActiveValidators.set(
         get_active_validator_indices(state, get_current_epoch(state)).size());
+    int i = getCorrectValidators(state, state.getCurrent_epoch_attestations());
+    currentCorrectValidators.set(
+        getCorrectValidators(state, state.getCurrent_epoch_attestations()));
     previousLiveValidators.set(getLiveValidators(state.getPrevious_epoch_attestations()));
     previousActiveValidators.set(
         get_active_validator_indices(state, get_previous_epoch(state)).size());
+    previousCorrectValidators.set(
+        getCorrectValidators(state, state.getPrevious_epoch_attestations()));
 
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     finalizedEpoch.set(finalizedCheckpoint.getEpoch().longValue());
@@ -173,15 +195,35 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private int getLiveValidators(final SSZList<PendingAttestation> attestations) {
-    final Map<UInt64, Map<UInt64, Bitlist>> aggregationBitsBySlotAndCommittee = new HashMap<>();
-    attestations.forEach(
+    return getNumberOfValidators(attestations, (__) -> true);
+  }
+
+  private int getCorrectValidators(
+      final BeaconState state, final SSZList<PendingAttestation> attestations) {
+    final Predicate<PendingAttestation> predicate =
         attestation ->
-            aggregationBitsBySlotAndCommittee
-                .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-                .computeIfAbsent(
-                    attestation.getData().getIndex(),
-                    __ -> attestation.getAggregation_bits().copy())
-                .setAllBits(attestation.getAggregation_bits()));
+            attestation
+                .getData()
+                .getTarget()
+                .getRoot()
+                .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
+    return getNumberOfValidators(attestations, predicate);
+  }
+
+  private int getNumberOfValidators(
+      final SSZList<PendingAttestation> attestations,
+      final Predicate<PendingAttestation> attestationPredicate) {
+    final Map<UInt64, Map<UInt64, Bitlist>> aggregationBitsBySlotAndCommittee = new HashMap<>();
+    attestations
+        .filter(attestationPredicate)
+        .forEach(
+            attestation ->
+                aggregationBitsBySlotAndCommittee
+                    .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
+                    .computeIfAbsent(
+                        attestation.getData().getIndex(),
+                        __ -> attestation.getAggregation_bits().copy())
+                    .setAllBits(attestation.getAggregation_bits()));
 
     return aggregationBitsBySlotAndCommittee.values().stream()
         .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
