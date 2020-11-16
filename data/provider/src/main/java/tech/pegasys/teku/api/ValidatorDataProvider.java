@@ -15,17 +15,13 @@ package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.teku.validator.api.ValidatorApiChannel.UKNOWN_VALIDATOR_ID;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
@@ -72,10 +68,6 @@ public class ValidatorDataProvider {
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
-  }
-
-  public boolean isEpochFinalized(final UInt64 epoch) {
-    return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
@@ -174,28 +166,6 @@ public class ValidatorDataProvider {
                         request.slot,
                         request.is_aggregator))
             .collect(toList()));
-  }
-
-  public void subscribeToBeaconCommitteeForAggregation(
-      final SubscribeToBeaconCommitteeRequest request) {
-    final UInt64 slot = request.aggregation_slot;
-    combinedChainDataClient
-        .getBestState()
-        // No point aggregating for historic slots and we can't calculate the subnet ID
-        .filter(state -> state.getSlot().compareTo(slot) <= 0)
-        .ifPresent(
-            state -> {
-              final UInt64 committeesAtSlot =
-                  get_committee_count_per_slot(state, compute_epoch_at_slot(slot));
-              validatorApiChannel.subscribeToBeaconCommittee(
-                  List.of(
-                      new CommitteeSubscriptionRequest(
-                          UKNOWN_VALIDATOR_ID,
-                          request.committee_index,
-                          committeesAtSlot,
-                          slot,
-                          true)));
-            });
   }
 
   public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {

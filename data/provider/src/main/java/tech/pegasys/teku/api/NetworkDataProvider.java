@@ -22,7 +22,6 @@ import tech.pegasys.teku.api.schema.Metadata;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class NetworkDataProvider {
   private final Eth2Network network;
@@ -47,19 +46,6 @@ public class NetworkDataProvider {
    */
   public String getNodeIdAsBase58() {
     return network.getNodeId().toBase58();
-  }
-
-  /**
-   * Get the list of Peers
-   *
-   * @return the current list of network peers (base58)
-   */
-  public List<String> getPeersAsBase58() {
-    return network
-        .streamPeers()
-        .map(Peer::getId)
-        .map(NodeId::toBase58)
-        .collect(Collectors.toList());
   }
 
   /**

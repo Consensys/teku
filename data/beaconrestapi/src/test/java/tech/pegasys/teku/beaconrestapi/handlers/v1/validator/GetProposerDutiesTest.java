@@ -42,7 +42,6 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   public void shouldGetProposerDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(100));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
 
     List<ProposerDuty> duties =
