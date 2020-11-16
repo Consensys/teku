@@ -63,7 +63,10 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-file"},
       paramLabel = "<FILENAME>",
-      description = "Path containing the location (relative or absolute) and the log filename.",
+      description =
+          "Path containing the location (relative or absolute) and the log filename. If not set "
+              + "will default to <data-path>/logs/teku.logs",
+      showDefaultValue = CommandLine.Help.Visibility.NEVER,
       arity = "1")
   private String logFile = null;
 
