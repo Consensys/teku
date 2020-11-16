@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-import java.util.List;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
@@ -29,8 +28,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -82,14 +79,6 @@ public class SchemaObjectsTestFixture {
             UInt64.ZERO,
             Constants.FAR_FUTURE_EPOCH,
             Constants.FAR_FUTURE_EPOCH));
-  }
-
-  public ValidatorDutiesRequest validatorDutiesRequest() {
-    return new ValidatorDutiesRequest(UInt64.ONE, List.of(BLSPubKey()));
-  }
-
-  public ValidatorDuties validatorDuties() {
-    return new ValidatorDuties(BLSPubKey(), 1, 1, 1, 1, List.of(UInt64.ONE), UInt64.ONE);
   }
 
   public BeaconBlock beaconBlock() {

@@ -68,7 +68,7 @@ public class GetHealth implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     if (!chainDataProvider.isStoreAvailable()) {
       ctx.status(SC_SERVICE_UNAVAILABLE);
-    } else if (syncProvider.getSyncStatus().is_syncing) {
+    } else if (syncProvider.isSyncing()) {
       ctx.status(SC_PARTIAL_CONTENT);
     } else {
       ctx.status(SC_OK);

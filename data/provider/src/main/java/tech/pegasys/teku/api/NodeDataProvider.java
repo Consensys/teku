@@ -76,10 +76,6 @@ public class NodeDataProvider {
         .collect(Collectors.toList());
   }
 
-  public int getAttestationPoolSize() {
-    return attestationPool.getSize();
-  }
-
   public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
     return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
   }
