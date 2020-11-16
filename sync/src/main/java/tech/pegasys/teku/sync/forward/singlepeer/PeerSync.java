@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -215,7 +216,8 @@ public class PeerSync {
       return PeerSyncResult.CANCELLED;
     }
 
-    if (rootException instanceof BlocksByRangeResponseInvalidResponseException) {
+    if (rootException instanceof BlocksByRangeResponseInvalidResponseException
+        || rootException instanceof RpcException) {
       disconnectFromPeer(peer);
       return PeerSyncResult.INVALID_RESPONSE;
     }
