@@ -77,7 +77,7 @@ function calculateSpecVersion(specFile) {
 
 function isReleaseVersion(specVersion) {
   // our main project's gradle's build calculateVersion puts -dev- for snapshot version
-  return !specVersion.includes("-");
+  return !specVersion.includes("+");
 }
 
 function destinationPath(usePrefix, specFile, suffix) {
