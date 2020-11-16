@@ -17,7 +17,6 @@ import static java.util.Collections.emptyMap;
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
-import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -53,7 +50,6 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
@@ -133,29 +129,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
-    if (publicKeys.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
-    }
-
-    return sendRequest(
-        () -> {
-          final List<BLSPubKey> blsPubKeys =
-              publicKeys.stream().map(BLSPubKey::new).collect(Collectors.toList());
-          final ValidatorDutiesRequest validatorDutiesRequest =
-              new ValidatorDutiesRequest(epoch, blsPubKeys);
-
-          final List<ValidatorDuties> validatorDuties =
-              apiClient.getDuties(validatorDutiesRequest).stream()
-                  .map(this::mapToApiValidatorDuties)
-                  .collect(Collectors.toList());
-
-          return Optional.of(validatorDuties);
-        });
-  }
-
-  @Override
   public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return sendRequest(
@@ -198,18 +171,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         attesterDuty.committeesAtSlot.intValue(),
         attesterDuty.validatorCommitteeIndex.intValue(),
         attesterDuty.slot);
-  }
-
-  private ValidatorDuties mapToApiValidatorDuties(
-      final tech.pegasys.teku.api.schema.ValidatorDuties schemaValidatorDuties) {
-    return ValidatorDuties.withDuties(
-        schemaValidatorDuties.validator_pubkey.asBLSPublicKey(),
-        schemaValidatorDuties.validator_index,
-        schemaValidatorDuties.attestation_committee_index,
-        schemaValidatorDuties.attestation_committee_position,
-        schemaValidatorDuties.aggregator_modulo,
-        schemaValidatorDuties.block_proposal_slots,
-        schemaValidatorDuties.attestation_slot);
   }
 
   @Override

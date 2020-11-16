@@ -109,12 +109,11 @@ public class BlockValidator {
                         block, preState.get(), postState)) {
                   return InternalValidationResult.ACCEPT;
                 }
+                return InternalValidationResult.REJECT;
               } catch (EpochProcessingException | SlotProcessingException e) {
                 LOG.error("BlockValidator: Unable to process block state.", e);
                 return InternalValidationResult.REJECT;
               }
-
-              return InternalValidationResult.REJECT;
             });
   }
 
