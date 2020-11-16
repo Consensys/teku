@@ -63,7 +63,8 @@ public class GetStateByBlockRoot implements Handler {
       method = HttpMethod.GET,
       summary = "Get SSZ State By Block id",
       tags = {TAG_TEKU},
-      description = "Download the state SSZ object for given identifier- by block root, keyword, or slot.",
+      description =
+          "Download the state SSZ object for given identifier- by block root, keyword, or slot.",
       pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
