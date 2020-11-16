@@ -25,7 +25,7 @@ public class NetworkOptions {
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
-  private NetworkDefinition network = NetworkDefinition.fromCliArg("medalla");
+  private NetworkDefinition network = NetworkDefinition.fromCliArg("mainnet");
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
