@@ -19,16 +19,13 @@ import picocli.CommandLine;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class NetworkDefinitionConverter implements CommandLine.ITypeConverter<NetworkDefinition> {
-  public static final String CHECKPOINT_ERROR =
-      "Checkpoint arguments should be formatted as <BLOCK_ROOT>:<EPOCH_NUMBER> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format";
-
   @Override
   public NetworkDefinition convert(final String networkString) {
     try {
       checkNotNull(networkString);
       return NetworkDefinition.fromCliArg(networkString);
     } catch (Throwable e) {
-      throw new CommandLine.TypeConversionException(CHECKPOINT_ERROR);
+      throw new CommandLine.TypeConversionException("Invalid network definition");
     }
   }
 }
