@@ -14,8 +14,6 @@
 package tech.pegasys.teku.api;
 
 import tech.pegasys.teku.api.response.v1.node.Syncing;
-import tech.pegasys.teku.api.schema.SyncStatus;
-import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 
@@ -25,24 +23,6 @@ public class SyncDataProvider {
 
   public SyncDataProvider(ForwardSync syncService) {
     this.syncService = syncService;
-  }
-
-  /**
-   * Get the sync status
-   *
-   * @return false if not syncing, otherwise true and a sync status object which indicates starting
-   *     slot, current slot and highest slot.
-   */
-  public SyncingStatus getSyncStatus() {
-    final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus = syncService.getSyncStatus();
-
-    final SyncStatus schemaSyncStatus =
-        new SyncStatus(
-            syncingStatus.getStartingSlot().orElse(null),
-            syncingStatus.getCurrentSlot(),
-            syncingStatus.getHighestSlot().orElse(null));
-
-    return new SyncingStatus(syncingStatus.isSyncing(), schemaSyncStatus);
   }
 
   public Syncing getSyncing() {

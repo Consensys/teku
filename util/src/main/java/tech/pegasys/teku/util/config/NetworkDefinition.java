@@ -94,13 +94,13 @@ public class NetworkDefinition {
               builder()
                   .constants("pyrmont")
                   .startupTimeoutSeconds(120)
-                  .eth1DepositContractAddress("0x2c539a95d2a3f9b10681D9c0dD7cCE37D40c7B79")
+                  .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
                   .initialStateFromClasspath("pyrmont-genesis.ssz")
                   .discoveryBootnodes(
                       // @protolambda bootnode 1
-                      "enr:-Ku4QDuuQGbUpzWMW1IUZpvt3xUzZuEwm2CvHqWQ-EGGzWXPYNc-PZPIfm05R7W3YwEIGM2_2-Y3JHQuEiizbYlW-HoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhDQPSjiJc2VjcDI1NmsxoQM6yTQB6XGWYJbI7NZFBjp4Yb9AYKQPBhVrfUclQUobb4N1ZHCCIyg",
+                      "enr:-Ku4QOA5OGWObY8ep_x35NlGBEj7IuQULTjkgxC_0G1AszqGEA0Wn2RNlyLFx9zGTNB1gdFBA6ZDYxCgIza1uJUUOj4Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDQPSjiJc2VjcDI1NmsxoQM6yTQB6XGWYJbI7NZFBjp4Yb9AYKQPBhVrfUclQUobb4N1ZHCCIyg",
                       // @protolambda bootnode 2
-                      "enr:-Ku4QAOnRymufUy7UbyxheWFbV9WAtt7BlvoixBz8-Xstb0oBui0ERAiBcsY5xDbE2YxvT7u6gwZPju9V_ecAAJMddUBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhDaa13aJc2VjcDI1NmsxoQKdNQJvnohpf0VO0ZYCAJxGjT0uwJoAHbAiBMujGjK0SoN1ZHCCIyg")
+                      "enr:-Ku4QOksdA2tabOGrfOOr6NynThMoio6Ggka2oDPqUuFeWCqcRM2alNb8778O_5bK95p3EFt0cngTUXm2H7o1jkSJ_8Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDaa13aJc2VjcDI1NmsxoQKdNQJvnohpf0VO0ZYCAJxGjT0uwJoAHbAiBMujGjK0SoN1ZHCCIyg")
                   .build())
           .build();
 
