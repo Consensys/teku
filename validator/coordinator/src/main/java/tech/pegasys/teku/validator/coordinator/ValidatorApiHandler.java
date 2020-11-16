@@ -18,7 +18,6 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentTargetRoot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousTargetRoot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
@@ -470,7 +469,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(toList());
-    return new AttesterDuties(getPreviousTargetRoot(state), duties);
+    // We always use the earliest state we can to calculate duties, hence getCurrentTargetRoot
+    return new AttesterDuties(getCurrentTargetRoot(state), duties);
   }
 
   private Optional<AttesterDuty> createAttesterDuties(

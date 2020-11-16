@@ -39,6 +39,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
   private final Counter targetRootInvalidationCounter;
   private final Counter reorgInvalidationCounter;
+  private final String dutyType;
   protected Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
@@ -46,6 +47,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final String dutyType,
       final DutyLoader epochDutiesScheduler,
       final int lookAheadEpochs) {
+    this.dutyType = dutyType;
     final LabelledMetric<Counter> invalidationCounters =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
@@ -102,6 +104,12 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
         // Invalidate epoch.
         // We invalidate if the duties haven't yet been calculated as the request has already been
         // sent, prior to getting the new head
+        LOG.debug(
+            "Invalidating {} duties for epoch {}.  Duties root {}, target root {}",
+            dutyType,
+            currentEpoch,
+            dutiesTargetRoot.orElse(null),
+            targetRoot);
         targetRootInvalidationCounter.inc();
         dutyQueue.cancel();
         iterator.remove();

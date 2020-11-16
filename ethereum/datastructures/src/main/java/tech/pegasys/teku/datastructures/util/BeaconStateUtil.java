@@ -61,6 +61,7 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -822,15 +823,17 @@ public class BeaconStateUtil {
 
   public static Bytes32 getCurrentTargetRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
+    // No previous block, use algorithm for calculating the genesis block root
     return slot.equals(state.getSlot())
-        ? state.getFinalized_checkpoint().getRoot()
+        ? new BeaconBlock(state.hash_tree_root()).getRoot()
         : get_block_root_at_slot(state, slot);
   }
 
   public static Bytes32 getPreviousTargetRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
     return slot.equals(state.getSlot())
-        ? state.getFinalized_checkpoint().getRoot()
+        // No previous block, use algorithm for calculating the genesis block root
+        ? new BeaconBlock(state.hash_tree_root()).getRoot()
         : get_block_root_at_slot(state, slot);
   }
 

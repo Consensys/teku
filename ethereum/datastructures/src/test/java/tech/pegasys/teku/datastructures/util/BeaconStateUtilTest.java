@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -437,7 +438,7 @@ class BeaconStateUtilTest {
   void getCurrentTargetRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getCurrentTargetRoot(state))
-        .isEqualTo(state.getFinalized_checkpoint().getRoot());
+        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
   }
 
   @Test
@@ -459,7 +460,7 @@ class BeaconStateUtilTest {
   void getPreviousTargetRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getPreviousTargetRoot(state))
-        .isEqualTo(state.getFinalized_checkpoint().getRoot());
+        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
   }
 
   @Test
