@@ -48,7 +48,11 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final int lookAheadEpochs) {
     final LabelledMetric<Counter> invalidationCounters =
         metricsSystem.createLabelledCounter(
-            TekuMetricCategory.VALIDATOR, "invalidated_duties_epochs", "type", "cause");
+            TekuMetricCategory.VALIDATOR,
+            "invalidated_duties_epochs",
+            "Total number of times the duties for an epoch were invalidated",
+            "type",
+            "cause");
     targetRootInvalidationCounter = invalidationCounters.labels(dutyType, "targetRootChange");
     reorgInvalidationCounter = invalidationCounters.labels(dutyType, "reorg");
     this.epochDutiesScheduler = epochDutiesScheduler;

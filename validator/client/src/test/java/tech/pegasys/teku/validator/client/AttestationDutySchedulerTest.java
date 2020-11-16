@@ -31,6 +31,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -151,19 +152,30 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldRefetchDutiesForMultipleEpochsAfterReorg() {
+  public void shouldRefetchDutiesForMultipleEpochsWhenCurrentAndPreviousTargetRootChanges() {
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
-    final UInt64 commonAncestorEpoch = currentEpoch.minus(2);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
-    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(previousTargetRoot, emptyList()))));
+    when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(currentTargetRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
     verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
-    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+    dutyScheduler.onHeadUpdate(
+        currentSlot,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
 
     verify(validatorApiChannel, times(2)).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
     verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
@@ -171,37 +183,60 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldRefetchDutiesForNextEpochAfterReorg() {
+  public void shouldRefetchDutiesForNextEpochWhenHeadUpdateHasNewCurrentTargetRoot() {
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
-    final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
-    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
+
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(previousTargetRoot, emptyList()))));
+    when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(currentTargetRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
     verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
-    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+    // Previous target root is the same so current duties are unchanged
+    // but current changed affecting next epoch
+    dutyScheduler.onHeadUpdate(
+        currentSlot,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        previousTargetRoot);
 
     verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @Test
-  public void shouldNotRefetchDutiesWhenCommonAncestorInCurrentEpoch() {
+  public void shouldNotRefetchDutiesWhenHeadUpdateReceivedWithNoChangeInTargetRoots() {
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(currentEpoch);
-    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(previousTargetRoot, emptyList()))));
+    when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(currentTargetRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
     verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
-    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+    dutyScheduler.onHeadUpdate(
+        currentSlot, dataStructureUtil.randomBytes32(), currentTargetRoot, previousTargetRoot);
 
     verifyNoMoreInteractions(validatorApiChannel);
   }
