@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
-class ValidatorKeyGenerator {
+public class ValidatorKeyGenerator {
   private final int validatorCount;
   private final SecureRandom srng;
 
@@ -38,7 +38,7 @@ class ValidatorKeyGenerator {
     return new ValidatorKeys(validatorKey, withdrawalKey);
   }
 
-  static class ValidatorKeys {
+  public static class ValidatorKeys {
     private final BLSKeyPair validatorKey;
     private final BLSKeyPair withdrawalKey;
 
