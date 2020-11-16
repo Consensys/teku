@@ -43,4 +43,8 @@ public abstract class DataOptions {
   private static Path defaultDataPath() {
     return Path.of(VersionProvider.defaultStoragePath());
   }
+
+  public Path getDataBasePath() {
+    return dataBasePath;
+  }
 }
