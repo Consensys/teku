@@ -322,7 +322,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("medalla");
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
     return expectedConfigurationBuilder()
         .globalConfig(
             b ->
