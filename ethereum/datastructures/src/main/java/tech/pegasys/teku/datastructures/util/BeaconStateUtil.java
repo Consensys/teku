@@ -825,7 +825,7 @@ public class BeaconStateUtil {
     final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
     // No previous block, use algorithm for calculating the genesis block root
     return slot.equals(state.getSlot())
-        ? new BeaconBlock(state.hash_tree_root()).getRoot()
+        ? BeaconBlock.fromGenesisState(state).getRoot()
         : get_block_root_at_slot(state, slot);
   }
 
@@ -833,7 +833,7 @@ public class BeaconStateUtil {
     final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root
-        ? new BeaconBlock(state.hash_tree_root()).getRoot()
+        ? BeaconBlock.fromGenesisState(state).getRoot()
         : get_block_root_at_slot(state, slot);
   }
 
