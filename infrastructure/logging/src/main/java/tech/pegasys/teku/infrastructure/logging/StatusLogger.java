@@ -146,10 +146,6 @@ public class StatusLogger {
         () -> peerCount);
   }
 
-  public void loadingGenesisResource(final String genesisFile) {
-    log.info("Loading genesis from {}", genesisFile);
-  }
-
   public void loadingInitialStateResource(final String wsBlockResource) {
     log.info("Loading initial state from {}", wsBlockResource);
   }
