@@ -44,7 +44,7 @@ class DutyQueue {
         });
   }
 
-  public Optional<Bytes32> getTargetRoot() {
+  public synchronized Optional<Bytes32> getTargetRoot() {
     return duties.map(ScheduledDuties::getTargetRoot);
   }
 
