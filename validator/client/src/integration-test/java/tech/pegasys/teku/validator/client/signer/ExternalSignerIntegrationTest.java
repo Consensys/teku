@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.signer;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +26,9 @@ import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSi
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
+import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableAttestationMessage;
+import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableBlockMessage;
+import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableGenericMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
@@ -53,10 +56,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.client.signer.ExternalSigner;
-import tech.pegasys.teku.validator.client.signer.ExternalSignerException;
-import tech.pegasys.teku.validator.client.signer.SignType;
-import tech.pegasys.teku.validator.client.signer.SigningRequestBody;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalSignerIntegrationTest {
@@ -117,6 +116,36 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
+  }
+
+  @Test
+  void failsSigningBlockWhenSigningServiceRefusesToSignDueToSlashingCondition() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    client.when(request()).respond(response().withStatusCode(412));
+
+    assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
+        .hasCauseInstanceOf(ExternalSignerException.class)
+        .hasMessageEndingWith(slashableBlockMessage(block).get());
+  }
+
+  @Test
+  void failsSigningAttestationDataWhenSigningServiceRefusesToSignDueToSlashingCondition() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    client.when(request()).respond(response().withStatusCode(412));
+
+    assertThatThrownBy(() -> externalSigner.signAttestationData(attestationData, fork).join())
+        .hasCauseInstanceOf(ExternalSignerException.class)
+        .hasMessageEndingWith(slashableAttestationMessage(attestationData).get());
+  }
+
+  @Test
+  void failsSigningRandaoRevealWhenSigningServiceRefusesToSignDueToSlashingCondition() {
+    final UInt64 epoch = UInt64.valueOf(7);
+    client.when(request()).respond(response().withStatusCode(412));
+
+    assertThatThrownBy(() -> externalSigner.createRandaoReveal(epoch, fork).join())
+        .hasCauseInstanceOf(ExternalSignerException.class)
+        .hasMessageEndingWith(slashableGenericMessage("randao reveal").get());
   }
 
   @Test
