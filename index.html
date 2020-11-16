@@ -79,7 +79,7 @@
       // or a default version (first one in list) if no matching version.
       function getSpecPath(version){
         var spec = (version in versions) ? versions[version].spec : versions[Object.keys(versions)[0]].spec;
-        return `${spec}.json`;
+        return `teku-${spec}.json`;
       }
 
       // is the version passed as param the one displayed accoring to the url
@@ -123,7 +123,8 @@
       // set the global versions value from the Json file,
       // update spec page on completions
       function getVersionsFromJsonFile(){
-        $.getJSON( "versions.json", function( data ) {
+        $.ajaxSetup({ cache: false });
+        $.getJSON( 'versions.json', function( data ) {
           if(!jQuery.isEmptyObject(data)){ versions = data; }
         })
         .always(function() { updateSpec(); });
