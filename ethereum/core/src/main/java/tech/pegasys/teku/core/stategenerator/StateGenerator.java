@@ -14,7 +14,6 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.stategenerator.AsyncChainStateGenerator.DEFAULT_BLOCK_BATCH_SIZE;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,28 +31,17 @@ public class StateGenerator {
   public static final int DEFAULT_STATE_CACHE_SIZE = 100;
   private static final Logger LOG = LogManager.getLogger();
 
-  private final BlockProcessor blockProcessor = new BlockProcessor();
   private final HashTree blockTree;
-  private final BlockProvider blockProvider;
   private final AsyncChainStateGenerator chainStateGenerator;
-
-  private final StateCache stateCache;
-  private final int blockBatchSize;
 
   private StateGenerator(
       final HashTree blockTree,
-      final BlockProvider blockProvider,
       final AsyncChainStateGenerator chainStateGenerator,
-      final StateCache stateCache,
-      final int blockBatchSize) {
-    checkArgument(blockBatchSize > 0, "Must provide a block batch size > 0");
+      final StateCache stateCache) {
     checkArgument(
         stateCache.containsKnownState(blockTree.getRootHash()), "Root state must be available");
 
     this.blockTree = blockTree;
-    this.blockProvider = blockProvider;
-    this.stateCache = stateCache;
-    this.blockBatchSize = blockBatchSize;
     this.chainStateGenerator = chainStateGenerator;
   }
 
@@ -70,12 +58,7 @@ public class StateGenerator {
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates) {
     return create(
-        blockTree,
-        rootBlockAndState,
-        blockProvider,
-        knownStates,
-        DEFAULT_BLOCK_BATCH_SIZE,
-        DEFAULT_STATE_CACHE_SIZE);
+        blockTree, rootBlockAndState, blockProvider, knownStates, DEFAULT_STATE_CACHE_SIZE);
   }
 
   public static StateGenerator create(
@@ -83,7 +66,6 @@ public class StateGenerator {
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates,
-      final int blockBatchSize,
       final int stateCacheSize) {
     checkArgument(
         rootBlockAndState.getRoot().equals(blockTree.getRootHash()),
@@ -95,8 +77,7 @@ public class StateGenerator {
 
     final AsyncChainStateGenerator chainStateGenerator =
         AsyncChainStateGenerator.create(blockTree, blockProvider, stateCache::get);
-    return new StateGenerator(
-        blockTree, blockProvider, chainStateGenerator, stateCache, blockBatchSize);
+    return new StateGenerator(blockTree, chainStateGenerator, stateCache);
   }
 
   public SafeFuture<StateAndBlockSummary> regenerateStateForBlock(final Bytes32 blockRoot) {
