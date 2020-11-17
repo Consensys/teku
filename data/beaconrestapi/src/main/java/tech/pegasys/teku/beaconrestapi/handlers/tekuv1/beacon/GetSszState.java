@@ -85,12 +85,10 @@ public class GetSszState implements Handler {
             result -> {
               if (result.isEmpty()) {
                 ctx.status(SC_NOT_FOUND);
-                ctx.result(
-                    BadRequest.serialize(
-                        jsonProvider,
-                        SC_NOT_FOUND,
-                        "State not found: " + pathParamMap.get(PARAM_STATE_ID)));
-                return null;
+                return BadRequest.serialize(
+                    jsonProvider,
+                    SC_NOT_FOUND,
+                    "State not found: " + pathParamMap.get(PARAM_STATE_ID));
               }
               final StateSszResponse stateSszResponse = result.get();
               ctx.header(

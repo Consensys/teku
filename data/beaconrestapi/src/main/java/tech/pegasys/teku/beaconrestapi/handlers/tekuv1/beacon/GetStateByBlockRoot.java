@@ -64,7 +64,7 @@ public class GetStateByBlockRoot implements Handler {
       summary = "Get SSZ State By Block id",
       tags = {TAG_TEKU},
       description =
-          "Download the state SSZ object for given identifier- by block root, keyword, or slot.",
+          "Download the state SSZ object for given identifier - by block root, keyword, or slot.",
       pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
@@ -87,12 +87,10 @@ public class GetStateByBlockRoot implements Handler {
             result -> {
               if (result.isEmpty()) {
                 ctx.status(SC_NOT_FOUND);
-                ctx.result(
-                    BadRequest.serialize(
-                        jsonProvider,
-                        SC_NOT_FOUND,
-                        "State by block root not found: " + pathParamMap.get(PARAM_BLOCK_ID)));
-                return null;
+                return BadRequest.serialize(
+                    jsonProvider,
+                    SC_NOT_FOUND,
+                    "State by block root not found: " + pathParamMap.get(PARAM_BLOCK_ID));
               }
               final StateSszResponse stateSszResponse = result.get();
               ctx.header(
