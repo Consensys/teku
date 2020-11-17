@@ -18,7 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
@@ -30,7 +29,6 @@ public class StateRegenerationBaseSelector {
   private final Optional<SlotAndBlockRoot> latestEpochBoundary;
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier;
   private final StateAndBlockSummaryProvider stateAndBlockProvider;
-  private final BlockProvider blockProvider;
   private final Optional<StateAndBlockSummary> rebasedStartingPoint;
 
   /**
@@ -44,13 +42,11 @@ public class StateRegenerationBaseSelector {
       final Optional<SlotAndBlockRoot> latestEpochBoundary,
       final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
-      final BlockProvider blockProvider,
       final Optional<StateAndBlockSummary> rebasedStartingPoint,
       final int replayToleranceToAvoidLoadingInEpochs) {
     this.latestEpochBoundary = latestEpochBoundary;
     this.closestAvailableStateSupplier = closestAvailableStateSupplier;
     this.stateAndBlockProvider = stateAndBlockProvider;
-    this.blockProvider = blockProvider;
     this.rebasedStartingPoint = rebasedStartingPoint;
     this.replayToleranceToAvoidLoadingInEpochs = replayToleranceToAvoidLoadingInEpochs;
   }
@@ -63,7 +59,6 @@ public class StateRegenerationBaseSelector {
           latestEpochBoundary,
           closestAvailableStateSupplier,
           stateAndBlockProvider,
-          blockProvider,
           Optional.of(blockAndState),
           replayToleranceToAvoidLoadingInEpochs);
     }
@@ -99,42 +94,31 @@ public class StateRegenerationBaseSelector {
         && isBestOption(epochBoundarySlot.get(), storeSlot, rebasedSlot)) {
       return stateAndBlockProvider
           .getStateAndBlock(latestEpochBoundary.get().getBlockRoot())
-          .thenCompose(
+          .thenApply(
               maybeBlockAndState -> {
                 if (maybeBlockAndState.isEmpty()) {
                   return getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get());
                 } else {
-                  return SafeFuture.completedFuture(maybeBlockAndState);
+                  return maybeBlockAndState;
                 }
               });
     }
 
-    return getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get());
+    return SafeFuture.completedFuture(
+        getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get()));
   }
 
-  private SafeFuture<Optional<StateAndBlockSummary>> getBestBaseExcludingLatestEpochBoundary(
+  private Optional<StateAndBlockSummary> getBestBaseExcludingLatestEpochBoundary(
       final BlockRootAndState closestAvailableFromStore) {
     if (rebasedStartingPoint.isPresent()
         && rebasedStartingPoint
             .get()
             .getSlot()
             .isGreaterThan(closestAvailableFromStore.getSlot())) {
-      return SafeFuture.completedFuture(rebasedStartingPoint);
+      return rebasedStartingPoint;
+    } else {
+      return Optional.of(StateAndBlockSummary.create(closestAvailableFromStore.getState()));
     }
-
-    return blockProvider
-        .getBlock(closestAvailableFromStore.getBlockRoot())
-        .thenApply(
-            maybeBlock -> {
-              if (maybeBlock.isPresent()) {
-                return maybeBlock.map(
-                    block ->
-                        StateAndBlockSummary.create(block, closestAvailableFromStore.getState()));
-              } else {
-                return Optional.of(
-                    StateAndBlockSummary.create(closestAvailableFromStore.getState()));
-              }
-            });
   }
 
   private Optional<UInt64> getLatestEpochBoundarySlotMinusTolerance(

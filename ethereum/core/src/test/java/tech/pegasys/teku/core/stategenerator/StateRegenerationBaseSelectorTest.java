@@ -123,7 +123,7 @@ class StateRegenerationBaseSelectorTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Optional<StateAndBlockSummary> expected =
-        Optional.of(StateAndBlockSummary.create(fromStore));
+        Optional.of(StateAndBlockSummary.create(fromStore.getState()));
     assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(expected);
   }
 
@@ -264,7 +264,6 @@ class StateRegenerationBaseSelectorTest {
                 new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot())),
         closestAvailableStateSupplier,
         stateAndBlockProvider,
-        blockProvider,
         rebasedStartingPoint,
         REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS);
   }
