@@ -112,7 +112,7 @@ public class BeaconBlocksByRangeMessageHandler
               if (earliestSlot.map(s -> s.isGreaterThan(message.getStartSlot())).orElse(true)) {
                 // We're missing the first block so return an error
                 return SafeFuture.failedFuture(
-                    new RpcException.HistoricalDataUnavailableException(
+                    new RpcException.ResourceUnavailableException(
                         "Requested historical blocks are currently unavailable"));
               }
 

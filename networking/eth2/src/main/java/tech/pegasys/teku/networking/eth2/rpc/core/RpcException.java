@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.HISTORICAL_DATA_UNAVAILABLE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SERVER_ERROR_CODE;
 
 import java.nio.charset.StandardCharsets;
@@ -76,10 +76,10 @@ public class RpcException extends Exception {
   }
 
   // Custom errors
-  public static class HistoricalDataUnavailableException extends RpcException {
+  public static class ResourceUnavailableException extends RpcException {
 
-    public HistoricalDataUnavailableException(final String errorMessage) {
-      super(HISTORICAL_DATA_UNAVAILABLE, errorMessage);
+    public ResourceUnavailableException(final String errorMessage) {
+      super(RESOURCE_UNAVAILABLE, errorMessage);
     }
   }
 
