@@ -13,17 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
@@ -38,6 +27,18 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
@@ -169,16 +170,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private void updateMetrics(final BeaconState state) {
-    currentLiveValidators.set(getLiveValidators(state.getCurrent_epoch_attestations()));
-    currentActiveValidators.set(
-        get_active_validator_indices(state, get_current_epoch(state)).size());
-    currentCorrectValidators.set(
-        getCorrectValidators(state, state.getCurrent_epoch_attestations()));
-    previousLiveValidators.set(getLiveValidators(state.getPrevious_epoch_attestations()));
-    previousActiveValidators.set(
-        get_active_validator_indices(state, get_previous_epoch(state)).size());
-    previousCorrectValidators.set(
-        getCorrectValidators(state, state.getPrevious_epoch_attestations()));
+    CorrectAndLiveValidators currentEpochValidators = getNumberOfValidators(state, state.getCurrent_epoch_attestations());
+    currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
+    currentActiveValidators.set(get_active_validator_indices(state, get_current_epoch(state)).size());
+    currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
+
+    CorrectAndLiveValidators previousEpochValidators = getNumberOfValidators(state, state.getPrevious_epoch_attestations());
+    previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
+    previousActiveValidators.set(get_active_validator_indices(state, get_previous_epoch(state)).size());
+    previousCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
 
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     finalizedEpoch.set(finalizedCheckpoint.getEpoch().longValue());
@@ -193,41 +193,50 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     previousJustifiedRoot.set(getLongFromRoot(previousJustifiedCheckpoint.getRoot()));
   }
 
-  private int getLiveValidators(final SSZList<PendingAttestation> attestations) {
-    return getNumberOfValidators(attestations, (__) -> true);
-  }
+  private CorrectAndLiveValidators getNumberOfValidators(final BeaconState state, final SSZList<PendingAttestation> attestations) {
 
-  private int getCorrectValidators(
-      final BeaconState state, final SSZList<PendingAttestation> attestations) {
-    final Predicate<PendingAttestation> predicate =
-        attestation ->
-            attestation
-                .getData()
-                .getTarget()
-                .getRoot()
-                .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
-    return getNumberOfValidators(attestations, predicate);
-  }
-
-  private int getNumberOfValidators(
-      final SSZList<PendingAttestation> attestations,
-      final Predicate<PendingAttestation> attestationPredicate) {
-    final Map<UInt64, Map<UInt64, Bitlist>> aggregationBitsBySlotAndCommittee = new HashMap<>();
-    attestations
-        .filter(attestationPredicate)
-        .forEach(
+    final Predicate<PendingAttestation> isCorrectValidatorPredicate =
             attestation ->
-                aggregationBitsBySlotAndCommittee
-                    .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-                    .computeIfAbsent(
-                        attestation.getData().getIndex(),
-                        __ -> attestation.getAggregation_bits().copy())
-                    .setAllBits(attestation.getAggregation_bits()));
+                    attestation
+                            .getData()
+                            .getTarget()
+                            .getRoot()
+                            .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
 
-    return aggregationBitsBySlotAndCommittee.values().stream()
+    final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee = new HashMap<>();
+    final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee = new HashMap<>();
+
+    attestations
+            .forEach(
+                    attestation -> {
+                      if (isCorrectValidatorPredicate.test(attestation)) {
+                        correctValidatorsAggregationBitsBySlotAndCommittee
+                                .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
+                                .computeIfAbsent(
+                                        attestation.getData().getIndex(),
+                                        __ -> attestation.getAggregation_bits().copy())
+                                .setAllBits(attestation.getAggregation_bits());
+                      }
+
+                      liveValidatorsAggregationBitsBySlotAndCommittee
+                              .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
+                              .computeIfAbsent(
+                                      attestation.getData().getIndex(),
+                                      __ -> attestation.getAggregation_bits().copy())
+                              .setAllBits(attestation.getAggregation_bits()));
+                    });
+
+    final int numberOfCorrectValidators = correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
         .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
         .mapToInt(Bitlist::getBitCount)
         .sum();
+
+    final int numberOfLiveValidators = liveValidatorsAggregationBitsBySlotAndCommittee.values().stream()
+            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
+            .mapToInt(Bitlist::getBitCount)
+            .sum();
+
+    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
   }
 
   static long getLongFromRoot(Bytes32 root) {
@@ -255,5 +264,23 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot.getValue()).longValue();
+  }
+
+  public static class CorrectAndLiveValidators {
+    private final int numberOfCorrectValidators;
+    private final int numberOfLiveValidators;
+
+    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators) {
+      this.numberOfCorrectValidators = numberOfCorrectValidators;
+      this.numberOfLiveValidators = numberOfLiveValidators;
+    }
+
+    public int getNumberOfCorrectValidators() {
+      return numberOfCorrectValidators;
+    }
+
+    public int getNumberOfLiveValidators() {
+      return numberOfLiveValidators;
+    }
   }
 }
