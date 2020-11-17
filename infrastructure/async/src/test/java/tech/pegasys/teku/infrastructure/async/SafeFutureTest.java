@@ -29,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
@@ -796,69 +795,6 @@ public class SafeFutureTest {
     SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
 
     assertThatThrownBy(future::get).hasMessageContaining("test");
-  }
-
-  @Test
-  public void asyncDoWhileWithWhileSupplier_alwaysRunAtLeastOnce() {
-    final AtomicInteger counter = new AtomicInteger(0);
-    final ExceptionThrowingFutureSupplier<Integer> loopBody =
-        () -> SafeFuture.of(counter::incrementAndGet);
-    final Supplier<Boolean> whileCond = () -> false;
-
-    final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
-    assertThat(counter.get()).isEqualTo(1);
-    assertThat(res).isCompletedWithValue(1);
-  }
-
-  @Test
-  public void asyncDoWhileWithWhileSupplier_repeatUntilPredicateReturnsFalse() {
-    final AtomicInteger counter = new AtomicInteger(0);
-    final ExceptionThrowingFutureSupplier<Integer> loopBody =
-        () -> SafeFuture.of(counter::incrementAndGet);
-    final Supplier<Boolean> whileCond = () -> counter.get() < 5;
-
-    final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
-    assertThat(counter.get()).isEqualTo(5);
-    assertThat(res).isCompletedWithValue(5);
-  }
-
-  @Test
-  public void asyncDoWhileWithWhileSupplier_haltIfBodyCompletesExceptionally() {
-    final AtomicInteger counter = new AtomicInteger(0);
-    final RuntimeException error = new RuntimeException("oops");
-    final ExceptionThrowingFutureSupplier<Integer> loopBody =
-        () -> {
-          if (counter.get() >= 5) {
-            throw error;
-          }
-          return SafeFuture.of(counter::incrementAndGet);
-        };
-    final Supplier<Boolean> whileCond = () -> true;
-
-    final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
-    assertThat(counter.get()).isEqualTo(5);
-    assertThat(res).isCompletedExceptionally();
-    assertThatThrownBy(res::get).hasCause(error);
-  }
-
-  @Test
-  public void asyncDoWhileWithWhileSupplier_haltIfConditionPredicateThrows() {
-    final RuntimeException error = new RuntimeException("oops");
-    final AtomicInteger counter = new AtomicInteger(0);
-    final ExceptionThrowingFutureSupplier<Integer> loopBody =
-        () -> SafeFuture.of(counter::incrementAndGet);
-    final Supplier<Boolean> whileCond =
-        () -> {
-          if (counter.get() < 5) {
-            return true;
-          }
-          throw error;
-        };
-
-    final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
-    assertThat(counter.get()).isEqualTo(5);
-    assertThat(res).isCompletedExceptionally();
-    assertThatThrownBy(res::get).hasCause(error);
   }
 
   @Test

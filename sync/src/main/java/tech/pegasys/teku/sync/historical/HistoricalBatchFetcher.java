@@ -91,7 +91,7 @@ public class HistoricalBatchFetcher {
    * @return A future that resolves with the earliest block pulled and saved.
    */
   public SafeFuture<BeaconBlockSummary> run() {
-    SafeFuture.asyncDoWhile(this::requestBlocksByRange, this::shouldRetryBlockByRangeRequest)
+    SafeFuture.asyncDoWhile(this::requestBlocksByRange)
         .thenCompose(
             __ -> {
               if (blocksToImport.isEmpty()) {
@@ -138,10 +138,6 @@ public class HistoricalBatchFetcher {
     }
   }
 
-  private boolean shouldRetryBlockByRangeRequest() {
-    return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
-  }
-
   private boolean batchIsComplete() {
     return getLatestReceivedBlock()
         .map(SignedBeaconBlock::getRoot)
@@ -149,10 +145,11 @@ public class HistoricalBatchFetcher {
         .orElse(false);
   }
 
-  private SafeFuture<Void> requestBlocksByRange() {
+  private SafeFuture<Boolean> requestBlocksByRange() {
     final RequestParameters requestParams = calculateRequestParams();
     if (requestParams.getCount().equals(UInt64.ZERO)) {
-      return SafeFuture.COMPLETE;
+      // Nothing left to request
+      return SafeFuture.completedFuture(false);
     }
 
     LOG.trace(
@@ -163,10 +160,15 @@ public class HistoricalBatchFetcher {
     final RequestManager requestManager =
         new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
     return peer.requestBlocksByRange(
-        requestParams.getStartSlot(),
-        requestParams.getCount(),
-        UInt64.ONE,
-        requestManager::processBlock);
+            requestParams.getStartSlot(),
+            requestParams.getCount(),
+            UInt64.ONE,
+            requestManager::processBlock)
+        .thenApply(__ -> shouldRetryBlockByRangeRequest());
+  }
+
+  private boolean shouldRetryBlockByRangeRequest() {
+    return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
   }
 
   private SafeFuture<Void> requestBlockByHash() {
