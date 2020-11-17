@@ -87,4 +87,15 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getGlobalConfigurationFromArguments("--Xpeer-request-limit", "10");
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
   }
+
+  @Test
+  public void helpDisplaysDefaultNetwork() {
+    beaconNodeCommand.parse(new String[] {"--help"});
+
+    final String output = getCommandLineOutput();
+    assertThat(output)
+        .contains(
+            "-n, --network=<NETWORK>    Represents which network to use.\n"
+                + "                               Default: mainnet");
+  }
 }
