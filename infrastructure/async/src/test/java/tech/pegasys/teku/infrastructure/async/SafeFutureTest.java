@@ -799,7 +799,19 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void asyncDoWhile_repeatUntilPredicateReturnsFalse() {
+  public void asyncDoWhileWithWhileSupplier_alwaysRunAtLeastOnce() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Integer> loopBody =
+        () -> SafeFuture.of(counter::incrementAndGet);
+    final Supplier<Boolean> whileCond = () -> false;
+
+    final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
+    assertThat(counter.get()).isEqualTo(1);
+    assertThat(res).isCompletedWithValue(1);
+  }
+
+  @Test
+  public void asyncDoWhileWithWhileSupplier_repeatUntilPredicateReturnsFalse() {
     final AtomicInteger counter = new AtomicInteger(0);
     final ExceptionThrowingFutureSupplier<Integer> loopBody =
         () -> SafeFuture.of(counter::incrementAndGet);
@@ -811,7 +823,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void asyncDoWhile_haltIfBodyCompletesExceptionally() {
+  public void asyncDoWhileWithWhileSupplier_haltIfBodyCompletesExceptionally() {
     final AtomicInteger counter = new AtomicInteger(0);
     final RuntimeException error = new RuntimeException("oops");
     final ExceptionThrowingFutureSupplier<Integer> loopBody =
@@ -830,7 +842,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void asyncDoWhile_haltIfConditionPredicateThrows() {
+  public void asyncDoWhileWithWhileSupplier_haltIfConditionPredicateThrows() {
     final RuntimeException error = new RuntimeException("oops");
     final AtomicInteger counter = new AtomicInteger(0);
     final ExceptionThrowingFutureSupplier<Integer> loopBody =
@@ -844,6 +856,48 @@ public class SafeFutureTest {
         };
 
     final SafeFuture<Integer> res = SafeFuture.asyncDoWhile(loopBody, whileCond);
+    assertThat(counter.get()).isEqualTo(5);
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasCause(error);
+  }
+
+  @Test
+  public void asyncDoWhile_runAtLeastOnce() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < 0);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(1);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_repeatUntilPredicateReturnsFalse() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < 5);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(5);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_haltIfLoopCompletesExceptionally() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final RuntimeException error = new RuntimeException("oops");
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () ->
+            SafeFuture.of(
+                () -> {
+                  if (counter.incrementAndGet() < 5) {
+                    return true;
+                  }
+                  throw error;
+                });
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
     assertThat(counter.get()).isEqualTo(5);
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get).hasCause(error);

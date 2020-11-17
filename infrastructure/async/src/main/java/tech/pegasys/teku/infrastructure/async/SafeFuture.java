@@ -142,6 +142,17 @@ public class SafeFuture<T> extends CompletableFuture<T> {
             });
   }
 
+  /**
+   * Repeatedly run the loop until it returns false or completes exceptionally
+   *
+   * @param loopBody A supplier for generating futures to be run in succession
+   * @return A future that will complete when looping terminates
+   */
+  public static SafeFuture<Void> asyncDoWhile(ExceptionThrowingFutureSupplier<Boolean> loopBody) {
+    return SafeFuture.of(loopBody::get)
+        .thenCompose(res -> res ? asyncDoWhile(loopBody) : SafeFuture.COMPLETE);
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
