@@ -100,7 +100,9 @@ public final class TekuDefaultExceptionHandler
       LOG.debug("Channel unexpectedly closed", exception);
     } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
       LOG.error(
-          "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
+          "Unexpected rejected execution due to full task queue in {}",
+          subscriberDescription,
+          exception);
     } else if (Throwables.getRootCause(exception) instanceof InvalidDepositEventsException) {
       statusLog.eth1DepositEventsFailure(exception);
     } else if (isSpecFailure(exception)) {
