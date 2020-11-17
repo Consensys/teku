@@ -146,18 +146,17 @@ public class StatusLogger {
         () -> peerCount);
   }
 
-  public void loadingGenesisResource(final String genesisFile) {
-    log.info("Loading genesis from {}", genesisFile);
+  public void loadingInitialStateResource(final String wsBlockResource) {
+    log.info("Loading initial state from {}", wsBlockResource);
   }
 
-  public void loadingWeakSubjectivityStateResources(final String wsBlockResource) {
-    log.info("Loading weak subjectivity state from {}", wsBlockResource);
-  }
-
-  public void loadedWeakSubjectivityStateResources(
+  public void loadedInitialStateResource(
       final Bytes32 stateRoot, final Bytes32 blockRoot, final UInt64 slot) {
     log.info(
-        "Loaded weak subjectivity state {} for block {} at slot {}", stateRoot, blockRoot, slot);
+        "Loaded initial state at slot {} (state root = {}, block root = {})",
+        slot,
+        stateRoot,
+        blockRoot);
   }
 
   public void loadingGenesisFromEth1Chain() {
