@@ -16,24 +16,16 @@ package tech.pegasys.teku.core.stategenerator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.AsyncChainStateGenerator.DEFAULT_BLOCK_BATCH_SIZE;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class StateGenerator {
@@ -107,7 +99,7 @@ public class StateGenerator {
         blockTree, blockProvider, chainStateGenerator, stateCache, blockBatchSize);
   }
 
-  public SafeFuture<SignedBlockAndState> regenerateStateForBlock(final Bytes32 blockRoot) {
+  public SafeFuture<StateAndBlockSummary> regenerateStateForBlock(final Bytes32 blockRoot) {
     final int blockCount = blockTree.size() - 1;
     LOG.info("Regenerate state for block {} by replaying {} blocks", blockRoot, blockCount);
     final long startTime = System.currentTimeMillis();

@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -58,18 +58,18 @@ class AsyncChainStateGenerator {
         blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
   }
 
-  public SafeFuture<SignedBlockAndState> generateTargetState(final Bytes32 targetRoot) {
+  public SafeFuture<StateAndBlockSummary> generateTargetState(final Bytes32 targetRoot) {
     if (!blockTree.contains(targetRoot)) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException("Target root is unknown: " + targetRoot));
     }
 
-    final SafeFuture<SignedBlockAndState> lastBlockAndState = new SafeFuture<>();
+    final SafeFuture<StateAndBlockSummary> lastBlockAndState = new SafeFuture<>();
     generateStates(
             targetRoot,
-            (block, state) -> {
-              if (block.getRoot().equals(targetRoot)) {
-                lastBlockAndState.complete(new SignedBlockAndState(block, state));
+            (stateAndBlock) -> {
+              if (stateAndBlock.getRoot().equals(targetRoot)) {
+                lastBlockAndState.complete(stateAndBlock);
               }
             })
         .finish(
@@ -82,16 +82,23 @@ class AsyncChainStateGenerator {
     return lastBlockAndState;
   }
 
-  public SafeFuture<?> generateStates(final Bytes32 targetRoot, final StateHandler handler) {
+  private SafeFuture<?> generateStates(final Bytes32 targetRoot, final StateHandler handler) {
     return SafeFuture.of(
         () -> {
           // Build chain from target root to the first ancestor with a known state
           final AtomicReference<BeaconState> baseState = new AtomicReference<>(null);
+          final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>(null);
           final List<Bytes32> chain =
               blockTree.collectChainRoots(
                   targetRoot,
                   (currentRoot) -> {
-                    stateProvider.getState(currentRoot).ifPresent(baseState::set);
+                    stateProvider
+                        .getState(currentRoot)
+                        .ifPresent(
+                            newValue -> {
+                              baseState.set(newValue);
+                              baseBlockRoot.set(currentRoot);
+                            });
                     return baseState.get() == null;
                   });
 
@@ -102,6 +109,15 @@ class AsyncChainStateGenerator {
           if (chain.size() == 0) {
             throw new IllegalStateException("Failed to retrieve chain");
           }
+
+          // Short-circuit if we found the target state
+          if (baseBlockRoot.get().equals(targetRoot)) {
+            handler.handle(StateAndBlockSummary.create(baseState.get()));
+            return SafeFuture.completedFuture(baseState.get());
+          }
+
+          // Remove the base block since we don't need it to regenerate our target state
+          chain.remove(baseBlockRoot.get());
 
           LOG.debug(
               "Regenerate state at {}, processing {} blocks on top of slot {} (root: {})",
@@ -153,9 +169,9 @@ class AsyncChainStateGenerator {
                   ChainStateGenerator.create(chainBlocks, startState, true);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
-                  (block, state) -> {
-                    lastState.set(state);
-                    handler.handle(block, state);
+                  (stateAndBlock) -> {
+                    lastState.set(stateAndBlock.getState());
+                    handler.handle(stateAndBlock);
                   });
 
               return lastState.get();
