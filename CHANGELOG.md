@@ -16,7 +16,7 @@ should ensure they upgrade to it.
 Event                            | Scheduled Date       | Notes
 ---------------------------------|----------------------|-------------------------------------------
 Teku 0.12.14 release             | 11 November          | Includes the Mainnet ready specification available with the `--network mainnet` command line option.
-Teku 20.11.0-RC1 release         | 18 November          | Makes `mainnet` the default network. Legacy options and APIs will be removed, see [Upcoming Breaking Changes](#upcoming-breaking-changes)
+Teku 20.11.0-RC1 release         | 18 November          | Makes `mainnet` the default network. Legacy options and APIs will be removed, see [20.11.0-RC1 Breaking Changes](#20.11.0-RC1)
 Earliest date for Mainnet genesis state to be set | 24 November | If enough deposits are received by this time, the Mainnet genesis state will be generated. Otherwise this will be delayed until enough deposits are received
 Teku 20.11.0 release             | Around 26 November   | First full production-ready release of Teku.
 Earliest date for Mainnet launch | 1 December   | This will be delayed if required deposit amounts are not received by 24 November. The chain will always launch 7 days after the genesis state is set. 
@@ -44,7 +44,14 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
 ## Upcoming Breaking Changes
 
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
-- REST API endpoints are being migrated to the standard API. Deprecated endpoints will be removed in a future release. Current replacements:
+- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
+
+## 20.11.0-RC1
+
+### Breaking Changes
+
+- The default network is now `mainnet`. Use `--network medalla` to continue using the Medalla testnet.
+- REST API endpoints have been migrated to the standard API and deprecated endpoints removed. Replacements:
   - GET `/eth/v1/beacon/states/{state_id}/validators/{validator_id}` replaced by POST `/eth/v1/beacon/states/{state_id}/validators/{validator_id}`
   - `/network/enr` replaced by `/eth/v1/node/identity`
   - `/network/listen_addresses` replaced by `/eth/v1/node/identity`
@@ -66,9 +73,32 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
   - `/validator/beacon_committee_subscription` replaced by `/eth/v1/validator/beacon_committee_subscriptions`
   - `/validator/persistent_subnets_subscription` deprecated. The beacon node now automatically establishes persistent subnet subscriptions based on calls to `/eth/v1/validator/beacon_committee_subscriptions`
   - `/beacon/block` deprecated. Replaced by `/eth/v1/beacon/blocks/{block_id}`
-- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
-- Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+  - `/admin/log_level` moved to `/teku/v1/admin/log_level`
+- Validator subcommands for generating and registering validators have been removed. Please use the Eth2 Launchpad to register validators, which is the most secure way of generating keys and sending deposits.
+- Log files are now stored under the specified `--data-path` in `<data-path>/logs/teku.log`. The location is unchanged if `--data-path` is not specified.
 
+### Additions and Improvements
+
+- Switched default network to `mainnet`. Note that as the MainNet genesis state is not yet set, an `--eth1-endpoint` must be provided when using MainNet.
+- Added support for the `pyrmont` testnet via `--network pyrmont`.
+- Added `teku voluntary-exit` subcommand to allow creating and sending voluntary exit operations for validators.
+- Syncing from a non-genesis state (weak subjectivity sync) is now fully supported. Use `--initial-state` to specify a finalized state to begin syncing from.
+- Added two REST APIs to download states as SSZ, suitable for use with `--initial-state`.
+  - By block root, slot or keyword (eg `finalized`): `/teku/v1/beacon/blocks/:block_id/state`
+  - By state root, slot or keyword (eg `finalized`): `/teku/v1/beacon/states/:state_id`
+- Provide clearer information in logs when external signers refuse to sign because of a potential slashing condition.
+- Provide more detailed information when internal slashing protection refuses to sign because of a potential slashing condition.
+- Allow built-in slashing protection to be disabled for external signers with `--validators-external-signer-slashing-protection-enabled=false`
+- Added support for slashing protection interchange format v5.
+- Historical blocks are now backfilled when syncing from a non-genesis state.
+
+### Bug Fixes
+
+- Updated jvm-libp2p to fix `CantDecryptInboundException` errors in logs.
+- Reduced log level when malformed response is received from a remote peer during sync.
+- Fixed incompatibility with the standard slashing protection interchange format.
+- Fix OpenAPI specification to remove the invalid `exampleSetFlag` field.
+- Fix response content for `/eth/v1/beacon/states/:state_id/finality_checkpoints` in OpenAPI specification.
 
 ## 0.12.14
 
