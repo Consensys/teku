@@ -273,18 +273,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     Set<BeaconBlock> blocksInEpoch = new HashSet<>();
     UInt64 currSlot = inclusiveEndEpochEndSlot;
     while (currSlot.isGreaterThanOrEqualTo(epochStartSlot)) {
-      // PerformanceTracker should not be running if chain data is not available.
-      BeaconBlock block =
+      Optional<BeaconBlock> block =
           combinedChainDataClient
               .getBlockInEffectAtSlot(currSlot)
               .join()
-              .orElseThrow()
-              .getMessage();
-      blocksInEpoch.add(block);
-      if (block.getSlot().equals(UInt64.ZERO)) {
+              .map(SignedBeaconBlock::getMessage);
+      block.ifPresent(blocksInEpoch::add);
+
+      if (block.isEmpty() || block.get().getSlot().equals(UInt64.ZERO)) {
         break;
       }
-      currSlot = block.getSlot().decrement();
+      currSlot = block.get().getSlot().decrement();
     }
     return blocksInEpoch;
   }

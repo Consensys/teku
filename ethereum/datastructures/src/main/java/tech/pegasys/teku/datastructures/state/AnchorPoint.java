@@ -65,9 +65,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
-    checkArgument(
-        genesisState.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT)),
-        "Invalid genesis state supplied");
+    checkArgument(isGenesisState(genesisState), "Invalid genesis state supplied");
 
     final BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
     final SignedBeaconBlock signedGenesisBlock =
@@ -81,13 +79,21 @@ public class AnchorPoint extends StateAndBlockSummary {
   }
 
   public static AnchorPoint fromInitialState(final BeaconState state) {
-    final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+    if (isGenesisState(state)) {
+      return fromGenesisState(state);
+    } else {
+      final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
 
-    // Calculate closest epoch boundary to use for the checkpoint
-    final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
-    final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
+      // Calculate closest epoch boundary to use for the checkpoint
+      final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
+      final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
 
-    return new AnchorPoint(checkpoint, state, header);
+      return new AnchorPoint(checkpoint, state, header);
+    }
+  }
+
+  private static boolean isGenesisState(final BeaconState state) {
+    return state.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT));
   }
 
   public static AnchorPoint fromInitialBlockAndState(final SignedBlockAndState blockAndState) {

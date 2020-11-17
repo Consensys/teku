@@ -27,6 +27,17 @@ public class StateSelectorFactory {
     this.client = client;
   }
 
+  public StateSelector byBlockRootStateSelector(final String selectorMethod) {
+    if (selectorMethod.startsWith("0x")) {
+      try {
+        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+      } catch (IllegalArgumentException ex) {
+        throw new BadRequestException("Invalid state: " + selectorMethod);
+      }
+    }
+    return byKeywordOrSlot(selectorMethod);
+  }
+
   public StateSelector defaultStateSelector(final String selectorMethod) {
     if (selectorMethod.startsWith("0x")) {
       try {
@@ -35,6 +46,10 @@ public class StateSelectorFactory {
         throw new BadRequestException("Invalid state: " + selectorMethod);
       }
     }
+    return byKeywordOrSlot(selectorMethod);
+  }
+
+  public StateSelector byKeywordOrSlot(final String selectorMethod) {
     switch (selectorMethod) {
       case ("head"):
         return headSelector();
@@ -74,5 +89,9 @@ public class StateSelectorFactory {
 
   public StateSelector forStateRoot(final Bytes32 stateRoot) {
     return () -> client.getStateByStateRoot(stateRoot);
+  }
+
+  public StateSelector forBlockRoot(final Bytes32 blockRoot) {
+    return () -> client.getStateByBlockRoot(blockRoot);
   }
 }

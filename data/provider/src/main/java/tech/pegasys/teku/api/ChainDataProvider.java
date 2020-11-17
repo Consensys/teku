@@ -169,6 +169,21 @@ public class ChainDataProvider {
                             state.hash_tree_root().toUnprefixedHexString())));
   }
 
+  public SafeFuture<Optional<StateSszResponse>> getBeaconStateSszByBlockRoot(
+      final String blockRootParam) {
+    return defaultStateSelectorFactory
+        .byBlockRootStateSelector(blockRootParam)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state ->
+                        new StateSszResponse(
+                            new ByteArrayInputStream(
+                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
+                            state.hash_tree_root().toUnprefixedHexString())));
+  }
+
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
     return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
   }

@@ -104,8 +104,13 @@ public class WeakSubjectivityValidator {
         .getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
         .thenAccept(
             maybeBlock -> {
-              // We must have a block at this slot because we know this epoch is finalized
-              SignedBeaconBlock blockAtCheckpointSlot = maybeBlock.orElseThrow();
+              SignedBeaconBlock blockAtCheckpointSlot =
+                  maybeBlock.orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Unable to verify weak subjectivity checkpoint at epoch "
+                                  + wsCheckpoint.getEpoch()
+                                  + ": finalized block is unavailable"));
               if (!blockAtCheckpointSlot.getRoot().equals(wsCheckpoint.getRoot())) {
                 handleInconsistentWsCheckpoint(blockAtCheckpointSlot);
               }
