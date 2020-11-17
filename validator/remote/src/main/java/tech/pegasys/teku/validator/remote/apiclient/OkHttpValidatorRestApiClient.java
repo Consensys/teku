@@ -57,6 +57,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -177,7 +178,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("committee_index", String.valueOf(committeeIndex));
 
-    return get(GET_ATTESTATION_DATA, queryParams, createHandler(AttestationData.class));
+    return get(GET_ATTESTATION_DATA, queryParams, createHandler(GetAttestationDataResponse.class))
+        .map(response -> response.data);
   }
 
   @Override
