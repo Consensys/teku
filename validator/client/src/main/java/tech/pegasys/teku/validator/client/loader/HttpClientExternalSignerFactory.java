@@ -23,7 +23,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -31,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.lang3.tuple.Pair;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
@@ -67,7 +67,7 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
           getKeyManagers(getFile(keystore.getLeft()), readPasswordFromFile(keystore.getRight())),
           getTrustManagers(
               getFile(truststore.getLeft()), readPasswordFromFile(truststore.getRight())),
-          new SecureRandom());
+          SecureRandomProvider.createSecureRandom());
       return sslContext;
     } catch (final NoSuchAlgorithmException | KeyManagementException e) {
       throw new InvalidConfigurationException(
