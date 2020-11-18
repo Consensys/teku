@@ -394,6 +394,11 @@ public class ForkChoiceUtil {
                     maybeTargetState.get(), validateableAttestation);
               }
             })
+        .ifSuccessful(
+            () -> {
+              validateableAttestation.saveCommitteeShufflingSeed(maybeTargetState.get());
+              return SUCCESSFUL;
+            })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
