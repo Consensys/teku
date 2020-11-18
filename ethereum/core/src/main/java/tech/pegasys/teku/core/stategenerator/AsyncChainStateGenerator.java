@@ -169,7 +169,7 @@ class AsyncChainStateGenerator {
                   ChainStateGenerator.create(chainBlocks, startState, true);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
-                  (stateAndBlock) -> {
+                  stateAndBlock -> {
                     lastState.set(stateAndBlock.getState());
                     handler.handle(stateAndBlock);
                   });
