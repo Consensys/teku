@@ -13,10 +13,25 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -28,23 +43,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
@@ -69,14 +67,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentEpochTotalWeight;
   private final SettableGauge previousEpochTotalWeight;
 
-  final Function<BeaconState, Predicate<PendingAttestation>> createCorrectlyContributedValidatorPredicate = (state) -> {
-    return attestation ->
-            attestation
-                    .getData()
-                    .getTarget()
-                    .getRoot()
-                    .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
-  }
+  final Function<BeaconState, Predicate<PendingAttestation>>
+      createCorrectlyContributedValidatorPredicate =
+          state ->
+              attestation ->
+                  attestation
+                      .getData()
+                      .getTarget()
+                      .getRoot()
+                      .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -184,30 +183,30 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
 
     currentEpochTotalParticipationWeight =
-            SettableGauge.create(
-                    metricsSystem,
-                    TekuMetricCategory.BEACON,
-                    "current_epoch_total_participation_weight",
-                    "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_epoch_total_participation_weight",
+            "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
     previousEpochTotalParticipationWeight =
-            SettableGauge.create(
-                    metricsSystem,
-                    TekuMetricCategory.BEACON,
-                    "current_epoch_total_participation_weight",
-                    "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_epoch_total_participation_weight",
+            "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
 
     currentEpochTotalWeight =
-            SettableGauge.create(
-                    metricsSystem,
-                    TekuMetricCategory.BEACON,
-                    "current_epoch_total_weight",
-                    "Total effective balance of all active validators in the current epoch");
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_epoch_total_weight",
+            "Total effective balance of all active validators in the current epoch");
     previousEpochTotalWeight =
-            SettableGauge.create(
-                    metricsSystem,
-                    TekuMetricCategory.BEACON,
-                    "current_epoch_total_weight",
-                    "Total effective balance of all active validators in the previous epoch");
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_epoch_total_weight",
+            "Total effective balance of all active validators in the previous epoch");
   }
 
   @Override
@@ -222,9 +221,12 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentEpochTotalParticipationWeight.set(currentEpochValidators.totalParticipationWeight);
 
-    List<Integer> currentEpochActiveValidators = get_active_validator_indices(state, get_current_epoch(state));
+    List<Integer> currentEpochActiveValidators =
+        get_active_validator_indices(state, get_current_epoch(state));
     long currentEpochActiveValidatorsTotalWeight =
-            currentEpochActiveValidators.stream().mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue()).sum();
+        currentEpochActiveValidators.stream()
+            .mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue())
+            .sum();
     currentEpochTotalWeight.set(currentEpochActiveValidatorsTotalWeight);
     currentActiveValidators.set(currentEpochActiveValidators.size());
 
@@ -234,10 +236,13 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousEpochTotalParticipationWeight.set(previousEpochValidators.totalParticipationWeight);
 
-    List<Integer> previousEpochActiveValidators = get_active_validator_indices(state, get_previous_epoch(state));
+    List<Integer> previousEpochActiveValidators =
+        get_active_validator_indices(state, get_previous_epoch(state));
     long previousEpochActiveValidatorsTotalWeight =
-            previousEpochActiveValidators.stream().mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue()).sum();
-    currentEpochTotalWeight.set(previousEpochActiveValidatorsTotalWeight);
+        previousEpochActiveValidators.stream()
+            .mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue())
+            .sum();
+    previousEpochTotalWeight.set(previousEpochActiveValidatorsTotalWeight);
     previousActiveValidators.set(previousEpochActiveValidators.size());
 
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
@@ -257,7 +262,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
       final BeaconState state, final SSZList<PendingAttestation> attestations) {
 
     final Predicate<PendingAttestation> isCorrectValidatorPredicate =
-            createCorrectlyContributedValidatorPredicate.apply(state);
+        createCorrectlyContributedValidatorPredicate.apply(state);
 
     final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
@@ -268,7 +273,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     attestations.forEach(
         attestation -> {
           if (isCorrectValidatorPredicate.test(attestation)) {
-            List<Integer> attestationAttesterIndices = get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
+            List<Integer> attestationAttesterIndices =
+                get_attesting_indices(
+                    state, attestation.getData(), attestation.getAggregation_bits());
             validatorIndices.addAll(attestationAttesterIndices);
 
             correctValidatorsAggregationBitsBySlotAndCommittee
@@ -288,7 +295,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
     UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
     for (int index : validatorIndices) {
-      validatorIndicesTotalBalance = validatorIndicesTotalBalance.plus(state.getValidators().get(index).getEffective_balance());
+      validatorIndicesTotalBalance =
+          validatorIndicesTotalBalance.plus(
+              state.getValidators().get(index).getEffective_balance());
     }
 
     final int numberOfCorrectValidators =
@@ -303,14 +312,11 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             .mapToInt(Bitlist::getBitCount)
             .sum();
 
-    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators, validatorIndicesTotalBalance.longValue());
+    return new CorrectAndLiveValidators(
+        numberOfCorrectValidators,
+        numberOfLiveValidators,
+        validatorIndicesTotalBalance.longValue());
   }
-
-  private long getTotalWeight(BeaconState state) {
-
-
-  }
-
 
   static long getLongFromRoot(Bytes32 root) {
     return root.getLong(24, ByteOrder.LITTLE_ENDIAN);
@@ -344,7 +350,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     private final int numberOfLiveValidators;
     private final long totalParticipationWeight;
 
-    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators, long totalParticipationWeight) {
+    public CorrectAndLiveValidators(
+        int numberOfCorrectValidators, int numberOfLiveValidators, long totalParticipationWeight) {
       this.numberOfCorrectValidators = numberOfCorrectValidators;
       this.numberOfLiveValidators = numberOfLiveValidators;
       this.totalParticipationWeight = totalParticipationWeight;
