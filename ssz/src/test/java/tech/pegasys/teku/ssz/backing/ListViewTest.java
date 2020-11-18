@@ -124,4 +124,31 @@ public class ListViewTest {
     assertThat(l2_3.hashTreeRoot()).isEqualTo(l1_3.hashTreeRoot());
     assertThat(l2_3.sszSerialize()).isEqualTo(l1_3.sszSerialize());
   }
+
+  @Test
+  void largeSuperNodeListTest() {
+    long maxLen = 1L << 38;
+    ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen);
+    ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen,
+        new TypeHints(true));
+
+    ListViewRead<UInt64View> l1_0 = lt1.getDefault();
+    ListViewRead<UInt64View> l2_0 = lt2.getDefault();
+
+    assertThat(l2_0.hashTreeRoot()).isEqualTo(l1_0.hashTreeRoot());
+
+    ListViewWrite<UInt64View> l1w_0 = l1_0.createWritableCopy();
+    for (int i = 0; i < 16000; i++) {
+      l1w_0.append(UInt64View.fromLong(0x77889900 + i));
+    }
+    ListViewRead<UInt64View> l1_1 = l1w_0.commitChanges();
+
+    ListViewWrite<UInt64View> l2w_0 = l2_0.createWritableCopy();
+    for (int i = 0; i < 16000; i++) {
+      l2w_0.append(UInt64View.fromLong(0x77889900 + i));
+    }
+    ListViewRead<UInt64View> l2_1 = l2w_0.commitChanges();
+
+    assertThat(l2_1.hashTreeRoot()).isEqualTo(l1_1.hashTreeRoot());
+  }
 }
