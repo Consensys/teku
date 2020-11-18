@@ -66,6 +66,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private final SettableGauge currentEpochTotalParticipationWeight;
   private final SettableGauge previousEpochTotalParticipationWeight;
+  private final SettableGauge currentEpochTotalWeight;
+  private final SettableGauge previousEpochTotalWeight;
 
   final Function<BeaconState, Predicate<PendingAttestation>> createCorrectlyContributedValidatorPredicate = (state) -> {
     return attestation ->
@@ -186,13 +188,26 @@ public class BeaconChainMetrics implements SlotEventsChannel {
                     metricsSystem,
                     TekuMetricCategory.BEACON,
                     "current_epoch_total_participation_weight",
-                    "Number of validators who voted for correct source and target checkpoints in the current epoch");
+                    "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
     previousEpochTotalParticipationWeight =
             SettableGauge.create(
                     metricsSystem,
                     TekuMetricCategory.BEACON,
                     "current_epoch_total_participation_weight",
-                    "Number of validators who voted for correct source and target checkpoints in the previous epoch");
+                    "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
+
+    currentEpochTotalWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_total_weight",
+                    "Total effective balance of all active validators in the current epoch");
+    previousEpochTotalWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_total_weight",
+                    "Total effective balance of all active validators in the previous epoch");
   }
 
   @Override
@@ -205,18 +220,25 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         getNumberOfValidators(state, state.getCurrent_epoch_attestations());
     currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
-    currentActiveValidators.set(
-        get_active_validator_indices(state, get_current_epoch(state)).size());
-    currentEpochTotalParticipationWeight.set(getTotalParticipationWeight(state, state.getCurrent_epoch_attestations()).longValue());
+    currentEpochTotalParticipationWeight.set(currentEpochValidators.totalParticipationWeight);
+
+    List<Integer> currentEpochActiveValidators = get_active_validator_indices(state, get_current_epoch(state));
+    long currentEpochActiveValidatorsTotalWeight =
+            currentEpochActiveValidators.stream().mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue()).sum();
+    currentEpochTotalWeight.set(currentEpochActiveValidatorsTotalWeight);
+    currentActiveValidators.set(currentEpochActiveValidators.size());
 
     CorrectAndLiveValidators previousEpochValidators =
         getNumberOfValidators(state, state.getPrevious_epoch_attestations());
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
-    previousCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
-    previousActiveValidators.set(
-        get_active_validator_indices(state, get_previous_epoch(state)).size());
-    previousEpochTotalParticipationWeight.set(getTotalParticipationWeight(state, state.getPrevious_epoch_attestations()).longValue());
+    previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
+    previousEpochTotalParticipationWeight.set(previousEpochValidators.totalParticipationWeight);
 
+    List<Integer> previousEpochActiveValidators = get_active_validator_indices(state, get_previous_epoch(state));
+    long previousEpochActiveValidatorsTotalWeight =
+            previousEpochActiveValidators.stream().mapToLong(index -> state.getValidators().get(index).getEffective_balance().longValue()).sum();
+    currentEpochTotalWeight.set(previousEpochActiveValidatorsTotalWeight);
+    previousActiveValidators.set(previousEpochActiveValidators.size());
 
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     finalizedEpoch.set(finalizedCheckpoint.getEpoch().longValue());
@@ -241,10 +263,14 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         new HashMap<>();
     final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
+    Set<Integer> validatorIndices = new HashSet<>();
 
     attestations.forEach(
         attestation -> {
           if (isCorrectValidatorPredicate.test(attestation)) {
+            List<Integer> attestationAttesterIndices = get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
+            validatorIndices.addAll(attestationAttesterIndices);
+
             correctValidatorsAggregationBitsBySlotAndCommittee
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
                 .computeIfAbsent(
@@ -260,6 +286,11 @@ public class BeaconChainMetrics implements SlotEventsChannel {
               .setAllBits(attestation.getAggregation_bits());
         });
 
+    UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
+    for (int index : validatorIndices) {
+      validatorIndicesTotalBalance = validatorIndicesTotalBalance.plus(state.getValidators().get(index).getEffective_balance());
+    }
+
     final int numberOfCorrectValidators =
         correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
             .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
@@ -272,32 +303,12 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             .mapToInt(Bitlist::getBitCount)
             .sum();
 
-    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
+    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators, validatorIndicesTotalBalance.longValue());
   }
 
-  private UInt64 getTotalParticipationWeight(
-          final BeaconState state, final SSZList<PendingAttestation> attestations) {
+  private long getTotalWeight(BeaconState state) {
 
 
-    Set<Integer> validatorIndices = new HashSet<>();
-    Predicate<PendingAttestation> correctlyContributedValidatorPredicate =
-            createCorrectlyContributedValidatorPredicate.apply(state);
-
-    attestations
-            .filter(correctlyContributedValidatorPredicate)
-            .forEach(attestation -> {
-      List<Integer> attestationAttesterIndices = get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
-      if (correctlyContributedValidatorPredicate.test(attestation)) {
-        validatorIndices.addAll(attestationAttesterIndices);
-      }
-    });
-
-    UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
-    for (int index : validatorIndices) {
-      validatorIndicesTotalBalance = validatorIndicesTotalBalance.plus(state.getValidators().get(index).getEffective_balance());
-    }
-
-    return validatorIndicesTotalBalance;
   }
 
 
@@ -331,10 +342,12 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   public static class CorrectAndLiveValidators {
     private final int numberOfCorrectValidators;
     private final int numberOfLiveValidators;
+    private final long totalParticipationWeight;
 
-    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators) {
+    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators, long totalParticipationWeight) {
       this.numberOfCorrectValidators = numberOfCorrectValidators;
       this.numberOfLiveValidators = numberOfLiveValidators;
+      this.totalParticipationWeight = totalParticipationWeight;
     }
   }
 }
