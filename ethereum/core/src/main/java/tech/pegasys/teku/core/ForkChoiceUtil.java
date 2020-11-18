@@ -13,6 +13,21 @@
 
 package tech.pegasys.teku.core;
 
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+
+import java.time.Instant;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -29,22 +44,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-
-import javax.annotation.CheckReturnValue;
-import java.time.Instant;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.function.Consumer;
-
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 public class ForkChoiceUtil {
 
