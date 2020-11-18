@@ -385,7 +385,13 @@ public class ForkChoiceUtil {
     Attestation attestation = validateableAttestation.getAttestation();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
-        .ifSuccessful(() -> indexAndValidateAttestation(validateableAttestation, maybeTargetState))
+        .ifSuccessful(
+            () -> {
+              if (validateableAttestation.isValidIndexedAttestation()) {
+                return SUCCESSFUL;
+              }
+              return indexAndValidateAttestation(validateableAttestation, maybeTargetState);
+            })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
@@ -434,6 +440,7 @@ public class ForkChoiceUtil {
     return is_valid_indexed_attestation(targetState, indexedAttestation)
         .ifSuccessful(
             () -> {
+              attestation.setValidIndexedAttestation();
               attestation.setIndexedAttestation(indexedAttestation);
               attestation.saveCommitteeShufflingSeed(targetState);
 
