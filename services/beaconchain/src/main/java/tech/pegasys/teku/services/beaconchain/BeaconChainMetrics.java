@@ -13,17 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
@@ -38,6 +27,22 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
@@ -244,6 +249,40 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
   }
+
+  private CorrectAndLiveValidators getNumberOfValidatost(
+          final BeaconState state, final SSZList<PendingAttestation> attestations) {
+
+    final Predicate<PendingAttestation> isCorrectValidatorPredicate =
+            attestation ->
+                    attestation
+                            .getData()
+                            .getTarget()
+                            .getRoot()
+                            .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
+
+    Set<Integer> correctValidatorIndices = new HashSet<>();
+
+    attestations
+            .filter
+            .forEach(attestation -> {
+      List<Integer> attestationAttesterIndices = get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
+      if (isCorrectValidatorPredicate.test(attestation)) {
+        correctValidatorIndices.addAll(attestationAttesterIndices);
+      }
+    });
+
+    UInt64 allValidatorIndicesBalance = UInt64.ZERO;
+    UInt64 correctValidatorIndicesBalance = UInt64.ZERO;
+    for (int index : correctValidatorIndices) {
+      correctValidatorIndicesBalance = correctValidatorIndicesBalance.plus(state.getValidators().get(index).getEffective_balance());
+    }
+
+    for (int index : allValidatorIndices) {
+      allValidatorIndicesBalance = allValidatorIndicesBalance.plus(state.getValidators().get(index).getEffective_balance());
+    }
+  }
+
 
   static long getLongFromRoot(Bytes32 root) {
     return root.getLong(24, ByteOrder.LITTLE_ENDIAN);
