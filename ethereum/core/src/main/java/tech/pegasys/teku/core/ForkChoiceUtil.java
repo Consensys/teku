@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -46,6 +48,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   public static UInt64 get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UInt64 time = useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -384,14 +388,14 @@ public class ForkChoiceUtil {
               if (maybeTargetState.isEmpty()) {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
-                return is_valid_indexed_attestation(
-                    maybeTargetState.get(), validateableAttestation);
+                try {
+                  return is_valid_indexed_attestation(
+                      maybeTargetState.get(), validateableAttestation);
+                } catch (IllegalArgumentException e) {
+                  LOG.debug("on_attestation: Attestation is not valid: ", e);
+                  return AttestationProcessingResult.invalid(e.getMessage());
+                }
               }
-            })
-        .ifSuccessful(
-            () -> {
-              validateableAttestation.saveCommitteeShufflingSeed(maybeTargetState.get());
-              return SUCCESSFUL;
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(

@@ -139,6 +139,7 @@ public class AttestationUtil {
       AttestationProcessingResult result =
           is_valid_indexed_attestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
       if (result.isSuccessful()) {
+        attestation.saveCommitteeShufflingSeed(state);
         attestation.setValidIndexedAttestation();
       }
       return result;
