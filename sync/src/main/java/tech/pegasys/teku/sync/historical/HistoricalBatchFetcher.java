@@ -49,7 +49,6 @@ public class HistoricalBatchFetcher {
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final AtomicInteger requestCount = new AtomicInteger(0);
-  private volatile boolean requestedBlockDirectly = false;
 
   /**
    * @param storageUpdateChannel The storage channel where finalized blocks will be imported
@@ -92,28 +91,39 @@ public class HistoricalBatchFetcher {
    * @return A future that resolves with the earliest block pulled and saved.
    */
   public SafeFuture<BeaconBlockSummary> run() {
-    requestBlocks();
+    SafeFuture.asyncDoWhile(this::requestBlocksByRange)
+        .thenCompose(
+            __ -> {
+              if (blocksToImport.isEmpty()) {
+                // If we've received no blocks, this range of blocks may be empty
+                // Try to look up the next block by root
+                return requestBlockByHash();
+              } else {
+                return SafeFuture.COMPLETE;
+              }
+            })
+        .thenCompose(__ -> complete())
+        .finish(this::handleRequestError);
+
     return future;
   }
 
-  private void requestBlocks() {
-    requestBlocks(calculateRequestParams());
-  }
+  private SafeFuture<Void> complete() {
+    final Optional<SignedBeaconBlock> latestBlock = getLatestReceivedBlock();
 
-  private void requestBlocks(RequestParameters requestParams) {
-    LOG.trace(
-        "Request {} blocks from {} to {}",
-        requestParams.getCount(),
-        requestParams.getStartSlot(),
-        requestParams.getEndSlot());
-    final RequestManager requestManager =
-        new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
-    peer.requestBlocksByRange(
-            requestParams.getStartSlot(),
-            requestParams.getCount(),
-            UInt64.ONE,
-            requestManager::processBlock)
-        .finish(__ -> this.handleCompletedRequest(), this::handleRequestError);
+    if (latestBlockCompletesBatch(latestBlock)) {
+      LOG.trace("Import batch of {} blocks", blocksToImport.size());
+      return importBatch();
+    } else if (latestBlockShouldCompleteBatch(latestBlock)) {
+      // Nothing left to request but the batch is incomplete
+      // It appears our peer is on a different chain
+      LOG.warn("Received invalid blocks from a different chain. Disconnecting peer: " + peer);
+      peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
+      throw new InvalidResponseException("Received invalid blocks from a different chain");
+    } else {
+      // We haven't completed the batch and we've hit our request limit
+      throw new InvalidResponseException("Failed to deliver full batch");
+    }
   }
 
   private void handleRequestError(final Throwable throwable) {
@@ -128,56 +138,50 @@ public class HistoricalBatchFetcher {
     }
   }
 
-  private void handleCompletedRequest() {
-    processResponses(true);
+  private boolean batchIsComplete() {
+    return getLatestReceivedBlock()
+        .map(SignedBeaconBlock::getRoot)
+        .map(r -> r.equals(lastBlockRoot))
+        .orElse(false);
   }
 
-  private void complete() {
-    processResponses(false);
-  }
-
-  private void processResponses(final boolean allowAdditionalRequests) {
-    final Optional<SignedBeaconBlock> latestBlock = getLatestReceivedBlock();
-    final boolean latestBlockCompletesBatch =
-        latestBlock.map(SignedBeaconBlock::getRoot).map(r -> r.equals(lastBlockRoot)).orElse(false);
-    if (latestBlockCompletesBatch) {
-      LOG.trace("Import batch of {} blocks", blocksToImport.size());
-      importBatch();
-    } else if (allowAdditionalRequests && requestCount.incrementAndGet() < maxRequests) {
-      final RequestParameters requestParameters = calculateRequestParams();
-      if (requestParameters.getCount().equals(UInt64.ZERO)) {
-        // Nothing left to request but the batch is incomplete
-        // It appears our peer is on a different chain
-        LOG.warn("Received invalid blocks from a different chain. Disconnecting peer: " + peer);
-        peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
-        future.completeExceptionally(
-            new InvalidResponseException("Received invalid blocks from a different chain"));
-      } else {
-        requestBlocks();
-      }
-    } else if (blocksToImport.size() == 0 && !requestedBlockDirectly) {
-      // If we've received no blocks in the range we want, this range could be empty - request the
-      // next block directly
-      requestTargetBlockDirectly();
-    } else {
-      // We haven't completed the batch and we've hit our request limit
-      future.completeExceptionally(new InvalidResponseException("Failed to deliver full batch"));
+  private SafeFuture<Boolean> requestBlocksByRange() {
+    final RequestParameters requestParams = calculateRequestParams();
+    if (requestParams.getCount().equals(UInt64.ZERO)) {
+      // Nothing left to request
+      return SafeFuture.completedFuture(false);
     }
+
+    LOG.trace(
+        "Request {} blocks from {} to {}",
+        requestParams.getCount(),
+        requestParams.getStartSlot(),
+        requestParams.getEndSlot());
+    final RequestManager requestManager =
+        new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
+    return peer.requestBlocksByRange(
+            requestParams.getStartSlot(),
+            requestParams.getCount(),
+            UInt64.ONE,
+            requestManager::processBlock)
+        .thenApply(__ -> shouldRetryBlockByRangeRequest());
   }
 
-  private void requestTargetBlockDirectly() {
+  private boolean shouldRetryBlockByRangeRequest() {
+    return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
+  }
+
+  private SafeFuture<Void> requestBlockByHash() {
     LOG.trace("Request next historical block directly by hash {}", lastBlockRoot);
-    requestedBlockDirectly = true;
-    peer.requestBlockByRoot(lastBlockRoot)
-        .thenAccept(maybeBlock -> maybeBlock.ifPresent(blocksToImport::add))
-        .finish(this::complete, this::handleRequestError);
+    return peer.requestBlockByRoot(lastBlockRoot)
+        .thenAccept(maybeBlock -> maybeBlock.ifPresent(blocksToImport::add));
   }
 
-  private void importBatch() {
+  private SafeFuture<Void> importBatch() {
     final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
-    storageUpdateChannel
+    return storageUpdateChannel
         .onFinalizedBlocks(blocksToImport)
-        .finish(() -> future.complete(newEarliestBlock), future::completeExceptionally);
+        .thenRun(() -> future.complete(newEarliestBlock));
   }
 
   private RequestParameters calculateRequestParams() {
@@ -196,6 +200,20 @@ public class HistoricalBatchFetcher {
 
   private Optional<SignedBeaconBlock> getLatestReceivedBlock() {
     return Optional.ofNullable(blocksToImport.peekLast());
+  }
+
+  private boolean latestBlockCompletesBatch(Optional<SignedBeaconBlock> latestBlock) {
+    return latestBlock
+        .map(SignedBeaconBlock::getRoot)
+        .map(r -> r.equals(lastBlockRoot))
+        .orElse(false);
+  }
+
+  private boolean latestBlockShouldCompleteBatch(Optional<SignedBeaconBlock> latestBlock) {
+    return latestBlock
+        .map(SignedBeaconBlock::getSlot)
+        .map(s -> s.isGreaterThanOrEqualTo(maxSlot))
+        .orElse(false);
   }
 
   private static class RequestManager {
