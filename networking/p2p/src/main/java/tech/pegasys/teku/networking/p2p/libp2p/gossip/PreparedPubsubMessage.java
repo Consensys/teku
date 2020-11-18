@@ -40,8 +40,8 @@ public class PreparedPubsubMessage implements PubsubMessage {
   public PreparedPubsubMessage(Message protobufMessage, PreparedGossipMessage preparedMessage) {
     this.protobufMessage = protobufMessage;
     this.preparedMessage = preparedMessage;
-    cachedMessageId = Suppliers
-        .memoize(() -> new WBytes(preparedMessage.getMessageId().toArrayUnsafe()));
+    cachedMessageId =
+        Suppliers.memoize(() -> new WBytes(preparedMessage.getMessageId().toArrayUnsafe()));
   }
 
   @NotNull
