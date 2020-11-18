@@ -71,7 +71,7 @@ class StateGenerationTaskTest {
 
     assertThatSafeFuture(result)
         .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
-    assertRequestedBlockRangeInclusive(3, 5);
+    assertRequestedBlockRangeInclusive(4, 5);
   }
 
   @Test
@@ -85,7 +85,7 @@ class StateGenerationTaskTest {
     final SafeFuture<Optional<StateAndBlockSummary>> result = rebasedTask.performTask();
     assertThatSafeFuture(result)
         .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
-    assertRequestedBlockRangeInclusive(4, 5);
+    assertRequestedBlockRangeInclusive(5, 5);
   }
 
   @Test
