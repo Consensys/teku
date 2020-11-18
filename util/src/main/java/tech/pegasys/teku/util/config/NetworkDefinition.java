@@ -165,6 +165,11 @@ public class NetworkDefinition {
     return eth1Endpoint;
   }
 
+  @Override
+  public String toString() {
+    return constants;
+  }
+
   private static class Builder {
     private String constants;
     private Optional<String> initialState = Optional.empty();

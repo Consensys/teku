@@ -14,8 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
@@ -43,16 +43,17 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetSszState implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/states/:state_id";
+public class GetStateByBlockRoot implements Handler {
+  public static final String ROUTE = "/teku/v1/beacon/blocks/:block_id/state";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
-  public GetSszState(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetStateByBlockRoot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this(dataProvider.getChainDataProvider(), jsonProvider);
   }
 
-  public GetSszState(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  public GetStateByBlockRoot(
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.chainDataProvider = chainDataProvider;
   }
@@ -60,10 +61,11 @@ public class GetSszState implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get SSZ State",
+      summary = "Get SSZ State By Block id",
       tags = {TAG_TEKU},
-      description = "Download the state SSZ object for given state_id.",
-      pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
+      description =
+          "Download the state SSZ object for given identifier - by block root, keyword, or slot.",
+      pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -79,7 +81,7 @@ public class GetSszState implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     SafeFuture<Optional<StateSszResponse>> future =
-        chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
+        chainDataProvider.getBeaconStateSszByBlockRoot(pathParamMap.get(PARAM_BLOCK_ID));
     ctx.result(
         future.thenApplyChecked(
             result -> {
@@ -88,7 +90,7 @@ public class GetSszState implements Handler {
                 return BadRequest.serialize(
                     jsonProvider,
                     SC_NOT_FOUND,
-                    "State not found: " + pathParamMap.get(PARAM_STATE_ID));
+                    "State by block root not found: " + pathParamMap.get(PARAM_BLOCK_ID));
               }
               final StateSszResponse stateSszResponse = result.get();
               ctx.header(

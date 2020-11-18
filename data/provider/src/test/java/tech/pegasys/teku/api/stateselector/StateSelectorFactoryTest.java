@@ -94,8 +94,13 @@ public class StateSelectorFactoryTest {
   }
 
   @Test
-  public void defaultBlockSelector_shouldThrowBadRequestException() {
+  public void defaultStateSelector_shouldThrowBadRequestException() {
     assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("a"));
+  }
+
+  @Test
+  public void byBlockRootSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.byBlockRootStateSelector("a"));
   }
 
   @Test

@@ -46,7 +46,6 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @Command(
     name = "db",
@@ -224,8 +223,7 @@ public class DebugDbCommand implements Runnable {
   }
 
   private void setConstants(@Mixin final NetworkOptions networkOptions) {
-    Constants.setConstants(
-        NetworkDefinition.fromCliArg(networkOptions.getNetwork()).getConstants());
+    Constants.setConstants(networkOptions.getNetwork().getConstants());
   }
 
   private Database createDatabase(
@@ -237,9 +235,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            NetworkDefinition.fromCliArg(networkOptions.getNetwork())
-                .getEth1DepositContractAddress()
-                .orElse(null));
+            networkOptions.getNetwork().getEth1DepositContractAddress().orElse(null));
     return databaseFactory.createDatabase();
   }
 
