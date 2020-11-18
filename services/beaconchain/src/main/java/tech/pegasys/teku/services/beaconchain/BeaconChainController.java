@@ -56,7 +56,6 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -171,7 +170,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
-  private volatile Optional<AnchorPoint> weakSubjectivityAnchor = Optional.empty();
+  private volatile Optional<AnchorPoint> initialAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
@@ -281,12 +280,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (weakSubjectivityAnchor.isPresent()) {
-                // If we already have an existing database and a ws anchor, validate that they are
-                // consistent
+              } else if (initialAnchor.isPresent()) {
+                // If we already have an existing database and an initial anchor, validate that they
+                // are consistent
                 return wsInitializer
-                    .assertWeakSubjectivityAnchorIsConsistentWithExistingData(
-                        client, weakSubjectivityAnchor.get(), storageQueryChannel)
+                    .assertInitialAnchorIsConsistentWithExistingData(
+                        client, initialAnchor.get(), storageQueryChannel)
                     .thenApply(__ -> client);
               }
               return SafeFuture.completedFuture(client);
@@ -393,10 +392,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
-    this.weakSubjectivityAnchor = wsInitializer.loadAnchorPoint(beaconConfig.weakSubjectivity());
+    this.initialAnchor = wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
     return wsInitializer
         .finalizeAndStoreConfig(
-            beaconConfig.weakSubjectivity(), weakSubjectivityAnchor, queryChannel, updateChannel)
+            beaconConfig.weakSubjectivity(), initialAnchor, queryChannel, updateChannel)
         .thenAccept(
             finalConfig -> {
               this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
@@ -707,10 +706,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void setupInitialState(final RecentChainData client) {
-    if (weakSubjectivityAnchor.isPresent()) {
-      client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
-    } else if (config.getInitialState() != null) {
-      setupGenesisState();
+    if (initialAnchor.isPresent()) {
+      final AnchorPoint anchor = initialAnchor.get();
+      client.initializeFromAnchorPoint(anchor);
+      if (anchor.isGenesis()) {
+        EVENT_LOG.genesisEvent(
+            anchor.getRoot(),
+            recentChainData.getBestBlockRoot().orElseThrow(),
+            anchor.getState().getGenesis_time());
+      }
     } else if (config.isInteropEnabled()) {
       setupInteropState();
     } else if (!config.isEth1Enabled()) {
@@ -722,23 +726,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void setupInteropState() {
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
-    final BeaconState interopState =
+    final BeaconState genesisState =
         InteropStartupUtil.createMockedStartInitialBeaconState(
             config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
-    initializeGenesis(interopState);
-  }
 
-  private void setupGenesisState() {
-    try {
-      STATUS_LOG.loadingGenesisResource(config.getInitialState());
-      final BeaconState genesisState = ChainDataLoader.loadState(config.getInitialState());
-      initializeGenesis(genesisState);
-    } catch (final IOException e) {
-      throw new IllegalStateException("Failed to load genesis state", e);
-    }
-  }
-
-  private void initializeGenesis(final BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState);
 
     EVENT_LOG.genesisEvent(

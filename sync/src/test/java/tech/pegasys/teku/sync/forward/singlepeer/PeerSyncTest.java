@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -516,6 +517,15 @@ public class PeerSyncTest extends AbstractSyncTest {
             eq(UInt64.ONE),
             any());
     verify(peer, never()).disconnectCleanly(any());
+  }
+
+  @Test
+  void sync_invalidResponseResultWhenMalformedResponse() {
+    when(peer.requestBlocksByRange(any(), any(), any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new DecompressFailedException()));
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);
   }
 
   private void withPeerHeadSlot(final UInt64 peerHeadSlot) {

@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -434,7 +435,9 @@ class OkHttpValidatorRestApiClientTest {
     final int committeeIndex = 1;
     final AttestationData expectedAttestationData = schemaObjects.attestation().data;
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestationData)));
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(asJson(new GetAttestationDataResponse(expectedAttestationData))));
     Optional<AttestationData> attestationData =
         apiClient.createAttestationData(slot, committeeIndex);
     assertThat(attestationData).isPresent();

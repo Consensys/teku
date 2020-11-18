@@ -42,7 +42,6 @@ import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @Command(
     name = "transition",
@@ -120,8 +119,7 @@ public class TransitionCommand implements Runnable {
 
   private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(
-        NetworkDefinition.fromCliArg(params.networkOptions.getNetwork()).getConstants());
+    Constants.setConstants(params.networkOptions.getNetwork().getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
