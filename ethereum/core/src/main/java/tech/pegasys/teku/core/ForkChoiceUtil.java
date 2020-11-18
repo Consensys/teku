@@ -387,10 +387,12 @@ public class ForkChoiceUtil {
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
         .ifSuccessful(
             () -> {
-              if (validateableAttestation.isValidIndexedAttestation()) {
-                return SUCCESSFUL;
+              if (maybeTargetState.isEmpty()) {
+                return AttestationProcessingResult.UNKNOWN_BLOCK;
+              } else {
+                return is_valid_indexed_attestation(
+                    maybeTargetState.get(), validateableAttestation);
               }
-              return indexAndValidateAttestation(validateableAttestation, maybeTargetState);
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
