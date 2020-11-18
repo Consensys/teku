@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
@@ -61,6 +63,18 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedEpoch;
   private final SettableGauge previousJustifiedRoot;
+
+  private final SettableGauge currentEpochTotalParticipationWeight;
+  private final SettableGauge previousEpochTotalParticipationWeight;
+
+  final Function<BeaconState, Predicate<PendingAttestation>> createCorrectlyContributedValidatorPredicate = (state) -> {
+    return attestation ->
+            attestation
+                    .getData()
+                    .getTarget()
+                    .getRoot()
+                    .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
+  }
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -166,6 +180,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_correct_validators",
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
+
+    currentEpochTotalParticipationWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_total_participation_weight",
+                    "Number of validators who voted for correct source and target checkpoints in the current epoch");
+    previousEpochTotalParticipationWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_total_participation_weight",
+                    "Number of validators who voted for correct source and target checkpoints in the previous epoch");
   }
 
   @Override
@@ -180,6 +207,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentActiveValidators.set(
         get_active_validator_indices(state, get_current_epoch(state)).size());
+    currentEpochTotalParticipationWeight.set(getTotalParticipationWeight(state, state.getCurrent_epoch_attestations()).longValue());
 
     CorrectAndLiveValidators previousEpochValidators =
         getNumberOfValidators(state, state.getPrevious_epoch_attestations());
@@ -187,6 +215,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     previousCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     previousActiveValidators.set(
         get_active_validator_indices(state, get_previous_epoch(state)).size());
+    previousEpochTotalParticipationWeight.set(getTotalParticipationWeight(state, state.getPrevious_epoch_attestations()).longValue());
+
 
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     finalizedEpoch.set(finalizedCheckpoint.getEpoch().longValue());
@@ -205,12 +235,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
       final BeaconState state, final SSZList<PendingAttestation> attestations) {
 
     final Predicate<PendingAttestation> isCorrectValidatorPredicate =
-        attestation ->
-            attestation
-                .getData()
-                .getTarget()
-                .getRoot()
-                .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
+            createCorrectlyContributedValidatorPredicate.apply(state);
 
     final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
@@ -250,37 +275,29 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
   }
 
-  private CorrectAndLiveValidators getNumberOfValidatost(
+  private UInt64 getTotalParticipationWeight(
           final BeaconState state, final SSZList<PendingAttestation> attestations) {
 
-    final Predicate<PendingAttestation> isCorrectValidatorPredicate =
-            attestation ->
-                    attestation
-                            .getData()
-                            .getTarget()
-                            .getRoot()
-                            .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
 
-    Set<Integer> correctValidatorIndices = new HashSet<>();
+    Set<Integer> validatorIndices = new HashSet<>();
+    Predicate<PendingAttestation> correctlyContributedValidatorPredicate =
+            createCorrectlyContributedValidatorPredicate.apply(state);
 
     attestations
-            .filter
+            .filter(correctlyContributedValidatorPredicate)
             .forEach(attestation -> {
       List<Integer> attestationAttesterIndices = get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
-      if (isCorrectValidatorPredicate.test(attestation)) {
-        correctValidatorIndices.addAll(attestationAttesterIndices);
+      if (correctlyContributedValidatorPredicate.test(attestation)) {
+        validatorIndices.addAll(attestationAttesterIndices);
       }
     });
 
-    UInt64 allValidatorIndicesBalance = UInt64.ZERO;
-    UInt64 correctValidatorIndicesBalance = UInt64.ZERO;
-    for (int index : correctValidatorIndices) {
-      correctValidatorIndicesBalance = correctValidatorIndicesBalance.plus(state.getValidators().get(index).getEffective_balance());
+    UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
+    for (int index : validatorIndices) {
+      validatorIndicesTotalBalance = validatorIndicesTotalBalance.plus(state.getValidators().get(index).getEffective_balance());
     }
 
-    for (int index : allValidatorIndices) {
-      allValidatorIndicesBalance = allValidatorIndicesBalance.plus(state.getValidators().get(index).getEffective_balance());
-    }
+    return validatorIndicesTotalBalance;
   }
 
 
