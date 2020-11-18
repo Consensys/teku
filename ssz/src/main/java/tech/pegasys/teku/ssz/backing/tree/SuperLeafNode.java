@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +29,7 @@ public class SuperLeafNode implements TreeNode {
   private final Bytes data;
   private final int dataLeafCount;
   private final long totalLeafCount;
+  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calcHashTreeRoot);
 
   public SuperLeafNode(int depth, Bytes data) {
     this.depth = depth;
@@ -41,6 +44,10 @@ public class SuperLeafNode implements TreeNode {
 
   @Override
   public Bytes32 hashTreeRoot() {
+    return hashTreeRoot.get();
+  }
+
+  private Bytes32 calcHashTreeRoot() {
     return hashTreeRoot(0, 0, totalLeafCount);
   }
 
@@ -50,12 +57,12 @@ public class SuperLeafNode implements TreeNode {
     } else if (curDepth == depth) {
       assert toNodeIdx - fromNodeIdx == 1;
       if (fromNodeIdx + 1 < dataLeafCount) {
-        return Bytes32.wrap(data, (int) fromNodeIdx * 32);
+        return Bytes32.wrap(data.slice((int) fromNodeIdx * 32, 32));
       } else {
         return Bytes32.rightPad(data.slice((int) (fromNodeIdx * 32)));
       }
     } else {
-      long midNodeIdx = fromNodeIdx + (1 << (depth - curDepth - 1));
+      long midNodeIdx = fromNodeIdx + (1L << (depth - curDepth - 1));
       assert midNodeIdx - fromNodeIdx == toNodeIdx - midNodeIdx;
       return Hash.sha2_256(Bytes.wrap(hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
           hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
@@ -75,7 +82,8 @@ public class SuperLeafNode implements TreeNode {
     if (leafIndex < dataLeafCount - 1) {
       return new LeafNodeImpl(data.slice((int) (leafIndex * 32), 32));
     } else if (leafIndex == dataLeafCount - 1) {
-      return new LeafNodeImpl(data.slice((int) (leafIndex * 32), data.size() % 32));
+      return new LeafNodeImpl(data.slice((int) (leafIndex * 32),
+          (int) (data.size() - leafIndex * 32)));
     } else {
       return TreeUtil.EMPTY_LEAF;
     }
@@ -107,7 +115,7 @@ public class SuperLeafNode implements TreeNode {
     LeafNode lastNewLeafNode = (LeafNode) lastNewNode;
     int newDataSize = max(data.size(), lastUpdatedIndex * 32 + lastNewLeafNode.getData().size());
     int newLeafCount = (newDataSize + 31) / 32;
-    MutableBytes newData = MutableBytes.create(newDataSize);
+    MutableBytes newData = MutableBytes.wrap(new byte[newDataSize]);
     int updateIdx = 0;
     for (int leafIdx = 0; leafIdx < newLeafCount; leafIdx++) {
       if (updateIdx < newNodes.size() &&
