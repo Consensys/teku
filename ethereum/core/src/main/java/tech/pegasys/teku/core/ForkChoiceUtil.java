@@ -14,7 +14,6 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -410,46 +408,6 @@ public class ForkChoiceUtil {
                               new UnsupportedOperationException(
                                   "ValidateableAttestation does not have an IndexedAttestation yet."));
               forkChoiceStrategy.onAttestation(store, indexedAttestation);
-              return SUCCESSFUL;
-            });
-  }
-
-  /**
-   * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
-   *
-   * @param attestation
-   * @param maybeTargetState The state corresponding to the attestation target, if it is available
-   * @return
-   */
-  private static AttestationProcessingResult indexAndValidateAttestation(
-      ValidateableAttestation attestation, Optional<BeaconState> maybeTargetState) {
-    BeaconState targetState;
-    try {
-      if (maybeTargetState.isEmpty()) {
-        return AttestationProcessingResult.UNKNOWN_BLOCK;
-      }
-      targetState = maybeTargetState.get();
-    } catch (final InvalidCheckpointException e) {
-      LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
-      return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
-    }
-
-    IndexedAttestation indexedAttestation;
-    Optional<IndexedAttestation> maybeIndexedAttestation = attestation.getIndexedAttestation();
-    try {
-      indexedAttestation =
-          maybeIndexedAttestation.orElse(
-              get_indexed_attestation(targetState, attestation.getAttestation()));
-    } catch (IllegalArgumentException e) {
-      LOG.debug("on_attestation: Attestation is not valid: ", e);
-      return AttestationProcessingResult.invalid(e.getMessage());
-    }
-    return is_valid_indexed_attestation(targetState, indexedAttestation)
-        .ifSuccessful(
-            () -> {
-              attestation.setIndexedAttestation(indexedAttestation);
-              attestation.saveCommitteeShufflingSeed(targetState);
-
               return SUCCESSFUL;
             });
   }
