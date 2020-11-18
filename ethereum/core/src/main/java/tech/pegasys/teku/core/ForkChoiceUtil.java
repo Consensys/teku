@@ -440,7 +440,6 @@ public class ForkChoiceUtil {
     return is_valid_indexed_attestation(targetState, indexedAttestation)
         .ifSuccessful(
             () -> {
-              attestation.setValidIndexedAttestation();
               attestation.setIndexedAttestation(indexedAttestation);
               attestation.saveCommitteeShufflingSeed(targetState);
 

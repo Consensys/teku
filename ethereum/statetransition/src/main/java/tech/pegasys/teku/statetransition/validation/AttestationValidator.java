@@ -186,6 +186,8 @@ public class AttestationValidator {
               if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
                 return REJECT;
               }
+              validateableAttestation.setValidIndexedAttestation();
+              validateableAttestation.setIndexedAttestation(indexedAttestation);
 
               // The attestation's target block is an ancestor of the block named in the LMD vote
               if (!forkChoiceUtilWrapper
