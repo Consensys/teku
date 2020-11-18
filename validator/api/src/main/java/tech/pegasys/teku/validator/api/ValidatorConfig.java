@@ -37,6 +37,10 @@ public class ValidatorConfig {
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
+  private final Path validatorExternalSignerKeystore;
+  private final Path validatorExternalSignerKeystorePasswordFile;
+  private final Path validatorExternalSignerTruststore;
+  private final Path validatorExternalSignerTruststorePasswordFile;
   private final Bytes32 graffiti;
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
@@ -49,6 +53,10 @@ public class ValidatorConfig {
       final List<BLSPublicKey> validatorExternalSignerPublicKeys,
       final URL validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
+      final Path validatorExternalSignerKeystore,
+      final Path validatorExternalSignerKeystorePasswordFile,
+      final Path validatorExternalSignerTruststore,
+      final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<URI> beaconNodeApiEndpoint,
       final Bytes32 graffiti,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
@@ -60,6 +68,11 @@ public class ValidatorConfig {
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
+    this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
+    this.validatorExternalSignerKeystorePasswordFile = validatorExternalSignerKeystorePasswordFile;
+    this.validatorExternalSignerTruststore = validatorExternalSignerTruststore;
+    this.validatorExternalSignerTruststorePasswordFile =
+        validatorExternalSignerTruststorePasswordFile;
     this.graffiti = graffiti;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
@@ -104,6 +117,15 @@ public class ValidatorConfig {
     return validatorExternalSignerTimeout;
   }
 
+  public Pair<Path, Path> getValidatorExternalSignerKeystorePasswordFilePair() {
+    return Pair.of(validatorExternalSignerKeystore, validatorExternalSignerKeystorePasswordFile);
+  }
+
+  public Pair<Path, Path> getValidatorExternalSignerTruststorePasswordFilePair() {
+    return Pair.of(
+        validatorExternalSignerTruststore, validatorExternalSignerTruststorePasswordFile);
+  }
+
   public Optional<URI> getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
   }
@@ -136,6 +158,10 @@ public class ValidatorConfig {
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerTimeout = 1000;
+    private Path validatorExternalSignerKeystore;
+    private Path validatorExternalSignerKeystorePasswordFile;
+    private Path validatorExternalSignerTruststore;
+    private Path validatorExternalSignerTruststorePasswordFile;
     private Bytes32 graffiti;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
@@ -182,6 +208,30 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorExternalSignerKeystore(final Path validatorExternalSignerKeystore) {
+      this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
+      return this;
+    }
+
+    public Builder validatorExternalSignerKeystorePasswordFile(
+        final Path validatorExternalSignerKeystorePasswordFile) {
+      this.validatorExternalSignerKeystorePasswordFile =
+          validatorExternalSignerKeystorePasswordFile;
+      return this;
+    }
+
+    public Builder validatorExternalSignerTruststore(final Path validatorExternalSignerTruststore) {
+      this.validatorExternalSignerTruststore = validatorExternalSignerTruststore;
+      return this;
+    }
+
+    public Builder validatorExternalSignerTruststorePasswordFile(
+        final Path validatorExternalSignerTruststorePasswordFile) {
+      this.validatorExternalSignerTruststorePasswordFile =
+          validatorExternalSignerTruststorePasswordFile;
+      return this;
+    }
+
     public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
       this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
       return this;
@@ -205,6 +255,9 @@ public class ValidatorConfig {
 
     public ValidatorConfig build() {
       validateKeyStoreFilesAndPasswordFilesConfig();
+      validateExternalSignerUrlAndPublicKeys();
+      validateExternalSignerKeystoreAndPasswordFileConfig();
+      validateExternalSignerTruststoreAndPasswordFileConfig();
       return new ValidatorConfig(
           validatorKeys,
           validatorKeystoreFiles,
@@ -212,6 +265,10 @@ public class ValidatorConfig {
           validatorExternalSignerPublicKeys,
           validatorExternalSignerUrl,
           validatorExternalSignerTimeout,
+          validatorExternalSignerKeystore,
+          validatorExternalSignerKeystorePasswordFile,
+          validatorExternalSignerTruststore,
+          validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoint,
           graffiti,
           validatorPerformanceTrackingMode,
@@ -242,6 +299,39 @@ public class ValidatorConfig {
                 validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
         throw new InvalidConfigurationException(errorMessage);
       }
+    }
+
+    private void validateExternalSignerUrlAndPublicKeys() {
+      if (validatorExternalSignerPublicKeys == null
+          || validatorExternalSignerPublicKeys.isEmpty()) {
+        return;
+      }
+
+      if (validatorExternalSignerUrl == null) {
+        final String errorMessage =
+            "Invalid configuration. '--validators-external-signer-url' and '--validators-external-signer-public-keys' must be specified together";
+        throw new InvalidConfigurationException(errorMessage);
+      }
+    }
+
+    private void validateExternalSignerKeystoreAndPasswordFileConfig() {
+      if (validatorExternalSignerKeystore == null
+          && validatorExternalSignerKeystorePasswordFile == null) {
+        return;
+      }
+      final String errorMessage =
+          "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together";
+      throw new InvalidConfigurationException(errorMessage);
+    }
+
+    private void validateExternalSignerTruststoreAndPasswordFileConfig() {
+      if (validatorExternalSignerTruststore == null
+          && validatorExternalSignerTruststorePasswordFile == null) {
+        return;
+      }
+      final String errorMessage =
+          "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together";
+      throw new InvalidConfigurationException(errorMessage);
     }
   }
 }

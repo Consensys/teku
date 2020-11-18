@@ -45,25 +45,22 @@ public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
-  private final Supplier<HttpClient> remoteValidatorHttpClientFactory;
+  private Supplier<HttpClient> externalValidatorHttpClientFactory;
 
-  @VisibleForTesting
-  ValidatorLoader(
-      final SlashingProtector slashingProtector,
-      final AsyncRunner asyncRunner,
-      final Supplier<HttpClient> remoteValidatorHttpClientFactory) {
+  private ValidatorLoader(
+      final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
     this.slashingProtector = slashingProtector;
     this.asyncRunner = asyncRunner;
-    this.remoteValidatorHttpClientFactory = remoteValidatorHttpClientFactory;
   }
 
   public static ValidatorLoader create(
       final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
-    return new ValidatorLoader(
-        slashingProtector,
-        asyncRunner,
-        Suppliers.memoize(
-            () -> HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()));
+    return new ValidatorLoader(slashingProtector, asyncRunner);
+  }
+
+  @VisibleForTesting
+  void setExternalValidatorHttpClientFactory(final Supplier<HttpClient> httpClientSupplier) {
+    this.externalValidatorHttpClientFactory = httpClientSupplier;
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(
@@ -98,12 +95,18 @@ public class ValidatorLoader {
 
   private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
+
+    if (externalValidatorHttpClientFactory == null) {
+      externalValidatorHttpClientFactory =
+          Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
+    }
+
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
             publicKey -> {
               final ExternalSigner externalSigner =
                   new ExternalSigner(
-                      remoteValidatorHttpClientFactory.get(),
+                      externalValidatorHttpClientFactory.get(),
                       config.getValidatorExternalSignerUrl(),
                       publicKey,
                       timeout);

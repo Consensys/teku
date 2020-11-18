@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -73,7 +74,12 @@ class ValidatorLoaderTest {
   private final HttpClient httpClient = mock(HttpClient.class);
 
   private final ValidatorLoader validatorLoader =
-      new ValidatorLoader(slashingProtector, asyncRunner, () -> httpClient);
+      ValidatorLoader.create(slashingProtector, asyncRunner);
+
+  @BeforeEach
+  void setupExternalValidatorHttpClient() {
+    validatorLoader.setExternalValidatorHttpClientFactory(() -> httpClient);
+  }
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() {
