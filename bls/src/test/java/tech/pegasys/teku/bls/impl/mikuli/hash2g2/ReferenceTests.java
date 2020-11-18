@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.bls.impl.mikuli.hash2g2;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.clearH2;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.expandMessage;
@@ -23,32 +21,22 @@ import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.hashToField;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.iso3;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.mapToCurve;
 
-import com.google.common.base.Splitter;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.bls.impl.mikuli.G2Point;
 
 /**
  * Test files are from https://github.com/algorand/bls_sigs_ref/tree/master/test-vectors/hash_g2
@@ -204,67 +192,5 @@ class ReferenceTests {
 
   private static FP2Immutable getFieldPoint(String s) {
     return new FP2Immutable(s.substring(0, 98), s.substring(99));
-  }
-
-  //
-  // Reference tests for hash to G2 from
-  // https://github.com/algorand/bls_sigs_ref/tree/master/test-vectors/hash_g2
-  //
-
-  private static final Path pathToFipsTests =
-      Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
-
-  @Disabled // TODO (#2409): re-enable once test vectors for draft 07 are available
-  @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
-  @MethodSource({
-    "getFipsTestCases",
-  })
-  void fipsReferenceTest(
-      String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
-    final G2Point actual = new G2Point(HashToCurve.hashToG2(message, suite));
-    assertEquals(expected, actual);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> getFipsTestCases() {
-    Scanner sc;
-    List<String> fileNames;
-    try (Stream<Path> walk = Files.walk(pathToFipsTests)) {
-
-      fileNames =
-          walk.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
-
-      Iterator<String> fileNamesIterator = fileNames.iterator();
-      ArrayList<Arguments> argumentsList = new ArrayList<>();
-      while (fileNamesIterator.hasNext()) {
-        File file = new File(fileNamesIterator.next());
-        try {
-          sc = new Scanner(file, UTF_8.name());
-          int i = 0;
-          while (sc.hasNextLine()) {
-
-            // Test line format is "MessageHex 00 CompressedG2Point"
-            List<String> params = Splitter.on(" ").omitEmptyStrings().splitToList(sc.nextLine());
-            checkArgument(params.size() == 3, "Wrong number of fields in input data.");
-
-            Bytes message = Bytes.fromHexString(params.get(0));
-            G2Point expected = G2Point.fromBytesCompressed(Bytes.fromHexString(params.get(2)));
-
-            // Cipher suite is fixed at 0x02 in the test data
-            Bytes suite = Bytes.fromHexString("0x02");
-
-            argumentsList.add(Arguments.of(file.toString(), i, message, suite, expected));
-            i++;
-          }
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }
-
-      return argumentsList.stream();
-
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
   }
 }
