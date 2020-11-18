@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.etc.types.WBytes;
 import io.libp2p.pubsub.PubsubMessage;
@@ -33,16 +35,19 @@ public class PreparedPubsubMessage implements PubsubMessage {
 
   private final Message protobufMessage;
   private final PreparedGossipMessage preparedMessage;
+  private final Supplier<WBytes> cachedMessageId;
 
   public PreparedPubsubMessage(Message protobufMessage, PreparedGossipMessage preparedMessage) {
     this.protobufMessage = protobufMessage;
     this.preparedMessage = preparedMessage;
+    cachedMessageId = Suppliers
+        .memoize(() -> new WBytes(preparedMessage.getMessageId().toArrayUnsafe()));
   }
 
   @NotNull
   @Override
   public WBytes getMessageId() {
-    return new WBytes(preparedMessage.getMessageId().toArrayUnsafe());
+    return cachedMessageId.get();
   }
 
   @NotNull
