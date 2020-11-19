@@ -273,6 +273,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     attestations.forEach(
         attestation -> {
           if (isCorrectValidatorPredicate.test(attestation)) {
+            // Worried that calling the get_attesting_indices method below might severely affect CPU
+            // usage.
+            // However, it seems to be the only way to find out how much stake is participating.
             List<Integer> attestationAttesterIndices =
                 get_attesting_indices(
                     state, attestation.getData(), attestation.getAggregation_bits());
