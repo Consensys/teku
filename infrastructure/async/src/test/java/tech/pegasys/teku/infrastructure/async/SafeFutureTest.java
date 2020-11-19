@@ -840,6 +840,39 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void asyncDoWhile_handlesManyLoopsCompletingImmediately() {
+    final int loopCount = 2000;
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < loopCount);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(loopCount);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_handlesManyLoopsCompletingAsync() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final int loopCount = 2000;
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> asyncRunner.runAsync(() -> counter.incrementAndGet() < loopCount);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+
+    int count = 0;
+    while (!res.isDone() && count <= loopCount) {
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeQueuedActions();
+      count++;
+    }
+
+    assertThat(counter.get()).isEqualTo(loopCount);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
   void alwaysRun_shouldRunWhenFutureCompletesSuccessfully() {
     final Runnable action = mock(Runnable.class);
     SafeFuture<String> source = new SafeFuture<>();
