@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.remote;
 import static java.util.Collections.emptyMap;
 
 import com.launchdarkly.eventsource.EventSource;
-
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.Credentials;
