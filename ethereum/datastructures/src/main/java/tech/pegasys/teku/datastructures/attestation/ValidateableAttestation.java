@@ -39,6 +39,8 @@ public class ValidateableAttestation {
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
 
+  private volatile boolean isValidIndexedAttestation = false;
+
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile OptionalInt receivedSubnetId;
@@ -87,6 +89,14 @@ public class ValidateableAttestation {
 
   public boolean isProducedLocally() {
     return producedLocally;
+  }
+
+  public boolean isValidIndexedAttestation() {
+    return isValidIndexedAttestation;
+  }
+
+  public void setValidIndexedAttestation() {
+    this.isValidIndexedAttestation = true;
   }
 
   public Optional<IndexedAttestation> getIndexedAttestation() {

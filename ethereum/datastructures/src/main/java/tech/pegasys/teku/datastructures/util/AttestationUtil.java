@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -125,6 +126,29 @@ public class AttestationUtil {
       }
     }
     return new ArrayList<>(attesting_indices);
+  }
+
+  public static AttestationProcessingResult is_valid_indexed_attestation(
+      BeaconState state, ValidateableAttestation attestation) {
+    if (attestation.isValidIndexedAttestation()) {
+      return AttestationProcessingResult.SUCCESSFUL;
+    } else {
+      try {
+        IndexedAttestation indexedAttestation =
+            get_indexed_attestation(state, attestation.getAttestation());
+        attestation.setIndexedAttestation(indexedAttestation);
+        AttestationProcessingResult result =
+            is_valid_indexed_attestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+        if (result.isSuccessful()) {
+          attestation.saveCommitteeShufflingSeed(state);
+          attestation.setValidIndexedAttestation();
+        }
+        return result;
+      } catch (IllegalArgumentException e) {
+        LOG.debug("on_attestation: Attestation is not valid: ", e);
+        return AttestationProcessingResult.invalid(e.getMessage());
+      }
+    }
   }
 
   /**
