@@ -106,6 +106,16 @@ class ValidatorConfigTest {
   }
 
   @Test
+  public void noExceptionThrownIfBothExternalSignerKeystoreAndPasswordFileAreSpecified() {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerKeystore(Path.of("somepath"))
+            .validatorExternalSignerKeystorePasswordFile(Path.of("somepath"));
+
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
   public void shouldThrowExceptionIfExternalSignerTruststoreSpecifiedWithoutPasswordFile() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerTruststore(Path.of("somepath"));
@@ -124,6 +134,16 @@ class ValidatorConfigTest {
         .isThrownBy(builder::build)
         .withMessageContaining(
             "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together");
+  }
+
+  @Test
+  public void noExceptionThrownIfBothExternalSignerTruststoreAndPasswordFileAreSpecified() {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerTruststore(Path.of("somepath"))
+            .validatorExternalSignerTruststorePasswordFile(Path.of("somepath"));
+
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
   }
 
   private ValidatorConfig.Builder buildConfig(
