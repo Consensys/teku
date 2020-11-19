@@ -205,7 +205,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "current_epoch_total_weight",
+            "previous_epoch_total_weight",
             "Total effective balance of all active validators in the previous epoch");
   }
 
