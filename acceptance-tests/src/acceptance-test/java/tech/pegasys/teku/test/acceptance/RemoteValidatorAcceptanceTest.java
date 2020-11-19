@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -21,11 +22,27 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   static final int VALIDATOR_COUNT = 8;
 
+  private TekuNode beaconNode;
+  private TekuValidatorNode validatorClient;
+
+  @BeforeEach
+  public void setup() {
+    beaconNode = createTekuNode(
+        config ->
+            config
+                .withNetwork("minimal")
+                .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                .withInteropValidators(0, 0));
+    validatorClient = createValidatorNode(
+        config ->
+            config
+                .withNetwork("minimal")
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
+  }
+
   @Test
   void shouldCreateAttestationsWithRemoteValidator() throws Exception {
-    final TekuNode beaconNode = getBeaconNode();
-    final TekuValidatorNode validatorClient = getValidatorClient(beaconNode.getBeaconRestApiUrl());
-
     beaconNode.start();
     validatorClient.start();
 
@@ -36,10 +53,6 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldCreateAttestationsWithRemoteValidatorStartingFirst() throws Exception {
-
-    final TekuNode beaconNode = getBeaconNode();
-    final TekuValidatorNode validatorClient = getValidatorClient(beaconNode.getBeaconRestApiUrl());
-
     validatorClient.start();
     validatorClient.waitForLogMessageContaining(
         "Error while connecting to beacon node event stream");
@@ -50,24 +63,5 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published block");
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
-  }
-
-  private TekuNode getBeaconNode() {
-    return createTekuNode(
-        config ->
-            config
-                .withNetwork("minimal")
-                .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                .withInteropValidators(0, 0)
-                .withRestHostsAllowed("*"));
-  }
-
-  private TekuValidatorNode getValidatorClient(final String beaconRestUrl) {
-    return createValidatorNode(
-        config ->
-            config
-                .withNetwork("minimal")
-                .withInteropValidators(0, VALIDATOR_COUNT)
-                .withBeaconNodeEndpoint(beaconRestUrl));
   }
 }

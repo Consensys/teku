@@ -145,10 +145,6 @@ public class TekuNode extends Node {
     waitFor(() -> assertThat(fetchBeaconHead().get()).isNotEqualTo(startingBlockRoot));
   }
 
-  public void waitForSlot(final long slot) {
-    waitFor(() -> assertThat(getFilteredOutput("Slot: " + slot + ",")).isNotEmpty(), 1, MINUTES);
-  }
-
   public void waitForNewFinalization() {
     UInt64 startingFinalizedEpoch = waitForChainHead().finalized.epoch;
     LOG.debug("Wait for finalized block");
@@ -405,18 +401,13 @@ public class TekuNode extends Node {
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
+      configMap.put("rest-api-host-allowlist", "*");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
       configMap.put("Xinterop-enabled", false);
       configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress());
       configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
-      return this;
-    }
-
-    public Config withRestHostsAllowed(final String allowList) {
-      LOG.debug("rest-api-host-allowlist:" + allowList);
-      configMap.put("rest-api-host-allowlist", allowList);
       return this;
     }
 
