@@ -63,7 +63,6 @@ public abstract class Node {
     container.stop();
   }
 
-
   public void waitForLogMessageContaining(final String filter) {
     waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
   }

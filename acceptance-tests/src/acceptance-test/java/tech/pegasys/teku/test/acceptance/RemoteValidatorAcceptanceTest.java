@@ -72,7 +72,8 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                     .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
 
     validatorClient.start();
-    validatorClient.waitForLogMessageContaining("Error while connecting to beacon node event stream");
+    validatorClient.waitForLogMessageContaining(
+        "Error while connecting to beacon node event stream");
 
     beaconNode.start();
 
