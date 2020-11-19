@@ -47,17 +47,15 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
     final ScheduledDuties scheduledDuties = scheduledDutiesFactory.get();
     return validatorIndexProvider
         .getValidatorIndices(validators.keySet())
-        .thenCompose(
-            validatorIndices ->
-                requestDuties(epoch, validatorIndices)
-                    .thenApply(
-                        maybeDuties ->
-                            maybeDuties.orElseThrow(
-                                () ->
-                                    new NodeDataUnavailableException(
-                                        "Duties could not be calculated because chain data was not yet available")))
-                    .thenCompose(duties -> scheduleAllDuties(scheduledDuties, duties))
-                    .thenApply(__ -> scheduledDuties));
+        .thenCompose(validatorIndices -> requestDuties(epoch, validatorIndices))
+        .thenApply(
+            maybeDuties ->
+                maybeDuties.orElseThrow(
+                    () ->
+                        new NodeDataUnavailableException(
+                            "Duties could not be calculated because chain data was not yet available")))
+        .thenCompose(duties -> scheduleAllDuties(scheduledDuties, duties))
+        .thenApply(__ -> scheduledDuties);
   }
 
   protected abstract SafeFuture<Optional<List<D>>> requestDuties(
