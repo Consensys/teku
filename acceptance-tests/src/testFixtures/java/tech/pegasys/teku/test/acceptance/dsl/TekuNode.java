@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
@@ -22,8 +20,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -65,15 +61,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
-
-  public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";
-  private static final int REST_API_PORT = 9051;
-  private static final String CONFIG_FILE_PATH = "/config.yaml";
-  protected static final String WORKING_DIRECTORY = "/opt/teku/";
-  private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
-  private static final int P2P_PORT = 9000;
-  private static final ObjectMapper YAML_MAPPER =
-      new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
 
   private final SimpleHttpClient httpClient;
   private final Config config;
@@ -156,6 +143,10 @@ public class TekuNode extends Node {
   public void waitForNewBlock() {
     final Bytes32 startingBlockRoot = waitForBeaconHead();
     waitFor(() -> assertThat(fetchBeaconHead().get()).isNotEqualTo(startingBlockRoot));
+  }
+
+  public void waitForSlot(final long slot) {
+    waitFor(() -> assertThat(getFilteredOutput("Slot: " + slot + ",")).isNotEmpty(), 1, MINUTES);
   }
 
   public void waitForNewFinalization() {
@@ -346,6 +337,12 @@ public class TekuNode extends Node {
     return "/dns4/" + nodeAlias + "/tcp/" + P2P_PORT + "/p2p/" + config.getPeerId();
   }
 
+  public String getBeaconRestApiUrl() {
+    final String url = "http://" + nodeAlias + ":" + REST_API_PORT;
+    LOG.debug("Node REST url: " + url);
+    return url;
+  }
+
   private URI getRestApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
   }
@@ -417,14 +414,20 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withValidatorKeys(final String validatorKeys) {
-      this.validatorKeys = Optional.of(validatorKeys);
+    public Config withRestHostsAllowed(final String allowList) {
+      LOG.debug("rest-api-host-allowlist:" + allowList);
+      configMap.put("rest-api-host-allowlist", allowList);
       return this;
     }
 
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
+      return this;
+    }
+
+    public Config withInteropNumberOfValidators(final int validatorCount) {
+      configMap.put("Xinterop-number-of-validators", validatorCount);
       return this;
     }
 
@@ -441,24 +444,6 @@ public class TekuNode extends Node {
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
-    }
-
-    public Config withGenesisState(String pathToGenesisState) {
-      checkNotNull(pathToGenesisState);
-      configMap.put("initial-state", pathToGenesisState);
-      return this;
-    }
-
-    /**
-     * Configures parameters for generating a genesis state.
-     *
-     * @param config Configuration defining how to generate the genesis state.
-     * @return this config
-     */
-    public Config withGenesisConfig(final GenesisStateConfig config) {
-      checkNotNull(config);
-      this.genesisStateConfig = Optional.of(config);
-      return withGenesisState(config.getPath());
     }
 
     public Config withPeers(final TekuNode... nodes) {

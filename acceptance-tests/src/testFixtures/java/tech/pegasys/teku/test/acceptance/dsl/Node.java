@@ -13,24 +13,40 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static org.assertj.core.api.Assertions.fail;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.OutputFrame;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public abstract class Node {
-  private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
+  public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";
+
+  protected static final int REST_API_PORT = 9051;
+  protected static final String CONFIG_FILE_PATH = "/config.yaml";
+  protected static final String WORKING_DIRECTORY = "/opt/teku/";
+  protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";
+  protected static final int P2P_PORT = 9000;
+  protected static final ObjectMapper YAML_MAPPER =
+      new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
   protected final NodeContainer container;
   protected final String nodeAlias;
+
+  private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
 
   protected Node(final Network network, final String dockerImageName, final Logger log) {
     this.nodeAlias =
@@ -61,6 +77,18 @@ public abstract class Node {
     } catch (final Throwable t) {
       fail(t.getMessage() + " Logs: " + container.getLogs(), t);
     }
+  }
+
+  public String getLoggedErrors() {
+    return container.getLogs(OutputFrame.OutputType.STDERR);
+  }
+
+  public List<String> getFilteredOutput(final String filter) {
+    return container
+        .getLogs(OutputFrame.OutputType.STDOUT)
+        .lines()
+        .filter(s -> s.contains(filter))
+        .collect(Collectors.toList());
   }
 
   public void captureDebugArtifacts(final File artifactDir) {}
