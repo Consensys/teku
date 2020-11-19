@@ -56,6 +56,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.AttestationUtilObject;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -418,7 +419,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(
         SlotEventsChannel.class,
         new BeaconChainMetrics(
-            recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
+            recentChainData,
+            slotProcessor.getNodeSlot(),
+            metricsSystem,
+            p2pNetwork,
+            new AttestationUtilObject()));
   }
 
   public void initDepositProvider() {

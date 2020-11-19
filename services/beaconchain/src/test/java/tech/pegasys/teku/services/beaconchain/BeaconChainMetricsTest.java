@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.AttestationUtilObject;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -74,12 +76,16 @@ class BeaconChainMetricsTest {
   private final Checkpoint currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
   private final Checkpoint previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
 
+  private final AttestationUtilObject attestationUtilObject = mock(AttestationUtilObject.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
-      new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2Network);
+      new BeaconChainMetrics(
+          recentChainData, nodeSlot, metricsSystem, eth2Network, attestationUtilObject);
 
   @BeforeEach
   void setUp() {
+    when(attestationUtilObject.get_attesting_indices(any(), any(), any()))
+        .thenReturn(Collections.EMPTY_LIST);
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
     when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);

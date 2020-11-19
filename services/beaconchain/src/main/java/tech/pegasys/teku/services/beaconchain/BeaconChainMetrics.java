@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.datastructures.util.AttestationUtilObject;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,6 +49,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
+  private final AttestationUtilObject attestationUtil;
 
   private final SettableGauge previousLiveValidators;
   private final SettableGauge currentActiveValidators;
@@ -72,9 +73,11 @@ public class BeaconChainMetrics implements SlotEventsChannel {
       final RecentChainData recentChainData,
       final NodeSlot nodeSlot,
       final MetricsSystem metricsSystem,
-      final Eth2Network p2pNetwork) {
+      final Eth2Network p2pNetwork,
+      final AttestationUtilObject utilObject) {
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
+    this.attestationUtil = utilObject;
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -278,7 +281,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             // usage. However, it seems to be the only way to find out how much stake is
             // participating.
             List<Integer> attestationAttesterIndices =
-                get_attesting_indices(
+                attestationUtil.get_attesting_indices(
                     state, attestation.getData(), attestation.getAggregation_bits());
             validatorIndices.addAll(attestationAttesterIndices);
 
