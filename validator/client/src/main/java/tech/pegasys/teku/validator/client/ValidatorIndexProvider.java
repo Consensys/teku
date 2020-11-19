@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorIndexProvider {
@@ -36,6 +38,8 @@ public class ValidatorIndexProvider {
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
+  private SafeFuture<Map<BLSPublicKey, Integer>> future =
+      SafeFuture.completedFuture(Collections.emptyMap());
 
   public ValidatorIndexProvider(
       final Collection<BLSPublicKey> validators, final ValidatorApiChannel validatorApiChannel) {
@@ -44,15 +48,16 @@ public class ValidatorIndexProvider {
   }
 
   public void lookupValidators() {
-    if (!requestInProgress.compareAndSet(false, true)) {
-      return;
-    }
     if (unknownValidators.isEmpty()) {
       return;
     }
+
+    if (!requestInProgress.compareAndSet(false, true)) {
+      return;
+    }
     LOG.trace("Looking up {} unknown validators", unknownValidators.size());
-    validatorApiChannel
-        .getValidatorIndices(unknownValidators)
+    future = validatorApiChannel.getValidatorIndices(unknownValidators);
+    future
         .thenAccept(
             knownValidators -> {
               logNewValidatorIndices(knownValidators);
@@ -80,6 +85,12 @@ public class ValidatorIndexProvider {
   }
 
   public Collection<Integer> getValidatorIndices(final Collection<BLSPublicKey> publicKeys) {
-    return publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList());
+    return future
+        .thenApply(
+            __ ->
+                publicKeys.stream()
+                    .flatMap(key -> getValidatorIndex(key).stream())
+                    .collect(toList()))
+        .join();
   }
 }
