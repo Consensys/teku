@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,6 +61,11 @@ public abstract class Node {
 
   public void stop() {
     container.stop();
+  }
+
+
+  public void waitForLogMessageContaining(final String filter) {
+    waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
   }
 
   protected void waitFor(

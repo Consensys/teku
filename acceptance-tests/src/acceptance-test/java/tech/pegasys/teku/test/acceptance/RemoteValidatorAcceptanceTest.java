@@ -45,9 +45,44 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.start();
 
     validatorClient.waitForLogMessageContaining("Published block");
-    validatorClient.waitForLogMessageContaining("Published aggregate");
     validatorClient.waitForLogMessageContaining("Published attestation");
+    validatorClient.waitForLogMessageContaining("Published aggregate");
 
     assertThat(validatorClient.getLoggedErrors()).isEmpty();
+  }
+
+  @Test
+  void shouldCreateAttestationsWithRemoteValidatorStartingFirst() throws Exception {
+    final int validatorCount = 8;
+    final TekuNode beaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork("minimal")
+                    .withInteropNumberOfValidators(validatorCount)
+                    .withInteropValidators(0, 0)
+                    .withRestHostsAllowed("*"));
+
+    final TekuValidatorNode validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withNetwork("minimal")
+                    .withInteropValidators(0, validatorCount)
+                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
+
+    validatorClient.start();
+    validatorClient.waitForLogMessageContaining("Error while connecting to beacon node event stream");
+
+    beaconNode.start();
+
+    validatorClient.waitForLogMessageContaining("Connected to EventSource stream");
+    validatorClient.waitForLogMessageContaining("Published block");
+
+    // straight after this message we start to see attestations and aggregations
+    beaconNode.waitForLogMessageContaining("Updating number of persistent subnet subscriptions");
+
+    validatorClient.waitForLogMessageContaining("Published attestation");
+    validatorClient.waitForLogMessageContaining("Published aggregate");
   }
 }

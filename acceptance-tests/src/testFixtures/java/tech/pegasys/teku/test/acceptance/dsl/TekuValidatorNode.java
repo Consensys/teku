@@ -83,10 +83,6 @@ public class TekuValidatorNode extends Node {
     container.stop();
   }
 
-  public void waitForLogMessageContaining(final String filter) {
-    waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 1, TimeUnit.MINUTES);
-  }
-
   public static class Config {
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
