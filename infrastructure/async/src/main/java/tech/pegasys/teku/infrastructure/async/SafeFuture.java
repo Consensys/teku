@@ -129,8 +129,17 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @return A future that will complete when looping terminates
    */
   public static SafeFuture<Void> asyncDoWhile(ExceptionThrowingFutureSupplier<Boolean> loopBody) {
-    return SafeFuture.of(loopBody::get)
-        .thenCompose(res -> res ? asyncDoWhile(loopBody) : SafeFuture.COMPLETE);
+    // Loop while futures complete immediately in order to avoid stack overflow due to recursion
+    SafeFuture<Boolean> loopFuture = SafeFuture.of(loopBody);
+    while (loopFuture.isCompletedNormally()) {
+      if (!loopFuture.join()) {
+        // Break if the result is false
+        break;
+      }
+      loopFuture = SafeFuture.of(loopBody);
+    }
+
+    return loopFuture.thenCompose(res -> res ? asyncDoWhile(loopBody) : SafeFuture.COMPLETE);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -212,6 +221,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public SafeFuture<Void> toVoid() {
     return thenAccept(__ -> {});
+  }
+
+  public boolean isCompletedNormally() {
+    return isDone() && !isCompletedExceptionally() && !isCancelled();
   }
 
   @Override
