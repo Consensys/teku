@@ -45,7 +45,6 @@ public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
-  private Supplier<HttpClient> externalValidatorHttpClientFactory;
 
   private ValidatorLoader(
       final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
@@ -58,19 +57,24 @@ public class ValidatorLoader {
     return new ValidatorLoader(slashingProtector, asyncRunner);
   }
 
-  @VisibleForTesting
-  void setExternalValidatorHttpClientFactory(final Supplier<HttpClient> httpClientSupplier) {
-    this.externalValidatorHttpClientFactory = httpClientSupplier;
+  public Map<BLSPublicKey, Validator> initializeValidators(
+      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
+    return initializeValidators(config, globalConfiguration, externalSignerHttpClientFactory);
   }
 
-  public Map<BLSPublicKey, Validator> initializeValidators(
-      ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+  @VisibleForTesting
+  Map<BLSPublicKey, Validator> initializeValidators(
+      final ValidatorConfig config,
+      final GlobalConfiguration globalConfiguration,
+      final Supplier<HttpClient> externalSignerHttpClientFactory) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
     final Map<BLSPublicKey, Validator> validators = new HashMap<>();
     validators.putAll(createLocalSignerValidator(config, globalConfiguration));
-    validators.putAll(createExternalSignerValidator(config));
+    validators.putAll(createExternalSignerValidator(config, externalSignerHttpClientFactory));
 
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
@@ -93,20 +97,16 @@ public class ValidatorLoader {
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
+  private Map<BLSPublicKey, Validator> createExternalSignerValidator(
+      final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
-
-    if (externalValidatorHttpClientFactory == null) {
-      externalValidatorHttpClientFactory =
-          Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
-    }
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
             publicKey -> {
               final ExternalSigner externalSigner =
                   new ExternalSigner(
-                      externalValidatorHttpClientFactory.get(),
+                      externalSignerHttpClientFactory.get(),
                       config.getValidatorExternalSignerUrl(),
                       publicKey,
                       timeout);
