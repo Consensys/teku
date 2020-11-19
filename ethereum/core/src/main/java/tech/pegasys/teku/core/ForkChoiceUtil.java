@@ -28,8 +28,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -48,8 +46,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   public static UInt64 get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UInt64 time = useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTime();
