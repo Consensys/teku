@@ -84,13 +84,10 @@ public class ValidatorIndexProvider {
     return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
   }
 
-  public Collection<Integer> getValidatorIndices(final Collection<BLSPublicKey> publicKeys) {
-    return future
-        .thenApply(
-            __ ->
-                publicKeys.stream()
-                    .flatMap(key -> getValidatorIndex(key).stream())
-                    .collect(toList()))
-        .join();
+  public SafeFuture<Collection<Integer>> getValidatorIndices(
+      final Collection<BLSPublicKey> publicKeys) {
+    return future.thenApply(
+        __ ->
+            publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList()));
   }
 }
