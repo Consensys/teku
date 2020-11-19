@@ -27,18 +27,20 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   @BeforeEach
   public void setup() {
-    beaconNode = createTekuNode(
-        config ->
-            config
-                .withNetwork("minimal")
-                .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                .withInteropValidators(0, 0));
-    validatorClient = createValidatorNode(
-        config ->
-            config
-                .withNetwork("minimal")
-                .withInteropValidators(0, VALIDATOR_COUNT)
-                .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
+    beaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork("minimal")
+                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                    .withInteropValidators(0, 0));
+    validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withNetwork("minimal")
+                    .withInteropValidators(0, VALIDATOR_COUNT)
+                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
   }
 
   @Test
