@@ -315,23 +315,25 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerKeystoreAndPasswordFileConfig() {
-      if (validatorExternalSignerKeystore == null
-          && validatorExternalSignerKeystorePasswordFile == null) {
-        return;
+      if ((validatorExternalSignerKeystore != null
+              && validatorExternalSignerKeystorePasswordFile == null)
+          || (validatorExternalSignerKeystore == null
+              && validatorExternalSignerKeystorePasswordFile != null)) {
+        final String errorMessage =
+            "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together";
+        throw new InvalidConfigurationException(errorMessage);
       }
-      final String errorMessage =
-          "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together";
-      throw new InvalidConfigurationException(errorMessage);
     }
 
     private void validateExternalSignerTruststoreAndPasswordFileConfig() {
-      if (validatorExternalSignerTruststore == null
-          && validatorExternalSignerTruststorePasswordFile == null) {
-        return;
+      if ((validatorExternalSignerTruststore != null
+              && validatorExternalSignerTruststorePasswordFile == null)
+          || (validatorExternalSignerTruststore == null
+              && validatorExternalSignerTruststorePasswordFile != null)) {
+        final String errorMessage =
+            "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together";
+        throw new InvalidConfigurationException(errorMessage);
       }
-      final String errorMessage =
-          "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together";
-      throw new InvalidConfigurationException(errorMessage);
     }
   }
 }

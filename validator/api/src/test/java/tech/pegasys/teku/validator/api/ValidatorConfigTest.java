@@ -15,9 +15,13 @@ package tech.pegasys.teku.validator.api;
 
 import static java.util.Collections.emptyList;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 class ValidatorConfigTest {
@@ -49,6 +53,77 @@ class ValidatorConfigTest {
         .isThrownBy(config::build)
         .withMessageContaining(
             "Invalid configuration. The number of --validators-key-files (2) must equal the number of --validators-key-password-files (1)");
+  }
+
+  @Test
+  public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerPublicKeys(
+            List.of(BLSKeyPair.random(0).getPublicKey()));
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-url' and '--validators-external-signer-public-keys' must be specified together");
+  }
+
+  @Test
+  public void noExceptionThrownIfExternalSignerUrlIsSpecifiedWithoutExternalPublicKeys()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void noExceptionThrownIfBothExternalSignerUrlAndPublicKeysAreSpecified()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerPublicKeys(List.of(BLSKeyPair.random(0).getPublicKey()))
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
+
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void shouldThrowExceptionIfExternalSignerKeystoreSpecifiedWithoutPasswordFile() {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerKeystore(Path.of("somepath"));
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together");
+  }
+
+  @Test
+  public void shouldThrowExceptionIfExternalSignerKeystorePasswordFileIsSpecifiedWithoutKeystore() {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerKeystorePasswordFile(Path.of("somepath"));
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together");
+  }
+
+  @Test
+  public void shouldThrowExceptionIfExternalSignerTruststoreSpecifiedWithoutPasswordFile() {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerTruststore(Path.of("somepath"));
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together");
+  }
+
+  @Test
+  public void
+      shouldThrowExceptionIfExternalSignerTruststorePasswordFileIsSpecifiedWithoutTruststore() {
+    final ValidatorConfig.Builder builder =
+        configBuilder.validatorExternalSignerTruststorePasswordFile(Path.of("somepath"));
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together");
   }
 
   private ValidatorConfig.Builder buildConfig(
