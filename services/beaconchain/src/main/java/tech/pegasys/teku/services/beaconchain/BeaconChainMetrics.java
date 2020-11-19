@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -68,16 +67,6 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge previousEpochParticipationWeight;
   private final SettableGauge currentEpochTotalWeight;
   private final SettableGauge previousEpochTotalWeight;
-
-  final Function<BeaconState, Predicate<PendingAttestation>>
-      createCorrectlyContributedValidatorPredicate =
-          state ->
-              attestation ->
-                  attestation
-                      .getData()
-                      .getTarget()
-                      .getRoot()
-                      .equals(get_block_root(state, compute_epoch_at_slot(state.getSlot())));
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -270,6 +259,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
             ? stateAndBlock.getRoot()
             : get_block_root_at_slot(stateAndBlock.getState(), epochStartSlot);
+
     final Predicate<PendingAttestation> isCorrectValidatorPredicate =
         attestation -> attestation.getData().getTarget().getRoot().equals(correctBlockRoot);
 
@@ -278,6 +268,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
     Set<Integer> validatorIndices = new HashSet<>();
+
+    BeaconState state = stateAndBlock.getState();
 
     attestations.forEach(
         attestation -> {
