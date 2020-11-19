@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -180,10 +178,7 @@ public class AttestationValidator {
                 return REJECT;
               }
 
-              // The signature of attestation is valid.
-              final IndexedAttestation indexedAttestation =
-                  get_indexed_attestation(state, attestation);
-              if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
+              if (!is_valid_indexed_attestation(state, validateableAttestation).isSuccessful()) {
                 return REJECT;
               }
 
