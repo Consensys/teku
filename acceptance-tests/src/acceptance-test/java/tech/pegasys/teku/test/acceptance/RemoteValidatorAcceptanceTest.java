@@ -79,10 +79,6 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
     validatorClient.waitForLogMessageContaining("Connected to EventSource stream");
     validatorClient.waitForLogMessageContaining("Published block");
-
-    // straight after this message we start to see attestations and aggregations
-    beaconNode.waitForLogMessageContaining("Updating number of persistent subnet subscriptions");
-
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
   }
