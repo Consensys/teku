@@ -15,7 +15,8 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -32,6 +33,7 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -211,12 +213,13 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getBestState().ifPresent(this::updateMetrics);
+    recentChainData.getChainHead().ifPresent(this::updateMetrics);
   }
 
-  private void updateMetrics(final BeaconState state) {
+  private void updateMetrics(final StateAndBlockSummary head) {
+    final BeaconState state = head.getState();
     CorrectAndLiveValidators currentEpochValidators =
-        getNumberOfValidators(state, state.getCurrent_epoch_attestations());
+        getNumberOfValidators(head, state.getCurrent_epoch_attestations());
     currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentEpochParticipationWeight.set(currentEpochValidators.totalParticipationWeight);
@@ -231,7 +234,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     currentActiveValidators.set(currentEpochActiveValidators.size());
 
     CorrectAndLiveValidators previousEpochValidators =
-        getNumberOfValidators(state, state.getPrevious_epoch_attestations());
+        getNumberOfValidators(head, state.getPrevious_epoch_attestations());
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
     previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousEpochParticipationWeight.set(previousEpochValidators.totalParticipationWeight);
@@ -259,10 +262,16 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private CorrectAndLiveValidators getNumberOfValidators(
-      final BeaconState state, final SSZList<PendingAttestation> attestations) {
+      final StateAndBlockSummary stateAndBlock, final SSZList<PendingAttestation> attestations) {
 
+    final UInt64 epochStartSlot =
+        compute_start_slot_at_epoch(compute_epoch_at_slot(stateAndBlock.getSlot()));
+    final Bytes32 correctBlockRoot =
+        epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
+            ? stateAndBlock.getRoot()
+            : get_block_root_at_slot(stateAndBlock.getState(), epochStartSlot);
     final Predicate<PendingAttestation> isCorrectValidatorPredicate =
-        createCorrectlyContributedValidatorPredicate.apply(state);
+        attestation -> attestation.getData().getTarget().getRoot().equals(correctBlockRoot);
 
     final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();

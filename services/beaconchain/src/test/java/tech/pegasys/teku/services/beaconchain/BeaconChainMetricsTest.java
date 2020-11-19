@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -58,7 +59,9 @@ class BeaconChainMetricsTest {
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24eFFFFFFFFFFFFFF7F");
   private final Bytes32 root3 =
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24e0000000000000080");
-  private final BeaconState randomState = dataStructureUtil.randomBeaconState();
+  private final StateAndBlockSummary chainHead =
+      dataStructureUtil.randomSignedBlockAndState(NODE_SLOT_VALUE);
+  private final BeaconState randomState = chainHead.getState();
   private final BeaconState state = mock(BeaconState.class);
 
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
@@ -77,7 +80,7 @@ class BeaconChainMetricsTest {
 
   @BeforeEach
   void setUp() {
-    when(recentChainData.getBestState()).thenReturn(Optional.of(randomState));
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
     when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
     when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
@@ -246,6 +249,9 @@ class BeaconChainMetricsTest {
   @Test
   void activeValidators_retrievesCorrectValue() {
     final UInt64 slotNumber = compute_start_slot_at_epoch(UInt64.valueOf(13));
+    final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
+    when(stateAndBlock.getSlot()).thenReturn(slotNumber);
+    when(stateAndBlock.getState()).thenReturn(state);
     when(state.getSlot()).thenReturn(slotNumber);
     final List<Validator> validators =
         List.of(
@@ -253,7 +259,7 @@ class BeaconChainMetricsTest {
             validator(14, 15, false),
             validator(10, 12, false),
             validator(10, 15, true));
-    when(recentChainData.getBestState()).thenReturn(Optional.of(state));
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
     when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
     when(state.getPrevious_epoch_attestations())
         .thenReturn(SSZList.empty(PendingAttestation.class));
@@ -359,15 +365,56 @@ class BeaconChainMetricsTest {
         .isEqualTo(4);
   }
 
+  @Test
+  void currentCorrectValidators_withStateAtFirstSlotOfEpoch() {
+    Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 slot = UInt64.valueOf(SLOTS_PER_EPOCH);
+    Checkpoint target = new Checkpoint(compute_epoch_at_slot(slot), blockRoot);
+
+    List<Bytes32> blockRootsList = new ArrayList<>(Collections.nCopies(33, blockRoot));
+    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
+    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final Bitlist bitlist2 = bitlistOf(2, 4, 6, 8);
+    List<PendingAttestation> allAttestations =
+        Stream.concat(
+                createAttestationsWithTargetCheckpoint(slot.intValue(), 1, target, bitlist1),
+                createAttestationsWithTargetCheckpoint(
+                    slot.intValue(),
+                    1,
+                    new Checkpoint(compute_epoch_at_slot(slot), blockRoot.not()),
+                    bitlist2))
+            .collect(toList());
+
+    withCurrentEpochAttestations(allAttestations, slot, blockRoot);
+
+    beaconChainMetrics.onSlot(UInt64.valueOf(20));
+    assertThat(metricsSystem.getGauge(BEACON, "current_correct_validators").getValue())
+        .isEqualTo(4);
+  }
+
   private void withCurrentEpochAttestations(final List<PendingAttestation> attestations) {
+    withCurrentEpochAttestations(
+        attestations, UInt64.valueOf(100), dataStructureUtil.randomBytes32());
+  }
+
+  private void withCurrentEpochAttestations(
+      final List<PendingAttestation> attestations,
+      final UInt64 slot,
+      final Bytes32 currentBlockRoot) {
     when(state.getCurrent_epoch_attestations())
         .thenReturn(
             SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
     when(state.getPrevious_epoch_attestations())
         .thenReturn(SSZList.empty(PendingAttestation.class));
     when(state.getValidators()).thenReturn(SSZList.empty(Validator.class));
-    when(state.getSlot()).thenReturn(UInt64.valueOf(100));
-    when(recentChainData.getBestState()).thenReturn(Optional.of(state));
+    when(state.getSlot()).thenReturn(slot);
+
+    final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
+    when(stateAndBlock.getSlot()).thenReturn(slot);
+    when(stateAndBlock.getState()).thenReturn(state);
+    when(stateAndBlock.getRoot()).thenReturn(currentBlockRoot);
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
   }
 
   private void withPreviousEpochAttestations(final List<PendingAttestation> attestations) {
@@ -376,8 +423,13 @@ class BeaconChainMetricsTest {
             SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
     when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
     when(state.getValidators()).thenReturn(SSZList.empty(Validator.class));
-    when(state.getSlot()).thenReturn(UInt64.valueOf(100));
-    when(recentChainData.getBestState()).thenReturn(Optional.of(state));
+    final UInt64 slot = UInt64.valueOf(100);
+    when(state.getSlot()).thenReturn(slot);
+
+    final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
+    when(stateAndBlock.getSlot()).thenReturn(slot);
+    when(stateAndBlock.getState()).thenReturn(state);
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
   }
 
   private Stream<PendingAttestation> createAttestations(

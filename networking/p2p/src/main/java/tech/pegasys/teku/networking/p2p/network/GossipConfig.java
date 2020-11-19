@@ -28,7 +28,7 @@ public class GossipConfig {
   public static final int DEFAULT_ADVERTISE = 3;
   public static final int DEFAULT_HISTORY = 6;
   public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
-  public static final Duration DEFAULT_SEEN_TTL = Duration.ofMillis(550);
+  public static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(550);
 
   public static final GossipConfig DEFAULT_CONFIG =
       new GossipConfig(
