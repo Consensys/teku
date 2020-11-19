@@ -388,13 +388,8 @@ public class ForkChoiceUtil {
               if (maybeTargetState.isEmpty()) {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
-                try {
-                  return is_valid_indexed_attestation(
-                      maybeTargetState.get(), validateableAttestation);
-                } catch (IllegalArgumentException e) {
-                  LOG.debug("on_attestation: Attestation is not valid: ", e);
-                  return AttestationProcessingResult.invalid(e.getMessage());
-                }
+                return is_valid_indexed_attestation(
+                    maybeTargetState.get(), validateableAttestation);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
