@@ -122,6 +122,26 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return new Interruptor(interruptFuture, exceptionSupplier);
   }
 
+  /**
+   * Repeatedly run the loop until it returns false or completes exceptionally
+   *
+   * @param loopBody A supplier for generating futures to be run in succession
+   * @return A future that will complete when looping terminates
+   */
+  public static SafeFuture<Void> asyncDoWhile(ExceptionThrowingFutureSupplier<Boolean> loopBody) {
+    // Loop while futures complete immediately in order to avoid stack overflow due to recursion
+    SafeFuture<Boolean> loopFuture = SafeFuture.of(loopBody);
+    while (loopFuture.isCompletedNormally()) {
+      if (!loopFuture.join()) {
+        // Break if the result is false
+        break;
+      }
+      loopFuture = SafeFuture.of(loopBody);
+    }
+
+    return loopFuture.thenCompose(res -> res ? asyncDoWhile(loopBody) : SafeFuture.COMPLETE);
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
@@ -201,6 +221,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public SafeFuture<Void> toVoid() {
     return thenAccept(__ -> {});
+  }
+
+  public boolean isCompletedNormally() {
+    return isDone() && !isCompletedExceptionally() && !isCancelled();
   }
 
   @Override

@@ -11,12 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.networking.p2p.network;
 
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public interface StateHandler {
-  StateHandler NOOP = (stateAndBlock) -> {};
+import org.junit.jupiter.api.Test;
 
-  void handle(final StateAndBlockSummary stateAndBlock);
+class GossipConfigTest {
+  @Test
+  void shouldUseCorrectSeenTtl() {
+    // Should be heartbeat interval * 550
+    assertThat(GossipConfig.DEFAULT_SEEN_TTL.toMillis()).isEqualTo(700 * 550);
+  }
 }
