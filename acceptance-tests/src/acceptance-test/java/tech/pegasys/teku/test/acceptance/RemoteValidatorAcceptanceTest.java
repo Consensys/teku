@@ -23,34 +23,31 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldCreateAttestationsWithRemoteValidator() throws Exception {
-    final int VALIDATOR_COUNT = 8;
-    final TekuNode node1 =
+    final int validatorCount = 8;
+    final TekuNode beaconNode =
         createTekuNode(
             config ->
                 config
                     .withNetwork("minimal")
-                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                    .withInteropNumberOfValidators(validatorCount)
                     .withInteropValidators(0, 0)
                     .withRestHostsAllowed("*"));
 
-    final TekuValidatorNode validatorNode1 =
+    final TekuValidatorNode validatorClient =
         createValidatorNode(
             config ->
                 config
                     .withNetwork("minimal")
-                    .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodeEndpoint(node1.getBeaconRestApiUrl()));
+                    .withInteropValidators(0, validatorCount)
+                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
 
-    node1.start();
-    validatorNode1.start();
-    node1.waitForSlot(3);
+    beaconNode.start();
+    validatorClient.start();
 
-    assertThat(validatorNode1.getLoggedErrors()).isEmpty();
-    assertThat(validatorNode1.getFilteredOutput("Published aggregate").size())
-        .isGreaterThanOrEqualTo(2);
-    assertThat(validatorNode1.getFilteredOutput("Published attestation").size())
-        .isGreaterThanOrEqualTo(2);
-    assertThat(validatorNode1.getFilteredOutput("Published block").size())
-        .isGreaterThanOrEqualTo(2);
+    validatorClient.waitForLogMessageContaining("Published block");
+    validatorClient.waitForLogMessageContaining("Published aggregate");
+    validatorClient.waitForLogMessageContaining("Published attestation");
+
+    assertThat(validatorClient.getLoggedErrors()).isEmpty();
   }
 }

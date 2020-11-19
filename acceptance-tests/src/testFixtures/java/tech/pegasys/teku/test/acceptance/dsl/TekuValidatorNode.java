@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,6 +81,10 @@ public class TekuValidatorNode extends Node {
           }
         });
     container.stop();
+  }
+
+  public void waitForLogMessageContaining(final String filter) {
+    waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 1, TimeUnit.MINUTES);
   }
 
   public static class Config {
