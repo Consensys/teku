@@ -45,7 +45,9 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
     LOG.trace("Requesting attestation duties for epoch {}", epoch);
     final ScheduledDuties scheduledDuties = scheduledDutiesFactory.get();
-    return requestDuties(epoch, validatorIndexProvider.getValidatorIndices(validators.keySet()))
+    return validatorIndexProvider
+        .getValidatorIndices(validators.keySet())
+        .thenCompose(validatorIndices -> requestDuties(epoch, validatorIndices))
         .thenApply(
             maybeDuties ->
                 maybeDuties.orElseThrow(
