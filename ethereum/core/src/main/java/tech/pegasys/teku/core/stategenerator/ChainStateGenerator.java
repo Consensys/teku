@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 class ChainStateGenerator {
@@ -65,11 +66,11 @@ class ChainStateGenerator {
     for (SignedBeaconBlock currentBlock : chain) {
       if (currentBlock.getStateRoot().equals(baseState.hash_tree_root())) {
         // Don't process base block
-        handler.handle(currentBlock, baseState);
+        handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;
       }
       state = blockProcessor.process(state, currentBlock);
-      handler.handle(currentBlock, state);
+      handler.handle(new SignedBlockAndState(currentBlock, state));
     }
   }
 }
