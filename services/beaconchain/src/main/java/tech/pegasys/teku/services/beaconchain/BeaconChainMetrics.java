@@ -62,8 +62,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge previousJustifiedEpoch;
   private final SettableGauge previousJustifiedRoot;
 
-  private final SettableGauge currentEpochTotalParticipationWeight;
-  private final SettableGauge previousEpochTotalParticipationWeight;
+  private final SettableGauge currentEpochParticipationWeight;
+  private final SettableGauge previousEpochParticipationWeight;
   private final SettableGauge currentEpochTotalWeight;
   private final SettableGauge previousEpochTotalWeight;
 
@@ -182,17 +182,17 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "previous_correct_validators",
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
 
-    currentEpochTotalParticipationWeight =
+    currentEpochParticipationWeight =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "current_epoch_total_participation_weight",
+            "current_epoch_participation_weight",
             "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
-    previousEpochTotalParticipationWeight =
+    previousEpochParticipationWeight =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "current_epoch_total_participation_weight",
+            "previous_epoch_participation_weight",
             "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
 
     currentEpochTotalWeight =
@@ -219,7 +219,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         getNumberOfValidators(state, state.getCurrent_epoch_attestations());
     currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
-    currentEpochTotalParticipationWeight.set(currentEpochValidators.totalParticipationWeight);
+    currentEpochParticipationWeight.set(currentEpochValidators.totalParticipationWeight);
 
     List<Integer> currentEpochActiveValidators =
         get_active_validator_indices(state, get_current_epoch(state));
@@ -234,7 +234,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         getNumberOfValidators(state, state.getPrevious_epoch_attestations());
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
     previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
-    previousEpochTotalParticipationWeight.set(previousEpochValidators.totalParticipationWeight);
+    previousEpochParticipationWeight.set(previousEpochValidators.totalParticipationWeight);
 
     List<Integer> previousEpochActiveValidators =
         get_active_validator_indices(state, get_previous_epoch(state));
