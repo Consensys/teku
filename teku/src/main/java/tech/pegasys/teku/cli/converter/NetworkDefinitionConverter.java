@@ -11,12 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.cli.converter;
 
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public interface StateHandler {
-  StateHandler NOOP = (stateAndBlock) -> {};
+import picocli.CommandLine;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
-  void handle(final StateAndBlockSummary stateAndBlock);
+public class NetworkDefinitionConverter implements CommandLine.ITypeConverter<NetworkDefinition> {
+  @Override
+  public NetworkDefinition convert(final String networkString) {
+    try {
+      checkNotNull(networkString);
+      return NetworkDefinition.fromCliArg(networkString);
+    } catch (Throwable e) {
+      throw new CommandLine.TypeConversionException("Invalid network definition");
+    }
+  }
 }

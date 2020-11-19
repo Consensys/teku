@@ -138,7 +138,7 @@ public class HistoricalBlockSyncServiceTest {
     startService();
 
     // We should be waiting to actually start the historic sync
-    assertServiceIsWaiting(peer);
+    assertServiceNotActive(peer);
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
 
     // When we switch to in sync, the service should run and complete
@@ -175,7 +175,7 @@ public class HistoricalBlockSyncServiceTest {
     startService();
 
     // We should be waiting to actually start the historic sync
-    assertServiceIsWaiting(peer);
+    assertServiceIsWaitingForPeers(peer);
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
 
     // When should succeed on the next retry
@@ -297,6 +297,7 @@ public class HistoricalBlockSyncServiceTest {
 
       // Peer should only have 1 outstanding request
       assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
       peer.completePendingRequests();
       requestCount++;
     }
@@ -327,14 +328,25 @@ public class HistoricalBlockSyncServiceTest {
   private void assertServiceFinished() {
     assertThat(service.isRunning()).isFalse();
     assertThat(syncStateSubscribers.getSubscriberCount()).isEqualTo(0);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
   }
 
-  private void assertServiceIsWaiting(final RespondingEth2Peer... peers) {
+  private void assertServiceNotActive(final RespondingEth2Peer... peers) {
     assertThat(service.isRunning()).isTrue();
     assertThat(syncStateSubscribers.getSubscriberCount()).isEqualTo(1);
     for (RespondingEth2Peer peer : peers) {
       assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     }
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
+  }
+
+  private void assertServiceIsWaitingForPeers(final RespondingEth2Peer... peers) {
+    assertThat(service.isRunning()).isTrue();
+    assertThat(syncStateSubscribers.getSubscriberCount()).isEqualTo(1);
+    for (RespondingEth2Peer peer : peers) {
+      assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    }
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
   }
 
   private AnchorPoint initializeChainAtEpoch(final UInt64 epoch) {

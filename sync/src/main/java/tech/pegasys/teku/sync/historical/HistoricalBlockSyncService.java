@@ -117,7 +117,7 @@ public class HistoricalBlockSyncService extends Service {
   @Override
   protected SafeFuture<?> doStart() {
     LOG.debug("Start {}", getClass().getSimpleName());
-    return initialize().thenRun(this::requestBlocksIfAppropriate);
+    return initialize().thenRun(this::fetchBlocks);
   }
 
   @Override
@@ -142,8 +142,7 @@ public class HistoricalBlockSyncService extends Service {
                 updateSyncMetrics();
               }
               syncStateSubscription.set(
-                  syncStateProvider.subscribeToSyncStateChanges(
-                      __ -> requestBlocksIfAppropriate()));
+                  syncStateProvider.subscribeToSyncStateChanges(__ -> fetchBlocks()));
             });
   }
 
@@ -153,26 +152,31 @@ public class HistoricalBlockSyncService extends Service {
     }
   }
 
-  private void requestBlocksIfAppropriate() {
+  private void fetchBlocks() {
+    SafeFuture.asyncDoWhile(this::findPeerAndRequestBlocks)
+        .always(
+            () -> {
+              if (isSyncDone()) {
+                stop().reportExceptions();
+              }
+            });
+  }
+
+  private SafeFuture<Boolean> findPeerAndRequestBlocks() {
     final Optional<MaxMissingBlockParams> blockParams = getMaxMissingBlockParams();
-    if (blockParams.isEmpty()) {
-      // Nothing to do - we're caught up to genesis
-      LOG.info("Historical block sync is complete");
-      this.stop().reportExceptions();
-    } else if (isRunning() && syncStateProvider.getCurrentSyncState().isInSync()) {
-      // Pull the next batch of blocks
-      findPeerAndRequestBlocks(blockParams.get());
+    if (blockParams.isPresent() && isActive() && requestInProgress.compareAndSet(false, true)) {
+      return findPeer()
+          .map(peer -> requestBlocks(peer, blockParams.get()))
+          .orElseGet(this::waitToRetry)
+          .alwaysRun(() -> requestInProgress.set(false))
+          .thenApply(__ -> true);
+    } else {
+      return SafeFuture.completedFuture(false);
     }
   }
 
-  private void findPeerAndRequestBlocks(final MaxMissingBlockParams params) {
-    if (requestInProgress.compareAndSet(false, true)) {
-      findPeer()
-          .map(peer -> requestBlocks(peer, params))
-          .orElseGet(this::waitToRetry)
-          .alwaysRun(() -> requestInProgress.set(false))
-          .always(this::requestBlocksIfAppropriate);
-    }
+  private boolean isActive() {
+    return isRunning() && syncStateProvider.getCurrentSyncState().isInSync();
   }
 
   private SafeFuture<Void> requestBlocks(final Eth2Peer peer, final MaxMissingBlockParams params) {
@@ -197,6 +201,9 @@ public class HistoricalBlockSyncService extends Service {
                 LOG.trace("Synced historical blocks to slot {}", newValue.getSlot());
                 earliestBlock = newValue;
                 updateSyncMetrics();
+                if (isSyncDone()) {
+                  LOG.info("Historical block sync is complete");
+                }
               }
             });
   }
@@ -207,11 +214,16 @@ public class HistoricalBlockSyncService extends Service {
         storageUpdateChannel, peer, params.getMaxSlot(), params.getBlockRoot(), batchSize);
   }
 
-  private final Optional<MaxMissingBlockParams> getMaxMissingBlockParams() {
+  private boolean isSyncDone() {
+    return earliestBlock.getBeaconBlock().map(b -> b.getSlot().equals(UInt64.ZERO)).orElse(false);
+  }
+
+  private Optional<MaxMissingBlockParams> getMaxMissingBlockParams() {
     final UInt64 maxSlot;
     final Bytes32 lastBlockRoot;
     if (earliestBlock.getBeaconBlock().isPresent()) {
       if (earliestBlock.getSlot().equals(UInt64.ZERO)) {
+        // Nothing left to request
         return Optional.empty();
       }
       maxSlot = earliestBlock.getSlot().minus(1);
