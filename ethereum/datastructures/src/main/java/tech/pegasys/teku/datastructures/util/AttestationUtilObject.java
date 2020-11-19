@@ -26,6 +26,24 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 public class AttestationUtilObject {
 
+  public List<Integer> get_active_validator_indices(
+      BeaconState state, AttestationData data, Bitlist bits) {
+    List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
+    checkArgument(
+        bits.getCurrentSize() == committee.size(),
+        "Aggregation bitlist size (%s) does not match committee size (%s)",
+        bits.getCurrentSize(),
+        committee.size());
+    Set<Integer> attesting_indices = new HashSet<>();
+    for (int i = 0; i < committee.size(); i++) {
+      int index = committee.get(i);
+      if (bits.getBit(i)) {
+        attesting_indices.add(index);
+      }
+    }
+    return new ArrayList<>(attesting_indices);
+  }
+
   public List<Integer> get_attesting_indices(
       BeaconState state, AttestationData data, Bitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());

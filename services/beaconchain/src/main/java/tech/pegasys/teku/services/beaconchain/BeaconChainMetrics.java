@@ -300,13 +300,6 @@ public class BeaconChainMetrics implements SlotEventsChannel {
               .setAllBits(attestation.getAggregation_bits());
         });
 
-    UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
-    for (int index : validatorIndices) {
-      validatorIndicesTotalBalance =
-          validatorIndicesTotalBalance.plus(
-              state.getValidators().get(index).getEffective_balance());
-    }
-
     final int numberOfCorrectValidators =
         correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
             .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
@@ -318,6 +311,13 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
             .mapToInt(Bitlist::getBitCount)
             .sum();
+
+    UInt64 validatorIndicesTotalBalance = UInt64.ZERO;
+    for (int index : validatorIndices) {
+      validatorIndicesTotalBalance =
+          validatorIndicesTotalBalance.plus(
+              state.getValidators().get(index).getEffective_balance());
+    }
 
     return new CorrectAndLiveValidators(
         numberOfCorrectValidators,

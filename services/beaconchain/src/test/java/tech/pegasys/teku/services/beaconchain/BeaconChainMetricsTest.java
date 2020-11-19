@@ -85,7 +85,7 @@ class BeaconChainMetricsTest {
   @BeforeEach
   void setUp() {
     when(attestationUtilObject.get_attesting_indices(any(), any(), any()))
-        .thenReturn(Collections.EMPTY_LIST);
+        .thenReturn(new ArrayList<>());
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
     when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
