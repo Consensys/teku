@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.Collections.emptySet;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 import java.util.Collections;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import static java.util.Collections.emptySet;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class ActiveValidatorTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,9 +49,13 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 epoch = compute_epoch_at_slot(slot);
-    final int validatorCount = validatorsPerEpoch.getOrDefault(epoch, emptySet()).size();
+    final int validatorCount = getNumberOfValidatorsForEpoch(epoch);
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
     stableSubnetSubscriber.onSlot(slot, validatorCount);
     validatorsPerEpoch.headMap(epoch, false).clear();
+  }
+
+  public int getNumberOfValidatorsForEpoch(final UInt64 epoch){
+    return validatorsPerEpoch.getOrDefault(epoch, emptySet()).size();
   }
 }
