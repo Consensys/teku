@@ -175,6 +175,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
+  private volatile AttestationTopicSubscriber attestationTopicSubscriber;
 
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
@@ -321,10 +322,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncService();
     initSlotProcessor();
     initMetrics();
+    initAttestationTopicSubscriber();
+    initActiveValidatorTracker();
+    initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
-    initPerformanceTracker();
   }
 
   private void initPendingBlocks() {
@@ -436,6 +439,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod());
   }
 
+  private void initAttestationTopicSubscriber() {
+    LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
+    this.attestationTopicSubscriber = new AttestationTopicSubscriber(p2pNetwork);
+  }
+
+  private void initActiveValidatorTracker() {
+    LOG.debug("BeaconChainController.initActiveValidatorTracker");
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
+    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber);
+  }
+
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
@@ -449,13 +466,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti());
-    final AttestationTopicSubscriber attestationTopicSubscriber =
-        new AttestationTopicSubscriber(p2pNetwork);
-    final StableSubnetSubscriber stableSubnetSubscriber =
-        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
-            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
-            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
-    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
