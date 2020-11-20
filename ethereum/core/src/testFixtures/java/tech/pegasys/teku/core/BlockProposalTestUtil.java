@@ -70,7 +70,7 @@ public class BlockProposalTestUtil {
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(state, newSlot),
+            get_beacon_proposer_index(blockSlotState, newSlot),
             randaoReveal,
             blockSlotState,
             parentBlockSigningRoot,
