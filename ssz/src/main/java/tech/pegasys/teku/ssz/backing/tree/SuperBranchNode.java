@@ -2,9 +2,13 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxChildGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -15,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 
 /**
  */
@@ -75,6 +80,29 @@ public class SuperBranchNode implements TreeNode {
     int depth = getDepth();
     return getChild(gIdxGetChildIndex(generalizedIndex, depth))
         .get(gIdxGetRelativeGIndex(generalizedIndex, depth));
+  }
+
+  @Override
+  public boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+    if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
+      return true;
+    } else {
+      boolean thisRes = visitor.visit(this, thisGeneralizedIndex);
+      if (!thisRes) {
+        return false;
+      }
+
+      int depth = getDepth();
+      for (int i = 0; i < getTotalChildCount(); i++) {
+        boolean childRes = getChild(i)
+            .iterate(visitor, gIdxChildGIndex(thisGeneralizedIndex, i, depth),
+                startGeneralizedIndex);
+        if (!childRes) {
+          return false;
+        }
+      }
+      return true;
+    }
   }
 
   @Override

@@ -14,16 +14,22 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 
 /**
@@ -81,6 +87,16 @@ public interface TreeNode {
     }
 
     @Override
+    default boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex,
+        long startGeneralizedIndex) {
+      if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
+        return true;
+      } else {
+        return visitor.visit(this, thisGeneralizedIndex);
+      }
+    }
+
+    @Override
     default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       checkArgument(target == 1, "Invalid root index: %s", target);
       return nodeUpdater.apply(this);
@@ -133,6 +149,19 @@ public interface TreeNode {
     }
 
     @Override
+    default boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex,
+        long startGeneralizedIndex) {
+
+      if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
+        return true;
+      } else {
+        return visitor.visit(this, thisGeneralizedIndex) &&
+            left().iterate(visitor, gIdxLeftGIndex(thisGeneralizedIndex), startGeneralizedIndex) &&
+            right().iterate(visitor, gIdxRightGIndex(thisGeneralizedIndex), startGeneralizedIndex);
+      }
+    }
+
+    @Override
     default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       if (gIdxIsSelf(target)) {
         return nodeUpdater.apply(this);
@@ -165,6 +194,16 @@ public interface TreeNode {
    */
   @NotNull
   TreeNode get(long generalizedIndex);
+
+  boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex);
+
+  default void iterateFrom(TreeVisitor visitor, long startGeneralizedIndex) {
+    iterate(visitor, SELF_G_INDEX, startGeneralizedIndex);
+  }
+
+  default void iterateAll(TreeVisitor visitor) {
+    iterate(visitor, SELF_G_INDEX, LEFTMOST_G_INDEX);
+  }
 
   /**
    * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate

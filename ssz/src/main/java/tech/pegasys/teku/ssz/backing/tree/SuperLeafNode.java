@@ -2,6 +2,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
@@ -12,6 +13,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /**
@@ -86,6 +88,16 @@ public class SuperLeafNode implements TreeNode {
           (int) (data.size() - leafIndex * 32)));
     } else {
       return TreeUtil.EMPTY_LEAF;
+    }
+  }
+
+
+  @Override
+  public boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+    if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
+      return true;
+    } else {
+      return visitor.visit(this, thisGeneralizedIndex);
     }
   }
 

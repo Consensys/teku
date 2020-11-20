@@ -1,12 +1,79 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static java.lang.Integer.min;
+
 public class GIndexUtil {
 
-  final static long LEFTMOST_G_INDEX = gIdxLeftmostFrom(1);
-  final static long RIGHTMOST_G_INDEX = gIdxRightmostFrom(1);
+  public enum NodeRelation {
+    Left,
+    Right,
+    Successor,
+    Predecessor,
+    Same
+  }
+
+  final static long SELF_G_INDEX = 1;
+  final static long LEFTMOST_G_INDEX = gIdxLeftmostFrom(SELF_G_INDEX);
+  final static long RIGHTMOST_G_INDEX = gIdxRightmostFrom(SELF_G_INDEX);
 
   public static boolean gIdxIsSelf(long generalizedIndex) {
-    return generalizedIndex == 1;
+    return generalizedIndex == SELF_G_INDEX;
+  }
+
+  /**
+   * How idx1 relates to idx2:
+   *  Left: idx1 is to the left of idx2
+   *  Right: idx1 is to the right of idx2
+   *  Subset: idx1 is to the right of idx2
+   *  Successor: idx1 is successor of idx2
+   *  Predecessor: idx1 is predecessor of idx2
+   * @param idx1
+   * @param idx2
+   * @return
+   */
+  public static NodeRelation gIdxCompare(long idx1, long idx2) {
+    long anchor1 = Long.highestOneBit(idx1);
+    long anchor2 = Long.highestOneBit(idx2);
+    int depth1 = Long.bitCount(anchor1 - 1);
+    int depth2 = Long.bitCount(anchor2 - 1);
+    int minDepth = min(depth1, depth2);
+    long minDepthIdx1 = idx1 >>> (depth1 - minDepth);
+    long minDepthIdx2 = idx2 >>> (depth2 - minDepth);
+    if (minDepthIdx1 == minDepthIdx2) {
+      if (depth1 < depth2) {
+        return NodeRelation.Predecessor;
+      } else if (depth1 > depth2) {
+        return NodeRelation.Successor;
+      } else {
+        return NodeRelation.Same;
+      }
+    } else {
+      if (minDepthIdx1 < minDepthIdx2) {
+        return NodeRelation.Left;
+      } else {
+        return NodeRelation.Right;
+      }
+    }
+  }
+
+  public static long gIdxLeftGIndex(long generalizedIndex) {
+    return gIdxChildGIndex(generalizedIndex, 0, 1);
+//    long anchor = Long.highestOneBit(generalizedIndex);
+//    return anchor << 1 | (generalizedIndex ^ anchor);
+  }
+
+  public static long gIdxRightGIndex(long generalizedIndex) {
+    return gIdxChildGIndex(generalizedIndex, 1, 1);
+//    long anchor = Long.highestOneBit(generalizedIndex);
+//    return anchor << 1 | generalizedIndex;
+  }
+
+  public static long gIdxChildGIndex(long generalizedIndex, int childIdx, int childDepth) {
+    long anchor = Long.highestOneBit(generalizedIndex);
+    int depth = Long.bitCount(anchor - 1);
+    long idxWithoutAnchor = generalizedIndex ^ anchor;
+    long newAnchor = anchor << childDepth;
+    return newAnchor | (childIdx << depth) | idxWithoutAnchor;
   }
 
   public static long gIdxLeftmostFrom(long fromGeneralizedIndex) {
