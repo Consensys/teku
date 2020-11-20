@@ -135,7 +135,7 @@ public class StateTransition {
    *
    * @throws BlockProcessingException
    */
-  private BeaconState process_block(BeaconState preState, BeaconBlock block)
+  public BeaconState process_block(BeaconState preState, BeaconBlock block)
       throws BlockProcessingException {
     return preState.updated(
         state -> {

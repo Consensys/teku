@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -71,11 +73,16 @@ public class BlockFactory {
 
   public BeaconBlock createUnsignedBlock(
       final BeaconState previousState,
-      final BeaconBlock previousBlock,
+      final Optional<BeaconState> maybeBlockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
+    checkArgument(
+        maybeBlockSlotState.isEmpty() || maybeBlockSlotState.get().getSlot().equals(newSlot),
+        "Block slot state for slot %s but should be for slot %s",
+        maybeBlockSlotState.map(BeaconState::getSlot).orElse(null),
+        newSlot);
 
     // Process empty slots up to the one before the new block slot
     final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
@@ -87,7 +94,12 @@ public class BlockFactory {
     }
 
     // Collect attestations to include
-    final BeaconState blockSlotState = stateTransition.process_slots(blockPreState, newSlot);
+    final BeaconState blockSlotState;
+    if (maybeBlockSlotState.isPresent()) {
+      blockSlotState = maybeBlockSlotState.get();
+    } else {
+      blockSlotState = stateTransition.process_slots(blockPreState, newSlot);
+    }
     SSZList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
             blockSlotState, new AttestationForkChecker(blockSlotState));
@@ -106,14 +118,14 @@ public class BlockFactory {
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
-    final Bytes32 parentRoot = previousBlock.hash_tree_root();
+    final Bytes32 parentRoot = get_block_root_at_slot(blockSlotState, slotBeforeBlock);
 
     return blockCreator
         .createNewUnsignedBlock(
             newSlot,
             get_beacon_proposer_index(blockPreState, newSlot),
             randaoReveal,
-            blockPreState,
+            blockSlotState,
             parentRoot,
             eth1Data,
             optionalGraffiti.orElse(graffiti),

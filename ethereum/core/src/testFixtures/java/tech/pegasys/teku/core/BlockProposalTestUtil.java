@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import java.util.Optional;
@@ -59,18 +60,19 @@ public class BlockProposalTestUtil {
       final SSZList<ProposerSlashing> slashings,
       final SSZList<Deposit> deposits,
       final SSZList<SignedVoluntaryExit> exits)
-      throws StateTransitionException {
+      throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
+    final BeaconState blockSlotState = stateTransition.process_slots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
-            getProposerIndexForSlot(state, newSlot),
+            get_beacon_proposer_index(blockSlotState),
             randaoReveal,
-            state,
+            blockSlotState,
             parentBlockSigningRoot,
             eth1Data,
             Bytes32.ZERO,
@@ -97,7 +99,7 @@ public class BlockProposalTestUtil {
       final Optional<SSZList<Deposit>> deposits,
       final Optional<SSZList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
-      throws StateTransitionException {
+      throws StateTransitionException, EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,

@@ -34,6 +34,8 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -392,7 +394,7 @@ public class ChainBuilder {
               options.getEth1Data());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
-    } catch (StateTransitionException e) {
+    } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
       throw new RuntimeException(e);
     }
   }
