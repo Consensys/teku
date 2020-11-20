@@ -24,7 +24,6 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -53,7 +52,6 @@ public class ValidatorApiHandlerIntegrationTest {
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
   private final EventBus eventBus = storageSystem.eventBus();
-  private final StateTransition stateTransition = new StateTransition();
 
   // Other dependencies are mocked, but these can be updated as needed
   private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
@@ -72,7 +70,6 @@ public class ValidatorApiHandlerIntegrationTest {
       new ValidatorApiHandler(
           combinedChainDataClient,
           syncStateProvider,
-          stateTransition,
           blockFactory,
           blockImportChannel,
           attestationPool,

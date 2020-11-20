@@ -40,7 +40,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -90,7 +89,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
-  private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
   private final AggregatingAttestationPool attestationPool;
@@ -104,7 +102,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
-      final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final AggregatingAttestationPool attestationPool,
@@ -116,7 +113,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final PerformanceTracker performanceTracker) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
-    this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
     this.attestationPool = attestationPool;

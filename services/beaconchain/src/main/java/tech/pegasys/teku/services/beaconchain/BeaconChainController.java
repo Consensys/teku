@@ -461,7 +461,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new ValidatorApiHandler(
             combinedChainDataClient,
             syncService,
-            stateTransition,
             blockFactory,
             blockImportChannel,
             attestationPool,
