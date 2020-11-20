@@ -32,7 +32,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public ListViewType(ViewType elementType, long maxLength) {
-    this(elementType, maxLength, new TypeHints());
+    this(elementType, maxLength, TypeHints.none());
   }
 
   public ListViewType(ViewType elementType, long maxLength, TypeHints hints) {

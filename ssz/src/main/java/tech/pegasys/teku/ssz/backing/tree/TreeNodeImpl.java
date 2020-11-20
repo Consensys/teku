@@ -48,7 +48,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public TreeNode updated(TreeUpdates newNodes) {
-      if (newNodes.size() == 0) {
+      if (newNodes.isEmpty()) {
         return this;
       } else {
         newNodes.checkLeaf();
@@ -108,7 +108,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public TreeNode updated(TreeUpdates newNodes) {
-      if (newNodes.size() == 0) {
+      if (newNodes.isEmpty()) {
         return this;
       } else if (newNodes.isFinal()) {
         return newNodes.getNode(0);

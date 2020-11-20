@@ -97,7 +97,29 @@ public class TreeUtil {
         defaultNode, EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
-  /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
+  public static TreeNode createDefaultSuperTree(long maxLength, TreeNode defaultNode,
+      List<Integer> superBranchDepths) {
+
+    int treeDepth = treeDepth(maxLength);
+    checkArgument(superBranchDepths.stream().mapToInt(i -> i).sum() <= treeDepth);
+    int superDepthIdx = 0;
+    int curDepth = treeDepth;
+    TreeNode curDepthDefaultNode = defaultNode;
+    while (curDepth > 0) {
+      int superDepth =
+          superDepthIdx < superBranchDepths.size() ? superBranchDepths.get(superDepthIdx++) : 1;
+      if (superDepth == 1) {
+        curDepthDefaultNode = TreeNode.createBranchNode(curDepthDefaultNode, curDepthDefaultNode);
+      } else {
+        curDepthDefaultNode = SuperBranchNode.createDefault(curDepthDefaultNode, 1 << superDepth);
+      }
+      curDepth -= superDepth;
+    }
+    return curDepthDefaultNode;
+  }
+
+
+    /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
   public static TreeNode createTree(List<TreeNode> leafNodes) {
     return createTree(leafNodes, treeDepth(leafNodes.size()));
   }

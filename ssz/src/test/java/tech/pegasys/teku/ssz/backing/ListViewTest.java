@@ -75,10 +75,10 @@ public class ListViewTest {
   }
 
   @Test
-  void superNodeListTest() {
+  void superLeafNodeListTest() {
     ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10);
     ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10,
-        new TypeHints(true));
+        TypeHints.superLeaf());
 
     ListViewRead<UInt64View> l1_0 = lt1.getDefault();
     ListViewRead<UInt64View> l2_0 = lt2.getDefault();
@@ -126,11 +126,11 @@ public class ListViewTest {
   }
 
   @Test
-  void largeSuperNodeListTest() {
+  void largeSuperLeafNodeListTest() {
     long maxLen = 1L << 38;
     ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen);
     ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen,
-        new TypeHints(true));
+        TypeHints.superLeaf());
 
     ListViewRead<UInt64View> l1_0 = lt1.getDefault();
     ListViewRead<UInt64View> l2_0 = lt2.getDefault();
@@ -150,5 +150,66 @@ public class ListViewTest {
     ListViewRead<UInt64View> l2_1 = l2w_0.commitChanges();
 
     assertThat(l2_1.hashTreeRoot()).isEqualTo(l1_1.hashTreeRoot());
+  }
+
+  @Test
+  void largeSuperBranchNodeTest() {
+    ListViewType<Bytes32View> lt1 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10);
+    ListViewType<Bytes32View> lt2 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10,
+        TypeHints.superBranch(List.of(3, 1)));
+
+    ListViewRead<Bytes32View> l1_0 = lt1.getDefault();
+    ListViewRead<Bytes32View> l2_0 = lt2.getDefault();
+
+    System.out.println(l1_0.getBackingNode());
+    System.out.println(l2_0.getBackingNode());
+
+    assertThat(l2_0.hashTreeRoot()).isEqualTo(l1_0.hashTreeRoot());
+
+    ListViewWrite<Bytes32View> l1w_0 = l1_0.createWritableCopy();
+    l1w_0.append(bytes32View(0x77889900));
+    ListViewRead<Bytes32View> l1_1 = l1w_0.commitChanges();
+
+    ListViewWrite<Bytes32View> l2w_0 = l2_0.createWritableCopy();
+    l2w_0.append(bytes32View(0x77889900));
+    ListViewRead<Bytes32View> l2_1 = l2w_0.commitChanges();
+
+    System.out.println(l1_1.getBackingNode());
+    System.out.println(l2_1.getBackingNode());
+
+    assertThat(l2_1.hashTreeRoot()).isEqualTo(l1_1.hashTreeRoot());
+
+    ListViewWrite<Bytes32View> l1w_1 = l1_1.createWritableCopy();
+    l1w_1.append(bytes32View(0x111111));
+    l1w_1.append(bytes32View(0x222222));
+    l1w_1.append(bytes32View(0x333333));
+    l1w_1.append(bytes32View(0x444444));
+    ListViewRead<Bytes32View> l1_2 = l1w_1.commitChanges();
+
+    ListViewWrite<Bytes32View> l2w_1 = l2_1.createWritableCopy();
+    l2w_1.append(bytes32View(0x111111));
+    l2w_1.append(bytes32View(0x222222));
+    l2w_1.append(bytes32View(0x333333));
+    l2w_1.append(bytes32View(0x444444));
+    ListViewRead<Bytes32View> l2_2 = l2w_1.commitChanges();
+
+    assertThat(l2_2.hashTreeRoot()).isEqualTo(l1_2.hashTreeRoot());
+
+    ListViewWrite<Bytes32View> l1w_2 = l1_2.createWritableCopy();
+    l1w_2.set(0, bytes32View(0x555555));
+    l1w_2.set(4, bytes32View(0x666666));
+    ListViewRead<Bytes32View> l1_3 = l1w_2.commitChanges();
+
+    ListViewWrite<Bytes32View> l2w_2 = l2_2.createWritableCopy();
+    l2w_2.set(0, bytes32View(0x555555));
+    l2w_2.set(4, bytes32View(0x666666));
+    ListViewRead<Bytes32View> l2_3 = l2w_2.commitChanges();
+
+    assertThat(l2_3.hashTreeRoot()).isEqualTo(l1_3.hashTreeRoot());
+    assertThat(l2_3.sszSerialize()).isEqualTo(l1_3.sszSerialize());
+  }
+
+  private static Bytes32View bytes32View(long l) {
+    return new Bytes32View(Bytes32.leftPad(Bytes.ofUnsignedLong(l)));
   }
 }

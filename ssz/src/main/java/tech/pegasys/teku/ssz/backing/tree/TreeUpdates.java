@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static java.util.Collections.emptyList;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collector;
@@ -81,7 +84,24 @@ public class TreeUpdates {
     this(gIndexes, nodes, 1, getDepthAndValidate(gIndexes));
   }
 
+  private static TreeUpdates EMPTY = new TreeUpdates(emptyList(), emptyList()) {
+    @Override
+    public Pair<TreeUpdates, TreeUpdates> splitAtPivot() {
+      return Pair.of(EMPTY, EMPTY);
+    }
+  };
+
+  private static TreeUpdates create(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+    if (gIndexes.isEmpty()) {
+      return EMPTY;
+    } else {
+      return new TreeUpdates(gIndexes, nodes, prefix, heightFromLeaf);
+    }
+  }
+
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+    assert gIndexes.size() == nodes.size();
+
     this.gIndexes = gIndexes;
     this.nodes = nodes;
     this.prefix = prefix;
@@ -105,18 +125,41 @@ public class TreeUpdates {
     int idx = Collections.binarySearch(gIndexes, pivotGIndex);
     int insIdx = idx < 0 ? -idx - 1 : idx;
     return Pair.of(
-        new TreeUpdates(
+        TreeUpdates.create(
             gIndexes.subList(0, insIdx), nodes.subList(0, insIdx), lPrefix, heightFromLeaf - 1),
-        new TreeUpdates(
+        TreeUpdates.create(
             gIndexes.subList(insIdx, gIndexes.size()),
             nodes.subList(insIdx, nodes.size()),
             rPrefix,
             heightFromLeaf - 1));
   }
 
+  public List<TreeUpdates> splitToDepth(int depth) {
+    List<TreeUpdates> ret = new ArrayList<>(1 << depth);
+    splitToDepth(depth, ret);
+    return ret;
+  }
+
+  private void splitToDepth(int depth, List<TreeUpdates> dest) {
+    assert !isFinal();
+
+    Pair<TreeUpdates, TreeUpdates> split = splitAtPivot();
+    if (depth == 1) {
+      dest.add(split.getLeft());
+      dest.add(split.getRight());
+    } else {
+      split.getLeft().splitToDepth(depth - 1, dest);
+      split.getRight().splitToDepth(depth - 1, dest);
+    }
+  }
+
   /** Number of updated nodes in this set */
   public int size() {
     return gIndexes.size();
+  }
+
+  public boolean isEmpty() {
+    return size() == 0;
   }
 
   /** Gets generalized index for update at position [index] */

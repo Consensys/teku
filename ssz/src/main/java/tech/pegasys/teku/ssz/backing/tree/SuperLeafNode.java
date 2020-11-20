@@ -96,6 +96,9 @@ public class SuperLeafNode implements TreeNode {
 
   @Override
   public TreeNode updated(TreeUpdates newNodes) {
+    if (newNodes.isEmpty()) {
+      return this;
+    }
     if (newNodes.isFinal()) {
       return newNodes.getNode(0);
     }

@@ -33,7 +33,7 @@ public class VectorViewType<C> extends CollectionViewType {
   }
 
   VectorViewType(ViewType elementType, long maxLength, boolean isListBacking) {
-    this(elementType, maxLength, isListBacking, new TypeHints());
+    this(elementType, maxLength, isListBacking, TypeHints.none());
   }
 
   VectorViewType(ViewType elementType, long maxLength, boolean isListBacking, TypeHints hints) {
@@ -52,6 +52,9 @@ public class VectorViewType<C> extends CollectionViewType {
     if (isListBacking) {
       if (hints.isSuperLeafNode()) {
         return new SuperLeafNode(treeDepth(), Bytes.EMPTY);
+      } else if (hints.isSuperBranchNodes()) {
+        return TreeUtil
+            .createDefaultSuperTree(maxChunks(), TreeUtil.EMPTY_LEAF, hints.getSuperBranchDepths());
       } else {
         return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
       }

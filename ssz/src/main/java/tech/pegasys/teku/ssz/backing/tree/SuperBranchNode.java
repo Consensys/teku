@@ -1,16 +1,20 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /**
  */
@@ -18,7 +22,14 @@ public class SuperBranchNode implements TreeNode {
   private final TreeNode[] children;
   private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calcHashTreeRoot);
 
+  public static SuperBranchNode createDefault(TreeNode defaultChild, int childCount) {
+    TreeNode[] children = new TreeNode[childCount];
+    Arrays.fill(children, defaultChild);
+    return new SuperBranchNode(children);
+  }
+
   public SuperBranchNode(TreeNode[] children) {
+    checkArgument(Long.bitCount(children.length) == 1, "Number of children should be power of 2");
     this.children = children;
   }
 
@@ -57,21 +68,13 @@ public class SuperBranchNode implements TreeNode {
   @NotNull
   @Override
   public TreeNode get(long generalizedIndex) {
-    if (generalizedIndex == 1) {
+    if (gIdxIsSelf(generalizedIndex)) {
       return this;
     }
-    if (generalizedIndex < getTotalChildCount()) {
-      throw new UnsupportedOperationException("Getting internal branch node not supported yet");
-    }
-    long childIndex = generalizedIndex - getTotalChildCount();
-    if (childIndex < dataLeafCount - 1) {
-      return new LeafNodeImpl(data.slice((int) (childIndex * 32), 32));
-    } else if (childIndex == dataLeafCount - 1) {
-      return new LeafNodeImpl(data.slice((int) (childIndex * 32),
-          (int) (data.size() - childIndex * 32)));
-    } else {
-      return TreeUtil.EMPTY_LEAF;
-    }
+    checkArgument(generalizedIndex > 0, "Invalid zero index");
+    int depth = getDepth();
+    return getChild(gIdxGetChildIndex(generalizedIndex, depth))
+        .get(gIdxGetRelativeGIndex(generalizedIndex, depth));
   }
 
   @Override
@@ -81,48 +84,36 @@ public class SuperBranchNode implements TreeNode {
 
   @Override
   public TreeNode updated(TreeUpdates newNodes) {
+    if (newNodes.isEmpty()) {
+      return this;
+    }
     if (newNodes.isFinal()) {
       return newNodes.getNode(0);
     }
-    long lastUpdatedGIndex = newNodes.getGIndex(newNodes.size() - 1);
-    int lastUpdatedIndex = (int) (lastUpdatedGIndex - getTotalChildCount());
-    if (lastUpdatedIndex < 0) {
-      throw new UnsupportedOperationException("Not yet supported updating branch nodes");
-    }
-    if (lastUpdatedIndex > getTotalChildCount()) {
-      throw new IndexOutOfBoundsException("Invalid general index");
+    List<TreeUpdates> childUpdates = newNodes.splitToDepth(getDepth());
+    TreeNode[] newChildren = new TreeNode[getTotalChildCount()];
+    for (int i = 0; i < getTotalChildCount(); i++) {
+      newChildren[i] = getChild(i).updated(childUpdates.get(i));
     }
 
-    TreeNode lastNewNode = newNodes.getNode(newNodes.size() - 1);
-    if (!(lastNewNode instanceof LeafNode)) {
-      throw new IllegalArgumentException("Can't update leaf node with branch node");
-    }
-    LeafNode lastNewLeafNode = (LeafNode) lastNewNode;
-    int newDataSize = max(data.size(), lastUpdatedIndex * 32 + lastNewLeafNode.getData().size());
-    int newLeafCount = (newDataSize + 31) / 32;
-    MutableBytes newData = MutableBytes.wrap(new byte[newDataSize]);
-    int updateIdx = 0;
-    for (int leafIdx = 0; leafIdx < newLeafCount; leafIdx++) {
-      if (updateIdx < newNodes.size() &&
-          newNodes.getGIndex(updateIdx) - getTotalChildCount() == leafIdx) {
+    return new SuperBranchNode(newChildren);
+  }
 
-        TreeNode node = newNodes.getNode(updateIdx);
-        if (!(node instanceof LeafNode)) {
-          throw new IllegalArgumentException("Can't update leaf node with branch node");
-        }
-        LeafNode leafNode = (LeafNode) node;
-        if (leafIdx < lastUpdatedIndex && leafNode.getData().size() != 32) {
-          throw new IllegalArgumentException("Update nodes should be packed");
-        }
-        leafNode.getData().copyTo(newData, leafIdx * 32);
-        updateIdx++;
+  @Override
+  public String toString() {
+    StringBuilder ret = new StringBuilder("SBranch-" + getTotalChildCount() + "[");
+    int dupCnt = 0;
+    for (int i = 0; i < getTotalChildCount(); i++) {
+      TreeNode cur = getChild(i);
+      TreeNode next = i + 1 < getTotalChildCount() ? getChild(i + 1) : null;
+      if (cur == next) {
+        dupCnt++;
       } else {
-        if (leafIdx + 1 < dataLeafCount) {
-          data.slice(leafIdx * 32, 32).copyTo(newData, leafIdx * 32);
-        }
-        // else leaving zeroes
+        ret.append(dupCnt > 0 ? (dupCnt + 1) + "x " : "");
+        ret.append(cur.toString() + ", ");
+        dupCnt = 0;
       }
     }
-    return new SuperBranchNode(getDepth(), newData);
+    return ret.substring(0, ret.length() - 2) + "]";
   }
 }

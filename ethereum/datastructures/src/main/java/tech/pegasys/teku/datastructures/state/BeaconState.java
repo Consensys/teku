@@ -79,7 +79,7 @@ public interface BeaconState
       new Field(
           12,
           () -> new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT,
-              new TypeHints(true)));
+              TypeHints.superLeaf()));
   Field RANDAO_MIXES_FIELD =
       new Field(
           13,
