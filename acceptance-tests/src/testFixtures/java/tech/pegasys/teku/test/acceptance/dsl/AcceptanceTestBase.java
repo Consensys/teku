@@ -55,6 +55,11 @@ public class AcceptanceTestBase {
     }
   }
 
+  protected TekuValidatorNode createValidatorNode(
+      final Consumer<TekuValidatorNode.Config> configOptions) {
+    return addNode(TekuValidatorNode.create(network, configOptions));
+  }
+
   protected TekuDepositSender createTekuDepositSender() {
     return addNode(new TekuDepositSender(network));
   }
