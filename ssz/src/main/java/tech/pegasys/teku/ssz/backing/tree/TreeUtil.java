@@ -14,6 +14,10 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -181,10 +185,9 @@ public class TreeUtil {
 
   public static void iterateNodes(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
-    int shiftN = 63 - treeDepth(toGeneralIndex);
-    long rightmostToIndex = (toGeneralIndex << shiftN) | ((1L << shiftN) - 1);
-    iterateNodesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
+    iterateNodesPriv(node, GIndexUtil.gIdxLeftmostFrom(fromGeneralIndex), GIndexUtil
+            .gIdxRightmostFrom(toGeneralIndex),
+        visitor);
   }
 
   private static void iterateNodesPriv(
@@ -192,19 +195,15 @@ public class TreeUtil {
     visitor.accept(node);
     if (node instanceof BranchNode) {
       BranchNode bNode = (BranchNode) node;
-      long anchorF = Long.highestOneBit(fromGeneralIndex);
-      long pivotF = anchorF >>> 1;
-      boolean fromLeft = fromGeneralIndex < (fromGeneralIndex | pivotF);
-      long fromChildIdx = (fromGeneralIndex ^ anchorF) | pivotF;
+      boolean fromLeft = gIdxGetChildIndex(fromGeneralIndex, 1) == 0;
+      long fromChildIdx = gIdxGetRelativeGIndex(fromGeneralIndex, 1);
 
-      long anchorT = Long.highestOneBit(toGeneralIndex);
-      long pivotT = anchorT >>> 1;
-      boolean toLeft = toGeneralIndex < (toGeneralIndex | pivotT);
-      long toChildIdx = (toGeneralIndex ^ anchorT) | pivotT;
+      boolean toLeft = gIdxGetChildIndex(toGeneralIndex, 1) == 0;
+      long toChildIdx = gIdxGetRelativeGIndex(toGeneralIndex, 1);
 
       if (fromLeft && !toLeft) {
-        iterateNodesPriv(bNode.left(), fromChildIdx, -1, visitor);
-        iterateNodesPriv(bNode.right(), 1L << 63, toChildIdx, visitor);
+        iterateNodesPriv(bNode.left(), fromChildIdx, RIGHTMOST_G_INDEX, visitor);
+        iterateNodesPriv(bNode.right(), LEFTMOST_G_INDEX, toChildIdx, visitor);
       } else if (fromLeft && toLeft) {
         iterateNodesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
       } else if (!fromLeft && !toLeft) {

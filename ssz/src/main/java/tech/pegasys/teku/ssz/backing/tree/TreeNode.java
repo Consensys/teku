@@ -15,6 +15,9 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -119,29 +122,27 @@ public interface TreeNode {
     @Override
     default TreeNode get(long target) {
       checkArgument(target >= 1, "Invalid index: %s", target);
-      if (target == 1) {
+      if (gIdxIsSelf(target)) {
         return this;
       } else {
-        long anchor = Long.highestOneBit(target);
-        long pivot = anchor >>> 1;
-        return target < (target | pivot)
-            ? left().get((target ^ anchor) | pivot)
-            : right().get((target ^ anchor) | pivot);
+        long relativeGIndex = gIdxGetRelativeGIndex(target, 1);
+        return gIdxGetChildIndex(target, 1) == 0
+            ? left().get(relativeGIndex)
+            : right().get(relativeGIndex);
       }
     }
 
     @Override
     default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
-      if (target == 1) {
+      if (gIdxIsSelf(target)) {
         return nodeUpdater.apply(this);
       } else {
-        long anchor = Long.highestOneBit(target);
-        long pivot = anchor >>> 1;
-        if (target < (target | pivot)) {
-          TreeNode newLeftChild = left().updated((target ^ anchor) | pivot, nodeUpdater);
+        long relativeGIndex = gIdxGetRelativeGIndex(target, 1);
+        if (gIdxGetChildIndex(target, 1) == 0) {
+          TreeNode newLeftChild = left().updated(relativeGIndex, nodeUpdater);
           return rebind(true, newLeftChild);
         } else {
-          TreeNode newRightChild = right().updated((target ^ anchor) | pivot, nodeUpdater);
+          TreeNode newRightChild = right().updated(relativeGIndex, nodeUpdater);
           return rebind(false, newRightChild);
         }
       }
