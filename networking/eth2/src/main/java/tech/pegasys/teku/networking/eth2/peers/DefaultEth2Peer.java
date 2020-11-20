@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -145,6 +146,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public UInt64 finalizedEpoch() {
     return getStatus().getFinalizedEpoch();
+  }
+
+  @Override
+  public Checkpoint finalizedCheckpoint() {
+    return getStatus().getFinalizedCheckpoint();
   }
 
   @Override

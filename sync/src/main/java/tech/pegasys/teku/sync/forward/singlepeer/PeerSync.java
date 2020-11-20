@@ -189,17 +189,28 @@ public class PeerSync {
               }
               return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest(), false);
             })
-        .exceptionally(err -> handleFailedRequestToPeer(peer, err));
+        .exceptionally(err -> handleFailedRequestToPeer(peer, status, err));
   }
 
-  private PeerSyncResult handleFailedRequestToPeer(Eth2Peer peer, Throwable err) {
+  private PeerSyncResult handleFailedRequestToPeer(
+      Eth2Peer peer, final PeerStatus peerStatus, Throwable err) {
     Throwable rootException = Throwables.getRootCause(err);
     if (rootException instanceof FailedBlockImportException) {
       final FailedBlockImportException importException = (FailedBlockImportException) rootException;
       final FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
-      LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
-      if (BAD_BLOCK_FAILURE_REASONS.contains(reason)) {
+
+      if (reason.equals(FailureReason.UNKNOWN_PARENT)
+          && !hasPeerFinalizedBlock(block, peerStatus)) {
+        // We received a block that doesn't connect to our chain.
+        // This can happen if our peer is sending us blocks from the non-final portion of their
+        // chain. They may be sending us blocks from a stale fork that we have already pruned out of
+        // our Store.
+        LOG.debug(
+            "Failed to import non-final block from peer (err: {}) {}: {}", reason, block, peer);
+        return PeerSyncResult.IMPORT_FAILED;
+      } else if (BAD_BLOCK_FAILURE_REASONS.contains(reason)) {
+        LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
         LOG.debug(
             "Disconnecting from peer ({}) who sent invalid block ({}): {}",
             peer,
@@ -208,6 +219,7 @@ public class PeerSync {
         disconnectFromPeer(peer);
         return PeerSyncResult.BAD_BLOCK;
       } else {
+        LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
         return PeerSyncResult.IMPORT_FAILED;
       }
     }
@@ -227,6 +239,10 @@ public class PeerSync {
     } else {
       throw new RuntimeException("Unhandled error while syncing", err);
     }
+  }
+
+  private boolean hasPeerFinalizedBlock(final SignedBeaconBlock block, final PeerStatus status) {
+    return block.getSlot().isLessThanOrEqualTo(status.getFinalizedCheckpoint().getEpochStartSlot());
   }
 
   private SafeFuture<PeerSyncResult> completeSyncWithPeer(
