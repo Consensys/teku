@@ -25,7 +25,8 @@ public class GIndexUtil {
       throw new IllegalArgumentException(
           "Generalized index " + generalizedIndex + " is upper than depth " + childDepth);
     }
-    return (int) (generalizedIndex >>> (indexBitCount - childDepth));
+    long generalizedIndexWithoutAnchor = generalizedIndex ^ anchor;
+    return (int) (generalizedIndexWithoutAnchor >>> (indexBitCount - childDepth));
   }
 
   public static long gIdxGetRelativeGIndex(long generalizedIndex, int childDepth) {
