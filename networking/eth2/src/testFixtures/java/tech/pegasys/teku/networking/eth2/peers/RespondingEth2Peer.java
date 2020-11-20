@@ -162,6 +162,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public Checkpoint finalizedCheckpoint() {
+    return status.getFinalizedCheckpoint();
+  }
+
+  @Override
   public boolean hasStatus() {
     return true;
   }
