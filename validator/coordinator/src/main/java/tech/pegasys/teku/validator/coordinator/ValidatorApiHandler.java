@@ -196,12 +196,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
-        .getCheckpointStateAtEpoch(epoch)
+        .getStateAtSlotExact(compute_start_slot_at_epoch(epoch))
         .thenApply(
             optionalState ->
-                optionalState.map(
-                    checkpointState ->
-                        getProposerDutiesFromIndexesAndState(checkpointState.getState(), epoch)));
+                optionalState.map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
   }
 
   @Override

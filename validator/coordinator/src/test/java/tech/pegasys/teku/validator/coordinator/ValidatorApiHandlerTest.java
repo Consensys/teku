@@ -43,7 +43,6 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -206,7 +205,7 @@ class ValidatorApiHandlerTest {
   public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
-    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
@@ -221,7 +220,7 @@ class ValidatorApiHandlerTest {
   public void getAttestationDuties_shouldAllowOneEpochTolerance() {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
-    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
@@ -254,7 +253,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getLatestStateAtSlot(EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -267,7 +266,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getProposerDuties_shouldAllowOneEpochTolerance() {
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getLatestStateAtSlot(EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
@@ -292,17 +291,19 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UInt64 newSlot = UInt64.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final BeaconBlockAndState previousBlockAndState = dataStructureUtil.randomBlockAndState(99);
-    final BeaconState previousState = previousBlockAndState.getState();
+    final BeaconState previousState = dataStructureUtil.randomBeaconState(newSlot.minus(1));
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getHeadSlot()).thenReturn(UInt64.valueOf(24));
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(ONE)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
+    when(chainDataClient.getStateAtSlotExact(newSlot.minus(ONE)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(previousState)));
+    when(chainDataClient.getStateAtSlotExact(newSlot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
-            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty()))
+            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty()))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -310,7 +311,7 @@ class ValidatorApiHandlerTest {
 
     verify(blockFactory)
         .createUnsignedBlock(
-            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty());
+            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty());
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
