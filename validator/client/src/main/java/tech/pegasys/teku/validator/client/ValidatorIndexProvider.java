@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,8 +37,7 @@ public class ValidatorIndexProvider {
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
-  private SafeFuture<Map<BLSPublicKey, Integer>> future =
-      SafeFuture.completedFuture(Collections.emptyMap());
+  private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
 
   public ValidatorIndexProvider(
       final Collection<BLSPublicKey> validators, final ValidatorApiChannel validatorApiChannel) {
@@ -56,13 +54,14 @@ public class ValidatorIndexProvider {
       return;
     }
     LOG.trace("Looking up {} unknown validators", unknownValidators.size());
-    future = validatorApiChannel.getValidatorIndices(unknownValidators);
-    future
+    validatorApiChannel
+        .getValidatorIndices(unknownValidators)
         .thenAccept(
             knownValidators -> {
               logNewValidatorIndices(knownValidators);
               validatorIndexesByPublicKey.putAll(knownValidators);
               unknownValidators.removeAll(knownValidators.keySet());
+              firstSuccessfulRequest.complete(null);
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
@@ -86,7 +85,8 @@ public class ValidatorIndexProvider {
 
   public SafeFuture<Collection<Integer>> getValidatorIndices(
       final Collection<BLSPublicKey> publicKeys) {
-    return future.thenApply(
+    // Wait for at least one successful load of validator indices before attempting to read
+    return firstSuccessfulRequest.thenApply(
         __ ->
             publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList()));
   }
