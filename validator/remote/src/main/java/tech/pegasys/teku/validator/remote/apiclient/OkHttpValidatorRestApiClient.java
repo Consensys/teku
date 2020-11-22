@@ -33,6 +33,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -312,7 +313,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
       return responseHandler.handleResponse(request, response);
     } catch (IOException e) {
-      throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
+      throw new UncheckedIOException(
+          "Error communicating with Beacon Node API: " + e.getMessage(), e);
     }
   }
 
