@@ -137,11 +137,11 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
         new ValidatorTimingActions(
             validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
-    validatorIndexProvider.lookupValidators();
     return beaconNodeApi.subscribeToEvents();
   }
 
