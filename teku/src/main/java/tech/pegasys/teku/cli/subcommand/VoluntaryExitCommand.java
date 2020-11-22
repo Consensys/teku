@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import com.google.common.base.Throwables;
+import java.io.UncheckedIOException;
+import java.net.ConnectException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -66,6 +70,7 @@ public class VoluntaryExitCommand implements Runnable {
   private tech.pegasys.teku.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
+  private TekuConfiguration config;
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -84,9 +89,16 @@ public class VoluntaryExitCommand implements Runnable {
   @Override
   public void run() {
     SUB_COMMAND_LOG.display("Loading configuration...");
-    initialise();
-    confirmExits();
-    getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+    try {
+      initialise();
+      confirmExits();
+      getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+    } catch (UncheckedIOException ex) {
+      if (Throwables.getRootCause(ex) instanceof ConnectException) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+        System.exit(1);
+      }
+    }
   }
 
   private void confirmExits() {
@@ -161,7 +173,7 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void initialise() {
-    final TekuConfiguration config = tekuConfiguration();
+    config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
         new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
@@ -215,6 +227,17 @@ public class VoluntaryExitCommand implements Runnable {
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
     return builder.build();
+  }
+
+  private String getFailedToConnectMessage() {
+    return String.format(
+        "Failed to connect to beacon node. Check that %s is available.",
+        config
+            .validatorClient()
+            .getValidatorConfig()
+            .getBeaconNodeApiEndpoint()
+            .orElse(URI.create("http://127.0.0.1:5051"))
+            .toString());
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
