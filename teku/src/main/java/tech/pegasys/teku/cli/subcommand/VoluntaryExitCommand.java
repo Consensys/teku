@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import com.google.common.base.Throwables;
+import java.net.ConnectException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -66,6 +69,7 @@ public class VoluntaryExitCommand implements Runnable {
   private tech.pegasys.teku.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
+  private TekuConfiguration config;
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -149,15 +153,31 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private Optional<Bytes32> getGenesisRoot() {
-    return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
+    try {
+      return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
+    } catch (RuntimeException ex) {
+      if (Throwables.getRootCause(ex) instanceof ConnectException) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+        System.exit(1);
+      }
+    }
+    return Optional.empty();
   }
 
   private Optional<tech.pegasys.teku.datastructures.state.Fork> getFork() {
-    return apiClient.getFork().map(Fork::asInternalFork);
+    try {
+      return apiClient.getFork().map(Fork::asInternalFork);
+    } catch (RuntimeException ex) {
+      if (Throwables.getRootCause(ex) instanceof ConnectException) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+        System.exit(1);
+      }
+    }
+    return Optional.empty();
   }
 
   private void initialise() {
-    final TekuConfiguration config = tekuConfiguration();
+    config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
         new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
@@ -211,6 +231,17 @@ public class VoluntaryExitCommand implements Runnable {
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
     return builder.build();
+  }
+
+  private String getFailedToConnectMessage() {
+    return String.format(
+        "Failed to connect to beacon node. Check that %s is available.",
+        config
+            .validatorClient()
+            .getValidatorConfig()
+            .getBeaconNodeApiEndpoint()
+            .orElse(URI.create("http://127.0.0.1:5051"))
+            .toString());
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
