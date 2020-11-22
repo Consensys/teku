@@ -94,6 +94,10 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void confirmExits() {
+    if (blsPublicKeyValidatorMap.isEmpty()) {
+      SUB_COMMAND_LOG.error("No validators were found to exit.");
+      System.exit(1);
+    }
     SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
     SUB_COMMAND_LOG.display("");
