@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import com.google.common.base.Throwables;
+import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -88,9 +89,16 @@ public class VoluntaryExitCommand implements Runnable {
   @Override
   public void run() {
     SUB_COMMAND_LOG.display("Loading configuration...");
-    initialise();
-    confirmExits();
-    getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+    try {
+      initialise();
+      confirmExits();
+      getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+    } catch (UncheckedIOException ex) {
+      if (Throwables.getRootCause(ex) instanceof ConnectException) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+        System.exit(1);
+      }
+    }
   }
 
   private void confirmExits() {
@@ -157,27 +165,11 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private Optional<Bytes32> getGenesisRoot() {
-    try {
-      return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
-    } catch (RuntimeException ex) {
-      if (Throwables.getRootCause(ex) instanceof ConnectException) {
-        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
-        System.exit(1);
-      }
-    }
-    return Optional.empty();
+    return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
   }
 
   private Optional<tech.pegasys.teku.datastructures.state.Fork> getFork() {
-    try {
-      return apiClient.getFork().map(Fork::asInternalFork);
-    } catch (RuntimeException ex) {
-      if (Throwables.getRootCause(ex) instanceof ConnectException) {
-        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
-        System.exit(1);
-      }
-    }
-    return Optional.empty();
+    return apiClient.getFork().map(Fork::asInternalFork);
   }
 
   private void initialise() {
