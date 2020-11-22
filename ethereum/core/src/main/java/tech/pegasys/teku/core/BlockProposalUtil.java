@@ -13,13 +13,15 @@
 
 package tech.pegasys.teku.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
@@ -41,7 +43,7 @@ public class BlockProposalUtil {
       final UInt64 newSlot,
       final int proposerIndex,
       final BLSSignature randaoReveal,
-      final BeaconState preState,
+      final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
@@ -51,6 +53,12 @@ public class BlockProposalUtil {
       final SSZList<Deposit> deposits,
       final SSZList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
+    checkArgument(
+        blockSlotState.getSlot().equals(newSlot),
+        "Block slot state from incorrect slot. Expected %s but got %s",
+        newSlot,
+        blockSlotState.getSlot());
+
     // Create block body
     BeaconBlockBody beaconBlockBody =
         new BeaconBlockBody(
@@ -74,13 +82,15 @@ public class BlockProposalUtil {
             beaconBlockBody);
 
     // Run state transition and set state root
-    final BeaconState newState =
-        stateTransition.initiate(
-            preState, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false);
+    try {
+      final BeaconState newState = stateTransition.process_block(blockSlotState, newBlock);
 
-    Bytes32 stateRoot = newState.hash_tree_root();
-    BeaconBlock newCompleteBlock = new BeaconBlock(newBlock, stateRoot);
+      Bytes32 stateRoot = newState.hash_tree_root();
+      BeaconBlock newCompleteBlock = new BeaconBlock(newBlock, stateRoot);
 
-    return new BeaconBlockAndState(newCompleteBlock, newState);
+      return new BeaconBlockAndState(newCompleteBlock, newState);
+    } catch (final BlockProcessingException e) {
+      throw new StateTransitionException(e);
+    }
   }
 }
