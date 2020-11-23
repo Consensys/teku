@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
+import io.javalin.http.Context;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.provider.JsonProvider;
+
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import io.javalin.http.Context;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class PutLogLevelTest {
 
@@ -77,4 +77,5 @@ public class PutLogLevelTest {
 
     verify(context).status(SC_NO_CONTENT);
   }
+
 }
