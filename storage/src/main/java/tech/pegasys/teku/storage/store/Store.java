@@ -589,7 +589,6 @@ class Store implements UpdatableStore {
                     Optional.ofNullable(latestEpochBoundary.get()),
                     () -> getClosestAvailableBlockRootAndState(blockRoot),
                     stateProvider,
-                    blockProvider,
                     Optional.empty(),
                     hotStatePersistenceFrequencyInEpochs))));
   }

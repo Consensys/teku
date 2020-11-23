@@ -23,6 +23,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -40,10 +41,15 @@ public class OperationPool<T> {
   private final Set<T> operations = LimitedSet.create(Constants.OPERATION_POOL_SIZE);
   private final Class<T> clazz;
   private final OperationValidator<T> operationValidator;
+  private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
 
   public OperationPool(Class<T> clazz, OperationValidator<T> operationValidator) {
     this.clazz = clazz;
     this.operationValidator = operationValidator;
+  }
+
+  public void subscribeOperationAdded(OperationAddedSubscriber<T> subscriber) {
+    this.subscribers.subscribe(subscriber);
   }
 
   public SSZList<T> getItemsForBlock(BeaconState stateAtBlockSlot) {
@@ -69,7 +75,9 @@ public class OperationPool<T> {
     if (result.equals(InternalValidationResult.ACCEPT)
         || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
       operations.add(item);
+      subscribers.forEach(s -> s.onOperationAdded(item, result));
     }
+
     return SafeFuture.completedFuture(result);
   }
 
@@ -83,5 +91,9 @@ public class OperationPool<T> {
 
   public Set<T> getAll() {
     return Collections.unmodifiableSet(operations);
+  }
+
+  public interface OperationAddedSubscriber<T> {
+    void onOperationAdded(T operation, InternalValidationResult validationStatus);
   }
 }

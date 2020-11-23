@@ -46,6 +46,20 @@ Upcoming backwards incompatible changes will be noted in the changelog at least 
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
+## 20.11.0-RC2
+
+### Additions and Improvements
+
+- Optimised gossip handling in jvm-libp2p.
+- Optimised attestation and aggregate verification, ensuring signatures are only verified once.
+- Added new metrics `beacon_current_correct_validators` and `beacon_previous_correct_validators` to report the number of validators that attested to the correct head block in the current and previous epochs.
+
+### Bug Fixes
+
+- Fixed seenTTL value in gossipsub configuration. Significantly reduces rate of gossip traffic. 
+- Avoid potential errors when regenerating states immedately after starting from a non-genesis state.
+- Fixed issue where validator duties may not be performed during the first two epochs after restart.
+
 ## 20.11.0-RC1
 
 ### Breaking Changes

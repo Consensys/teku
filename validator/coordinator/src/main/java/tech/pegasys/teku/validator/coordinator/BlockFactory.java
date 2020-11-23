@@ -113,7 +113,7 @@ public class BlockFactory {
             newSlot,
             get_beacon_proposer_index(blockPreState, newSlot),
             randaoReveal,
-            blockPreState,
+            blockSlotState,
             parentRoot,
             eth1Data,
             optionalGraffiti.orElse(graffiti),
