@@ -24,6 +24,7 @@ import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -85,6 +86,10 @@ public final class BeaconBlock
     this.parent_root = Bytes32.ZERO;
     this.state_root = state_root;
     this.body = new BeaconBlockBody();
+  }
+
+  public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
+    return new BeaconBlock(genesisState.hash_tree_root());
   }
 
   @Override
