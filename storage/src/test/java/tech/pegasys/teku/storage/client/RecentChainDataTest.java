@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -90,12 +93,24 @@ class RecentChainDataTest {
 
   @Test
   public void updateHead_validUpdate() throws Exception {
+    // Ensure the current and previous target root blocks are different
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(recentChainData.getChainHead().map(StateAndBlockSummary::getRoot))
         .contains(bestBlock.getRoot());
+    assertThat(storageSystem.reorgEventChannel().getHeadEvents())
+        .contains(
+            new HeadEvent(
+                bestBlock.getSlot(),
+                bestBlock.getStateRoot(),
+                bestBlock.getRoot(),
+                true,
+                getPreviousDutyDependentRoot(bestBlock.getState()),
+                getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
   @Test
