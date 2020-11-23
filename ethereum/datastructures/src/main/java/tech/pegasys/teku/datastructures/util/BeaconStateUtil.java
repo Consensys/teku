@@ -61,6 +61,7 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -800,6 +801,22 @@ public class BeaconStateUtil {
     return data.toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
+  public static Bytes32 getCurrentTargetRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
+    // No previous block, use algorithm for calculating the genesis block root
+    return slot.equals(state.getSlot())
+        ? BeaconBlock.fromGenesisState(state).getRoot()
+        : get_block_root_at_slot(state, slot);
+  }
+
+  public static Bytes32 getPreviousTargetRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
+    return slot.equals(state.getSlot())
+        // No previous block, use algorithm for calculating the genesis block root
+        ? BeaconBlock.fromGenesisState(state).getRoot()
+        : get_block_root_at_slot(state, slot);
+  }
+
   /**
    * Return the block root at a recent ``slot``.
    *
@@ -812,15 +829,18 @@ public class BeaconStateUtil {
   public static Bytes32 get_block_root_at_slot(BeaconState state, UInt64 slot)
       throws IllegalArgumentException {
     checkArgument(
-        isBlockRootAvailableFromState(state, slot), "BeaconStateUtil.get_block_root_at_slot");
+        isBlockRootAvailableFromState(state, slot),
+        "Block at slot %s not available from state at slot %s",
+        slot,
+        state.getSlot());
     int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
     UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
-    return slot.compareTo(state.getSlot()) < 0
-        && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
+    return slot.isLessThan(state.getSlot())
+        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
   }
 
   public static boolean isSlotAtNthEpochBoundary(

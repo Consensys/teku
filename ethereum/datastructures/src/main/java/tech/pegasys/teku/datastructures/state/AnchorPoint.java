@@ -67,7 +67,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
     checkArgument(isGenesisState(genesisState), "Invalid genesis state supplied");
 
-    final BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
+    final BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(genesisState);
     final SignedBeaconBlock signedGenesisBlock =
         new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 

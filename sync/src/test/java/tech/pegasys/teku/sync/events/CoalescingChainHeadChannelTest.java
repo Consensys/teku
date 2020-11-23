@@ -39,10 +39,26 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext);
   }
 
   @Test
@@ -51,13 +67,29 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(false);
 
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext);
   }
 
   @Test
@@ -66,11 +98,20 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
 
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
     verifyNoInteractions(delegate);
   }
 
@@ -80,6 +121,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
@@ -89,15 +132,31 @@ class CoalescingChainHeadChannelTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         false,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
         Optional.empty());
 
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
 
     verifyNoInteractions(delegate);
 
     channel.onSyncingChange(false);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext);
     verifyNoMoreInteractions(delegate);
   }
 
@@ -107,11 +166,27 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext);
 
     channel.onSyncingChange(true);
     channel.onSyncingChange(false);
@@ -125,13 +200,29 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext = Optional.empty();
 
     channel.onSyncingChange(true);
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
     channel.onSyncingChange(false);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext);
 
     channel.onSyncingChange(true);
     channel.onSyncingChange(false);
@@ -145,6 +236,8 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
     final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Optional<ReorgContext> reorgContext1 =
         Optional.of(
             new ReorgContext(
@@ -165,15 +258,31 @@ class CoalescingChainHeadChannelTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         false,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
         reorgContext2);
 
-    channel.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext1);
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext1);
 
     verifyNoInteractions(delegate);
 
     channel.onSyncingChange(false);
     verify(delegate)
-        .chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext2);
+        .chainHeadUpdated(
+            slot,
+            stateRoot,
+            bestBlockRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot,
+            reorgContext2);
     verifyNoMoreInteractions(delegate);
   }
 }

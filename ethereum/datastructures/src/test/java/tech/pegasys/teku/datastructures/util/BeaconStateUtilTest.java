@@ -23,6 +23,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -169,7 +171,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(Constants.GENESIS_SLOT)));
+        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT)));
     assertEquals(
         UInt64.valueOf(Constants.GENESIS_EPOCH), BeaconStateUtil.get_previous_epoch(beaconState));
   }
@@ -179,9 +181,7 @@ class BeaconStateUtilTest {
     BeaconState beaconState =
         createBeaconState()
             .updated(
-                state ->
-                    state.setSlot(
-                        UInt64.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH)));
+                state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT + Constants.SLOTS_PER_EPOCH)));
     assertEquals(
         UInt64.valueOf(Constants.GENESIS_EPOCH), BeaconStateUtil.get_previous_epoch(beaconState));
   }
@@ -192,8 +192,7 @@ class BeaconStateUtilTest {
         createBeaconState()
             .updated(
                 state ->
-                    state.setSlot(
-                        UInt64.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH)));
+                    state.setSlot(UInt64.valueOf(GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH)));
     assertEquals(
         UInt64.valueOf(Constants.GENESIS_EPOCH + 1),
         BeaconStateUtil.get_previous_epoch(beaconState));
@@ -202,7 +201,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(Constants.GENESIS_SLOT)));
+        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT)));
     assertEquals(
         UInt64.valueOf(Constants.GENESIS_EPOCH + 1), BeaconStateUtil.get_next_epoch(beaconState));
   }
@@ -433,5 +432,57 @@ class BeaconStateUtilTest {
     final UInt64 slot = compute_start_slot_at_epoch(expectedEpoch).minus(1);
 
     assertThat(compute_next_epoch_boundary(slot)).isEqualTo(expectedEpoch);
+  }
+
+  @Test
+  void getCurrentTargetRoot_genesisStateReturnsFinalizedCheckpointRoot() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
+    assertThat(BeaconStateUtil.getCurrentTargetRoot(state))
+        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+  }
+
+  @Test
+  void getCurrentTargetRoot_returnsGenesisBlockDuringEpochZero() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + 3));
+    assertThat(BeaconStateUtil.getCurrentTargetRoot(state))
+        .isEqualTo(state.getBlock_roots().get(0));
+  }
+
+  @Test
+  void getCurrentTargetRoot_returnsBlockRootAtLastSlotOfPriorEpoch() {
+    final BeaconState state =
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH + 3));
+    assertThat(BeaconStateUtil.getCurrentTargetRoot(state))
+        .isEqualTo(state.getBlock_roots().get((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
+  }
+
+  @Test
+  void getPreviousTargetRoot_genesisStateReturnsFinalizedCheckpointRoot() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
+    assertThat(BeaconStateUtil.getPreviousTargetRoot(state))
+        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+  }
+
+  @Test
+  void getPreviousTargetRoot_returnsGenesisBlockDuringEpochZero() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + 3));
+    assertThat(BeaconStateUtil.getPreviousTargetRoot(state))
+        .isEqualTo(state.getBlock_roots().get(0));
+  }
+
+  @Test
+  void getPreviousTargetRoot_returnsGenesisBlockDuringEpochOne() {
+    final BeaconState state =
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH + 3));
+    assertThat(BeaconStateUtil.getPreviousTargetRoot(state))
+        .isEqualTo(state.getBlock_roots().get(0));
+  }
+
+  @Test
+  void getCurrentTargetRoot_returnsBlockRootAtLastSlotOfTwoEpochsAgo() {
+    final BeaconState state =
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH * 2 + 3));
+    assertThat(BeaconStateUtil.getPreviousTargetRoot(state))
+        .isEqualTo(state.getBlock_roots().get((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
   }
 }
