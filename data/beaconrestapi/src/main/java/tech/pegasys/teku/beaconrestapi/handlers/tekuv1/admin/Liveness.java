@@ -14,9 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -37,6 +39,7 @@ public class Liveness implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.status(SC_OK);
   }
 }

@@ -16,7 +16,9 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,7 @@ public class LivenessTest {
   @Test
   public void shouldReturnOkWhenTekuIsUp() throws Exception {
     handler.handle(context);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).status(SC_OK);
   }
 }
