@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -259,6 +261,13 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
+    final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new tech.pegasys.teku.validator.api.AttesterDuties(
+                        previousTargetRoot, emptyList()))));
     final SafeFuture<Optional<PostAttesterDutiesResponse>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
     assertThat(future).isCompleted();
