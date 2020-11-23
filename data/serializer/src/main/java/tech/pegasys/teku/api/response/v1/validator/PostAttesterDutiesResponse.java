@@ -11,28 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.api.response.v1.validator;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES32;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class AttesterDuties {
-  private final Bytes32 dependentRoot;
-  private final List<AttesterDuty> duties;
+public class PostAttesterDutiesResponse {
+  @JsonProperty("dependent_root")
+  @Schema(
+      type = "string",
+      example = EXAMPLE_BYTES32,
+      pattern = PATTERN_BYTES32,
+      description = "The block root that this response is dependent on.")
+  public final Bytes32 dependentRoot;
 
-  public AttesterDuties(final Bytes32 dependentRoot, final List<AttesterDuty> duties) {
+  public final List<AttesterDuty> data;
+
+  @JsonCreator
+  public PostAttesterDutiesResponse(
+      @JsonProperty("dependent_root") final Bytes32 dependentRoot,
+      @JsonProperty("data") final List<AttesterDuty> data) {
     this.dependentRoot = dependentRoot;
-    this.duties = duties;
-  }
-
-  public Bytes32 getDependentRoot() {
-    return dependentRoot;
-  }
-
-  public List<AttesterDuty> getDuties() {
-    return duties;
+    this.data = data;
   }
 
   @Override
@@ -43,20 +51,20 @@ public class AttesterDuties {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final AttesterDuties that = (AttesterDuties) o;
-    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(duties, that.duties);
+    final PostAttesterDutiesResponse that = (PostAttesterDutiesResponse) o;
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(dependentRoot, duties);
+    return Objects.hash(dependentRoot, data);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("dependentRoot", dependentRoot)
-        .add("duties", duties)
+        .add("data", data)
         .toString();
   }
 }
