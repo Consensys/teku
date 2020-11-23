@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -187,13 +189,29 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
+    final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
-        .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
-    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.orElseThrow().getDuties()).isEmpty();
+    final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties()).isEmpty();
+    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
+  }
+
+  @Test
+  public void getAttestationDuties_shouldUsePreviousDutyDependentRootWhenStateFromSameEpoch() {
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    when(chainDataClient.getLatestStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
+
+    final SafeFuture<Optional<AttesterDuties>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
+    final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDependentRoot()).isEqualTo(getPreviousDutyDependentRoot(state));
   }
 
   @Test
