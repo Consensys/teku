@@ -66,6 +66,7 @@ import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -168,6 +170,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile Optional<AnchorPoint> initialAnchor = Optional.empty();
@@ -554,6 +558,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
 
+      // Setup gossip for voluntary exits
+      voluntaryExitPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              voluntaryExitGossipPublisher.publish(item);
+            }
+          });
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
@@ -566,6 +578,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
               .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
               .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
+              .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
