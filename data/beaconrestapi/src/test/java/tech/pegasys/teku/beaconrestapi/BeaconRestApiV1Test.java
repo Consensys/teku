@@ -30,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -188,6 +189,7 @@ public class BeaconRestApiV1Test {
     // TEKU
     builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
     builder.add(Arguments.of(GetStateByBlockRoot.ROUTE, GetStateByBlockRoot.class));
+    builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
 
     return builder.build();
   }
