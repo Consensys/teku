@@ -91,7 +91,7 @@
       function updateSpec(){
         const element = $( `<redoc spec-url="${getSpecPath(getVersionFromURL())}"></redoc>` );
         element.appendTo( "main.container" );
-        Redoc.init(element.attr('spec-url'), {});
+        Redoc.init(element.attr('spec-url'), {hideHostname: true});
         updateVersionsDropDown();
       }
 
