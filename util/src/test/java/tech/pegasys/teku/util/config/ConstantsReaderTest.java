@@ -14,6 +14,7 @@
 package tech.pegasys.teku.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -83,6 +84,12 @@ class ConstantsReaderTest {
     Constants.setConstants(Constants.class.getResource("mainnet.yaml").toExternalForm());
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
     assertAllFieldsSet();
+  }
+
+  @Test
+  void shouldThrowInvalidConfigurationExceptionWhenNetworkFileNotFound() {
+    assertThatThrownBy(() -> Constants.setConstants("doesNotExist/notARealFile.yaml"))
+        .isInstanceOf(InvalidConfigurationException.class);
   }
 
   static Stream<Arguments> knownNetworks() {
