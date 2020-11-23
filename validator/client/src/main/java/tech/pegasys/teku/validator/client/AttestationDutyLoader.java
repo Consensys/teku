@@ -29,12 +29,13 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
+public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuty> {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
@@ -55,24 +56,26 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   @Override
-  protected SafeFuture<Optional<List<AttesterDuties>>> requestDuties(
+  protected SafeFuture<Optional<List<AttesterDuty>>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    return validatorApiChannel.getAttestationDuties(epoch, validatorIndices);
+    return validatorApiChannel
+        .getAttestationDuties(epoch, validatorIndices)
+        .thenApply(result -> result.map(AttesterDuties::getDuties));
   }
 
   @Override
   protected SafeFuture<Void> scheduleAllDuties(
-      final ScheduledDuties scheduledDuties, final List<AttesterDuties> duties) {
+      final ScheduledDuties scheduledDuties, final List<AttesterDuty> duties) {
     return super.scheduleAllDuties(scheduledDuties, duties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 
   @Override
   protected SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties scheduledDuties, final AttesterDuties duty) {
+      final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
     final Validator validator = validators.get(duty.getPublicKey());
     final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());
 
@@ -89,7 +92,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     return scheduleAggregation(
         scheduledDuties,
         duty.getCommitteeIndex(),
-        duty.getCommiteesAtSlot(),
+        duty.getCommitteesAtSlot(),
         duty.getValidatorIndex(),
         validator,
         duty.getSlot(),

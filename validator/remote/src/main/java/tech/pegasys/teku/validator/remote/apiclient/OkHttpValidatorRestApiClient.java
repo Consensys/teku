@@ -33,6 +33,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,12 +56,11 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -117,15 +117,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public List<AttesterDuty> getAttestationDuties(
+  public Optional<PostAttesterDutiesResponse> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return post(
-            GET_ATTESTATION_DUTIES,
-            Map.of("epoch", epoch.toString()),
-            validatorIndexes.toArray(),
-            createHandler(GetAttesterDutiesResponse.class))
-        .map(response -> response.data)
-        .orElse(Collections.emptyList());
+        GET_ATTESTATION_DUTIES,
+        Map.of("epoch", epoch.toString()),
+        validatorIndexes.toArray(),
+        createHandler(PostAttesterDutiesResponse.class));
   }
 
   @Override
@@ -312,7 +310,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
       return responseHandler.handleResponse(request, response);
     } catch (IOException e) {
-      throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
+      throw new UncheckedIOException(
+          "Error communicating with Beacon Node API: " + e.getMessage(), e);
     }
   }
 

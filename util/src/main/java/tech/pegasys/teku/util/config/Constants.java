@@ -180,7 +180,7 @@ public class Constants {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants from " + source, e);
+      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
     }
   }
 

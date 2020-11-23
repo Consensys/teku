@@ -92,8 +92,16 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   @Test
-  void sync_failedImport_unknownParent() {
+  void sync_failedImport_unknownParent_fromFinalizedRange() {
     testFailedBlockImport(() -> BlockImportResult.FAILED_UNKNOWN_PARENT, true);
+  }
+
+  @Test
+  void sync_failedImport_unknownParent_fromNonFinalRange() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(
+            PEER_STATUS.getFinalizedCheckpoint().getEpochStartSlot().plus(1));
+    testFailedBlockImport(() -> BlockImportResult.FAILED_UNKNOWN_PARENT, false, block);
   }
 
   @Test
@@ -113,6 +121,13 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
+    testFailedBlockImport(importResult, shouldDisconnect, BLOCK);
+  }
+
+  void testFailedBlockImport(
+      final Supplier<BlockImportResult> importResult,
+      final boolean shouldDisconnect,
+      final SignedBeaconBlock block) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -128,11 +143,11 @@ public class PeerSyncTest extends AbstractSyncTest {
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
-    when(blockImporter.importBlock(BLOCK))
+    when(blockImporter.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(importResult.get()));
     // Probably want to have a specific exception type to indicate bad data.
     try {
-      responseListener.onResponse(BLOCK).join();
+      responseListener.onResponse(block).join();
       fail("Should have thrown an error to indicate the response was bad");
     } catch (final Exception e) {
       // RpcMessageHandler will consider the request complete if there's an error processing a
