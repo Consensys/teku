@@ -222,7 +222,7 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(UInt64.ONE, emptyList());
 
-    assertThat(unwrapToValue(future).getDuties()).isEmpty();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
