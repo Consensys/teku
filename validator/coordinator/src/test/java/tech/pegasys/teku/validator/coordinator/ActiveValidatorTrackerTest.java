@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
-
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 
 class ActiveValidatorTrackerTest {
   private final StableSubnetSubscriber stableSubnetSubscriber =
