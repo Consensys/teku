@@ -19,8 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentTargetRoot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousTargetRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
@@ -109,8 +109,8 @@ class RecentChainDataTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getRoot(),
                 true,
-                getPreviousTargetRoot(bestBlock.getState()),
-                getCurrentTargetRoot(bestBlock.getState())));
+                getPreviousDutyDependentRoot(bestBlock.getState()),
+                getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
   @Test

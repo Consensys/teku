@@ -801,7 +801,7 @@ public class BeaconStateUtil {
     return data.toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
-  public static Bytes32 getCurrentTargetRoot(BeaconState state) {
+  public static Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
     // No previous block, use algorithm for calculating the genesis block root
     return slot.equals(state.getSlot())
@@ -809,7 +809,7 @@ public class BeaconStateUtil {
         : get_block_root_at_slot(state, slot);
   }
 
-  public static Bytes32 getPreviousTargetRoot(BeaconState state) {
+  public static Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root

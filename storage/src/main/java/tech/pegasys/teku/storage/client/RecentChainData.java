@@ -15,8 +15,8 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentTargetRoot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousTargetRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Collections;
@@ -276,8 +276,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,
-          getPreviousTargetRoot(newChainHead.getState()),
-          getCurrentTargetRoot(newChainHead.getState()),
+          getPreviousDutyDependentRoot(newChainHead.getState()),
+          getCurrentDutyDependentRoot(newChainHead.getState()),
           optionalReorgContext);
     }
 
