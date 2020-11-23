@@ -53,6 +53,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -113,6 +114,7 @@ public class Eth2NetworkFactory {
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
     protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
     protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
+    protected GossipPublisher<SignedVoluntaryExit> voluntaryExitPublisher;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -234,6 +236,7 @@ public class Eth2NetworkFactory {
             attesterSlashingProcessor,
             proposerSlashingProcessor,
             voluntaryExitProcessor,
+            voluntaryExitPublisher,
             processedAttestationSubscriptionProvider);
       }
     }
@@ -307,6 +310,9 @@ public class Eth2NetworkFactory {
       }
       if (voluntaryExitProcessor == null) {
         voluntaryExitProcessor = OperationProcessor.noop();
+      }
+      if (voluntaryExitPublisher == null) {
+        voluntaryExitPublisher = new GossipPublisher<>();
       }
     }
 
@@ -391,6 +397,13 @@ public class Eth2NetworkFactory {
         final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
       checkNotNull(gossipedVoluntaryExitProcessor);
       this.voluntaryExitProcessor = gossipedVoluntaryExitProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder voluntaryExitPublisher(
+        final GossipPublisher<SignedVoluntaryExit> publisher) {
+      checkNotNull(publisher);
+      this.voluntaryExitPublisher = publisher;
       return this;
     }
 

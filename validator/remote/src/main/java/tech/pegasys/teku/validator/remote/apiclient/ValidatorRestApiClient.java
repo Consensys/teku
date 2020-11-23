@@ -20,8 +20,8 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -46,7 +46,7 @@ public interface ValidatorRestApiClient {
   Optional<PostAttesterDutiesResponse> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes);
 
-  List<ProposerDuty> getProposerDuties(final UInt64 epoch);
+  Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
   Optional<BeaconBlock> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
