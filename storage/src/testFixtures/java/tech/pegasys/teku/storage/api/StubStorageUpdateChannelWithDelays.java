@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Collection;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -28,6 +30,11 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
 
   @Override
   public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 

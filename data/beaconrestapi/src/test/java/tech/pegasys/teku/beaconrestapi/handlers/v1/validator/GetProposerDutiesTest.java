@@ -22,6 +22,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -42,17 +43,18 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   public void shouldGetProposerDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(100));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
 
-    List<ProposerDuty> duties =
-        List.of(getProposerDuty(2, compute_start_slot_at_epoch(UInt64.valueOf(100))));
+    GetProposerDutiesResponse duties =
+        new GetProposerDutiesResponse(
+            Bytes32.fromHexString("0x1234"),
+            List.of(getProposerDuty(2, compute_start_slot_at_epoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
     handler.handle(context);
     GetProposerDutiesResponse response = getResponseFromFuture(GetProposerDutiesResponse.class);
-    assertThat(response.data).isEqualTo(duties);
+    assertThat(response).isEqualTo(duties);
   }
 
   @Test

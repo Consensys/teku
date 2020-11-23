@@ -16,6 +16,7 @@ package tech.pegasys.teku.datastructures.blocks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -108,5 +109,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   @Override
   public int hashCode() {
     return Objects.hash(state, blockSummary);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("blockSummary", blockSummary).toString();
   }
 }

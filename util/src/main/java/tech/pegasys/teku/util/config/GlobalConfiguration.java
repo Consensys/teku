@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 @Deprecated
 public class GlobalConfiguration implements MetricsConfig {
   // Network
+  private final NetworkDefinition networkDefinition;
   private final String constants;
-  private final String initialState;
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
   private final Integer peerRateLimit;
@@ -84,6 +84,7 @@ public class GlobalConfiguration implements MetricsConfig {
   }
 
   GlobalConfiguration(
+      final NetworkDefinition networkDefinition,
       final String constants,
       final Integer startupTargetPeerCount,
       final Integer startupTimeoutSeconds,
@@ -92,7 +93,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
@@ -124,6 +124,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist) {
+    this.networkDefinition = networkDefinition;
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -132,7 +133,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -164,6 +164,10 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
+  }
+
+  public NetworkDefinition getNetworkDefinition() {
+    return networkDefinition;
   }
 
   public String getConstants() {
@@ -200,10 +204,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getInteropOwnedValidatorCount() {
     return interopOwnedValidatorCount;
-  }
-
-  public String getInitialState() {
-    return initialState == null || initialState.isEmpty() ? null : initialState;
   }
 
   public int getInteropNumberOfValidators() {

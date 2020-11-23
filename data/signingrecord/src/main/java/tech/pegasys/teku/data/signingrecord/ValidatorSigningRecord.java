@@ -119,9 +119,22 @@ public class ValidatorSigningRecord {
               + genesisValidatorsRoot);
       return Optional.empty();
     }
-    if (isSafeSourceEpoch(sourceEpoch) && isSafeTargetEpoch(targetEpoch)) {
+
+    boolean sourceEpochIsSafe = isSafeSourceEpoch(sourceEpoch);
+    boolean targetEpochIsSafe = isSafeTargetEpoch(targetEpoch);
+    if (sourceEpochIsSafe && targetEpochIsSafe) {
       return Optional.of(
           new ValidatorSigningRecord(genesisValidatorsRoot, blockSlot, sourceEpoch, targetEpoch));
+    } else {
+      LOG.error(
+          "Refusing to sign attestation:  source epoch ({}) is {}, target epoch ({}) is {}.  "
+              + "Previously signed source epoch {}, target epoch {}",
+          sourceEpoch,
+          sourceEpochIsSafe ? "safe" : "unsafe",
+          targetEpoch,
+          targetEpochIsSafe ? "safe" : "unsafe",
+          attestationSourceEpoch,
+          attestationTargetEpoch);
     }
     return Optional.empty();
   }

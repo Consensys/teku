@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -794,6 +795,81 @@ public class SafeFutureTest {
     SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
 
     assertThatThrownBy(future::get).hasMessageContaining("test");
+  }
+
+  @Test
+  public void asyncDoWhile_runAtLeastOnce() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < 0);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(1);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_repeatUntilPredicateReturnsFalse() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < 5);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(5);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_haltIfLoopCompletesExceptionally() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    final RuntimeException error = new RuntimeException("oops");
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () ->
+            SafeFuture.of(
+                () -> {
+                  if (counter.incrementAndGet() < 5) {
+                    return true;
+                  }
+                  throw error;
+                });
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(5);
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasCause(error);
+  }
+
+  @Test
+  public void asyncDoWhile_handlesManyLoopsCompletingImmediately() {
+    final int loopCount = 2000;
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> SafeFuture.of(() -> counter.incrementAndGet() < loopCount);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+    assertThat(counter.get()).isEqualTo(loopCount);
+    assertThat(res).isCompleted();
+  }
+
+  @Test
+  public void asyncDoWhile_handlesManyLoopsCompletingAsync() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final int loopCount = 2000;
+    final AtomicInteger counter = new AtomicInteger(0);
+    final ExceptionThrowingFutureSupplier<Boolean> loop =
+        () -> asyncRunner.runAsync(() -> counter.incrementAndGet() < loopCount);
+
+    final SafeFuture<Void> res = SafeFuture.asyncDoWhile(loop);
+
+    int count = 0;
+    while (!res.isDone() && count <= loopCount) {
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeQueuedActions();
+      count++;
+    }
+
+    assertThat(counter.get()).isEqualTo(loopCount);
+    assertThat(res).isCompleted();
   }
 
   @Test

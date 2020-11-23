@@ -52,6 +52,7 @@ import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.VoluntaryExitCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
@@ -66,7 +67,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @SuppressWarnings("unused")
 @Command(
@@ -81,6 +81,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
       ValidatorClientCommand.class,
+      VoluntaryExitCommand.class,
       InternalToolsCommand.class,
     },
     showDefaultValues = true,
@@ -324,14 +325,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-      final NetworkDefinition networkDefinition =
-          NetworkDefinition.fromCliArg(networkOptions.getNetwork());
-      builder.globalConfig(
-          globalBuilder -> buildGlobalConfiguration(globalBuilder, networkDefinition));
-      weakSubjectivityOptions.configure(builder);
+      builder.globalConfig(globalBuilder -> buildGlobalConfiguration(globalBuilder));
+      weakSubjectivityOptions.configure(builder, networkOptions.getNetwork());
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
-      p2POptions.configure(builder, networkDefinition);
+      p2POptions.configure(builder, networkOptions.getNetwork());
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -339,10 +337,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
     }
   }
 
-  private void buildGlobalConfiguration(
-      final GlobalConfigurationBuilder builder, final NetworkDefinition networkDefinition) {
+  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
-        .setNetwork(networkDefinition)
+        .setNetwork(networkOptions.getNetwork())
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
         .setPeerRateLimit(networkOptions.getPeerRateLimit())
@@ -350,7 +347,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
@@ -360,7 +356,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFile(loggingOptions.getLogFile())
         .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
@@ -383,6 +378,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist());
+
+    String logFile =
+        loggingOptions
+            .getMaybeLogFile()
+            .orElse(
+                LoggingOptions.getDefaultLogFileGivenDataDir(
+                    dataOptions.getDataBasePath().toString(), false));
+    builder.setLogFile(logFile);
   }
 
   @FunctionalInterface

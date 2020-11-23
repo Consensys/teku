@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class AggregateAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
@@ -40,9 +41,15 @@ public class AggregateAttestationTopicHandler extends Eth2TopicHandler<Validatea
   }
 
   @Override
-  protected ValidateableAttestation deserialize(Bytes bytes) throws DecodingException {
+  public PreparedGossipMessage prepareMessage(Bytes payload) {
+    return getGossipEncoding().prepareMessage(payload, SignedAggregateAndProof.class);
+  }
+
+  @Override
+  public ValidateableAttestation deserialize(PreparedGossipMessage message)
+      throws DecodingException {
     SignedAggregateAndProof aggregate =
-        getGossipEncoding().decode(bytes, SignedAggregateAndProof.class);
+        getGossipEncoding().decodeMessage(message, SignedAggregateAndProof.class);
     return ValidateableAttestation.aggregateFromValidator(aggregate);
   }
 }

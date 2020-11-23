@@ -41,6 +41,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
@@ -136,9 +137,17 @@ public class Eth2NetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
+    PreparedGossipMessageFactory defaultMessageFactory =
+        (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
     final LibP2PNetwork p2pNetwork =
         new LibP2PNetwork(
-            asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers);
+            asyncRunner,
+            config,
+            reputationManager,
+            metricsSystem,
+            rpcMethods,
+            peerHandlers,
+            defaultMessageFactory);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(

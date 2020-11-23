@@ -14,39 +14,19 @@
 package tech.pegasys.teku.api;
 
 import tech.pegasys.teku.api.response.v1.node.Syncing;
-import tech.pegasys.teku.api.schema.SyncStatus;
-import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public class SyncDataProvider {
 
-  private final SyncService syncService;
+  private final ForwardSync syncService;
 
-  public SyncDataProvider(SyncService syncService) {
+  public SyncDataProvider(ForwardSync syncService) {
     this.syncService = syncService;
   }
 
-  /**
-   * Get the sync status
-   *
-   * @return false if not syncing, otherwise true and a sync status object which indicates starting
-   *     slot, current slot and highest slot.
-   */
-  public SyncingStatus getSyncStatus() {
-    final tech.pegasys.teku.sync.SyncingStatus syncingStatus = syncService.getSyncStatus();
-
-    final SyncStatus schemaSyncStatus =
-        new SyncStatus(
-            syncingStatus.getStartingSlot().orElse(null),
-            syncingStatus.getCurrentSlot(),
-            syncingStatus.getHighestSlot().orElse(null));
-
-    return new SyncingStatus(syncingStatus.isSyncing(), schemaSyncStatus);
-  }
-
   public Syncing getSyncing() {
-    tech.pegasys.teku.sync.SyncingStatus syncStatus = syncService.getSyncStatus();
+    tech.pegasys.teku.sync.events.SyncingStatus syncStatus = syncService.getSyncStatus();
     return new Syncing(syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus));
   }
 
@@ -54,7 +34,7 @@ public class SyncDataProvider {
     return syncService.isSyncActive();
   }
 
-  private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.SyncingStatus syncingStatus) {
+  private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus) {
     if (syncingStatus.isSyncing() && syncingStatus.getHighestSlot().isPresent()) {
       final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
       return highestSlot.minus(syncingStatus.getCurrentSlot());

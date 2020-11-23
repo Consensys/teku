@@ -5,7 +5,7 @@ executors:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
           username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO      
+          password: $DOCKER_PASSWORD_RO
     resource_class: small
     working_directory: ~/project
     environment:
@@ -17,7 +17,7 @@ executors:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
           username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO       
+          password: $DOCKER_PASSWORD_RO
     resource_class: medium
     working_directory: ~/project
     environment:
@@ -29,7 +29,7 @@ executors:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
           username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO         
+          password: $DOCKER_PASSWORD_RO
     resource_class: "medium+"
     working_directory: ~/project
     environment:
@@ -41,7 +41,7 @@ executors:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
           username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO      
+          password: $DOCKER_PASSWORD_RO
     resource_class: large
     working_directory: ~/project
     environment:
@@ -59,7 +59,7 @@ executors:
       - image: circleci/node:14-buster
         auth:
           username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO      
+          password: $DOCKER_PASSWORD_RO
 
 commands:
   prepare:
@@ -305,153 +305,131 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
+            mkdir -p .openapidoc/spec
+
             build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
 
             EXIT_CODE=0
-            wget --timeout=30 --retry-connrefused --output-document=./docs/openapi.json http://localhost:5051/swagger-docs
+            wget --timeout=30 --retry-connrefused --output-document=.openapidoc/spec/teku.json http://localhost:5051/swagger-docs
             if [ $? != 0 ]; then
-              rm openapi.json
               EXIT_CODE=1
             fi
 
             kill $TEKU_PID
             exit $EXIT_CODE
       - store_artifacts:
-          path: ./docs/openapi.json
+          path: .openapidoc/spec/teku.json
       - store_artifacts:
           path: teku_output.log
       - persist_to_workspace:
           root: ~/project
           paths:
-            - ./docs/openapi.json
+            - .openapidoc/spec/teku.json
 
-  publishAPIDoc:
+  publishAPISpec:
     executor: node_executor
     steps:
-      # This job requires that we checkout current branch first to have all the repos.
-      # it will not be used directly as we have the saved workspace
-      # but will enable to checkout gh-pages branch.
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef"
       - attach_workspace:
-          at: /tmp/workspace
-      - run:
-          name: checkout gh pages branch and copy files from workspace
-          command: |
-            # publishing happens by pushing files to gh-pages branch
-            # retrieve branch to publish to from Circle CI env vars and fallback on the real gh-pages
-            # if no var for a test or alternative branch defined.
-            [ -n "$GH_PAGES_BRANCH_OVERRIDE" ] && readonly BRANCH="$GH_PAGES_BRANCH_OVERRIDE" || readonly BRANCH='gh-pages'
-
-            # switch to the publishing branch
-            git checkout "$BRANCH"
-
-            # copy the content of the docs folder built on the previous job and attached
-            # using workspace on temp location
-            # cp with T option to override existing content, specially usefull for latest
-            cp -aT /tmp/workspace/docs/. .
-
-            # add a readme to make sure devs understand that this publishing branch is generated
-            # by CI (use template readme), mv replaces the current readme that is only for source dir
-            mv TARGET_README.md README.md
+          at: ~/project
       - restore_cache:
           keys:
-            - node-cache-{{ checksum "package-lock.json" }}
+            - node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
+            - node-cache-
       - run:
-          name: Install dependencies
+          name: install
+          working_directory: .openapidoc
           command: |
             npm ci
+      - run:
+          name: Build Folder
+          working_directory: .openapidoc
+          command: |
+            OA_GIT_USERNAME=$CIRCLE_USERNAME OA_GIT_EMAIL="${CIRCLE_USERNAME}@users.noreply.github.com" OA_GIT_URL=$CIRCLE_REPOSITORY_URL OA_GH_PAGES_BRANCH="gh-pages" node publish.js
       - save_cache:
           paths:
             - ~/.npm
-          key: node-cache-{{ checksum "package-lock.json" }}
-      - run:
-          name: Generate API doc site files
-          command: |
-            npm run generate-versions -- --spec=openapi.json --tag=${CIRCLE_TAG}
-      - run:
-          name: Clean gh-pages branch
-          command: |
-            # remove files used to build the doc version but it's not usefull to have them in
-            # the final gh-pages branch
-            rm openapi.json
-            rm package.json
-            rm package-lock.json
-            rm generate-versions.js
-      - add_ssh_keys:
-          fingerprints:
-            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
-      - run:
-          name: Set Git user params
-          command: |
-            git config --global user.name $CIRCLE_USERNAME
-            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
-      - deploy:
-          name: Commit and push docs changes
-          command: |
-            # add all generated and copied content to git
-            git add .
-
-            # commit with infos on the triggering task and branch
-            # use [skip ci] to prevent CI from runnning on this branch as no CI is configured
-            git commit -m "Automated REST API documentation update" \
-                       -m "[ci skip] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
-                       -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
-
-            # push changes to the Github Pages publishing branch on origin repos
-            git push --set-upstream origin $BRANCH
-            git push origin
+          key: node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
 
 workflows:
   circleci:
     jobs:
       - assemble:
-          context: 
-            - dockerhub-quorumengineering-ro  
+          context:
+            - dockerhub-quorumengineering-ro
+          filters:
+            tags: &filters-release-tags
+              only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - spotless:
-          context: 
-            - dockerhub-quorumengineering-ro  
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - referenceTests:
           requires:
             - assemble
             - spotless
-          context: 
-            - dockerhub-quorumengineering-ro               
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - unitTests:
           requires:
             - assemble
             - spotless
-          context: 
-            - dockerhub-quorumengineering-ro              
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - integrationTests:
           requires:
             - assemble
             - spotless
-          context: 
-            - dockerhub-quorumengineering-ro        
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - acceptanceTests:
           requires:
             - assemble
             - spotless
-          context: 
-            - dockerhub-quorumengineering-ro           
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - docker:
           requires:
             - assemble
             - spotless
-          context: 
-            - dockerhub-quorumengineering-ro             
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - extractAPISpec:
           requires:
             - assemble
-          context: dockerhub-quorumengineering-ro            
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context: dockerhub-quorumengineering-ro
       - publish:
           filters:
             branches:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
+            tags:
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -459,16 +437,17 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
-          context: 
-            - dockerhub-quorumengineering-ro   
-            - quorum-gradle          
+          context:
+            - dockerhub-quorumengineering-ro
+            - quorum-gradle
       - publishDocker:
           filters:
             branches:
               only:
                 - master
                 - /^release-.*/
-                - /^.*-integration$/
+            tags:
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -476,16 +455,16 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
-          context: 
-            - dockerhub-quorumengineering-rw 
-      - publishAPIDoc:
+          context:
+            - dockerhub-quorumengineering-rw
+      - publishAPISpec:
           filters:
             branches:
               only:
                 - master
                 - /^release-.*/
             tags: # stable doc is published only on tags to prevent confusion on the doc site.
-              only: /.*/
+              <<: *filters-release-tags
           requires:
             - unitTests
             - integrationTests
@@ -493,19 +472,5 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
-          context: 
-            - dockerhub-quorumengineering-ro        
-
-#  nightly:
-#    triggers:
-#      - schedule:
-#          cron: "0 0 * * *"
-#          filters:
-#            branches:
-#              only:
-#                - master
-#    jobs:
-#      - assemble
-#      - compatibilityTests:
-#          requires:
-#            - assemble
+          context:
+            - dockerhub-quorumengineering-ro

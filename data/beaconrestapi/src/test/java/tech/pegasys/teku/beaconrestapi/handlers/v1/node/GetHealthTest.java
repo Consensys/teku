@@ -28,7 +28,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 10));
+    when(syncService.isSyncActive()).thenReturn(true);
 
     handler.handle(context);
     verifyCacheStatus(CACHE_NONE);
@@ -39,7 +39,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 10));
+    when(syncService.isSyncActive()).thenReturn(false);
 
     handler.handle(context);
     verifyCacheStatus(CACHE_NONE);

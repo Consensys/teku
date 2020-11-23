@@ -14,12 +14,17 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.io.Resources;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -29,7 +34,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -56,19 +66,23 @@ class ValidatorLoaderTest {
     }
   }
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final HttpClient httpClient = mock(HttpClient.class);
 
   private final ValidatorLoader validatorLoader =
-      new ValidatorLoader(slashingProtector, asyncRunner);
+      new ValidatorLoader(slashingProtector, asyncRunner, () -> httpClient);
 
   @Test
-  void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
+  void initializeValidatorsWithExternalSignerAndSlashingProtection() {
     final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config, globalConfig);
@@ -78,6 +92,48 @@ class ValidatorLoaderTest {
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
+
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    when(slashingProtector.maySignBlock(
+            PUBLIC_KEY1, forkInfo.getGenesisValidatorsRoot(), block.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(true));
+    when(httpClient.sendAsync(any(), any())).thenReturn(new SafeFuture<>());
+    final SafeFuture<BLSSignature> result = validator.getSigner().signBlock(block, forkInfo);
+    assertThat(result).isNotDone();
+    verify(slashingProtector)
+        .maySignBlock(PUBLIC_KEY1, forkInfo.getGenesisValidatorsRoot(), block.getSlot());
+  }
+
+  @Test
+  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
+    final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerSlashingProtectionEnabled(false)
+            .build();
+    final Map<BLSPublicKey, Validator> validators =
+        validatorLoader.initializeValidators(config, globalConfig);
+
+    assertThat(validators).hasSize(1);
+    final Validator validator = validators.get(PUBLIC_KEY1);
+    assertThat(validator).isNotNull();
+    assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator.getSigner().isLocal()).isFalse();
+
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    when(slashingProtector.maySignBlock(
+            PUBLIC_KEY1, forkInfo.getGenesisValidatorsRoot(), block.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(true));
+    when(httpClient.sendAsync(any(), any())).thenReturn(new SafeFuture<>());
+    final SafeFuture<BLSSignature> result = validator.getSigner().signBlock(block, forkInfo);
+    assertThat(result).isNotDone();
+    // Confirm request was sent without checking with the slashing protector
+    verifyNoInteractions(slashingProtector);
+    verify(httpClient).sendAsync(any(), any());
   }
 
   @Test

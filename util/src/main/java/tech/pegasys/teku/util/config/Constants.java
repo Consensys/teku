@@ -27,7 +27,9 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Constants {
 
-  static final String[] NETWORK_DEFINITIONS = {"mainnet", "minimal", "swift", "medalla", "toledo"};
+  static final String[] NETWORK_DEFINITIONS = {
+    "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont"
+  };
 
   // Non-configurable constants
   public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
@@ -178,7 +180,7 @@ public class Constants {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants from " + source, e);
+      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
     }
   }
 

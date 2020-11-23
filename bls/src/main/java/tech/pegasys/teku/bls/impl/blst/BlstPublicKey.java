@@ -78,6 +78,14 @@ public class BlstPublicKey implements PublicKey {
     }
   }
 
+  static BlstPublicKey fromPublicKey(PublicKey publicKey) {
+    if (publicKey instanceof BlstPublicKey) {
+      return (BlstPublicKey) publicKey;
+    } else {
+      return fromBytes(publicKey.toBytesCompressed());
+    }
+  }
+
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
@@ -148,12 +156,11 @@ public class BlstPublicKey implements PublicKey {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof PublicKey)) {
       return false;
     }
 
-    BlstPublicKey that = (BlstPublicKey) o;
-    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
+    return Objects.equals(toBytesCompressed(), ((PublicKey) o).toBytesCompressed());
   }
 
   @Override

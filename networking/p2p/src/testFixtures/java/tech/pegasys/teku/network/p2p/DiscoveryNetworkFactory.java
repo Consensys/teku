@@ -111,7 +111,10 @@ public class DiscoveryNetworkFactory {
                     reputationManager,
                     METRICS_SYSTEM,
                     Collections.emptyList(),
-                    Collections.emptyList()),
+                    Collections.emptyList(),
+                    (__1, __2) -> {
+                      throw new UnsupportedOperationException();
+                    }),
                 new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
                 config);
         try {

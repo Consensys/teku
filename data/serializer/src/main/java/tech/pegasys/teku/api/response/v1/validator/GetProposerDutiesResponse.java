@@ -13,15 +13,58 @@
 
 package tech.pegasys.teku.api.response.v1.validator;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class GetProposerDutiesResponse {
+  @JsonProperty("dependent_root")
+  @Schema(
+      type = "string",
+      example = EXAMPLE_BYTES32,
+      pattern = PATTERN_BYTES32,
+      description = "The block root that this response is dependent on.")
+  public final Bytes32 dependentRoot;
+
   public final List<ProposerDuty> data;
 
   @JsonCreator
-  public GetProposerDutiesResponse(@JsonProperty("data") final List<ProposerDuty> data) {
+  public GetProposerDutiesResponse(
+      @JsonProperty("dependent_root") final Bytes32 dependentRoot,
+      @JsonProperty("data") final List<ProposerDuty> data) {
+    this.dependentRoot = dependentRoot;
     this.data = data;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final GetProposerDutiesResponse that = (GetProposerDutiesResponse) o;
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(dependentRoot, data);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("dependentRoot", dependentRoot)
+        .add("data", data)
+        .toString();
   }
 }

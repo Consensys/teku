@@ -13,89 +13,18 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SlashingProtector {
+public interface SlashingProtector {
+  SafeFuture<Boolean> maySignBlock(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot);
 
-  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
-
-  private final SyncDataAccessor dataAccessor;
-  private final Path slashingProtectionBaseDir;
-
-  public SlashingProtector(
-      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
-    this.dataAccessor = dataAccessor;
-    this.slashingProtectionBaseDir = slashingProtectionBaseDir;
-  }
-
-  public synchronized SafeFuture<Boolean> maySignBlock(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
-    return SafeFuture.of(
-        () -> {
-          final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
-          return handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot));
-        });
-  }
-
-  public synchronized SafeFuture<Boolean> maySignAttestation(
+  SafeFuture<Boolean> maySignAttestation(
       final BLSPublicKey validator,
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
-      final UInt64 targetEpoch) {
-    return SafeFuture.of(
-        () -> {
-          final ValidatorSigningRecord signingRecord =
-              loadSigningRecord(validator, genesisValidatorsRoot);
-          return handleResult(
-              validator,
-              signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
-        });
-  }
-
-  private Boolean handleResult(
-      final BLSPublicKey validator, final Optional<ValidatorSigningRecord> newRecord)
-      throws IOException {
-    if (newRecord.isEmpty()) {
-      return false;
-    }
-    writeSigningRecord(validator, newRecord.get());
-    return true;
-  }
-
-  private ValidatorSigningRecord loadSigningRecord(
-      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
-    ValidatorSigningRecord record = signingRecords.get(validator);
-    if (record != null) {
-      return record;
-    }
-    record =
-        dataAccessor
-            .read(validatorRecordPath(validator))
-            .map(ValidatorSigningRecord::fromBytes)
-            .orElseGet(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
-    signingRecords.put(validator, record);
-    return record;
-  }
-
-  private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
-      throws IOException {
-    dataAccessor.syncedWrite(validatorRecordPath(validator), record.toBytes());
-    signingRecords.put(validator, record);
-  }
-
-  private Path validatorRecordPath(final BLSPublicKey validator) {
-    return slashingProtectionBaseDir.resolve(
-        validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
-  }
+      final UInt64 targetEpoch);
 }

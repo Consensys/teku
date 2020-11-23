@@ -340,24 +340,9 @@ public class PeerChainValidatorTest {
   }
 
   @Test
-  public void remoteChainIsBehindLocalAnchorPoint_allow() {
-    peerChainValidator =
-        new PeerChainValidator(new NoOpMetricsSystem(), combinedChainData, Optional.empty(), true);
-
-    // Setup mocks
-    forksMatch();
-    remoteChainIsBehindOnSameChain();
-    when(combinedChainData.getBlockInEffectAtSlot(remoteFinalizedEpochSlot))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
-    assertPeerChainVerified(result);
-  }
-
-  @Test
   public void remoteChainIsBehindLocalAnchorPoint_disallow() {
     peerChainValidator =
-        new PeerChainValidator(new NoOpMetricsSystem(), combinedChainData, Optional.empty(), false);
+        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, Optional.empty());
 
     // Setup mocks
     forksMatch();

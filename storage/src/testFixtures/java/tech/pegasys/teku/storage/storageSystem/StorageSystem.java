@@ -19,7 +19,7 @@ import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -95,7 +95,7 @@ public class StorageSystem implements AutoCloseable {
             storeConfig,
             chainStorageServer,
             chainStorageServer,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);

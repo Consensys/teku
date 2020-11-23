@@ -69,7 +69,8 @@ public class AttesterSlashingTopicHandlerTest {
     when(processor.process(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -79,7 +80,8 @@ public class AttesterSlashingTopicHandlerTest {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -89,7 +91,8 @@ public class AttesterSlashingTopicHandlerTest {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(REJECT));
     Bytes serialized = gossipEncoding.encode(slashing);
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -98,7 +101,8 @@ public class AttesterSlashingTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -90,12 +93,24 @@ class RecentChainDataTest {
 
   @Test
   public void updateHead_validUpdate() throws Exception {
+    // Ensure the current and previous target root blocks are different
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(recentChainData.getChainHead().map(StateAndBlockSummary::getRoot))
         .contains(bestBlock.getRoot());
+    assertThat(storageSystem.reorgEventChannel().getHeadEvents())
+        .contains(
+            new HeadEvent(
+                bestBlock.getSlot(),
+                bestBlock.getStateRoot(),
+                bestBlock.getRoot(),
+                true,
+                getPreviousDutyDependentRoot(bestBlock.getState()),
+                getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
   @Test
@@ -347,7 +362,7 @@ class RecentChainDataTest {
 
     // Set store and update best block to genesis
     assertThat(preGenesisStorageClient.getChainHead()).isEmpty();
-    preGenesisStorageClient.setStore(store, mock(ProtoArrayForkChoiceStrategy.class));
+    preGenesisStorageClient.setStore(store);
     preGenesisStorageClient.updateHead(genesis.getRoot(), genesis.getSlot());
     assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(genesis.getRoot());
 
@@ -716,7 +731,7 @@ class RecentChainDataTest {
             .collect(Collectors.toSet());
 
     // Check expected blocks
-    assertThat(recentChainData.getStore().getBlockRoots())
+    assertThat(recentChainData.getStore().getOrderedBlockRoots())
         .containsExactlyInAnyOrderElementsOf(blockRoots);
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
       assertThat(recentChainData.retrieveSignedBlockByRoot(expectedBlock.getRoot()))
@@ -738,14 +753,7 @@ class RecentChainDataTest {
     final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(
-            blockAndState -> {
-              transaction.putBlockAndState(blockAndState);
-              client
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-            });
+        .forEach(transaction::putBlockAndState);
     transaction.commit().join();
   }
 
@@ -789,10 +797,6 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 
   private void disableForkChoicePruneThreshold() {

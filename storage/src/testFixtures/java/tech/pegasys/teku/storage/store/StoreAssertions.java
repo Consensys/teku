@@ -30,6 +30,7 @@ public class StoreAssertions {
             "readLock",
             "blockProvider",
             "blocks",
+            "blockMetadata",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
             "stateRequestMissCounter",
@@ -39,6 +40,9 @@ public class StoreAssertions {
             "metricsSystem",
             "states",
             "stateProvider",
-            "checkpointStates");
+            "checkpointStates",
+            "forkChoiceStrategy");
+    assertThat(actualState.getOrderedBlockRoots())
+        .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());
   }
 }

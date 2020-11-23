@@ -45,8 +45,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getInitialState())
-        .isEqualTo(networkDefinition.getInitialState().orElse(null));
+    assertThat(tekuConfig.weakSubjectivity().getWeakSubjectivityStateResource())
+        .isEqualTo(networkDefinition.getInitialState());
     assertThat(config.getStartupTargetPeerCount())
         .isEqualTo(networkDefinition.getStartupTargetPeerCount());
     assertThat(config.getStartupTimeoutSeconds())
@@ -75,14 +75,6 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void useInitialState() {
-    String initialState = "some-file-or-url";
-    final GlobalConfiguration config =
-        getGlobalConfigurationFromArguments("--initial-state", initialState);
-    assertThat(config.getInitialState()).isEqualTo(initialState);
-  }
-
-  @Test
   public void setPeerRateLimit() {
     final GlobalConfiguration config =
         getGlobalConfigurationFromArguments("--Xpeer-rate-limit", "10");
@@ -94,5 +86,16 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final GlobalConfiguration config =
         getGlobalConfigurationFromArguments("--Xpeer-request-limit", "10");
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
+  }
+
+  @Test
+  public void helpDisplaysDefaultNetwork() {
+    beaconNodeCommand.parse(new String[] {"--help"});
+
+    final String output = getCommandLineOutput();
+    assertThat(output)
+        .contains(
+            "-n, --network=<NETWORK>    Represents which network to use.\n"
+                + "                               Default: mainnet");
   }
 }

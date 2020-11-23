@@ -37,6 +37,14 @@ public class MikuliSecretKey implements SecretKey {
     return new MikuliSecretKey(new Scalar(BIG.fromBytes(Bytes48.leftPad(bytes).toArrayUnsafe())));
   }
 
+  public static MikuliSecretKey fromSecretKey(SecretKey genericSecretKey) {
+    if (genericSecretKey instanceof MikuliSecretKey) {
+      return (MikuliSecretKey) genericSecretKey;
+    } else {
+      return fromBytes(genericSecretKey.toBytes());
+    }
+  }
+
   private final Scalar scalarValue;
 
   public MikuliSecretKey(Scalar value) {
@@ -84,8 +92,8 @@ public class MikuliSecretKey implements SecretKey {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    MikuliSecretKey secretKey = (MikuliSecretKey) o;
+    if (!(o instanceof SecretKey)) return false;
+    MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKey) o);
     return Objects.equals(scalarValue, secretKey.scalarValue);
   }
 

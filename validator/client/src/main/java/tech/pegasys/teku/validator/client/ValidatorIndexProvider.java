@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorIndexProvider {
@@ -36,6 +37,7 @@ public class ValidatorIndexProvider {
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
+  private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
 
   public ValidatorIndexProvider(
       final Collection<BLSPublicKey> validators, final ValidatorApiChannel validatorApiChannel) {
@@ -44,10 +46,11 @@ public class ValidatorIndexProvider {
   }
 
   public void lookupValidators() {
-    if (!requestInProgress.compareAndSet(false, true)) {
+    if (unknownValidators.isEmpty()) {
       return;
     }
-    if (unknownValidators.isEmpty()) {
+
+    if (!requestInProgress.compareAndSet(false, true)) {
       return;
     }
     LOG.trace("Looking up {} unknown validators", unknownValidators.size());
@@ -58,6 +61,7 @@ public class ValidatorIndexProvider {
               logNewValidatorIndices(knownValidators);
               validatorIndexesByPublicKey.putAll(knownValidators);
               unknownValidators.removeAll(knownValidators.keySet());
+              firstSuccessfulRequest.complete(null);
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
@@ -79,7 +83,11 @@ public class ValidatorIndexProvider {
     return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
   }
 
-  public Collection<Integer> getValidatorIndices(final Collection<BLSPublicKey> publicKeys) {
-    return publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList());
+  public SafeFuture<Collection<Integer>> getValidatorIndices(
+      final Collection<BLSPublicKey> publicKeys) {
+    // Wait for at least one successful load of validator indices before attempting to read
+    return firstSuccessfulRequest.thenApply(
+        __ ->
+            publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList()));
   }
 }

@@ -42,4 +42,9 @@ public interface MutableStore extends ReadOnlyStore {
   void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
 
   VoteTracker getVote(UInt64 validatorIndex);
+
+  Bytes32 applyForkChoiceScoreChanges(
+      Checkpoint finalizedCheckpoint,
+      Checkpoint justifiedCheckpoint,
+      BeaconState justifiedCheckpointState);
 }

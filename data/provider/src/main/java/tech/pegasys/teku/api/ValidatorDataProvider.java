@@ -13,24 +13,15 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.teku.validator.api.ValidatorApiChannel.UKNOWN_VALIDATOR_ID;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -38,21 +29,16 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
 
@@ -78,10 +64,6 @@ public class ValidatorDataProvider {
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
-  }
-
-  public boolean isEpochFinalized(final UInt64 epoch) {
-    return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
@@ -123,47 +105,6 @@ public class ValidatorDataProvider {
                             attestation.getAggregation_bits(),
                             new AttestationData(attestation.getData()),
                             new BLSSignature(attestation.getAggregate_signature()))));
-  }
-
-  public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
-      final ValidatorDutiesRequest validatorDutiesRequest) {
-    checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
-    if (validatorDutiesRequest.pubkeys.isEmpty()) {
-      // Short-cut if there's nothing to look up
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
-    }
-    if (!combinedChainDataClient.isStoreAvailable()
-        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return SafeFuture.of(
-            () -> {
-              final List<BLSPublicKey> publicKeys =
-                  validatorDutiesRequest.pubkeys.stream()
-                      .map(key -> BLSPublicKey.fromSSZBytes(key.toBytes()))
-                      .collect(toList());
-              return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
-            })
-        .thenApply(
-            res ->
-                res.map(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList())));
-  }
-
-  private ValidatorDuties mapToSchemaDuties(
-      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
-    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
-    if (duty.getDuties().isEmpty()) {
-      return new ValidatorDuties(pubKey, null, null, null, null, emptyList(), null);
-    }
-    final Duties duties = duty.getDuties().get();
-    return new ValidatorDuties(
-        pubKey,
-        duties.getValidatorIndex(),
-        duties.getAttestationCommitteeIndex(),
-        duties.getAttestationCommitteePosition(),
-        duties.getAggregatorModulo(),
-        duties.getBlockProposalSlots(),
-        duties.getAttestationSlot());
   }
 
   public void submitAttestation(Attestation attestation) {
@@ -223,77 +164,49 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public void subscribeToBeaconCommitteeForAggregation(
-      final SubscribeToBeaconCommitteeRequest request) {
-    final UInt64 slot = request.aggregation_slot;
-    combinedChainDataClient
-        .getBestState()
-        // No point aggregating for historic slots and we can't calculate the subnet ID
-        .filter(state -> state.getSlot().compareTo(slot) <= 0)
-        .ifPresent(
-            state -> {
-              final UInt64 committeesAtSlot =
-                  get_committee_count_per_slot(state, compute_epoch_at_slot(slot));
-              validatorApiChannel.subscribeToBeaconCommittee(
-                  List.of(
-                      new CommitteeSubscriptionRequest(
-                          UKNOWN_VALIDATOR_ID,
-                          request.committee_index,
-                          committeesAtSlot,
-                          slot,
-                          true)));
-            });
-  }
-
-  public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {
-    final Set<tech.pegasys.teku.datastructures.validator.SubnetSubscription>
-        internalSubnetSubscriptions =
-            subnetSubscriptions.stream()
-                .map(SubnetSubscription::asInternalSubnetSubscription)
-                .collect(Collectors.toSet());
-    validatorApiChannel.subscribeToPersistentSubnets(internalSubnetSubscriptions);
-  }
-
-  public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
+  public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
-    if (indexes.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(
             res ->
                 res.map(
                     duties ->
-                        duties.stream()
-                            .filter(duty -> duty.getPublicKey() != null)
-                            .map(this::mapToAttesterDuties)
-                            .collect(toList())));
+                        new PostAttesterDutiesResponse(
+                            duties.getDependentRoot(),
+                            duties.getDuties().stream()
+                                .filter(duty -> duty.getPublicKey() != null)
+                                .map(this::mapToAttesterDuties)
+                                .collect(toList()))));
   }
 
-  public SafeFuture<Optional<List<ProposerDuty>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<GetProposerDutiesResponse>> getProposerDuties(final UInt64 epoch) {
     return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch))
         .thenApply(
             res ->
                 res.map(
                     duties ->
-                        duties.stream()
-                            .filter(duty -> duty.getPublicKey() != null)
-                            .map(this::mapToProposerDuties)
-                            .collect(toList())));
+                        new GetProposerDutiesResponse(
+                            duties.getDependentRoot(),
+                            duties.getDuties().stream()
+                                .filter(duty -> duty.getPublicKey() != null)
+                                .map(this::mapToProposerDuties)
+                                .collect(toList()))));
   }
 
-  private ProposerDuty mapToProposerDuties(final ProposerDuties duties) {
-    return new ProposerDuty(
+  private tech.pegasys.teku.api.response.v1.validator.ProposerDuty mapToProposerDuties(
+      final ProposerDuty duties) {
+    return new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
         new BLSPubKey(duties.getPublicKey()), duties.getValidatorIndex(), duties.getSlot());
   }
 
-  private AttesterDuty mapToAttesterDuties(final AttesterDuties duties) {
-    return new AttesterDuty(
+  private tech.pegasys.teku.api.response.v1.validator.AttesterDuty mapToAttesterDuties(
+      final AttesterDuty duties) {
+    return new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
         new BLSPubKey(duties.getPublicKey()),
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
-        UInt64.valueOf(duties.getCommiteesAtSlot()),
+        UInt64.valueOf(duties.getCommitteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }

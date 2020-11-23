@@ -14,14 +14,9 @@
 package tech.pegasys.teku.sync.gossip;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.BlockSubscriber;
 
 public interface RecentBlockFetcher {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
 
   long subscribeBlockFetched(BlockSubscriber subscriber);
 
