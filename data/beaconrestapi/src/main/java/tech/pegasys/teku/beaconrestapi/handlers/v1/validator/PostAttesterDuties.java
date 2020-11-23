@@ -43,7 +43,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -92,7 +92,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetAttesterDutiesResponse.class)),
+            content = @OpenApiContent(from = PostAttesterDutiesResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
@@ -108,7 +108,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64[] indexes = jsonProvider.jsonToObject(ctx.body(), UInt64[].class);
 
-      SafeFuture<Optional<GetAttesterDutiesResponse>> future =
+      SafeFuture<Optional<PostAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
@@ -127,7 +127,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final GetAttesterDutiesResponse response)
+  private Optional<String> handleResult(Context ctx, final PostAttesterDutiesResponse response)
       throws JsonProcessingException {
     return Optional.of(jsonProvider.objectToJSON(response));
   }

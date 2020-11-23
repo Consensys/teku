@@ -43,7 +43,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -230,7 +230,7 @@ class RemoteValidatorApiHandlerTest {
     when(apiClient.getAttestationDuties(any(), any()))
         .thenReturn(
             Optional.of(
-                new GetAttesterDutiesResponse(
+                new PostAttesterDutiesResponse(
                     dataStructureUtil.randomBytes32(), Collections.emptyList())));
 
     SafeFuture<Optional<AttesterDuties>> future =
@@ -269,7 +269,7 @@ class RemoteValidatorApiHandlerTest {
     when(apiClient.getAttestationDuties(UInt64.ONE, List.of(validatorIndex)))
         .thenReturn(
             Optional.of(
-                new GetAttesterDutiesResponse(
+                new PostAttesterDutiesResponse(
                     dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties))));
 
     SafeFuture<Optional<AttesterDuties>> future =

@@ -20,14 +20,14 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class GetAttesterDutiesResponse {
+public class PostAttesterDutiesResponse {
   @JsonProperty("dependent_root")
   public final Bytes32 dependentRoot;
 
   public final List<AttesterDuty> data;
 
   @JsonCreator
-  public GetAttesterDutiesResponse(
+  public PostAttesterDutiesResponse(
       @JsonProperty("dependent_root") final Bytes32 dependentRoot,
       @JsonProperty("data") final List<AttesterDuty> data) {
     this.dependentRoot = dependentRoot;
@@ -42,7 +42,7 @@ public class GetAttesterDutiesResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final GetAttesterDutiesResponse that = (GetAttesterDutiesResponse) o;
+    final PostAttesterDutiesResponse that = (PostAttesterDutiesResponse) o;
     return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
   }
 

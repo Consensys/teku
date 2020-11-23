@@ -28,7 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -62,15 +62,15 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
 
-    GetAttesterDutiesResponse duties =
-        new GetAttesterDutiesResponse(
+    PostAttesterDutiesResponse duties =
+        new PostAttesterDutiesResponse(
             Bytes32.fromHexString("0x1234"),
             List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
     handler.handle(context);
-    GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
+    PostAttesterDutiesResponse response = getResponseFromFuture(PostAttesterDutiesResponse.class);
     assertThat(response).isEqualTo(duties);
   }
 

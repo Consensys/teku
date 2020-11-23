@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -164,14 +164,14 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public SafeFuture<Optional<GetAttesterDutiesResponse>> getAttesterDuties(
+  public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(
             res ->
                 res.map(
                     duties ->
-                        new GetAttesterDutiesResponse(
+                        new PostAttesterDutiesResponse(
                             duties.getDependentRoot(),
                             duties.getDuties().stream()
                                 .filter(duty -> duty.getPublicKey() != null)

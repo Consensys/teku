@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -259,10 +259,10 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
-    final SafeFuture<Optional<GetAttesterDutiesResponse>> future =
+    final SafeFuture<Optional<PostAttesterDutiesResponse>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
     assertThat(future).isCompleted();
-    Optional<GetAttesterDutiesResponse> maybeData = future.join();
+    Optional<PostAttesterDutiesResponse> maybeData = future.join();
     assertThat(maybeData.isPresent()).isTrue();
     assertThat(maybeData.get().data).isEmpty();
   }
@@ -277,11 +277,11 @@ public class ValidatorDataProviderTest {
                 Optional.of(
                     new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(v1, v2)))));
 
-    final SafeFuture<Optional<GetAttesterDutiesResponse>> future =
+    final SafeFuture<Optional<PostAttesterDutiesResponse>> future =
         provider.getAttesterDuties(ONE, List.of(1, 11));
     assertThat(future).isCompleted();
-    final Optional<GetAttesterDutiesResponse> maybeList = future.join();
-    final GetAttesterDutiesResponse list = maybeList.orElseThrow();
+    final Optional<PostAttesterDutiesResponse> maybeList = future.join();
+    final PostAttesterDutiesResponse list = maybeList.orElseThrow();
     assertThat(list.data).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
   }
 
