@@ -257,7 +257,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<ProposerDuties>>> duties =
+    final SafeFuture<Optional<ProposerDuties>> duties =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -267,7 +267,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -280,10 +280,11 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -293,10 +294,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
   }
 
   @Test

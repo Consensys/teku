@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -48,6 +47,7 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
@@ -145,20 +145,23 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return sendRequest(
-        () -> {
-          final List<ProposerDuties> duties =
-              apiClient.getProposerDuties(epoch).stream()
-                  .map(this::mapToProposerDuties)
-                  .collect(Collectors.toList());
-
-          return Optional.of(duties);
-        });
+        () ->
+            apiClient
+                .getProposerDuties(epoch)
+                .map(
+                    response ->
+                        new ProposerDuties(
+                            response.dependentRoot,
+                            response.data.stream()
+                                .map(this::mapToProposerDuties)
+                                .collect(Collectors.toList()))));
   }
 
-  private ProposerDuties mapToProposerDuties(final ProposerDuty proposerDuty) {
-    return new ProposerDuties(
+  private ProposerDuty mapToProposerDuties(
+      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
+    return new ProposerDuty(
         proposerDuty.pubkey.asBLSPublicKey(),
         proposerDuty.validatorIndex.intValue(),
         proposerDuty.slot);
