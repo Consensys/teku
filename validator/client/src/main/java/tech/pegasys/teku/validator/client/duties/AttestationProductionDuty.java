@@ -143,10 +143,9 @@ public class AttestationProductionDuty implements Duty {
       final ValidatorWithCommitteePositionAndIndex validator) {
     checkArgument(
         attestationData.getSlot().equals(slot),
-        "Unsigned attestation slot ( "
-            + attestationData.getSlot()
-            + ") does not match expected slot "
-            + slot);
+        "Unsigned attestation slot (%s) does not match expected slot %s",
+        attestationData.getSlot(),
+        slot);
     return validator
         .getSigner()
         .signAttestationData(attestationData, forkInfo)

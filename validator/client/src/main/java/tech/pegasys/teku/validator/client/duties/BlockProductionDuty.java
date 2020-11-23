@@ -96,22 +96,19 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<SignedBeaconBlock> signBlock(
-      final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
-    unsignedBlock.ifPresent(
-        beaconBlock ->
-            checkArgument(
-                beaconBlock.getSlot().equals(slot),
-                "Unsigned block slot ( "
-                    + beaconBlock.getSlot()
-                    + ") does not match expected slot "
-                    + slot));
+      final ForkInfo forkInfo, final Optional<BeaconBlock> maybeBlock) {
+    final BeaconBlock unsignedBlock =
+        maybeBlock.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    checkArgument(
+        unsignedBlock.getSlot().equals(slot),
+        "Unsigned block slot (%s) does not match expected slot %s",
+        unsignedBlock.getSlot(),
+        slot);
     return validator
         .getSigner()
-        .signBlock(
-            unsignedBlock.orElseThrow(
-                () -> new IllegalStateException("Node was not syncing but could not create block")),
-            forkInfo)
-        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
+        .signBlock(unsignedBlock, forkInfo)
+        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock, signature));
   }
 
   @Override
