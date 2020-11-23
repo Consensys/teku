@@ -13,30 +13,30 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
+
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
-
 public class Liveness implements Handler {
 
   public static final String ROUTE = "/teku/v1/admin/liveness";
 
   @OpenApi(
-          path = ROUTE,
-          method = HttpMethod.GET,
-          summary = "Returns 200 if the node is up even if it is syncing.",
-          tags = {TAG_TEKU},
-          responses = {
-                  @OpenApiResponse(status = RES_OK),
-          })
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Returns 200 if the node is up even if it is syncing.",
+      tags = {TAG_TEKU},
+      responses = {
+        @OpenApiResponse(status = RES_OK),
+      })
   @Override
-  public void handle(final Context ctx) throws Exception{
+  public void handle(final Context ctx) throws Exception {
     ctx.status(SC_OK);
   }
 }
