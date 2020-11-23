@@ -58,22 +58,15 @@ public class GIndexUtil {
 
   public static long gIdxLeftGIndex(long generalizedIndex) {
     return gIdxChildGIndex(generalizedIndex, 0, 1);
-//    long anchor = Long.highestOneBit(generalizedIndex);
-//    return anchor << 1 | (generalizedIndex ^ anchor);
   }
 
   public static long gIdxRightGIndex(long generalizedIndex) {
     return gIdxChildGIndex(generalizedIndex, 1, 1);
-//    long anchor = Long.highestOneBit(generalizedIndex);
-//    return anchor << 1 | generalizedIndex;
   }
 
   public static long gIdxChildGIndex(long generalizedIndex, int childIdx, int childDepth) {
-    long anchor = Long.highestOneBit(generalizedIndex);
-    int depth = Long.bitCount(anchor - 1);
-    long idxWithoutAnchor = generalizedIndex ^ anchor;
-    long newAnchor = anchor << childDepth;
-    return newAnchor | (childIdx << depth) | idxWithoutAnchor;
+    assert childIdx < (1 << childDepth);
+    return (generalizedIndex << childDepth) | childIdx;
   }
 
   public static long gIdxLeftmostFrom(long fromGeneralizedIndex) {

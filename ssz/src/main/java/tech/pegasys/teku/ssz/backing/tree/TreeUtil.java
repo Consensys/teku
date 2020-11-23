@@ -214,27 +214,10 @@ public class TreeUtil {
 
   private static void iterateNodesPriv(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    visitor.accept(node);
-    if (node instanceof BranchNode) {
-      BranchNode bNode = (BranchNode) node;
-      boolean fromLeft = gIdxGetChildIndex(fromGeneralIndex, 1) == 0;
-      long fromChildIdx = gIdxGetRelativeGIndex(fromGeneralIndex, 1);
-
-      boolean toLeft = gIdxGetChildIndex(toGeneralIndex, 1) == 0;
-      long toChildIdx = gIdxGetRelativeGIndex(toGeneralIndex, 1);
-
-      if (fromLeft && !toLeft) {
-        iterateNodesPriv(bNode.left(), fromChildIdx, RIGHTMOST_G_INDEX, visitor);
-        iterateNodesPriv(bNode.right(), LEFTMOST_G_INDEX, toChildIdx, visitor);
-      } else if (fromLeft && toLeft) {
-        iterateNodesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
-      } else if (!fromLeft && !toLeft) {
-        iterateNodesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
-      } else {
-        throw new IllegalArgumentException(
-            "fromGeneralIndex < toGeneralIndex: " + fromGeneralIndex + " < " + toGeneralIndex);
-      }
-    }
+    node.iterateRange((itNode, __) -> {
+      visitor.accept(itNode);
+      return true;
+    }, fromGeneralIndex, toGeneralIndex);
   }
 
   /** Dumps the tree to stdout */

@@ -153,7 +153,7 @@ public class ListViewTest {
   }
 
   @Test
-  void largeSuperBranchNodeTest() {
+  void superBranchNodeTest() {
     ListViewType<Bytes32View> lt1 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10);
     ListViewType<Bytes32View> lt2 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10,
         TypeHints.superBranch(List.of(3, 1)));
