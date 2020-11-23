@@ -13,15 +13,24 @@
 
 package tech.pegasys.teku.api.response.v1.validator;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class PostAttesterDutiesResponse {
   @JsonProperty("dependent_root")
+  @Schema(
+      type = "string",
+      example = EXAMPLE_BYTES32,
+      pattern = PATTERN_BYTES32,
+      description = "The block root that this response is dependent on.")
   public final Bytes32 dependentRoot;
 
   public final List<AttesterDuty> data;

@@ -79,10 +79,17 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       description =
           "Requests the beacon node to provide a set of attestation duties, "
               + "which should be performed by validators, for a particular epoch. "
-              + "Duties should only need to be checked once per epoch, however a "
-              + "chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
-              + "resulting in a change of duties. For full safety, "
-              + "you should monitor chain reorganizations events.",
+              + "Duties should only need to be checked once per epoch, however a chain "
+              + "reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
+              + "resulting in a change of duties. "
+              + "For full safety, you should monitor head events and confirm the dependent root in "
+              + "this response matches:\n"
+              + "- event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+              + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
+              + "- event.block otherwise\n\n"
+              + "The dependent_root value is "
+              + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
+              + "or the genesis block root in the case of underflow.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = String[].class),
