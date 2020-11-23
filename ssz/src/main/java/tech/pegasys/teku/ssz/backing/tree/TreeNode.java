@@ -87,8 +87,8 @@ public interface TreeNode {
     }
 
     @Override
-    default boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex,
-        long startGeneralizedIndex) {
+    default boolean iterate(
+        TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
       if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
         return true;
       } else {
@@ -149,15 +149,16 @@ public interface TreeNode {
     }
 
     @Override
-    default boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex,
-        long startGeneralizedIndex) {
+    default boolean iterate(
+        TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
 
       if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
         return true;
       } else {
-        return visitor.visit(this, thisGeneralizedIndex) &&
-            left().iterate(visitor, gIdxLeftGIndex(thisGeneralizedIndex), startGeneralizedIndex) &&
-            right().iterate(visitor, gIdxRightGIndex(thisGeneralizedIndex), startGeneralizedIndex);
+        return visitor.visit(this, thisGeneralizedIndex)
+            && left().iterate(visitor, gIdxLeftGIndex(thisGeneralizedIndex), startGeneralizedIndex)
+            && right()
+                .iterate(visitor, gIdxRightGIndex(thisGeneralizedIndex), startGeneralizedIndex);
       }
     }
 
@@ -197,10 +198,12 @@ public interface TreeNode {
 
   boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex);
 
-  default void iterateRange(TreeVisitor visitor, long startGeneralizedIndex,
-      long endGeneralizedIndexInclusive) {
-    iterate(TreeVisitor.createTillIndexInclusive(visitor, endGeneralizedIndexInclusive),
-        SELF_G_INDEX, startGeneralizedIndex);
+  default void iterateRange(
+      TreeVisitor visitor, long startGeneralizedIndex, long endGeneralizedIndexInclusive) {
+    iterate(
+        TreeVisitor.createTillIndexInclusive(visitor, endGeneralizedIndexInclusive),
+        SELF_G_INDEX,
+        startGeneralizedIndex);
   }
 
   default void iterateAll(TreeVisitor visitor) {

@@ -115,7 +115,8 @@ public class ProfilingRun {
         }
       }
       long totalT = System.currentTimeMillis() - totalS;
-      System.out.printf("############# Total: %f.2 blocks/sec\n", measuredBlockCount / (totalT / 1000.0));
+      System.out.printf(
+          "############# Total: %f.2 blocks/sec\n", measuredBlockCount / (totalT / 1000.0));
     }
   }
 

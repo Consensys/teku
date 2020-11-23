@@ -78,8 +78,11 @@ public interface BeaconState
   Field BALANCES_FIELD =
       new Field(
           12,
-          () -> new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT,
-              TypeHints.superLeaf()));
+          () ->
+              new ListViewType<>(
+                  BasicViewTypes.UINT64_TYPE,
+                  Constants.VALIDATOR_REGISTRY_LIMIT,
+                  TypeHints.superLeaf()));
   Field RANDAO_MIXES_FIELD =
       new Field(
           13,

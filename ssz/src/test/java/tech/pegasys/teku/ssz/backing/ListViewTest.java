@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
@@ -77,8 +76,8 @@ public class ListViewTest {
   @Test
   void superLeafNodeListTest() {
     ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10);
-    ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10,
-        TypeHints.superLeaf());
+    ListViewType<UInt64View> lt2 =
+        new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10, TypeHints.superLeaf());
 
     ListViewRead<UInt64View> l1_0 = lt1.getDefault();
     ListViewRead<UInt64View> l2_0 = lt2.getDefault();
@@ -129,8 +128,8 @@ public class ListViewTest {
   void largeSuperLeafNodeListTest() {
     long maxLen = 1L << 38;
     ListViewType<UInt64View> lt1 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen);
-    ListViewType<UInt64View> lt2 = new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen,
-        TypeHints.superLeaf());
+    ListViewType<UInt64View> lt2 =
+        new ListViewType<>(BasicViewTypes.UINT64_TYPE, maxLen, TypeHints.superLeaf());
 
     ListViewRead<UInt64View> l1_0 = lt1.getDefault();
     ListViewRead<UInt64View> l2_0 = lt2.getDefault();
@@ -155,8 +154,8 @@ public class ListViewTest {
   @Test
   void superBranchNodeTest() {
     ListViewType<Bytes32View> lt1 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10);
-    ListViewType<Bytes32View> lt2 = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10,
-        TypeHints.superBranch(List.of(3, 1)));
+    ListViewType<Bytes32View> lt2 =
+        new ListViewType<>(BasicViewTypes.BYTES32_TYPE, 10, TypeHints.superBranch(List.of(3, 1)));
 
     ListViewRead<Bytes32View> l1_0 = lt1.getDefault();
     ListViewRead<Bytes32View> l2_0 = lt2.getDefault();

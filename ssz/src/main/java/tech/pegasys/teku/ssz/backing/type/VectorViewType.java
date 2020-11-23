@@ -53,8 +53,8 @@ public class VectorViewType<C> extends CollectionViewType {
       if (hints.isSuperLeafNode()) {
         return new SuperLeafNode(treeDepth(), Bytes.EMPTY);
       } else if (hints.isSuperBranchNodes()) {
-        return TreeUtil
-            .createDefaultSuperTree(maxChunks(), TreeUtil.EMPTY_LEAF, hints.getSuperBranchDepths());
+        return TreeUtil.createDefaultSuperTree(
+            maxChunks(), TreeUtil.EMPTY_LEAF, hints.getSuperBranchDepths());
       } else {
         return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
       }

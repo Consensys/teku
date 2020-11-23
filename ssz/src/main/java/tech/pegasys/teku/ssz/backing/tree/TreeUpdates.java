@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-import static java.util.Collections.emptyList;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,19 +82,20 @@ public class TreeUpdates {
     this(gIndexes, nodes, 1, getDepthAndValidate(gIndexes));
   }
 
-//  private static TreeUpdates EMPTY = new TreeUpdates(emptyList(), emptyList()) {
-//    @Override
-//    public Pair<TreeUpdates, TreeUpdates> splitAtPivot() {
-//      return Pair.of(EMPTY, EMPTY);
-//    }
-//  };
+  //  private static TreeUpdates EMPTY = new TreeUpdates(emptyList(), emptyList()) {
+  //    @Override
+  //    public Pair<TreeUpdates, TreeUpdates> splitAtPivot() {
+  //      return Pair.of(EMPTY, EMPTY);
+  //    }
+  //  };
 
-  private static TreeUpdates create(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
-//    if (gIndexes.isEmpty()) {
-//      return EMPTY;
-//    } else {
-      return new TreeUpdates(gIndexes, nodes, prefix, heightFromLeaf);
-//    }
+  private static TreeUpdates create(
+      List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+    //    if (gIndexes.isEmpty()) {
+    //      return EMPTY;
+    //    } else {
+    return new TreeUpdates(gIndexes, nodes, prefix, heightFromLeaf);
+    //    }
   }
 
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {

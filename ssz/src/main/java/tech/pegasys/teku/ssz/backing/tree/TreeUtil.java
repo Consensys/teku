@@ -14,10 +14,6 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -97,8 +93,8 @@ public class TreeUtil {
         defaultNode, EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
-  public static TreeNode createDefaultSuperTree(long maxLength, TreeNode defaultNode,
-      List<Integer> superBranchDepths) {
+  public static TreeNode createDefaultSuperTree(
+      long maxLength, TreeNode defaultNode, List<Integer> superBranchDepths) {
 
     int treeDepth = treeDepth(maxLength);
     checkArgument(superBranchDepths.stream().mapToInt(i -> i).sum() <= treeDepth);
@@ -118,8 +114,7 @@ public class TreeUtil {
     return curDepthDefaultNode;
   }
 
-
-    /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
+  /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
   public static TreeNode createTree(List<TreeNode> leafNodes) {
     return createTree(leafNodes, treeDepth(leafNodes.size()));
   }
@@ -187,37 +182,50 @@ public class TreeUtil {
    */
   public static void iterateLeaves(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
-    iterateNodes(node, fromGeneralIndex, toGeneralIndex, n -> {
-      if (n instanceof LeafNode) {
-        visitor.accept((LeafNode) n);
-      }
-    });
+    iterateNodes(
+        node,
+        fromGeneralIndex,
+        toGeneralIndex,
+        n -> {
+          if (n instanceof LeafNode) {
+            visitor.accept((LeafNode) n);
+          }
+        });
   }
 
   public static void iterateLeavesData(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
-    iterateNodes(node, fromGeneralIndex, toGeneralIndex, n -> {
-      if (n instanceof LeafNode) {
-        visitor.accept(((LeafNode) n).getData());
-      } else if (n instanceof SuperLeafNode) {
-        visitor.accept(((SuperLeafNode) n).getData());
-      }
-    });
+    iterateNodes(
+        node,
+        fromGeneralIndex,
+        toGeneralIndex,
+        n -> {
+          if (n instanceof LeafNode) {
+            visitor.accept(((LeafNode) n).getData());
+          } else if (n instanceof SuperLeafNode) {
+            visitor.accept(((SuperLeafNode) n).getData());
+          }
+        });
   }
 
   public static void iterateNodes(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    iterateNodesPriv(node, GIndexUtil.gIdxLeftmostFrom(fromGeneralIndex), GIndexUtil
-            .gIdxRightmostFrom(toGeneralIndex),
+    iterateNodesPriv(
+        node,
+        GIndexUtil.gIdxLeftmostFrom(fromGeneralIndex),
+        GIndexUtil.gIdxRightmostFrom(toGeneralIndex),
         visitor);
   }
 
   private static void iterateNodesPriv(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    node.iterateRange((itNode, __) -> {
-      visitor.accept(itNode);
-      return true;
-    }, fromGeneralIndex, toGeneralIndex);
+    node.iterateRange(
+        (itNode, __) -> {
+          visitor.accept(itNode);
+          return true;
+        },
+        fromGeneralIndex,
+        toGeneralIndex);
   }
 
   /** Dumps the tree to stdout */

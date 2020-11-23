@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static java.lang.Integer.min;
@@ -12,21 +25,19 @@ public class GIndexUtil {
     Same
   }
 
-  final static long SELF_G_INDEX = 1;
-  final static long LEFTMOST_G_INDEX = gIdxLeftmostFrom(SELF_G_INDEX);
-  final static long RIGHTMOST_G_INDEX = gIdxRightmostFrom(SELF_G_INDEX);
+  static final long SELF_G_INDEX = 1;
+  static final long LEFTMOST_G_INDEX = gIdxLeftmostFrom(SELF_G_INDEX);
+  static final long RIGHTMOST_G_INDEX = gIdxRightmostFrom(SELF_G_INDEX);
 
   public static boolean gIdxIsSelf(long generalizedIndex) {
     return generalizedIndex == SELF_G_INDEX;
   }
 
   /**
-   * How idx1 relates to idx2:
-   *  Left: idx1 is to the left of idx2
-   *  Right: idx1 is to the right of idx2
-   *  Subset: idx1 is to the right of idx2
-   *  Successor: idx1 is successor of idx2
-   *  Predecessor: idx1 is predecessor of idx2
+   * How idx1 relates to idx2: Left: idx1 is to the left of idx2 Right: idx1 is to the right of idx2
+   * Subset: idx1 is to the right of idx2 Successor: idx1 is successor of idx2 Predecessor: idx1 is
+   * predecessor of idx2
+   *
    * @param idx1
    * @param idx2
    * @return

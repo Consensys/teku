@@ -1,14 +1,24 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.max;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxChildGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -21,8 +31,7 @@ import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 
-/**
- */
+/** */
 public class SuperBranchNode implements TreeNode {
   private final TreeNode[] children;
   private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calcHashTreeRoot);
@@ -45,6 +54,7 @@ public class SuperBranchNode implements TreeNode {
   private int getDepth() {
     return TreeUtil.treeDepth(children.length);
   }
+
   @Override
   public Bytes32 hashTreeRoot() {
     return hashTreeRoot.get();
@@ -61,8 +71,10 @@ public class SuperBranchNode implements TreeNode {
     } else {
       long midNodeIdx = fromNodeIdx + (1L << (getDepth() - curDepth - 1));
       assert midNodeIdx - fromNodeIdx == toNodeIdx - midNodeIdx;
-      return Hash.sha2_256(Bytes.wrap(hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
-          hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
+      return Hash.sha2_256(
+          Bytes.wrap(
+              hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
+              hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
     }
   }
 
@@ -83,7 +95,8 @@ public class SuperBranchNode implements TreeNode {
   }
 
   @Override
-  public boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+  public boolean iterate(
+      TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
     if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
       return true;
     } else {
@@ -94,9 +107,12 @@ public class SuperBranchNode implements TreeNode {
 
       int depth = getDepth();
       for (int i = 0; i < getTotalChildCount(); i++) {
-        boolean childRes = getChild(i)
-            .iterate(visitor, gIdxChildGIndex(thisGeneralizedIndex, i, depth),
-                startGeneralizedIndex);
+        boolean childRes =
+            getChild(i)
+                .iterate(
+                    visitor,
+                    gIdxChildGIndex(thisGeneralizedIndex, i, depth),
+                    startGeneralizedIndex);
         if (!childRes) {
           return false;
         }

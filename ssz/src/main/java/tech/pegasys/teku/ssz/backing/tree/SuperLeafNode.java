@@ -1,10 +1,21 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.tree;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.max;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.function.Function;
@@ -17,14 +28,9 @@ import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /**
- * Works for:
- *   Vector[UInt64]
- *   Vector[byte]
- *   Vector[bytes32]
+ * Works for: Vector[UInt64] Vector[byte] Vector[bytes32]
  *
- * Doesn't work for
- *   Container
- *   Vector[Container]
+ * <p>Doesn't work for Container Vector[Container]
  */
 public class SuperLeafNode implements TreeNode {
   private final int depth;
@@ -66,8 +72,10 @@ public class SuperLeafNode implements TreeNode {
     } else {
       long midNodeIdx = fromNodeIdx + (1L << (depth - curDepth - 1));
       assert midNodeIdx - fromNodeIdx == toNodeIdx - midNodeIdx;
-      return Hash.sha2_256(Bytes.wrap(hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
-          hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
+      return Hash.sha2_256(
+          Bytes.wrap(
+              hashTreeRoot(curDepth + 1, fromNodeIdx, midNodeIdx),
+              hashTreeRoot(curDepth + 1, midNodeIdx, toNodeIdx)));
     }
   }
 
@@ -84,16 +92,16 @@ public class SuperLeafNode implements TreeNode {
     if (leafIndex < dataLeafCount - 1) {
       return new LeafNodeImpl(data.slice((int) (leafIndex * 32), 32));
     } else if (leafIndex == dataLeafCount - 1) {
-      return new LeafNodeImpl(data.slice((int) (leafIndex * 32),
-          (int) (data.size() - leafIndex * 32)));
+      return new LeafNodeImpl(
+          data.slice((int) (leafIndex * 32), (int) (data.size() - leafIndex * 32)));
     } else {
       return TreeUtil.EMPTY_LEAF;
     }
   }
 
-
   @Override
-  public boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+  public boolean iterate(
+      TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
     if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
       return true;
     } else {
@@ -133,8 +141,8 @@ public class SuperLeafNode implements TreeNode {
     MutableBytes newData = MutableBytes.wrap(new byte[newDataSize]);
     int updateIdx = 0;
     for (int leafIdx = 0; leafIdx < newLeafCount; leafIdx++) {
-      if (updateIdx < newNodes.size() &&
-          newNodes.getGIndex(updateIdx) - totalLeafCount == leafIdx) {
+      if (updateIdx < newNodes.size()
+          && newNodes.getGIndex(updateIdx) - totalLeafCount == leafIdx) {
 
         TreeNode node = newNodes.getNode(updateIdx);
         if (!(node instanceof LeafNode)) {
