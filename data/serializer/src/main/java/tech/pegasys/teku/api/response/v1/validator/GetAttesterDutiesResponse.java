@@ -15,13 +15,47 @@ package tech.pegasys.teku.api.response.v1.validator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class GetAttesterDutiesResponse {
+  @JsonProperty("dependent_root")
+  public final Bytes32 dependentRoot;
+
   public final List<AttesterDuty> data;
 
   @JsonCreator
-  public GetAttesterDutiesResponse(@JsonProperty("data") final List<AttesterDuty> data) {
+  public GetAttesterDutiesResponse(
+      @JsonProperty("dependent_root") final Bytes32 dependentRoot,
+      @JsonProperty("data") final List<AttesterDuty> data) {
+    this.dependentRoot = dependentRoot;
     this.data = data;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final GetAttesterDutiesResponse that = (GetAttesterDutiesResponse) o;
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(data, that.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(dependentRoot, data);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("dependentRoot", dependentRoot)
+        .add("data", data)
+        .toString();
   }
 }

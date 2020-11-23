@@ -35,7 +35,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,7 +43,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -110,11 +108,12 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64[] indexes = jsonProvider.jsonToObject(ctx.body(), UInt64[].class);
 
-      SafeFuture<Optional<List<AttesterDuty>>> future =
+      SafeFuture<Optional<GetAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
-      handleOptionalResult(ctx, future, this::handleResult, this::handleError, List.of());
+      handleOptionalResult(
+          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
@@ -128,9 +127,9 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final List<AttesterDuty> response)
+  private Optional<String> handleResult(Context ctx, final GetAttesterDutiesResponse response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(response));
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {

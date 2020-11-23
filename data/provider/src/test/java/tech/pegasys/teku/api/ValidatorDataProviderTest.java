@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -51,6 +51,7 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -258,37 +259,41 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
-    final SafeFuture<Optional<List<AttesterDuty>>> future =
+    final SafeFuture<Optional<GetAttesterDutiesResponse>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
     assertThat(future).isCompleted();
-    Optional<List<AttesterDuty>> maybeData = future.join();
+    Optional<GetAttesterDutiesResponse> maybeData = future.join();
     assertThat(maybeData.isPresent()).isTrue();
-    assertThat(maybeData.get()).isEmpty();
+    assertThat(maybeData.get().data).isEmpty();
   }
 
   @Test
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
-    AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 15, 4, ONE);
-    AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 15, 14, ZERO);
+    AttesterDuty v1 = new AttesterDuty(BLSPublicKey.random(0), 1, 2, 3, 15, 4, ONE);
+    AttesterDuty v2 = new AttesterDuty(BLSPublicKey.random(1), 11, 12, 13, 15, 14, ZERO);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(v1, v2))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(dataStructureUtil.randomBytes32(), List.of(v1, v2)))));
 
-    final SafeFuture<Optional<List<AttesterDuty>>> future =
+    final SafeFuture<Optional<GetAttesterDutiesResponse>> future =
         provider.getAttesterDuties(ONE, List.of(1, 11));
     assertThat(future).isCompleted();
-    final Optional<List<AttesterDuty>> maybeList = future.join();
-    final List<AttesterDuty> list = maybeList.orElseThrow();
-    assertThat(list).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
+    final Optional<GetAttesterDutiesResponse> maybeList = future.join();
+    final GetAttesterDutiesResponse list = maybeList.orElseThrow();
+    assertThat(list.data).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
   }
 
-  private AttesterDuty asAttesterDuty(final tech.pegasys.teku.validator.api.AttesterDuties duties) {
+  private tech.pegasys.teku.api.response.v1.validator.AttesterDuty asAttesterDuty(
+      final AttesterDuty duties) {
 
-    return new AttesterDuty(
+    return new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
         new BLSPubKey(duties.getPublicKey()),
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
-        UInt64.valueOf(duties.getCommiteesAtSlot()),
+        UInt64.valueOf(duties.getCommitteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }
