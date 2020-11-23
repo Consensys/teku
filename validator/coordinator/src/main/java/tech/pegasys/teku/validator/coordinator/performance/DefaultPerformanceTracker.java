@@ -13,20 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
-import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,12 +34,18 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
