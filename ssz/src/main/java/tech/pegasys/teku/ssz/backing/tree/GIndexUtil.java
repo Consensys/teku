@@ -107,6 +107,6 @@ public class GIndexUtil {
       throw new IllegalArgumentException(
           "Generalized index " + generalizedIndex + " is upper than depth " + childDepth);
     }
-    return generalizedIndex & (pivot - 1) | pivot;
+    return (generalizedIndex & (pivot - 1)) | pivot;
   }
 }
