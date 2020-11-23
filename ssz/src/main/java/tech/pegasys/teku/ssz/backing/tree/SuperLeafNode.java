@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static java.lang.Integer.min;
 import static java.lang.Math.max;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 
@@ -141,6 +142,7 @@ public class SuperLeafNode implements TreeNode {
     MutableBytes newData = MutableBytes.wrap(new byte[newDataSize]);
     int updateIdx = 0;
     for (int leafIdx = 0; leafIdx < newLeafCount; leafIdx++) {
+      int off = leafIdx * 32;
       if (updateIdx < newNodes.size()
           && newNodes.getGIndex(updateIdx) - totalLeafCount == leafIdx) {
 
@@ -152,13 +154,11 @@ public class SuperLeafNode implements TreeNode {
         if (leafIdx < lastUpdatedIndex && leafNode.getData().size() != 32) {
           throw new IllegalArgumentException("Update nodes should be packed");
         }
-        leafNode.getData().copyTo(newData, leafIdx * 32);
+        leafNode.getData().copyTo(newData, off);
         updateIdx++;
       } else {
-        if (leafIdx + 1 < dataLeafCount) {
-          data.slice(leafIdx * 32, 32).copyTo(newData, leafIdx * 32);
-        }
-        // else leaving zeroes
+        int len = min(32, data.size() - off);
+        data.slice(off, len).copyTo(newData, off);
       }
     }
     return new SuperLeafNode(depth, newData);
