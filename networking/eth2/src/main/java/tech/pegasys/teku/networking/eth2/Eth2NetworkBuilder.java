@@ -32,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -67,6 +68,7 @@ public class Eth2NetworkBuilder {
   private OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
   private OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
   private OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  private GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
@@ -131,6 +133,7 @@ public class Eth2NetworkBuilder {
         gossipedAttesterSlashingConsumer,
         gossipedProposerSlashingConsumer,
         gossipedVoluntaryExitConsumer,
+        voluntaryExitGossipPublisher,
         processedAttestationSubscriptionProvider);
   }
 
@@ -179,6 +182,7 @@ public class Eth2NetworkBuilder {
     assertNotNull("gossipedAttesterSlashingProcessor", gossipedAttesterSlashingConsumer);
     assertNotNull("gossipedProposerSlashingProcessor", gossipedProposerSlashingConsumer);
     assertNotNull("gossipedVoluntaryExitProcessor", gossipedVoluntaryExitConsumer);
+    assertNotNull("voluntaryExitGossipPublisher", voluntaryExitGossipPublisher);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -235,6 +239,13 @@ public class Eth2NetworkBuilder {
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     checkNotNull(processedAttestationSubscriptionProvider);
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    return this;
+  }
+
+  public Eth2NetworkBuilder voluntaryExitGossipPublisher(
+      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher) {
+    checkNotNull(voluntaryExitGossipPublisher);
+    this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
     return this;
   }
 
