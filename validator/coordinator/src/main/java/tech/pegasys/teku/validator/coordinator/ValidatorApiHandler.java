@@ -79,6 +79,7 @@ import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -191,7 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -445,9 +446,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
-  private List<ProposerDuties> getProposerDutiesFromIndexesAndState(
+  private ProposerDuties getProposerDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch) {
-    final List<ProposerDuties> result = new ArrayList<>();
+    final List<ProposerDuty> result = new ArrayList<>();
     getProposalSlotsForEpoch(state, epoch)
         .forEach(
             (slot, publicKey) -> {
@@ -458,9 +459,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                         "Assigned public key %s could not be found at epoch %s",
                         publicKey.toString(), epoch.toString()));
               }
-              result.add(new ProposerDuties(publicKey, maybeIndex.get(), slot));
+              result.add(new ProposerDuty(publicKey, maybeIndex.get(), slot));
             });
-    return result;
+    return new ProposerDuties(getCurrentDutyDependentRoot(state), result);
   }
 
   private AttesterDuties getAttesterDutiesFromIndexesAndState(
