@@ -50,6 +50,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
       optionalReorgContext.ifPresent(
@@ -61,14 +63,26 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                   formatHashRoot(bestBlockRoot),
                   reorg.getCommonAncestorSlot()));
       delegate.chainHeadUpdated(
-          slot, stateRoot, bestBlockRoot, epochTransition, optionalReorgContext);
+          slot,
+          stateRoot,
+          bestBlockRoot,
+          epochTransition,
+          previousDutyDependentRoot,
+          currentDutyDependentRoot,
+          optionalReorgContext);
     } else {
       pendingEvent =
           pendingEvent
               .map(
                   current ->
                       current.update(
-                          slot, stateRoot, bestBlockRoot, epochTransition, optionalReorgContext))
+                          slot,
+                          stateRoot,
+                          bestBlockRoot,
+                          epochTransition,
+                          previousDutyDependentRoot,
+                          currentDutyDependentRoot,
+                          optionalReorgContext))
               .or(
                   () ->
                       Optional.of(
@@ -77,6 +91,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
                               stateRoot,
                               bestBlockRoot,
                               epochTransition,
+                              previousDutyDependentRoot,
+                              currentDutyDependentRoot,
                               optionalReorgContext)));
     }
   }
@@ -95,6 +111,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     private Bytes32 stateRoot;
     private Bytes32 bestBlockRoot;
     private boolean epochTransition;
+    private Bytes32 previousDutyDependentRoot;
+    private Bytes32 currentDutyDependentRoot;
     private Optional<ReorgContext> reorgContext;
 
     private PendingEvent(
@@ -102,16 +120,27 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final Bytes32 previousDutyDependentRoot,
+        final Bytes32 currentDutyDependentRoot,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
       this.bestBlockRoot = bestBlockRoot;
       this.epochTransition = epochTransition;
+      this.previousDutyDependentRoot = previousDutyDependentRoot;
+      this.currentDutyDependentRoot = currentDutyDependentRoot;
       this.reorgContext = reorgContext;
     }
 
     public void send() {
-      delegate.chainHeadUpdated(slot, stateRoot, bestBlockRoot, epochTransition, reorgContext);
+      delegate.chainHeadUpdated(
+          slot,
+          stateRoot,
+          bestBlockRoot,
+          epochTransition,
+          previousDutyDependentRoot,
+          currentDutyDependentRoot,
+          reorgContext);
     }
 
     public PendingEvent update(
@@ -119,6 +148,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
         final Bytes32 stateRoot,
         final Bytes32 bestBlockRoot,
         final boolean epochTransition,
+        final Bytes32 previousDutyDependentRoot,
+        final Bytes32 currentDutyDependentRoot,
         final Optional<ReorgContext> reorgContext) {
       this.slot = slot;
       this.stateRoot = stateRoot;
@@ -126,6 +157,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       if (epochTransition) {
         this.epochTransition = true;
       }
+      this.previousDutyDependentRoot = previousDutyDependentRoot;
+      this.currentDutyDependentRoot = currentDutyDependentRoot;
       if (reorgContext.isPresent() && hasEarlierCommonAncestor(reorgContext)) {
         this.reorgContext = reorgContext;
       }

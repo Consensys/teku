@@ -35,7 +35,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,8 +43,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -81,10 +79,17 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       description =
           "Requests the beacon node to provide a set of attestation duties, "
               + "which should be performed by validators, for a particular epoch. "
-              + "Duties should only need to be checked once per epoch, however a "
-              + "chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
-              + "resulting in a change of duties. For full safety, "
-              + "you should monitor chain reorganizations events.",
+              + "Duties should only need to be checked once per epoch, however a chain "
+              + "reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
+              + "resulting in a change of duties. "
+              + "For full safety, you should monitor head events and confirm the dependent root in "
+              + "this response matches:\n"
+              + "- event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+              + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
+              + "- event.block otherwise\n\n"
+              + "The dependent_root value is "
+              + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
+              + "or the genesis block root in the case of underflow.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = String[].class),
@@ -94,7 +99,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetAttesterDutiesResponse.class)),
+            content = @OpenApiContent(from = PostAttesterDutiesResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
@@ -110,11 +115,12 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64[] indexes = jsonProvider.jsonToObject(ctx.body(), UInt64[].class);
 
-      SafeFuture<Optional<List<AttesterDuty>>> future =
+      SafeFuture<Optional<PostAttesterDutiesResponse>> future =
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
-      handleOptionalResult(ctx, future, this::handleResult, this::handleError, List.of());
+      handleOptionalResult(
+          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
@@ -128,9 +134,9 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final List<AttesterDuty> response)
+  private Optional<String> handleResult(Context ctx, final PostAttesterDutiesResponse response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(response));
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {

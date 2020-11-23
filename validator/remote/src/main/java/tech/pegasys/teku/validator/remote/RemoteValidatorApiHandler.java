@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -129,17 +129,19 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return sendRequest(
-        () -> {
-          final List<AttesterDuties> duties =
-              apiClient.getAttestationDuties(epoch, validatorIndexes).stream()
-                  .map(this::mapToApiAttesterDuties)
-                  .collect(Collectors.toList());
-
-          return Optional.of(duties);
-        });
+        () ->
+            apiClient
+                .getAttestationDuties(epoch, validatorIndexes)
+                .map(
+                    response ->
+                        new AttesterDuties(
+                            response.dependentRoot,
+                            response.data.stream()
+                                .map(this::mapToApiAttesterDuties)
+                                .collect(Collectors.toList()))));
   }
 
   @Override
@@ -162,8 +164,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         proposerDuty.slot);
   }
 
-  private AttesterDuties mapToApiAttesterDuties(final AttesterDuty attesterDuty) {
-    return new AttesterDuties(
+  private AttesterDuty mapToApiAttesterDuties(
+      final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
+    return new AttesterDuty(
         attesterDuty.pubkey.asBLSPublicKey(),
         attesterDuty.validatorIndex.intValue(),
         attesterDuty.committeeLength.intValue(),

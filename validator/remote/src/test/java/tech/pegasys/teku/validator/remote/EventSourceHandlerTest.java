@@ -48,7 +48,12 @@ class EventSourceHandlerTest {
     final UInt64 slot = UInt64.valueOf(134);
     final HeadEvent event =
         new HeadEvent(
-            slot, dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), false);
+            slot,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            false,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32());
     handler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
 
     verify(validatorTimingChannel).onAttestationCreationDue(slot);
@@ -81,7 +86,12 @@ class EventSourceHandlerTest {
     final UInt64 slot = UInt64.valueOf(134);
     final HeadEvent event =
         new HeadEvent(
-            slot, dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), false);
+            slot,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            false,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32());
     // Head message with a reorg type
     final MessageEvent messageEvent = new MessageEvent(jsonProvider.objectToJSON(event));
     assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
