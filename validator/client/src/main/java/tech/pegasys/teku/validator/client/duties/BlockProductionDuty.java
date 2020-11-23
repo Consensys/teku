@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.Optional;
@@ -96,6 +97,14 @@ public class BlockProductionDuty implements Duty {
 
   public SafeFuture<SignedBeaconBlock> signBlock(
       final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
+    unsignedBlock.ifPresent(
+        beaconBlock ->
+            checkArgument(
+                beaconBlock.getSlot().equals(slot),
+                "Unsigned block slot ( "
+                    + beaconBlock.getSlot()
+                    + ") does not match expected slot "
+                    + slot));
     return validator
         .getSigner()
         .signBlock(

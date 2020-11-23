@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
@@ -140,6 +141,12 @@ public class AttestationProductionDuty implements Duty {
       final ForkInfo forkInfo,
       final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator) {
+    checkArgument(
+        attestationData.getSlot().equals(slot),
+        "Unsigned attestation slot ( "
+            + attestationData.getSlot()
+            + ") does not match expected slot "
+            + slot);
     return validator
         .getSigner()
         .signAttestationData(attestationData, forkInfo)
