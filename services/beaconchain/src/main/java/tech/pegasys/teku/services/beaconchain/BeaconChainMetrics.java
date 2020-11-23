@@ -182,7 +182,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     CorrectAndLiveValidators previousEpochValidators =
         getNumberOfValidators(head, state.getPrevious_epoch_attestations());
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
-    previousCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
+    previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousActiveValidators.set(
         get_active_validator_indices(state, get_previous_epoch(state)).size());
 
