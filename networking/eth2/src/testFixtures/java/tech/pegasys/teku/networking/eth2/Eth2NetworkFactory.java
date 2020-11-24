@@ -112,7 +112,9 @@ public class Eth2NetworkFactory {
     protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
+    private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
     protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
+    private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
     protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
     protected GossipPublisher<SignedVoluntaryExit> voluntaryExitPublisher;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
@@ -234,7 +236,9 @@ public class Eth2NetworkFactory {
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,
             attesterSlashingProcessor,
+            attesterSlashingGossipPublisher,
             proposerSlashingProcessor,
+            proposerSlashingGossipPublisher,
             voluntaryExitProcessor,
             voluntaryExitPublisher,
             processedAttestationSubscriptionProvider);
@@ -314,6 +318,12 @@ public class Eth2NetworkFactory {
       if (voluntaryExitPublisher == null) {
         voluntaryExitPublisher = new GossipPublisher<>();
       }
+      if (proposerSlashingGossipPublisher == null) {
+        proposerSlashingGossipPublisher = new GossipPublisher<>();
+      }
+      if (attesterSlashingGossipPublisher == null) {
+        attesterSlashingGossipPublisher = new GossipPublisher<>();
+      }
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
@@ -386,10 +396,24 @@ public class Eth2NetworkFactory {
       return this;
     }
 
+    public Eth2P2PNetworkBuilder attesterSlashingGossipPublisher(
+        final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
+      checkNotNull(attesterSlashingGossipPublisher);
+      this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
+      return this;
+    }
+
     public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
         final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
       checkNotNull(gossipedProposerSlashingProcessor);
       this.proposerSlashingProcessor = gossipedProposerSlashingProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder proposerSlashingGossipPublisher(
+        final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
+      checkNotNull(proposerSlashingGossipPublisher);
+      this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
       return this;
     }
 
