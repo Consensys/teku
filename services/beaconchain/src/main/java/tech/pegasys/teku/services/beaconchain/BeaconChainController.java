@@ -168,7 +168,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
       new GossipPublisher<>();
@@ -569,11 +573,25 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
 
-      // Setup gossip for voluntary exits
+      // Set up gossip for voluntary exits
       voluntaryExitPool.subscribeOperationAdded(
           (item, result) -> {
             if (result.equals(InternalValidationResult.ACCEPT)) {
               voluntaryExitGossipPublisher.publish(item);
+            }
+          });
+      // Set up gossip for attester slashings
+      attesterSlashingPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              attesterSlashingGossipPublisher.publish(item);
+            }
+          });
+      // Set up gossip for proposer slashings
+      proposerSlashingPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              proposerSlashingGossipPublisher.publish(item);
             }
           });
 
@@ -587,7 +605,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .gossipedAttestationProcessor(attestationManager::addAttestation)
               .gossipedAggregateProcessor(attestationManager::addAggregate)
               .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
+              .attesterSlashingGossipPublisher(attesterSlashingGossipPublisher)
               .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
+              .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
               .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
               .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
               .processedAttestationSubscriptionProvider(

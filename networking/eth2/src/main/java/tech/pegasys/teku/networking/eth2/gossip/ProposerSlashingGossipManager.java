@@ -13,43 +13,28 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class ProposerSlashingGossipManager {
-  private final TopicChannel channel;
+public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
   public static String TOPIC_NAME = "proposer_slashing";
-
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public ProposerSlashingGossipManager(
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ProposerSlashing> processor) {
-    final Eth2TopicHandler<ProposerSlashing> topicHandler =
-        new Eth2TopicHandler<>(
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkInfo.getForkDigest(),
-            TOPIC_NAME,
-            ProposerSlashing.class);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<ProposerSlashing> processor,
+      final GossipPublisher<ProposerSlashing> publisher) {
+    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  protected Class<ProposerSlashing> getGossipType() {
+    return ProposerSlashing.class;
   }
 }
