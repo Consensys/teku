@@ -95,6 +95,22 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     toRemove.clear();
   }
 
+  protected Optional<UInt64> getCurrentEpoch() {
+    return currentEpoch;
+  }
+
+  protected boolean isAbleToVerifyEpoch(final UInt64 slot) {
+    if (currentEpoch.isEmpty()) {
+      return false;
+    }
+    final UInt64 signingEpoch = compute_epoch_at_slot(slot);
+    final UInt64 epoch = currentEpoch.get();
+    if (signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1))) {
+      return false;
+    }
+    return true;
+  }
+
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
 
