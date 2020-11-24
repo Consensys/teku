@@ -24,7 +24,6 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
@@ -172,15 +171,23 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
+
+    final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());
+    final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
+    final Bytes32 currentEpochCorrectTarget = getCorrectTargetRoot(head, currentEpoch);
+    final Bytes32 previousEpochCorrectTarget = getCorrectTargetRoot(head, previousEpoch);
+
     CorrectAndLiveValidators currentEpochValidators =
-        getNumberOfValidators(head, state.getCurrent_epoch_attestations());
+        getNumberOfValidators(
+            head, state.getCurrent_epoch_attestations(), currentEpochCorrectTarget);
     currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentActiveValidators.set(
         get_active_validator_indices(state, get_current_epoch(state)).size());
 
     CorrectAndLiveValidators previousEpochValidators =
-        getNumberOfValidators(head, state.getPrevious_epoch_attestations());
+        getNumberOfValidators(
+            head, state.getPrevious_epoch_attestations(), previousEpochCorrectTarget);
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
     previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousActiveValidators.set(
@@ -200,16 +207,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private CorrectAndLiveValidators getNumberOfValidators(
-      final StateAndBlockSummary stateAndBlock, final SSZList<PendingAttestation> attestations) {
-
-    final UInt64 epochStartSlot =
-        compute_start_slot_at_epoch(compute_epoch_at_slot(stateAndBlock.getSlot()));
-    final Bytes32 correctBlockRoot =
-        epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
-            ? stateAndBlock.getRoot()
-            : get_block_root_at_slot(stateAndBlock.getState(), epochStartSlot);
-    final Predicate<PendingAttestation> isCorrectValidatorPredicate =
-        attestation -> attestation.getData().getTarget().getRoot().equals(correctBlockRoot);
+      final StateAndBlockSummary stateAndBlock,
+      final SSZList<PendingAttestation> attestations,
+      final Bytes32 correctTargetRoot) {
 
     final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
@@ -218,7 +218,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
     attestations.forEach(
         attestation -> {
-          if (isCorrectValidatorPredicate.test(attestation)) {
+          if (isCorrectAttestation(attestation, correctTargetRoot)) {
             correctValidatorsAggregationBitsBySlotAndCommittee
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
                 .computeIfAbsent(
@@ -247,6 +247,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             .sum();
 
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
+  }
+
+  private boolean isCorrectAttestation(
+      final PendingAttestation attestation, final Bytes32 correctTargetRoot) {
+    return attestation.getData().getTarget().getRoot().equals(correctTargetRoot);
+  }
+
+  private Bytes32 getCorrectTargetRoot(
+      final StateAndBlockSummary stateAndBlock, final UInt64 epoch) {
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
+    return epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
+        ? stateAndBlock.getRoot()
+        : get_block_root_at_slot(stateAndBlock.getState(), epochStartSlot);
   }
 
   static long getLongFromRoot(Bytes32 root) {
