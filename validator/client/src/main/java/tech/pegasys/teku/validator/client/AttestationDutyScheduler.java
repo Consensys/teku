@@ -40,17 +40,17 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
       LOG.debug(
-          "lastAttestationCreationSlot {} is ahead of current slot {}, not processing attestation duty.",
-          lastAttestationCreationSlot,
-          slot);
+          "Not performing attestation duties for slot {} because lastAttestationCreationSlot {} is beyond that.",
+          slot,
+          lastAttestationCreationSlot);
       return;
     }
 
     if (!isAbleToVerifyEpoch(slot)) {
       LOG.info(
-          "current epoch {} could not be verified against the current slot {}, not processing attestation duty",
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
-          slot);
+          "Not performing attestation duties for slot {} because it is too far ahead of the current slot {}",
+          slot,
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }
 
@@ -62,9 +62,9 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   public void onAttestationAggregationDue(final UInt64 slot) {
     if (!isAbleToVerifyEpoch(slot)) {
       LOG.info(
-          "current epoch {} could not be verified against the current slot {}, not processing aggregation duty",
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
-          slot);
+          "Not performing aggregation duties for slot {} because it is too far ahead of the current slot {}",
+          slot,
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }
 

@@ -38,9 +38,9 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   public void onBlockProductionDue(final UInt64 slot) {
     if (!isAbleToVerifyEpoch(slot)) {
       LOG.info(
-          "current epoch {} could not be verified against the current slot {}, not processing block duty",
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
-          slot);
+          "Not performing block duties for slot {} because it is too far ahead of the current slot {}",
+          slot,
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
       return;
     }
 
