@@ -755,7 +755,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       client.initializeFromAnchorPoint(anchor);
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
-            anchor.getRoot(),
+            anchor.getStateRoot(),
             recentChainData.getBestBlockRoot().orElseThrow(),
             anchor.getState().getGenesis_time());
       }
