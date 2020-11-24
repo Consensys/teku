@@ -79,13 +79,6 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
-<<<<<<< HEAD
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-=======
->>>>>>> Run spotless
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
