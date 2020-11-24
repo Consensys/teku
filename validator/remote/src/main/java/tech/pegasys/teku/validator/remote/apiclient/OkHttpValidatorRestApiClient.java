@@ -61,7 +61,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -127,14 +126,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public List<ProposerDuty> getProposerDuties(final UInt64 epoch) {
+  public Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch) {
     return get(
-            GET_PROPOSER_DUTIES,
-            Map.of("epoch", epoch.toString()),
-            emptyMap(),
-            createHandler(GetProposerDutiesResponse.class))
-        .map(response -> response.data)
-        .orElse(Collections.emptyList());
+        GET_PROPOSER_DUTIES,
+        Map.of("epoch", epoch.toString()),
+        emptyMap(),
+        createHandler(GetProposerDutiesResponse.class));
   }
 
   @Override

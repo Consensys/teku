@@ -22,10 +22,11 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties> {
+public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuty> {
 
   private final ValidatorApiChannel validatorApiChannel;
 
@@ -39,14 +40,19 @@ public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties
   }
 
   @Override
-  protected SafeFuture<Optional<List<ProposerDuties>>> requestDuties(
+  protected SafeFuture<Optional<List<ProposerDuty>>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return validatorApiChannel.getProposerDuties(epoch);
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return validatorApiChannel
+        .getProposerDuties(epoch)
+        .thenApply(result -> result.map(ProposerDuties::getDuties));
   }
 
   @Override
   protected SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties scheduledDuties, final ProposerDuties duty) {
+      final ScheduledDuties scheduledDuties, final ProposerDuty duty) {
     final Validator validator = validators.get(duty.getPublicKey());
     if (validator != null) {
       scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator);

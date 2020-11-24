@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
@@ -257,7 +258,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<ProposerDuties>>> duties =
+    final SafeFuture<Optional<ProposerDuties>> duties =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -267,7 +268,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -280,10 +281,11 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -293,10 +295,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -439,6 +441,21 @@ class ValidatorApiHandlerTest {
 
     verify(attestationTopicSubscriptions)
         .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);
+    verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
+  public void subscribeToBeaconCommittee_shouldUpdateActiveValidatorTrackerWhenNotAggregating() {
+    final int committeeIndex = 10;
+    final UInt64 aggregationSlot = UInt64.valueOf(13);
+    final UInt64 committeesAtSlot = UInt64.valueOf(10);
+    final int validatorIndex = 1;
+    validatorApiHandler.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, false)));
+
+    verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
   }
 

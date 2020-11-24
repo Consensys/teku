@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.Optional;
@@ -95,14 +96,19 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<SignedBeaconBlock> signBlock(
-      final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
+      final ForkInfo forkInfo, final Optional<BeaconBlock> maybeBlock) {
+    final BeaconBlock unsignedBlock =
+        maybeBlock.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    checkArgument(
+        unsignedBlock.getSlot().equals(slot),
+        "Unsigned block slot (%s) does not match expected slot %s",
+        unsignedBlock.getSlot(),
+        slot);
     return validator
         .getSigner()
-        .signBlock(
-            unsignedBlock.orElseThrow(
-                () -> new IllegalStateException("Node was not syncing but could not create block")),
-            forkInfo)
-        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
+        .signBlock(unsignedBlock, forkInfo)
+        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock, signature));
   }
 
   @Override
