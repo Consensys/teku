@@ -13,21 +13,20 @@
 
 package tech.pegasys.teku.api.response.v1.beacon;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.Objects;
-import java.util.Optional;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 public class ValidatorResponse {
 

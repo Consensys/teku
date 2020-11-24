@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.nio.file.Path;
+import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
@@ -36,9 +38,6 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
-import java.nio.file.Path;
-import java.util.Map;
-
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
@@ -48,7 +47,7 @@ public class ValidatorClientService extends Service {
   private final BeaconNodeApi beaconNodeApi;
 
   private ValidatorClientService(
-          final ValidatorStatusLogger validatorStatusLogger,
+      final ValidatorStatusLogger validatorStatusLogger,
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
@@ -119,10 +118,10 @@ public class ValidatorClientService extends Service {
     addValidatorCountMetric(metricsSystem, validators.size());
 
     final ValidatorStatusLogger validatorStatusLogger =
-            new ValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+        new ValidatorStatusLogger(validators.keySet(), validatorApiChannel);
 
     return new ValidatorClientService(
-            validatorStatusLogger,
+        validatorStatusLogger,
         eventChannels,
         attestationDutyScheduler,
         blockDutyScheduler,
@@ -148,8 +147,11 @@ public class ValidatorClientService extends Service {
     validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
-        new ValidatorTimingActions(validatorStatusLogger,
-            validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
+        new ValidatorTimingActions(
+            validatorStatusLogger,
+            validatorIndexProvider,
+            blockProductionTimingChannel,
+            attestationTimingChannel));
     validatorStatusLogger.printInitialValidatorStatuses();
     return beaconNodeApi.subscribeToEvents();
   }

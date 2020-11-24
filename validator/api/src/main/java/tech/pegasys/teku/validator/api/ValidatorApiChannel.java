@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.validator.api;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -29,12 +34,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 public interface ValidatorApiChannel extends ChannelInterface {
   int UKNOWN_VALIDATOR_ID = -1;
 
@@ -44,7 +43,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(final List<BLSPublicKey> publicKeys);
 
-  SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(final List<String> validatorIdentifiers);
+  SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+      final List<String> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes);
