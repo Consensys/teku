@@ -82,7 +82,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final OperationProcessor<ValidateableAttestation> attestationProcessor;
   private final OperationProcessor<ValidateableAttestation> aggregateProcessor;
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
+  private final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
   private final OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
+  private final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
   private final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
   private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
 
@@ -99,7 +101,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
+      final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
+      final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
       final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
@@ -116,7 +120,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.attestationProcessor = attestationProcessor;
     this.aggregateProcessor = aggregateProcessor;
     this.attesterSlashingProcessor = attesterSlashingProcessor;
+    this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
     this.proposerSlashingProcessor = proposerSlashingProcessor;
+    this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
     this.voluntaryExitProcessor = voluntaryExitProcessor;
     this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
@@ -166,11 +172,21 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            proposerSlashingProcessor,
+            proposerSlashingGossipPublisher);
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, attesterSlashingProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            attesterSlashingProcessor,
+            attesterSlashingGossipPublisher);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(

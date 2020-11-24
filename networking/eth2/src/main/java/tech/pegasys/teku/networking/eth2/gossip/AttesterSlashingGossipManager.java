@@ -13,43 +13,28 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class AttesterSlashingGossipManager {
-  private final TopicChannel channel;
+public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
   public static String TOPIC_NAME = "attester_slashing";
-
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttesterSlashingGossipManager(
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<AttesterSlashing> processor) {
-    final Eth2TopicHandler<AttesterSlashing> topicHandler =
-        new Eth2TopicHandler<>(
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkInfo.getForkDigest(),
-            TOPIC_NAME,
-            AttesterSlashing.class);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<AttesterSlashing> processor,
+      final GossipPublisher<AttesterSlashing> publisher) {
+    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  protected Class<AttesterSlashing> getGossipType() {
+    return AttesterSlashing.class;
   }
 }
