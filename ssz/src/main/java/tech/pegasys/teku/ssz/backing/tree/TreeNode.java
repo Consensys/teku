@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.singletonList;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
@@ -222,7 +223,11 @@ public interface TreeNode {
    * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate
    * a new node
    */
-  TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+  default TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater) {
+    TreeNode newNode = nodeUpdater.apply(get(generalizedIndex));
+    return updated(
+        new TreeUpdates(singletonList(new TreeUpdates.Update(generalizedIndex, newNode))));
+  }
 
   /** Updates the tree in a batch */
   default TreeNode updated(TreeUpdates newNodes) {

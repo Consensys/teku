@@ -27,6 +27,7 @@ import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
@@ -52,7 +53,7 @@ public class Validator extends AbstractImmutableContainer
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.UINT64_TYPE),
-          Validator::new);
+          Validator::new, TypeHints.sszLeaf());
 
   // BLS public key
   @SuppressWarnings("unused")

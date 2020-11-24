@@ -204,6 +204,8 @@ public class TreeUtil {
             visitor.accept(((LeafNode) n).getData());
           } else if (n instanceof SuperLeafNode) {
             visitor.accept(((SuperLeafNode) n).getData());
+          } else if (n instanceof SszSuperNode) {
+            visitor.accept(((SszSuperNode) n).getSsz());
           }
         });
   }

@@ -111,11 +111,6 @@ public class SuperLeafNode implements TreeNode {
   }
 
   @Override
-  public TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater) {
-    throw new UnsupportedOperationException("TODO");
-  }
-
-  @Override
   public TreeNode updated(TreeUpdates newNodes) {
     if (newNodes.isEmpty()) {
       return this;
