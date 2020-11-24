@@ -26,7 +26,5 @@ public interface PerformanceTracker extends SlotEventsChannel {
 
   void saveProducedBlock(SignedBeaconBlock block);
 
-  void reportAttestationProductionAttempt(UInt64 epoch);
-
   void reportBlockProductionAttempt(UInt64 epoch);
 }
