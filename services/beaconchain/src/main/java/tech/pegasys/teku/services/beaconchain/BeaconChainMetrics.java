@@ -178,16 +178,14 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     final Bytes32 previousEpochCorrectTarget = getCorrectTargetRoot(head, previousEpoch);
 
     CorrectAndLiveValidators currentEpochValidators =
-        getNumberOfValidators(
-            head, state.getCurrent_epoch_attestations(), currentEpochCorrectTarget);
+        getNumberOfValidators(state.getCurrent_epoch_attestations(), currentEpochCorrectTarget);
     currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
     currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentActiveValidators.set(
         get_active_validator_indices(state, get_current_epoch(state)).size());
 
     CorrectAndLiveValidators previousEpochValidators =
-        getNumberOfValidators(
-            head, state.getPrevious_epoch_attestations(), previousEpochCorrectTarget);
+        getNumberOfValidators(state.getPrevious_epoch_attestations(), previousEpochCorrectTarget);
     previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
     previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousActiveValidators.set(
@@ -207,9 +205,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private CorrectAndLiveValidators getNumberOfValidators(
-      final StateAndBlockSummary stateAndBlock,
-      final SSZList<PendingAttestation> attestations,
-      final Bytes32 correctTargetRoot) {
+      final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
 
     final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
