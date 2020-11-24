@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
@@ -440,6 +441,21 @@ class ValidatorApiHandlerTest {
 
     verify(attestationTopicSubscriptions)
         .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);
+    verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
+  public void subscribeToBeaconCommittee_shouldUpdateActiveValidatorTrackerWhenNotAggregating() {
+    final int committeeIndex = 10;
+    final UInt64 aggregationSlot = UInt64.valueOf(13);
+    final UInt64 committeesAtSlot = UInt64.valueOf(10);
+    final int validatorIndex = 1;
+    validatorApiHandler.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, false)));
+
+    verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
   }
 
