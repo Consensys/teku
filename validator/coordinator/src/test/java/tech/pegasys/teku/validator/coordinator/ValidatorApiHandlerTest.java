@@ -34,6 +34,9 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.eventbus.EventBus;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,10 +79,13 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+=======
+>>>>>>> Run spotless
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
@@ -101,12 +107,11 @@ class ValidatorApiHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
-  private final ChainDataProvider chainDataProvider =
-          mock(ChainDataProvider.class);
+  private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
-              chainDataProvider,
+          chainDataProvider,
           chainDataClient,
           syncStateProvider,
           stateTransition,
