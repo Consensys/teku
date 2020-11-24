@@ -13,16 +13,20 @@
 
 package tech.pegasys.teku.validator.client;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private UInt64 lastAttestationCreationSlot;
+  private static final Logger LOG = LogManager.getLogger();
+  static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler, 1);
+    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -35,14 +39,35 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   public void onAttestationCreationDue(final UInt64 slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
+      LOG.debug(
+          "lastAttestationCreationSlot {} is ahead of current slot {}, not processing attestation duty.",
+          lastAttestationCreationSlot,
+          slot);
       return;
     }
+
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info(
+          "current epoch {} could not be verified against the current slot {}, not processing attestation duty",
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
+          slot);
+      return;
+    }
+
     lastAttestationCreationSlot = slot;
     notifyDutyQueue(DutyQueue::onAttestationCreationDue, slot);
   }
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info(
+          "current epoch {} could not be verified against the current slot {}, not processing aggregation duty",
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
+          slot);
+      return;
+    }
+
     notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
   }
 }

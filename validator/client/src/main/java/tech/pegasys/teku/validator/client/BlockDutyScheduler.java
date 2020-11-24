@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.validator.client;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
+  private static final Logger LOG = LogManager.getLogger();
+  static final int LOOKAHEAD_EPOCHS = 0;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler, 0);
+    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -32,6 +36,14 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info(
+          "current epoch {} could not be verified against the current slot {}, not processing block duty",
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"),
+          slot);
+      return;
+    }
+
     notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
   }
 }
