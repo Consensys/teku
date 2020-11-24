@@ -24,6 +24,7 @@ import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -208,6 +209,13 @@ public interface TreeNode {
 
   default void iterateAll(TreeVisitor visitor) {
     iterate(visitor, SELF_G_INDEX, LEFTMOST_G_INDEX);
+  }
+
+  default void iterateAll(Consumer<TreeNode> simpleVisitor) {
+    iterateAll((node, __) -> {
+      simpleVisitor.accept(node);
+      return true;
+    });
   }
 
   /**
