@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -69,6 +71,7 @@ import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
@@ -179,28 +182,44 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<AttesterDuties>>> duties =
+    final SafeFuture<Optional<AttesterDuties>> duties =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
 
   @Test
-  public void getAttestationDuties_shouldFailWhenNoIndexesSpecified() {
+  public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
+    final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
-        .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get()).isEmpty();
+    final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties()).isEmpty();
+    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
+  }
+
+  @Test
+  public void getAttestationDuties_shouldUsePreviousDutyDependentRootWhenStateFromSameEpoch() {
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    when(chainDataClient.getLatestStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
+
+    final SafeFuture<Optional<AttesterDuties>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
+    final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDependentRoot()).isEqualTo(getPreviousDutyDependentRoot(state));
   }
 
   @Test
   public void getAttestationDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -214,11 +233,11 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
+    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties())
+        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -229,17 +248,17 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<AttesterDuties>>> result =
+    final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
-    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
+    final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties())
+        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<List<ProposerDuties>>> duties =
+    final SafeFuture<Optional<ProposerDuties>> duties =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -249,7 +268,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
@@ -262,10 +281,11 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -275,10 +295,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
-    final SafeFuture<Optional<List<ProposerDuties>>> result =
+    final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -526,8 +546,7 @@ class ValidatorApiHandlerTest {
         .isCompletedWithValue(Map.of(validator0, 0));
   }
 
-  private <T> Optional<List<T>> assertCompletedSuccessfully(
-      final SafeFuture<Optional<List<T>>> result) {
+  private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
     assertThat(result).isCompleted();
     return result.join();
   }

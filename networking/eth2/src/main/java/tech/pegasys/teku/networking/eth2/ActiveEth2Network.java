@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -83,6 +84,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
   private final OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
   private final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
+  private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
 
   public ActiveEth2Network(
       final AsyncRunner asyncRunner,
@@ -99,6 +101,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
     this.asyncRunner = asyncRunner;
@@ -115,6 +118,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.attesterSlashingProcessor = attesterSlashingProcessor;
     this.proposerSlashingProcessor = proposerSlashingProcessor;
     this.voluntaryExitProcessor = voluntaryExitProcessor;
+    this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
@@ -153,7 +157,12 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, voluntaryExitProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            voluntaryExitProcessor,
+            voluntaryExitGossipPublisher);
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(

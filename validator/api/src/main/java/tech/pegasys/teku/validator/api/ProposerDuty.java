@@ -11,20 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.validator.api;
 
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class StubChainHeadChannel implements ChainHeadChannel {
-  @Override
-  public void chainHeadUpdated(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Optional<ReorgContext> optionalReorgContext) {}
+public class ProposerDuty {
+  private final BLSPublicKey publicKey;
+  private final int validatorIndex;
+  private final UInt64 slot;
+
+  public ProposerDuty(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
+    this.publicKey = publicKey;
+    this.validatorIndex = validatorIndex;
+    this.slot = slot;
+  }
+
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
+  }
+
+  public int getValidatorIndex() {
+    return validatorIndex;
+  }
+
+  public UInt64 getSlot() {
+    return slot;
+  }
 }

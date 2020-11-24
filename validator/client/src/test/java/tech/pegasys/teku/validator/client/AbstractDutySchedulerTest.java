@@ -58,7 +58,8 @@ public abstract class AbstractDutySchedulerTest {
 
   @BeforeEach
   public void setUp() {
-    when(validatorIndexProvider.getValidatorIndices(VALIDATOR_KEYS)).thenReturn(VALIDATOR_INDICES);
+    when(validatorIndexProvider.getValidatorIndices(VALIDATOR_KEYS))
+        .thenReturn(SafeFuture.completedFuture(VALIDATOR_INDICES));
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
     final SafeFuture<BLSSignature> rejectAggregationSignature =

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static java.util.Collections.emptyList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
@@ -34,7 +33,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -78,7 +75,15 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
       summary = "Get proposer duties",
       tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
-          "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.",
+          "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.\n\n"
+              + "Duties should only need to be checked once per epoch, "
+              + "however a chain reorganization could occur that results in a change of duties. "
+              + "For full safety, you should monitor head events and confirm the dependent root "
+              + "in this response matches:\n"
+              + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+              + "- event.block otherwise\n\n"
+              + "The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch) - 1)` "
+              + "or the genesis block root in the case of underflow.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -97,9 +102,10 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      SafeFuture<Optional<List<ProposerDuty>>> future =
+      SafeFuture<Optional<GetProposerDutiesResponse>> future =
           validatorDataProvider.getProposerDuties(epoch);
-      handleOptionalResult(ctx, future, this::handleResult, this::handleError, emptyList());
+      handleOptionalResult(
+          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
@@ -109,9 +115,9 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final List<ProposerDuty> response)
+  private Optional<String> handleResult(Context ctx, final GetProposerDutiesResponse response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetProposerDutiesResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(response));
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {

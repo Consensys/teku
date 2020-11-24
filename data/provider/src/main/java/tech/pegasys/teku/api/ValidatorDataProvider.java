@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -21,8 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -36,9 +35,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
@@ -165,46 +164,49 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
-  public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
+  public SafeFuture<Optional<PostAttesterDutiesResponse>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
-    if (indexes.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
-    }
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(
             res ->
                 res.map(
                     duties ->
-                        duties.stream()
-                            .filter(duty -> duty.getPublicKey() != null)
-                            .map(this::mapToAttesterDuties)
-                            .collect(toList())));
+                        new PostAttesterDutiesResponse(
+                            duties.getDependentRoot(),
+                            duties.getDuties().stream()
+                                .filter(duty -> duty.getPublicKey() != null)
+                                .map(this::mapToAttesterDuties)
+                                .collect(toList()))));
   }
 
-  public SafeFuture<Optional<List<ProposerDuty>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<GetProposerDutiesResponse>> getProposerDuties(final UInt64 epoch) {
     return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch))
         .thenApply(
             res ->
                 res.map(
                     duties ->
-                        duties.stream()
-                            .filter(duty -> duty.getPublicKey() != null)
-                            .map(this::mapToProposerDuties)
-                            .collect(toList())));
+                        new GetProposerDutiesResponse(
+                            duties.getDependentRoot(),
+                            duties.getDuties().stream()
+                                .filter(duty -> duty.getPublicKey() != null)
+                                .map(this::mapToProposerDuties)
+                                .collect(toList()))));
   }
 
-  private ProposerDuty mapToProposerDuties(final ProposerDuties duties) {
-    return new ProposerDuty(
+  private tech.pegasys.teku.api.response.v1.validator.ProposerDuty mapToProposerDuties(
+      final ProposerDuty duties) {
+    return new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
         new BLSPubKey(duties.getPublicKey()), duties.getValidatorIndex(), duties.getSlot());
   }
 
-  private AttesterDuty mapToAttesterDuties(final AttesterDuties duties) {
-    return new AttesterDuty(
+  private tech.pegasys.teku.api.response.v1.validator.AttesterDuty mapToAttesterDuties(
+      final AttesterDuty duties) {
+    return new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
         new BLSPubKey(duties.getPublicKey()),
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
-        UInt64.valueOf(duties.getCommiteesAtSlot()),
+        UInt64.valueOf(duties.getCommitteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }
