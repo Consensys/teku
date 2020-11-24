@@ -30,6 +30,7 @@ public class NetworkDefinition {
               "mainnet",
               builder()
                   .constants("mainnet")
+                  .initialStateFromClasspath("mainnet-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
                   .discoveryBootnodes(
