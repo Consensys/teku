@@ -280,7 +280,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -364,17 +363,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
+          // The old subscription API can't provide the validator ID so until it can be removed,
+          // don't track validators from those calls - they should use the old API to subscribe to
+          // persistent subnets.
+          if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+            activeValidatorTracker.onCommitteeSubscriptionRequest(
+                request.getValidatorIndex(), request.getSlot());
+          }
+
           if (request.isAggregator()) {
             attestationTopicSubscriber.subscribeToCommitteeForAggregation(
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
-
-            // The old subscription API can't provide the validator ID so until it can be removed,
-            // don't track validators from those calls - they should use the old API to subscribe to
-            // persistent subnets.
-            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
-              activeValidatorTracker.onCommitteeSubscriptionRequest(
-                  request.getValidatorIndex(), request.getSlot());
-            }
           }
         });
   }

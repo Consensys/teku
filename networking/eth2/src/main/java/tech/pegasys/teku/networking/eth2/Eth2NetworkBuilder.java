@@ -66,7 +66,9 @@ public class Eth2NetworkBuilder {
   private OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
   private OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
   private OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
   private OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
+  private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
   private OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   private GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
@@ -131,7 +133,9 @@ public class Eth2NetworkBuilder {
         gossipedAttestationConsumer,
         gossipedAggregateProcessor,
         gossipedAttesterSlashingConsumer,
+        attesterSlashingGossipPublisher,
         gossipedProposerSlashingConsumer,
+        proposerSlashingGossipPublisher,
         gossipedVoluntaryExitConsumer,
         voluntaryExitGossipPublisher,
         processedAttestationSubscriptionProvider);
@@ -246,6 +250,20 @@ public class Eth2NetworkBuilder {
       final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher) {
     checkNotNull(voluntaryExitGossipPublisher);
     this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
+    return this;
+  }
+
+  public Eth2NetworkBuilder attesterSlashingGossipPublisher(
+      final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
+    checkNotNull(attesterSlashingGossipPublisher);
+    this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
+    return this;
+  }
+
+  public Eth2NetworkBuilder proposerSlashingGossipPublisher(
+      final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
+    checkNotNull(proposerSlashingGossipPublisher);
+    this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
     return this;
   }
 
