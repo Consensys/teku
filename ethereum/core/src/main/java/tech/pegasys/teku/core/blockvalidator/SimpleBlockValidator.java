@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.BlockProcessorUtil;
@@ -29,8 +30,9 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Base logic of a block validation
@@ -120,13 +122,14 @@ public class SimpleBlockValidator implements BlockValidator {
 
   private void verify_block_signature(final BeaconState state, SignedBeaconBlock signed_block)
       throws BlockProcessingException {
-    final Validator proposer =
-        state.getValidators().get(get_beacon_proposer_index(state, signed_block.getSlot()));
+    final int proposerIndex = get_beacon_proposer_index(state, signed_block.getSlot());
+    final BLSPublicKey proposerPublicKey =
+        ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
     final Bytes signing_root =
         compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
     try {
       signatureVerifier.verifyAndThrow(
-          proposer.getPubkey(), signing_root, signed_block.getSignature());
+          proposerPublicKey, signing_root, signed_block.getSignature());
     } catch (InvalidSignatureException e) {
       throw new BlockProcessingException("Invalid block signature: " + signed_block);
     }

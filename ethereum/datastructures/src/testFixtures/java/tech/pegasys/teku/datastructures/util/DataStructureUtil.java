@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -183,6 +184,10 @@ public final class DataStructureUtil {
 
   public BLSPublicKey randomPublicKey() {
     return pubKeyGenerator.get();
+  }
+
+  public Bytes48 randomPublicKeyBytes() {
+    return pubKeyGenerator.get().toBytesCompressed();
   }
 
   public Eth1Data randomEth1Data() {
@@ -565,7 +570,7 @@ public final class DataStructureUtil {
 
   public Validator randomValidator() {
     return Validator.create(
-        randomPublicKey(),
+        randomPublicKeyBytes(),
         randomBytes32(),
         UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,

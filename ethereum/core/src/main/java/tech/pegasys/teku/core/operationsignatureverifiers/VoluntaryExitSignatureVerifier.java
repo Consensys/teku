@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.operationsignatureverifiers;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
@@ -25,7 +24,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 
 public class VoluntaryExitSignatureVerifier {
 
@@ -34,11 +33,7 @@ public class VoluntaryExitSignatureVerifier {
     final VoluntaryExit exit = signedExit.getMessage();
 
     BLSPublicKey publicKey =
-        BeaconStateCache.getTransitionCaches(state)
-            .getValidatorsPubKeys()
-            .get(
-                exit.getValidator_index(),
-                idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
+        ValidatorsUtil.getValidatorPubKey(state, exit.getValidator_index()).orElseThrow();
 
     final Bytes32 domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
     final Bytes signing_root = compute_signing_root(exit, domain);

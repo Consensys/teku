@@ -15,9 +15,11 @@ package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -91,7 +93,7 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public Validator(
-      BLSPublicKey pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       UInt64 effective_balance,
       boolean slashed,
@@ -101,7 +103,7 @@ public class Validator extends AbstractImmutableContainer
       UInt64 withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toSSZBytes()),
+        ViewUtils.createVectorFromBytes(pubkey),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         BitView.viewOf(slashed),
@@ -127,7 +129,7 @@ public class Validator extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(getPubkey().get_fixed_parts());
+    fixedPartsList.addAll(Collections.singleton(getPubkey()));
     fixedPartsList.addAll(
         List.of(
             SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
@@ -155,7 +157,7 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public static Validator create(
-      BLSPublicKey pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       UInt64 effective_balance,
       boolean slashed,
@@ -174,8 +176,8 @@ public class Validator extends AbstractImmutableContainer
         withdrawable_epoch);
   }
 
-  public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromSSZBytes(ViewUtils.getAllBytes(getAny(0)));
+  public Bytes48 getPubkey() {
+    return Bytes48.wrap(ViewUtils.getAllBytes(getAny(0)));
   }
 
   public Bytes32 getWithdrawal_credentials() {

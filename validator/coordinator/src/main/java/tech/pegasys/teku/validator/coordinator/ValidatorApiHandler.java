@@ -481,7 +481,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private Optional<AttesterDuty> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
-      final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      final BLSPublicKey pkey =
+          ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)).orElseThrow();
       final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
       return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
           .map(
@@ -508,7 +509,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final int proposerIndex = get_beacon_proposer_index(state, slot);
-      final BLSPublicKey publicKey = state.getValidators().get(proposerIndex).getPubkey();
+      final BLSPublicKey publicKey =
+          ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
       proposerSlots.put(slot, publicKey);
     }
     return proposerSlots;
