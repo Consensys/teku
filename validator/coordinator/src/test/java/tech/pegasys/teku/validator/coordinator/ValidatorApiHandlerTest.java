@@ -186,7 +186,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndexesSpecified() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
@@ -200,7 +200,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldUsePreviousDutyDependentRootWhenStateFromSameEpoch() {
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
-    when(chainDataClient.getLatestStateAtSlot(any()))
+    when(chainDataClient.getStateAtSlotExact(any()))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
