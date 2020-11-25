@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -526,12 +525,14 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void getValidatorIndices_shouldReturnEmptyMapWhenBestStateNotAvailable() {
+  void getValidatorIndices_shouldThrowExceptionWhenBestStateNotAvailable() {
     when(chainDataClient.getBestState()).thenReturn(Optional.empty());
 
+    // The validator client needs to be able to differentiate between the state not yet being loaded
+    // and the requested validators not existing so it doesn't skip scheduling duties.
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
-        .isCompletedWithValue(emptyMap());
+        .isCompletedExceptionallyWith(IllegalStateException.class);
   }
 
   @Test
