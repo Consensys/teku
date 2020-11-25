@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -144,22 +144,25 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return SafeFuture.completedFuture(combinedChainDataClient.getGenesisData());
   }
 
+  private static final AtomicInteger counter = new AtomicInteger();
+
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final List<BLSPublicKey> publicKeys) {
-    return SafeFuture.completedFuture(
-        combinedChainDataClient
-            .getBestState()
-            .map(
-                state -> {
-                  final Map<BLSPublicKey, Integer> results = new HashMap<>();
-                  publicKeys.forEach(
-                      publicKey ->
-                          ValidatorsUtil.getValidatorIndex(state, publicKey)
-                              .ifPresent(index -> results.put(publicKey, index)));
-                  return results;
-                })
-            .orElse(emptyMap()));
+    return SafeFuture.of(
+        () ->
+            combinedChainDataClient
+                .getBestState()
+                .map(
+                    state -> {
+                      final Map<BLSPublicKey, Integer> results = new HashMap<>();
+                      publicKeys.forEach(
+                          publicKey ->
+                              ValidatorsUtil.getValidatorIndex(state, publicKey)
+                                  .ifPresent(index -> results.put(publicKey, index)));
+                      return results;
+                    })
+                .orElseThrow(() -> new IllegalStateException("Head state is not yet available")));
   }
 
   @Override
