@@ -179,7 +179,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    post(SEND_SIGNED_ATTESTATION, attestation, createHandler());
+    post(SEND_SIGNED_ATTESTATION, List.of(attestation), createHandler());
   }
 
   @Override
