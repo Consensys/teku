@@ -176,6 +176,15 @@ public class Validator extends AbstractImmutableContainer
         withdrawable_epoch);
   }
 
+  /**
+   * Returns compressed BLS public key bytes
+   *
+   * <p>{@link BLSPublicKey} instance can be created with {@link
+   * BLSPublicKey#fromBytesCompressed(Bytes48)} method. However this method is pretty 'expensive'
+   * and the preferred way would be to use {@link
+   * tech.pegasys.teku.datastructures.util.ValidatorsUtil#getValidatorPubKey(BeaconState, UInt64)}
+   * if the {@link BeaconState} instance and validator index is available
+   */
   public Bytes48 getPubkey() {
     return Bytes48.wrap(ViewUtils.getAllBytes(getAny(0)));
   }
