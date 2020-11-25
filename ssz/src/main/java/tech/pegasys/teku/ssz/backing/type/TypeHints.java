@@ -18,6 +18,7 @@ import java.util.List;
 public class TypeHints {
   public boolean superLeafNode;
   public boolean sszLeaf;
+  public int sszSuperLeaf;
   public List<Integer> superBranchDepths;
 
   public static TypeHints none() {
@@ -31,6 +32,12 @@ public class TypeHints {
   public static TypeHints sszLeaf() {
     TypeHints ret = new TypeHints();
     ret.sszLeaf = true;
+    return ret;
+  }
+
+  public static TypeHints sszSuperLeaf(int depth) {
+    TypeHints ret = new TypeHints();
+    ret.sszSuperLeaf = depth;
     return ret;
   }
 
@@ -60,5 +67,9 @@ public class TypeHints {
 
   public boolean isSszLeaf() {
     return sszLeaf;
+  }
+
+  public int getSszSuperLeaf() {
+    return sszSuperLeaf;
   }
 }
