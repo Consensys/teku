@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -33,6 +34,7 @@ public class PostAttestationTest {
   private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private PostAttestation handler;
+  final Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
 
   @BeforeEach
   public void setup() {
@@ -41,8 +43,7 @@ public class PostAttestationTest {
 
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {
-    final Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(attestation));
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
     handler.handle(context);
 
     verify(context).status(SC_OK);
@@ -51,6 +52,14 @@ public class PostAttestationTest {
   @Test
   void shouldReturnBadRequestIfAttestationInvalid() throws Exception {
     when(context.body()).thenReturn("{\"a\": \"field\"}");
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  void shouldReturnBadRequestIfSingleAttestationPassed() throws Exception {
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(attestation));
     handler.handle(context);
 
     verify(context).status(SC_BAD_REQUEST);

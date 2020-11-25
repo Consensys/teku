@@ -29,6 +29,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Arrays;
+import java.util.List;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -52,11 +54,13 @@ public class PostAttestation extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Submit a signed attestation",
+      summary = "Submit signed attestations",
       tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
+      requestBody =
+          @OpenApiRequestBody(
+              content = {@OpenApiContent(from = Attestation.class, isArray = true)}),
       description =
-          "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
+          "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\n"
               + "This endpoint does not protected against slashing.",
       responses = {
         @OpenApiResponse(
@@ -68,8 +72,10 @@ public class PostAttestation extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      Attestation attestation = jsonProvider.jsonToObject(ctx.body(), Attestation.class);
-      provider.submitAttestation(attestation);
+      final String body = ctx.body();
+      final List<Attestation> attestations =
+          Arrays.asList(jsonProvider.jsonToObject(body, Attestation[].class));
+      provider.submitAttestations(attestations);
       ctx.status(SC_OK);
     } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
