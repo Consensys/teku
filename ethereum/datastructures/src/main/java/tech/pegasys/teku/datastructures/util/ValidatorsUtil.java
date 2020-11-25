@@ -74,23 +74,21 @@ public class ValidatorsUtil {
         || validatorIndex.longValue() < 0) {
       return Optional.empty();
     }
-    Optional<BLSPublicKey> ret =
-        Optional.of(
+    return Optional.of(
             BeaconStateCache.getTransitionCaches(state)
                 .getValidatorsPubKeys()
                 .get(
                     validatorIndex,
-                    i ->
-                        BLSPublicKey.fromBytesCompressed(
-                            state.getValidators().get(i.intValue()).getPubkey())));
+                    i -> {
+                      BLSPublicKey pubKey = BLSPublicKey.fromBytesCompressed(
+                          state.getValidators().get(i.intValue()).getPubkey());
 
-    // eagerly pre-cache pubKey => validatorIndex mapping
-    ret.ifPresent(
-        pubKey ->
-            BeaconStateCache.getTransitionCaches(state)
-                .getValidatorIndex()
-                .invalidateWithNewValue(pubKey, validatorIndex.intValue()));
-    return ret;
+                      // eagerly pre-cache pubKey => validatorIndex mapping
+                      BeaconStateCache.getTransitionCaches(state)
+                          .getValidatorIndex()
+                          .invalidateWithNewValue(pubKey, i.intValue());
+                      return pubKey;
+                    }));
   }
 
   /**
