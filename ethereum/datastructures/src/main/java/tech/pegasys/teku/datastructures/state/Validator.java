@@ -58,7 +58,7 @@ public class Validator extends AbstractImmutableContainer
 
   // BLS public key
   @SuppressWarnings("unused")
-  private final BLSPublicKey pubkey = null;
+  private final Bytes48 pubkey = null;
 
   // Withdrawal credentials
   @SuppressWarnings("unused")
