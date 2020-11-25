@@ -315,10 +315,8 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerKeystoreAndPasswordFileConfig() {
-      if ((validatorExternalSignerKeystore != null
-              && validatorExternalSignerKeystorePasswordFile == null)
-          || (validatorExternalSignerKeystore == null
-              && validatorExternalSignerKeystorePasswordFile != null)) {
+      if (onlyOneInitialized(
+          validatorExternalSignerKeystore, validatorExternalSignerKeystorePasswordFile)) {
         final String errorMessage =
             "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together";
         throw new InvalidConfigurationException(errorMessage);
@@ -326,14 +324,16 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerTruststoreAndPasswordFileConfig() {
-      if ((validatorExternalSignerTruststore != null
-              && validatorExternalSignerTruststorePasswordFile == null)
-          || (validatorExternalSignerTruststore == null
-              && validatorExternalSignerTruststorePasswordFile != null)) {
+      if (onlyOneInitialized(
+          validatorExternalSignerTruststore, validatorExternalSignerTruststorePasswordFile)) {
         final String errorMessage =
             "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together";
         throw new InvalidConfigurationException(errorMessage);
       }
+    }
+
+    private boolean onlyOneInitialized(final Object o1, final Object o2) {
+      return (o1 == null) != (o2 == null);
     }
   }
 }
