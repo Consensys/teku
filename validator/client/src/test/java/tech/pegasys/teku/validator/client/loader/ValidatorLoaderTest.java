@@ -25,6 +25,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -33,6 +34,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -72,11 +74,14 @@ class ValidatorLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
 
+  @SuppressWarnings("unchecked")
+  private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
+
   private final ValidatorLoader validatorLoader =
       ValidatorLoader.create(slashingProtector, asyncRunner);
 
   @Test
-  void initializeValidatorsWithExternalSignerAndSlashingProtection() {
+  void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {
     final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -84,6 +89,8 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
@@ -106,7 +113,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
+  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() throws Exception {
     final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -114,6 +121,8 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
@@ -151,6 +160,9 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
+
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
@@ -183,6 +195,8 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
