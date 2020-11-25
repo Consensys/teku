@@ -31,14 +31,14 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 config
-                    .withNetwork("minimal")
+                    .withNetwork("swift")
                     .withInteropNumberOfValidators(VALIDATOR_COUNT)
                     .withInteropValidators(0, 0));
     validatorClient =
         createValidatorNode(
             config ->
                 config
-                    .withNetwork("minimal")
+                    .withNetwork("swift")
                     .withInteropValidators(0, VALIDATOR_COUNT)
                     .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
   }
