@@ -107,6 +107,10 @@ public class ValidatorDataProvider {
                             new BLSSignature(attestation.getAggregate_signature()))));
   }
 
+  public void submitAttestations(List<Attestation> attestations) {
+    attestations.forEach(this::submitAttestation);
+  }
+
   public void submitAttestation(Attestation attestation) {
     if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
