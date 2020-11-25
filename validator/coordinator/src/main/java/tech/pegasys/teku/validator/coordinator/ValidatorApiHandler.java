@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
@@ -71,9 +72,11 @@ import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -138,29 +141,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final List<BLSPublicKey> publicKeys) {
-    return SafeFuture.completedFuture(
-        combinedChainDataClient
-            .getBestState()
-            .map(
-                state -> {
-                  final Map<BLSPublicKey, Integer> results = new HashMap<>();
-                  publicKeys.forEach(
-                      publicKey ->
-                          ValidatorsUtil.getValidatorIndex(state, publicKey)
-                              .ifPresent(index -> results.put(publicKey, index)));
-                  return results;
-                })
-            .orElse(emptyMap()));
+    return SafeFuture.of(
+        () ->
+            combinedChainDataClient
+                .getBestState()
+                .map(
+                    state -> {
+                      final Map<BLSPublicKey, Integer> results = new HashMap<>();
+                      publicKeys.forEach(
+                          publicKey ->
+                              ValidatorsUtil.getValidatorIndex(state, publicKey)
+                                  .ifPresent(index -> results.put(publicKey, index)));
+                      return results;
+                    })
+                .orElseThrow(() -> new IllegalStateException("Head state is not yet available")));
   }
 
   @Override
-  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
-    }
-    if (validatorIndexes.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
     if (epoch.isGreaterThan(
         combinedChainDataClient
@@ -183,7 +184,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -242,7 +243,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -326,17 +326,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
+          // The old subscription API can't provide the validator ID so until it can be removed,
+          // don't track validators from those calls - they should use the old API to subscribe to
+          // persistent subnets.
+          if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+            activeValidatorTracker.onCommitteeSubscriptionRequest(
+                request.getValidatorIndex(), request.getSlot());
+          }
+
           if (request.isAggregator()) {
             attestationTopicSubscriber.subscribeToCommitteeForAggregation(
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
-
-            // The old subscription API can't provide the validator ID so until it can be removed,
-            // don't track validators from those calls - they should use the old API to subscribe to
-            // persistent subnets.
-            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
-              activeValidatorTracker.onCommitteeSubscriptionRequest(
-                  request.getValidatorIndex(), request.getSlot());
-            }
           }
         });
   }
@@ -432,9 +432,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
-  private List<ProposerDuties> getProposerDutiesFromIndexesAndState(
+  private ProposerDuties getProposerDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch) {
-    final List<ProposerDuties> result = new ArrayList<>();
+    final List<ProposerDuty> result = new ArrayList<>();
     getProposalSlotsForEpoch(state, epoch)
         .forEach(
             (slot, publicKey) -> {
@@ -445,21 +445,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                         "Assigned public key %s could not be found at epoch %s",
                         publicKey.toString(), epoch.toString()));
               }
-              result.add(new ProposerDuties(publicKey, maybeIndex.get(), slot));
+              result.add(new ProposerDuty(publicKey, maybeIndex.get(), slot));
             });
-    return result;
+    return new ProposerDuties(getCurrentDutyDependentRoot(state), result);
   }
 
-  private List<AttesterDuties> getAttesterDutiesFromIndexesAndState(
+  private AttesterDuties getAttesterDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return validatorIndexes.stream()
-        .map(index -> createAttesterDuties(state, epoch, index))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(toList());
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThan(get_current_epoch(state))
+            ? getCurrentDutyDependentRoot(state)
+            : getPreviousDutyDependentRoot(state);
+    return new AttesterDuties(
+        dependentRoot,
+        validatorIndexes.stream()
+            .map(index -> createAttesterDuties(state, epoch, index))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(toList()));
   }
 
-  private Optional<AttesterDuties> createAttesterDuties(
+  private Optional<AttesterDuty> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
       final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
@@ -467,7 +473,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
           .map(
               committeeAssignment ->
-                  new AttesterDuties(
+                  new AttesterDuty(
                       pkey,
                       validatorIndex,
                       committeeAssignment.getCommittee().size(),

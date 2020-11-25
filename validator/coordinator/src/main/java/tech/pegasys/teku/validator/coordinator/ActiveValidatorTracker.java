@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
 
 import java.util.Collections;
 import java.util.NavigableMap;
@@ -48,9 +49,20 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 epoch = compute_epoch_at_slot(slot);
-    final int validatorCount = validatorsPerEpoch.getOrDefault(epoch, emptySet()).size();
+    final int validatorCount = getNumberOfValidatorsForEpoch(epoch);
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
     stableSubnetSubscriber.onSlot(slot, validatorCount);
-    validatorsPerEpoch.headMap(epoch, false).clear();
+
+    // PerformanceTracker uses validator counts to determine expected attestation count.
+    // Thus we wait ATTESTATION_INCLUSION_RANGE epochs, after which the performance is determined,
+    // before clearing those from memory.
+    if (epoch.isLessThanOrEqualTo(ATTESTATION_INCLUSION_RANGE)) {
+      return;
+    }
+    validatorsPerEpoch.headMap(epoch.minus(ATTESTATION_INCLUSION_RANGE), false).clear();
+  }
+
+  public int getNumberOfValidatorsForEpoch(final UInt64 epoch) {
+    return validatorsPerEpoch.getOrDefault(epoch, emptySet()).size();
   }
 }

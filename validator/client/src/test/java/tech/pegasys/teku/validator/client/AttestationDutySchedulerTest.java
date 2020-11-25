@@ -27,6 +27,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.validator.client.AttestationDutyScheduler.LOOKAHEAD_EPOCHS;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
@@ -48,6 +50,22 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
+
+  final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
+  final ValidatorTimingChannel dutySchedulerWithMockDuties =
+      new AttestationDutyScheduler(
+          metricsSystem2,
+          new RetryingDutyLoader(
+              asyncRunner,
+              new AttestationDutyLoader(
+                  validatorApiChannel,
+                  forkProvider,
+                  () -> scheduledDuties,
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                  validatorIndexProvider,
+                  beaconCommitteeSubscriptions)));
+
   private final AttestationDutyScheduler dutyScheduler =
       new AttestationDutyScheduler(
           metricsSystem,
@@ -64,13 +82,17 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @BeforeEach
   public void init() {
     when(validatorApiChannel.getAttestationDuties(any(), any()))
-        .thenReturn(completedFuture(Optional.of(emptyList())));
+        .thenReturn(
+            completedFuture(
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
   }
 
   @Test
   public void shouldFetchDutiesForCurrentAndNextEpoch() {
     when(validatorApiChannel.getAttestationDuties(any(), any()))
-        .thenReturn(completedFuture(Optional.of(emptyList())));
+        .thenReturn(
+            completedFuture(
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
 
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
@@ -125,8 +147,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldRetryWhenRequestingDutiesFails() {
-    final SafeFuture<Optional<List<AttesterDuties>>> request1 = new SafeFuture<>();
-    final SafeFuture<Optional<List<AttesterDuties>>> request2 = new SafeFuture<>();
+    final SafeFuture<Optional<AttesterDuties>> request1 = new SafeFuture<>();
+    final SafeFuture<Optional<AttesterDuties>> request2 = new SafeFuture<>();
     when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(request1)
         .thenReturn(request2);
@@ -229,36 +251,75 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
+  public void shouldNotProcessAggregationIfEpochIsUnknown() {
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(ONE);
+    verify(scheduledDuties, never()).performAggregation(ZERO);
+  }
+
+  @Test
+  public void shouldNotProcessAttestationIfEpochIsUnknown() {
+    dutySchedulerWithMockDuties.onAttestationCreationDue(ONE);
+    verify(scheduledDuties, never()).produceAttestations(ZERO);
+  }
+
+  @Test
+  public void shouldNotProcessAggregationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
+    // first slot of epoch 2
+    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(slot);
+    verify(scheduledDuties, never()).performAggregation(slot);
+  }
+
+  @Test
+  public void shouldNotProcessAttestationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
+    // first slot of epoch 2
+    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationCreationDue(slot);
+    verify(scheduledDuties, never()).produceAttestations(slot);
+  }
+
+  @Test
+  public void shouldProcessAggregationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
+    // last slot of epoch 1
+    final UInt64 slot =
+        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(slot);
+    verify(scheduledDuties).performAggregation(slot);
+  }
+
+  @Test
+  public void shouldProcessAttestationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
+    // last slot of epoch 1
+    final UInt64 slot =
+        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationCreationDue(slot);
+    verify(scheduledDuties).produceAttestations(slot);
+  }
+
+  @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
-    final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-    final ValidatorTimingChannel dutyScheduler =
-        new AttestationDutyScheduler(
-            metricsSystem,
-            new RetryingDutyLoader(
-                asyncRunner,
-                new AttestationDutyLoader(
-                    validatorApiChannel,
-                    forkProvider,
-                    () -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                    validatorIndexProvider,
-                    beaconCommitteeSubscriptions)));
-    final SafeFuture<Optional<List<AttesterDuties>>> epoch0Duties = new SafeFuture<>();
+    final SafeFuture<Optional<AttesterDuties>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
-    dutyScheduler.onSlot(ZERO);
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
+    dutySchedulerWithMockDuties.onSlot(ZERO);
 
-    dutyScheduler.onBlockProductionDue(ZERO);
-    dutyScheduler.onAttestationCreationDue(ZERO);
-    dutyScheduler.onAttestationAggregationDue(ZERO);
+    dutySchedulerWithMockDuties.onBlockProductionDue(ZERO);
+    dutySchedulerWithMockDuties.onAttestationCreationDue(ZERO);
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(ZERO);
     // Duties haven't been loaded yet.
     verify(scheduledDuties, never()).produceAttestations(ZERO);
     verify(scheduledDuties, never()).performAggregation(ZERO);
 
-    epoch0Duties.complete(Optional.of(emptyList()));
+    epoch0Duties.complete(
+        Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList())));
     verify(scheduledDuties).produceAttestations(ZERO);
     verify(scheduledDuties).performAggregation(ZERO);
   }
@@ -267,11 +328,14 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotPerformDutiesForSameSlotTwice() {
     final UInt64 attestationProductionSlot = UInt64.valueOf(5);
     final int committeesAtSlot = 15;
-    final AttesterDuties validator1Duties =
-        new AttesterDuties(
-            VALIDATOR1_KEY, 5, 10, 3, committeesAtSlot, 6, attestationProductionSlot);
+    final AttesterDuty validator1Duties =
+        new AttesterDuty(VALIDATOR1_KEY, 5, 10, 3, committeesAtSlot, 6, attestationProductionSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -304,8 +368,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2CommitteePosition = 8;
     final int validator2CommitteeSize = 11;
     final int committeesAtSlot = 15;
-    final AttesterDuties validator1Duties =
-        new AttesterDuties(
+    final AttesterDuty validator1Duties =
+        new AttesterDuty(
             VALIDATOR1_KEY,
             validator1Index,
             validator1CommitteeSize,
@@ -313,8 +377,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
-    final AttesterDuties validator2Duties =
-        new AttesterDuties(
+    final AttesterDuty validator2Duties =
+        new AttesterDuty(
             VALIDATOR2_KEY,
             validator2Index,
             validator2CommitteeSize,
@@ -323,7 +387,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties, validator2Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -365,8 +434,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2CommitteePosition = 8;
     final int validator2CommitteeSize = 11;
     final int committeesAtSlot = 15;
-    final AttesterDuties validator1Duties =
-        new AttesterDuties(
+    final AttesterDuty validator1Duties =
+        new AttesterDuty(
             VALIDATOR1_KEY,
             validator1Index,
             validator1CommitteeSize,
@@ -374,8 +443,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
-    final AttesterDuties validator2Duties =
-        new AttesterDuties(
+    final AttesterDuty validator2Duties =
+        new AttesterDuty(
             VALIDATOR2_KEY,
             validator2Index,
             validator2CommitteeSize,
@@ -384,7 +453,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties, validator2Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -426,8 +500,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2CommitteePosition = 8;
     final int validator2CommitteeSize = 11;
     final int committeesAtSlot = 15;
-    final AttesterDuties validator1Duties =
-        new AttesterDuties(
+    final AttesterDuty validator1Duties =
+        new AttesterDuty(
             VALIDATOR1_KEY,
             validator1Index,
             validator1CommitteeSize,
@@ -435,8 +509,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
-    final AttesterDuties validator2Duties =
-        new AttesterDuties(
+    final AttesterDuty validator2Duties =
+        new AttesterDuty(
             VALIDATOR2_KEY,
             validator2Index,
             validator2CommitteeSize,
@@ -445,7 +519,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties, validator2Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -491,8 +570,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2CommitteeSize = 1000000000; // Won't be an aggregator
     final int committeesAtSlot = 15;
 
-    final AttesterDuties validator1Duties =
-        new AttesterDuties(
+    final AttesterDuty validator1Duties =
+        new AttesterDuty(
             VALIDATOR1_KEY,
             validator1Index,
             validator1CommitteeSize,
@@ -500,8 +579,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
-    final AttesterDuties validator2Duties =
-        new AttesterDuties(
+    final AttesterDuty validator2Duties =
+        new AttesterDuty(
             VALIDATOR2_KEY,
             validator2Index,
             validator2CommitteeSize,
@@ -510,7 +589,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties, validator2Duties)))));
 
     final BLSSignature validator1Signature = dataStructureUtil.randomSignature();
     when(validator1.getSigner().signAggregationSlot(attestationSlot, fork))

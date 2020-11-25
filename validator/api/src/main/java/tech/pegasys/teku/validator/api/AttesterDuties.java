@@ -14,66 +14,25 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Objects;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class AttesterDuties {
+  private final Bytes32 dependentRoot;
+  private final List<AttesterDuty> duties;
 
-  private final BLSPublicKey publicKey;
-  private final int validatorIndex;
-  private final int committeeLength;
-  /** the committee index of the committee that includes the specified validator */
-  private final int committeeIndex;
-
-  private final int commiteesAtSlot;
-  // index of the validator in the committee
-  private final int validatorCommitteeIndex;
-  private final UInt64 slot;
-
-  public AttesterDuties(
-      final BLSPublicKey publicKey,
-      final int validatorIndex,
-      final int committeeLength,
-      final int committeeIndex,
-      final int commiteesAtSlot,
-      final int validatorCommitteeIndex,
-      final UInt64 slot) {
-    this.publicKey = publicKey;
-    this.validatorIndex = validatorIndex;
-    this.committeeLength = committeeLength;
-    this.committeeIndex = committeeIndex;
-    this.commiteesAtSlot = commiteesAtSlot;
-    this.validatorCommitteeIndex = validatorCommitteeIndex;
-    this.slot = slot;
+  public AttesterDuties(final Bytes32 dependentRoot, final List<AttesterDuty> duties) {
+    this.dependentRoot = dependentRoot;
+    this.duties = duties;
   }
 
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
+  public Bytes32 getDependentRoot() {
+    return dependentRoot;
   }
 
-  public int getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public int getCommitteeLength() {
-    return committeeLength;
-  }
-
-  public int getCommitteeIndex() {
-    return committeeIndex;
-  }
-
-  public int getCommiteesAtSlot() {
-    return commiteesAtSlot;
-  }
-
-  public int getValidatorCommitteeIndex() {
-    return validatorCommitteeIndex;
-  }
-
-  public UInt64 getSlot() {
-    return slot;
+  public List<AttesterDuty> getDuties() {
+    return duties;
   }
 
   @Override
@@ -85,37 +44,19 @@ public class AttesterDuties {
       return false;
     }
     final AttesterDuties that = (AttesterDuties) o;
-    return validatorIndex == that.validatorIndex
-        && committeeLength == that.committeeLength
-        && committeeIndex == that.committeeIndex
-        && commiteesAtSlot == that.commiteesAtSlot
-        && validatorCommitteeIndex == that.validatorCommitteeIndex
-        && Objects.equals(publicKey, that.publicKey)
-        && Objects.equals(slot, that.slot);
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        publicKey,
-        validatorIndex,
-        committeeLength,
-        committeeIndex,
-        commiteesAtSlot,
-        validatorCommitteeIndex,
-        slot);
+    return Objects.hash(dependentRoot, duties);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("publicKey", publicKey)
-        .add("validatorIndex", validatorIndex)
-        .add("committeeLength", committeeLength)
-        .add("committeeIndex", committeeIndex)
-        .add("commiteesAtSlot", commiteesAtSlot)
-        .add("validatorCommitteeIndex", validatorCommitteeIndex)
-        .add("slot", slot)
+        .add("dependentRoot", dependentRoot)
+        .add("duties", duties)
         .toString();
   }
 }

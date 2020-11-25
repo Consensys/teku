@@ -53,6 +53,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -111,8 +112,11 @@ public class Eth2NetworkFactory {
     protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
+    private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
     protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
+    private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
     protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
+    protected GossipPublisher<SignedVoluntaryExit> voluntaryExitPublisher;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -232,8 +236,11 @@ public class Eth2NetworkFactory {
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,
             attesterSlashingProcessor,
+            attesterSlashingGossipPublisher,
             proposerSlashingProcessor,
+            proposerSlashingGossipPublisher,
             voluntaryExitProcessor,
+            voluntaryExitPublisher,
             processedAttestationSubscriptionProvider);
       }
     }
@@ -308,6 +315,15 @@ public class Eth2NetworkFactory {
       if (voluntaryExitProcessor == null) {
         voluntaryExitProcessor = OperationProcessor.noop();
       }
+      if (voluntaryExitPublisher == null) {
+        voluntaryExitPublisher = new GossipPublisher<>();
+      }
+      if (proposerSlashingGossipPublisher == null) {
+        proposerSlashingGossipPublisher = new GossipPublisher<>();
+      }
+      if (attesterSlashingGossipPublisher == null) {
+        attesterSlashingGossipPublisher = new GossipPublisher<>();
+      }
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
@@ -380,6 +396,13 @@ public class Eth2NetworkFactory {
       return this;
     }
 
+    public Eth2P2PNetworkBuilder attesterSlashingGossipPublisher(
+        final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
+      checkNotNull(attesterSlashingGossipPublisher);
+      this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
+      return this;
+    }
+
     public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
         final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
       checkNotNull(gossipedProposerSlashingProcessor);
@@ -387,10 +410,24 @@ public class Eth2NetworkFactory {
       return this;
     }
 
+    public Eth2P2PNetworkBuilder proposerSlashingGossipPublisher(
+        final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
+      checkNotNull(proposerSlashingGossipPublisher);
+      this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
+      return this;
+    }
+
     public Eth2P2PNetworkBuilder gossipedVoluntaryExitProcessor(
         final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
       checkNotNull(gossipedVoluntaryExitProcessor);
       this.voluntaryExitProcessor = gossipedVoluntaryExitProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder voluntaryExitPublisher(
+        final GossipPublisher<SignedVoluntaryExit> publisher) {
+      checkNotNull(publisher);
+      this.voluntaryExitPublisher = publisher;
       return this;
     }
 

@@ -13,29 +13,50 @@
 
 package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import com.google.common.base.MoreObjects;
+import java.util.List;
+import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class ProposerDuties {
-  private final BLSPublicKey publicKey;
-  private final int validatorIndex;
-  private final UInt64 slot;
+  private final Bytes32 dependentRoot;
+  private final List<ProposerDuty> duties;
 
-  public ProposerDuties(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
-    this.publicKey = publicKey;
-    this.validatorIndex = validatorIndex;
-    this.slot = slot;
+  public ProposerDuties(final Bytes32 dependentRoot, final List<ProposerDuty> duties) {
+    this.dependentRoot = dependentRoot;
+    this.duties = duties;
   }
 
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
+  public Bytes32 getDependentRoot() {
+    return dependentRoot;
   }
 
-  public int getValidatorIndex() {
-    return validatorIndex;
+  public List<ProposerDuty> getDuties() {
+    return duties;
   }
 
-  public UInt64 getSlot() {
-    return slot;
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ProposerDuties that = (ProposerDuties) o;
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(duties, that.duties);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(dependentRoot, duties);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("dependentRoot", dependentRoot)
+        .add("duties", duties)
+        .toString();
   }
 }

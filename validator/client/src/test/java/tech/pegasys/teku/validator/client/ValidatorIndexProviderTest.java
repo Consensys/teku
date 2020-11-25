@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -118,5 +119,23 @@ class ValidatorIndexProviderTest {
     provider.lookupValidators();
 
     verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  void shouldWaitForFirstSuccessfulRequestBeforeLookingUpValidatorIndices() {
+    final ValidatorIndexProvider provider =
+        new ValidatorIndexProvider(List.of(key1), validatorApiChannel);
+
+    final SafeFuture<Map<BLSPublicKey, Integer>> requestResult = new SafeFuture<>();
+    when(validatorApiChannel.getValidatorIndices(List.of(key1))).thenReturn(requestResult);
+
+    final SafeFuture<Collection<Integer>> result = provider.getValidatorIndices(List.of(key1));
+    assertThat(result).isNotDone();
+
+    provider.lookupValidators();
+    assertThat(result).isNotDone();
+
+    requestResult.complete(Map.of(key1, 1));
+    assertThat(result).isCompletedWithValue(List.of(1));
   }
 }
