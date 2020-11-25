@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -147,19 +146,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
       final List<BLSPublicKey> publicKeys) {
-    return SafeFuture.completedFuture(
-        combinedChainDataClient
-            .getBestState()
-            .map(
-                state -> {
-                  final Map<BLSPublicKey, Integer> results = new HashMap<>();
-                  publicKeys.forEach(
-                      publicKey ->
-                          ValidatorsUtil.getValidatorIndex(state, publicKey)
-                              .ifPresent(index -> results.put(publicKey, index)));
-                  return results;
-                })
-            .orElse(emptyMap()));
+    return SafeFuture.of(
+        () ->
+            combinedChainDataClient
+                .getBestState()
+                .map(
+                    state -> {
+                      final Map<BLSPublicKey, Integer> results = new HashMap<>();
+                      publicKeys.forEach(
+                          publicKey ->
+                              ValidatorsUtil.getValidatorIndex(state, publicKey)
+                                  .ifPresent(index -> results.put(publicKey, index)));
+                      return results;
+                    })
+                .orElseThrow(() -> new IllegalStateException("Head state is not yet available")));
   }
 
   @Override
@@ -256,7 +256,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -340,17 +339,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     requests.forEach(
         request -> {
+          // The old subscription API can't provide the validator ID so until it can be removed,
+          // don't track validators from those calls - they should use the old API to subscribe to
+          // persistent subnets.
+          if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+            activeValidatorTracker.onCommitteeSubscriptionRequest(
+                request.getValidatorIndex(), request.getSlot());
+          }
+
           if (request.isAggregator()) {
             attestationTopicSubscriber.subscribeToCommitteeForAggregation(
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
-
-            // The old subscription API can't provide the validator ID so until it can be removed,
-            // don't track validators from those calls - they should use the old API to subscribe to
-            // persistent subnets.
-            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
-              activeValidatorTracker.onCommitteeSubscriptionRequest(
-                  request.getValidatorIndex(), request.getSlot());
-            }
           }
         });
   }

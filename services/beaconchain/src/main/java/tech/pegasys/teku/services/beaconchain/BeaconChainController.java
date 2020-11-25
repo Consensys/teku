@@ -66,6 +66,7 @@ import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -166,14 +168,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
+      new GossipPublisher<>();
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile Optional<AnchorPoint> initialAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
+  private volatile ActiveValidatorTracker activeValidatorTracker;
+  private volatile AttestationTopicSubscriber attestationTopicSubscriber;
 
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
@@ -320,6 +330,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncService();
     initSlotProcessor();
     initMetrics();
+    initAttestationTopicSubscriber();
+    initActiveValidatorTracker();
     initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
@@ -342,7 +354,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               combinedChainDataClient,
               STATUS_LOG,
               new ValidatorPerformanceMetrics(metricsSystem),
-              beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode());
+              beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode(),
+              activeValidatorTracker);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
@@ -434,6 +447,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod());
   }
 
+  private void initAttestationTopicSubscriber() {
+    LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
+    this.attestationTopicSubscriber = new AttestationTopicSubscriber(p2pNetwork);
+  }
+
+  private void initActiveValidatorTracker() {
+    LOG.debug("BeaconChainController.initActiveValidatorTracker");
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
+    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber);
+  }
+
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
@@ -447,14 +474,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti());
-    final AttestationTopicSubscriber attestationTopicSubscriber =
-        new AttestationTopicSubscriber(p2pNetwork);
-    final StableSubnetSubscriber stableSubnetSubscriber =
-        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
-            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
-            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
-    final ActiveValidatorTracker activeValidatorTracker =
-        new ActiveValidatorTracker(stableSubnetSubscriber);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
@@ -554,6 +573,28 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
 
+      // Set up gossip for voluntary exits
+      voluntaryExitPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              voluntaryExitGossipPublisher.publish(item);
+            }
+          });
+      // Set up gossip for attester slashings
+      attesterSlashingPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              attesterSlashingGossipPublisher.publish(item);
+            }
+          });
+      // Set up gossip for proposer slashings
+      proposerSlashingPool.subscribeOperationAdded(
+          (item, result) -> {
+            if (result.equals(InternalValidationResult.ACCEPT)) {
+              proposerSlashingGossipPublisher.publish(item);
+            }
+          });
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
@@ -564,8 +605,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .gossipedAttestationProcessor(attestationManager::addAttestation)
               .gossipedAggregateProcessor(attestationManager::addAggregate)
               .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
+              .attesterSlashingGossipPublisher(attesterSlashingGossipPublisher)
               .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
+              .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
               .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
+              .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToAttestationsToSend)
               .historicalChainData(
@@ -711,7 +755,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       client.initializeFromAnchorPoint(anchor);
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
-            anchor.getRoot(),
+            anchor.getStateRoot(),
             recentChainData.getBestBlockRoot().orElseThrow(),
             anchor.getState().getGenesis_time());
       }

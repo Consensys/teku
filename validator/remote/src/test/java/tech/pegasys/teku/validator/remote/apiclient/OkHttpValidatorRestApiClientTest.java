@@ -471,7 +471,8 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(asJson(attestation));
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(asJson(List.of(attestation)));
   }
 
   @Test

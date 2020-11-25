@@ -27,6 +27,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.validator.client.AttestationDutyScheduler.LOOKAHEAD_EPOCHS;
 
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,22 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
+
+  final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
+  final ValidatorTimingChannel dutySchedulerWithMockDuties =
+      new AttestationDutyScheduler(
+          metricsSystem2,
+          new RetryingDutyLoader(
+              asyncRunner,
+              new AttestationDutyLoader(
+                  validatorApiChannel,
+                  forkProvider,
+                  () -> scheduledDuties,
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                  validatorIndexProvider,
+                  beaconCommitteeSubscriptions)));
+
   private final AttestationDutyScheduler dutyScheduler =
       new AttestationDutyScheduler(
           metricsSystem,
@@ -234,21 +251,57 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
+  public void shouldNotProcessAggregationIfEpochIsUnknown() {
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(ONE);
+    verify(scheduledDuties, never()).performAggregation(ZERO);
+  }
+
+  @Test
+  public void shouldNotProcessAttestationIfEpochIsUnknown() {
+    dutySchedulerWithMockDuties.onAttestationCreationDue(ONE);
+    verify(scheduledDuties, never()).produceAttestations(ZERO);
+  }
+
+  @Test
+  public void shouldNotProcessAggregationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
+    // first slot of epoch 2
+    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(slot);
+    verify(scheduledDuties, never()).performAggregation(slot);
+  }
+
+  @Test
+  public void shouldNotProcessAttestationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
+    // first slot of epoch 2
+    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationCreationDue(slot);
+    verify(scheduledDuties, never()).produceAttestations(slot);
+  }
+
+  @Test
+  public void shouldProcessAggregationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
+    // last slot of epoch 1
+    final UInt64 slot =
+        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(slot);
+    verify(scheduledDuties).performAggregation(slot);
+  }
+
+  @Test
+  public void shouldProcessAttestationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
+    // last slot of epoch 1
+    final UInt64 slot =
+        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+    dutySchedulerWithMockDuties.onSlot(ONE); // epoch 0
+    dutySchedulerWithMockDuties.onAttestationCreationDue(slot);
+    verify(scheduledDuties).produceAttestations(slot);
+  }
+
+  @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
-    final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-    final ValidatorTimingChannel dutyScheduler =
-        new AttestationDutyScheduler(
-            metricsSystem,
-            new RetryingDutyLoader(
-                asyncRunner,
-                new AttestationDutyLoader(
-                    validatorApiChannel,
-                    forkProvider,
-                    () -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                    validatorIndexProvider,
-                    beaconCommitteeSubscriptions)));
     final SafeFuture<Optional<AttesterDuties>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
@@ -256,11 +309,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
-    dutyScheduler.onSlot(ZERO);
+    dutySchedulerWithMockDuties.onSlot(ZERO);
 
-    dutyScheduler.onBlockProductionDue(ZERO);
-    dutyScheduler.onAttestationCreationDue(ZERO);
-    dutyScheduler.onAttestationAggregationDue(ZERO);
+    dutySchedulerWithMockDuties.onBlockProductionDue(ZERO);
+    dutySchedulerWithMockDuties.onAttestationCreationDue(ZERO);
+    dutySchedulerWithMockDuties.onAttestationAggregationDue(ZERO);
     // Duties haven't been loaded yet.
     verify(scheduledDuties, never()).produceAttestations(ZERO);
     verify(scheduledDuties, never()).performAggregation(ZERO);

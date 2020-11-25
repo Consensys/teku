@@ -20,6 +20,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -90,5 +92,37 @@ public class OperationPoolTest {
     when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(true);
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+  }
+
+  @Test
+  void subscribeOperationAdded() {
+    OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
+    OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
+
+    // Set up subscriber
+    final Map<ProposerSlashing, InternalValidationResult> addedSlashings = new HashMap<>();
+    OperationPool.OperationAddedSubscriber<ProposerSlashing> subscriber = addedSlashings::put;
+    pool.subscribeOperationAdded(subscriber);
+
+    ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing3 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing4 = dataStructureUtil.randomProposerSlashing();
+
+    when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(slashing2)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
+    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.REJECT);
+    when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.IGNORE);
+
+    pool.add(slashing1);
+    pool.add(slashing2);
+    pool.add(slashing3);
+    pool.add(slashing4);
+
+    assertThat(addedSlashings.size()).isEqualTo(2);
+    assertThat(addedSlashings).containsKey(slashing1);
+    assertThat(addedSlashings.get(slashing1)).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(addedSlashings).containsKey(slashing2);
+    assertThat(addedSlashings.get(slashing2)).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
   }
 }

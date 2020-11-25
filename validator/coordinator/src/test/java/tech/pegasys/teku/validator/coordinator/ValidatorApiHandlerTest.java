@@ -14,13 +14,13 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
@@ -444,6 +444,21 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void subscribeToBeaconCommittee_shouldUpdateActiveValidatorTrackerWhenNotAggregating() {
+    final int committeeIndex = 10;
+    final UInt64 aggregationSlot = UInt64.valueOf(13);
+    final UInt64 committeesAtSlot = UInt64.valueOf(10);
+    final int validatorIndex = 1;
+    validatorApiHandler.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, false)));
+
+    verifyNoInteractions(attestationTopicSubscriptions);
+    verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
   public void sendSignedAttestation_shouldAddAttestationToAggregatorAndEventBus() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
@@ -510,12 +525,14 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void getValidatorIndices_shouldReturnEmptyMapWhenBestStateNotAvailable() {
+  void getValidatorIndices_shouldThrowExceptionWhenBestStateNotAvailable() {
     when(chainDataClient.getBestState()).thenReturn(Optional.empty());
 
+    // The validator client needs to be able to differentiate between the state not yet being loaded
+    // and the requested validators not existing so it doesn't skip scheduling duties.
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
-        .isCompletedWithValue(emptyMap());
+        .isCompletedExceptionallyWith(IllegalStateException.class);
   }
 
   @Test

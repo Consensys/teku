@@ -88,7 +88,7 @@ BLS_WITHDRAWAL_PREFIX: 0x00
 # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
 GENESIS_DELAY: 300
 # [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 1
+SECONDS_PER_SLOT: 3
 # 2**0 (= 1) slots 6 seconds
 MIN_ATTESTATION_INCLUSION_DELAY: 1
 # [customized] fast epochs
