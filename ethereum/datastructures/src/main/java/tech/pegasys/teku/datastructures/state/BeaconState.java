@@ -76,7 +76,7 @@ public interface BeaconState
   Field ETH1_DEPOSIT_INDEX_FIELD = new Field(10, BasicViewTypes.UINT64_TYPE);
   Field VALIDATORS_FIELD =
       new Field(11, () -> new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT,
-          TypeHints.superBranch(List.of(6, 6, 6, 6, 4, 4))));
+          TypeHints.sszSuperLeaf(8)));
   Field BALANCES_FIELD =
       new Field(
           12,

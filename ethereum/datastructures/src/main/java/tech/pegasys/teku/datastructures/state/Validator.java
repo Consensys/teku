@@ -53,7 +53,7 @@ public class Validator extends AbstractImmutableContainer
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.UINT64_TYPE),
-          Validator::new, TypeHints.sszLeaf());
+          Validator::new);
 
   // BLS public key
   @SuppressWarnings("unused")

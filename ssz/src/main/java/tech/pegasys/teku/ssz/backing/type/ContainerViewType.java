@@ -20,7 +20,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
+import tech.pegasys.teku.ssz.backing.tree.SszNode;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -64,9 +64,9 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
 
   private TreeNode createDefaultTree() {
     if (typeHints.isSszLeaf()) {
-      SszNodeTemplate sszNodeTemplate = SszNodeTemplate.createFromContainerType(this);
+      SszNodeTemplate sszNodeTemplate = SszNodeTemplate.createFromType(this);
       Bytes defaultSsz = sszSerialize(createDefaultCanonicalBinaryTree());
-      return new SszSuperNode(sszNodeTemplate, defaultSsz);
+      return new SszNode(sszNodeTemplate, defaultSsz);
     } else {
       return createDefaultCanonicalBinaryTree();
     }

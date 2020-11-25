@@ -20,56 +20,32 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.TestUtil.TestContainer;
+import tech.pegasys.teku.ssz.TestUtil.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 public class ListViewTest {
 
-  public static class SubContainer extends AbstractImmutableContainer {
-
-    public static final ContainerViewType<SubContainer> TYPE =
-        new ContainerViewType<>(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), SubContainer::new);
-
-    private SubContainer(ContainerViewType<SubContainer> type, TreeNode backingNode) {
-      super(type, backingNode);
-    }
-
-    public SubContainer(UInt64 long1, Bytes32 bytes1) {
-      super(TYPE, new UInt64View(long1), new Bytes32View(bytes1));
-    }
-
-    public UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
-    }
-
-    public Bytes32 getBytes1() {
-      return ((Bytes32View) get(1)).get();
-    }
-  }
-
   @Test
   void clearTest() {
-    ListViewType<SubContainer> type = new ListViewType<>(SubContainer.TYPE, 100);
-    ListViewRead<SubContainer> lr1 = type.getDefault();
-    ListViewWrite<SubContainer> lw1 = lr1.createWritableCopy();
-    lw1.append(new SubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    lw1.append(new SubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    ListViewWrite<SubContainer> lw2 = lw1.commitChanges().createWritableCopy();
+    ListViewType<TestSubContainer> type = new ListViewType<>(TestSubContainer.TYPE, 100);
+    ListViewRead<TestSubContainer> lr1 = type.getDefault();
+    ListViewWrite<TestSubContainer> lw1 = lr1.createWritableCopy();
+    lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
+    lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
+    ListViewWrite<TestSubContainer> lw2 = lw1.commitChanges().createWritableCopy();
     lw2.clear();
-    ListViewRead<SubContainer> lr2 = lw2.commitChanges();
+    ListViewRead<TestSubContainer> lr2 = lw2.commitChanges();
     assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
 
-    ListViewWrite<SubContainer> lw3 = lw1.commitChanges().createWritableCopy();
+    ListViewWrite<TestSubContainer> lw3 = lw1.commitChanges().createWritableCopy();
     lw3.clear();
-    lw3.append(new SubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    ListViewRead<SubContainer> lr3 = lw3.commitChanges();
+    lw3.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
+    ListViewRead<TestSubContainer> lr3 = lw3.commitChanges();
     assertThat(lr3.size()).isEqualTo(1);
   }
 
@@ -210,5 +186,11 @@ public class ListViewTest {
 
   private static Bytes32View bytes32View(long l) {
     return new Bytes32View(Bytes32.leftPad(Bytes.ofUnsignedLong(l)));
+  }
+
+  @Test
+  void sszSuperNodeTest() {
+    ListViewType<Bytes32View> lt1 = new ListViewType<>(TestContainer.TYPE, 10,
+        TypeHints.sszSuperLeaf(2));
   }
 }

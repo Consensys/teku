@@ -233,7 +233,7 @@ public interface TreeNode {
   default TreeNode updated(TreeUpdates newNodes) {
     TreeNode ret = this;
     for (int i = 0; i < newNodes.size(); i++) {
-      ret = ret.updated(newNodes.getGIndex(i), newNodes.getNode(i));
+      ret = ret.updated(newNodes.getRelativeGIndex(i), newNodes.getNode(i));
     }
     return ret;
   }

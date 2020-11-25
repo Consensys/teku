@@ -67,6 +67,11 @@ public class GIndexUtil {
     }
   }
 
+  public static int gIdxGetDepth(long generalizedIndex) {
+    long anchor = Long.highestOneBit(generalizedIndex);
+    return Long.bitCount(anchor - 1);
+  }
+
   public static long gIdxLeftGIndex(long generalizedIndex) {
     return gIdxChildGIndex(generalizedIndex, 0, 1);
   }

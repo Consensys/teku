@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
+import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.SuperLeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -28,16 +30,16 @@ public class VectorViewType<C> extends CollectionViewType {
   private final boolean isListBacking;
   private final TypeHints hints;
 
-  public VectorViewType(ViewType elementType, long maxLength) {
-    this(elementType, maxLength, false);
+  public VectorViewType(ViewType elementType, long vectorLength) {
+    this(elementType, vectorLength, false);
   }
 
-  VectorViewType(ViewType elementType, long maxLength, boolean isListBacking) {
-    this(elementType, maxLength, isListBacking, TypeHints.none());
+  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking) {
+    this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
-  VectorViewType(ViewType elementType, long maxLength, boolean isListBacking, TypeHints hints) {
-    super(maxLength, elementType);
+  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
+    super(vectorLength, elementType);
     this.isListBacking = isListBacking;
     this.hints = hints;
   }
@@ -55,6 +57,12 @@ public class VectorViewType<C> extends CollectionViewType {
       } else if (hints.isSuperBranchNodes()) {
         return TreeUtil.createDefaultSuperTree(
             maxChunks(), TreeUtil.EMPTY_LEAF, hints.getSuperBranchDepths());
+      } else if (hints.getSszSuperLeaf() > 0) {
+        int superNodeDepth = hints.getSszSuperLeaf();
+        SszSuperNode defaultSuperSszNode = new SszSuperNode(superNodeDepth,
+            SszNodeTemplate.createFromType(getElementType()), Bytes.EMPTY);
+        int binaryDepth = treeDepth() - superNodeDepth;
+        return fillTreeWith(binaryDepth, defaultSuperSszNode);
       } else {
         return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
       }
@@ -74,6 +82,14 @@ public class VectorViewType<C> extends CollectionViewType {
       return TreeUtil.createTree(
           Stream.concat(fullZeroNodes, lastZeroNode).collect(Collectors.toList()));
     }
+  }
+
+  private TreeNode fillTreeWith(int depth, TreeNode fillNode) {
+    TreeNode root = fillNode;
+    for (int i = 0; i < depth; i++) {
+      root = TreeNode.createBranchNode(root, root);
+    }
+    return root;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
