@@ -124,7 +124,11 @@ public class SimpleBlockValidator implements BlockValidator {
       throws BlockProcessingException {
     final int proposerIndex = get_beacon_proposer_index(state, signed_block.getSlot());
     final BLSPublicKey proposerPublicKey =
-        ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow(() -> new BlockProcessingException("Public key not found for validator " + proposerIndex));
+        ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "Public key not found for validator " + proposerIndex));
     final Bytes signing_root =
         compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
     try {

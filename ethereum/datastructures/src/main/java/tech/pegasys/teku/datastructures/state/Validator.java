@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
