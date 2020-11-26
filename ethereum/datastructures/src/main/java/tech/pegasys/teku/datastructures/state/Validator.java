@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -56,7 +57,7 @@ public class Validator extends AbstractImmutableContainer
 
   // BLS public key
   @SuppressWarnings("unused")
-  private final BLSPublicKey pubkey = null;
+  private final Bytes48 pubkey = null;
 
   // Withdrawal credentials
   @SuppressWarnings("unused")
@@ -91,7 +92,7 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public Validator(
-      BLSPublicKey pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       UInt64 effective_balance,
       boolean slashed,
@@ -101,7 +102,7 @@ public class Validator extends AbstractImmutableContainer
       UInt64 withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toSSZBytes()),
+        ViewUtils.createVectorFromBytes(pubkey),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         BitView.viewOf(slashed),
@@ -127,7 +128,7 @@ public class Validator extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(getPubkey().get_fixed_parts());
+    fixedPartsList.add(getPubkey());
     fixedPartsList.addAll(
         List.of(
             SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
@@ -155,7 +156,7 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public static Validator create(
-      BLSPublicKey pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       UInt64 effective_balance,
       boolean slashed,
@@ -174,8 +175,17 @@ public class Validator extends AbstractImmutableContainer
         withdrawable_epoch);
   }
 
-  public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromSSZBytes(ViewUtils.getAllBytes(getAny(0)));
+  /**
+   * Returns compressed BLS public key bytes
+   *
+   * <p>{@link BLSPublicKey} instance can be created with {@link
+   * BLSPublicKey#fromBytesCompressed(Bytes48)} method. However this method is pretty 'expensive'
+   * and the preferred way would be to use {@link
+   * tech.pegasys.teku.datastructures.util.ValidatorsUtil#getValidatorPubKey(BeaconState, UInt64)}
+   * if the {@link BeaconState} instance and validator index is available
+   */
+  public Bytes48 getPubkey() {
+    return Bytes48.wrap(ViewUtils.getAllBytes(getAny(0)));
   }
 
   public Bytes32 getWithdrawal_credentials() {

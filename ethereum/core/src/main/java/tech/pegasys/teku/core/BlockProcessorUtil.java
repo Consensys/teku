@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -137,12 +139,12 @@ public final class BlockProcessorUtil {
       throws InvalidSignatureException {
     UInt64 epoch = compute_epoch_at_slot(block.getSlot());
     // Verify RANDAO reveal
-    Validator proposer =
-        state.getValidators().get(toIntExact(block.getProposerIndex().longValue()));
+    final BLSPublicKey proposerPublicKey =
+        ValidatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes signing_root =
         compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
     bls.verifyAndThrow(
-        proposer.getPubkey(),
+        proposerPublicKey,
         signing_root,
         block.getBody().getRandao_reveal(),
         "process_randao: Verify that the provided randao value is valid");

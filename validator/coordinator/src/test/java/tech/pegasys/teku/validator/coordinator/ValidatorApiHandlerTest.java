@@ -227,7 +227,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    final BLSPublicKey validator1Key =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
@@ -242,7 +243,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldAllowOneEpochTolerance() {
     final BeaconState state = createStateWithActiveValidators();
-    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    final BLSPublicKey validator1Key =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
@@ -538,7 +540,8 @@ class ValidatorApiHandlerTest {
   @Test
   void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final BLSPublicKey validator0 = state.getValidators().get(0).getPubkey();
+    final BLSPublicKey validator0 =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(0).getPubkey());
     final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
     when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
 
