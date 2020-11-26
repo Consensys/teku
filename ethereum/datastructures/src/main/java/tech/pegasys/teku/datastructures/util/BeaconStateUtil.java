@@ -73,7 +73,6 @@ import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -135,11 +134,9 @@ public class BeaconStateUtil {
     } else {
       SSZList<Validator> validators = state.getValidators();
 
-      Cache<UInt64, BLSPublicKey> publicKeyCache =
-          BeaconStateCache.getTransitionCaches(state).getValidatorsPubKeys();
       Function<Integer, BLSPublicKey> validatorPubkey =
-          index ->
-              publicKeyCache.get(UInt64.valueOf(index), i -> validators.get(index).getPubkey());
+          index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
@@ -192,7 +189,7 @@ public class BeaconStateUtil {
             .minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT))
             .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
     return new Validator(
-        deposit.getData().getPubkey(),
+        deposit.getData().getPubkey().toBytesCompressed(),
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,
