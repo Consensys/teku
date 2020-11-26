@@ -28,8 +28,7 @@ public class WeakSubjectivityOptions {
       paramLabel = "<STRING>",
       description =
           "The initial state. This value should be a file or URL pointing to an SSZ encoded state.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private String weakSubjectivityState;
 
   @CommandLine.Option(
