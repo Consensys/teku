@@ -129,7 +129,7 @@ public class Validator extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(Collections.singleton(getPubkey()));
+    fixedPartsList.add(getPubkey());
     fixedPartsList.addAll(
         List.of(
             SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
