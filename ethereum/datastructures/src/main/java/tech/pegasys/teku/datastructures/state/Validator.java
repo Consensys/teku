@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -129,7 +128,7 @@ public class Validator extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(Collections.singleton(getPubkey()));
+    fixedPartsList.add(getPubkey());
     fixedPartsList.addAll(
         List.of(
             SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
