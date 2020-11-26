@@ -201,6 +201,7 @@ public class BeaconRestApi {
               config.defaultContentType = "application/json";
               config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
+              config.enableCorsForAllOrigins();
             });
     initialize(dataProvider, configuration, eventChannels, asyncRunner);
   }
