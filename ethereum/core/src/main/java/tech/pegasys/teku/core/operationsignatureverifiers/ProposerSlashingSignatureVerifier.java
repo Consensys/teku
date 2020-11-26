@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_sign
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -38,8 +39,13 @@ public class ProposerSlashingSignatureVerifier {
 
     final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
-    BLSPublicKey publicKey =
-        ValidatorsUtil.getValidatorPubKey(state, header1.getProposerIndex()).orElseThrow();
+
+    Optional<BLSPublicKey> maybePublicKey =
+        ValidatorsUtil.getValidatorPubKey(state, header1.getProposerIndex());
+    if (maybePublicKey.isEmpty()) {
+      return false;
+    }
+    BLSPublicKey publicKey = maybePublicKey.get();
 
     if (!signatureVerifier.verify(
         publicKey,
