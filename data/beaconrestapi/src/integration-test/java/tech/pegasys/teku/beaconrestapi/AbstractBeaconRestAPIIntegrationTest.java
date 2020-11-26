@@ -32,20 +32,25 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 /** @deprecated - use {@link AbstractDataBackedRestAPIIntegrationTest} */
 @Deprecated
+@SuppressWarnings("unchecked")
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
   static final GlobalConfiguration config =
@@ -62,9 +67,12 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
   protected StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected RecentChainData recentChainData = mock(RecentChainData.class);
-  protected final SyncService syncService = mock(SyncService.class);
+  protected final ForwardSync syncService = mock(ForwardSync.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
@@ -82,7 +90,10 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            attestationPool);
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool);
 
     beaconRestApi =
         new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);

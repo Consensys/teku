@@ -29,19 +29,41 @@ public class ProtoArray {
 
   private UInt64 justifiedEpoch;
   private UInt64 finalizedEpoch;
+  // The epoch of our initial startup state
+  // When starting from genesis, this value is zero (genesis epoch)
+  private final UInt64 initialEpoch;
 
+  /**
+   * Lists all the known nodes. It is guaranteed that a node will be after its parent in the list.
+   *
+   * <p>The list may contain nodes which have been removed from the indices collection either
+   * because they are now before the finalized checkpoint but pruning has not yet occurred or
+   * because they extended from a now-invalid chain and were removed. This avoids having to update
+   * the indices to entries in the list too often.
+   */
   private final List<ProtoNode> nodes;
+
+  /**
+   * Maps block roots to the index of their node in the {@link #nodes} list. Nodes which are present
+   * in this map are guaranteed to be present in the nodes list, but the nodes list may contain
+   * additional nodes, not present in this map.
+   *
+   * <p>The {@link #removeBlockRoot(Bytes32)} method removes blocks from this map but does not
+   * change the nodes list to avoid having to adjust all indices.
+   */
   private final Map<Bytes32, Integer> indices;
 
   public ProtoArray(
       int pruneThreshold,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
+      UInt64 initialEpoch,
       List<ProtoNode> nodes,
       Map<Bytes32, Integer> indices) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
+    this.initialEpoch = initialEpoch;
     this.nodes = nodes;
     this.indices = indices;
   }
@@ -79,7 +101,7 @@ public class ProtoArray {
       return;
     }
 
-    int nodeIndex = nodes.size();
+    int nodeIndex = getTotalTrackedNodeCount();
 
     ProtoNode node =
         new ProtoNode(
@@ -152,7 +174,7 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    checkArgument(deltas.size() == indices.size(), "ProtoArray: Invalid delta length");
+    checkArgument(deltas.size() == getTotalTrackedNodeCount(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
@@ -161,7 +183,7 @@ public class ProtoArray {
     }
 
     // Iterate backwards through all indices in `this.nodes`.
-    for (int nodeIndex = nodes.size() - 1; nodeIndex >= 0; nodeIndex--) {
+    for (int nodeIndex = getTotalTrackedNodeCount() - 1; nodeIndex >= 0; nodeIndex--) {
       ProtoNode node = nodes.get(nodeIndex);
 
       // There is no need to adjust the balances or manage parent of the zero hash since it
@@ -180,6 +202,10 @@ public class ProtoArray {
         maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
       }
     }
+  }
+
+  public int getTotalTrackedNodeCount() {
+    return nodes.size();
   }
 
   /**
@@ -384,9 +410,9 @@ public class ProtoArray {
    * @param node
    * @return
    */
-  private boolean nodeIsViableForHead(ProtoNode node) {
-    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(UInt64.ZERO))
-        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(UInt64.ZERO));
+  public boolean nodeIsViableForHead(ProtoNode node) {
+    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(initialEpoch))
+        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(initialEpoch));
   }
 
   public UInt64 getJustifiedEpoch() {
@@ -395,5 +421,21 @@ public class ProtoArray {
 
   public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
+  }
+
+  public UInt64 getInitialEpoch() {
+    return initialEpoch;
+  }
+
+  /**
+   * Removes a block root from the lookup map. The actual node is not removed from the protoarray to
+   * avoid recalculating indices. As a result, looking up the block by root will not find it but it
+   * may still be "found" when iterating through all nodes or following links to parent or ancestor
+   * nodes.
+   *
+   * @param blockRoot the block root to remove from the lookup map.
+   */
+  public void removeBlockRoot(final Bytes32 blockRoot) {
+    indices.remove(blockRoot);
   }
 }

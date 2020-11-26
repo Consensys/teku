@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
@@ -24,6 +25,7 @@ import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.validate
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -132,5 +134,35 @@ public class SingleQueryParameterUtilsTest {
     Map<String, List<String>> data = Map.of(KEY, List.of(signature.toHexString()));
     BLSSignature result = getParameterValueAsBLSSignature(data, KEY);
     assertEquals(signature, result);
+  }
+
+  @Test
+  public void getParameterAsBytes32IfPresent_houldReturnEmptyIfNotPresent() {
+    assertThat(SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(Map.of(), "t"))
+        .isEmpty();
+  }
+
+  @Test
+  public void getParameterAsBytes32IfPresent_shouldReturnData() {
+    Bytes32 bytes32 = Bytes32.random();
+    assertThat(
+            SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(
+                Map.of("t", List.of(bytes32.toHexString())), "t"))
+        .isEqualTo(Optional.of(bytes32));
+  }
+
+  @Test
+  public void getParameterAsUInt64IfPresent_shouldReturnEmptyIfNotPresent() {
+    assertThat(SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(Map.of(), "t"))
+        .isEmpty();
+  }
+
+  @Test
+  public void getParameterAsUInt64IfPresent_shouldReturnData() {
+    final UInt64 value = UInt64.valueOf("123456");
+    assertThat(
+            SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(
+                Map.of("t", List.of(value.toString())), "t"))
+        .isEqualTo(Optional.of(value));
   }
 }

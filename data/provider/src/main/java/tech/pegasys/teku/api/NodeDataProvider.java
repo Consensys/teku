@@ -13,17 +13,78 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttesterSlashing;
+import tech.pegasys.teku.api.schema.ProposerSlashing;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class NodeDataProvider {
 
   private final AggregatingAttestationPool attestationPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+      attesterSlashingPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+      proposerSlashingPool;
+  private final OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+      voluntaryExitPool;
 
-  public NodeDataProvider(final AggregatingAttestationPool attestationPool) {
+  public NodeDataProvider(
+      AggregatingAttestationPool attestationPool,
+      OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+          attesterSlashingsPool,
+      OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+          proposerSlashingPool,
+      OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+          voluntaryExitPool) {
     this.attestationPool = attestationPool;
+    this.attesterSlashingPool = attesterSlashingsPool;
+    this.proposerSlashingPool = proposerSlashingPool;
+    this.voluntaryExitPool = voluntaryExitPool;
   }
 
-  public int getAttestationPoolSize() {
-    return attestationPool.getSize();
+  public List<Attestation> getAttestations(
+      Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
+    return attestationPool
+        .getAttestations(maybeSlot, maybeCommitteeIndex)
+        .map(Attestation::new)
+        .collect(Collectors.toList());
+  }
+
+  public List<AttesterSlashing> getAttesterSlashings() {
+    return attesterSlashingPool.getAll().stream()
+        .map(AttesterSlashing::new)
+        .collect(Collectors.toList());
+  }
+
+  public List<ProposerSlashing> getProposerSlashings() {
+    return proposerSlashingPool.getAll().stream()
+        .map(ProposerSlashing::new)
+        .collect(Collectors.toList());
+  }
+
+  public List<SignedVoluntaryExit> getVoluntaryExits() {
+    return voluntaryExitPool.getAll().stream()
+        .map(SignedVoluntaryExit::new)
+        .collect(Collectors.toList());
+  }
+
+  public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
+    return voluntaryExitPool.add(exit.asInternalSignedVoluntaryExit());
+  }
+
+  public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
+    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing());
+  }
+
+  public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
+    return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
   }
 }

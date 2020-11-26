@@ -23,6 +23,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 class TestStoreImpl implements MutableStore {
   protected UInt64 time;
   protected UInt64 genesis_time;
+  protected final Optional<Checkpoint> initialCheckpoint;
   protected Checkpoint justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
   protected Checkpoint best_justified_checkpoint;
@@ -43,6 +46,7 @@ class TestStoreImpl implements MutableStore {
   TestStoreImpl(
       final UInt64 time,
       final UInt64 genesis_time,
+      final Optional<Checkpoint> initialCheckpoint,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
@@ -52,6 +56,7 @@ class TestStoreImpl implements MutableStore {
       final Map<UInt64, VoteTracker> votes) {
     this.time = time;
     this.genesis_time = genesis_time;
+    this.initialCheckpoint = initialCheckpoint;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
@@ -73,6 +78,11 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
+  public Optional<Checkpoint> getInitialCheckpoint() {
+    return initialCheckpoint;
+  }
+
+  @Override
   public Checkpoint getJustifiedCheckpoint() {
     return justified_checkpoint;
   }
@@ -88,10 +98,10 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+  public AnchorPoint getLatestFinalized() {
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
     final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
-    return new SignedBlockAndState(block, state);
+    return AnchorPoint.create(finalized_checkpoint, block, state);
   }
 
   @Override
@@ -115,11 +125,6 @@ class TestStoreImpl implements MutableStore {
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     return blocks.containsKey(blockRoot);
-  }
-
-  @Override
-  public Set<Bytes32> getBlockRoots() {
-    return blocks.keySet();
   }
 
   @Override
@@ -165,6 +170,12 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
+      final Bytes32 blockRoot) {
+    return retrieveBlockAndState(blockRoot).thenApply(res -> res.map(a -> a));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
   }
@@ -178,7 +189,7 @@ class TestStoreImpl implements MutableStore {
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    return SafeFuture.completedFuture(new CheckpointState(finalized_checkpoint, block, state));
+    return SafeFuture.completedFuture(CheckpointState.create(finalized_checkpoint, block, state));
   }
 
   @Override
@@ -241,5 +252,13 @@ class TestStoreImpl implements MutableStore {
     }
     this.votes.put(validatorIndex, vote);
     return vote;
+  }
+
+  @Override
+  public Bytes32 applyForkChoiceScoreChanges(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+    throw new UnsupportedOperationException("Not implemented");
   }
 }

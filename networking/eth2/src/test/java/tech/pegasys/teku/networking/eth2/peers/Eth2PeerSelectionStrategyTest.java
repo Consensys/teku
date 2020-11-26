@@ -36,13 +36,13 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy.Shuffler;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 class Eth2PeerSelectionStrategyTest {

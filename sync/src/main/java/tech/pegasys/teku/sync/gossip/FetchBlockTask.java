@@ -86,7 +86,11 @@ class FetchBlockTask {
     numberOfRuns.incrementAndGet();
     queriedPeers.add(peer.getId());
     return peer.requestBlockByRoot(blockRoot)
-        .thenApply(FetchBlockResult::createSuccessful)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock
+                    .map(FetchBlockResult::createSuccessful)
+                    .orElseGet(() -> FetchBlockResult.createFailed(Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
               LOG.debug("Failed to fetch block " + blockRoot, err);

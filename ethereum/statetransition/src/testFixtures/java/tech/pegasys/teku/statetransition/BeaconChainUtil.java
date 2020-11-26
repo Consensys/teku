@@ -28,11 +28,10 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -192,7 +191,7 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final Optional<BeaconState> preState =
-        recentChainData.retrieveBlockState(block.getParent_root()).join();
+        recentChainData.retrieveBlockState(block.getParentRoot()).join();
     final BlockImportResult importResult = forkChoice.onBlock(block, preState).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
@@ -203,7 +202,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead(slot, false);
+    forkChoice.processHead(slot);
     return importResult.getBlock();
   }
 
@@ -244,12 +243,10 @@ public class BeaconChainUtil {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
-    final BeaconBlockAndState bestBlockAndState =
-        recentChainData.getHeadBlockAndState().orElseThrow();
+    final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
-    final BeaconBlock bestBlock = bestBlockAndState.getBlock();
     final BeaconState preState = bestBlockAndState.getState();
-    checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
+    checkArgument(bestBlockAndState.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
     final int proposerIndex =
@@ -270,14 +267,11 @@ public class BeaconChainUtil {
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
-      BeaconState headState =
-          recentChainData.getHeadBlockAndState().map(BeaconBlockAndState::getState).orElseThrow();
-      BeaconBlock headBlock =
-          recentChainData.getHeadBlock().map(SignedBeaconBlock::getMessage).orElseThrow();
+      StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
       UInt64 slot = recentChainData.getHeadSlot();
       SSZList<Attestation> currentSlotAssignments =
           SSZList.createMutable(
-              attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
+              attestationGenerator.getAttestationsForSlot(head, slot),
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(

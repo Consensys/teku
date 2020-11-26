@@ -46,14 +46,15 @@ import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
-import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.VoluntaryExitCommand;
 import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
+import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -66,7 +67,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @SuppressWarnings("unused")
 @Command(
@@ -81,7 +81,8 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
       ValidatorClientCommand.class,
-      DepositCommand.class,
+      VoluntaryExitCommand.class,
+      InternalToolsCommand.class,
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -131,7 +132,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
       names = {"-c", CONFIG_FILE_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Path/filename of the yaml config file (default: none)",
-      arity = "1")
+      arity = "1",
+      // Available to all subcommands
+      scope = ScopeType.INHERIT)
   private File configFile;
 
   @Mixin(name = "Network")
@@ -322,11 +325,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-
-      builder.globalConfig(this::buildGlobalConfiguration);
-      weakSubjectivityOptions.configure(builder);
+      builder.globalConfig(globalBuilder -> buildGlobalConfiguration(globalBuilder));
+      weakSubjectivityOptions.configure(builder, networkOptions.getNetwork());
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
+      p2POptions.configure(builder, networkOptions.getNetwork());
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -336,28 +339,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
-        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setNetwork(networkOptions.getNetwork())
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
         .setPeerRateLimit(networkOptions.getPeerRateLimit())
         .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
-        .setP2pEnabled(p2POptions.isP2pEnabled())
-        .setP2pInterface(p2POptions.getP2pInterface())
-        .setP2pPort(p2POptions.getP2pPort())
-        .setP2pDiscoveryEnabled(p2POptions.isP2pDiscoveryEnabled())
-        .setP2pDiscoveryBootnodes(p2POptions.getP2pDiscoveryBootnodes())
-        .setP2pAdvertisedIp(p2POptions.getP2pAdvertisedIp())
-        .setP2pAdvertisedPort(p2POptions.getP2pAdvertisedPort())
-        .setP2pPrivateKeyFile(p2POptions.getP2pPrivateKeyFile())
-        .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
-        .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
-        .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
-        .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
-        .setMultiPeerSyncEnabled(p2POptions.isMultiPeerSyncEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
@@ -367,7 +356,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFile(loggingOptions.getLogFile())
         .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
@@ -390,6 +378,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist());
+
+    String logFile =
+        loggingOptions
+            .getMaybeLogFile()
+            .orElse(
+                LoggingOptions.getDefaultLogFileGivenDataDir(
+                    dataOptions.getDataBasePath().toString(), false));
+    builder.setLogFile(logFile);
   }
 
   @FunctionalInterface

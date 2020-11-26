@@ -24,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
@@ -72,11 +71,7 @@ public class BlstBLS12381 implements BLS12381 {
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, Bytes dst) {
     if (secretKey.isZero()) {
-      if (BLSConstants.VALID_INFINITY) {
-        return BlstSignature.INFINITY;
-      } else {
-        throw new IllegalArgumentException("Signing with zero private key is prohibited");
-      }
+      throw new IllegalArgumentException("Signing with zero private key is prohibited");
     }
 
     p2 hash = HashToCurve.hashToG2(message, dst);
@@ -99,7 +94,7 @@ public class BlstBLS12381 implements BLS12381 {
 
   public static boolean verify(
       BlstPublicKey publicKey, Bytes message, BlstSignature signature, Bytes dst) {
-    if (!BLSConstants.VALID_INFINITY && publicKey.isInfinity()) {
+    if (publicKey.isInfinity()) {
       return false;
     }
 
@@ -141,13 +136,13 @@ public class BlstBLS12381 implements BLS12381 {
   @Override
   public BlstPublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
     return BlstPublicKey.aggregate(
-        publicKeys.stream().map(k -> (BlstPublicKey) k).collect(Collectors.toList()));
+        publicKeys.stream().map(BlstPublicKey::fromPublicKey).collect(Collectors.toList()));
   }
 
   @Override
   public BlstSignature aggregateSignatures(List<? extends Signature> signatures) {
     return BlstSignature.aggregate(
-        signatures.stream().map(s -> (BlstSignature) s).collect(Collectors.toList()));
+        signatures.stream().map(BlstSignature::fromSignature).collect(Collectors.toList()));
   }
 
   @Override
@@ -155,8 +150,8 @@ public class BlstBLS12381 implements BLS12381 {
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
-    BlstSignature blstSignature = (BlstSignature) signature;
-    if (!BLSConstants.VALID_INFINITY && aggrPubKey.isInfinity()) {
+    BlstSignature blstSignature = BlstSignature.fromSignature(signature);
+    if (aggrPubKey.isInfinity()) {
       return new BlstInfiniteSemiAggregate(false);
     }
 

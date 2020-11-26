@@ -207,6 +207,7 @@ class AggregatingAttestationPoolTest {
     final Attestation preserveAttestation =
         addAttestationFromValidators(preserveAttestationData, 2);
 
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
@@ -217,6 +218,7 @@ class AggregatingAttestationPoolTest {
             aggregatingPool.getAttestationsForBlock(
                 dataStructureUtil.randomBeaconState(), forkChecker))
         .containsOnly(preserveAttestation);
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
   @Test
@@ -242,7 +244,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
     final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidateableAttestation.fromAttestation(attestation));
+    aggregatingPool.add(ValidateableAttestation.from(attestation));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -304,14 +306,57 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation2);
   }
 
+  @Test
+  public void getAttestations_shouldReturnAllAttestations() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3);
+    assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
+        .containsExactly(attestation);
+  }
+
+  @Test
+  public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly() {
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData2 =
+        new AttestationData(
+            attestationData1.getSlot(),
+            attestationData1.getIndex().plus(1),
+            attestationData1.getBeacon_block_root(),
+            attestationData1.getSource(),
+            attestationData1.getTarget());
+    Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    addAttestationFromValidators(attestationData2, 4, 5, 6);
+    assertThat(
+            aggregatingPool.getAttestations(
+                Optional.empty(), Optional.of(attestationData1.getIndex())))
+        .containsExactly(attestation1);
+  }
+
+  @Test
+  public void getAttestations_shouldReturnAttestationsForGivenSlotOnly() {
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData2 =
+        new AttestationData(
+            attestationData1.getSlot().plus(1),
+            attestationData1.getIndex(),
+            attestationData1.getBeacon_block_root(),
+            attestationData1.getSource(),
+            attestationData1.getTarget());
+    Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    addAttestationFromValidators(attestationData2, 4, 5, 6);
+    assertThat(
+            aggregatingPool.getAttestations(
+                Optional.of(attestationData1.getSlot()), Optional.empty()))
+        .containsExactly(attestation1);
+  }
+
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
     final Bitlist bitlist = new Bitlist(20, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(bitlist::setBit);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
-    ValidateableAttestation validateableAttestation =
-        ValidateableAttestation.fromAttestation(attestation);
+    ValidateableAttestation validateableAttestation = ValidateableAttestation.from(attestation);
     validateableAttestation.saveCommitteeShufflingSeed(
         dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validateableAttestation);

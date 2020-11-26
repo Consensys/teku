@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
+import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class ValidatorConfig {
 
@@ -33,10 +34,11 @@ public class ValidatorConfig {
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
   private final List<BLSPublicKey> validatorExternalSignerPublicKeys;
+  private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
   private final Bytes32 graffiti;
-  private final boolean validatorPerformanceTrackingEnabled;
+  private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
 
@@ -49,8 +51,9 @@ public class ValidatorConfig {
       final int validatorExternalSignerTimeout,
       final Optional<URI> beaconNodeApiEndpoint,
       final Bytes32 graffiti,
-      final boolean validatorPerformanceTrackingEnabled,
-      final boolean validatorKeystoreLockingEnabled) {
+      final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
+      final boolean validatorKeystoreLockingEnabled,
+      final boolean validatorExternalSignerSlashingProtectionEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -58,17 +61,19 @@ public class ValidatorConfig {
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.graffiti = graffiti;
-    this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
+    this.validatorExternalSignerSlashingProtectionEnabled =
+        validatorExternalSignerSlashingProtectionEnabled;
   }
 
   public static Builder builder() {
     return new Builder();
   }
 
-  public boolean isValidatorPerformanceTrackingEnabled() {
-    return validatorPerformanceTrackingEnabled;
+  public ValidatorPerformanceTrackingMode getValidatorPerformanceTrackingMode() {
+    return validatorPerformanceTrackingMode;
   }
 
   public boolean isValidatorKeystoreLockingEnabled() {
@@ -85,6 +90,10 @@ public class ValidatorConfig {
 
   public List<BLSPublicKey> getValidatorExternalSignerPublicKeys() {
     return validatorExternalSignerPublicKeys;
+  }
+
+  public boolean isValidatorExternalSignerSlashingProtectionEnabled() {
+    return validatorExternalSignerSlashingProtectionEnabled;
   }
 
   public URL getValidatorExternalSignerUrl() {
@@ -126,11 +135,12 @@ public class ValidatorConfig {
     private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
-    private int validatorExternalSignerTimeout;
+    private int validatorExternalSignerTimeout = 1000;
     private Bytes32 graffiti;
-    private boolean validatorPerformanceTrackingEnabled;
+    private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
+    private boolean validatorExternalSignerSlashingProtectionEnabled = true;
 
     private Builder() {}
 
@@ -160,6 +170,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorExternalSignerSlashingProtectionEnabled(
+        final boolean validatorExternalSignerSlashingProtectionEnabled) {
+      this.validatorExternalSignerSlashingProtectionEnabled =
+          validatorExternalSignerSlashingProtectionEnabled;
+      return this;
+    }
+
     public Builder validatorExternalSignerTimeout(int validatorExternalSignerTimeout) {
       this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
       return this;
@@ -175,9 +192,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorPerformanceTrackingEnabled(
-        boolean validatorPerformanceTrackingEnabled) {
-      this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
+    public Builder validatorPerformanceTrackingMode(
+        ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode) {
+      this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
       return this;
     }
 
@@ -197,8 +214,9 @@ public class ValidatorConfig {
           validatorExternalSignerTimeout,
           beaconNodeApiEndpoint,
           graffiti,
-          validatorPerformanceTrackingEnabled,
-          validatorKeystoreLockingEnabled);
+          validatorPerformanceTrackingMode,
+          validatorKeystoreLockingEnabled,
+          validatorExternalSignerSlashingProtectionEnabled);
     }
 
     private void validateKeyStoreFilesAndPasswordFilesConfig() {

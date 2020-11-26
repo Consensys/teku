@@ -20,10 +20,9 @@ import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
@@ -49,7 +47,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         metricsSystem,
         storeConfig,
         BlockProvider.NOOP,
-        StateAndBlockProvider.NOOP,
+        StateAndBlockSummaryProvider.NOOP,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
@@ -71,21 +69,10 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     return builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
   }
 
-  public static RecentChainData createWithStore(
-      final EventBus eventBus,
-      final ChainHeadChannel chainHeadChannel,
-      final UpdatableStore store) {
-    final RecentChainData recentChainData =
-        builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
-    recentChainData.setStore(store);
-    return recentChainData;
-  }
-
   public static class Builder {
     private StoreConfig storeConfig = StoreConfig.createDefault();
     private EventBus eventBus = new EventBus();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-    private ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
@@ -97,7 +84,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storeConfig,
           eventBus,
           storageUpdateChannel,
-          protoArrayStorageChannel,
+          ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
           chainHeadChannel);
     }

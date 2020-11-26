@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.core.operationsignatureverifiers;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -26,7 +26,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 
 public class ProposerSlashingSignatureVerifier {
 
@@ -39,12 +39,13 @@ public class ProposerSlashingSignatureVerifier {
 
     final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
-    BLSPublicKey publicKey =
-        BeaconStateCache.getTransitionCaches(state)
-            .getValidatorsPubKeys()
-            .get(
-                header1.getProposer_index(),
-                idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
+
+    Optional<BLSPublicKey> maybePublicKey =
+        ValidatorsUtil.getValidatorPubKey(state, header1.getProposerIndex());
+    if (maybePublicKey.isEmpty()) {
+      return false;
+    }
+    BLSPublicKey publicKey = maybePublicKey.get();
 
     if (!signatureVerifier.verify(
         publicKey,

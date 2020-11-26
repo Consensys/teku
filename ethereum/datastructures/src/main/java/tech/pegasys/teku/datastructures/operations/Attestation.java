@@ -56,8 +56,12 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public Attestation() {
-    this.aggregation_bits =
-        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.aggregation_bits = createEmptyAggregationBits();
+  }
+
+  public static Bitlist createEmptyAggregationBits() {
+    return new Bitlist(
+        Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing() {

@@ -19,6 +19,7 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
+import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.Unpooled;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -26,8 +27,11 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
@@ -44,16 +48,29 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   private final PubsubPublisherApi publisher;
   private final TopicHandler handler;
   private final Set<Bytes> processedMessages = LimitedSet.create(MAX_SENT_MESSAGES);
+  private final Counter messageCounter;
 
   public GossipHandler(
-      final Topic topic, final PubsubPublisherApi publisher, final TopicHandler handler) {
+      final MetricsSystem metricsSystem,
+      final Topic topic,
+      final PubsubPublisherApi publisher,
+      final TopicHandler handler) {
     this.topic = topic;
     this.publisher = publisher;
     this.handler = handler;
+    this.messageCounter =
+        metricsSystem
+            .createLabelledCounter(
+                TekuMetricCategory.LIBP2P,
+                "gossip_messages_total",
+                "Total number of gossip messages received (avoid libp2p deduplication)",
+                "topic")
+            .labels(topic.getTopic());
   }
 
   @Override
   public SafeFuture<ValidationResult> apply(final MessageApi message) {
+    messageCounter.inc();
     final int messageSize = message.getData().readableBytes();
     if (messageSize > GOSSIP_MAX_SIZE) {
       LOG.trace(
@@ -72,7 +89,13 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
-    return handler.handleMessage(bytes);
+    PubsubMessage pubsubMessage = message.getOriginalMessage();
+    if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
+      throw new IllegalArgumentException(
+          "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
+    }
+    PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
+    return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
   public void gossip(Bytes bytes) {

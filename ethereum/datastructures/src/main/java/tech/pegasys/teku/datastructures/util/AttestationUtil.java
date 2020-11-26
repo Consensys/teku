@@ -36,7 +36,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -127,6 +128,29 @@ public class AttestationUtil {
     return new ArrayList<>(attesting_indices);
   }
 
+  public static AttestationProcessingResult is_valid_indexed_attestation(
+      BeaconState state, ValidateableAttestation attestation) {
+    if (attestation.isValidIndexedAttestation()) {
+      return AttestationProcessingResult.SUCCESSFUL;
+    } else {
+      try {
+        IndexedAttestation indexedAttestation =
+            get_indexed_attestation(state, attestation.getAttestation());
+        attestation.setIndexedAttestation(indexedAttestation);
+        AttestationProcessingResult result =
+            is_valid_indexed_attestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+        if (result.isSuccessful()) {
+          attestation.saveCommitteeShufflingSeed(state);
+          attestation.setValidIndexedAttestation();
+        }
+        return result;
+      } catch (IllegalArgumentException e) {
+        LOG.debug("on_attestation: Attestation is not valid: ", e);
+        return AttestationProcessingResult.invalid(e.getMessage());
+      }
+    }
+  }
+
   /**
    * Verify validity of ``indexed_attestation``.
    *
@@ -211,14 +235,14 @@ public class AttestationUtil {
 
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(
-      UInt64 slot, BeaconState state, BeaconBlock block, final UInt64 committeeIndex) {
+      UInt64 slot, BeaconState state, BeaconBlockSummary block, final UInt64 committeeIndex) {
     UInt64 epoch = compute_epoch_at_slot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beacon_block_root = block.hash_tree_root();
+    Bytes32 beacon_block_root = block.getRoot();
     UInt64 start_slot = compute_start_slot_at_epoch(epoch);
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
-            ? block.hash_tree_root()
+            ? block.getRoot()
             : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);

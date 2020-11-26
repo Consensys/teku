@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Collection;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
@@ -26,10 +28,15 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public void onGenesis(AnchorPoint genesis) {}
+  public void onChainInitialized(AnchorPoint initialAnchor) {}
 }

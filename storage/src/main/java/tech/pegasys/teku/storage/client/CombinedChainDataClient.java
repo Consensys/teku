@@ -32,9 +32,12 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -187,7 +190,7 @@ public class CombinedChainDataClient {
         .thenApply(
             checkpointState -> {
               final SignedBeaconBlock block = latestBlockAndState.getBlock();
-              return new CheckpointState(checkpoint, block, checkpointState.orElseThrow());
+              return CheckpointState.create(checkpoint, block, checkpointState.orElseThrow());
             });
   }
 
@@ -382,6 +385,11 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
+  /** @return The earliest available block's slot */
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return historicalChainData.getEarliestAvailableBlockSlot();
+  }
+
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return recentChainData
         .retrieveSignedBlockByRoot(blockRoot)
@@ -413,7 +421,43 @@ public class CombinedChainDataClient {
         .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
   }
 
+  public Optional<SignedBeaconBlock> getFinalizedBlock() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return getStore().getLatestFinalized().getSignedBeaconBlock();
+  }
+
+  public Optional<BeaconState> getFinalizedState() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalized().getState());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getJustifiedState() {
+    if (recentChainData.isPreGenesis()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
+  }
+
   public Optional<GenesisData> getGenesisData() {
     return recentChainData.getGenesisData();
+  }
+
+  public SafeFuture<Optional<BeaconBlockSummary>> getEarliestAvailableBlockSummary() {
+    // Pull the latest finalized first, so that we're sure to return a consistent result if the
+    // Store is updated while we're pulling historical data
+    final Optional<BeaconBlockSummary> latestFinalized =
+        Optional.ofNullable(getStore())
+            .map(ReadOnlyStore::getLatestFinalized)
+            .map(StateAndBlockSummary::getBlockSummary);
+
+    return historicalChainData
+        .getEarliestAvailableBlock()
+        .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 }

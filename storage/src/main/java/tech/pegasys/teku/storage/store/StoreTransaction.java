@@ -17,15 +17,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,8 +35,9 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -135,15 +137,31 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return vote;
   }
 
+  @Override
+  public Bytes32 applyForkChoiceScoreChanges(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
+
+    // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
+    // protoArray lock first, and may deadlock when it later needs to get votes which requires the
+    // store lock.
+    lock.writeLock().lock();
+    try {
+      return store
+          .getForkChoiceStrategy()
+          .findHead(this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
   @CheckReturnValue
   @Override
   public SafeFuture<Void> commit() {
-    return retrieveBlockAndState(getFinalizedCheckpoint().getRoot())
+    return retrieveLatestFinalized()
         .thenCompose(
-            maybeLatestFinalized -> {
-              final SignedBlockAndState latestFinalized =
-                  maybeLatestFinalized.orElseThrow(
-                      () -> new IllegalStateException("Missing latest finalized block and state"));
+            latestFinalized -> {
               final StoreTransactionUpdates updates;
               // Lock so that we have a consistent view while calculating our updates
               final Lock writeLock = lock.writeLock();
@@ -189,6 +207,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<Checkpoint> getInitialCheckpoint() {
+    return store.getInitialCheckpoint();
+  }
+
+  @Override
   public Checkpoint getJustifiedCheckpoint() {
     return justified_checkpoint.orElseGet(store::getJustifiedCheckpoint);
   }
@@ -199,18 +222,36 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+  public AnchorPoint getLatestFinalized() {
     if (finalized_checkpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
       // unlikely to call this on tx objects
-      return retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      final SignedBlockAndState finalizedBlockAndState =
+          retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      return AnchorPoint.create(finalized_checkpoint.get(), finalizedBlockAndState);
     }
-    return store.getLatestFinalizedBlockAndState();
+    return store.getLatestFinalized();
+  }
+
+  private SafeFuture<AnchorPoint> retrieveLatestFinalized() {
+    if (finalized_checkpoint.isPresent()) {
+      final Checkpoint finalizedCheckpoint = finalized_checkpoint.get();
+      return retrieveBlockAndState(finalized_checkpoint.get().getRoot())
+          .thenApply(
+              blockAndState ->
+                  AnchorPoint.create(
+                      finalizedCheckpoint,
+                      blockAndState.orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "Missing latest finalized block and state"))));
+    }
+    return SafeFuture.completedFuture(store.getLatestFinalized());
   }
 
   @Override
   public UInt64 getLatestFinalizedBlockSlot() {
-    return getLatestFinalizedBlockAndState().getSlot();
+    return getLatestFinalized().getBlockSlot();
   }
 
   @Override
@@ -224,23 +265,22 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Set<Bytes32> getBlockRoots() {
-    return Sets.union(blockAndStates.keySet(), store.getBlockRoots());
-  }
-
-  @Override
-  public List<Bytes32> getOrderedBlockRoots() {
+  public Collection<Bytes32> getOrderedBlockRoots() {
     if (this.blockAndStates.isEmpty()) {
       return store.getOrderedBlockRoots();
     }
 
     lock.readLock().lock();
     try {
-      final HashTree.Builder treeBuilder = store.blockTree.getHashTree().updater();
-      this.blockAndStates.values().stream()
-          .map(SignedBlockAndState::getBlock)
-          .forEach(treeBuilder::block);
-      return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
+      final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
+      store.blockMetadata.processAllInOrder(
+          (root, slot, parent) -> blockRootsBySlot.put(slot, root));
+      this.blockAndStates
+          .values()
+          .forEach(
+              blockAndState ->
+                  blockRootsBySlot.put(blockAndState.getSlot(), blockAndState.getRoot()));
+      return blockRootsBySlot.values();
     } finally {
       lock.readLock().unlock();
     }
@@ -269,6 +309,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       return SafeFuture.completedFuture(Optional.of(result));
     }
     return store.retrieveBlockAndState(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
+      final Bytes32 blockRoot) {
+    if (blockAndStates.containsKey(blockRoot)) {
+      final StateAndBlockSummary result = blockAndStates.get(blockRoot);
+      return SafeFuture.completedFuture(Optional.of(result));
+    }
+    return store.retrieveStateAndBlockSummary(blockRoot);
   }
 
   @Override
@@ -313,7 +363,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 return store.retrieveFinalizedCheckpointAndState();
               } else {
                 return SafeFuture.completedFuture(
-                    new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
+                    CheckpointState.create(finalizedCheckpoint, block.get(), state.get()));
               }
             });
   }

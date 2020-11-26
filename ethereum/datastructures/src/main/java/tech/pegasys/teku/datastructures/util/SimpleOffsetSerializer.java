@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.ssz.SSZReader;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -74,6 +75,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -136,6 +138,10 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
+    if (value instanceof ViewRead) {
+      return ((ViewRead) value).sszSerialize();
+    }
+
     List<UInt64> variable_offsets = new ArrayList<>();
     List<Bytes> interleaved_values = new ArrayList<>();
     UInt64 fixedLengthSum = UInt64.ZERO;
@@ -490,6 +496,9 @@ public class SimpleOffsetSerializer {
       case "Bytes32":
         bytePointer.add(Bytes32.SIZE);
         return Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
+      case "Bytes48":
+        bytePointer.add(Bytes48.SIZE);
+        return Bytes48.wrap(reader.readFixedBytes(Bytes48.SIZE));
       case "Bytes4":
         bytePointer.add(Bytes4.SIZE);
         return new Bytes4(reader.readFixedBytes(Bytes4.SIZE));

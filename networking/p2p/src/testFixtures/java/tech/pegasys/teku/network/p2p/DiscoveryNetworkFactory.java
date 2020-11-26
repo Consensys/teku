@@ -34,11 +34,11 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -111,7 +111,10 @@ public class DiscoveryNetworkFactory {
                     reputationManager,
                     METRICS_SYSTEM,
                     Collections.emptyList(),
-                    Collections.emptyList()),
+                    Collections.emptyList(),
+                    (__1, __2) -> {
+                      throw new UnsupportedOperationException();
+                    }),
                 new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
                 config);
         try {

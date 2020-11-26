@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 class ChainStateGenerator {
@@ -31,7 +32,7 @@ class ChainStateGenerator {
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
         checkArgument(
-            chain.get(i).getParent_root().equals(chain.get(i - 1).getRoot()),
+            chain.get(i).getParentRoot().equals(chain.get(i - 1).getRoot()),
             "Blocks must form an ordered chain");
       }
     }
@@ -65,11 +66,11 @@ class ChainStateGenerator {
     for (SignedBeaconBlock currentBlock : chain) {
       if (currentBlock.getStateRoot().equals(baseState.hash_tree_root())) {
         // Don't process base block
-        handler.handle(currentBlock, baseState);
+        handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;
       }
       state = blockProcessor.process(state, currentBlock);
-      handler.handle(currentBlock, state);
+      handler.handle(new SignedBlockAndState(currentBlock, state));
     }
   }
 }

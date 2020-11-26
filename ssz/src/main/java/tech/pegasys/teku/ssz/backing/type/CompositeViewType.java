@@ -51,6 +51,14 @@ public interface CompositeViewType extends ViewType {
     return (getMaxLength() - 1) / getElementsPerChunk() + 1;
   }
 
+  /**
+   * Returns then number of chunks (i.e. leaf nodes) to store {@code elementCount} child elements
+   * Returns a number lower than {@code elementCode} only in case of packed basic types collection
+   */
+  default int getChunks(int elementCount) {
+    return (elementCount - 1) / getElementsPerChunk() + 1;
+  }
+
   /** Returns the backed binary tree depth to store maxLength elements */
   default int treeDepth() {
     return Long.bitCount(Utils.nextPowerOf2(maxChunks()) - 1);

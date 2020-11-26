@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
@@ -33,6 +34,12 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<WeakSubjectivityState> getWeakSubjectivityState();
 
+  /** @return The earliest available finalized block's slot */
+  SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot();
+
+  /** @return The earliest available finalized block */
+  SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock();
+
   SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot);
@@ -40,6 +47,9 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
 
   SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
+      final Bytes32 blockRoot);
 
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest

@@ -13,13 +13,15 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -31,6 +33,14 @@ public interface ReadOnlyStore {
   UInt64 getTime();
 
   UInt64 getGenesisTime();
+
+  /**
+   * Returns the initial checkpoint from which the chain was started. If the checkpoint is missing,
+   * the node was started up from genesis.
+   *
+   * @return The initial checkpoint if it exists.
+   */
+  Optional<Checkpoint> getInitialCheckpoint();
 
   Checkpoint getJustifiedCheckpoint();
 
@@ -44,19 +54,17 @@ public interface ReadOnlyStore {
    */
   UInt64 getLatestFinalizedBlockSlot();
 
-  SignedBlockAndState getLatestFinalizedBlockAndState();
+  AnchorPoint getLatestFinalized();
 
   Checkpoint getBestJustifiedCheckpoint();
 
   boolean containsBlock(Bytes32 blockRoot);
 
-  Set<Bytes32> getBlockRoots();
-
   /**
-   * @return A list of block roots ordered to guarantee that parent roots will be sorted earlier
-   *     than child roots
+   * @return A collection of block roots ordered to guarantee that parent roots will be sorted
+   *     earlier than child roots
    */
-  List<Bytes32> getOrderedBlockRoots();
+  Collection<Bytes32> getOrderedBlockRoots();
 
   Set<UInt64> getVotedValidatorIndices();
 
@@ -83,6 +91,8 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot);
 
   SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 

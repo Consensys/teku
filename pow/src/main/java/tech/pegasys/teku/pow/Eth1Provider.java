@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import java.math.BigInteger;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -31,4 +32,6 @@ public interface Eth1Provider {
   SafeFuture<Block> getLatestEth1Block();
 
   SafeFuture<EthCall> ethCall(String from, String to, String data, UInt64 blockNumber);
+
+  SafeFuture<BigInteger> getChainId();
 }

@@ -61,6 +61,7 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -72,7 +73,6 @@ import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -134,11 +134,9 @@ public class BeaconStateUtil {
     } else {
       SSZList<Validator> validators = state.getValidators();
 
-      Cache<UInt64, BLSPublicKey> publicKeyCache =
-          BeaconStateCache.getTransitionCaches(state).getValidatorsPubKeys();
       Function<Integer, BLSPublicKey> validatorPubkey =
-          index ->
-              publicKeyCache.get(UInt64.valueOf(index), i -> validators.get(index).getPubkey());
+          index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
@@ -191,7 +189,7 @@ public class BeaconStateUtil {
             .minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT))
             .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
     return new Validator(
-        deposit.getData().getPubkey(),
+        deposit.getData().getPubkey().toBytesCompressed(),
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,
@@ -462,6 +460,21 @@ public class BeaconStateUtil {
    */
   public static UInt64 compute_start_slot_at_epoch(UInt64 epoch) {
     return epoch.times(SLOTS_PER_EPOCH);
+  }
+
+  /**
+   * If the given slot is at an epoch boundary returns the current epoch, otherwise returns the next
+   * epoch.
+   *
+   * @param slot The slot for which we want to calculate the next epoch boundary
+   * @return Either the current epoch or next epoch depending on whether the slot is at or before an
+   *     epoch boundary
+   */
+  public static UInt64 compute_next_epoch_boundary(final UInt64 slot) {
+    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
+    return compute_start_slot_at_epoch(currentEpoch).equals(slot)
+        ? currentEpoch
+        : currentEpoch.plus(1);
   }
 
   /**
@@ -785,6 +798,22 @@ public class BeaconStateUtil {
     return data.toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
+  public static Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
+    // No previous block, use algorithm for calculating the genesis block root
+    return slot.equals(state.getSlot())
+        ? BeaconBlock.fromGenesisState(state).getRoot()
+        : get_block_root_at_slot(state, slot);
+  }
+
+  public static Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
+    final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
+    return slot.equals(state.getSlot())
+        // No previous block, use algorithm for calculating the genesis block root
+        ? BeaconBlock.fromGenesisState(state).getRoot()
+        : get_block_root_at_slot(state, slot);
+  }
+
   /**
    * Return the block root at a recent ``slot``.
    *
@@ -797,14 +826,25 @@ public class BeaconStateUtil {
   public static Bytes32 get_block_root_at_slot(BeaconState state, UInt64 slot)
       throws IllegalArgumentException {
     checkArgument(
-        isBlockRootAvailableFromState(state, slot), "BeaconStateUtil.get_block_root_at_slot");
+        isBlockRootAvailableFromState(state, slot),
+        "Block at slot %s not available from state at slot %s",
+        slot,
+        state.getSlot());
     int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
     UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
-    return slot.compareTo(state.getSlot()) < 0
-        && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
+    return slot.isLessThan(state.getSlot())
+        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
+  }
+
+  public static boolean isSlotAtNthEpochBoundary(
+      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
+    checkArgument(n > 0, "Parameter n must be greater than 0");
+    final UInt64 blockEpoch = compute_epoch_at_slot(blockSlot);
+    final UInt64 parentEpoch = compute_epoch_at_slot(parentSlot);
+    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,10 +24,11 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -41,35 +43,35 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   }
 
   @Test
-  public void shouldReturnEmptyListIfValidatorIndexOutOfBounds() throws Exception {
+  public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
-    GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data).isEmpty();
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
   public void shouldGetAttesterDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
-    List<AttesterDuty> duties =
-        List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
+
+    PostAttesterDutiesResponse duties =
+        new PostAttesterDutiesResponse(
+            Bytes32.fromHexString("0x1234"),
+            List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
     handler.handle(context);
-    GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
-    assertThat(response.data).isEqualTo(duties);
+    PostAttesterDutiesResponse response = getResponseFromFuture(PostAttesterDutiesResponse.class);
+    assertThat(response).isEqualTo(duties);
   }
 
   @Test

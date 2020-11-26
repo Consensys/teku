@@ -15,26 +15,28 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 
 import java.util.List;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public interface WeakSubjectivityViolationPolicy {
 
   static WeakSubjectivityViolationPolicy lenient() {
-    return new LoggingWeakSubjectivityViolationPolicy(Level.TRACE);
+    return new LoggingWeakSubjectivityViolationPolicy(
+        WeakSubjectivityLogger.createFileLogger(), Level.TRACE);
   }
 
-  static WeakSubjectivityViolationPolicy moderate(final WeakSubjectivityConfig config) {
-    return new ModerateWeakSubjectivityViolationPolicy(config);
+  static WeakSubjectivityViolationPolicy moderate() {
+    return new ModerateWeakSubjectivityViolationPolicy();
   }
 
   static WeakSubjectivityViolationPolicy strict() {
     return new CompoundWeakSubjectivityViolationPolicy(
         List.of(
-            new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
+            new LoggingWeakSubjectivityViolationPolicy(
+                WeakSubjectivityLogger.createConsoleLogger(), Level.FATAL),
             new ExitingWeakSubjectivityViolationPolicy()));
   }
 
@@ -45,7 +47,7 @@ public interface WeakSubjectivityViolationPolicy {
       final UInt64 wsPeriod);
 
   void onChainInconsistentWithWeakSubjectivityCheckpoint(
-      Checkpoint wsCheckpoint, SignedBeaconBlock block);
+      Checkpoint wsCheckpoint, Bytes32 blockRoot, final UInt64 blockSlot);
 
   void onFailedToPerformValidation(final String message, Throwable error);
 }

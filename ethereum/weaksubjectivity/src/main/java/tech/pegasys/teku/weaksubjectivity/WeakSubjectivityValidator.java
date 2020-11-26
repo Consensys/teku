@@ -16,7 +16,6 @@ package tech.pegasys.teku.weaksubjectivity;
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
@@ -27,7 +26,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
@@ -45,10 +44,8 @@ public class WeakSubjectivityValidator {
 
   private final WeakSubjectivityConfig config;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
-  private final Throttler<StatusLogger> wsChecksSuppressedLogger =
-      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
-  private final Throttler<StatusLogger> deferValidationLogger =
-      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
+  private final Throttler<WeakSubjectivityLogger> wsChecksSuppressedLogger;
+  private final Throttler<WeakSubjectivityLogger> deferValidationLogger;
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
@@ -57,6 +54,11 @@ public class WeakSubjectivityValidator {
     this.calculator = calculator;
     this.violationPolicy = violationPolicy;
     this.config = config;
+
+    final int throttlingPeriod = 20;
+    final WeakSubjectivityLogger wsLogger = WeakSubjectivityLogger.createFileLogger();
+    this.wsChecksSuppressedLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriod));
+    this.deferValidationLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriod));
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
@@ -68,7 +70,7 @@ public class WeakSubjectivityValidator {
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate(config));
+        config, calculator, WeakSubjectivityViolationPolicy.moderate());
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -102,12 +104,26 @@ public class WeakSubjectivityValidator {
         .getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
         .thenAccept(
             maybeBlock -> {
-              // We must have a block at this slot because we know this epoch is finalized
-              SignedBeaconBlock blockAtCheckpointSlot = maybeBlock.orElseThrow();
+              SignedBeaconBlock blockAtCheckpointSlot =
+                  maybeBlock.orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Unable to verify weak subjectivity checkpoint at epoch "
+                                  + wsCheckpoint.getEpoch()
+                                  + ": finalized block is unavailable"));
               if (!blockAtCheckpointSlot.getRoot().equals(wsCheckpoint.getRoot())) {
                 handleInconsistentWsCheckpoint(blockAtCheckpointSlot);
               }
             });
+  }
+
+  public Optional<UInt64> getWSPeriod(final CheckpointState latestFinalizedCheckpoint) {
+    if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint.getState()));
   }
 
   /**
@@ -135,7 +151,8 @@ public class WeakSubjectivityValidator {
     if (isAtWSCheckpoint(latestFinalizedCheckpoint)
         && !isWSCheckpointRoot(latestFinalizedCheckpoint.getRoot())) {
       // Finalized root is inconsistent with ws checkpoint
-      handleInconsistentWsCheckpoint(latestFinalizedCheckpoint.getBlock());
+      handleInconsistentWsCheckpoint(
+          latestFinalizedCheckpoint.getRoot(), latestFinalizedCheckpoint.getBlockSlot());
     }
 
     // Determine whether we should suppress ws period errors
@@ -172,8 +189,7 @@ public class WeakSubjectivityValidator {
     } else if (blockEpoch.isGreaterThanOrEqualTo(wsCheckpoint.getEpoch())) {
       // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
       final Optional<Bytes32> ancestor =
-          get_ancestor(
-              forkChoiceStrategy, block.getParent_root(), wsCheckpoint.getEpochStartSlot());
+          get_ancestor(forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot());
       // If ancestor is not present, the chain must have moved passed the wsCheckpoint
       return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);
     }
@@ -203,9 +219,14 @@ public class WeakSubjectivityValidator {
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {
+    handleInconsistentWsCheckpoint(inconsistentBlock.getRoot(), inconsistentBlock.getSlot());
+  }
+
+  private void handleInconsistentWsCheckpoint(
+      final Bytes32 inconsistentBlockRoot, final UInt64 inconsistentBlockSlot) {
     final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().orElseThrow();
     violationPolicy.onChainInconsistentWithWeakSubjectivityCheckpoint(
-        wsCheckpoint, inconsistentBlock);
+        wsCheckpoint, inconsistentBlockRoot, inconsistentBlockSlot);
   }
 
   @VisibleForTesting

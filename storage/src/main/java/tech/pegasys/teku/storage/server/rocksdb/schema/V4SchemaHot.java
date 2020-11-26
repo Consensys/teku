@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BYTES32_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.CHECKPOINT_EPOCHS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.CHECKPOINT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
@@ -26,6 +27,7 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -52,6 +54,9 @@ public class V4SchemaHot implements SchemaHot {
       RocksDbColumn.create(5, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
   private static final RocksDbColumn<Bytes32, BeaconState> HOT_STATES_BY_ROOT =
       RocksDbColumn.create(6, BYTES32_SERIALIZER, STATE_SERIALIZER);
+  private static final RocksDbColumn<Bytes32, CheckpointEpochs>
+      HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT =
+          RocksDbColumn.create(7, BYTES32_SERIALIZER, CHECKPOINT_EPOCHS_SERIALIZER);
 
   // Variables
   private static final RocksDbVariable<UInt64> GENESIS_TIME =
@@ -70,6 +75,8 @@ public class V4SchemaHot implements SchemaHot {
       RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
   private static final RocksDbVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
       RocksDbVariable.create(8, CHECKPOINT_SERIALIZER);
+  private static final RocksDbVariable<Checkpoint> ANCHOR_CHECKPOINT =
+      RocksDbVariable.create(9, CHECKPOINT_SERIALIZER);
 
   private static final List<RocksDbColumn<?, ?>> ALL_COLUMNS =
       List.of(
@@ -78,7 +85,8 @@ public class V4SchemaHot implements SchemaHot {
           VOTES,
           DEPOSITS_FROM_BLOCK_EVENTS,
           STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT,
-          HOT_STATES_BY_ROOT);
+          HOT_STATES_BY_ROOT,
+          HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT);
 
   private static final List<RocksDbVariable<?>> ALL_VARIABLES =
       List.of(
@@ -89,13 +97,19 @@ public class V4SchemaHot implements SchemaHot {
           LATEST_FINALIZED_STATE,
           MIN_GENESIS_TIME_BLOCK,
           PROTO_ARRAY_SNAPSHOT,
-          WEAK_SUBJECTIVITY_CHECKPOINT);
+          WEAK_SUBJECTIVITY_CHECKPOINT,
+          ANCHOR_CHECKPOINT);
 
   private V4SchemaHot() {}
 
   @Override
   public RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
     return HOT_BLOCKS_BY_ROOT;
+  }
+
+  @Override
+  public RocksDbColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot() {
+    return HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT;
   }
 
   @Override
@@ -161,6 +175,11 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return WEAK_SUBJECTIVITY_CHECKPOINT;
+  }
+
+  @Override
+  public RocksDbVariable<Checkpoint> getVariableAnchorCheckpoint() {
+    return ANCHOR_CHECKPOINT;
   }
 
   @Override

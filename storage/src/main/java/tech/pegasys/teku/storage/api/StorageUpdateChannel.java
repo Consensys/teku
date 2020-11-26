@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Collection;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 
@@ -23,7 +25,9 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onStorageUpdate(StorageUpdate event);
 
+  SafeFuture<Void> onFinalizedBlocks(Collection<SignedBeaconBlock> finalizedBlocks);
+
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
-  void onGenesis(AnchorPoint genesis);
+  void onChainInitialized(AnchorPoint initialAnchor);
 }

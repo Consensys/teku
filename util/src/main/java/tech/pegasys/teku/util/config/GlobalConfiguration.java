@@ -14,8 +14,6 @@
 package tech.pegasys.teku.util.config;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
@@ -24,27 +22,12 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 @Deprecated
 public class GlobalConfiguration implements MetricsConfig {
   // Network
+  private final NetworkDefinition networkDefinition;
   private final String constants;
-  private final String initialState;
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
   private final Integer peerRateLimit;
   private final Integer peerRequestLimit;
-
-  // P2P
-  private final boolean p2pEnabled;
-  private final String p2pInterface;
-  private final int p2pPort;
-  private final boolean p2pDiscoveryEnabled;
-  private final List<String> p2pDiscoveryBootnodes;
-  private final Optional<String> p2pAdvertisedIp;
-  private final OptionalInt p2pAdvertisedPort;
-  private final String p2pPrivateKeyFile;
-  private final int p2pPeerLowerBound;
-  private final int p2pPeerUpperBound;
-  private final int targetSubnetSubscriberCount;
-  private final List<String> p2pStaticPeers;
-  private final boolean multiPeerSyncEnabled;
 
   // Interop
   private final Integer interopGenesisTime;
@@ -101,28 +84,15 @@ public class GlobalConfiguration implements MetricsConfig {
   }
 
   GlobalConfiguration(
+      final NetworkDefinition networkDefinition,
       final String constants,
       final Integer startupTargetPeerCount,
       final Integer startupTimeoutSeconds,
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
-      final boolean p2pEnabled,
-      final String p2pInterface,
-      final int p2pPort,
-      final boolean p2pDiscoveryEnabled,
-      final List<String> p2pDiscoveryBootnodes,
-      final Optional<String> p2pAdvertisedIp,
-      final OptionalInt p2pAdvertisedPort,
-      final String p2pPrivateKeyFile,
-      final int p2pPeerLowerBound,
-      final int p2pPeerUpperBound,
-      final int targetSubnetSubscriberCount,
-      final List<String> p2pStaticPeers,
-      final boolean multiPeerSyncEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
@@ -154,28 +124,15 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist) {
+    this.networkDefinition = networkDefinition;
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.p2pEnabled = p2pEnabled;
-    this.p2pInterface = p2pInterface;
-    this.p2pPort = p2pPort;
-    this.p2pDiscoveryEnabled = p2pDiscoveryEnabled;
-    this.p2pDiscoveryBootnodes = p2pDiscoveryBootnodes;
-    this.p2pAdvertisedIp = p2pAdvertisedIp;
-    this.p2pAdvertisedPort = p2pAdvertisedPort;
-    this.p2pPrivateKeyFile = p2pPrivateKeyFile;
-    this.p2pPeerLowerBound = p2pPeerLowerBound;
-    this.p2pPeerUpperBound = p2pPeerUpperBound;
-    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
-    this.p2pStaticPeers = p2pStaticPeers;
-    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -209,6 +166,10 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiHostAllowlist = restApiHostAllowlist;
   }
 
+  public NetworkDefinition getNetworkDefinition() {
+    return networkDefinition;
+  }
+
   public String getConstants() {
     return constants;
   }
@@ -229,62 +190,6 @@ public class GlobalConfiguration implements MetricsConfig {
     return peerRequestLimit;
   }
 
-  public boolean isP2pEnabled() {
-    return p2pEnabled;
-  }
-
-  public String getP2pInterface() {
-    return p2pInterface;
-  }
-
-  public int getP2pPort() {
-    return p2pPort;
-  }
-
-  public boolean isP2pDiscoveryEnabled() {
-    return p2pDiscoveryEnabled;
-  }
-
-  public List<String> getP2pDiscoveryBootnodes() {
-    return p2pDiscoveryBootnodes;
-  }
-
-  public Optional<String> getP2pAdvertisedIp() {
-    return p2pAdvertisedIp;
-  }
-
-  public OptionalInt getP2pAdvertisedPort() {
-    return p2pAdvertisedPort;
-  }
-
-  public String getP2pPrivateKeyFile() {
-    return p2pPrivateKeyFile;
-  }
-
-  public int getP2pPeerLowerBound() {
-    return p2pPeerLowerBound;
-  }
-
-  public int getP2pPeerUpperBound() {
-    return p2pPeerUpperBound;
-  }
-
-  public int getMinimumRandomlySelectedPeerCount() {
-    return Math.min(1, p2pPeerLowerBound * 2 / 10);
-  }
-
-  public int getTargetSubnetSubscriberCount() {
-    return targetSubnetSubscriberCount;
-  }
-
-  public List<String> getP2pStaticPeers() {
-    return p2pStaticPeers;
-  }
-
-  public boolean isMultiPeerSyncEnabled() {
-    return multiPeerSyncEnabled;
-  }
-
   public Integer getInteropGenesisTime() {
     if (interopGenesisTime == 0) {
       return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
@@ -299,10 +204,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getInteropOwnedValidatorCount() {
     return interopOwnedValidatorCount;
-  }
-
-  public String getInitialState() {
-    return initialState == null || initialState.isEmpty() ? null : initialState;
   }
 
   public int getInteropNumberOfValidators() {

@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 
 public interface StateHandler {
-  StateHandler NOOP = (block, state) -> {};
+  StateHandler NOOP = (stateAndBlock) -> {};
 
-  void handle(final SignedBeaconBlock block, final BeaconState state);
+  void handle(final StateAndBlockSummary stateAndBlock);
 }

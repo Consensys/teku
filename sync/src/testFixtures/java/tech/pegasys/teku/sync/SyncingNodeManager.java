@@ -39,12 +39,15 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.sync.forward.singlepeer.SinglePeerSyncService;
+import tech.pegasys.teku.sync.forward.singlepeer.SyncManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
-import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -54,7 +57,7 @@ public class SyncingNodeManager {
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
   private final Eth2Network eth2Network;
-  private final SyncService syncService;
+  private final ForwardSync syncService;
 
   private SyncingNodeManager(
       final EventBus eventBus,
@@ -62,7 +65,7 @@ public class SyncingNodeManager {
       final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2Network eth2Network,
-      final SyncService syncService) {
+      final ForwardSync syncService) {
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
     this.storageClient = storageClient;
@@ -91,11 +94,14 @@ public class SyncingNodeManager {
     BlockImporter blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
+
+    BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =
-        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
+        BlockManager.create(
+            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
@@ -107,7 +113,7 @@ public class SyncingNodeManager {
             .builder()
             .eventBus(eventBus)
             .recentChainData(recentChainData)
-            .gossipedBlockConsumer(blockManager::importBlock);
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock);
 
     configureNetwork.accept(networkBuilder);
 
@@ -121,7 +127,7 @@ public class SyncingNodeManager {
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
-    SyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
+    ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
     recentBlockFetcher.start().join();
     blockManager.start().join();
@@ -156,7 +162,7 @@ public class SyncingNodeManager {
     return storageClient;
   }
 
-  public SyncService syncService() {
+  public ForwardSync syncService() {
     return syncService;
   }
 

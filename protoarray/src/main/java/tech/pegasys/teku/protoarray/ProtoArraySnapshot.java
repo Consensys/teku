@@ -25,14 +25,17 @@ public class ProtoArraySnapshot {
 
   private final UInt64 justifiedEpoch;
   private final UInt64 finalizedEpoch;
+  private final UInt64 initialEpoch;
   private final List<BlockInformation> blockInformationList;
 
   public ProtoArraySnapshot(
       final UInt64 justifiedEpoch,
       final UInt64 finalizedEpoch,
+      final UInt64 initialEpoch,
       final List<BlockInformation> blockInformationList) {
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
+    this.initialEpoch = initialEpoch;
     this.blockInformationList = blockInformationList;
   }
 
@@ -43,7 +46,8 @@ public class ProtoArraySnapshot {
             .collect(Collectors.toList());
     UInt64 justifiedEpoch = protoArray.getJustifiedEpoch();
     UInt64 finalizedEpoch = protoArray.getFinalizedEpoch();
-    return new ProtoArraySnapshot(justifiedEpoch, finalizedEpoch, nodes);
+    UInt64 initialEpoch = protoArray.getInitialEpoch();
+    return new ProtoArraySnapshot(justifiedEpoch, finalizedEpoch, initialEpoch, nodes);
   }
 
   public ProtoArray toProtoArray() {
@@ -52,6 +56,7 @@ public class ProtoArraySnapshot {
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
             justifiedEpoch,
             finalizedEpoch,
+            initialEpoch,
             new ArrayList<>(),
             new HashMap<>());
 
@@ -73,6 +78,10 @@ public class ProtoArraySnapshot {
 
   public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
+  }
+
+  public UInt64 getInitialEpoch() {
+    return initialEpoch;
   }
 
   public List<BlockInformation> getBlockInformationList() {

@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -64,8 +65,8 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
-    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
+        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+    final ValidatorLoader validatorLoader = ValidatorLoader.create(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getGlobalConfiguration());
@@ -136,11 +137,11 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
         new ValidatorTimingActions(
             validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
-    validatorIndexProvider.lookupValidators();
     return beaconNodeApi.subscribeToEvents();
   }
 

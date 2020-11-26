@@ -42,12 +42,16 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
@@ -56,11 +60,12 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
+@SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final okhttp3.MediaType JSON =
@@ -81,11 +86,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   // Mocks
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
-  protected final SyncService syncService = mock(SyncService.class);
+  protected final ForwardSync syncService = mock(ForwardSync.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
+  protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
   private StorageSystem storageSystem;
 
@@ -134,7 +142,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            attestationPool);
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool);
     beaconRestApi =
         new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
     beaconRestApi.start();

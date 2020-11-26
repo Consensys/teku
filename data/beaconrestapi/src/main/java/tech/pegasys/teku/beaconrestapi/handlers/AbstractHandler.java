@@ -13,40 +13,18 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_GONE;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.util.Optional;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class AbstractHandler implements Handler {
-
   protected final JsonProvider jsonProvider;
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
-  }
-
-  protected <T> void handlePossiblyMissingResult(
-      final Context ctx, SafeFuture<Optional<T>> future) {
-    handleOptionalResult(ctx, future, SC_NOT_FOUND);
-  }
-
-  protected <T> void handlePossiblyMissingResult(
-      final Context ctx, SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor) {
-    handleOptionalResult(ctx, future, resultProcessor, SC_NOT_FOUND);
-  }
-
-  protected <T> void handlePossiblyGoneResult(final Context ctx, SafeFuture<Optional<T>> future) {
-    handleOptionalResult(ctx, future, SC_GONE);
-  }
-
-  protected <T> void handlePossiblyGoneResult(
-      final Context ctx, SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor) {
-    handleOptionalResult(ctx, future, resultProcessor, SC_GONE);
   }
 
   protected <T> void handleOptionalResult(
@@ -81,6 +59,26 @@ public abstract class AbstractHandler implements Handler {
       final Context ctx,
       SafeFuture<Optional<T>> future,
       ResultProcessor<T> resultProcessor,
+      ErrorProcessor errorProcessor,
+      final int missingStatus) {
+    ctx.result(
+        future
+            .thenApplyChecked(
+                result -> {
+                  if (result.isPresent()) {
+                    return resultProcessor.process(ctx, result.get()).orElse(null);
+                  } else {
+                    ctx.status(missingStatus);
+                    return null;
+                  }
+                })
+            .exceptionallyCompose(error -> errorProcessor.handleError(ctx, error)));
+  }
+
+  protected <T> void handleOptionalResult(
+      final Context ctx,
+      SafeFuture<Optional<T>> future,
+      ResultProcessor<T> resultProcessor,
       final int missingStatus) {
     ctx.result(
         future.thenApplyChecked(
@@ -89,6 +87,7 @@ public abstract class AbstractHandler implements Handler {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(missingStatus);
+                ctx.result(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
                 return null;
               }
             }));

@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -30,7 +29,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,14 +39,21 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.api.schema.BeaconChainHead;
-import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
@@ -53,15 +61,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
-
-  public static final String TEKU_DOCKER_IMAGE = "quorumengineering/teku:develop";
-  private static final int REST_API_PORT = 9051;
-  private static final String CONFIG_FILE_PATH = "/config.yaml";
-  protected static final String WORKING_DIRECTORY = "/opt/teku/";
-  private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
-  private static final int P2P_PORT = 9000;
-  private static final ObjectMapper YAML_MAPPER =
-      new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
 
   private final SimpleHttpClient httpClient;
   private final Config config;
@@ -81,7 +80,7 @@ public class TekuNode extends Node {
         .waitingFor(
             new HttpWaitStrategy()
                 .forPort(REST_API_PORT)
-                .forPath("/network/peer_id")
+                .forPath("/eth/v1/node/identity")
                 .withStartupTimeout(Duration.ofMinutes(2)))
         .withCommand("--config-file", CONFIG_FILE_PATH);
   }
@@ -130,8 +129,10 @@ public class TekuNode extends Node {
   }
 
   private UInt64 fetchGenesisTime() throws IOException {
-    String genesisTime = httpClient.get(getRestApiUrl(), "/node/genesis_time");
-    return jsonProvider.jsonToObject(genesisTime, UInt64.class);
+    String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
+    final GetGenesisResponse response =
+        jsonProvider.jsonToObject(genesisTime, GetGenesisResponse.class);
+    return response.data.genesisTime;
   }
 
   public UInt64 getGenesisTime() throws IOException {
@@ -140,16 +141,17 @@ public class TekuNode extends Node {
   }
 
   public void waitForNewBlock() {
-    final Bytes32 startingBlockRoot = waitForBeaconHead().block_root;
-    waitFor(() -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot));
+    final Bytes32 startingBlockRoot = waitForBeaconHead();
+    waitFor(() -> assertThat(fetchBeaconHead().get()).isNotEqualTo(startingBlockRoot));
   }
 
   public void waitForNewFinalization() {
-    UInt64 startingFinalizedEpoch = waitForChainHead().finalized_epoch;
+    UInt64 startingFinalizedEpoch = waitForChainHead().finalized.epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
         () ->
-            assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
+            assertThat(fetchStateFinalityCheckpoints().get().finalized.epoch)
+                .isNotEqualTo(startingFinalizedEpoch),
         9,
         MINUTES);
   }
@@ -158,9 +160,9 @@ public class TekuNode extends Node {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
         () -> {
-          final Optional<BeaconHead> beaconHead = fetchBeaconHead();
+          final Optional<Bytes32> beaconHead = fetchBeaconHead();
           assertThat(beaconHead).isPresent();
-          final Optional<BeaconHead> targetBeaconHead = targetNode.fetchBeaconHead();
+          final Optional<Bytes32> targetBeaconHead = targetNode.fetchBeaconHead();
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
@@ -168,12 +170,12 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  private BeaconHead waitForBeaconHead() {
+  private Bytes32 waitForBeaconHead() {
     LOG.debug("Waiting for beacon head");
-    final AtomicReference<BeaconHead> beaconHead = new AtomicReference<>(null);
+    final AtomicReference<Bytes32> beaconHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<BeaconHead> fetchedHead = fetchBeaconHead();
+          final Optional<Bytes32> fetchedHead = fetchBeaconHead();
           assertThat(fetchedHead).isPresent();
           beaconHead.set(fetchedHead.get());
         });
@@ -181,39 +183,122 @@ public class TekuNode extends Node {
     return beaconHead.get();
   }
 
-  private Optional<BeaconHead> fetchBeaconHead() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/beacon/head");
+  private Optional<Bytes32> fetchBeaconHead() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head/root");
     if (result.isEmpty()) {
       return Optional.empty();
     }
 
-    return Optional.of(
-        jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class));
+    final GetBlockRootResponse response =
+        jsonProvider.jsonToObject(result, GetBlockRootResponse.class);
+
+    return Optional.of(response.data.root);
   }
 
-  private BeaconChainHead waitForChainHead() {
+  private FinalityCheckpointsResponse waitForChainHead() {
     LOG.debug("Waiting for chain head");
-    final AtomicReference<BeaconChainHead> chainHead = new AtomicReference<>(null);
+    final AtomicReference<FinalityCheckpointsResponse> chainHead = new AtomicReference<>(null);
     waitFor(
         () -> {
-          final Optional<BeaconChainHead> fetchedHead = fetchChainHead();
-          assertThat(fetchedHead).isPresent();
-          chainHead.set(fetchedHead.get());
+          final Optional<FinalityCheckpointsResponse> fetchCheckpoints =
+              fetchStateFinalityCheckpoints();
+          assertThat(fetchCheckpoints).isPresent();
+          chainHead.set(fetchCheckpoints.get());
         });
     LOG.debug("Retrieved chain head: {}", chainHead.get());
     return chainHead.get();
   }
 
-  private Optional<BeaconChainHead> fetchChainHead() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/beacon/chainhead");
+  private Optional<FinalityCheckpointsResponse> fetchStateFinalityCheckpoints() throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
     if (result.isEmpty()) {
       return Optional.empty();
     }
+    final GetStateFinalityCheckpointsResponse response =
+        jsonProvider.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
+    return Optional.of(response.data);
+  }
 
-    return Optional.of(
-        jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class));
+  private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponse.class).data);
+    }
+  }
+
+  private Optional<BeaconState> fetchHeadState() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/states/head");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(jsonProvider.jsonToObject(result, GetStateResponse.class).data);
+    }
+  }
+
+  public void waitForValidators(int numberOfValidators) {
+    waitFor(
+        () -> {
+          Optional<BeaconState> maybeState = fetchHeadState();
+          assertThat(maybeState).isPresent();
+          BeaconState state = maybeState.get();
+          assertThat(state.asInternalBeaconState().getValidators().size())
+              .isEqualTo(numberOfValidators);
+        });
+  }
+
+  public void waitForAttestationBeingGossiped(
+      int validatorSeparationIndex, int totalValidatorCount) {
+    List<UInt64> node1Validators =
+        IntStream.range(0, validatorSeparationIndex).mapToObj(UInt64::valueOf).collect(toList());
+    List<UInt64> node2Validators =
+        IntStream.range(validatorSeparationIndex, totalValidatorCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(toList());
+    waitFor(
+        () -> {
+          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
+          final Optional<BeaconState> maybeState = fetchHeadState();
+          assertThat(maybeBlock).isPresent();
+          assertThat(maybeState).isPresent();
+          SignedBeaconBlock block = maybeBlock.get();
+          BeaconState state = maybeState.get();
+
+          // Check that the fetched block and state are in sync
+          assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
+
+          tech.pegasys.teku.datastructures.state.BeaconState internalBeaconState =
+              state.asInternalBeaconState();
+          UInt64 proposerIndex = block.message.proposer_index;
+
+          Set<UInt64> attesterIndicesInAttestations =
+              block.message.body.attestations.stream()
+                  .map(
+                      a ->
+                          get_attesting_indices(
+                              internalBeaconState,
+                              a.asInternalAttestation().getData(),
+                              a.asInternalAttestation().getAggregation_bits()))
+                  .flatMap(Collection::stream)
+                  .map(UInt64::valueOf)
+                  .collect(toSet());
+
+          if (node1Validators.contains(proposerIndex)) {
+            assertThat(attesterIndicesInAttestations.stream().anyMatch(node2Validators::contains))
+                .isTrue();
+          } else if (node2Validators.contains(proposerIndex)) {
+            assertThat(attesterIndicesInAttestations.stream().anyMatch(node1Validators::contains))
+                .isTrue();
+          } else {
+            throw new IllegalStateException("Proposer index greater than total validator count");
+          }
+        });
+  }
+
+  public Config getConfig() {
+    return config;
   }
 
   /**
@@ -246,6 +331,12 @@ public class TekuNode extends Node {
 
   String getMultiAddr() {
     return "/dns4/" + nodeAlias + "/tcp/" + P2P_PORT + "/p2p/" + config.getPeerId();
+  }
+
+  public String getBeaconRestApiUrl() {
+    final String url = "http://" + nodeAlias + ":" + REST_API_PORT;
+    LOG.debug("Node REST url: " + url);
+    return url;
   }
 
   private URI getRestApiUrl() {
@@ -298,6 +389,7 @@ public class TekuNode extends Node {
       configMap.put("p2p-interface", "0.0.0.0");
       configMap.put("Xinterop-genesis-time", 0);
       configMap.put("Xinterop-owned-validator-start-index", 0);
+      configMap.put("Xstartup-target-peer-count", 0);
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-enabled", true);
@@ -309,6 +401,7 @@ public class TekuNode extends Node {
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
       configMap.put("log-destination", "console");
+      configMap.put("rest-api-host-allowlist", "*");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
@@ -318,14 +411,14 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withValidatorKeys(final String validatorKeys) {
-      this.validatorKeys = Optional.of(validatorKeys);
-      return this;
-    }
-
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
+      return this;
+    }
+
+    public Config withInteropNumberOfValidators(final int validatorCount) {
+      configMap.put("Xinterop-number-of-validators", validatorCount);
       return this;
     }
 
@@ -334,27 +427,14 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withNetwork(String networkName) {
+      configMap.put("network", networkName);
+      return this;
+    }
+
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
-    }
-
-    public Config withGenesisState(String pathToGenesisState) {
-      checkNotNull(pathToGenesisState);
-      configMap.put("initial-state", pathToGenesisState);
-      return this;
-    }
-
-    /**
-     * Configures parameters for generating a genesis state.
-     *
-     * @param config Configuration defining how to generate the genesis state.
-     * @return this config
-     */
-    public Config withGenesisConfig(final GenesisStateConfig config) {
-      checkNotNull(config);
-      this.genesisStateConfig = Optional.of(config);
-      return withGenesisState(config.getPath());
     }
 
     public Config withPeers(final TekuNode... nodes) {

@@ -33,6 +33,9 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
         @Override
         public void complete() {}
+
+        @Override
+        public void close() {}
       };
 
   private final String name;

@@ -47,17 +47,19 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @SuppressWarnings("unchecked")
 public class OperationsReOrgManagerTest {
 
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  private OperationPool<ProposerSlashing> proposerSlashingOperationPool = mock(OperationPool.class);
-  private OperationPool<AttesterSlashing> attesterSlashingOperationPool = mock(OperationPool.class);
-  private OperationPool<SignedVoluntaryExit> exitOperationPool = mock(OperationPool.class);
-  private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-  private AttestationManager attestationManager = mock(AttestationManager.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingOperationPool =
+      mock(OperationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingOperationPool =
+      mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> exitOperationPool = mock(OperationPool.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AttestationManager attestationManager = mock(AttestationManager.class);
 
-  private RecentChainData recentChainData = mock(RecentChainData.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
-  private OperationsReOrgManager operationsReOrgManager =
+  private final OperationsReOrgManager operationsReOrgManager =
       new OperationsReOrgManager(
           proposerSlashingOperationPool,
           attesterSlashingOperationPool,
@@ -103,11 +105,13 @@ public class OperationsReOrgManagerTest {
 
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
-        fork2Block2.getState_root(),
+        fork2Block2.getStateRoot(),
         fork2Block2.hash_tree_root(),
         false,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
         ReorgContext.of(
-            fork1Block2.hash_tree_root(), fork1Block2.getState_root(), commonAncestorSlot));
+            fork1Block2.hash_tree_root(), fork1Block2.getStateRoot(), commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
 
@@ -126,11 +130,11 @@ public class OperationsReOrgManagerTest {
     List<ValidateableAttestation> attestationList = new ArrayList<>();
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::fromAttestation)
+            .map(ValidateableAttestation::from)
             .collect(Collectors.toList()));
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::fromAttestation)
+            .map(ValidateableAttestation::from)
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 
@@ -172,9 +176,11 @@ public class OperationsReOrgManagerTest {
 
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
-        block2.getState_root(),
+        block2.getStateRoot(),
         block2.hash_tree_root(),
         false,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
         ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());

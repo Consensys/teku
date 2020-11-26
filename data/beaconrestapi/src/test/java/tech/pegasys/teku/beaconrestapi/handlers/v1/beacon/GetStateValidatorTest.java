@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -52,14 +54,20 @@ public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
-    when(chainDataProvider.validatorParameterToIndex("1")).thenReturn(Optional.of(1));
-    when(chainDataProvider.getValidatorDetails(slot, Optional.of(1)))
+    when(chainDataProvider.getStateValidator("head", "1"))
         .thenReturn(SafeFuture.completedFuture(Optional.of(validatorResponse)));
     handler.handle(context);
     GetStateValidatorResponse response = getResponseFromFuture(GetStateValidatorResponse.class);
     assertThat(response.data).isEqualTo(validatorResponse);
+  }
+
+  @Test
+  public void shouldGetNotFoundForMissingState() throws Exception {
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "1", "validator_id", "1"));
+    when(chainDataProvider.getStateValidator("1", "1"))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    handler.handle(context);
+    verify(context).status(SC_NOT_FOUND);
   }
 }

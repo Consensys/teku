@@ -42,13 +42,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(final List<BLSPublicKey> publicKeys);
 
-  SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      UInt64 epoch, Collection<BLSPublicKey> publicKeys);
-
-  SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
+  SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes);
 
-  SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch);
+  SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
@@ -57,7 +54,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
+  SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 

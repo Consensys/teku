@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
@@ -82,5 +84,43 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);
+  }
+
+  @Test
+  public void initialState_shouldAcceptValue() {
+    final String state = "state.ssz";
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--initial-state", state);
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).contains(state);
+  }
+
+  @Test
+  public void initialState_shouldDefaultToNetworkValue() {
+    final String network = "medalla";
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
+    assertThat(networkDefinition.getInitialState()).isPresent();
+
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", network);
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource())
+        .isEqualTo(networkDefinition.getInitialState());
+  }
+
+  @Test
+  public void initialState_shouldOverrideNetworkValue() {
+    final String state = "state.ssz";
+    final String network = "medalla";
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
+    assertThat(networkDefinition.getInitialState()).isPresent();
+
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--initial-state", state, "--network", network);
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).contains(state);
+  }
+
+  @Test
+  public void weakSubjectivityState_shouldDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final Optional<String> defaultState = config.global().getNetworkDefinition().getInitialState();
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource())
+        .isEqualTo(defaultState);
   }
 }

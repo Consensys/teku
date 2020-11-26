@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -57,6 +59,11 @@ public class BlockProductionDuty implements Duty {
     return "block";
   }
 
+  @Override
+  public Optional<BLSPublicKey> getValidatorIdentifier() {
+    return Optional.of(validator.getPublicKey());
+  }
+
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
@@ -89,14 +96,19 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<SignedBeaconBlock> signBlock(
-      final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
+      final ForkInfo forkInfo, final Optional<BeaconBlock> maybeBlock) {
+    final BeaconBlock unsignedBlock =
+        maybeBlock.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    checkArgument(
+        unsignedBlock.getSlot().equals(slot),
+        "Unsigned block slot (%s) does not match expected slot %s",
+        unsignedBlock.getSlot(),
+        slot);
     return validator
         .getSigner()
-        .signBlock(
-            unsignedBlock.orElseThrow(
-                () -> new IllegalStateException("Node was not syncing but could not create block")),
-            forkInfo)
-        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
+        .signBlock(unsignedBlock, forkInfo)
+        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock, signature));
   }
 
   @Override

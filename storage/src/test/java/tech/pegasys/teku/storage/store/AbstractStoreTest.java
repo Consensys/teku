@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
@@ -26,13 +27,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
@@ -94,7 +99,7 @@ public abstract class AbstractStoreTest {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
       allCheckpoints.add(
-          new CheckpointState(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
+          CheckpointState.create(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
@@ -124,21 +129,29 @@ public abstract class AbstractStoreTest {
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return Store.create(
-        SYNC_RUNNER,
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        StateAndBlockProvider.NOOP,
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        Map.of(genesis.getRoot(), genesis.getSlot()),
-        genesis,
-        Collections.emptyMap(),
-        pruningOptions);
+    return StoreBuilder.create()
+        .asyncRunner(SYNC_RUNNER)
+        .metricsSystem(new StubMetricsSystem())
+        .blockProvider(blockProviderFromChainBuilder())
+        .stateProvider(StateAndBlockSummaryProvider.NOOP)
+        .anchor(Optional.empty())
+        .genesisTime(genesis.getState().getGenesis_time())
+        .time(genesis.getState().getGenesis_time())
+        .latestFinalized(AnchorPoint.create(genesisCheckpoint, genesis))
+        .justifiedCheckpoint(genesisCheckpoint)
+        .bestJustifiedCheckpoint(genesisCheckpoint)
+        .blockInformation(
+            Map.of(
+                genesis.getRoot(),
+                new StoredBlockMetadata(
+                    genesis.getSlot(),
+                    genesis.getRoot(),
+                    genesis.getParentRoot(),
+                    genesis.getStateRoot(),
+                    Optional.of(new CheckpointEpochs(UInt64.ZERO, UInt64.ZERO)))))
+        .storeConfig(pruningOptions)
+        .votes(emptyMap())
+        .build();
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
@@ -79,6 +78,14 @@ public class BlstPublicKey implements PublicKey {
     }
   }
 
+  static BlstPublicKey fromPublicKey(PublicKey publicKey) {
+    if (publicKey instanceof BlstPublicKey) {
+      return (BlstPublicKey) publicKey;
+    } else {
+      return fromBytes(publicKey.toBytesCompressed());
+    }
+  }
+
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
@@ -87,7 +94,7 @@ public class BlstPublicKey implements PublicKey {
     if (finitePublicKeys.isEmpty()) {
       return INFINITY;
     }
-    if (!BLSConstants.VALID_INFINITY && finitePublicKeys.size() < publicKeys.size()) {
+    if (finitePublicKeys.size() < publicKeys.size()) {
       // if the Infinity is not a valid public key then aggregating with any
       // non-valid pubkey should result to a non-valid pubkey
       return INFINITY;
@@ -149,12 +156,11 @@ public class BlstPublicKey implements PublicKey {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof PublicKey)) {
       return false;
     }
 
-    BlstPublicKey that = (BlstPublicKey) o;
-    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
+    return Objects.equals(toBytesCompressed(), ((PublicKey) o).toBytesCompressed());
   }
 
   @Override

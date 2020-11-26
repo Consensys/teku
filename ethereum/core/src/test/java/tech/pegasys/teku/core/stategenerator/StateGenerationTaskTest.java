@@ -32,6 +32,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,10 +53,10 @@ class StateGenerationTaskTest {
   void performTask_shouldRegenerateState() {
     chainBuilder.generateBlocksUpToSlot(3);
     final StateGenerationTask task = createTask(0, 3);
-    final SafeFuture<Optional<SignedBlockAndState>> result = task.performTask();
+    final SafeFuture<Optional<StateAndBlockSummary>> result = task.performTask();
     assertThatSafeFuture(result)
         .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(3));
-    assertRequestedBlockRangeInclusive(0, 3);
+    assertRequestedBlockRangeInclusive(1, 3);
   }
 
   @Test
@@ -66,11 +67,11 @@ class StateGenerationTaskTest {
         Optional.of(
             new SlotAndBlockRoot(epochBoundaryBlock.getSlot(), epochBoundaryBlock.getRoot()));
     final StateGenerationTask task = createTask(1, 5, epochBoundaryRoot);
-    final SafeFuture<Optional<SignedBlockAndState>> result = task.performTask();
+    final SafeFuture<Optional<StateAndBlockSummary>> result = task.performTask();
 
     assertThatSafeFuture(result)
         .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
-    assertRequestedBlockRangeInclusive(3, 5);
+    assertRequestedBlockRangeInclusive(4, 5);
   }
 
   @Test
@@ -81,10 +82,10 @@ class StateGenerationTaskTest {
 
     final StateGenerationTask rebasedTask =
         originalTask.rebase(chainBuilder.getBlockAndStateAtSlot(4));
-    final SafeFuture<Optional<SignedBlockAndState>> result = rebasedTask.performTask();
+    final SafeFuture<Optional<StateAndBlockSummary>> result = rebasedTask.performTask();
     assertThatSafeFuture(result)
         .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
-    assertRequestedBlockRangeInclusive(4, 5);
+    assertRequestedBlockRangeInclusive(5, 5);
   }
 
   @Test
@@ -127,7 +128,7 @@ class StateGenerationTaskTest {
     SignedBeaconBlock block = endBlock;
     while (block.getSlot().isGreaterThan(startBlockAndState.getSlot())) {
       treeBuilder.block(block);
-      block = chainBuilder.getBlock(block.getParent_root()).orElseThrow();
+      block = chainBuilder.getBlock(block.getParentRoot()).orElseThrow();
     }
     final HashTree tree = treeBuilder.build();
     return new StateGenerationTask(
@@ -141,7 +142,6 @@ class StateGenerationTaskTest {
                     new BlockRootAndState(
                         startBlockAndState.getRoot(), startBlockAndState.getState())),
             chainBuilder.getStateAndBlockProvider(),
-            blockProvider,
             Optional.empty(),
             REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
   }

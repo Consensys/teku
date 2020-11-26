@@ -13,43 +13,28 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.ProposerSlashingTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class ProposerSlashingGossipManager {
-  private final TopicChannel channel;
-
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
+  public static String TOPIC_NAME = "proposer_slashing";
 
   public ProposerSlashingGossipManager(
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final ProposerSlashingValidator proposerSlashingValidator,
-      final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
-    final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(
-            asyncRunner,
-            gossipEncoding,
-            forkInfo,
-            proposerSlashingValidator,
-            gossipedProposerSlashingConsumer);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<ProposerSlashing> processor,
+      final GossipPublisher<ProposerSlashing> publisher) {
+    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  protected Class<ProposerSlashing> getGossipType() {
+    return ProposerSlashing.class;
   }
 }

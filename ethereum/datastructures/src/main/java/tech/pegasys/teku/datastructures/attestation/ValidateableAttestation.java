@@ -21,6 +21,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,24 +37,66 @@ public class ValidateableAttestation {
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
+  private final boolean producedLocally;
+
+  private volatile boolean isValidIndexedAttestation = false;
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
+  private volatile OptionalInt receivedSubnetId;
 
-  public static ValidateableAttestation fromAttestation(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty());
+  public static ValidateableAttestation from(Attestation attestation) {
+    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), false);
   }
 
-  public static ValidateableAttestation fromSignedAggregate(SignedAggregateAndProof attestation) {
+  public static ValidateableAttestation fromValidator(Attestation attestation) {
+    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), true);
+  }
+
+  public static ValidateableAttestation fromNetwork(Attestation attestation, int receivedSubnetId) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation));
+        attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
+  }
+
+  public static ValidateableAttestation aggregateFromValidator(
+      SignedAggregateAndProof attestation) {
+    return new ValidateableAttestation(
+        attestation.getMessage().getAggregate(),
+        Optional.of(attestation),
+        OptionalInt.empty(),
+        true);
+  }
+
+  public static ValidateableAttestation aggregateFromNetwork(SignedAggregateAndProof attestation) {
+    return new ValidateableAttestation(
+        attestation.getMessage().getAggregate(),
+        Optional.of(attestation),
+        OptionalInt.empty(),
+        false);
   }
 
   private ValidateableAttestation(
-      Attestation attestation, Optional<SignedAggregateAndProof> aggregateAndProof) {
+      Attestation attestation,
+      Optional<SignedAggregateAndProof> aggregateAndProof,
+      OptionalInt receivedSubnetId,
+      boolean producedLocally) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
+    this.producedLocally = producedLocally;
+  }
+
+  public boolean isProducedLocally() {
+    return producedLocally;
+  }
+
+  public boolean isValidIndexedAttestation() {
+    return isValidIndexedAttestation;
+  }
+
+  public void setValidIndexedAttestation() {
+    this.isValidIndexedAttestation = true;
   }
 
   public Optional<IndexedAttestation> getIndexedAttestation() {
@@ -62,6 +105,10 @@ public class ValidateableAttestation {
 
   public Optional<Bytes32> getCommitteeShufflingSeed() {
     return committeeShufflingSeed;
+  }
+
+  public OptionalInt getReceivedSubnetId() {
+    return receivedSubnetId;
   }
 
   public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
@@ -77,6 +124,10 @@ public class ValidateableAttestation {
         get_seed(
             state, compute_epoch_at_slot(attestation.getData().getSlot()), DOMAIN_BEACON_ATTESTER);
     this.committeeShufflingSeed = Optional.of(committeeShufflingSeed);
+  }
+
+  public boolean isGossiped() {
+    return gossiped.get();
   }
 
   public boolean markGossiped() {

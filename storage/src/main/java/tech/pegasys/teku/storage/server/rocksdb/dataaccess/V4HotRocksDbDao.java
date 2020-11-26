@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -50,6 +52,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  public Optional<Checkpoint> getAnchor() {
+    return db.get(schema.getVariableAnchorCheckpoint());
+  }
+
+  @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return db.get(schema.getVariableJustifiedCheckpoint());
   }
@@ -67,6 +74,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  @Override
+  public Optional<CheckpointEpochs> getHotBlockCheckpointEpochs(final Bytes32 root) {
+    return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
   }
 
   @Override
@@ -88,11 +100,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
     return db.get(schema.getVariableWeakSubjectivityCheckpoint());
-  }
-
-  @Override
-  public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
-    return db.getAll(schema.getColumnHotBlocksByRoot());
   }
 
   @Override
@@ -171,6 +178,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
+    public void setAnchor(final Checkpoint anchor) {
+      transaction.put(schema.getVariableAnchorCheckpoint(), anchor);
+    }
+
+    @Override
     public void setJustifiedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableJustifiedCheckpoint(), checkpoint);
     }
@@ -201,9 +213,17 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void addHotBlock(final SignedBeaconBlock block) {
+    public void addHotBlock(final BlockAndCheckpointEpochs block) {
       final Bytes32 blockRoot = block.getRoot();
-      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block);
+      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
+      addHotBlockCheckpointEpochs(blockRoot, block.getCheckpointEpochs());
+    }
+
+    @Override
+    public void addHotBlockCheckpointEpochs(
+        final Bytes32 blockRoot, final CheckpointEpochs checkpointEpochs) {
+      transaction.put(
+          schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot, checkpointEpochs);
     }
 
     @Override
@@ -222,9 +242,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
     @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-      stateRoots.stream()
-          .forEach(
-              (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
+      stateRoots.forEach(
+          (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
     }
 
     @Override
@@ -236,6 +255,7 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
+      transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
     }
 
@@ -255,8 +275,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
-      transaction.put(schema.getVariableProtoArraySnapshot(), newProtoArray);
+    public void deleteProtoArraySnapshot() {
+      transaction.delete(schema.getVariableProtoArraySnapshot());
     }
 
     @Override

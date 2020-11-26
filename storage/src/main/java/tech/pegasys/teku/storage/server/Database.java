@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,12 +24,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -36,9 +37,11 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public interface Database extends AutoCloseable {
 
-  void storeGenesis(AnchorPoint genesis);
+  void storeInitialAnchor(AnchorPoint genesis);
 
   void update(StorageUpdate event);
+
+  void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
@@ -59,6 +62,12 @@ public interface Database extends AutoCloseable {
    * @return Returns the finalized block proposed at this slot, if such a block exists
    */
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
+
+  /** @return The earliest available finalized block's slot */
+  Optional<UInt64> getEarliestAvailableBlockSlot();
+
+  /** Return the earliest available finalized block */
+  Optional<SignedBeaconBlock> getEarliestAvailableBlock();
 
   /**
    * Returns the latest finalized block at or prior to the given slot

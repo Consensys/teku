@@ -17,7 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.function.Consumer;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
@@ -27,14 +28,53 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  public static final TreeNode ZERO_LEAF = new LeafNodeImpl(Bytes32.ZERO);
+  private static class ZeroLeafNode extends LeafNodeImpl {
+    public ZeroLeafNode(int size) {
+      super(Bytes.wrap(new byte[size]));
+    }
+
+    @Override
+    public String toString() {
+      return "(" + getData() + ")";
+    }
+  }
+
+  private static class ZeroBranchNode extends BranchNodeImpl {
+    private final int height;
+
+    public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
+      super(left, right);
+      this.height = height;
+    }
+
+    @Override
+    public String toString() {
+      return "(ZeroBranch-" + height + ")";
+    }
+  }
+
+  /**
+   * Pre-allocated leaf nodes with the data consisting of 0, 1, 2, ..., 32 zero bytes Worth to
+   * mention that {@link TreeNode#hashTreeRoot()} for all these nodes return the same value {@link
+   * org.apache.tuweni.bytes.Bytes32#ZERO}
+   *
+   * <p>Iterating leaves with this method is much faster that addressing each leaf by its general
+   * index separately
+   */
+  public static final TreeNode[] ZERO_LEAVES =
+      IntStream.range(0, TreeNode.NODE_BYTE_SIZE + 1)
+          .mapToObj(ZeroLeafNode::new)
+          .toArray(TreeNode[]::new);
+  /** The {@link LeafNode} with empty data */
+  public static final TreeNode EMPTY_LEAF = ZERO_LEAVES[0];
+
   private static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
-    ZERO_TREES[0] = ZERO_LEAF;
+    ZERO_TREES[0] = EMPTY_LEAF;
     for (int i = 1; i < ZERO_TREES.length; i++) {
-      ZERO_TREES[i] = new BranchNodeImpl(ZERO_TREES[i - 1], ZERO_TREES[i - 1]);
+      ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
       ZERO_TREES[i].hashTreeRoot(); // pre-cache
     }
   }
@@ -50,7 +90,7 @@ public class TreeUtil {
    */
   public static TreeNode createDefaultTree(long maxLength, TreeNode defaultNode) {
     return createTree(
-        defaultNode, ZERO_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
+        defaultNode, EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
@@ -109,6 +149,51 @@ public class TreeUtil {
         return estimateNonDefaultNodes(branchNode.left())
             + estimateNonDefaultNodes(branchNode.right())
             + 1;
+      }
+    }
+  }
+
+  /**
+   * Iterate all leaf tree nodes starting from the node with general index {@code fromGeneralIndex}
+   * (including all node descendants if this is a branch node) and ending with the node with general
+   * index {@code toGeneralIndex} inclusive (including all node descendants if this is a branch
+   * node). On every {@link LeafNode} the supplied {@code visitor} is invoked.
+   */
+  public static void iterateLeaves(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+    long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
+    int shiftN = 63 - treeDepth(toGeneralIndex);
+    long rightmostToIndex = (toGeneralIndex << shiftN) | ((1L << shiftN) - 1);
+    iterateLeavesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
+  }
+
+  private static void iterateLeavesPriv(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+    if (node instanceof LeafNode) {
+      visitor.accept((LeafNode) node);
+    } else {
+
+      BranchNode bNode = (BranchNode) node;
+      long anchorF = Long.highestOneBit(fromGeneralIndex);
+      long pivotF = anchorF >>> 1;
+      boolean fromLeft = fromGeneralIndex < (fromGeneralIndex | pivotF);
+      long fromChildIdx = (fromGeneralIndex ^ anchorF) | pivotF;
+
+      long anchorT = Long.highestOneBit(toGeneralIndex);
+      long pivotT = anchorT >>> 1;
+      boolean toLeft = toGeneralIndex < (toGeneralIndex | pivotT);
+      long toChildIdx = (toGeneralIndex ^ anchorT) | pivotT;
+
+      if (fromLeft && !toLeft) {
+        iterateLeavesPriv(bNode.left(), fromChildIdx, -1, visitor);
+        iterateLeavesPriv(bNode.right(), 1L << 63, toChildIdx, visitor);
+      } else if (fromLeft && toLeft) {
+        iterateLeavesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
+      } else if (!fromLeft && !toLeft) {
+        iterateLeavesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
+      } else {
+        throw new IllegalArgumentException(
+            "fromGeneralIndex < toGeneralIndex: " + fromGeneralIndex + " < " + toGeneralIndex);
       }
     }
   }

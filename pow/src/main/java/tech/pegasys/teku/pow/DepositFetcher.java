@@ -17,7 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.base.Throwables;
 import java.math.BigInteger;
+import java.net.SocketTimeoutException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +39,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
+import tech.pegasys.teku.pow.contract.RejectedRequestException;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
+
+  static final int DEFAULT_BATCH_SIZE = 500_000;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -73,7 +78,57 @@ public class DepositFetcher {
         fromBlockNumber,
         toBlockNumber);
 
-    return getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber)
+    final DepositFetchState fetchState = new DepositFetchState(fromBlockNumber, toBlockNumber);
+    return sendNextBatchRequest(fetchState);
+  }
+
+  private SafeFuture<Void> sendNextBatchRequest(final DepositFetchState fetchState) {
+    final BigInteger nextBatchEnd = fetchState.getNextBatchEnd();
+    LOG.debug(
+        "Requesting deposits between {} and {}. Batch size: {}",
+        fetchState.nextBatchStart,
+        nextBatchEnd,
+        fetchState.batchSize);
+    return processDepositsInBatch(fetchState.nextBatchStart, nextBatchEnd)
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.debug(
+                  "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
+                  fetchState.nextBatchStart,
+                  nextBatchEnd,
+                  err);
+
+              final Throwable rootCause = Throwables.getRootCause(err);
+              if (rootCause instanceof SocketTimeoutException
+                  || rootCause instanceof RejectedRequestException) {
+                LOG.debug("Request timed out or was rejected, reduce the batch size and retry");
+                fetchState.reduceBatchSize();
+              }
+
+              return asyncRunner.runAfterDelay(
+                  () -> sendNextBatchRequest(fetchState),
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
+                  TimeUnit.SECONDS);
+            })
+        .thenCompose(
+            __ -> {
+              fetchState.moveToNextBatch();
+              LOG.trace("Batch request completed. Done? {}", fetchState.isDone());
+              if (fetchState.isDone()) {
+                return SafeFuture.COMPLETE;
+              } else {
+                return sendNextBatchRequest(fetchState);
+              }
+            });
+  }
+
+  private SafeFuture<Void> processDepositsInBatch(
+      final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
+
+    return depositContract
+        .depositEventInRange(
+            DefaultBlockParameter.valueOf(fromBlockNumber),
+            DefaultBlockParameter.valueOf(toBlockNumber))
         .thenApply(this::groupDepositEventResponsesByBlockHash)
         .thenCompose(
             eventResponsesByBlockHash ->
@@ -84,34 +139,12 @@ public class DepositFetcher {
                     toBlockNumber));
   }
 
-  private SafeFuture<List<DepositContract.DepositEventEventResponse>>
-      getDepositEventsInRangeFromContract(BigInteger fromBlockNumber, BigInteger toBlockNumber) {
-
-    DefaultBlockParameter fromBlock = DefaultBlockParameter.valueOf(fromBlockNumber);
-    DefaultBlockParameter toBlock = DefaultBlockParameter.valueOf(toBlockNumber);
-
-    return depositContract
-        .depositEventInRange(fromBlock, toBlock)
-        .exceptionallyCompose(
-            (err) -> {
-              LOG.debug(
-                  "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
-                  fromBlockNumber,
-                  toBlockNumber,
-                  err);
-
-              return asyncRunner.runAfterDelay(
-                  () -> getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber),
-                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
-                  TimeUnit.SECONDS);
-            });
-  }
-
   private SafeFuture<Void> postDepositEvents(
       List<SafeFuture<EthBlock.Block>> blockRequests,
       Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>> depositEventsByBlock,
       BigInteger fromBlock,
       BigInteger toBlock) {
+    LOG.trace("Posting deposit events for {} blocks", depositEventsByBlock.size());
     BigInteger from = fromBlock;
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
@@ -187,6 +220,41 @@ public class DepositFetcher {
 
   private void postDeposits(DepositsFromBlockEvent event) {
     eth1EventsChannel.onDepositsFromBlock(event);
+  }
+
+  private static class DepositFetchState {
+    // Both inclusive
+    BigInteger nextBatchStart;
+
+    final BigInteger lastBlock;
+    int batchSize = DEFAULT_BATCH_SIZE;
+
+    public DepositFetchState(final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
+      this.nextBatchStart = fromBlockNumber;
+      this.lastBlock = toBlockNumber;
+    }
+
+    public void moveToNextBatch() {
+      nextBatchStart = getNextBatchEnd().add(BigInteger.ONE);
+      if (batchSize < DEFAULT_BATCH_SIZE) {
+        // Grow the batch size slowly as we may be past a large blob of logs that caused trouble
+        // +1 to guarantee it grows by at least 1
+        batchSize = Math.min(DEFAULT_BATCH_SIZE, (int) (batchSize * 1.1 + 1));
+      }
+    }
+
+    private BigInteger getNextBatchEnd() {
+      return lastBlock.min(nextBatchStart.add(BigInteger.valueOf(batchSize)));
+    }
+
+    public boolean isDone() {
+      return nextBatchStart.compareTo(lastBlock) >= 0;
+    }
+
+    public void reduceBatchSize() {
+      batchSize = Math.max(1, batchSize / 2);
+      LOG.debug("Reduced batch size to {}", batchSize);
+    }
   }
 
   private static class BlockNumberAndHash implements Comparable<BlockNumberAndHash> {

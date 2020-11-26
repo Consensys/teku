@@ -13,23 +13,37 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 
 abstract class TreeNodeImpl implements TreeNode {
 
   static class LeafNodeImpl extends TreeNodeImpl implements LeafNode {
-    private final Bytes32 root;
+    private final byte[] data;
 
-    public LeafNodeImpl(Bytes32 root) {
-      this.root = root;
+    public LeafNodeImpl(Bytes data) {
+      checkArgument(data.size() <= TreeNode.NODE_BYTE_SIZE);
+      this.data = data.toArrayUnsafe();
     }
 
     @Override
-    public Bytes32 getRoot() {
-      return root;
+    public Bytes getData() {
+      return Bytes.wrap(data);
+    }
+
+    @Override
+    public Bytes32 hashTreeRoot() {
+      if (data.length == TreeNode.NODE_BYTE_SIZE) {
+        return Bytes32.wrap(data);
+      } else {
+        return Bytes32.wrap(Arrays.copyOf(data, TreeNode.NODE_BYTE_SIZE));
+      }
     }
 
     @Override
@@ -47,21 +61,21 @@ abstract class TreeNodeImpl implements TreeNode {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (!(o instanceof LeafNode)) {
         return false;
       }
-      LeafNodeImpl root1 = (LeafNodeImpl) o;
-      return Objects.equals(root, root1.root);
+      LeafNode otherLeaf = (LeafNode) o;
+      return Objects.equals(getData(), otherLeaf.getData());
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(root);
+      return getData().hashCode();
     }
 
     @Override
     public String toString() {
-      return "[" + (Bytes32.ZERO.equals(root) ? "0x0" : root) + "]";
+      return "[" + getData() + "]";
     }
   }
 
@@ -115,7 +129,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public String toString() {
-      return "(" + (left == right ? "default" : left + ", " + right) + ')';
+      return "(" + left + ", " + right + ')';
     }
   }
 }

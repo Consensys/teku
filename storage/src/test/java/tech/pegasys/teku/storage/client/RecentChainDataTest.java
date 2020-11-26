@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -89,11 +93,24 @@ class RecentChainDataTest {
 
   @Test
   public void updateHead_validUpdate() throws Exception {
+    // Ensure the current and previous target root blocks are different
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
-    assertThat(recentChainData.getHeadBlockAndState()).contains(bestBlock.toUnsigned());
+    assertThat(recentChainData.getChainHead().map(StateAndBlockSummary::getRoot))
+        .contains(bestBlock.getRoot());
+    assertThat(storageSystem.reorgEventChannel().getHeadEvents())
+        .contains(
+            new HeadEvent(
+                bestBlock.getSlot(),
+                bestBlock.getStateRoot(),
+                bestBlock.getRoot(),
+                true,
+                getPreviousDutyDependentRoot(bestBlock.getState()),
+                getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
   @Test
@@ -101,7 +118,8 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
-    assertThat(recentChainData.getHeadBlockAndState()).contains(genesis.toUnsigned());
+    assertThat(recentChainData.getChainHead().map(StateAndBlockSummary::getRoot))
+        .contains(genesis.getRoot());
   }
 
   @Test
@@ -343,27 +361,27 @@ class RecentChainDataTest {
     mockChainData(store, chain);
 
     // Set store and update best block to genesis
-    assertThat(preGenesisStorageClient.getHeadBlockAndState()).isEmpty();
+    assertThat(preGenesisStorageClient.getChainHead()).isEmpty();
     preGenesisStorageClient.setStore(store);
     preGenesisStorageClient.updateHead(genesis.getRoot(), genesis.getSlot());
-    assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
+    assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(genesis.getRoot());
 
     // Update best block, but delay the resolution of the future
     final SignedBlockAndState chainHeadA = chain.get(0);
-    final SafeFuture<Optional<SignedBlockAndState>> chainHeadAFuture = new SafeFuture<>();
-    when(store.retrieveBlockAndState(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
+    final SafeFuture<Optional<StateAndBlockSummary>> chainHeadAFuture = new SafeFuture<>();
+    when(store.retrieveStateAndBlockSummary(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
     preGenesisStorageClient.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
     // We should still be at genesis while we wait on the future to resolve
-    assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
+    assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(genesis.getRoot());
 
     // Now start another update
     final SignedBlockAndState chainHeadB = chain.get(1);
     preGenesisStorageClient.updateHead(chainHeadB.getRoot(), chainHeadB.getSlot());
-    assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(chainHeadB.toUnsigned());
+    assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(chainHeadB.getRoot());
 
     // Resolve the earlier update - which should be ignored since we've already moved on
     chainHeadAFuture.complete(Optional.of(chainHeadA));
-    assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(chainHeadB.toUnsigned());
+    assertThat(preGenesisStorageClient.getBestBlockRoot()).contains(chainHeadB.getRoot());
   }
 
   @Test
@@ -713,7 +731,7 @@ class RecentChainDataTest {
             .collect(Collectors.toSet());
 
     // Check expected blocks
-    assertThat(recentChainData.getStore().getBlockRoots())
+    assertThat(recentChainData.getStore().getOrderedBlockRoots())
         .containsExactlyInAnyOrderElementsOf(blockRoots);
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
       assertThat(recentChainData.retrieveSignedBlockByRoot(expectedBlock.getRoot()))
@@ -735,14 +753,7 @@ class RecentChainDataTest {
     final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(
-            blockAndState -> {
-              transaction.putBlockAndState(blockAndState);
-              client
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
-            });
+        .forEach(transaction::putBlockAndState);
     transaction.commit().join();
   }
 
@@ -786,10 +797,6 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 
   private void disableForkChoicePruneThreshold() {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import com.google.common.base.Strings;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -66,12 +67,16 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void dutyFailed(final String producedType, final UInt64 slot, final Throwable error) {
-    log.error(
-        ColorConsolePrinter.print(
-            String.format("%sFailed to produce %s  Slot: %s", PREFIX, producedType, slot),
-            Color.RED),
-        error);
+  public void dutyFailed(
+      final String producedType,
+      final UInt64 slot,
+      final Optional<String> maybeKey,
+      final Throwable error) {
+    final String errorString =
+        String.format(
+            "%sFailed to produce %s  Slot: %s%s",
+            PREFIX, producedType, slot, maybeKey.map(key -> " Validator: " + key).orElse(""));
+    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 
   private void logDuty(

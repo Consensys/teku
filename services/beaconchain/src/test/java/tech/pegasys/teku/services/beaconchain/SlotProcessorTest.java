@@ -37,7 +37,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -51,7 +51,7 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final Eth2Network p2pNetwork = mock(Eth2Network.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
@@ -209,7 +209,7 @@ public class SlotProcessorTest {
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
             1);
-    verify(forkChoice).processHead(slot, false);
+    verify(forkChoice).processHead(slot);
   }
 
   @Test
@@ -243,7 +243,7 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ZERO, false);
+    verify(forkChoice).processHead(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = beaconState.getGenesis_time().plus(SECONDS_PER_SLOT);
@@ -251,6 +251,6 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ONE, false);
+    verify(forkChoice).processHead(ONE);
   }
 }

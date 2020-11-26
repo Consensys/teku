@@ -23,13 +23,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidatorTest {
@@ -46,6 +47,7 @@ public class PeerChainValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final CombinedChainDataClient combinedChainData = mock(CombinedChainDataClient.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
 
   private final ForkInfo remoteForkInfo = dataStructureUtil.randomForkInfo();
   private final Bytes4 remoteFork = remoteForkInfo.getForkDigest();
@@ -66,23 +68,31 @@ public class PeerChainValidatorTest {
   private final UInt64 earlierBlockSlot = earlierEpochSlot.minus(UInt64.ONE);
   private final UInt64 laterBlockSlot = laterEpochSlot.minus(UInt64.ONE);
 
-  private final SignedBeaconBlock genesisBlock =
-      dataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue());
-  private final SignedBeaconBlock remoteFinalizedBlock =
-      dataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue());
-  private final SignedBeaconBlock earlierBlock =
-      dataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue());
-  private final SignedBeaconBlock laterBlock =
-      dataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue());
+  private final SignedBlockAndState genesisBlockAndState =
+      dataStructureUtil.randomSignedBlockAndState(genesisSlot);
+  private final SignedBlockAndState remoteFinalizedBlockAndState =
+      dataStructureUtil.randomSignedBlockAndState(remoteFinalizedBlockSlot);
+  private final SignedBlockAndState earlierBlockAndState =
+      dataStructureUtil.randomSignedBlockAndState(earlierBlockSlot);
+  private final SignedBlockAndState laterBlockAndState =
+      dataStructureUtil.randomSignedBlockAndState(laterBlockSlot);
 
   private final Checkpoint genesisCheckpoint =
-      new Checkpoint(genesisEpoch, genesisBlock.getMessage().hash_tree_root());
+      new Checkpoint(genesisEpoch, genesisBlockAndState.getRoot());
   private final Checkpoint remoteFinalizedCheckpoint =
-      new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlock.getMessage().hash_tree_root());
+      new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlockAndState.getRoot());
   private final Checkpoint earlierCheckpoint =
-      new Checkpoint(earlierEpoch, earlierBlock.getMessage().hash_tree_root());
+      new Checkpoint(earlierEpoch, earlierBlockAndState.getRoot());
   private final Checkpoint laterCheckpoint =
-      new Checkpoint(laterEpoch, laterBlock.getMessage().hash_tree_root());
+      new Checkpoint(laterEpoch, laterBlockAndState.getRoot());
+
+  private final AnchorPoint genesisAnchor =
+      AnchorPoint.create(genesisCheckpoint, genesisBlockAndState);
+  private final AnchorPoint remoteFinalizedAnchor =
+      AnchorPoint.create(remoteFinalizedCheckpoint, remoteFinalizedBlockAndState);
+  private final AnchorPoint earlierAnchor =
+      AnchorPoint.create(earlierCheckpoint, earlierBlockAndState);
+  private final AnchorPoint laterAnchor = AnchorPoint.create(laterCheckpoint, laterBlockAndState);
 
   private PeerStatus remoteStatus;
   private PeerChainValidator peerChainValidator;
@@ -95,6 +105,7 @@ public class PeerChainValidatorTest {
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
 
     when(combinedChainData.getCurrentEpoch()).thenReturn(compute_epoch_at_slot(laterBlockSlot));
+    when(combinedChainData.getStore()).thenReturn(store);
   }
 
   @Test
@@ -108,10 +119,30 @@ public class PeerChainValidatorTest {
   }
 
   @Test
+  public void chainsAreCompatible_finalizedCheckpointsMatch_latestFinalizedBlockMissing() {
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch(false);
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
+  @Test
   public void chainsAreCompatible_remoteChainIsAhead() {
     // Setup mocks
     forksMatch();
     remoteChainIsAheadOnSameChain();
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
+  @Test
+  public void chainsAreCompatible_remoteChainIsAhead_latestFinalizedBlockMissing() {
+    // Setup mocks
+    forksMatch();
+    remoteChainIsAheadOnSameChain(false);
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
@@ -133,6 +164,16 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksMatch();
     remoteChainIsBehindOnSameChain();
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
+  @Test
+  public void chainsAreCompatible_remoteChainIsBehind_latestFinalizedBlockMissing() {
+    // Setup mocks
+    forksMatch();
+    remoteChainIsBehindOnSameChain(false);
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
@@ -209,7 +250,7 @@ public class PeerChainValidatorTest {
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any());
     verify(combinedChainData, never()).getBlockInEffectAtSlot(any());
-    verify(combinedChainData, never()).getBestState();
+    verify(store, never()).getFinalizedCheckpoint();
   }
 
   @Test
@@ -245,9 +286,9 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
-    when(peer.requestBlockBySlot(earlierBlock.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock())));
+    when(peer.requestBlockBySlot(earlierBlockAndState.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock())));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
@@ -264,9 +305,9 @@ public class PeerChainValidatorTest {
     final SignedBeaconBlock nonMatchingBlock =
         dataStructureUtil.randomSignedBeaconBlock(earlierCheckpoint.getEpochStartSlot());
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(earlierBlock));
-    when(peer.requestBlockBySlot(earlierBlock.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(nonMatchingBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock())));
+    when(peer.requestBlockBySlot(earlierBlockAndState.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(nonMatchingBlock)));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
@@ -281,7 +322,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
-        .thenReturn(SafeFuture.failedFuture(new CompletionException(new NullPointerException())));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
@@ -296,6 +337,21 @@ public class PeerChainValidatorTest {
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
+  }
+
+  @Test
+  public void remoteChainIsBehindLocalAnchorPoint_disallow() {
+    peerChainValidator =
+        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, Optional.empty());
+
+    // Setup mocks
+    forksMatch();
+    remoteChainIsBehindOnSameChain();
+    when(combinedChainData.getBlockInEffectAtSlot(remoteFinalizedEpochSlot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
   }
 
   private void assertPeerChainRejected(
@@ -319,30 +375,38 @@ public class PeerChainValidatorTest {
   }
 
   private void finalizedCheckpointsMatch() {
-    final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
-    withLocalFinalizedCheckpoint(remoteFinalizedCheckpoint);
+    finalizedCheckpointsMatch(true);
+  }
+
+  private void finalizedCheckpointsMatch(final boolean isLocalFinalizedBlockAvailable) {
+    withLocalFinalizedAnchor(remoteFinalizedAnchor, isLocalFinalizedBlockAvailable);
   }
 
   private void remoteCheckpointIsAtCurrentEpoch() {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
-    withLocalFinalizedCheckpoint(genesisCheckpoint);
+    withLocalFinalizedAnchor(genesisAnchor);
     when(combinedChainData.getCurrentEpoch()).thenReturn(remoteFinalizedCheckpoint.getEpoch());
   }
 
   private void remoteCheckpointIsAtFutureEpoch() {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
-    withLocalFinalizedCheckpoint(genesisCheckpoint);
+    withLocalFinalizedAnchor(genesisAnchor);
 
     when(combinedChainData.getCurrentEpoch())
         .thenReturn(remoteFinalizedCheckpoint.getEpoch().minus(1));
   }
 
   private void remoteChainIsAheadOnSameChain() {
-    final SafeFuture<SignedBeaconBlock> blockFuture = SafeFuture.completedFuture(earlierBlock);
-    final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
-        SafeFuture.completedFuture(Optional.of(earlierBlock));
+    remoteChainIsAheadOnSameChain(true);
+  }
 
-    withLocalFinalizedCheckpoint(earlierCheckpoint);
+  private void remoteChainIsAheadOnSameChain(final boolean isLocalFinalizedBlockAvailable) {
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock()));
+    final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
+        SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock()));
+
+    withLocalFinalizedAnchor(earlierAnchor, isLocalFinalizedBlockAvailable);
     when(combinedChainData.getBlockInEffectAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
@@ -350,9 +414,9 @@ public class PeerChainValidatorTest {
 
   private void remoteOnSameChainButReturnsInvalidResponseWhenGenesisRequested() {
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
-        SafeFuture.completedFuture(Optional.of(genesisBlock));
+        SafeFuture.completedFuture(Optional.of(genesisBlockAndState.getBlock()));
 
-    withLocalFinalizedCheckpoint(genesisCheckpoint);
+    withLocalFinalizedAnchor(genesisAnchor);
     when(combinedChainData.getBlockInEffectAtSlot(genesisSlot)).thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(genesisSlot))
         .thenReturn(
@@ -362,34 +426,38 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
-    final SafeFuture<SignedBeaconBlock> blockFuture =
-        SafeFuture.completedFuture(randomBlock(earlierBlockSlot));
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        SafeFuture.completedFuture(Optional.of(randomBlock(earlierBlockSlot)));
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
-        SafeFuture.completedFuture(Optional.of(earlierBlock));
+        SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock()));
 
-    withLocalFinalizedCheckpoint(earlierCheckpoint);
+    withLocalFinalizedAnchor(earlierAnchor);
     when(combinedChainData.getBlockInEffectAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
-    final SafeFuture<SignedBeaconBlock> blockFuture =
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
         SafeFuture.failedFuture(new NullPointerException());
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
-        SafeFuture.completedFuture(Optional.of(earlierBlock));
+        SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock()));
 
-    withLocalFinalizedCheckpoint(earlierCheckpoint);
+    withLocalFinalizedAnchor(earlierAnchor);
     when(combinedChainData.getBlockInEffectAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
   private void remoteChainIsBehindOnSameChain() {
-    SafeFuture<Optional<SignedBeaconBlock>> blockResult =
-        SafeFuture.completedFuture(Optional.of(remoteFinalizedBlock));
+    remoteChainIsBehindOnSameChain(true);
+  }
 
-    withLocalFinalizedCheckpoint(laterCheckpoint);
+  private void remoteChainIsBehindOnSameChain(final boolean isLocalFinalizedBlockAvailable) {
+    SafeFuture<Optional<SignedBeaconBlock>> blockResult =
+        SafeFuture.completedFuture(Optional.of(remoteFinalizedBlockAndState.getBlock()));
+
+    withLocalFinalizedAnchor(laterAnchor, isLocalFinalizedBlockAvailable);
     when(combinedChainData.getBlockInEffectAtSlot(remoteFinalizedEpochSlot))
         .thenReturn(blockResult);
   }
@@ -398,7 +466,7 @@ public class PeerChainValidatorTest {
     SafeFuture<Optional<SignedBeaconBlock>> blockResult =
         SafeFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
-    withLocalFinalizedCheckpoint(laterCheckpoint);
+    withLocalFinalizedAnchor(laterAnchor);
     when(combinedChainData.getBlockInEffectAtSlot(remoteFinalizedEpochSlot))
         .thenReturn(blockResult);
   }
@@ -411,10 +479,20 @@ public class PeerChainValidatorTest {
     return new Checkpoint(status.getFinalizedEpoch(), status.getFinalizedRoot());
   }
 
-  private void withLocalFinalizedCheckpoint(final Checkpoint remoteFinalizedCheckpoint) {
-    final BeaconState state = mock(BeaconState.class);
-    when(combinedChainData.getBestState()).thenReturn(Optional.of(state));
-    when(state.getFinalized_checkpoint()).thenReturn(remoteFinalizedCheckpoint);
+  private void withLocalFinalizedAnchor(final AnchorPoint finalizedAnchor) {
+    withLocalFinalizedAnchor(finalizedAnchor, true);
+  }
+
+  private void withLocalFinalizedAnchor(
+      final AnchorPoint finalizedAnchor, final boolean isLocalFinalizedBlockAvailable) {
+    if (isLocalFinalizedBlockAvailable) {
+      when(store.getLatestFinalized()).thenReturn(finalizedAnchor);
+    } else {
+      final AnchorPoint anchorMissingBlock =
+          AnchorPoint.create(
+              finalizedAnchor.getCheckpoint(), finalizedAnchor.getState(), Optional.empty());
+      when(store.getLatestFinalized()).thenReturn(anchorMissingBlock);
+    }
   }
 
   private void setupRemoteStatusAndValidator(final Checkpoint remoteFinalizedCheckpoint) {

@@ -39,7 +39,6 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
@@ -73,7 +72,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final ValidatorApiChannel delegate;
   private final BeaconChainRequestCounter forkInfoRequestCounter;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
-  private final BeaconChainRequestCounter dutiesRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
   private final BeaconChainRequestCounter proposerDutiesRequestCounter;
   private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
@@ -102,11 +100,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             GENESIS_TIME_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for genesis time");
-    dutiesRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            DUTIES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for validator duties");
     attestationDutiesRequestCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
@@ -187,20 +180,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
-    return countRequest(delegate.getDuties(epoch, publicKeys), dutiesRequestCounter);
-  }
-
-  @Override
-  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return countRequest(
         delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
   }
 
   @Override
-  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return countRequest(delegate.getProposerDuties(epoch), proposerDutiesRequestCounter);
   }
 
@@ -227,9 +214,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public SafeFuture<Optional<Attestation>> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return countRequest(
-        delegate.createAggregate(attestationHashTreeRoot), aggregateRequestsCounter);
+        delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
   }
 
   @Override

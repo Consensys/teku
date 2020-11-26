@@ -32,7 +32,6 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @Command(
     name = "validator-client",
@@ -66,7 +65,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Logging")
   @SuppressWarnings("FieldMayBeFinal")
-  private LoggingOptions loggingOptions = new LoggingOptions(LoggingOptions.DEFAULT_VC_LOG_FILE);
+  private LoggingOptions loggingOptions = new LoggingOptions();
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -105,7 +104,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
-        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setNetwork(networkOptions.getNetwork())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
@@ -115,7 +114,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFile(loggingOptions.getLogFile())
         .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
@@ -126,5 +124,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
+
+    String logFile =
+        loggingOptions
+            .getMaybeLogFile()
+            .orElse(
+                LoggingOptions.getDefaultLogFileGivenDataDir(
+                    dataOptions.getDataBasePath().toString(), true));
+    builder.setLogFile(logFile);
   }
 }

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.weaksubjectivity.policies;
 
 import java.util.List;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,9 +41,9 @@ class CompoundWeakSubjectivityViolationPolicy implements WeakSubjectivityViolati
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
-      final Checkpoint wsCheckpoint, final SignedBeaconBlock block) {
+      final Checkpoint wsCheckpoint, final Bytes32 blockRoot, final UInt64 blockSlot) {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, block);
+      policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, blockRoot, blockSlot);
     }
   }
 

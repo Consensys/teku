@@ -16,10 +16,11 @@ package tech.pegasys.teku.util.config;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 public class Constants {
 
   static final String[] NETWORK_DEFINITIONS = {
-    "mainnet", "minimal", "swift", "medalla", "spadina", "zinken"
+    "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont"
   };
 
   // Non-configurable constants
@@ -169,10 +170,7 @@ public class Constants {
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
-  // Custom
-  // Temporary BLS backward compatibility flag
-  // Set to 1 if required BLS to be pre rc-1 spec compatible
-  public static boolean BLS_INFINITY_VALID = false;
+  public static final Map<String, Object> CONFIG_ITEM_MAP = new HashMap<>();
 
   static {
     setConstants("minimal");
@@ -181,9 +179,8 @@ public class Constants {
   public static void setConstants(final String source) {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
-      BLSConstants.VALID_INFINITY = BLS_INFINITY_VALID;
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants from " + source, e);
+      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
     }
   }
 

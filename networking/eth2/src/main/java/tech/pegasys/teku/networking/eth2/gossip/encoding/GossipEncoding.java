@@ -14,11 +14,11 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 
 public interface GossipEncoding {
 
-  GossipEncoding SSZ = new SszGossipEncoding();
-  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(SSZ, new SnappyBlockCompressor());
+  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(new SnappyBlockCompressor());
 
   /**
    * Get the name of the encoding. This is the name included as part of gossip topic strings.
@@ -36,10 +36,34 @@ public interface GossipEncoding {
   <T> Bytes encode(T value);
 
   /**
+   * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
+   * {@link #decodeMessage(PreparedGossipMessage, Class)}
+   *
+   * <p>If there is a problem while preprocessing a message the error should be memorized and later
+   * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
+   * Class)}
+   *
    * @param data Data received over gossip to be deserialized
+   * @param valueType The concrete type to deserialize to
+   */
+  <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType);
+
+  /**
+   * Fallback for {@link #prepareMessage(Bytes, Class)} for the case when decoded {@code valueType}
+   * is unknown
+   *
+   * @param data raw Gossip message data
+   */
+  PreparedGossipMessage prepareUnknownMessage(Bytes data);
+
+  /**
+   * Decodes preprocessed message
+   *
+   * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
+   *     Class)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T> T decode(Bytes data, Class<T> valueType) throws DecodingException;
+  <T> T decodeMessage(PreparedGossipMessage message, Class<T> valueType) throws DecodingException;
 }

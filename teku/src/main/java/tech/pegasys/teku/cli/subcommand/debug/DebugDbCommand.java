@@ -29,7 +29,10 @@ import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -41,8 +44,8 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 @Command(
     name = "db",
@@ -113,7 +116,7 @@ public class DebugDbCommand implements Runnable {
               required = true,
               names = {"--slot", "-s"},
               description =
-                  "The slot to retrive the state for. If unavailable the closest available state will be returned")
+                  "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
     setConstants(networkOptions);
@@ -144,7 +147,11 @@ public class DebugDbCommand implements Runnable {
               required = true,
               names = {"--output", "-o"},
               description = "File to write state to")
-          final Path outputFile)
+          final Path outputFile,
+      @Option(
+              names = {"--block-output"},
+              description = "File to write the block matching the latest finalized state to")
+          final Path blockOutputFile)
       throws Exception {
     setConstants(networkOptions);
     final AsyncRunner asyncRunner =
@@ -152,14 +159,24 @@ public class DebugDbCommand implements Runnable {
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
-      final Optional<BeaconState> state =
+      final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
               .map(
                   builder ->
-                      builder.blockProvider(BlockProvider.NOOP).asyncRunner(asyncRunner).build())
-              .map(store -> store.getLatestFinalizedBlockAndState().getState());
-      return writeState(outputFile, state);
+                      builder
+                          .blockProvider(BlockProvider.NOOP)
+                          .asyncRunner(asyncRunner)
+                          .stateProvider(StateAndBlockSummaryProvider.NOOP)
+                          .build())
+              .map(UpdatableStore::getLatestFinalized);
+      int result = writeState(outputFile, finalizedAnchor.map(AnchorPoint::getState));
+      if (result == 0 && blockOutputFile != null) {
+        final Optional<SignedBeaconBlock> finalizedBlock =
+            finalizedAnchor.flatMap(AnchorPoint::getSignedBeaconBlock);
+        result = writeBlock(blockOutputFile, finalizedBlock);
+      }
+      return result;
     } finally {
       asyncRunner.shutdown();
     }
@@ -206,8 +223,7 @@ public class DebugDbCommand implements Runnable {
   }
 
   private void setConstants(@Mixin final NetworkOptions networkOptions) {
-    Constants.setConstants(
-        NetworkDefinition.fromCliArg(networkOptions.getNetwork()).getConstants());
+    Constants.setConstants(networkOptions.getNetwork().getConstants());
   }
 
   private Database createDatabase(
@@ -219,9 +235,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            NetworkDefinition.fromCliArg(networkOptions.getNetwork())
-                .getEth1DepositContractAddress()
-                .orElse(null));
+            networkOptions.getNetwork().getEth1DepositContractAddress().orElse(null));
     return databaseFactory.createDatabase();
   }
 
@@ -234,6 +248,20 @@ public class DebugDbCommand implements Runnable {
       Files.write(outputFile, SimpleOffsetSerializer.serialize(state.get()).toArrayUnsafe());
     } catch (IOException e) {
       System.err.println("Unable to write state to " + outputFile + ": " + e.getMessage());
+      return 1;
+    }
+    return 0;
+  }
+
+  private int writeBlock(final Path outputFile, final Optional<SignedBeaconBlock> block) {
+    if (block.isEmpty()) {
+      System.err.println("No block available.");
+      return 2;
+    }
+    try {
+      Files.write(outputFile, SimpleOffsetSerializer.serialize(block.get()).toArrayUnsafe());
+    } catch (IOException e) {
+      System.err.println("Unable to write block to " + outputFile + ": " + e.getMessage());
       return 1;
     }
     return 0;

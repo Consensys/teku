@@ -22,6 +22,10 @@ sonarqube {
   }
 }
 
+rootProject.version = calculatePublishVersion()
+def specificVersion = calculateVersion()
+def isDevelopBuild = rootProject.version.contains('develop')
+
 apply plugin: 'application'
 
 defaultTasks 'build','checkLicenses'
@@ -143,6 +147,9 @@ allprojects {
       '-Xlint:static',
       '-Werror',
     ]
+    options.forkOptions.jvmArgs += [
+        '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+    ]
 
     options.errorprone {
       disableWarningsInGeneratedCode
@@ -207,7 +214,7 @@ allprojects {
       'root.log.level',
       'evm.log.level'
     ]
-    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = project.hasProperty("showOutput") ? project.property("showOutput") : false
     for (String name : toImport) {
       if (System.getProperty(name) != null) {
         systemProperty name, System.getProperty(name)
@@ -227,7 +234,8 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.0.0-rc.0'
+// Note: v1.0.0 tests were republished to fix an initial error. This comment forces cache update
+def refTestVersion = 'v1.0.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -361,8 +369,8 @@ tasks.register("dockerDistUntar") {
 task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "quorumengineering/teku:develop"
+  def dockerBuildVersion = rootProject.version
+  def image = "consensys/teku:develop"
   def dockerBuildDir = "build/docker-teku/"
   workingDir "${dockerBuildDir}"
 
@@ -495,7 +503,7 @@ subprojects {
       key = bintrayKey
 
       publications = ['mavenJava']
-      override = version.endsWith('SNAPSHOT')
+      override = isDevelopBuild
 
       publish = true
 
@@ -531,7 +539,7 @@ subprojects {
           'Specification-Title': jarName,
           'Specification-Version': project.version,
           'Implementation-Title': jarName,
-          'Implementation-Version': calculateVersion()
+          'Implementation-Version': specificVersion
       )
     }
   }
@@ -638,15 +646,44 @@ def buildTime() {
   return df.format(new Date())
 }
 
-// Takes the version, and if -SNAPSHOT is part of it replaces SNAPSHOT
-// with the git commit version.
+// Calculate the version that this build would be published under (if it is published)
+// If this exact commit is tagged, use the tag
+// If this is on a release-* branch, use the most recent tag appended with +develop (e.g. 0.1.1-RC1+develop)
+// Otherwise, use develop
+def calculatePublishVersion() {
+  if (!grgit) {
+    return 'UNKNOWN'
+  }
+  def specificVersion = calculateVersion()
+  def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
+  if (specificVersion.contains('+')) {
+    return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
+  }
+  return specificVersion
+}
+
+// Calculate the version that teku --version will report (among other places)
+// If this exact commit is tagged, use the tag
+// Otherwise use git describe --tags and replace the - after the tag with a +
 def calculateVersion() {
-  String version = rootProject.version
-  if (version.endsWith("-SNAPSHOT")) {
-    version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
+  if (!grgit) {
+    return 'UNKNOWN'
+  }
+  String version = grgit.describe(tags: true)
+  def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
+  def matcher = version =~ versionPattern
+  if (matcher.find()) {
+    return "${matcher.group("lastVersion")}+${matcher.group("devVersion")}"
   }
   return version
 }
+
+task printVersion() {
+  doFirst {
+    print "Specific version: ${specificVersion}  Publish version: ${project.version}"
+  }
+}
+
 
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
@@ -692,7 +729,7 @@ bintray {
   }
 
   publish = true
-  override = version.endsWith('SNAPSHOT')
+  override = isDevelopBuild
 
   pkg = bintrayPackage
 }
@@ -702,8 +739,8 @@ bintrayUpload.mustRunAfter(distZip)
 
 task dockerUpload(type: Exec) {
   dependsOn([distDocker])
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def imageName = "quorumengineering/teku"
+  def dockerBuildVersion = "${rootProject.version}"
+  def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
   def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
 
@@ -716,7 +753,7 @@ task dockerUpload(type: Exec) {
     additionalTags.add('develop')
   }
 
-  if (!(dockerBuildVersion ==~ /.*-SNAPSHOT/)) {
+  if (!isDevelopBuild) {
     additionalTags.add('latest')
     additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }

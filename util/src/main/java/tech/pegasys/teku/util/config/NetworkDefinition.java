@@ -26,7 +26,34 @@ public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
           .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
-          .put("mainnet", builder().constants("mainnet").build())
+          .put(
+              "mainnet",
+              builder()
+                  .constants("mainnet")
+                  .initialStateFromClasspath("mainnet-genesis.ssz")
+                  .startupTimeoutSeconds(120)
+                  .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
+                  .discoveryBootnodes(
+                      // PegaSys Teku
+                      "enr:-KG4QJRlj4pHagfNIm-Fsx9EVjW4rviuZYzle3tyddm2KAWMJBDGAhxfM2g-pDaaiwE8q19uvLSH4jyvWjypLMr3TIcEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA",
+                      "enr:-KG4QDyytgmE4f7AnvW-ZaUOIi9i79qX4JwjRAiXBZCU65wOfBu-3Nb5I7b_Rmg3KCOcZM_C3y5pg7EBU5XGrcLTduQEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQ2_DUbiXNlY3AyNTZrMaEDKnz_-ps3UUOfHWVYaskI5kWYO_vtYMGYCQRAR3gHDouDdGNwgiMog3VkcIIjKA",
+                      // Prysmatic Labs
+                      "enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
+                      "enr:-Ku4QP2xDnEtUXIjzJ_DhlCRN9SN99RYQPJL92TMlSv7U5C1YnYLjwOQHgZIUXw6c-BvRg2Yc2QsZxxoS_pPRVe0yK8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMeFF5GrS7UZpAH2Ly84aLK-TyvH-dRo0JM1i8yygH50YN1ZHCCJxA",
+                      "enr:-Ku4QPp9z1W4tAO8Ber_NQierYaOStqhDqQdOPY3bB3jDgkjcbk6YrEnVYIiCBbTxuar3CzS528d2iE7TdJsrL-dEKoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMw5fqqkw2hHC4F5HZZDPsNmPdB1Gi8JPQK7pRc9XHh-oN1ZHCCKvg",
+                      // Sigp
+                      "enr:-IS4QLkKqDMy_ExrpOEWa59NiClemOnor-krjp4qoeZwIw2QduPC-q7Kz4u1IOWf3DDbdxqQIgC4fejavBOuUPy-HE4BgmlkgnY0gmlwhCLzAHqJc2VjcDI1NmsxoQLQSJfEAHZApkm5edTCZ_4qps_1k_ub2CxHFxi-gr2JMIN1ZHCCIyg",
+                      "enr:-IS4QDAyibHCzYZmIYZCjXwU9BqpotWmv2BsFlIq1V31BwDDMJPFEbox1ijT5c2Ou3kvieOKejxuaCqIcjxBjJ_3j_cBgmlkgnY0gmlwhAMaHiCJc2VjcDI1NmsxoQJIdpj_foZ02MXz4It8xKD7yUHTBx7lVFn3oeRP21KRV4N1ZHCCIyg",
+                      // EF
+                      "enr:-Ku4QHqVeJ8PPICcWk1vSn_XcSkjOkNiTg6Fmii5j6vUQgvzMc9L1goFnLKgXqBJspJjIsB91LTOleFmyWWrFVATGngBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAMRHkWJc2VjcDI1NmsxoQKLVXFOhp2uX6jeT0DvvDpPcU8FWMjQdR4wMuORMhpX24N1ZHCCIyg",
+                      "enr:-Ku4QG-2_Md3sZIAUebGYT6g0SMskIml77l6yR-M_JXc-UdNHCmHQeOiMLbylPejyJsdAPsTHJyjJB2sYGDLe0dn8uYBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhBLY-NyJc2VjcDI1NmsxoQORcM6e19T1T9gi7jxEZjk_sjVLGFscUNqAY9obgZaxbIN1ZHCCIyg",
+                      "enr:-Ku4QPn5eVhcoF1opaFEvg1b6JNFD2rqVkHQ8HApOKK61OIcIXD127bKWgAtbwI7pnxx6cDyk_nI88TrZKQaGMZj0q0Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhDayLMaJc2VjcDI1NmsxoQK2sBOLGcUb4AwuYzFuAVCaNHA-dy24UuEKkeFNgCVCsIN1ZHCCIyg",
+                      "enr:-Ku4QEWzdnVtXc2Q0ZVigfCGggOVB2Vc1ZCPEc6j21NIFLODSJbvNaef1g4PxhPwl_3kax86YPheFUSLXPRs98vvYsoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhDZBrP2Jc2VjcDI1NmsxoQM6jr8Rb1ktLEsVcKAPa08wCsKUmvoQ8khiOl_SLozf9IN1ZHCCIyg",
+
+                      // Nimbus
+                      "enr:-LK4QLU5_AeUzZEtpK8grqPo4EmX4el3ochu8vNNoXX1PrBjYfn8ksjeQ1eFtbL7ywMau9k_7BBQGmO26DHWgngkBCgBh2F0dG5ldHOI__________-EZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAN7_O-Jc2VjcDI1NmsxoQKH1zg2Fge8Q6Zf-rLFbjGEtgvVbmDXqFVLxqquJcguFIN0Y3CCI4yDdWRwgiOM",
+                      "enr:-LK4QLjSKc09WkFZ5Pa1UF3KPkt3ieTZ6B7F6iDL_chyniP5NVDl10aGIu-pL9mbwZ47GM3RN63eGHPsw-MTLSYcz74Bh2F0dG5ldHOI__________-EZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhDQ7fI6Jc2VjcDI1NmsxoQJDU6zzDlUDgUqFSzoIuP9bWu097k2d7X4eHoJTGhbphoN0Y3CCI4yDdWRwgiOM")
+                  .build())
           .put(
               "medalla",
               builder()
@@ -48,41 +75,50 @@ public class NetworkDefinition {
                       "enr:-Ku4QOYFmi2BW_YPDew_CKdfMvsrcRY1ARA-ImtcqFl-lgoxOFbxte4PU44-1M3uRNSRM-6rVa8USGohmWwtgwalEt8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQKH3lxnglLqrA7L6sl5r7XFnckr3XCnlZMaBTYSdE8SHIN1ZHCCD6A",
 
                       // Proto
-                      "enr:-Ku4QFVactU18ogiqPPasKs3jhUm5ISszUrUMK2c6SUPbGtANXVJ2wFapsKwVEVnVKxZ7Gsr9yEc4PYF-a14ahPa1q0Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhGQbAHyJc2VjcDI1NmsxoQILF-Ya2i5yowVkQtlnZLjG0kqC4qtwmSk8ha7tKLuME4N1ZHCCIyg")
+                      "enr:-Ku4QFVactU18ogiqPPasKs3jhUm5ISszUrUMK2c6SUPbGtANXVJ2wFapsKwVEVnVKxZ7Gsr9yEc4PYF-a14ahPa1q0Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhGQbAHyJc2VjcDI1NmsxoQILF-Ya2i5yowVkQtlnZLjG0kqC4qtwmSk8ha7tKLuME4N1ZHCCIyg",
+
+                      // Lighthouse v5.1
+                      "enr:-LK4QCGFeQXjpQkgOfLHsbTjD65IOtSqV7Qo-Qdqv6SrL8lqFY7INPMMGP5uGKkVDcJkeXimSeNeypaZV3MHkcJgr9QCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDnp11aAAAAAf__________gmlkgnY0gmlwhA37LMaJc2VjcDI1NmsxoQJ7k0mKtTd_kdEq251flOjD1HKpqgMmIETDoD-Msy_O-4N0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QCpyWmMLYwC2umMJ_g0c9VY7YOFwZyaR80_tuQNTWOzJbaR82DDhVQYqmE_0gvN6Du5jwnxzIaaNRZQlVXzfIK0Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDnp11aAAAAAf__________gmlkgnY0gmlwhCLR2xuJc2VjcDI1NmsxoQOYiWqrQtQksTEtS3qY6idxJE5wkm0t9wKqpzv2gCR21oN0Y3CCIyiDdWRwgiMo",
+
+                      // Prysm v5.1
+                      "enr:-Ku4QHWezvidY_m0dWEwERrNrqjEQWrlIx7b8K4EIxGgTrLmUxHCZPW5-t8PsS8nFxAJ8k8YacKP5zPRk5gbsTSsRTQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMypP_ODwTuBq2v0oIdjPGCEyu9Hb_jHDbuIX_iNvBRGoN1ZHCCGWQ",
+                      "enr:-Ku4QOnVSyvzS3VbF87J8MubaRuTyfPi6B67XQg6-5eAV_uILAhn9geTTQmfqDIOcIeAxWHUUajQp6lYniAXPWncp6UBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQKekYKqUtwbaJKKCct_srE5-g7tBUm68mj_jpeSb7CCqYN1ZHCCC7g")
                   .build())
           .put(
-              "spadina",
+              "toledo",
               builder()
-                  .constants("spadina")
-                  .initialStateFromClasspath("spadina-genesis.ssz")
+                  .constants("toledo")
                   .startupTimeoutSeconds(120)
-                  .eth1DepositContractAddress("0x48B597F4b53C21B48AD95c7256B49D1779Bd5890")
+                  .eth1DepositContractAddress("0x47709dC7a8c18688a1f051761fc34ac253970bC0")
                   .discoveryBootnodes(
-                      // PegaSys Teku
-                      "enr:-KG4QA-EcFfXQsL2dcneG8vp8HTWLrpwHQ5HhfyIytfpeKOISzROy2kYSsf_v-BZKnIx5XHDjqJ-ttz0hoz6qJA7tasEhGV0aDKQxKgkDQAAAAL__________4JpZIJ2NIJpcIQDFt-UiXNlY3AyNTZrMaECkR4C5DVO_9rB48eHTY4kdyOHsguTEDlvb7Ce0_mvghSDdGNwgiMog3VkcIIjKA",
+                      // discv5.1-only bootnode @protolambda
+                      "enr:-Ku4QL5E378NT4-vqP6v1mZ7kHxiTHJvuBvQixQsuTTCffa0PJNWMBlG3Mduvsvd6T2YP1U3l5tBKO5H-9wyX2SCtPkBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC4EvfsAHAe0P__________gmlkgnY0gmlwhDaetEeJc2VjcDI1NmsxoQKtGC2CAuba7goLLdle899M3esUmoWRvzi7GBVhq6ViCYN1ZHCCIyg",
 
-                      // Prysmatic Prysm
-                      "enr:-Ku4QGQJf2bcDAwVGvbvtq3AB4KKwAvStTenY-i_QnW2ABNRRBncIU_5qR_e_um-9t3s9g-Y5ZfFATj1nhtzq6lvgc4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQNoed9JnQh7ltcAacHEGOjwocL1BhMQbYTgaPX0kFuXtIN1ZHCCE4g",
+                      // lighthouse (Canada) @protolambda
+                      "enr:-LK4QHLujdDjOwm2siyFJ2XGz19_ip-qTtozG3ceZ3_56G-LMWb4um67gTSYRJg0WsSkyvRMBEpz8uuIYl-7HfWvktgBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhCO3C5OJc2VjcDI1NmsxoQKXw9BLDY6YwmqTtfkzUnlJQb82UrlX4lIAnSSYWHFRlYN0Y3CCIyiDdWRwgiMo",
 
-                      // Proto
-                      "enr:-Ku4QFW1SLbtzJ_ghQQC8-8xezvZ1Mx95J-zer9IPmDE2BKeD_SM7j4vH6xmroUFVuyK-54n2Ey2ueB-Lf-fkbcLwAQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhGQZkSyJc2VjcDI1NmsxoQJMcbZhTCEKYSH5-qPQPgYfSHHUMLGBAKU-f-96yYKFMIN1ZHCCIyg")
+                      // lighthouse (Sao Paulo) @protolambda
+                      "enr:-LK4QMxmk7obupScBebKFaasSH3QmYUg-HaEmMAljfmGQCLbKwdOhszzx-VfVPvlH7bZZbOmg3-SNWbJsFfytdjD7a4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhBLkdWuJc2VjcDI1NmsxoQOwYsJyLOjJcDIqiQSSZtDi_EwwSaUjPBSnLVY_PYu-HoN0Y3CCIyiDdWRwgiMo",
+
+                      // Teku @protolambda
+                      "enr:-KG4QKqo0mG4C35ntJg8icO54wd973aZ7aBiAnC2t1XkGvgqNDOEHwNe2ykxYVUj9AWjm_lKD7brlhXKCZEskGbie2cDhGV0aDKQl5uvZwBwHtD__________4JpZIJ2NIJpcIQNOThwiXNlY3AyNTZrMaECn1dwC8MRt8rk2VUT8RjzEBaceF09d4CEQI20O_SWYcqDdGNwgiMog3VkcIIjKA",
+
+                      // Prysm @protolambda
+                      "enr:-LK4QAhU5smiLgU0AgrdFv8eCKmDPCBkXCMCIy8Aktaci5qvCYOsW98xVqJS6OoPWt4Sz_YoTdLQBWxd-RZ756vmGPMBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhDTTDL2Jc2VjcDI1NmsxoQOmSJ0mKsQjab7Zralm1Hi0AEReZ2SEqYdKoOPmoA98DoN0Y3CCIyiDdWRwgiMo")
                   .build())
           .put(
-              "zinken",
+              "pyrmont",
               builder()
-                  .constants("zinken")
-                  .initialStateFromClasspath("zinken-genesis.ssz")
+                  .constants("pyrmont")
                   .startupTimeoutSeconds(120)
-                  .eth1DepositContractAddress("0x99F0Ec06548b086E46Cb0019C78D0b9b9F36cD53")
+                  .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
+                  .initialStateFromClasspath("pyrmont-genesis.ssz")
                   .discoveryBootnodes(
-                      // PegaSys Teku
-                      "enr:-KG4QHPtVnKHEOkEJT1f5C6Hs-C_c4SlipTfkPrDIikLTzhqA_3m6bTq-CirsljlVP4IJybXelHE7J3l9DojR14_ZHUGhGV0aDKQ2jUIggAAAAP__________4JpZIJ2NIJpcIQSv2qciXNlY3AyNTZrMaECi_CNPDkKPilhimY7aEY-mBtSzI8AKMDvvv_I2Un74_qDdGNwgiMog3VkcIIjKA",
-
-                      // Prysmatic Prysm
-                      "enr:-Ku4QH63huZ12miIY0kLI9dunG5fwKpnn-zR3XyA_kH6rQpRD1VoyLyzIcFysCJ09JDprdX-EzXp-Nc8swYqBznkXggBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDaNQiCAAAAA___________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQILqxBY-_SF8o_5FjFD3yM92s50zT_ciFi8hStde5AEjIN1ZHCCH0A",
-
-                      // Proto
-                      "enr:-Ku4QMGGAuQO8NPhYCz29wsahrFR-betfxKx6ltyzLUM70yJWoaRjJZ-n1Oiof2PiKnzjVG1n6RoyO4ZNJkQtqEkqNkBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDaNQiCAAAAA___________gmlkgnY0gmlwhDZUyU6Jc2VjcDI1NmsxoQNMOowBnXeUYjK71_Zz78j3y7EYKSXH9ZGhYB4wB6V8lIN1ZHCCIyg")
+                      // @protolambda bootnode 1
+                      "enr:-Ku4QOA5OGWObY8ep_x35NlGBEj7IuQULTjkgxC_0G1AszqGEA0Wn2RNlyLFx9zGTNB1gdFBA6ZDYxCgIza1uJUUOj4Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDQPSjiJc2VjcDI1NmsxoQM6yTQB6XGWYJbI7NZFBjp4Yb9AYKQPBhVrfUclQUobb4N1ZHCCIyg",
+                      // @protolambda bootnode 2
+                      "enr:-Ku4QOksdA2tabOGrfOOr6NynThMoio6Ggka2oDPqUuFeWCqcRM2alNb8778O_5bK95p3EFt0cngTUXm2H7o1jkSJ_8Dh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDVTPWXAAAgCf__________gmlkgnY0gmlwhDaa13aJc2VjcDI1NmsxoQKdNQJvnohpf0VO0ZYCAJxGjT0uwJoAHbAiBMujGjK0SoN1ZHCCIyg")
                   .build())
           .build();
 
@@ -145,6 +181,11 @@ public class NetworkDefinition {
 
   public Optional<String> getEth1Endpoint() {
     return eth1Endpoint;
+  }
+
+  @Override
+  public String toString() {
+    return constants;
   }
 
   private static class Builder {

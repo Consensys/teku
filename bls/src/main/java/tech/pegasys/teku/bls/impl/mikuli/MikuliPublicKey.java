@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 
@@ -80,10 +79,8 @@ public final class MikuliPublicKey implements PublicKey {
   }
 
   public MikuliPublicKey combine(MikuliPublicKey pk) {
-    if (!BLSConstants.VALID_INFINITY) {
-      if (this.isInfinity()) return this;
-      if (pk.isInfinity()) return pk;
-    }
+    if (this.isInfinity()) return this;
+    if (pk.isInfinity()) return pk;
     return new MikuliPublicKey(point.add(pk.point));
   }
 
@@ -126,10 +123,10 @@ public final class MikuliPublicKey implements PublicKey {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof MikuliPublicKey)) {
+    if (!(obj instanceof PublicKey)) {
       return false;
     }
-    MikuliPublicKey other = (MikuliPublicKey) obj;
+    MikuliPublicKey other = MikuliPublicKey.fromPublicKey((PublicKey) obj);
     try {
       return point.equals(other.point);
     } catch (final IllegalArgumentException e) {

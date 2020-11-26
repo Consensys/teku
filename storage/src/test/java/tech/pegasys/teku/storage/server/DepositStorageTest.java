@@ -62,7 +62,7 @@ public class DepositStorageTest {
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     storageSystem = storageSystemSupplier.get(dataDirectory);
-    database = storageSystem.getDatabase();
+    database = storageSystem.database();
     eventsChannel = storageSystem.eth1EventsChannel();
 
     storageSystem.chainUpdater().initializeGenesis();

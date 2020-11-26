@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static java.util.Collections.emptySet;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -54,18 +57,22 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
-    for (int i = 1; i <= 4; i++) {
-      when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
-          .thenReturn(Optional.of(i));
-    }
-    when(chainDataProvider.getValidatorsDetails(slot, List.of(1, 2, 3, 4)))
+    when(chainDataProvider.getStateValidators("head", List.of("1", "2", "3", "4"), emptySet()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorResponse))));
     handler.handle(context);
     GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);
-    assertThat(response.data).isEqualTo(List.of(validatorResponse));
+    assertThat(response.data).containsExactly(validatorResponse);
+  }
+
+  @Test
+  public void shouldGetNotFoundForMissingState() throws Exception {
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "1"));
+    when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1")));
+    when(chainDataProvider.getStateValidators("1", List.of("1"), emptySet()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    handler.handle(context);
+    verify(context).status(SC_NOT_FOUND);
   }
 }

@@ -23,7 +23,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SignedBlock {
+  @JsonProperty("slot")
   public final UInt64 slot;
+
+  @JsonProperty("signing_root")
   public final Bytes32 signingRoot;
 
   @JsonCreator

@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -33,17 +35,18 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla", "spadina"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final GlobalConfiguration config = getResultingGlobalConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes())
+    final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
+    final GlobalConfiguration config = tekuConfig.global();
+    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getInitialState())
-        .isEqualTo(networkDefinition.getInitialState().orElse(null));
+    assertThat(tekuConfig.weakSubjectivity().getWeakSubjectivityStateResource())
+        .isEqualTo(networkDefinition.getInitialState());
     assertThat(config.getStartupTargetPeerCount())
         .isEqualTo(networkDefinition.getStartupTargetPeerCount());
     assertThat(config.getStartupTimeoutSeconds())
@@ -58,8 +61,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
 
-    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
-    assertThat(globalConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
+    final P2PConfig config = getResultingTekuConfiguration().beaconChain().p2pConfig();
+    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   @Test
@@ -69,14 +72,6 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
     assertThat(globalConfiguration.getConstants()).isEqualTo(url);
-  }
-
-  @Test
-  public void useInitialState() {
-    String initialState = "some-file-or-url";
-    final GlobalConfiguration config =
-        getGlobalConfigurationFromArguments("--initial-state", initialState);
-    assertThat(config.getInitialState()).isEqualTo(initialState);
   }
 
   @Test
@@ -91,5 +86,16 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final GlobalConfiguration config =
         getGlobalConfigurationFromArguments("--Xpeer-request-limit", "10");
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
+  }
+
+  @Test
+  public void helpDisplaysDefaultNetwork() {
+    beaconNodeCommand.parse(new String[] {"--help"});
+
+    final String output = getCommandLineOutput();
+    assertThat(output)
+        .contains(
+            "-n, --network=<NETWORK>    Represents which network to use.\n"
+                + "                               Default: mainnet");
   }
 }

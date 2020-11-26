@@ -23,9 +23,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,11 +41,12 @@ class StateRegenerationBaseSelectorTest {
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier =
       mock(Supplier.class);
 
-  private final StateAndBlockProvider stateAndBlockProvider = mock(StateAndBlockProvider.class);
+  private final StateAndBlockSummaryProvider stateAndBlockProvider =
+      mock(StateAndBlockSummaryProvider.class);
   private final BlockProvider blockProvider = mock(BlockProvider.class);
 
   private Optional<SignedBlockAndState> closestBlockAndStateFromStore = Optional.empty();
-  private Optional<SignedBlockAndState> rebasedStartingPoint = Optional.empty();
+  private Optional<StateAndBlockSummary> rebasedStartingPoint = Optional.empty();
   private Optional<SignedBlockAndState> latestEpochBoundary = Optional.empty();
 
   @Test
@@ -117,10 +119,29 @@ class StateRegenerationBaseSelectorTest {
     final StateRegenerationBaseSelector selector = createSelector();
 
     // Make the epoch boundary state unavailable
-    when(stateAndBlockProvider.getBlockAndState(fromEpochBoundary.getRoot()))
+    when(stateAndBlockProvider.getStateAndBlock(fromEpochBoundary.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(Optional.of(fromStore));
+    final Optional<StateAndBlockSummary> expected =
+        Optional.of(StateAndBlockSummary.create(fromStore.getState()));
+    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(expected);
+  }
+
+  @Test
+  void shouldUseBaseFromStoreEvenIfBlockIsUnavailable() {
+    final SignedBlockAndState fromStore = withClosestAvailableFromStoreAtSlot(100);
+    final SignedBlockAndState fromEpochBoundary = withLatestEpochBoundaryAtSlot(90);
+    withRebasedStartingPointAtSlot(80);
+
+    final StateRegenerationBaseSelector selector = createSelector(false);
+
+    // Make the epoch boundary state unavailable
+    when(stateAndBlockProvider.getStateAndBlock(fromEpochBoundary.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Optional<StateAndBlockSummary> expected =
+        Optional.of(StateAndBlockSummary.create(fromStore.getState()));
+    assertThatSafeFuture(selector.getBestBase()).isCompletedWithValue(expected);
   }
 
   @Test
@@ -181,7 +202,10 @@ class StateRegenerationBaseSelectorTest {
   }
 
   private void assertSelectedBase(final SignedBlockAndState fromStore) {
-    assertThatSafeFuture(getBestBase()).isCompletedWithValue(Optional.of(fromStore));
+    final SafeFuture<Optional<StateAndBlockSummary>> actual = getBestBase();
+    assertThat(actual).isCompleted();
+    assertThat(actual.join()).isPresent();
+    assertThat(actual.join().get().getRoot()).isEqualTo(fromStore.getRoot());
   }
 
   private SignedBlockAndState withClosestAvailableFromStoreAtSlot(final long slot) {
@@ -205,11 +229,16 @@ class StateRegenerationBaseSelectorTest {
     return blockAndState;
   }
 
-  private SafeFuture<Optional<SignedBlockAndState>> getBestBase() {
+  private SafeFuture<Optional<StateAndBlockSummary>> getBestBase() {
     return createSelector().getBestBase();
   }
 
   private StateRegenerationBaseSelector createSelector() {
+    return createSelector(true);
+  }
+
+  private StateRegenerationBaseSelector createSelector(
+      final boolean withClosestStoreBlockAvailable) {
     final Optional<BlockRootAndState> closestStateFromStore =
         closestBlockAndStateFromStore.map(
             blockAndState ->
@@ -219,11 +248,14 @@ class StateRegenerationBaseSelectorTest {
     closestBlockAndStateFromStore.ifPresent(
         blockAndState ->
             when(blockProvider.getBlock(blockAndState.getRoot()))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState.getBlock()))));
+                .thenReturn(
+                    SafeFuture.completedFuture(
+                        Optional.of(blockAndState.getBlock())
+                            .filter(__ -> withClosestStoreBlockAvailable))));
 
     latestEpochBoundary.ifPresent(
         blockAndState ->
-            when(stateAndBlockProvider.getBlockAndState(blockAndState.getRoot()))
+            when(stateAndBlockProvider.getStateAndBlock(blockAndState.getRoot()))
                 .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState))));
 
     return new StateRegenerationBaseSelector(
@@ -232,7 +264,6 @@ class StateRegenerationBaseSelectorTest {
                 new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot())),
         closestAvailableStateSupplier,
         stateAndBlockProvider,
-        blockProvider,
         rebasedStartingPoint,
         REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS);
   }

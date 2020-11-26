@@ -1,13 +1,235 @@
 # Changelog
 
-Due to the rapidly changing nature of ETH2 testnets and rapid rate of improvements to Teku, 
-we recommend most users use the latest `master` branch of Teku.
-
 ## Upcoming Breaking Changes
 
-- REST API endpoints will be updated to match emerging standards in a future release.
-- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
-- Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
+- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
+
+## 20.11.0
+
+The beacon chain is set to launch with the MainNet genesis state now set. The beacon chain will launch on 1 December 2020 at 12:00:23 UTC. 
+Teku 20.11.0 is fully production ready and has full support for the beacon chain Mainnet.
+
+### Breaking Changes
+
+- REST API endpoint `/eth/v1/beacon/pool/attestations` now accepts an array of attestations instead of a single attestation.
+
+### Additions and Improvements
+
+- Full support for Eth2 MainNet. Genesis state and bootnodes are now configured as part of the `--network mainnet` option. 
+- Voluntary exits and slashings submitted via the REST API are now broadcast to the gossip network.
+- Added `/teku/v1/admin/liveness` endpoint which always returns 200 OK to be used to check if the REST API is live.
+- Added `dependent_root` field to attester and block producer duties as well as 
+  `current_duty_dependent_root` and `previous_duty_dependent_root` to the `head` events to aid validator clients in determining when duties are invalidated by changes in the chain.
+- Tightened validation of data from the beacon node in the validator client to ensure blocks and attestations from far future slots are not signed. 
+
+### Bug Fixes
+
+- Fixed incorrect expected attestation metric.
+- Fixed incorrect `beacon_previous_correct_validators` metrics.
+- Fixed race condition during validator startup which could lead to duties not being performed for the first two epochs.
+- Provide a human-friendly error message when the `--network` argument is unknown.
+- Provide more human-friendly error messages when invalid options are given to the `voluntary-exit` subcommand.
+- Avoided duplicate epoch processing during block creation.
+- Reduce noise from `UNKNOWN_PARENT` errors when syncing.
+- Drop discovery session when a malformed `authheadermessage` packet is received.
+
+## 20.11.0-RC2
+
+### Additions and Improvements
+
+- Optimised gossip handling in jvm-libp2p.
+- Optimised attestation and aggregate verification, ensuring signatures are only verified once.
+- Added new metrics `beacon_current_correct_validators` and `beacon_previous_correct_validators` to report the number of validators that attested to the correct head block in the current and previous epochs.
+
+### Bug Fixes
+
+- Fixed seenTTL value in gossipsub configuration. Significantly reduces rate of gossip traffic. 
+- Avoid potential errors when regenerating states immedately after starting from a non-genesis state.
+- Fixed issue where validator duties may not be performed during the first two epochs after restart.
+
+## 20.11.0-RC1
+
+### Breaking Changes
+
+- The default network is now `mainnet`. Use `--network medalla` to continue using the Medalla testnet.
+- REST API endpoints have been migrated to the standard API and deprecated endpoints removed. Replacements:
+  - GET `/eth/v1/beacon/states/{state_id}/validators/{validator_id}` replaced by POST `/eth/v1/beacon/states/{state_id}/validators/{validator_id}`
+  - `/network/enr` replaced by `/eth/v1/node/identity`
+  - `/network/listen_addresses` replaced by `/eth/v1/node/identity`
+  - `/network/peer_id` replaced by `/eth/v1/node/identity`
+  - `/network/peers` replaced by `/eth/v1/node/peers`
+  - `/network/peer_count` replaced by `/eth/v1/node/peers`
+  - `/network/listen_port` replaced by `/eth/v1/node/identity`
+  - `/node/fork` replaced by `/eth/v1/beacon/states/{state_id}/fork`
+  - `/node/genesis_time` replaced by `/eth/v1/beacon/genesis`
+  - `/node/syncing` replaced by `/eth/v1/node/syncing`
+  - `/node/version` replaced by `/eth/v1/node/version`
+  - GET `/validator/attestation` replaced by `/eth/v1/validator/attestation_data`
+  - POST `/validator/attestation` replaced by `/eth/v1/beacon/pool/attestations`
+  - GET `/validator/block` replaced by `/eth/v1/validator/blocks/{slot}`
+  - POST `/validator/block` replaced by `/eth/v1/beacon/blocks`
+  - `/validator/aggregate_attestation` replaced by `/eth/v1/validator/aggregate_attestation`
+  - POST `/validator/duties` replaced by POST `/eth/v1/validator/duties/attester/{epoch}` and GET `/eth/v1/validator/duties/proposer/{epoch}`
+  - `/validator/aggregate_and_proofs` replaced by `/eth/v1/validator/aggregate_and_proofs`
+  - `/validator/beacon_committee_subscription` replaced by `/eth/v1/validator/beacon_committee_subscriptions`
+  - `/validator/persistent_subnets_subscription` deprecated. The beacon node now automatically establishes persistent subnet subscriptions based on calls to `/eth/v1/validator/beacon_committee_subscriptions`
+  - `/beacon/block` deprecated. Replaced by `/eth/v1/beacon/blocks/{block_id}`
+  - `/admin/log_level` moved to `/teku/v1/admin/log_level`
+- Validator subcommands for generating and registering validators have been removed. Please use the Eth2 Launchpad to register validators, which is the most secure way of generating keys and sending deposits.
+- Log files are now stored under the specified `--data-path` in `<data-path>/logs/teku.log`. The location is unchanged if `--data-path` is not specified.
+
+### Additions and Improvements
+
+- Switched default network to `mainnet`. Note that as the MainNet genesis state is not yet set, an `--eth1-endpoint` must be provided when using MainNet.
+- Added support for the `pyrmont` testnet via `--network pyrmont`.
+- Added `teku voluntary-exit` subcommand to allow creating and sending voluntary exit operations for validators.
+- Syncing from a non-genesis state (weak subjectivity sync) is now fully supported. Use `--initial-state` to specify a finalized state to begin syncing from.
+- Added two REST APIs to download states as SSZ, suitable for use with `--initial-state`.
+  - By block root, slot or keyword (eg `finalized`): `/teku/v1/beacon/blocks/:block_id/state`
+  - By state root, slot or keyword (eg `finalized`): `/teku/v1/beacon/states/:state_id`
+- Provide clearer information in logs when external signers refuse to sign because of a potential slashing condition.
+- Provide more detailed information when internal slashing protection refuses to sign because of a potential slashing condition.
+- Allow built-in slashing protection to be disabled for external signers with `--validators-external-signer-slashing-protection-enabled=false`
+- Added support for slashing protection interchange format v5.
+- Historical blocks are now backfilled when syncing from a non-genesis state.
+
+### Bug Fixes
+
+- Updated jvm-libp2p to fix `CantDecryptInboundException` errors in logs.
+- Reduced log level when malformed response is received from a remote peer during sync.
+- Fixed incompatibility with the standard slashing protection interchange format.
+- Fix OpenAPI specification to remove the invalid `exampleSetFlag` field.
+- Fix response content for `/eth/v1/beacon/states/:state_id/finality_checkpoints` in OpenAPI specification.
+
+## 0.12.14
+
+### Breaking Changes
+- In post data for `/eth/v1/validator/aggregate_and_proofs`, `index` has been renamed to `aggregator_index` and `attestation` has been renamed to `aggregate` reflecting the latest version of the standard API spec.
+- Removed network definitions for `spadina` and `zinken` testnets which are no longer active.
+- The `validator` subcommands to generate validator keys and send deposit transactions have been removed. Use the Eth2 Launchpad to register validators.
+
+### Additions and Improvements
+- Added the Mainnet network definition. To use Mainnet, ensure the ETH1 node is connected to Eth1 Mainnet and specify `--network mainnet`.
+- New standard API endpoints:
+  - GET `/eth/v1/config/fork_schedule`
+  - GET `/eth/v1/beacon/blocks/{block_id}`
+  - GET `/eth/v1/beacon/blocks/{block_id}/attestations`
+  - GET `/eth/v1/beacon/blocks/{block_id}/root`
+  - POST `/eth/v1/beacon/pool/voluntary_exits`
+  - POST `/eth/v1/beacon/pool/proposer_slashings`
+  - POST `/eth/v1/beacon/pool/attester_slashings`
+  - GET `/eth/v1/config/deposit_contract`
+- Added support for the Toledo devnet.
+- Early access: Weak subjectivity sync no longer requires the initial block.  Only the state needs to be provided via `--Xws-initial-state`. Additionally the `Xws-initial-state` option can be specified via a config file.
+- Support either plain text or JSON responses from external signers.
+- Identify which validator was affected when validator duties fail.
+- Removed support for uncompressed `SSZ` encoding for gossip and p2p RPC. All networks have been using `SSZ_SNAPPY` encoding for some time.
+
+### Bug Fixes
+- Fixed an issue where deposit events were retrieved from a range of blocks that was too large. This resulted in overloading local Geth nodes running on Mainnet, and exceeding the 10,000 log event limit in Infura responses.
+- Reduce log level for `RpcTimeoutException` during sync.
+- Check equality of the header in proposer slashings, not the signed wrapper. Fixes a potential state transition incompatibility found by fuzz testing.
+
+
+## 0.12.13
+
+### Breaking Changes
+- `/eth/v1/beacon/{state}/committees` now specifies the epoch as a query parameter instead of a part of the path
+- Discovery has been updated to discv5.1
+
+### Additions and Improvements
+- Reduced memory usage when finalizing after a long period of non-finalization and provided progress messages while finalized blocks are stored
+- New standard API endpoints:
+  - GET `/eth/v1/debug/beacon/heads`
+- Updated discovery to use discv5.1 standard
+- Significantly reduced CPU usage, particularly during long periods of non-finalization by optimising the `get_ancestor` method in fork choice
+- Added `libp2p_gossip_messages_total` metric to report the number of gossip messages processed by gossip topic
+- Apache license notice is now displayed on startup
+
+### Bug Fixes
+- Handled retrieving states for `finalized` or `head` when the actual slot is empty
+- Fixed issue where EIP2335 keystores without a `path` or `uuid` field were rejected as invalid
+- Fixed error codes returned when validators were not found in standard API queries
+- Skip loading the latest finalized state on startup as it is not required to recreate the memory store
+- Fixed handling of empty responses from peers when requesting a single block that they do not have
+
+
+## 0.12.12
+
+### Breaking Changes
+- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
+- Support for the v3 database format has been removed.  This is an old format that was replaced prior to the Medalla testnet launching so all users should already be on more recent versions. 
+
+### Additions and Improvements
+- External signing API now includes all data required for the external signer to independently compute the signing root
+- New standard REST API endpoints:
+  - GET `/eth/v1/beacon/headers` - currently the `parent_root` option is not supported
+  - GET `/eth/v1/debug/states/{state_id}`
+  - GET `/eth/v1/config/spec`
+- Validator client now supports basic authentication when the credentials are specified as part of the `--beacon-node-api-endpoint` option
+- Validator client now has simple handling for 429 Too Many Request responses from the beacon node
+- Added `--p2p-subscribe-all-subnets-enabled` option to the beacon node to automatically create persistent subscriptions to all attestation subnets
+- Early access: support for starting sync from an arbitrary point in the chain with `--Xws-initial-state=<path-to-ssz-encoded-state> --Xws-initial-block=<path-to-ssz-encoded-block>`. As this is early access, the CLI options are subject to change.
+
+
+### Bug Fixes
+- Fixed a long stall when the chain finalizes after a long period of non-finalization in archive mode
+- `--config-file` option can now be used with subcommands and specified either before or after the subcommand on the command line
+- Fixed issue where validator committee indices were not string formatted in the standard REST API responses
+- Requests for `head`, `justified` and `finalized` blocks would incorrectly return a `404` response if the slot was empty
+- Fixed issue where the `slot` parameter for the `/eth/v1/validator/aggregate_attestation` endpoint was ignored and the validator client always set it to 0 when making requests.
+- Fixed issue where the `/eth/v1/validator/attestation_data` endpoint did not wrap the response in the `data` element as expected
+- Fixed an issue where a state from the previous epoch was used when calculating proposer duties
+- Performed block gossip validation checks which do not require the state prior to loading it to improve performance
+
+## 0.12.11
+
+### Additions and Improvements
+- Teku now supports running the validator client as a separate process via the `teku validator-client` subcommand. The in-process validator client is still supported. 
+  
+  **IMPORTANT**: To avoid being slashed, ensure validator keys are only passed as arguments to *either* the beacon node or the validator client but never both at the same time.
+- Migrates to a new directory structure for data storage to provide clear separation between beacon node and validator files. Existing databases will be automatically migrated.
+- Improved management of states to reduce on-heap memory usage during long periods of non-finalization.
+- Head update and chain reorg events are no longer published during sync. A single coalesced event is published when sync completes.
+- Reduced database growth rate during periods of non-finalization. State snapshots are only stored every two epochs instead of each epoch. This can be further adjusted with `--Xhot-state-persistence-frequency`.
+- New standard REST API endpoints:
+  - `/eth/v1/beacon/headers/{block_id}`
+  - `/eth/v1/beacon/states/:state_id/committees/`
+  - `/eth/v1/beacon/states/:state_id/committees/:epoch`
+  - `/eth/v1/beacon/states/:state_id/finality_checkpoints`
+  - `/eth/v1/beacon/states/:state_id/validators`
+  - `/eth/v1/beacon/states/:state_id/validator_balances`
+  - `/eth/v1/validator/aggregate_attestation`
+  - `/eth/v1/validator/aggregate_and_proofs`
+  - `/eth/v1/validator/beacon_committee_subscriptions`
+  - `/eth/v1/validator/attestation_data`
+  - `/eth/v1/beacon/pool/attestations`
+  - `/eth/v1/beacon/states/:state_id/root`
+  - `/eth/v1/beacon/blocks`
+  - `/eth/v1/validator/blocks/{slot}`
+- `/eth/v1/validator/duties/attester/:epoch` now includes the `committees_at_slot` value.
+- `/eth/v1/validator/duties/attester/:epoch` now supports using the `POST` method to specify validator IDs, avoiding URL length limits.
+- The beacon node now automatically manages persistent subnet subscriptions based on the requests to `/eth/v1/validator/beacon_committee_subscriptions` endpoint
+- Log to the console if the ETH1 node's chain ID doesn't match the expected value from the ETH2 network definition. This alerts users if the ETH1 node is sync'd to the wrong ETH1 network. Thanks to `systemfreund`.
+- Performance tracker reports now include information on duties which could not be performed due to an error.
+- Added support for v1.0.0-rc.0 of the beacon chain spec.
+- Added a `beacon_attestation_pool_size` metric to report the number of attestations held in the attestation pool.
+- `StrictNoSign` requirements are now enforced on gossip messages. Messages with `from`, `signature` or `seqno` fields will be rejected.
+- Removed support for `onyx` and `altona` options to the `--network` command line option. These networks used an older, incompatible version of the beacon chain spec and have been shut down.
+- The `--config-file` option can now be used to provide options for all subcommands.
+- Added support for checking the weak subjectivity period and checkpoint. Violations are currently reported to the log file only while the remaining details and infrastructure for handling the weak subjectivity period are finalized.
+
+
+### Bug Fixes
+- Fixed "Unhandled error while processes req/response" `NullPointerException`. 
+- Fixed issue where performance tracker logs counted attestations twice.
+- Force external signer connections to use HTTP1.1. HTTP2 connections were regularly failing in Azure.
+- Fixed incompatibility with Lighthouse caused by sending an unexpected `RESET` after both sides of a stream were closed.
+- Fixed issue where REST API reported a 500 internal server error when syncing instead of 503.
+- Fixed issue where REST APIs returning validator information incorrectly used the effective balance instead of the actual balance.
+
+ 
 
 ## 0.12.10
 

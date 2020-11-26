@@ -19,7 +19,7 @@ import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -45,6 +45,7 @@ public class StorageSystem implements AutoCloseable {
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final ChainStorage chainStorage;
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
@@ -53,11 +54,13 @@ public class StorageSystem implements AutoCloseable {
       final EventBus eventBus,
       final TrackingChainHeadChannel reorgEventChannel,
       final StateStorageMode storageMode,
+      final ChainStorage chainStorage,
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier) {
     this.metricsSystem = metricsSystem;
+    this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
@@ -92,7 +95,7 @@ public class StorageSystem implements AutoCloseable {
             storeConfig,
             chainStorageServer,
             chainStorageServer,
-            new StubProtoArrayStorageChannel(),
+            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -107,6 +110,7 @@ public class StorageSystem implements AutoCloseable {
         eventBus,
         reorgEventChannel,
         storageMode,
+        chainStorageServer,
         database,
         recentChainData,
         combinedChainDataClient,
@@ -137,8 +141,12 @@ public class StorageSystem implements AutoCloseable {
     return new ProtoArrayStorage(database);
   }
 
-  public Database getDatabase() {
+  public Database database() {
     return database;
+  }
+
+  public ChainStorage chainStorage() {
+    return chainStorage;
   }
 
   public StorageSystem restarted() {
@@ -175,7 +183,7 @@ public class StorageSystem implements AutoCloseable {
     this.database.close();
   }
 
-  public static interface RestartedStorageSupplier {
+  public interface RestartedStorageSupplier {
     StorageSystem restart(final StateStorageMode storageMode);
   }
 }

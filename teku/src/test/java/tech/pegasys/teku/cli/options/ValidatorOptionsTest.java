@@ -41,7 +41,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .getValidatorConfig();
 
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
-    assertThat(config.isValidatorPerformanceTrackingEnabled()).isTrue();
     assertThat(config.getValidatorKeystorePasswordFiles())
         .containsExactly("a.password", "b.password");
     assertThat(config.getValidatorKeys())
@@ -57,5 +56,22 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     final ValidatorConfig config =
         getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
     assertThat(config.getGraffiti()).isNull();
+  }
+
+  @Test
+  void shouldEnableSlashingProtectionForExternalSignersByDefault() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisableSlashingProtectionForExternalSigners() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments(
+                "--validators-external-signer-slashing-protection-enabled=false")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isFalse();
   }
 }

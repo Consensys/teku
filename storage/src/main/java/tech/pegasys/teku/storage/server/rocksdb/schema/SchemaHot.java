@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -26,6 +27,9 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 public interface SchemaHot extends Schema {
   RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
+
+  RocksDbColumn<Bytes32, CheckpointEpochs> getColumnHotBlockCheckpointEpochsByRoot();
+
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   RocksDbColumn<Checkpoint, BeaconState> getColumnCheckpointStates();
 
@@ -53,4 +57,6 @@ public interface SchemaHot extends Schema {
   RocksDbVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot();
 
   RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
+
+  RocksDbVariable<Checkpoint> getVariableAnchorCheckpoint();
 }

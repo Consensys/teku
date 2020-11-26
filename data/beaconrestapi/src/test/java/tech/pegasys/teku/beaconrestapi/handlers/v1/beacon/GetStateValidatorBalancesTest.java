@@ -24,32 +24,24 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GetStateValidatorBalances handler =
       new GetStateValidatorBalances(chainDataProvider, jsonProvider);
   private final ValidatorBalanceResponse validatorBalanceResponse =
       new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
 
   @Test
-  public void shouldGetValidatorFromState() throws Exception {
-    final UInt64 slot = dataStructureUtil.randomUInt64();
+  public void shouldGetValidatorBalancesFromState() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
-    for (int i = 1; i <= 4; i++) {
-      when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
-          .thenReturn(Optional.of(i));
-    }
-    when(chainDataProvider.getValidatorsBalances(slot, List.of(1, 2, 3, 4)))
+    when(chainDataProvider.getStateValidatorBalances("head", List.of("1", "2", "3", "4")))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
     handler.handle(context);
     GetStateValidatorBalancesResponse response =
         getResponseFromFuture(GetStateValidatorBalancesResponse.class);
-    assertThat(response.data).isEqualTo(List.of(validatorBalanceResponse));
+    assertThat(response.data).containsExactly(validatorBalanceResponse);
   }
 }

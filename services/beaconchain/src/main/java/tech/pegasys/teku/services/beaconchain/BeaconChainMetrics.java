@@ -14,6 +14,8 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -46,6 +49,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
   private final SettableGauge currentLiveValidators;
+  private final SettableGauge previousCorrectValidators;
+  private final SettableGauge currentCorrectValidators;
   private final SettableGauge finalizedEpoch;
   private final SettableGauge finalizedRoot;
   private final SettableGauge currentJustifiedEpoch;
@@ -144,18 +149,45 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_active_validators",
             "Number of active validators in the previous epoch");
+
+    currentCorrectValidators =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "current_correct_validators",
+            "Number of validators who voted for correct source and target checkpoints in the current epoch");
+    previousCorrectValidators =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "previous_correct_validators",
+            "Number of validators who voted for correct source and target checkpoints in the previous epoch");
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getBestState().ifPresent(this::updateMetrics);
+    recentChainData.getChainHead().ifPresent(this::updateMetrics);
   }
 
-  private void updateMetrics(final BeaconState state) {
-    currentLiveValidators.set(getLiveValidators(state.getCurrent_epoch_attestations()));
+  private void updateMetrics(final StateAndBlockSummary head) {
+    final BeaconState state = head.getState();
+
+    final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());
+    final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
+    final Bytes32 currentEpochCorrectTarget = getCorrectTargetRoot(head, currentEpoch);
+    final Bytes32 previousEpochCorrectTarget = getCorrectTargetRoot(head, previousEpoch);
+
+    CorrectAndLiveValidators currentEpochValidators =
+        getNumberOfValidators(state.getCurrent_epoch_attestations(), currentEpochCorrectTarget);
+    currentLiveValidators.set(currentEpochValidators.numberOfLiveValidators);
+    currentCorrectValidators.set(currentEpochValidators.numberOfCorrectValidators);
     currentActiveValidators.set(
         get_active_validator_indices(state, get_current_epoch(state)).size());
-    previousLiveValidators.set(getLiveValidators(state.getPrevious_epoch_attestations()));
+
+    CorrectAndLiveValidators previousEpochValidators =
+        getNumberOfValidators(state.getPrevious_epoch_attestations(), previousEpochCorrectTarget);
+    previousLiveValidators.set(previousEpochValidators.numberOfLiveValidators);
+    previousCorrectValidators.set(previousEpochValidators.numberOfCorrectValidators);
     previousActiveValidators.set(
         get_active_validator_indices(state, get_previous_epoch(state)).size());
 
@@ -172,21 +204,58 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     previousJustifiedRoot.set(getLongFromRoot(previousJustifiedCheckpoint.getRoot()));
   }
 
-  private int getLiveValidators(final SSZList<PendingAttestation> attestations) {
-    final Map<UInt64, Map<UInt64, Bitlist>> aggregationBitsBySlotAndCommittee = new HashMap<>();
+  private CorrectAndLiveValidators getNumberOfValidators(
+      final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
+
+    final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
+        new HashMap<>();
+    final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
+        new HashMap<>();
+
     attestations.forEach(
-        attestation ->
-            aggregationBitsBySlotAndCommittee
+        attestation -> {
+          if (isCorrectAttestation(attestation, correctTargetRoot)) {
+            correctValidatorsAggregationBitsBySlotAndCommittee
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
                 .computeIfAbsent(
                     attestation.getData().getIndex(),
                     __ -> attestation.getAggregation_bits().copy())
-                .setAllBits(attestation.getAggregation_bits()));
+                .setAllBits(attestation.getAggregation_bits());
+          }
 
-    return aggregationBitsBySlotAndCommittee.values().stream()
-        .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-        .mapToInt(Bitlist::getBitCount)
-        .sum();
+          liveValidatorsAggregationBitsBySlotAndCommittee
+              .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
+              .computeIfAbsent(
+                  attestation.getData().getIndex(), __ -> attestation.getAggregation_bits().copy())
+              .setAllBits(attestation.getAggregation_bits());
+        });
+
+    final int numberOfCorrectValidators =
+        correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
+            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
+            .mapToInt(Bitlist::getBitCount)
+            .sum();
+
+    final int numberOfLiveValidators =
+        liveValidatorsAggregationBitsBySlotAndCommittee.values().stream()
+            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
+            .mapToInt(Bitlist::getBitCount)
+            .sum();
+
+    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
+  }
+
+  private boolean isCorrectAttestation(
+      final PendingAttestation attestation, final Bytes32 correctTargetRoot) {
+    return attestation.getData().getTarget().getRoot().equals(correctTargetRoot);
+  }
+
+  private Bytes32 getCorrectTargetRoot(
+      final StateAndBlockSummary stateAndBlock, final UInt64 epoch) {
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
+    return epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
+        ? stateAndBlock.getRoot()
+        : get_block_root_at_slot(stateAndBlock.getState(), epochStartSlot);
   }
 
   static long getLongFromRoot(Bytes32 root) {
@@ -214,5 +283,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot.getValue()).longValue();
+  }
+
+  public static class CorrectAndLiveValidators {
+    private final int numberOfCorrectValidators;
+    private final int numberOfLiveValidators;
+
+    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators) {
+      this.numberOfCorrectValidators = numberOfCorrectValidators;
+      this.numberOfLiveValidators = numberOfLiveValidators;
+    }
   }
 }

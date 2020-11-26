@@ -14,19 +14,23 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -103,8 +107,13 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public void onGenesis(final AnchorPoint genesis) {
-    database.storeGenesis(genesis);
+  public SafeFuture<Void> onFinalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
+    return SafeFuture.fromRunnable(() -> database.storeFinalizedBlocks(finalizedBlocks));
+  }
+
+  @Override
+  public void onChainInitialized(final AnchorPoint initialAnchor) {
+    database.storeInitialAnchor(initialAnchor);
   }
 
   @Override
@@ -113,6 +122,16 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
         () -> {
           database.updateWeakSubjectivityState(weakSubjectivityUpdate);
         });
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
+    return SafeFuture.of(database::getEarliestAvailableBlockSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock() {
+    return SafeFuture.of(database::getEarliestAvailableBlock);
   }
 
   @Override
@@ -139,6 +158,24 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
                 .getHotState(blockRoot)
                 .flatMap(
                     s -> database.getHotBlock(blockRoot).map(b -> new SignedBlockAndState(b, s))));
+  }
+
+  @Override
+  public SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.of(
+        () ->
+            database
+                .getHotState(blockRoot)
+                .map(
+                    state -> {
+                      final BeaconBlockSummary block =
+                          database
+                              .getHotBlock(blockRoot)
+                              .map(b -> (BeaconBlockSummary) b)
+                              .orElseGet(() -> BeaconBlockHeader.fromState(state));
+                      return StateAndBlockSummary.create(block, state);
+                    }));
   }
 
   @Override

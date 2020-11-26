@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.noop;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +24,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -38,10 +39,13 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 public class NoOpDatabase implements Database {
 
   @Override
-  public void storeGenesis(final AnchorPoint genesis) {}
+  public void storeInitialAnchor(final AnchorPoint genesis) {}
 
   @Override
   public void update(final StorageUpdate event) {}
+
+  @Override
+  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}
 
   @Override
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
@@ -73,6 +77,16 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableBlockSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getEarliestAvailableBlock() {
     return Optional.empty();
   }
 

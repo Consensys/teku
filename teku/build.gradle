@@ -1,6 +1,7 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
+  implementation project(':data:serializer')
   implementation project(':infrastructure:metrics')
   implementation project(':data:recorder')
   implementation project(':data:dataexchange')
@@ -13,6 +14,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
   implementation project(':networking:p2p')
+  implementation project(':networking:eth2')
   implementation project(':protoarray')
   implementation project(':pow')
   implementation project(':services:beaconchain')
@@ -26,6 +28,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
+  implementation project(':validator:remote')
 
   api 'com.google.guava:guava'
 
@@ -51,8 +54,4 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testImplementation 'org.awaitility:awaitility'
-
-  test {
-    testLogging.showStandardStreams = true
-  }
 }

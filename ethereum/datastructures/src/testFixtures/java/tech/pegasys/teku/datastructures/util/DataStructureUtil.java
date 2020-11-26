@@ -16,9 +16,8 @@ package tech.pegasys.teku.datastructures.util;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -28,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -56,6 +56,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -185,6 +186,10 @@ public final class DataStructureUtil {
     return pubKeyGenerator.get();
   }
 
+  public Bytes48 randomPublicKeyBytes() {
+    return pubKeyGenerator.get().toBytesCompressed();
+  }
+
   public Eth1Data randomEth1Data() {
     return new Eth1Data(randomBytes32(), randomUInt64(), randomBytes32());
   }
@@ -203,6 +208,14 @@ public final class DataStructureUtil {
 
   public SlotAndBlockRoot randomSlotAndBlockRoot(final UInt64 slot) {
     return new SlotAndBlockRoot(slot, randomBytes32());
+  }
+
+  public Checkpoint randomCheckpoint(final long epoch) {
+    return randomCheckpoint(UInt64.valueOf(epoch));
+  }
+
+  public Checkpoint randomCheckpoint(final UInt64 epoch) {
+    return new Checkpoint(epoch, randomBytes32());
   }
 
   public Checkpoint randomCheckpoint() {
@@ -339,10 +352,8 @@ public final class DataStructureUtil {
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
   }
 
-  public BeaconBlockAndState randomBlockAndState(final long slot, final BeaconState beaconState) {
-    final UInt64 unsignedSlot = UInt64.valueOf(slot);
-    final BeaconState state = beaconState.updated(b -> b.setSlot(unsignedSlot));
-    return randomBlockAndState(unsignedSlot, state);
+  public BeaconBlockAndState randomBlockAndState(final long slot) {
+    return randomBlockAndState(UInt64.valueOf(slot));
   }
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
@@ -350,14 +361,19 @@ public final class DataStructureUtil {
     return randomBlockAndState(slot, state);
   }
 
-  public BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
+  private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
     final Bytes32 parentRoot = randomBytes32();
-    final Bytes32 state_root = state.hash_tree_root();
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
-    final BeaconBlock block = new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+    final BeaconBlockHeader latestHeader =
+        new BeaconBlockHeader(
+            slot, proposer_index, parentRoot, Bytes32.ZERO, body.hash_tree_root());
 
-    return new BeaconBlockAndState(block, state);
+    final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
+    final BeaconBlock block =
+        new BeaconBlock(slot, proposer_index, parentRoot, matchingState.hashTreeRoot(), body);
+
+    return new BeaconBlockAndState(block, matchingState);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, boolean isFull) {
@@ -554,7 +570,7 @@ public final class DataStructureUtil {
 
   public Validator randomValidator() {
     return Validator.create(
-        randomPublicKey(),
+        randomPublicKeyBytes(),
         randomBytes32(),
         UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,
@@ -585,49 +601,47 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconState.create(
-        randomUInt64(),
-        randomBytes32(),
-        randomUInt64(),
-        randomFork(),
-        randomBeaconBlockHeader(),
-        randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
-        randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
-        randomSSZList(
-            Bytes32.class,
-            numItemsInSSZLists,
-            Constants.HISTORICAL_ROOTS_LIMIT,
-            this::randomBytes32),
-        randomEth1Data(),
-        randomSSZList(
-            Eth1Data.class, EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH, this::randomEth1Data),
-        randomUInt64(),
-        randomSSZList(
-            Validator.class,
-            validatorCount,
-            Constants.VALIDATOR_REGISTRY_LIMIT,
-            this::randomValidator),
-        randomSSZList(
-            UInt64.class, validatorCount, Constants.VALIDATOR_REGISTRY_LIMIT, this::randomUInt64),
-        randomSSZVector(Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, this::randomBytes32),
-        randomSSZVector(UInt64.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUInt64),
-        randomSSZList(
-            PendingAttestation.class,
-            numItemsInSSZLists,
-            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
-            this::randomPendingAttestation),
-        randomSSZList(
-            PendingAttestation.class,
-            numItemsInSSZLists,
-            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
-            this::randomPendingAttestation),
-        randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH),
-        randomCheckpoint(),
-        randomCheckpoint(),
-        randomCheckpoint());
+    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists).build();
+  }
+
+  public BeaconStateBuilder stateBuilder() {
+    return BeaconStateBuilder.create(this, 10, 10);
+  }
+
+  public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
+    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
     return randomBeaconState().updated(state -> state.setSlot(slot));
+  }
+
+  public AnchorPoint randomAnchorPoint(final long epoch) {
+    return randomAnchorPoint(UInt64.valueOf(epoch));
+  }
+
+  public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
+    final SignedBlockAndState anchorBlockAndState =
+        randomSignedBlockAndState(compute_start_slot_at_epoch(epoch));
+    return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+  }
+
+  public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
+    // Create corresponding block
+    final BeaconBlock anchorBlock =
+        new BeaconBlock(
+            anchorState.getSlot(),
+            UInt64.ZERO,
+            anchorState.getLatest_block_header().getParentRoot(),
+            anchorState.hashTreeRoot(),
+            new BeaconBlockBody());
+    final SignedBeaconBlock signedAnchorBlock =
+        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
+
+    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
+    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+
+    return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 }

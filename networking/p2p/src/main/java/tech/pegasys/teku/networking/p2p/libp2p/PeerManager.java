@@ -31,13 +31,13 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class PeerManager implements ConnectionHandler {
@@ -69,7 +69,7 @@ public class PeerManager implements ConnectionHandler {
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection, rpcHandlers);
+    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager);
     onConnectedPeer(peer);
   }
 
@@ -98,7 +98,7 @@ public class PeerManager implements ConnectionHandler {
                 if (connection.closeFuture().isDone()) {
                   // Connection has been immediately closed and the peer already removed
                   // Since the connection is closed anyway, we can create a new peer to wrap it.
-                  return new LibP2PPeer(connection, rpcHandlers);
+                  return new LibP2PPeer(connection, rpcHandlers, reputationManager);
                 } else {
                   // Theoretically this should never happen because removing from the map is done
                   // by the close future completing, but make a loud noise just in case.

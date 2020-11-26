@@ -21,7 +21,6 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
@@ -36,6 +35,14 @@ public class MikuliSecretKey implements SecretKey {
    */
   public static MikuliSecretKey fromBytes(Bytes32 bytes) {
     return new MikuliSecretKey(new Scalar(BIG.fromBytes(Bytes48.leftPad(bytes).toArrayUnsafe())));
+  }
+
+  public static MikuliSecretKey fromSecretKey(SecretKey genericSecretKey) {
+    if (genericSecretKey instanceof MikuliSecretKey) {
+      return (MikuliSecretKey) genericSecretKey;
+    } else {
+      return fromBytes(genericSecretKey.toBytes());
+    }
   }
 
   private final Scalar scalarValue;
@@ -63,7 +70,7 @@ public class MikuliSecretKey implements SecretKey {
 
   @Override
   public MikuliSignature sign(Bytes message, Bytes dst) {
-    if (!BLSConstants.VALID_INFINITY && scalarValue.isZero()) {
+    if (scalarValue.isZero()) {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     } else {
       G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
@@ -85,8 +92,8 @@ public class MikuliSecretKey implements SecretKey {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    MikuliSecretKey secretKey = (MikuliSecretKey) o;
+    if (!(o instanceof SecretKey)) return false;
+    MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKey) o);
     return Objects.equals(scalarValue, secretKey.scalarValue);
   }
 

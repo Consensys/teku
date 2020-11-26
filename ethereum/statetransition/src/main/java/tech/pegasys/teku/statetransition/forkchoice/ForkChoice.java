@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.base.Throwables;
 import java.util.List;
@@ -43,12 +41,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
-  /**
-   * Number of slots within head that new blocks are automatically set as the new chain head if
-   * possible. The update causes a re-org event so we skip it if we are syncing blocks from a long
-   * way back to avoid unnecessary work and noise about the reorg in the logs.
-   */
-  private static final int SHORT_SYNC_SLOTS = 2 * SLOTS_PER_EPOCH;
 
   private final ForkChoiceExecutor forkChoiceExecutor;
   private final RecentChainData recentChainData;
@@ -69,14 +61,14 @@ public class ForkChoice {
   }
 
   public void processHead() {
-    processHead(Optional.empty(), false);
+    processHead(Optional.empty());
   }
 
-  public void processHead(UInt64 nodeSlot, boolean syncing) {
-    processHead(Optional.of(nodeSlot), syncing);
+  public void processHead(UInt64 nodeSlot) {
+    processHead(Optional.of(nodeSlot));
   }
 
-  private void processHead(Optional<UInt64> nodeSlot, boolean syncing) {
+  private void processHead(Optional<UInt64> nodeSlot) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     recentChainData
@@ -101,8 +93,7 @@ public class ForkChoice {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
                       Bytes32 headBlockRoot =
-                          forkChoiceStrategy.findHead(
-                              transaction,
+                          transaction.applyForkChoiceScoreChanges(
                               finalizedCheckpoint,
                               justifiedCheckpoint,
                               justifiedCheckpointState.orElseThrow());
@@ -116,8 +107,7 @@ public class ForkChoice {
                                       () ->
                                           new IllegalStateException(
                                               "Unable to retrieve the slot of fork choice head: "
-                                                  + headBlockRoot))),
-                          syncing);
+                                                  + headBlockRoot))));
                       return transaction.commit();
                     }))
         .join();
@@ -158,34 +148,27 @@ public class ForkChoice {
                       forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
-              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
               .thenApply(__ -> result);
         });
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final ForkChoiceStrategy forkChoiceStrategy,
-      final BlockImportResult result) {
+      final SignedBeaconBlock block, final BlockImportResult result) {
     result
         .getBlockProcessingRecord()
         .ifPresent(
             record -> {
-              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
               // If the new block builds on our current chain head immediately make it the new head
               // Since fork choice works by walking down the tree selecting the child block with
               // the greatest weight, when a block has only one child it will automatically become
               // a better choice than the block itself.  So the first block we receive that is a
               // child of our current chain head, must be the new chain head. If we'd had any other
               // child of the current chain head we'd have already selected it as head.
-              if (block
-                      .getSlot()
-                      .plus(SHORT_SYNC_SLOTS)
-                      .isGreaterThan(recentChainData.getCurrentSlot().orElse(ZERO))
-                  && recentChainData
-                      .getHeadBlock()
-                      .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
-                      .orElse(false)) {
+              if (recentChainData
+                  .getHeadBlock()
+                  .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
+                  .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
                 result.markAsCanonical();
               }
@@ -217,10 +200,6 @@ public class ForkChoice {
               }
               return SafeFuture.failedFuture(error);
             });
-  }
-
-  public void save() {
-    getForkChoiceStrategy().save();
   }
 
   public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {

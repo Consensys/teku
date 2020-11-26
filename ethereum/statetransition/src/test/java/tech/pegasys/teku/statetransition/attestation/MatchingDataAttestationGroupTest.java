@@ -70,6 +70,23 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  public void remove_multipleCallsToRemoveShouldAggregate() {
+    // Create attestations that will be removed
+    final ValidateableAttestation attestation1 = createAttestation(1);
+    final ValidateableAttestation attestation2 = createAttestation(2);
+
+    // Add some attestations
+    final ValidateableAttestation attestation3 = addAttestation(3);
+    addAttestation(1, 2);
+
+    int numRemoved = group.remove(attestation1.getAttestation());
+    assertThat(numRemoved).isEqualTo(0);
+    numRemoved += group.remove(attestation2.getAttestation());
+    assertThat(numRemoved).isEqualTo(1);
+    assertThat(group.stream()).containsExactly(attestation3);
+  }
+
+  @Test
   public void remove_shouldRemoveAttestationsThatAreAggregatedIntoRemovedAttestation() {
     final ValidateableAttestation attestation1 = addAttestation(1);
     final ValidateableAttestation attestation2 = addAttestation(2);
@@ -84,13 +101,42 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  public void add_shouldIgnoreAttestationWhoseBitsHaveAllBeenRemoved() {
+    // Create attestations that will be removed
+    final ValidateableAttestation attestation1 = createAttestation(1);
+    final ValidateableAttestation attestation2 = createAttestation(2);
+
+    // Create attestation to be added / ignored
+    final ValidateableAttestation attestationToIgnore = createAttestation(1, 2);
+
+    int numRemoved = group.remove(attestation1.getAttestation());
+    numRemoved += group.remove(attestation2.getAttestation());
+    assertThat(numRemoved).isEqualTo(0);
+
+    assertThat(group.add(attestationToIgnore)).isFalse();
+    assertThat(group.stream()).isEmpty();
+  }
+
+  @Test
+  public void add_shouldIgnoreDuplicateAttestations() {
+    final ValidateableAttestation attestation = addAttestation(1);
+    final ValidateableAttestation copy =
+        ValidateableAttestation.from(
+            SimpleOffsetSerializer.deserialize(
+                SimpleOffsetSerializer.serialize(attestation.getAttestation()), Attestation.class));
+
+    assertThat(group.add(copy)).isFalse();
+    assertThat(group.stream()).containsExactly(attestation);
+  }
+
+  @Test
   public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
     final ValidateableAttestation attestation1 = addAttestation(1);
     final ValidateableAttestation attestation2 = addAttestation(2);
 
     final Attestation expected =
         aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
-    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.fromAttestation(expected));
+    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.from(expected));
   }
 
   @Test
@@ -101,7 +147,7 @@ class MatchingDataAttestationGroupTest {
 
     assertThat(group)
         .containsExactly(
-            ValidateableAttestation.fromAttestation(
+            ValidateableAttestation.from(
                 aggregateAttestations(
                     bigAttestation.getAttestation(), littleAttestation.getAttestation())),
             mediumAttestation);
@@ -123,6 +169,26 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(aggregate);
   }
 
+  @Test
+  public void size() {
+    assertThat(group.size()).isEqualTo(0);
+    final ValidateableAttestation attestation1 = addAttestation(1);
+    assertThat(group.size()).isEqualTo(1);
+    final ValidateableAttestation attestation2 = addAttestation(2);
+    assertThat(group.size()).isEqualTo(2);
+    addAttestation(3, 4);
+    assertThat(group.size()).isEqualTo(3);
+    addAttestation(1, 2);
+    assertThat(group.size()).isEqualTo(4);
+
+    int numRemoved =
+        group.remove(
+            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
+
+    assertThat(numRemoved).isEqualTo(3);
+    assertThat(group.size()).isEqualTo(1);
+  }
+
   private ValidateableAttestation addAttestation(final int... validators) {
     final ValidateableAttestation attestation = createAttestation(validators);
     final boolean added = group.add(attestation);
@@ -133,7 +199,7 @@ class MatchingDataAttestationGroupTest {
   private ValidateableAttestation createAttestation(final int... validators) {
     final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
-    return ValidateableAttestation.fromAttestation(
+    return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

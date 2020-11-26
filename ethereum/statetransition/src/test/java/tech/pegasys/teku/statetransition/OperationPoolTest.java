@@ -20,19 +20,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.operationvalidators.OperationStateTransitionValidator;
-import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.util.config.Constants;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class OperationPoolTest {
 
   DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -40,20 +41,18 @@ public class OperationPoolTest {
 
   @Test
   void emptyPoolShouldReturnEmptyList() {
-    OperationStateTransitionValidator<ProposerSlashing> validator =
-        mock(OperationStateTransitionValidator.class);
+    OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
-    when(validator.validate(any(), any())).thenReturn(Optional.empty());
     assertThat(pool.getItemsForBlock(state)).isEmpty();
   }
 
   @Test
   void shouldAddMaxItemsToPool() {
-    OperationStateTransitionValidator<SignedVoluntaryExit> validator =
-        mock(OperationStateTransitionValidator.class);
+    OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
         new OperationPool<>(SignedVoluntaryExit.class, validator);
-    when(validator.validate(any(), any())).thenReturn(Optional.empty());
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     for (int i = 0; i < Constants.MAX_VOLUNTARY_EXITS + 1; i++) {
       pool.add(dataStructureUtil.randomSignedVoluntaryExit());
     }
@@ -62,11 +61,11 @@ public class OperationPoolTest {
 
   @Test
   void shouldRemoveAllItemsFromPool() {
-    OperationStateTransitionValidator<AttesterSlashing> validator =
-        mock(OperationStateTransitionValidator.class);
+    OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
     OperationPool<AttesterSlashing> pool = new OperationPool<>(AttesterSlashing.class, validator);
     SSZMutableList<AttesterSlashing> slashingsInBlock = createAttesterSlashings();
-    when(validator.validate(any(), any())).thenReturn(Optional.empty());
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     for (int i = 0; i < Constants.MAX_ATTESTER_SLASHINGS; i++) {
       AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
       pool.add(slashing);
@@ -78,22 +77,52 @@ public class OperationPoolTest {
 
   @Test
   void shouldNotIncludeInvalidatedItemsFromPool() {
-    OperationStateTransitionValidator<ProposerSlashing> validator =
-        mock(OperationStateTransitionValidator.class);
+    OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
 
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+
     pool.add(slashing1);
     pool.add(slashing2);
 
-    when(validator.validate(any(), eq(slashing1)))
-        .thenReturn(
-            Optional.of(
-                ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
-                    .HEADER_SLOTS_DIFFERENT));
-    when(validator.validate(any(), eq(slashing2))).thenReturn(Optional.empty());
+    when(validator.validateForStateTransition(any(), eq(slashing1))).thenReturn(false);
+    when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(true);
+
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
+  }
+
+  @Test
+  void subscribeOperationAdded() {
+    OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
+    OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
+
+    // Set up subscriber
+    final Map<ProposerSlashing, InternalValidationResult> addedSlashings = new HashMap<>();
+    OperationPool.OperationAddedSubscriber<ProposerSlashing> subscriber = addedSlashings::put;
+    pool.subscribeOperationAdded(subscriber);
+
+    ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing3 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing4 = dataStructureUtil.randomProposerSlashing();
+
+    when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(slashing2)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
+    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.REJECT);
+    when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.IGNORE);
+
+    pool.add(slashing1);
+    pool.add(slashing2);
+    pool.add(slashing3);
+    pool.add(slashing4);
+
+    assertThat(addedSlashings.size()).isEqualTo(2);
+    assertThat(addedSlashings).containsKey(slashing1);
+    assertThat(addedSlashings.get(slashing1)).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(addedSlashings).containsKey(slashing2);
+    assertThat(addedSlashings.get(slashing2)).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
   }
 }

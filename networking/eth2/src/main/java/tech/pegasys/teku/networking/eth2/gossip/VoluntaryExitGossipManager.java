@@ -13,43 +13,28 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
-import tech.pegasys.teku.networking.eth2.gossip.topics.VoluntaryExitTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
-public class VoluntaryExitGossipManager {
-  private final TopicChannel channel;
-
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
+  public static String TOPIC_NAME = "voluntary_exit";
 
   public VoluntaryExitGossipManager(
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final VoluntaryExitValidator voluntaryExitValidator,
-      final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
-    final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(
-            asyncRunner,
-            gossipEncoding,
-            forkInfo,
-            voluntaryExitValidator,
-            gossipedVoluntaryExitConsumer);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+      final OperationProcessor<SignedVoluntaryExit> processor,
+      final GossipPublisher<SignedVoluntaryExit> publisher) {
+    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
   }
 
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+  @Override
+  protected Class<SignedVoluntaryExit> getGossipType() {
+    return SignedVoluntaryExit.class;
   }
 }

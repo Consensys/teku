@@ -93,7 +93,7 @@ class AggregationDutyTest {
         attestationCommitteeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -136,9 +136,9 @@ class AggregationDutyTest {
         validator2CommitteeIndex,
         completedFuture(Optional.of(committee2AttestationData)));
 
-    when(validatorApiChannel.createAggregate(committee1AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee1AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(committee2AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee2AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -190,7 +190,7 @@ class AggregationDutyTest {
         committeeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
@@ -219,7 +219,11 @@ class AggregationDutyTest {
     performAndReportDuty();
 
     verify(validatorLogger)
-        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(duty.getProducedType()),
+            eq(SLOT),
+            eq(duty.getValidatorIdString()),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -231,7 +235,8 @@ class AggregationDutyTest {
 
     performAndReportDuty();
 
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -244,7 +249,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
@@ -263,18 +268,21 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
-    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verify(validatorLogger)
+        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result.join().report(duty.getProducedType(), SLOT, validatorLogger);
+    result
+        .join()
+        .report(duty.getProducedType(), SLOT, duty.getValidatorIdString(), validatorLogger);
   }
 }

@@ -66,6 +66,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         reorgContext -> {
@@ -121,7 +123,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
     attestations.forEach(
         attestation -> {
           attestationManager
-              .onAttestation(ValidateableAttestation.fromAttestation(attestation))
+              .onAttestation(ValidateableAttestation.from(attestation))
               .finish(
                   result ->
                       result.ifInvalid(

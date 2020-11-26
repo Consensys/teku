@@ -13,19 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -37,22 +33,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetStateFork extends AbstractHandler implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/fork";
   private final ChainDataProvider chainDataProvider;
 
@@ -81,29 +71,14 @@ public class GetStateFork extends AbstractHandler implements Handler {
             content = @OpenApiContent(from = GetStateForkResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
-    try {
-      final Optional<UInt64> maybeSlot =
-          chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
-      if (maybeSlot.isEmpty()) {
-        ctx.status(SC_NOT_FOUND);
-        return;
-      }
-      SafeFuture<Optional<Fork>> future = chainDataProvider.getForkAtSlot(maybeSlot.get());
-      handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
-    } catch (ChainDataUnavailableException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_SERVICE_UNAVAILABLE);
-    } catch (IllegalArgumentException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
-    }
+    final Map<String, String> pathParamMap = ctx.pathParamMap();
+    final SafeFuture<Optional<Fork>> future =
+        chainDataProvider.getStateFork(pathParamMap.get(PARAM_STATE_ID));
+    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
   private Optional<String> handleResult(Context ctx, final Fork response)

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -126,7 +125,7 @@ public class MikuliSignature implements Signature {
    * @return True if the verification is successful, false otherwise
    */
   private boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
-    if (!BLSConstants.VALID_INFINITY && publicKey.isInfinity()) {
+    if (publicKey.isInfinity()) {
       return false;
     }
 
@@ -151,7 +150,7 @@ public class MikuliSignature implements Signature {
         "List of public keys and list of messages differ in length");
     checkArgument(publicKeys.size() > 0, "List of public keys is empty");
 
-    if (!BLSConstants.VALID_INFINITY && publicKeys.stream().anyMatch(MikuliPublicKey::isInfinity)) {
+    if (publicKeys.stream().anyMatch(MikuliPublicKey::isInfinity)) {
       return false;
     }
 
@@ -210,11 +209,11 @@ public class MikuliSignature implements Signature {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof MikuliSignature)) {
+    if (!(obj instanceof Signature)) {
       return false;
     }
-    MikuliSignature other = (MikuliSignature) obj;
     try {
+      MikuliSignature other = MikuliSignature.fromSignature((Signature) obj);
       return point.equals(other.point);
     } catch (final IllegalArgumentException e) {
       // Invalid points are only equal if they have the exact some data.
