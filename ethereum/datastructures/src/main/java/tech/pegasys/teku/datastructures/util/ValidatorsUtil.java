@@ -79,9 +79,17 @@ public class ValidatorsUtil {
             .getValidatorsPubKeys()
             .get(
                 validatorIndex,
-                i ->
-                    BLSPublicKey.fromBytesCompressed(
-                        state.getValidators().get(i.intValue()).getPubkey())));
+                i -> {
+                  BLSPublicKey pubKey =
+                      BLSPublicKey.fromBytesCompressed(
+                          state.getValidators().get(i.intValue()).getPubkey());
+
+                  // eagerly pre-cache pubKey => validatorIndex mapping
+                  BeaconStateCache.getTransitionCaches(state)
+                      .getValidatorIndex()
+                      .invalidateWithNewValue(pubKey, i.intValue());
+                  return pubKey;
+                }));
   }
 
   /**
