@@ -515,7 +515,7 @@ class BeaconChainMetricsTest {
   private Validator validator(
       final long activationEpoch, final long exitEpoch, final boolean slashed) {
     return new Validator(
-        dataStructureUtil.randomPublicKey(),
+        dataStructureUtil.randomPublicKeyBytes(),
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomUInt64(),
         slashed,

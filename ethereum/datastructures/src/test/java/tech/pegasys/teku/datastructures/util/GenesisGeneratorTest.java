@@ -147,7 +147,7 @@ class GenesisGeneratorTest {
     // And the validator with an invalid deposit should wind up at index 3, not 0 because their
     // first deposit was completely ignored
     final Validator validator = state.getValidators().get(expectedIndex);
-    assertThat(validator.getPubkey()).isEqualTo(validData.getPubkey());
+    assertThat(validator.getPubkey()).isEqualTo(validData.getPubkey().toBytesCompressed());
     assertThat(is_active_validator(validator, GENESIS_EPOCH)).isTrue();
   }
 }

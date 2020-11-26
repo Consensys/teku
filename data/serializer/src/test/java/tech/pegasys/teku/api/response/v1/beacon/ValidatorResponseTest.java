@@ -19,15 +19,15 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorResponseTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final BLSPublicKey key = dataStructureUtil.randomPublicKey();
+  final Bytes48 key = dataStructureUtil.randomPublicKeyBytes();
   final Bytes32 creds = dataStructureUtil.randomBytes32();
   final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
   final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
