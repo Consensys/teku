@@ -38,7 +38,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
-          NoOpCache.getNoOpCache(),
+          ValidatorIndexCache.NO_OP_INSTANCE,
           NoOpCache.getNoOpCache()) {
 
         @Override
@@ -62,7 +62,7 @@ public class TransitionCaches {
   private final Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee;
   private final Cache<UInt64, Pair<UInt64, UInt64>> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
-  private final Cache<BLSPublicKey, Integer> validatorIndex;
+  private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
   private TransitionCaches() {
@@ -71,24 +71,24 @@ public class TransitionCaches {
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
     validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
-    validatorIndex = new LRUCache<>(Integer.MAX_VALUE - 1);
+    validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
   }
 
-  public TransitionCaches(
+  private TransitionCaches(
       Cache<UInt64, List<Integer>> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
       Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee,
       Cache<UInt64, Pair<UInt64, UInt64>> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
-      Cache<BLSPublicKey, Integer> validatorIndex,
+      ValidatorIndexCache validatorIndexCache,
       Cache<Bytes32, List<Integer>> committeeShuffle) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
     this.totalActiveBalance = totalActiveBalance;
     this.validatorsPubKeys = validatorsPubKeys;
-    this.validatorIndex = validatorIndex;
+    this.validatorIndexCache = validatorIndexCache;
     this.committeeShuffle = committeeShuffle;
   }
 
@@ -124,8 +124,8 @@ public class TransitionCaches {
    * this state (but when registered are guaranteed to be at that index). Check index < total
    * validator count before looking up the cache
    */
-  public Cache<BLSPublicKey, Integer> getValidatorIndex() {
-    return validatorIndex;
+  public ValidatorIndexCache getValidatorIndexCache() {
+    return validatorIndexCache;
   }
 
   /** (epoch committee seed) -> (validators shuffle for epoch) cache */
@@ -153,7 +153,7 @@ public class TransitionCaches {
         beaconCommittee.copy(),
         totalActiveBalance.copy(),
         validatorsPubKeys,
-        validatorIndex,
+        validatorIndexCache,
         committeeShuffle.copy());
   }
 }
