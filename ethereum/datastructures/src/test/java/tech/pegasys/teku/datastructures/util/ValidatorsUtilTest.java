@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 
@@ -29,7 +30,10 @@ class ValidatorsUtilTest {
     assertThat(state.getValidators()).hasSizeGreaterThan(5);
     for (int i = 0; i < 5; i++) {
       final Validator validator = state.getValidators().get(i);
-      assertThat(ValidatorsUtil.getValidatorIndex(state, validator.getPubkey())).contains(i);
+      assertThat(
+              ValidatorsUtil.getValidatorIndex(
+                  state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+          .contains(i);
     }
   }
 
@@ -51,9 +55,14 @@ class ValidatorsUtilTest {
     final Validator validator = dataStructureUtil.randomValidator();
     final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
 
-    assertThat(ValidatorsUtil.getValidatorIndex(nextState, validator.getPubkey()))
+    assertThat(
+            ValidatorsUtil.getValidatorIndex(
+                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
         .contains(nextState.getValidators().size() - 1);
-    assertThat(ValidatorsUtil.getValidatorIndex(state, validator.getPubkey())).isEmpty();
+    assertThat(
+            ValidatorsUtil.getValidatorIndex(
+                state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+        .isEmpty();
   }
 
   @Test
@@ -62,11 +71,16 @@ class ValidatorsUtilTest {
 
     final Validator validator = dataStructureUtil.randomValidator();
     // Lookup the validator before it's in the list.
-    assertThat(ValidatorsUtil.getValidatorIndex(state, validator.getPubkey())).isEmpty();
+    assertThat(
+            ValidatorsUtil.getValidatorIndex(
+                state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+        .isEmpty();
 
     // Then add it to the list and we should be able to find the index.
     final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
-    assertThat(ValidatorsUtil.getValidatorIndex(nextState, validator.getPubkey()))
+    assertThat(
+            ValidatorsUtil.getValidatorIndex(
+                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
         .contains(nextState.getValidators().size() - 1);
   }
 }

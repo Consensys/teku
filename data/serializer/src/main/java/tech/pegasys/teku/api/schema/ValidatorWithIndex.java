@@ -57,7 +57,7 @@ public class ValidatorWithIndex {
   public ValidatorWithIndex(
       final tech.pegasys.teku.datastructures.state.Validator validator,
       tech.pegasys.teku.datastructures.state.BeaconState state) {
-    BLSPublicKey blsPublicKey = validator.getPubkey();
+    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytesCompressed(validator.getPubkey());
     Optional<Integer> optionalInteger = ValidatorsUtil.getValidatorIndex(state, blsPublicKey);
     if (optionalInteger.isPresent()) {
       this.validator_index = optionalInteger.get();
