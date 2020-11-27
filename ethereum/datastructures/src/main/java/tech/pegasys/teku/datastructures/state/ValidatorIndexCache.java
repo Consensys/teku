@@ -26,8 +26,9 @@ public class ValidatorIndexCache {
   private final Cache<BLSPublicKey, Integer> validatorIndexes;
   private final AtomicInteger lastIndex;
 
+  private static final int INDEX_NONE = -1;
   static final ValidatorIndexCache NO_OP_INSTANCE =
-      new ValidatorIndexCache(NoOpCache.getNoOpCache(), Integer.MAX_VALUE - 1);
+      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
 
   @VisibleForTesting
   ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndexes, final int lastIndex) {
@@ -37,12 +38,12 @@ public class ValidatorIndexCache {
 
   @VisibleForTesting
   ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndexes) {
-    this(validatorIndexes, -1);
+    this(validatorIndexes, INDEX_NONE);
   }
 
   public ValidatorIndexCache() {
     this.validatorIndexes = new LRUCache<>(Integer.MAX_VALUE - 1);
-    this.lastIndex = new AtomicInteger(-1);
+    this.lastIndex = new AtomicInteger(INDEX_NONE);
   }
 
   public Optional<Integer> getValidatorIndex(
