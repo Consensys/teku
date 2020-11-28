@@ -36,11 +36,6 @@ public class ValidatorIndexCache {
     this.lastIndex = new AtomicInteger(lastIndex);
   }
 
-  @VisibleForTesting
-  ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndexes) {
-    this(validatorIndexes, INDEX_NONE);
-  }
-
   public ValidatorIndexCache() {
     this.validatorIndexes = new LRUCache<>(Integer.MAX_VALUE - 1);
     this.lastIndex = new AtomicInteger(INDEX_NONE);
@@ -53,15 +48,11 @@ public class ValidatorIndexCache {
       return validatorIndex.filter(index -> index < state.getValidators().size());
     }
 
-    if (lastIndex.get() < state.getValidators().size()) {
-      return findIndexFromState(state, publicKey);
-    }
-    return Optional.empty();
+    return findIndexFromState(state.getValidators(), publicKey);
   }
 
   private Optional<Integer> findIndexFromState(
-      final BeaconState state, final BLSPublicKey publicKey) {
-    final SSZList<Validator> validatorList = state.getValidators();
+      final SSZList<Validator> validatorList, final BLSPublicKey publicKey) {
     for (int i = Math.max(lastIndex.get(), 0); i < validatorList.size(); i++) {
       final int currentIndex = i;
       lastIndex.updateAndGet(curr -> Math.max(curr, currentIndex));
