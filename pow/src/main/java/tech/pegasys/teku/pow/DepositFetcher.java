@@ -46,7 +46,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
 
-  static final int DEFAULT_BATCH_SIZE = 500_000;
+  static final int DEFAULT_BATCH_SIZE = 50_000;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -124,7 +124,6 @@ public class DepositFetcher {
 
   private SafeFuture<Void> processDepositsInBatch(
       final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
-
     return depositContract
         .depositEventInRange(
             DefaultBlockParameter.valueOf(fromBlockNumber),
