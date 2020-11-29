@@ -61,6 +61,15 @@ public class ValidatorIndexCacheTest {
   }
 
   @Test
+  public void shouldGetAllValidatorKeysCachedIfMissingKeyPassed() {
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
+    assertThat(index).isEmpty();
+    assertThat(validatorIndexCache.getValidatorIndexes().size())
+        .isEqualTo(state.getValidators().size());
+  }
+
+  @Test
   public void shouldPopulateCacheItemsFromState() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
     final BLSPublicKey foundKey =
