@@ -63,7 +63,7 @@ public class ValidatorIndexCache {
       }
     }
     if (validatorList.size() > lastIndexSnapshot) {
-      validatorList.size();
+      updateLastIndex(validatorList.size());
     }
     return Optional.empty();
   }
