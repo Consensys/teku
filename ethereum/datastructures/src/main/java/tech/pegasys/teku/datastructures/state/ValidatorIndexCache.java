@@ -43,7 +43,11 @@ public class ValidatorIndexCache {
 
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
+    // Store lastIndex here in case we need to scan keys from the state.
+    // This ensures we're adding from a point that we're confident the cache is at
+    // when we scan for more keys through the state later.
     final int lastIndexSnapshot = lastIndex.get();
+
     final Optional<Integer> validatorIndex = validatorIndexes.getCached(publicKey);
     if (validatorIndex.isPresent()) {
       return validatorIndex.filter(index -> index < state.getValidators().size());
