@@ -21,7 +21,8 @@ public class DepositOptions {
   @Option(
       names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
-      description = "Contract address for the deposit contract. Required if eth1-endpoint is set.",
+      description =
+          "Contract address for the deposit contract. Generally defaults if network has been specified.",
       arity = "1")
   private Eth1Address eth1DepositContractAddress = null; // Depends on network configuration
 
