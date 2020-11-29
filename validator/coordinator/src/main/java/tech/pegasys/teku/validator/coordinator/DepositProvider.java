@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DepositUtil;
 import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -52,10 +55,19 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
+  private final Counter depositCounter;
 
-  public DepositProvider(RecentChainData recentChainData, final Eth1DataCache eth1DataCache) {
+  public DepositProvider(
+      MetricsSystem metricsSystem,
+      RecentChainData recentChainData,
+      final Eth1DataCache eth1DataCache) {
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
+    depositCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "eth1_deposit_total",
+            "Total number of received ETH1 deposits");
   }
 
   @Override
@@ -71,6 +83,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
               depositNavigableMap.put(deposit.getIndex(), deposit);
               depositMerkleTree.add(deposit.getData().hash_tree_root());
             });
+    depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
         event.getBlockTimestamp(),
         new Eth1Data(
