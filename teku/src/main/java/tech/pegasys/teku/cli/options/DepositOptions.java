@@ -22,7 +22,7 @@ public class DepositOptions {
       names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
       description =
-          "Contract address for the deposit contract. Generally defaults if network has been specified.",
+          "Contract address for the deposit contract. Only required when creating a custom network.",
       arity = "1")
   private Eth1Address eth1DepositContractAddress = null; // Depends on network configuration
 
