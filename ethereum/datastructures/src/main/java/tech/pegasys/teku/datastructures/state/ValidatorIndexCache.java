@@ -53,23 +53,27 @@ public class ValidatorIndexCache {
 
   private Optional<Integer> findIndexFromState(
       final SSZList<Validator> validatorList, final BLSPublicKey publicKey) {
-    for (int i = Math.max(lastIndex.get(), 0); i < validatorList.size(); i++) {
-      final int currentIndex = i;
-      lastIndex.updateAndGet(curr -> Math.max(curr, currentIndex));
+    final int lastIndexSnapshot = lastIndex.get();
+    for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = BLSPublicKey.fromBytesCompressed(validatorList.get(i).getPubkey());
       validatorIndexes.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
+        updateLastIndex(i);
         return Optional.of(i);
       }
+    }
+    if (validatorList.size() > lastIndexSnapshot) {
+      validatorList.size();
     }
     return Optional.empty();
   }
 
+  private void updateLastIndex(final int i) {
+    lastIndex.updateAndGet(curr -> Math.max(curr, i));
+  }
+
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    if (lastIndex.get() < updatedIndex) {
-      // won't reset last index here, as we haven't scanned from last index up to this index
-      validatorIndexes.invalidateWithNewValue(pubKey, updatedIndex);
-    }
+    validatorIndexes.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
   @VisibleForTesting
