@@ -43,17 +43,19 @@ public class ValidatorIndexCache {
 
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
+    final int lastIndexSnapshot = lastIndex.get();
     final Optional<Integer> validatorIndex = validatorIndexes.getCached(publicKey);
     if (validatorIndex.isPresent()) {
       return validatorIndex.filter(index -> index < state.getValidators().size());
     }
 
-    return findIndexFromState(state.getValidators(), publicKey);
+    return findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
   }
 
   private Optional<Integer> findIndexFromState(
-      final SSZList<Validator> validatorList, final BLSPublicKey publicKey) {
-    final int lastIndexSnapshot = lastIndex.get();
+      final SSZList<Validator> validatorList,
+      final BLSPublicKey publicKey,
+      final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
       BLSPublicKey pubKey = BLSPublicKey.fromBytesCompressed(validatorList.get(i).getPubkey());
       validatorIndexes.invalidateWithNewValue(pubKey, i);
@@ -62,9 +64,8 @@ public class ValidatorIndexCache {
         return Optional.of(i);
       }
     }
-    if (validatorList.size() > lastIndexSnapshot) {
-      updateLastIndex(validatorList.size());
-    }
+
+    updateLastIndex(validatorList.size());
     return Optional.empty();
   }
 
