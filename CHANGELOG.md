@@ -5,6 +5,15 @@
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
+## 20.11.1
+
+### Bug Fixes
+- Resolve slow lookup for validators by public key, particularly when the public key is not a known validator.
+- Ensure correct source target is used when creating attestations for an empty slot at the start of the epoch.
+- Fix `--initial-state` option so it is included in help output and support `--initial-state ""` to ignore built-in states and recalculate genesis from the Eth1 chain.
+- Improved error message when Eth1 node fails to return data for a requested block.
+- Reduced batch size when retrieving deposits from the Eth1 chain. Improves compatibility with Geth nodes with limited resources. 
+
 ## 20.11.0
 
 The beacon chain is set to launch with the MainNet genesis state now set. The beacon chain will launch on 1 December 2020 at 12:00:23 UTC. 
