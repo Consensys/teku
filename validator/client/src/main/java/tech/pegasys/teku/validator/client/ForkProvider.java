@@ -49,7 +49,7 @@ public class ForkProvider {
     return currentFork.map(SafeFuture::completedFuture).orElseGet(this::loadForkInfo);
   }
 
-  public SafeFuture<ForkInfo> loadForkInfo() {
+  private SafeFuture<ForkInfo> loadForkInfo() {
     return requestForkInfo()
         .exceptionallyCompose(
             error -> {
