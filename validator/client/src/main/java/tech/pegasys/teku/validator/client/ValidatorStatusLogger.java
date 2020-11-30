@@ -15,10 +15,12 @@ package tech.pegasys.teku.validator.client;
 
 import static java.util.stream.Collectors.toList;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +31,8 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public class ValidatorStatusLogger {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
 
   final Set<BLSPublicKey> validatorPublicKeys;
   final ValidatorApiChannel validatorApiChannel;
@@ -52,18 +56,43 @@ public class ValidatorStatusLogger {
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
-              for (BLSPublicKey publicKey : validatorPublicKeys) {
-                Optional<ValidatorStatus> maybeValidatorStatus =
-                    Optional.ofNullable(validatorStatuses.get(publicKey));
-                maybeValidatorStatus.ifPresentOrElse(
-                    validatorStatus ->
-                        LOG.info(
-                            "Validator {} status is " + validatorStatus,
-                            publicKey.toAbbreviatedString()),
-                    () -> LOG.info("Error retrieving status for validator {}", publicKey));
+              if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
+                printValidatorStatusesOneByOne(validatorStatuses);
+              } else {
+                printValidatorStatusSummary(validatorStatuses);
               }
             })
         .reportExceptions();
+  }
+
+  private void printValidatorStatusesOneByOne(
+      Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    for (BLSPublicKey publicKey : validatorPublicKeys) {
+      Optional<ValidatorStatus> maybeValidatorStatus =
+          Optional.ofNullable(validatorStatuses.get(publicKey));
+      maybeValidatorStatus.ifPresentOrElse(
+          validatorStatus ->
+              LOG.info(
+                  "Validator {} status is " + validatorStatus, publicKey.toAbbreviatedString()),
+          () -> LOG.error("Error retrieving status for validator {}", publicKey));
+    }
+  }
+
+  private void printValidatorStatusSummary(Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
+    for (ValidatorStatus status : validatorStatuses.values()) {
+      AtomicInteger count =
+          validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
+      count.incrementAndGet();
+    }
+
+    for (Map.Entry<ValidatorStatus, AtomicInteger> statusCount : validatorStatusCount.entrySet()) {
+      LOG.info(
+          statusCount.getValue().get()
+              + " validators are in "
+              + statusCount.getKey().name()
+              + " state.");
+    }
   }
 
   public void checkValidatorStatusChanges() {
