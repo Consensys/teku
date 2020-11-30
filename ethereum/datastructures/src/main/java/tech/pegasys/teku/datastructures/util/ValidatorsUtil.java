@@ -77,7 +77,19 @@ public class ValidatorsUtil {
     return Optional.of(
         BeaconStateCache.getTransitionCaches(state)
             .getValidatorsPubKeys()
-            .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey()));
+            .get(
+                validatorIndex,
+                i -> {
+                  BLSPublicKey pubKey =
+                      BLSPublicKey.fromBytesCompressed(
+                          state.getValidators().get(i.intValue()).getPubkey());
+
+                  // eagerly pre-cache pubKey => validatorIndex mapping
+                  BeaconStateCache.getTransitionCaches(state)
+                      .getValidatorIndexCache()
+                      .invalidateWithNewValue(pubKey, i.intValue());
+                  return pubKey;
+                }));
   }
 
   /**
@@ -105,25 +117,9 @@ public class ValidatorsUtil {
 
   @SuppressWarnings("DoNotReturnNullOptionals")
   public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
-    final Integer validatorIndex =
-        BeaconStateCache.getTransitionCaches(state)
-            .getValidatorIndex()
-            .get(
-                publicKey,
-                key -> {
-                  SSZList<Validator> validators = state.getValidators();
-                  for (int i = 0; i < validators.size(); i++) {
-                    final Validator validator = validators.get(i);
-                    if (validator.getPubkey().equals(publicKey)) {
-                      return i;
-                    }
-                  }
-                  return null;
-                });
-    return Optional.ofNullable(validatorIndex)
-        // The cache is shared between all states, so filter out any cached responses for validators
-        // that are only added into later states
-        .filter(index -> index < state.getValidators().size());
+    return BeaconStateCache.getTransitionCaches(state)
+        .getValidatorIndexCache()
+        .getValidatorIndex(state, publicKey);
   }
 
   /**

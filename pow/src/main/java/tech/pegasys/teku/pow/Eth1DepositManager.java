@@ -16,6 +16,7 @@ package tech.pegasys.teku.pow;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
+import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -81,6 +82,9 @@ public class Eth1DepositManager {
 
   private SafeFuture<Void> processStart(
       final EthBlock.Block headBlock, final ReplayDepositsResult replayDepositsResult) {
+    Preconditions.checkArgument(headBlock != null, "eth1 headBlock should be defined");
+    Preconditions.checkArgument(
+        replayDepositsResult != null, "eth1 replayDepositsResult should be defined");
     BigInteger startBlockNumber = replayDepositsResult.getFirstUnprocessedBlockNumber();
     if (headBlock.getNumber().compareTo(startBlockNumber) >= 0) {
       if (isBlockAfterMinGenesis(headBlock)) {

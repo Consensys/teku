@@ -24,6 +24,7 @@ import static tech.pegasys.teku.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import java.lang.reflect.Field;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -143,6 +144,8 @@ public class LengthBoundCalculator {
       case "ArrayWrappingBytes32":
       case "Bytes32":
         return Bytes32.SIZE;
+      case "Bytes48":
+        return Bytes48.SIZE;
       case "Bytes4":
         return Bytes4.SIZE;
       case "BLSSignature":

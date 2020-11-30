@@ -214,7 +214,7 @@ class BlockProcessorUtilTest {
 
   private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
     return Validator.create(
-        pubkey,
+        pubkey.toBytesCompressed(),
         withdrawalCredentials,
         UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,

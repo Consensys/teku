@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -84,6 +85,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
+
   private static final Logger LOG = LogManager.getLogger();
   /**
    * Number of epochs ahead of the current head that duties can be requested. This provides some
@@ -260,7 +262,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
-    final UInt64 minQuerySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
+    final UInt64 epoch = compute_epoch_at_slot(slot);
+    final UInt64 minQuerySlot = compute_start_slot_at_epoch(epoch);
 
     return combinedChainDataClient
         .getSignedBlockAndStateInEffectAtSlot(slot)
@@ -273,8 +276,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               final BeaconBlock block = blockAndState.getBlock().getMessage();
               if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
                 // The current effective block is too far in the past - so roll the state
-                // forward to the minimum epoch
-                final UInt64 epoch = compute_epoch_at_slot(minQuerySlot);
+                // forward to the current epoch. Ensures we have the latest justified checkpoint
                 return combinedChainDataClient
                     .getCheckpointState(epoch, blockAndState)
                     .thenApply(
@@ -480,24 +482,29 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private Optional<AttesterDuty> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
-    try {
-      final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
-      final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
-      return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
-          .map(
-              committeeAssignment ->
-                  new AttesterDuty(
-                      pkey,
-                      validatorIndex,
-                      committeeAssignment.getCommittee().size(),
-                      committeeAssignment.getCommitteeIndex().intValue(),
-                      committeeCountPerSlot.intValue(),
-                      committeeAssignment.getCommittee().indexOf(validatorIndex),
-                      committeeAssignment.getSlot()));
-    } catch (IndexOutOfBoundsException ex) {
-      LOG.debug(ex);
+
+    return combine(
+        ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
+        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
+        (pkey, committeeAssignment) -> {
+          final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
+          return new AttesterDuty(
+              pkey,
+              validatorIndex,
+              committeeAssignment.getCommittee().size(),
+              committeeAssignment.getCommitteeIndex().intValue(),
+              committeeCountPerSlot.intValue(),
+              committeeAssignment.getCommittee().indexOf(validatorIndex),
+              committeeAssignment.getSlot());
+        });
+  }
+
+  private static <A, B, R> Optional<R> combine(
+      Optional<A> a, Optional<B> b, BiFunction<A, B, R> fun) {
+    if (a.isEmpty() || b.isEmpty()) {
       return Optional.empty();
     }
+    return Optional.ofNullable(fun.apply(a.get(), b.get()));
   }
 
   private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(
@@ -508,7 +515,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final int proposerIndex = get_beacon_proposer_index(state, slot);
-      final BLSPublicKey publicKey = state.getValidators().get(proposerIndex).getPubkey();
+      final BLSPublicKey publicKey =
+          ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
       proposerSlots.put(slot, publicKey);
     }
     return proposerSlots;
