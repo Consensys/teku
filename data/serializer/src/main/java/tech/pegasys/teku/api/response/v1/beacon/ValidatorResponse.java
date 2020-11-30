@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -131,10 +132,12 @@ public class ValidatorResponse {
         && Objects.equals(validator, that.validator);
   }
 
+  @JsonIgnore
   public BLSPublicKey getPublicKey() {
     return validator.pubkey.asBLSPublicKey();
   }
 
+  @JsonIgnore
   public ValidatorStatus getStatus() {
     return status;
   }
