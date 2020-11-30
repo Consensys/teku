@@ -76,6 +76,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .setRestApiEnabled(true)
           .setRestApiDocsEnabled(true)
           .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+          .setRestApiCorsAllowedOrigins(new ArrayList<>())
           .build();
 
   protected static final UInt64 SIX = UInt64.valueOf(6);
