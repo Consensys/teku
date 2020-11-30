@@ -207,7 +207,7 @@ public class BeaconRestApi {
                   config.enableCorsForAllOrigins();
                 } else {
                   config.enableCorsForOrigin(
-                      configuration.getRestApiCorsAllowedOrigins().toArray(new String[] {}));
+                      configuration.getRestApiCorsAllowedOrigins().toArray(new String[0]));
                 }
               }
             });
