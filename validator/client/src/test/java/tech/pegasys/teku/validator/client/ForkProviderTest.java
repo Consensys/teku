@@ -50,6 +50,7 @@ class ForkProviderTest {
     when(genesisDataProvider.getGenesisValidatorsRoot())
         .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
 
+    forkProvider.initialize();
     final SafeFuture<ForkInfo> result = forkProvider.getForkInfo();
 
     assertThat(result).isNotDone();
@@ -65,6 +66,7 @@ class ForkProviderTest {
     when(genesisDataProvider.getGenesisValidatorsRoot())
         .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
 
+    forkProvider.initialize();
     // First request loads the fork
     assertThat(forkProvider.getForkInfo()).isCompletedWithValue(forkInfo);
     verify(validatorApiChannel).getFork();
@@ -83,6 +85,8 @@ class ForkProviderTest {
     when(validatorApiChannel.getFork())
         .thenReturn(completedFuture(Optional.of(forkInfo.getFork())))
         .thenReturn(completedFuture(Optional.of(updatedFork.getFork())));
+
+    forkProvider.initialize();
 
     assertThat(forkProvider.getForkInfo()).isCompletedWithValue(forkInfo);
 
@@ -103,6 +107,7 @@ class ForkProviderTest {
         .thenReturn(completedFuture(Optional.of(forkInfo.getFork())));
 
     // First request fails
+    forkProvider.initialize();
     final SafeFuture<ForkInfo> result = forkProvider.getForkInfo();
     verify(validatorApiChannel).getFork();
     assertThat(result).isNotDone();

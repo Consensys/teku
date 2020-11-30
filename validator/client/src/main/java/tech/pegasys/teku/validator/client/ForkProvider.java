@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.util.config.Constants.FORK_REFRESH_TIME_SECONDS;
 import static tech.pegasys.teku.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,7 @@ public class ForkProvider {
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
   private final GenesisDataProvider genesisDataProvider;
+  private SafeFuture<ForkInfo> futureForkInfo;
 
   private volatile Optional<ForkInfo> currentFork = Optional.empty();
 
@@ -45,8 +47,19 @@ public class ForkProvider {
     this.genesisDataProvider = genesisDataProvider;
   }
 
+  public void initialize() {
+    futureForkInfo = loadForkInfo();
+  }
+
   public SafeFuture<ForkInfo> getForkInfo() {
-    return currentFork.map(SafeFuture::completedFuture).orElseGet(this::loadForkInfo);
+    return currentFork
+        .map(SafeFuture::completedFuture)
+        .orElseGet(
+            () -> {
+              Preconditions.checkArgument(
+                  futureForkInfo != null, "ForkProvider was not initialised");
+              return futureForkInfo;
+            });
   }
 
   private SafeFuture<ForkInfo> loadForkInfo() {
@@ -55,7 +68,7 @@ public class ForkProvider {
             error -> {
               LOG.error("Failed to retrieve current fork info. Retrying after delay", error);
               return asyncRunner.runAfterDelay(
-                  this::getForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+                  this::loadForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
             });
   }
 
