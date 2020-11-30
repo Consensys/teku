@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -75,16 +73,11 @@ public interface BeaconState
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   Field ETH1_DEPOSIT_INDEX_FIELD = new Field(10, BasicViewTypes.UINT64_TYPE);
   Field VALIDATORS_FIELD =
-      new Field(11, () -> new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT,
-          TypeHints.sszSuperLeaf(8)));
+      new Field(11, () -> new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
   Field BALANCES_FIELD =
       new Field(
           12,
-          () ->
-              new ListViewType<>(
-                  BasicViewTypes.UINT64_TYPE,
-                  Constants.VALIDATOR_REGISTRY_LIMIT,
-                  TypeHints.superLeaf()));
+          () -> new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
   Field RANDAO_MIXES_FIELD =
       new Field(
           13,

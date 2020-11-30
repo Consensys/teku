@@ -20,8 +20,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.tree.SszNode;
-import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
@@ -30,23 +28,11 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   private final List<ViewType> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
   private volatile TreeNode defaultTree;
-  private final TypeHints typeHints;
 
   public ContainerViewType(
       List<ViewType> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
-    this(childrenTypes, instanceCtor, TypeHints.none());
-  }
-
-  public ContainerViewType(List<ViewType> childrenTypes,
-      BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor,
-      TypeHints typeHints) {
     this.childrenTypes = childrenTypes;
     this.instanceCtor = instanceCtor;
-    this.typeHints = typeHints;
-  }
-
-  public ContainerViewType<C> copyWithHints(TypeHints hints) {
-    return new ContainerViewType<>(childrenTypes, instanceCtor, hints);
   }
 
   @Override
@@ -63,16 +49,6 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   private TreeNode createDefaultTree() {
-    if (typeHints.isSszLeaf()) {
-      SszNodeTemplate sszNodeTemplate = SszNodeTemplate.createFromType(this);
-      Bytes defaultSsz = sszSerialize(createDefaultCanonicalBinaryTree());
-      return new SszNode(sszNodeTemplate, defaultSsz);
-    } else {
-      return createDefaultCanonicalBinaryTree();
-    }
-  }
-
-  public TreeNode createDefaultCanonicalBinaryTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
     for (int i = 0; i < getChildCount(); i++) {
       defaultChildren.add(getChildType(i).getDefault().getBackingNode());

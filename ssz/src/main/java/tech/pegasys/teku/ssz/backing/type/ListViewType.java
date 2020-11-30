@@ -25,19 +25,12 @@ import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
-  private final TypeHints hints;
-
   public ListViewType(VectorViewType<C> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
   public ListViewType(ViewType elementType, long maxLength) {
-    this(elementType, maxLength, TypeHints.none());
-  }
-
-  public ListViewType(ViewType elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType);
-    this.hints = hints;
   }
 
   @Override
@@ -57,7 +50,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true, hints);
+    return new VectorViewType<>(getElementType(), getMaxLength(), true);
   }
 
   @Override
