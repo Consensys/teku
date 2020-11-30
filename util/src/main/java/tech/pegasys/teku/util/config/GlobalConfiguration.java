@@ -78,6 +78,7 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean restApiEnabled;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
+  private final List<String> restApiCorsAllowedOrigins;
 
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
@@ -123,7 +124,8 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
-      final List<String> restApiHostAllowlist) {
+      final List<String> restApiHostAllowlist,
+      final List<String> restApiCorsAllowedOrigins) {
     this.networkDefinition = networkDefinition;
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -164,6 +166,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
+    this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
   }
 
   public NetworkDefinition getNetworkDefinition() {
@@ -337,6 +340,10 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public List<String> getRestApiHostAllowlist() {
     return restApiHostAllowlist;
+  }
+
+  public List<String> getRestApiCorsAllowedOrigins() {
+    return restApiCorsAllowedOrigins;
   }
 
   public void validate() throws IllegalArgumentException {
