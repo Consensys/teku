@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.beacon;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestA
             .setRestApiEnabled(true)
             .setRestApiDocsEnabled(false)
             .setRestApiHostAllowlist(List.of("not.authorized.host"))
+            .setRestApiCorsAllowedOrigins(new ArrayList<>())
             .build();
     startPreGenesisRestAPIWithConfig(config);
 
