@@ -14,16 +14,34 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation.Left;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation.Predecessor;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation.Right;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation.Same;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 
 public class GIndexUtilTest {
 
-  @Test
-  void test1() {
-    assertThat(gIdxLeftGIndex(4)).isEqualTo(8);
-    assertThat(gIdxRightGIndex(4)).isEqualTo(9);
+
+  static Stream<Arguments> compareCases() {
+    return Stream.of(
+        Arguments.of(0b1L, 0b1L, Same),
+        Arguments.of(0b1L, 0b11L, Predecessor),
+        Arguments.of(0b1L, 0b10L, Predecessor),
+        Arguments.of(0b10L, 0b11L, Left),
+        Arguments.of(0b11L, 0b10L, Right)
+    );
+  }
+
+  @ParameterizedTest
+  @MethodSource("compareCases")
+  void testCompare(long idx1, long idx2, NodeRelation expected) {
+    assertThat(gIdxCompare(idx1, idx2)).isEqualTo(expected);
   }
 }
