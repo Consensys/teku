@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -13,7 +26,8 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil.ZeroLeafNode;
 
 /**
  * Leaf node of a tree which contains 'bytes32' value. This node type corresponds to the 'Root' node
- * in the spec: https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
+ * in the spec:
+ * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
  */
 public interface LeafNode extends TreeNode {
 
@@ -26,9 +40,7 @@ public interface LeafNode extends TreeNode {
    * Bytes32#ZERO}
    */
   LeafNode[] ZERO_LEAVES =
-      IntStream.rangeClosed(0, MAX_BYTE_SIZE)
-          .mapToObj(ZeroLeafNode::new)
-          .toArray(LeafNode[]::new);
+      IntStream.rangeClosed(0, MAX_BYTE_SIZE).mapToObj(ZeroLeafNode::new).toArray(LeafNode[]::new);
 
   /** The {@link LeafNode} with empty data */
   LeafNode EMPTY_LEAF = ZERO_LEAVES[0];
@@ -42,9 +54,7 @@ public interface LeafNode extends TreeNode {
    */
   Bytes getData();
 
-  /**
-   * LeafNode hash tree root is the leaf data right padded to 32 bytes
-   */
+  /** LeafNode hash tree root is the leaf data right padded to 32 bytes */
   @Override
   default Bytes32 hashTreeRoot() {
     return Bytes32.rightPad(getData());

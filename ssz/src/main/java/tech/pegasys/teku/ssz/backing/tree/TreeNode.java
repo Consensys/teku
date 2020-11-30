@@ -35,15 +35,14 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
  */
 public interface TreeNode {
 
-  /**
-   * Creates a basic Leaf node instance with the data <= 32 bytes
-   */
+  /** Creates a basic Leaf node instance with the data <= 32 bytes */
   static LeafNode createLeafNode(Bytes data) {
     return new LeafNodeImpl(data);
   }
 
   /**
    * Creates a basic binary Branch node with left and right child
+   *
    * @param left Non-null left child
    * @param right Non-null right child
    */
@@ -71,23 +70,22 @@ public interface TreeNode {
   TreeNode get(long generalizedIndex);
 
   /**
-   * Iterates recursively this node children (including the node itself) in the order Self -> Left subtree -> Right subtree
+   * Iterates recursively this node children (including the node itself) in the order Self -> Left
+   * subtree -> Right subtree
    *
-   * This method can be considered low-level and mostly intended as a single implementation point
-   * for subclasses. Consider using higher-level methods {@link #iterateRange(TreeVisitor, long, long)},
-   * {@link #iterateAll(TreeVisitor)} and {@link #iterateAll(Consumer)}
+   * <p>This method can be considered low-level and mostly intended as a single implementation point
+   * for subclasses. Consider using higher-level methods {@link #iterateRange(TreeVisitor, long,
+   * long)}, {@link #iterateAll(TreeVisitor)} and {@link #iterateAll(Consumer)}
    *
    * @param visitor Callback for nodes. When visitor returns false, iteration breaks
-   * @param thisGeneralizedIndex the generalized index of this node or {@link GIndexUtil#SELF_G_INDEX}
-   *                             if this node is considered the root.
-   *                             {@link TreeVisitor#visit(TreeNode, long)} index will be calculated with respect
-   *                             to this parameter
-   * @param startGeneralizedIndex The generalized index to start iteration from. All tree predecessor and
-   *                              successor nodes of a node at this index will be visited. All nodes
-   *                              'to the left' of start node are to be skipped.
-   *                              The index may point to a non-existing node, in this case the nearest
-   *                              existing predecessor node would be the starting node
-   *                              To start iteration from the leftmost node use {@link GIndexUtil#LEFTMOST_G_INDEX}
+   * @param thisGeneralizedIndex the generalized index of this node or {@link
+   *     GIndexUtil#SELF_G_INDEX} if this node is considered the root. {@link
+   *     TreeVisitor#visit(TreeNode, long)} index will be calculated with respect to this parameter
+   * @param startGeneralizedIndex The generalized index to start iteration from. All tree
+   *     predecessor and successor nodes of a node at this index will be visited. All nodes 'to the
+   *     left' of start node are to be skipped. The index may point to a non-existing node, in this
+   *     case the nearest existing predecessor node would be the starting node To start iteration
+   *     from the leftmost node use {@link GIndexUtil#LEFTMOST_G_INDEX}
    * @return true if the iteration should proceed or false to break iteration
    */
   boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex);
@@ -96,14 +94,14 @@ public interface TreeNode {
    * Iterates all nodes between and including startGeneralizedIndex and endGeneralizedIndexInclusive
    * in order Self -> Left subtree -> Right subtree
    *
-   * All tree predecessor and successor nodes of startGeneralizedIndex and
-   * endGeneralizedIndexInclusive nodes will be visited.
-   * All nodes 'to the left' of the start node and 'to the right' of the end node are to be skipped.
-   * An index may point to a non-existing node, in this case the nearest existing predecessor node
-   * would be considered the starting node.
+   * <p>All tree predecessor and successor nodes of startGeneralizedIndex and
+   * endGeneralizedIndexInclusive nodes will be visited. All nodes 'to the left' of the start node
+   * and 'to the right' of the end node are to be skipped. An index may point to a non-existing
+   * node, in this case the nearest existing predecessor node would be considered the starting node.
    *
-   * To start iteration from the leftmost node specify startGeneralizedIndex equal to {@link GIndexUtil#LEFTMOST_G_INDEX}
-   * To iteration till the rightmost node specify endGeneralizedIndexInclusive equal to {@link GIndexUtil#RIGHTMOST_G_INDEX}
+   * <p>To start iteration from the leftmost node specify startGeneralizedIndex equal to {@link
+   * GIndexUtil#LEFTMOST_G_INDEX} To iteration till the rightmost node specify
+   * endGeneralizedIndexInclusive equal to {@link GIndexUtil#RIGHTMOST_G_INDEX}
    *
    * @param visitor
    * @param startGeneralizedIndex
@@ -117,29 +115,27 @@ public interface TreeNode {
         startGeneralizedIndex);
   }
 
-  /**
-   * Iterates all tree nodes in the order Self -> Left subtree -> Right subtree
-   */
+  /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
   default void iterateAll(TreeVisitor visitor) {
     iterate(visitor, SELF_G_INDEX, LEFTMOST_G_INDEX);
   }
 
-  /**
-   * Iterates all tree nodes in the order Self -> Left subtree -> Right subtree
-   */
+  /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
   default void iterateAll(Consumer<TreeNode> simpleVisitor) {
-    iterateAll((node, __) -> {
-      simpleVisitor.accept(node);
-      return true;
-    });
+    iterateAll(
+        (node, __) -> {
+          simpleVisitor.accept(node);
+          return true;
+        });
   }
 
   /**
    * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate
    * a new node
    *
-   * Three method overloads call each other in a cycle. The implementation class should override
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
    * one of them and may override more for efficiency
+   *
    * @see #updated(TreeUpdates)
    * @see #updated(long, TreeNode)
    * @see #updated(long, Function)
@@ -153,8 +149,9 @@ public interface TreeNode {
   /**
    * Updates the tree in a batch.
    *
-   * Three method overloads call each other in a cycle. The implementation class should override
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
    * one of them and may override more for efficiency
+   *
    * @see #updated(TreeUpdates)
    * @see #updated(long, TreeNode)
    * @see #updated(long, Function)
@@ -171,7 +168,7 @@ public interface TreeNode {
    * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
    * are left immutable. The updated subtree node is returned.
    *
-   * Three method overloads call each other in a cycle. The implementation class should override
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
    * one of them and may override more for efficiency
    *
    * @param generalizedIndex index of tree node to be replaced

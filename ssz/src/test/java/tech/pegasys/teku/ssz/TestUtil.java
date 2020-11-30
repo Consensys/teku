@@ -36,7 +36,8 @@ public class TestUtil {
 
     public static final ContainerViewType<TestSubContainer> TYPE =
         new ContainerViewType<>(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), TestSubContainer::new);
+            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
+            TestSubContainer::new);
 
     private TestSubContainer(ContainerViewType<TestSubContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -71,6 +72,7 @@ public class TestUtil {
     public TestSubContainer getSubContainer() {
       return (TestSubContainer) get(0);
     }
+
     public UInt64 getLong() {
       return ((UInt64View) get(1)).get();
     }

@@ -51,8 +51,7 @@ public class TreeUtil {
     }
   }
 
-  @VisibleForTesting
-  static final TreeNode[] ZERO_TREES;
+  @VisibleForTesting static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];

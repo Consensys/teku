@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-/**
- * Visitor callback interface for traversing binary tree {@link TreeNode}s
- */
+/** Visitor callback interface for traversing binary tree {@link TreeNode}s */
 public interface TreeVisitor {
 
   /**
    * 'Visits' a tree node with specifying its generalized index
+   *
    * @return true if the visitor wishes to continue or false if further iteration should break
    */
   boolean visit(TreeNode node, long generalizedIndex);
 }
-

@@ -18,9 +18,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
