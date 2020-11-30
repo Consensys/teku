@@ -377,7 +377,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
-        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist());
+        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
+        .setRestApiCorsAllowedOrigins(beaconRestApiOptions.getRestApiCorsAllowedOrigins());
 
     String logFile =
         loggingOptions
