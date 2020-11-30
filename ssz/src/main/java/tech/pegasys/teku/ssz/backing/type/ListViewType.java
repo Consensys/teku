@@ -18,9 +18,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
@@ -36,7 +36,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   @Override
   protected TreeNode createDefaultTree() {
     return TreeNode.createBranchNode(
-        getCompatibleVectorType().createDefaultTree(), TreeUtil.ZERO_LEAVES[8]);
+        getCompatibleVectorType().createDefaultTree(), LeafNode.ZERO_LEAVES[8]);
   }
 
   @Override

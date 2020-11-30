@@ -15,20 +15,18 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  private static class ZeroLeafNode extends LeafNodeImpl {
+  static class ZeroLeafNode extends LeafNodeImpl {
     public ZeroLeafNode(int size) {
       super(Bytes.wrap(new byte[size]));
     }
@@ -53,26 +51,12 @@ public class TreeUtil {
     }
   }
 
-  /**
-   * Pre-allocated leaf nodes with the data consisting of 0, 1, 2, ..., 32 zero bytes Worth to
-   * mention that {@link TreeNode#hashTreeRoot()} for all these nodes return the same value {@link
-   * org.apache.tuweni.bytes.Bytes32#ZERO}
-   *
-   * <p>Iterating leaves with this method is much faster that addressing each leaf by its general
-   * index separately
-   */
-  public static final TreeNode[] ZERO_LEAVES =
-      IntStream.range(0, TreeNode.NODE_BYTE_SIZE + 1)
-          .mapToObj(ZeroLeafNode::new)
-          .toArray(TreeNode[]::new);
-  /** The {@link LeafNode} with empty data */
-  public static final TreeNode EMPTY_LEAF = ZERO_LEAVES[0];
-
+  @VisibleForTesting
   static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
-    ZERO_TREES[0] = EMPTY_LEAF;
+    ZERO_TREES[0] = LeafNode.EMPTY_LEAF;
     for (int i = 1; i < ZERO_TREES.length; i++) {
       ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
       ZERO_TREES[i].hashTreeRoot(); // pre-cache
@@ -90,7 +74,7 @@ public class TreeUtil {
    */
   public static TreeNode createDefaultTree(long maxLength, TreeNode defaultNode) {
     return createTree(
-        defaultNode, EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
+        defaultNode, LeafNode.EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */

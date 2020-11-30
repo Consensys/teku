@@ -28,7 +28,7 @@ abstract class TreeNodeImpl implements TreeNode {
     private final byte[] data;
 
     public LeafNodeImpl(Bytes data) {
-      checkArgument(data.size() <= TreeNode.NODE_BYTE_SIZE);
+      checkArgument(data.size() <= LeafNode.MAX_BYTE_SIZE);
       this.data = data.toArrayUnsafe();
     }
 
@@ -39,10 +39,10 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public Bytes32 hashTreeRoot() {
-      if (data.length == TreeNode.NODE_BYTE_SIZE) {
+      if (data.length == LeafNode.MAX_BYTE_SIZE) {
         return Bytes32.wrap(data);
       } else {
-        return Bytes32.wrap(Arrays.copyOf(data, TreeNode.NODE_BYTE_SIZE));
+        return Bytes32.wrap(Arrays.copyOf(data, LeafNode.MAX_BYTE_SIZE));
       }
     }
 

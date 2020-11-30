@@ -23,8 +23,7 @@ import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -58,7 +57,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[1];
+          return LeafNode.ZERO_LEAVES[1];
         }
       };
 
@@ -79,7 +78,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[1];
+          return LeafNode.ZERO_LEAVES[1];
         }
       };
 
@@ -122,7 +121,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[8];
+          return LeafNode.ZERO_LEAVES[8];
         }
       };
 
@@ -145,7 +144,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[4];
+          return LeafNode.ZERO_LEAVES[4];
         }
       };
 
@@ -163,7 +162,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[32];
+          return LeafNode.ZERO_LEAVES[32];
         }
       };
 
