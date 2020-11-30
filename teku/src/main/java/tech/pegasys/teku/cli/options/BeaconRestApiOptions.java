@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import picocli.CommandLine.Option;
@@ -59,6 +60,14 @@ public class BeaconRestApiOptions {
       arity = "0..*")
   private final List<String> restApiHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
+  @Option(
+      names = {"--rest-api-cors-origins"},
+      paramLabel = "<origin>",
+      description = "Comma separated list of origins to allow, or * to allow any origin",
+      split = ",",
+      arity = "0..*")
+  private final List<String> restApiCorsAllowedOrigins = new ArrayList<>();
+
   public int getRestApiPort() {
     return restApiPort;
   }
@@ -77,5 +86,9 @@ public class BeaconRestApiOptions {
 
   public List<String> getRestApiHostAllowlist() {
     return restApiHostAllowlist;
+  }
+
+  public List<String> getRestApiCorsAllowedOrigins() {
+    return restApiCorsAllowedOrigins;
   }
 }

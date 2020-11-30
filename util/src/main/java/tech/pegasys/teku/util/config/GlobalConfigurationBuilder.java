@@ -64,6 +64,7 @@ public class GlobalConfigurationBuilder {
   private boolean restApiEnabled;
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
+  private List<String> restApiCorsAllowedOrigins;
   private NetworkDefinition network;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
@@ -275,6 +276,12 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
+  public GlobalConfigurationBuilder setRestApiCorsAllowedOrigins(
+      final List<String> restApiCorsAllowedOrigins) {
+    this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
+    return this;
+  }
+
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -337,7 +344,8 @@ public class GlobalConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostAllowlist);
+        restApiHostAllowlist,
+        restApiCorsAllowedOrigins);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
