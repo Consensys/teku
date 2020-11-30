@@ -13,7 +13,15 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import com.google.common.eventbus.EventBus;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -37,15 +45,6 @@ import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 public class ValidatorApiHandlerIntegrationTest {
 
@@ -73,7 +72,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
-              chainDataProvider,
+          chainDataProvider,
           combinedChainDataClient,
           syncStateProvider,
           stateTransition,
