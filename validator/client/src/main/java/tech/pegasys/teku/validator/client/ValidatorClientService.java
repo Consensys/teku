@@ -83,7 +83,6 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider =
         new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
-    forkProvider.getForkInfo().reportExceptions();
     final ValidatorIndexProvider validatorIndexProvider =
         new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =

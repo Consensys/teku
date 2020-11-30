@@ -63,7 +63,7 @@ public class ForkProvider {
     return genesisDataProvider.getGenesisValidatorsRoot().thenCompose(this::requestFork);
   }
 
-  public SafeFuture<ForkInfo> requestFork(final Bytes32 genesisValidatorsRoot) {
+  private SafeFuture<ForkInfo> requestFork(final Bytes32 genesisValidatorsRoot) {
     return validatorApiChannel
         .getFork()
         .thenCompose(
