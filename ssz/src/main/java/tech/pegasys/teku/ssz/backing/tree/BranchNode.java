@@ -89,14 +89,14 @@ public interface BranchNode extends TreeNode {
 
   @Override
   default boolean iterate(
-      TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
 
     if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
       return true;
     } else {
       return visitor.visit(this, thisGeneralizedIndex)
-          && left().iterate(visitor, gIdxLeftGIndex(thisGeneralizedIndex), startGeneralizedIndex)
-          && right().iterate(visitor, gIdxRightGIndex(thisGeneralizedIndex), startGeneralizedIndex);
+          && left().iterate(gIdxLeftGIndex(thisGeneralizedIndex), startGeneralizedIndex, visitor)
+          && right().iterate(gIdxRightGIndex(thisGeneralizedIndex), startGeneralizedIndex, visitor);
     }
   }
 

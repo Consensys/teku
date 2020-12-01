@@ -146,14 +146,14 @@ public class TreeUtil {
   static void iterateLeaves(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
     node.iterateRange(
+        fromGeneralIndex,
+        toGeneralIndex,
         (n, idx) -> {
           if (n instanceof LeafNode) {
             visitor.accept((LeafNode) n);
           }
           return true;
-        },
-        fromGeneralIndex,
-        toGeneralIndex);
+        });
   }
 
   public static void iterateLeavesData(

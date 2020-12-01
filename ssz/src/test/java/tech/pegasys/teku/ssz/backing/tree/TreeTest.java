@@ -156,6 +156,87 @@ public class TreeTest {
             newTestLeaf(5));
   }
 
+  private BranchNode createNonPlainTree() {
+    BranchNode n1 =
+        (BranchNode)
+            TreeUtil.createTree(
+                IntStream.range(0, 4).mapToObj(TreeTest::newTestLeaf).collect(Collectors.toList()));
+    BranchNode n2 =
+        (BranchNode)
+            TreeUtil.createTree(
+                IntStream.range(4, 6).mapToObj(TreeTest::newTestLeaf).collect(Collectors.toList()));
+    return BranchNode.create(n1, n2);
+  }
+
+  @Test
+  void testTreeNodeIterator() {
+    BranchNode root = createNonPlainTree();
+
+    List<Long> iteratedIndices = new ArrayList<>();
+    root.iterateAll(
+        (node, idx) -> {
+          assertThat(root.get(idx)).isSameAs(node);
+          iteratedIndices.add(idx);
+          return true;
+        });
+
+    assertThat(iteratedIndices)
+        .containsExactly(
+            0b1L, 0b10L, 0b100L, 0b1000L, 0b1001L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L, 0b111L);
+  }
+
+  @Test
+  void testTreeNodeIteratorWithRange() {
+    BranchNode root = createNonPlainTree();
+
+    List<Long> iteratedIndices = new ArrayList<>();
+    root.iterateRange(
+        0b101,
+        0b110,
+        (node, idx) -> {
+          assertThat(root.get(idx)).isSameAs(node);
+          iteratedIndices.add(idx);
+          return true;
+        });
+
+    assertThat(iteratedIndices)
+        .containsExactly(0b1L, 0b10L, 0b101L, 0b1010L, 0b1011L, 0b11L, 0b110L);
+  }
+
+  @Test
+  void testTreeNodeIteratorWithDegenerateRange() {
+    BranchNode root = createNonPlainTree();
+
+    List<Long> iteratedIndices = new ArrayList<>();
+    root.iterateRange(
+        0b100000,
+        0b100001,
+        (node, idx) -> {
+          assertThat(root.get(idx)).isSameAs(node);
+          iteratedIndices.add(idx);
+          return true;
+        });
+
+    assertThat(iteratedIndices).containsExactly(0b1L, 0b10L, 0b100L, 0b1000L);
+  }
+
+  @Test
+  void testTreeNodeIteratorWithEqualStartEndNodes() {
+    BranchNode root = createNonPlainTree();
+
+    List<Long> iteratedIndices = new ArrayList<>();
+    root.iterateRange(
+        0b11,
+        0b11,
+        (node, idx) -> {
+          assertThat(root.get(idx)).isSameAs(node);
+          iteratedIndices.add(idx);
+          return true;
+        });
+
+    assertThat(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
+  }
+
   static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {
     List<LeafNode> ret = new ArrayList<>();
     TreeUtil.iterateLeaves(n, from, to, ret::add);

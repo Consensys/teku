@@ -13,18 +13,14 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.singletonList;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
-import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -57,10 +53,9 @@ public interface TreeNode {
    * subtree -> Right subtree
    *
    * <p>This method can be considered low-level and mostly intended as a single implementation point
-   * for subclasses. Consider using higher-level methods {@link #iterateRange(TreeVisitor, long,
-   * long)}, {@link #iterateAll(TreeVisitor)} and {@link #iterateAll(Consumer)}
+   * for subclasses. Consider using higher-level methods {@link #iterateRange(long, long,
+   * TreeVisitor)}, {@link #iterateAll(TreeVisitor)} and {@link #iterateAll(Consumer)}
    *
-   * @param visitor Callback for nodes. When visitor returns false, iteration breaks
    * @param thisGeneralizedIndex the generalized index of this node or {@link
    *     GIndexUtil#SELF_G_INDEX} if this node is considered the root. {@link
    *     TreeVisitor#visit(TreeNode, long)} index will be calculated with respect to this parameter
@@ -69,9 +64,10 @@ public interface TreeNode {
    *     left' of start node are to be skipped. The index may point to a non-existing node, in this
    *     case the nearest existing predecessor node would be the starting node To start iteration
    *     from the leftmost node use {@link GIndexUtil#LEFTMOST_G_INDEX}
+   * @param visitor Callback for nodes. When visitor returns false, iteration breaks
    * @return true if the iteration should proceed or false to break iteration
    */
-  boolean iterate(TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex);
+  boolean iterate(long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor);
 
   /**
    * Iterates all nodes between and including startGeneralizedIndex and endGeneralizedIndexInclusive
@@ -85,22 +81,18 @@ public interface TreeNode {
    * <p>To start iteration from the leftmost node specify startGeneralizedIndex equal to {@link
    * GIndexUtil#LEFTMOST_G_INDEX} To iteration till the rightmost node specify
    * endGeneralizedIndexInclusive equal to {@link GIndexUtil#RIGHTMOST_G_INDEX}
-   *
-   * @param visitor
-   * @param startGeneralizedIndex
-   * @param endGeneralizedIndexInclusive
    */
   default void iterateRange(
-      TreeVisitor visitor, long startGeneralizedIndex, long endGeneralizedIndexInclusive) {
+      long startGeneralizedIndex, long endGeneralizedIndexInclusive, TreeVisitor visitor) {
     iterate(
-        TillIndexVisitor.create(visitor, endGeneralizedIndexInclusive),
         SELF_G_INDEX,
-        startGeneralizedIndex);
+        startGeneralizedIndex,
+        TillIndexVisitor.create(visitor, endGeneralizedIndexInclusive));
   }
 
   /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
   default void iterateAll(TreeVisitor visitor) {
-    iterate(visitor, SELF_G_INDEX, LEFTMOST_G_INDEX);
+    iterate(SELF_G_INDEX, LEFTMOST_G_INDEX, visitor);
   }
 
   /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */

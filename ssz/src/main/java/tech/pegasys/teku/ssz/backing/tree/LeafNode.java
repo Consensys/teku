@@ -80,7 +80,7 @@ public interface LeafNode extends TreeNode {
 
   @Override
   default boolean iterate(
-      TreeVisitor visitor, long thisGeneralizedIndex, long startGeneralizedIndex) {
+      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
     if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
       return true;
     } else {
