@@ -135,7 +135,7 @@ public class DepositsFetcherTest {
   @Test
   void shouldReduceBatchSizeWhenRequestIsRejected() {
     final BigInteger fromBlockNumber = BigInteger.ZERO;
-    final BigInteger toBlockNumber = BigInteger.valueOf(DEFAULT_BATCH_SIZE + 1000);
+    final BigInteger toBlockNumber = BigInteger.valueOf(DEFAULT_BATCH_SIZE + 100);
 
     final SafeFuture<List<DepositContract.DepositEventEventResponse>> request1Response =
         new SafeFuture<>();
