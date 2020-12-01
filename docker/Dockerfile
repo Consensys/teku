@@ -27,9 +27,9 @@ ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="Teku" \
       org.label-schema.description="Ethereum 2.0 Beacon Chain Client" \
-      org.label-schema.url="https://pegasys.tech/teku/" \
+      org.label-schema.url="https://consensys.net/knowledge-base/ethereum-2/teku/" \
       org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/PegaSysEng/teku.git" \
-      org.label-schema.vendor="PegaSys" \
+      org.label-schema.vcs-url="https://github.com/ConsenSys/teku.git" \
+      org.label-schema.vendor="ConsenSys" \
       org.label-schema.version=$VERSION \
       org.label-schema.schema-version="1.0"

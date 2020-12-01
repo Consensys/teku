@@ -46,7 +46,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
 
-  static final int DEFAULT_BATCH_SIZE = 50_000;
+  static final int DEFAULT_BATCH_SIZE = 10_000;
 
   private static final Logger LOG = LogManager.getLogger();
 

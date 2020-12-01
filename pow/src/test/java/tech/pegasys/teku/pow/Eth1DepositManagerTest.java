@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,7 +75,8 @@ class Eth1DepositManagerTest {
           eth1EventsChannel,
           eth1DepositStorageChannel,
           depositProcessingController,
-          minimumGenesisTimeBlockFinder);
+          minimumGenesisTimeBlockFinder,
+          Optional.empty());
 
   @BeforeAll
   static void setConstants() {
