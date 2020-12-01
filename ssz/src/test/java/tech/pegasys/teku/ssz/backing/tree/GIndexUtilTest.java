@@ -25,8 +25,10 @@ import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxChildGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetDepth;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetParent;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftmostFrom;
@@ -164,5 +166,54 @@ public class GIndexUtilTest {
     assertThat(gIdxRightmostFrom(LEFTMOST_G_INDEX)).isEqualTo(LEFTMOST_G_INDEX);
     assertThat(gIdxLeftmostFrom(RIGHTMOST_G_INDEX)).isEqualTo(RIGHTMOST_G_INDEX);
     assertThat(gIdxRightmostFrom(RIGHTMOST_G_INDEX)).isEqualTo(RIGHTMOST_G_INDEX);
+
+    assertThatThrownBy(() -> gIdxLeftmostFrom(INVALID_G_INDEX));
+    assertThatThrownBy(() -> gIdxRightmostFrom(INVALID_G_INDEX));
+  }
+
+  @Test
+  void testGetChildIndex() {
+    assertThat(gIdxGetChildIndex(SELF_G_INDEX, 0)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 0)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 0)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 22)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 63)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 1)).isEqualTo(1);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 2)).isEqualTo(3);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 3)).isEqualTo(7);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 22)).isEqualTo((1 << 22) - 1);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 63)).isEqualTo(RIGHTMOST_G_INDEX);
+    assertThat(gIdxGetChildIndex(0b1100, 0)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(0b1100, 1)).isEqualTo(1);
+    assertThat(gIdxGetChildIndex(0b1100, 2)).isEqualTo(2);
+    assertThat(gIdxGetChildIndex(0b1100, 3)).isEqualTo(4);
+    assertThat(gIdxGetChildIndex(0b1000, 1)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(0b1000, 2)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(0b1000, 3)).isEqualTo(0);
+
+    assertThatThrownBy(() -> gIdxGetChildIndex(INVALID_G_INDEX, 0));
+    assertThatThrownBy(() -> gIdxGetChildIndex(INVALID_G_INDEX, 1));
+    assertThatThrownBy(() -> gIdxGetChildIndex(SELF_G_INDEX, 1));
+    assertThatThrownBy(() -> gIdxGetChildIndex(SELF_G_INDEX, 2));
+    assertThatThrownBy(() -> gIdxGetChildIndex(RIGHTMOST_G_INDEX, 64));
+  }
+
+  @Test
+  void testRelativeGIndex() {
+    assertThat(gIdxGetRelativeGIndex(SELF_G_INDEX, 0)).isEqualTo(SELF_G_INDEX);
+    assertThat(gIdxGetRelativeGIndex(LEFTMOST_G_INDEX, 0)).isEqualTo(LEFTMOST_G_INDEX);
+    assertThat(gIdxGetRelativeGIndex(RIGHTMOST_G_INDEX, 0)).isEqualTo(RIGHTMOST_G_INDEX);
+    assertThat(gIdxGetRelativeGIndex(RIGHTMOST_G_INDEX, 62)).isEqualTo(0b11L);
+    assertThat(gIdxGetRelativeGIndex(0b100100111, 3)).isEqualTo(0b100111L);
+    assertThat(gIdxGetRelativeGIndex(0b10, 1)).isEqualTo(SELF_G_INDEX);
+    assertThat(gIdxGetRelativeGIndex(0b1011, 0)).isEqualTo(0b1011);
+    assertThat(gIdxGetRelativeGIndex(0b1011, 1)).isEqualTo(0b111);
+    assertThat(gIdxGetRelativeGIndex(0b1011, 2)).isEqualTo(0b11);
+    assertThat(gIdxGetRelativeGIndex(0b1011, 3)).isEqualTo(SELF_G_INDEX);
+
+    assertThatThrownBy(() -> gIdxGetRelativeGIndex(SELF_G_INDEX, 1));
+    assertThatThrownBy(() -> gIdxGetRelativeGIndex(0b10, 2));
+    assertThatThrownBy(() -> gIdxGetRelativeGIndex(0b10, -1));
+    assertThatThrownBy(() -> gIdxGetRelativeGIndex(0b10, 64));
   }
 }
