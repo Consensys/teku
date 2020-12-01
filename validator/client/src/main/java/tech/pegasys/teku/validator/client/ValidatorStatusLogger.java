@@ -94,7 +94,6 @@ public class ValidatorStatusLogger {
     }
 
     final int unknownValidatorCount = unknownValidatorCountReference.get();
-    ;
     if (unknownValidatorCount > 0) {
       STATUS_LOG.unableToRetrieveValidatorStatusSummary(unknownValidatorCountReference.get());
     }
