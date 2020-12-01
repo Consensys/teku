@@ -142,50 +142,23 @@ public class TreeUtil {
    * index {@code toGeneralIndex} inclusive (including all node descendants if this is a branch
    * node). On every {@link LeafNode} the supplied {@code visitor} is invoked.
    */
-  public static void iterateLeaves(
+  @VisibleForTesting
+  static void iterateLeaves(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
-    iterateNodes(
-        node,
-        fromGeneralIndex,
-        toGeneralIndex,
-        n -> {
+    node.iterateRange(
+        (n, idx) -> {
           if (n instanceof LeafNode) {
             visitor.accept((LeafNode) n);
           }
-        });
-  }
-
-  public static void iterateLeavesData(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
-    iterateNodes(
-        node,
-        fromGeneralIndex,
-        toGeneralIndex,
-        n -> {
-          if (n instanceof LeafNode) {
-            visitor.accept(((LeafNode) n).getData());
-          }
-        });
-  }
-
-  public static void iterateNodes(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    iterateNodesPriv(
-        node,
-        GIndexUtil.gIdxLeftmostFrom(fromGeneralIndex),
-        GIndexUtil.gIdxRightmostFrom(toGeneralIndex),
-        visitor);
-  }
-
-  private static void iterateNodesPriv(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<TreeNode> visitor) {
-    node.iterateRange(
-        (itNode, __) -> {
-          visitor.accept(itNode);
           return true;
         },
         fromGeneralIndex,
         toGeneralIndex);
+  }
+
+  public static void iterateLeavesData(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
+    iterateLeaves(node, fromGeneralIndex, toGeneralIndex, leaf -> visitor.accept(leaf.getData()));
   }
 
   /** Dumps the tree to stdout */
