@@ -323,7 +323,7 @@ New REST APIs
 - Operations (e.g. attestations, slashings etc) included in blocks are now readded to the pending pool if a reorg causes them to no longer be in the canonical chain
 - Removed support for generating unencrypted keystores
 - Discv5 now caches the hash of the local node to reduce load caused by significant numbers of incoming discovery messages
-- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/PegaSysEng/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
+- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/ConsenSys/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
 
 ### Bug Fixes
 - Gossip messages with null `from`, `signature` or `seqNo` fields are now rebroadcast with the fields still null instead of replaced by default values
@@ -351,7 +351,7 @@ New REST APIs
 
 ### Additions and Improvements
 
-- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/PegaSysEng/teku/issues/2596 for a full list of related issues.
+- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/ConsenSys/teku/issues/2596 for a full list of related issues.
 - Support loading an entire directory of validator keys using `--validator-keys=<keyDir>:<passDir>`. Individual keystore and password files can also be specified using this new argument. 
 - Major reduction in CPU and memory usage during periods of non-finalization by intelligently queuing and combining requests for beacon states and checkpoint states
 - Fixed slow startup times during long periods of non-finalization.  Non-finalized states are now periodically persisted to disk to avoid needing to replay large numbers of blocks to regenerate state.
@@ -415,7 +415,7 @@ New REST APIs
 
 - Fixed vector for DOS attack caused by not throttling libp2p response rate. (See https://github.com/libp2p/jvm-libp2p/pull/127 and https://github.com/ethereum/public-attacknets/issues/7 for futher details)
 - Fixed issue that delayed publication of created attestations by a slot
-- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/PegaSysEng/teku/pull/2501 for further details)
+- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/ConsenSys/teku/pull/2501 for further details)
 - Fixed issues where validators failed to perform duties because the node incorrectly returned to syncing state
 - Fixed `--logging` option to accept lowercase `debug` option. Renamed the `debug` subcommand to avoid the naming conflict
 - Avoid lock contention when reading in-memory storage metrics
@@ -547,7 +547,7 @@ New REST APIs
 
 ### Known Issues
 
-- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/ConsenSys/teku/issues/2179))
 
 
 ## 0.11.5
