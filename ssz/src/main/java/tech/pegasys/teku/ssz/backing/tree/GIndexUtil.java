@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -26,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
  * <p>Here the general index is represented by <code>long</code> which is treated as unsigned uint64
  * Thus the only illegal generalized index value is <code>0</code>
  */
-public class GIndexUtil {
+class GIndexUtil {
 
   /** See {@link #gIdxCompare(long, long)} */
   public enum NodeRelation {
@@ -168,11 +167,10 @@ public class GIndexUtil {
    */
   public static long gIdxChildGIndex(long generalizedIndex, int childIdx, int childDepth) {
     checkGIndex(generalizedIndex);
-    checkArgument(childDepth >= 0 && childDepth < 64);
-    checkArgument(childIdx >= 0);
-    checkArgument(
-        childIdx < (1 << childDepth), "Invalid child index %s, for depth %s", childIdx, childDepth);
-    checkArgument(gIdxGetDepth(generalizedIndex) + childDepth < 64);
+    assert childDepth >= 0 && childDepth < 64;
+    assert childIdx >= 0;
+    assert childIdx < (1 << childDepth);
+    assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
     return (generalizedIndex << childDepth) | childIdx;
   }
 
@@ -239,14 +237,11 @@ public class GIndexUtil {
    */
   public static int gIdxGetChildIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    checkArgument(childDepth < 64);
+    assert childDepth < 64;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     int indexBitCount = Long.bitCount(anchor - 1);
-    if (indexBitCount < childDepth) {
-      throw new IllegalArgumentException(
-          "Generalized index " + generalizedIndex + " is upper than depth " + childDepth);
-    }
+    assert indexBitCount >= childDepth;
     long generalizedIndexWithoutAnchor = generalizedIndex ^ anchor;
     return (int) (generalizedIndexWithoutAnchor >>> (indexBitCount - childDepth));
   }
@@ -266,14 +261,11 @@ public class GIndexUtil {
    */
   public static long gIdxGetRelativeGIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    checkArgument(childDepth < 64);
+    assert childDepth < 64;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     long pivot = anchor >>> childDepth;
-    if (pivot == 0) {
-      throw new IllegalArgumentException(
-          "Generalized index " + generalizedIndex + " is upper than depth " + childDepth);
-    }
+    assert pivot != 0;
     return (generalizedIndex & (pivot - 1)) | pivot;
   }
 
@@ -284,6 +276,6 @@ public class GIndexUtil {
   }
 
   private static void checkGIndex(long index) {
-    checkArgument(index != 0, "Invalid index: %s", index);
+    assert index != 0;
   }
 }
