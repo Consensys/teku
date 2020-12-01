@@ -14,9 +14,11 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -34,7 +36,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getEth1Block(final UInt64 blockNumber) {
+  public SafeFuture<Optional<Block>> getEth1Block(final UInt64 blockNumber) {
     return queueRequest(() -> delegate.getEth1Block(blockNumber));
   }
 
@@ -49,7 +51,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getEth1Block(final String blockHash) {
+  public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
     return queueRequest(() -> delegate.getEth1Block(blockHash));
   }
 

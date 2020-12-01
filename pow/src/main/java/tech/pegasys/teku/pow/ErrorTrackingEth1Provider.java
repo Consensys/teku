@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -33,12 +34,12 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final UInt64 blockNumber) {
+  public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final UInt64 blockNumber) {
     return logStatus(delegate.getEth1Block(blockNumber));
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final String blockHash) {
+  public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final String blockHash) {
     return logStatus(delegate.getEth1Block(blockHash));
   }
 

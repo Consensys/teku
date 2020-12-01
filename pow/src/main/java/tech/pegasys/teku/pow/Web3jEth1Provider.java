@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -44,22 +45,25 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final UInt64 blockNumber) {
+  public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final UInt64 blockNumber) {
     LOG.trace("Getting eth1 block {}", blockNumber);
     DefaultBlockParameter blockParameter =
         DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue());
-    return getEth1Block(blockParameter);
+    return getEth1Block(blockParameter).thenApply(Optional::ofNullable);
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final String blockHash) {
+  public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final String blockHash) {
     LOG.trace("Getting eth1 block {}", blockHash);
-    return sendAsync(web3j.ethGetBlockByHash(blockHash, false)).thenApply(EthBlock::getBlock);
+    return sendAsync(web3j.ethGetBlockByHash(blockHash, false))
+        .thenApply(EthBlock::getBlock)
+        .thenApply(Optional::ofNullable);
   }
 
   @Override
   public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final String blockHash) {
     return getEth1Block(blockHash)
+        .thenApply(Optional::get)
         .exceptionallyCompose(
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockHash, err);
@@ -73,6 +77,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return getEth1Block(blockNumber)
+        .thenApply(Optional::get)
         .exceptionallyCompose(
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockNumber, err);

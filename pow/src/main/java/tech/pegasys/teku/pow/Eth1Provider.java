@@ -14,6 +14,8 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.time.Duration;
+import java.util.Optional;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -21,9 +23,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface Eth1Provider {
 
-  SafeFuture<Block> getEth1Block(UInt64 blockNumber);
+  SafeFuture<Optional<Block>> getEth1Block(UInt64 blockNumber);
 
-  SafeFuture<Block> getEth1Block(String blockHash);
+  SafeFuture<Optional<Block>> getEth1Block(String blockHash);
 
   SafeFuture<Block> getGuaranteedEth1Block(String blockHash);
 
