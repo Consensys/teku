@@ -113,11 +113,14 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      List<String> validatorIdentifiers) {
+      Set<BLSPublicKey> validatorPublicKeys) {
     return sendRequest(
         () ->
             apiClient
-                .getValidators(validatorIdentifiers)
+                .getValidators(
+                    validatorPublicKeys.stream()
+                        .map(BLSPublicKey::toString)
+                        .collect(Collectors.toList()))
                 .map(
                     list ->
                         list.stream()

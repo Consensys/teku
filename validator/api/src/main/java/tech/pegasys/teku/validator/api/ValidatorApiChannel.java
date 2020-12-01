@@ -44,7 +44,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(final List<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      final List<String> validatorIdentifiers);
+      final Set<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes);

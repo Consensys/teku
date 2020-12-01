@@ -13,24 +13,20 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.stream.Collectors.toList;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorStatusLogger {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
 
@@ -41,17 +37,18 @@ public class ValidatorStatusLogger {
 
   public ValidatorStatusLogger(
       Set<BLSPublicKey> validatorPublicKeys, ValidatorApiChannel validatorApiChannel) {
+    checkArgument(!validatorPublicKeys.isEmpty());
     this.validatorPublicKeys = validatorPublicKeys;
     this.validatorApiChannel = validatorApiChannel;
   }
 
   public void printInitialValidatorStatuses() {
     validatorApiChannel
-        .getValidatorStatuses(getAsIdentifiers(validatorPublicKeys))
+        .getValidatorStatuses(validatorPublicKeys)
         .thenAccept(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
-                LOG.error("Unable to retrieve validator statuses from BeaconNode.");
+                STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
                 return;
               }
 
@@ -72,36 +69,44 @@ public class ValidatorStatusLogger {
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           validatorStatus ->
-              LOG.info(
-                  "Validator {} status is " + validatorStatus, publicKey.toAbbreviatedString()),
-          () -> LOG.error("Error retrieving status for validator {}", publicKey));
+              STATUS_LOG.validatorStatus(validatorStatus.name(), publicKey.toAbbreviatedString()),
+          () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
     }
   }
 
   private void printValidatorStatusSummary(Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
     Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
-    for (ValidatorStatus status : validatorStatuses.values()) {
-      AtomicInteger count =
-          validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
-      count.incrementAndGet();
+    final AtomicInteger unknownValidatorCountReference = new AtomicInteger(0);
+    for (BLSPublicKey publicKey : validatorPublicKeys) {
+      Optional<ValidatorStatus> maybeValidatorStatus =
+          Optional.ofNullable(validatorStatuses.get(publicKey));
+      maybeValidatorStatus.ifPresentOrElse(
+          status -> {
+            AtomicInteger count =
+                validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
+            count.incrementAndGet();
+          },
+          unknownValidatorCountReference::incrementAndGet);
     }
 
     for (Map.Entry<ValidatorStatus, AtomicInteger> statusCount : validatorStatusCount.entrySet()) {
-      LOG.info(
-          statusCount.getValue().get()
-              + " validators are in "
-              + statusCount.getKey().name()
-              + " state.");
+      STATUS_LOG.validatorStatusSummary(statusCount.getValue().get(), statusCount.getKey().name());
+    }
+
+    final int unknownValidatorCount = unknownValidatorCountReference.get();
+    ;
+    if (unknownValidatorCount > 0) {
+      STATUS_LOG.unableToRetrieveValidatorStatusSummary(unknownValidatorCountReference.get());
     }
   }
 
   public void checkValidatorStatusChanges() {
     validatorApiChannel
-        .getValidatorStatuses(getAsIdentifiers(validatorPublicKeys))
+        .getValidatorStatuses(validatorPublicKeys)
         .thenAccept(
             maybeNewValidatorStatuses -> {
               if (maybeNewValidatorStatuses.isEmpty()) {
-                LOG.error("Unable to retrieve validator statuses from BeaconNode.");
+                STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
                 return;
               }
 
@@ -121,15 +126,10 @@ public class ValidatorStatusLogger {
                   continue;
                 }
 
-                LOG.warn(
-                    "Validator {} has changed status from " + oldStatus + " to " + newStatus,
-                    key::toAbbreviatedString);
+                STATUS_LOG.validatorStatusChange(
+                    oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
               }
             })
         .reportExceptions();
-  }
-
-  private static List<String> getAsIdentifiers(Set<BLSPublicKey> validatorPublicKeys) {
-    return validatorPublicKeys.stream().map(BLSPublicKey::toString).collect(toList());
   }
 }

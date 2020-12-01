@@ -182,7 +182,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      final List<String> validatorIdentifiers) {
+      final Set<BLSPublicKey> validatorIdentifiers) {
     return delegate.getValidatorStatuses(validatorIdentifiers);
   }
 

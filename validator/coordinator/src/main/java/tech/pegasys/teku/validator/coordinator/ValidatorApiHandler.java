@@ -224,9 +224,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      List<String> validatorIdentifiers) {
+      Set<BLSPublicKey> validatorIdentifiers) {
     return chainDataProvider
-        .getStateValidators("head", validatorIdentifiers, new HashSet<>())
+        .getStateValidators(
+            "head",
+            validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
+            new HashSet<>())
         .thenApply(
             (maybeList) ->
                 maybeList.map(
