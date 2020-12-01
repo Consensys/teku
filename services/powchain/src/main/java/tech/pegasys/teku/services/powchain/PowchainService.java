@@ -53,13 +53,14 @@ public class PowchainService extends Service {
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
   private final Eth1ChainIdValidator chainIdValidator;
+  private final Web3j web3j;
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    Web3j web3j = createWeb3j(tekuConfig);
+    this.web3j = createWeb3j(tekuConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
@@ -149,6 +150,7 @@ public class PowchainService extends Service {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::stop),
         SafeFuture.fromRunnable(eth1DepositManager::stop),
-        SafeFuture.fromRunnable(chainIdValidator::stop));
+        SafeFuture.fromRunnable(chainIdValidator::stop),
+        SafeFuture.fromRunnable(web3j::shutdown));
   }
 }
