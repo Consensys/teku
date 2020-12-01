@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
@@ -33,6 +34,7 @@ public class NetworkDefinition {
                   .initialStateFromClasspath("mainnet-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
+                  .eth1DepositContractDeployBlock(11052984)
                   .discoveryBootnodes(
                       // PegaSys Teku
                       "enr:-KG4QJRlj4pHagfNIm-Fsx9EVjW4rviuZYzle3tyddm2KAWMJBDGAhxfM2g-pDaaiwE8q19uvLSH4jyvWjypLMr3TIcEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA",
@@ -129,6 +131,7 @@ public class NetworkDefinition {
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
+  private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   private NetworkDefinition(
       final String constants,
@@ -137,7 +140,8 @@ public class NetworkDefinition {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<String> eth1Endpoint) {
+      final Optional<String> eth1Endpoint,
+      final Optional<UInt64> eth1DepositContractDeployBlock) {
     this.constants = constants;
     this.initialState = initialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -145,6 +149,7 @@ public class NetworkDefinition {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
+    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
   }
 
   public static NetworkDefinition fromCliArg(final String arg) {
@@ -179,6 +184,10 @@ public class NetworkDefinition {
     return eth1DepositContractAddress;
   }
 
+  public Optional<UInt64> getEth1DepositContractDeployBlock() {
+    return eth1DepositContractDeployBlock;
+  }
+
   public Optional<String> getEth1Endpoint() {
     return eth1Endpoint;
   }
@@ -196,6 +205,7 @@ public class NetworkDefinition {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
+    private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
 
     public Builder constants(final String constants) {
       this.constants = constants;
@@ -238,6 +248,12 @@ public class NetworkDefinition {
       return this;
     }
 
+    public Builder eth1DepositContractDeployBlock(final long eth1DepositContractDeployBlock) {
+      this.eth1DepositContractDeployBlock =
+          Optional.of(UInt64.valueOf(eth1DepositContractDeployBlock));
+      return this;
+    }
+
     public NetworkDefinition build() {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
@@ -247,7 +263,8 @@ public class NetworkDefinition {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1Endpoint);
+          eth1Endpoint,
+          eth1DepositContractDeployBlock);
     }
   }
 }

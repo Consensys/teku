@@ -14,9 +14,11 @@
 package tech.pegasys.teku.util.config;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
 @Deprecated
@@ -40,6 +42,7 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
   private final boolean eth1DepositsFromStorageEnabled;
+  private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   // Logging
   private final boolean logColorEnabled;
@@ -98,6 +101,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
+      final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
@@ -139,6 +143,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
+    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
@@ -223,6 +228,10 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
+  }
+
+  public Optional<UInt64> getEth1DepositContractDeployBlock() {
+    return eth1DepositContractDeployBlock;
   }
 
   public String getEth1Endpoint() {
