@@ -35,7 +35,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   @Override
   protected TreeNode createDefaultTree() {
-    return TreeNode.createBranchNode(
+    return BranchNode.create(
         getCompatibleVectorType().createDefaultTree(), LeafNode.ZERO_LEAVES[8]);
   }
 

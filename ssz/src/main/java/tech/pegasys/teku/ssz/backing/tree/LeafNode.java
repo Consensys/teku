@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil.ZeroLeafNode;
 
 /**
@@ -44,6 +45,11 @@ public interface LeafNode extends TreeNode {
 
   /** The {@link LeafNode} with empty data */
   LeafNode EMPTY_LEAF = ZERO_LEAVES[0];
+
+  /** Creates a basic Leaf node instance with the data <= 32 bytes */
+  static LeafNode create(Bytes data) {
+    return new LeafNodeImpl(data);
+  }
 
   /**
    * Returns only data bytes without zero right padding (unlike {@link #hashTreeRoot()}) E.g. if a

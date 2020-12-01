@@ -35,23 +35,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
  */
 public interface TreeNode {
 
-  /** Creates a basic Leaf node instance with the data <= 32 bytes */
-  static LeafNode createLeafNode(Bytes data) {
-    return new LeafNodeImpl(data);
-  }
-
-  /**
-   * Creates a basic binary Branch node with left and right child
-   *
-   * @param left Non-null left child
-   * @param right Non-null right child
-   */
-  static BranchNode createBranchNode(TreeNode left, TreeNode right) {
-    checkNotNull(left);
-    checkNotNull(right);
-    return new BranchNodeImpl(left, right);
-  }
-
   /**
    * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
    * `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content

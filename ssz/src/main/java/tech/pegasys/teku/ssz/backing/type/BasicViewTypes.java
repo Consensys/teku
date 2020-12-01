@@ -52,7 +52,7 @@ public class BasicViewTypes {
             b = (byte) (b & ~(1 << bitIndex));
           }
           Bytes newBytes = updateExtending(originalBytes, byteIndex, Bytes.of(b));
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
@@ -73,7 +73,7 @@ public class BasicViewTypes {
           byte aByte = ((ByteView) newValue).get();
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
@@ -116,7 +116,7 @@ public class BasicViewTypes {
               Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
@@ -139,7 +139,7 @@ public class BasicViewTypes {
           Bytes bytes = ((Bytes4View) newValue).get().getWrappedBytes();
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, internalIndex * 4, bytes);
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
@@ -157,7 +157,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-          return TreeNode.createLeafNode(((Bytes32View) newValue).get());
+          return LeafNode.create(((Bytes32View) newValue).get());
         }
 
         @Override

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
@@ -27,12 +28,25 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 
 /**
  * Branch node of a tree. This node type corresponds to the 'Commit' node in the spec:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
  */
 public interface BranchNode extends TreeNode {
+
+  /**
+   * Creates a basic binary Branch node with left and right child
+   *
+   * @param left Non-null left child
+   * @param right Non-null right child
+   */
+  static BranchNode create(TreeNode left, TreeNode right) {
+    checkNotNull(left);
+    checkNotNull(right);
+    return new BranchNodeImpl(left, right);
+  }
 
   /**
    * Returns left child node. It can be either a default or non-default node. Note that both left

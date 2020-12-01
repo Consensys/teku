@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates.Update;
 public class TreeTest {
 
   public static LeafNode newTestLeaf(long l) {
-    return TreeNode.createLeafNode(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
+    return LeafNode.create(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
   }
 
   @Test
