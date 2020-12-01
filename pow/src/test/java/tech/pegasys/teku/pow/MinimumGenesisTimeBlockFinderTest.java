@@ -14,10 +14,12 @@
 package tech.pegasys.teku.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,10 +31,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class MinimumGenesisTimeBlockFinderTest {
 
-  private Eth1Provider eth1Provider = mock(Eth1Provider.class);
+  private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
 
   private MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
-      new MinimumGenesisTimeBlockFinder(eth1Provider);
+      new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
 
   @BeforeAll
   static void setUp() {
@@ -51,6 +53,38 @@ public class MinimumGenesisTimeBlockFinderTest {
     final Block[] blocks = withBlockTimestamps(timestamps);
     final int minGenesisTime = 3500;
     final Block expectedMinGenesisTimeBlock = blocks[4];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
+  }
+
+  @Test
+  void shouldFindMinGenesisTimeWhenDeployBlockSpecified() {
+    final UInt64 deployBlock = UInt64.valueOf(2); // Block number
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.of(deployBlock));
+
+    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+    final Block[] blocks = withBlockTimestamps(timestamps);
+
+    when(eth1Provider.getEth1Block(argThat((UInt64 argument) -> argument.isLessThan(deployBlock))))
+        .thenReturn(SafeFuture.completedFuture(null));
+    final int minGenesisTime = 3500;
+    final Block expectedMinGenesisTimeBlock = blocks[4];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
+  }
+
+  @Test
+  void shouldFindMinGenesisTimeWhenDeployBlockSpecified_deployedAfterMinGenesisBlock() {
+    final UInt64 deployBlock = UInt64.valueOf(6); // Block number
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.of(deployBlock));
+
+    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+    final Block[] blocks = withBlockTimestamps(timestamps);
+
+    when(eth1Provider.getEth1Block(argThat((UInt64 argument) -> argument.isLessThan(deployBlock))))
+        .thenReturn(SafeFuture.completedFuture(null));
+    final int minGenesisTime = 3500;
+    final Block expectedMinGenesisTimeBlock = blocks[6];
     assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
   }
 

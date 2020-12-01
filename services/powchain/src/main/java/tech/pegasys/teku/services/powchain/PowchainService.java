@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -25,6 +26,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -99,6 +101,8 @@ public class PowchainService extends Service {
             eth1BlockFetcher,
             headTracker);
 
+    final Optional<UInt64> eth1DepositContractDeployBlock =
+        tekuConfig.getEth1DepositContractDeployBlock();
     eth1DepositManager =
         new Eth1DepositManager(
             eth1Provider,
@@ -106,7 +110,8 @@ public class PowchainService extends Service {
             eth1EventsPublisher,
             eth1DepositStorageChannel,
             depositProcessingController,
-            new MinimumGenesisTimeBlockFinder(eth1Provider));
+            new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
+            eth1DepositContractDeployBlock);
 
     chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
   }
