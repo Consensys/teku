@@ -158,7 +158,15 @@ public class TreeUtil {
 
   public static void iterateLeavesData(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
-    iterateLeaves(node, fromGeneralIndex, toGeneralIndex, leaf -> visitor.accept(leaf.getData()));
+    node.iterateRange(
+        fromGeneralIndex,
+        toGeneralIndex,
+        (n, idx) -> {
+          if (n instanceof LeadDataNode) {
+            visitor.accept(((LeadDataNode) n).getData());
+          }
+          return true;
+        });
   }
 
   /** Dumps the tree to stdout */

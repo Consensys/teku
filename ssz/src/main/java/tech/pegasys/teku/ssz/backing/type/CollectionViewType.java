@@ -24,11 +24,14 @@ public abstract class CollectionViewType implements CompositeViewType {
 
   private final long maxLength;
   private final ViewType elementType;
+  private final TypeHints hints;
   private volatile TreeNode defaultTree;
 
-  CollectionViewType(long maxLength, ViewType elementType) {
+  public CollectionViewType(long maxLength, ViewType elementType,
+      TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
+    this.hints = hints;
   }
 
   protected abstract TreeNode createDefaultTree();
@@ -119,6 +122,10 @@ public abstract class CollectionViewType implements CompositeViewType {
       elementType.sszSerialize(childSubtree, writer);
     }
     return variableOffset;
+  }
+
+  public TypeHints getHints() {
+    return hints;
   }
 
   @Override

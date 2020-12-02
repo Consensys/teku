@@ -30,7 +30,11 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public ListViewType(ViewType elementType, long maxLength) {
-    super(maxLength, elementType);
+    this(elementType, maxLength, TypeHints.none());
+  }
+
+  public ListViewType(ViewType elementType, long maxLength, TypeHints hints) {
+    super(maxLength, elementType, hints);
   }
 
   @Override
@@ -50,7 +54,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true);
+    return new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
   }
 
   @Override
