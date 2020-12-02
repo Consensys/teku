@@ -71,7 +71,9 @@ public class Eth1DepositManager {
                   .map(UInt64::valueOf)
                   .ifPresent(eth1EventsPublisher::setLatestPublishedDeposit);
               return getHead()
-                  .thenCompose(headBlock -> processStart(headBlock, replayDepositsResult).thenApply(__ -> headBlock));
+                  .thenCompose(
+                      headBlock ->
+                          processStart(headBlock, replayDepositsResult).thenApply(__ -> headBlock));
             })
         .thenAccept(headBlock -> STATUS_LOG.eth1AtHead(headBlock.getNumber()))
         .exceptionally(
