@@ -189,11 +189,12 @@ public class MinimumGenesisTimeBlockFinder {
   private void assertBlockIsAtOrAfterMinGenesis(final EthBlock.Block block) {
     checkArgument(
         blockIsAtOrAfterMinGenesis(block),
-        "Invalid candidate minimum genesis block (#: %s, hash: %s, timestamp; %s) is prior to MIN_GENESIS_TIME + GENESIS_DELAY (%s)",
+        "Invalid candidate minimum genesis block (#: %s, hash: %s, timestamp; %s) is prior to MIN_GENESIS_TIME (%s) - GENESIS_DELAY (%s)",
         block.getNumber(),
         block.getHash(),
         block.getTimestamp(),
-        Constants.MIN_GENESIS_TIME.plus(Constants.GENESIS_DELAY));
+        Constants.MIN_GENESIS_TIME,
+        Constants.GENESIS_DELAY);
   }
 
   private boolean blockIsAtMinGenesis(final EthBlock.Block block) {

@@ -72,15 +72,15 @@ public interface AsyncRunner {
   }
 
   /**
-   * Execute the future supplier until it succeeds up to some maximum number of retries.
+   * Execute the future supplier until it completes normally up to some maximum number of retries.
    *
    * @param action The action to run
    * @param retryDelay The time to wait before retrying
    * @param maxRetries The maximum number of retries. A value of 0 means the action is run only once
    *     (no retries).
-   * @param <T> The value return by the action future
-   * @return A future that resolve with the first successful result, or else an error if the maximum
-   *     retries are exhausted.
+   * @param <T> The value returned by the action future
+   * @return A future that resolves with the first successful result, or else an error if the
+   *     maximum retries are exhausted.
    */
   default <T> SafeFuture<T> runWithRetry(
       final ExceptionThrowingFutureSupplier<T> action,
