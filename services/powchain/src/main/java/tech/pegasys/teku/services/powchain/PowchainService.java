@@ -18,6 +18,7 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_RE
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import javax.net.SocketFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +55,8 @@ public class PowchainService extends Service {
   private final Eth1HeadTracker headTracker;
   private final Eth1ChainIdValidator chainIdValidator;
   private final Web3j web3j;
+  private final TrackedSocketFactory trackedSocketFactory =
+      new TrackedSocketFactory(SocketFactory.getDefault());
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
@@ -120,16 +123,17 @@ public class PowchainService extends Service {
 
   private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
     final HttpService web3jService =
-        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient(trackedSocketFactory));
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
     return Web3j.build(web3jService);
   }
 
-  private static OkHttpClient createOkHttpClient() {
+  private static OkHttpClient createOkHttpClient(final TrackedSocketFactory socketFactory) {
     final OkHttpClient.Builder builder =
         new OkHttpClient.Builder()
             // Increased read timeout allows ETH1 nodes time to process large log requests
-            .readTimeout(1, TimeUnit.MINUTES);
+            .readTimeout(1, TimeUnit.MINUTES)
+            .socketFactory(socketFactory);
     if (LOG.isTraceEnabled()) {
       HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
       logging.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -152,6 +156,7 @@ public class PowchainService extends Service {
         SafeFuture.fromRunnable(headTracker::stop),
         SafeFuture.fromRunnable(eth1DepositManager::stop),
         SafeFuture.fromRunnable(chainIdValidator::stop),
-        SafeFuture.fromRunnable(web3j::shutdown));
+        SafeFuture.fromRunnable(web3j::shutdown),
+        SafeFuture.fromRunnable(trackedSocketFactory::closeAllSockets));
   }
 }
