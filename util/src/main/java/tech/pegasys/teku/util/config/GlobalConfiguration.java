@@ -43,6 +43,7 @@ public class GlobalConfiguration implements MetricsConfig {
   private final String eth1Endpoint;
   private final boolean eth1DepositsFromStorageEnabled;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
+  private final int eth1LogsMaxBlockRange;
 
   // Logging
   private final boolean logColorEnabled;
@@ -102,6 +103,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final Optional<UInt64> eth1DepositContractDeployBlock,
+      final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
@@ -144,6 +146,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
@@ -232,6 +235,10 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public Optional<UInt64> getEth1DepositContractDeployBlock() {
     return eth1DepositContractDeployBlock;
+  }
+
+  public int getEth1LogsMaxBlockRange() {
+    return eth1LogsMaxBlockRange;
   }
 
   public String getEth1Endpoint() {

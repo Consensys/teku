@@ -39,6 +39,7 @@ public class GlobalConfigurationBuilder {
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+  private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
@@ -137,6 +138,11 @@ public class GlobalConfigurationBuilder {
   public GlobalConfigurationBuilder setEth1DepositContractDeployBlock(
       final Optional<UInt64> eth1DepositContractDeployBlock) {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    return this;
+  }
+
+  public GlobalConfigurationBuilder setEth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
+    this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     return this;
   }
 
@@ -328,6 +334,7 @@ public class GlobalConfigurationBuilder {
         eth1DepositContractAddress,
         eth1Endpoint,
         eth1DepositContractDeployBlock,
+        eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,
         logColorEnabled,
         logIncludeEventsEnabled,
