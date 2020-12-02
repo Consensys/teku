@@ -117,8 +117,13 @@ public class ValidatorClientService extends Service {
 
     addValidatorCountMetric(metricsSystem, validators.size());
 
-    final ValidatorStatusLogger validatorStatusLogger =
-        new ValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+    ValidatorStatusLogger validatorStatusLogger;
+    if (validators.keySet().size() > 0) {
+      validatorStatusLogger =
+          new DefaultValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+    } else {
+      validatorStatusLogger = ValidatorStatusLogger.NOOP;
+    }
 
     return new ValidatorClientService(
         validatorStatusLogger,
