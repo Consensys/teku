@@ -22,7 +22,7 @@ public class SyncAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action) {
-    return SafeFuture.ofComposed(action);
+    return SafeFuture.of(action);
   }
 
   @Override

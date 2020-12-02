@@ -58,7 +58,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
       final ExceptionThrowingFutureSupplier<U> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
-      executor.execute(() -> SafeFuture.ofComposed(action).propagateTo(result));
+      executor.execute(() -> SafeFuture.of(action).propagateTo(result));
     } catch (final RejectedExecutionException ex) {
       LOG.debug("shutting down ", ex);
     } catch (final Throwable t) {
