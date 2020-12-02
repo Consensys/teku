@@ -24,33 +24,29 @@ import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class SszSuperNodeTest {
 
+  ViewType listElementType = TestContainer.TYPE;
+
+  ListViewType<TestContainer> listTypeSuperNode =
+      new ListViewType<>(listElementType, 10, TypeHints.sszSuperNode(2));
+  ListViewType<TestContainer> listTypeSimple = new ListViewType<>(listElementType, 10);
+
+  ListViewRead<TestContainer> lr1_1 = listTypeSuperNode.getDefault();
+  ListViewRead<TestContainer> lr2_1 = listTypeSimple.getDefault();
+
+  Bytes32 bytes32 =
+      Bytes32.fromHexString("0x2222222222222222222222222222222222222222222222222222222222222222");
+  TestSubContainer subContainer = new TestSubContainer(UInt64.valueOf(0x111111), bytes32);
+  TestContainer testContainer = new TestContainer(subContainer, UInt64.valueOf(0x333333));
+
   @Test
   void test1() {
-    ViewType listElementType = TestContainer.TYPE;
-    VectorViewType<TestContainer> superNodeType = new VectorViewType<>(listElementType, 4);
-    SszNodeTemplate.createFromType(superNodeType);
 
-    ListViewType<TestContainer> lt1 =
-        new ListViewType<>(listElementType, 10, TypeHints.sszSuperNode(2));
-    ListViewType<TestContainer> lt2 = new ListViewType<>(listElementType, 10);
-
-    TreeNode defTree1 = lt1.getDefaultTree();
-    TreeNode defTree2 = lt2.getDefaultTree();
-
-    assertThat(defTree1.hashTreeRoot()).isEqualTo(defTree2.hashTreeRoot());
-
-    ListViewRead<TestContainer> lr1_1 = lt1.getDefault();
-    ListViewRead<TestContainer> lr2_1 = lt2.getDefault();
-
-    Bytes32 bytes32 =
-        Bytes32.fromHexString("0x2222222222222222222222222222222222222222222222222222222222222222");
-    TestSubContainer subContainer = new TestSubContainer(UInt64.valueOf(0x111111), bytes32);
-    TestContainer testContainer = new TestContainer(subContainer, UInt64.valueOf(0x333333));
+    assertThat(listTypeSuperNode.getDefaultTree().hashTreeRoot())
+        .isEqualTo(listTypeSimple.getDefaultTree().hashTreeRoot());
 
     ListViewWrite<TestContainer> lw1_1 = lr1_1.createWritableCopy();
     ListViewWrite<TestContainer> lw2_1 = lr2_1.createWritableCopy();

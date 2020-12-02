@@ -58,6 +58,7 @@ public interface LeafNode extends TreeNode, LeadDataNode {
    * {@code LeafNode}s then the second node {@code getData} would return just the last 16 bytes of
    * the vector (while {@link #hashTreeRoot()} would return zero padded 32 bytes)
    */
+  @Override
   Bytes getData();
 
   /** LeafNode hash tree root is the leaf data right padded to 32 bytes */

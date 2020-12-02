@@ -77,7 +77,7 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
               hashTreeRoot(curDepth + 1, offset),
               hashTreeRoot(
                   curDepth + 1,
-                  offset + elementTemplate.getSszLength() * (1 << (depth - curDepth) - 1))));
+                  offset + elementTemplate.getSszLength() * ((1 << (depth - curDepth)) - 1))));
     }
   }
 
