@@ -34,7 +34,7 @@ public class ForkProvider extends Service {
   private final ValidatorApiChannel validatorApiChannel;
   private final GenesisDataProvider genesisDataProvider;
 
-  private volatile SafeFuture<ForkInfo> currentFork;
+  private volatile SafeFuture<ForkInfo> currentFork = new SafeFuture<>();
 
   public ForkProvider(
       final AsyncRunner asyncRunner,
@@ -43,7 +43,6 @@ public class ForkProvider extends Service {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.genesisDataProvider = genesisDataProvider;
-    currentFork = new SafeFuture<>();
   }
 
   public SafeFuture<ForkInfo> getForkInfo() {
