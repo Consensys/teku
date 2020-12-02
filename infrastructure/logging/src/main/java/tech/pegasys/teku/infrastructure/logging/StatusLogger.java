@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
 
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -199,8 +200,8 @@ public class StatusLogger {
     log.warn("Eth1 service down for {}s, retrying", interval);
   }
 
-  public void eth1AtHead() {
-    log.info("Eth1 tracker successfully caught up to chain head");
+  public void eth1AtHead(final BigInteger headBlockNumber) {
+    log.info("Successfully loaded deposits up to Eth1 block {}", headBlockNumber);
   }
 
   public void usingGeneratedP2pPrivateKey(final String key, final boolean justGenerated) {
