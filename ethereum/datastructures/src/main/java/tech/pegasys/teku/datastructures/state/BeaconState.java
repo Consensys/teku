@@ -74,9 +74,11 @@ public interface BeaconState
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   Field ETH1_DEPOSIT_INDEX_FIELD = new Field(10, BasicViewTypes.UINT64_TYPE);
   Field VALIDATORS_FIELD =
-      new Field(11,
-          () -> new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, TypeHints
-              .sszSuperNode(8)));
+      new Field(
+          11,
+          () ->
+              new ListViewType<>(
+                  Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, TypeHints.sszSuperNode(8)));
   Field BALANCES_FIELD =
       new Field(
           12,

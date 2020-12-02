@@ -56,8 +56,9 @@ public class VectorViewType<C> extends CollectionViewType {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       if (sszSuperNodeHint.isPresent()) {
         int superNodeDepth = sszSuperNodeHint.get().getDepth();
-        SszSuperNode defaultSuperSszNode = new SszSuperNode(superNodeDepth,
-            SszNodeTemplate.createFromType(getElementType()), Bytes.EMPTY);
+        SszSuperNode defaultSuperSszNode =
+            new SszSuperNode(
+                superNodeDepth, SszNodeTemplate.createFromType(getElementType()), Bytes.EMPTY);
         int binaryDepth = treeDepth() - superNodeDepth;
         return fillTreeWith(binaryDepth, defaultSuperSszNode);
       } else {

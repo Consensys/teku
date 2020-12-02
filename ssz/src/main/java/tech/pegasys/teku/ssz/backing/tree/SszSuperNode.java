@@ -1,8 +1,19 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
-import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
@@ -10,8 +21,6 @@ import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,7 +38,6 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
   private final SszNodeTemplate elementTemplate;
   private final Bytes ssz;
   private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calcHashTreeRoot);
-
 
   public SszSuperNode(int depth, SszNodeTemplate elementTemplate, Bytes ssz) {
     this.depth = depth;
@@ -64,11 +72,12 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
         return DEFAULT_NODE.hashTreeRoot();
       }
     } else {
-      return Hash.sha2_256(Bytes.wrap(
-          hashTreeRoot(curDepth + 1, offset),
-          hashTreeRoot(curDepth + 1,
-              offset + elementTemplate.getSszLength() * (1 << (depth - curDepth) - 1)
-          )));
+      return Hash.sha2_256(
+          Bytes.wrap(
+              hashTreeRoot(curDepth + 1, offset),
+              hashTreeRoot(
+                  curDepth + 1,
+                  offset + elementTemplate.getSszLength() * (1 << (depth - curDepth) - 1))));
     }
   }
 
@@ -87,8 +96,8 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
   }
 
   @Override
-  public boolean iterate(long thisGeneralizedIndex,
-      long startGeneralizedIndex, TreeVisitor visitor) {
+  public boolean iterate(
+      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
     if (gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.Left) {
       return true;
     } else {
@@ -104,11 +113,13 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
     int childOffset = childIndex * elementTemplate.getSszLength();
     checkArgument(childOffset <= ssz.size(), "Invalid index");
     long relativeGIndex = gIdxGetRelativeGIndex(generalizedIndex, depth);
-    Bytes sszNewSize = childOffset < ssz.size() ? ssz
-        : Bytes.wrap(ssz, Bytes.wrap(new byte[elementTemplate.getSszLength()]));
+    Bytes sszNewSize =
+        childOffset < ssz.size()
+            ? ssz
+            : Bytes.wrap(ssz, Bytes.wrap(new byte[elementTemplate.getSszLength()]));
     MutableBytes mutableCopy = sszNewSize.mutableCopy();
-    MutableBytes childMutableSlice = mutableCopy
-        .mutableSlice(childOffset, elementTemplate.getSszLength());
+    MutableBytes childMutableSlice =
+        mutableCopy.mutableSlice(childOffset, elementTemplate.getSszLength());
     elementTemplate.update(relativeGIndex, node, childMutableSlice);
     return new SszSuperNode(depth, elementTemplate, mutableCopy);
   }
@@ -120,8 +131,10 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
 
   @Override
   public String toString() {
-    return "SszSuperNode{" + IntStream.range(0, getElementsCount())
-        .mapToObj(i -> ssz.slice(i, elementTemplate.getSszLength()).toString())
-        .collect(Collectors.joining(", ")) + "}";
+    return "SszSuperNode{"
+        + IntStream.range(0, getElementsCount())
+            .mapToObj(i -> ssz.slice(i, elementTemplate.getSszLength()).toString())
+            .collect(Collectors.joining(", "))
+        + "}";
   }
 }

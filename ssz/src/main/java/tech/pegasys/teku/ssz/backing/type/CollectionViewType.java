@@ -27,8 +27,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   private final TypeHints hints;
   private volatile TreeNode defaultTree;
 
-  public CollectionViewType(long maxLength, ViewType elementType,
-      TypeHints hints) {
+  public CollectionViewType(long maxLength, ViewType elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
