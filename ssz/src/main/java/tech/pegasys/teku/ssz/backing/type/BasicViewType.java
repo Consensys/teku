@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /**
  * Represents primitive view type
@@ -50,7 +50,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract C createFromBackingNode(TreeNode node, int internalIndex);
 
   public TreeNode createBackingNode(C newValue) {
-    return updateBackingNode(TreeUtil.EMPTY_LEAF, 0, newValue);
+    return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 
   @Override
