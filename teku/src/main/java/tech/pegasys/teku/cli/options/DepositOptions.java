@@ -44,12 +44,25 @@ public class DepositOptions {
       arity = "0..1")
   private boolean eth1DepositsFromStorageEnabled = true;
 
+  @Option(
+      hidden = true,
+      names = {"--Xeth1-logs-max-block-range"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Maximum number of blocks to request deposit event logs for in a single request.",
+      arity = "1")
+  private int eth1LogsMaxBlockRange = 10_000;
+
   public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
   public String getEth1Endpoint() {
     return eth1Endpoint;
+  }
+
+  public int getEth1LogsMaxBlockRange() {
+    return eth1LogsMaxBlockRange;
   }
 
   public boolean isEth1DepositsFromStorageEnabled() {
