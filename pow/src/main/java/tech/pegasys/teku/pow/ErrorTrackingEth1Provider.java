@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
@@ -41,6 +42,12 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final String blockHash) {
     return logStatus(delegate.getEth1Block(blockHash));
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getEth1BlockWithRetry(
+      final String blockHash, final Duration retryDuration, final int maxRetries) {
+    return delegate.getEth1BlockWithRetry(blockHash, retryDuration, maxRetries);
   }
 
   @Override

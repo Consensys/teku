@@ -27,6 +27,8 @@ public interface Eth1Provider {
 
   SafeFuture<Optional<Block>> getEth1Block(String blockHash);
 
+  SafeFuture<Block> getEth1BlockWithRetry(String blockHash, Duration retryDuration, int maxRetries);
+
   SafeFuture<Block> getGuaranteedEth1Block(String blockHash);
 
   SafeFuture<Block> getGuaranteedEth1Block(UInt64 blockNumber);

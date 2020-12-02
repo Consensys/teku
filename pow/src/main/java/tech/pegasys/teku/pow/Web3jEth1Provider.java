@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,13 @@ public class Web3jEth1Provider implements Eth1Provider {
     return sendAsync(web3j.ethGetBlockByHash(blockHash, false))
         .thenApply(EthBlock::getBlock)
         .thenApply(Optional::ofNullable);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getEth1BlockWithRetry(
+      final String blockHash, final Duration retryDuration, final int maxRetries) {
+    return asyncRunner.runWithRetry(
+        () -> getEth1Block(blockHash).thenApply(Optional::get), retryDuration, maxRetries);
   }
 
   @Override

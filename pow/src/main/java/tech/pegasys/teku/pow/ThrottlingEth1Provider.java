@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -53,6 +54,12 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
     return queueRequest(() -> delegate.getEth1Block(blockHash));
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getEth1BlockWithRetry(
+      final String blockHash, final Duration retryDuration, final int maxRetries) {
+    return queueRequest(() -> delegate.getEth1BlockWithRetry(blockHash, retryDuration, maxRetries));
   }
 
   @Override
