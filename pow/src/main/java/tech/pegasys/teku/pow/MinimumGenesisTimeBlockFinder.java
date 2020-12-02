@@ -132,9 +132,7 @@ public class MinimumGenesisTimeBlockFinder {
 
   private boolean blockIsAtMinimalMinGenesisPosition(final EthBlock.Block block) {
     final UInt64 candidateBlockNumber = UInt64.valueOf(block.getNumber());
-    return eth1DepositContractDeployBlock
-            .map(b -> b.isGreaterThanOrEqualTo(candidateBlockNumber))
-            .orElse(false)
+    return eth1DepositContractDeployBlock.map(b -> b.equals(candidateBlockNumber)).orElse(false)
         || candidateBlockNumber.equals(ZERO)
         || blockIsAtMinGenesis(block);
   }
