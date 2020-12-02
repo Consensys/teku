@@ -103,7 +103,7 @@ public class ListViewWriteImpl<
 
   @Override
   public ListViewRead<ElementReadType> commitChanges() {
-    return new ListViewReadImpl<ElementReadType>(getType(), container.commitChanges());
+    return new ListViewReadImpl<>(getType(), container.commitChanges());
   }
 
   @Override
