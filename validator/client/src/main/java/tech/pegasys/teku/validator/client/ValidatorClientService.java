@@ -44,18 +44,21 @@ public class ValidatorClientService extends Service {
   private final ValidatorTimingChannel blockProductionTimingChannel;
   private final ValidatorIndexProvider validatorIndexProvider;
   private final BeaconNodeApi beaconNodeApi;
+  private final ForkProvider forkProvider;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
       final ValidatorIndexProvider validatorIndexProvider,
-      final BeaconNodeApi beaconNodeApi) {
+      final BeaconNodeApi beaconNodeApi,
+      final ForkProvider forkProvider) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.beaconNodeApi = beaconNodeApi;
+    this.forkProvider = forkProvider;
   }
 
   public static ValidatorClientService create(
@@ -119,7 +122,8 @@ public class ValidatorClientService extends Service {
         attestationDutyScheduler,
         blockDutyScheduler,
         validatorIndexProvider,
-        beaconNodeApi);
+        beaconNodeApi,
+        forkProvider);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -137,6 +141,7 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    forkProvider.doStart().reportExceptions();
     validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
