@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,6 +54,8 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -231,7 +232,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    final BLSPublicKey validator1Key =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
@@ -246,7 +248,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_shouldAllowOneEpochTolerance() {
     final BeaconState state = createStateWithActiveValidators();
-    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    final BLSPublicKey validator1Key =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
@@ -363,7 +366,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedAttestation_shouldCreateAttestation() {
     final UInt64 slot = compute_start_slot_at_epoch(EPOCH).plus(ONE);
 
-    final BeaconState state = createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
     final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
@@ -387,6 +390,47 @@ class ValidatorApiHandlerTest {
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(
                 slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
+    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
+    assertThat(attestation.getAggregate_signature().toSSZBytes())
+        .isEqualTo(BLSSignature.empty().toSSZBytes());
+  }
+
+  @Test
+  public void createUnsignedAttestation_shouldUseCorrectSourceWhenEpochTransitionRequired() {
+    final UInt64 slot = compute_start_slot_at_epoch(EPOCH);
+    // Slot is from before the current epoch, so we need to ensure we process the epoch transition
+    final UInt64 blockSlot = slot.minus(1);
+
+    final BeaconState wrongState = createStateWithActiveValidators(blockSlot);
+    final BeaconState rightState = createStateWithActiveValidators(slot);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(wrongState.getSlot(), wrongState);
+    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, wrongState);
+
+    final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
+        completedFuture(Optional.of(blockAndState));
+    when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
+        .thenReturn(blockAndStateResult);
+
+    when(chainDataClient.getCheckpointState(EPOCH, blockAndState))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
+
+    final int committeeIndex = 0;
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
+
+    assertThat(result).isCompleted();
+    final Optional<Attestation> maybeAttestation = result.join();
+    assertThat(maybeAttestation).isPresent();
+    final Attestation attestation = maybeAttestation.orElseThrow();
+    assertThat(attestation.getAggregation_bits())
+        .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+    assertThat(attestation.getData())
+        .isEqualTo(
+            AttestationUtil.getGenericAttestationData(
+                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toSSZBytes())
         .isEqualTo(BLSSignature.empty().toSSZBytes());
@@ -529,18 +573,21 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void getValidatorIndices_shouldReturnEmptyMapWhenBestStateNotAvailable() {
+  void getValidatorIndices_shouldThrowExceptionWhenBestStateNotAvailable() {
     when(chainDataClient.getBestState()).thenReturn(Optional.empty());
 
+    // The validator client needs to be able to differentiate between the state not yet being loaded
+    // and the requested validators not existing so it doesn't skip scheduling duties.
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
-        .isCompletedWithValue(emptyMap());
+        .isCompletedExceptionallyWith(IllegalStateException.class);
   }
 
   @Test
   void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final BLSPublicKey validator0 = state.getValidators().get(0).getPubkey();
+    final BLSPublicKey validator0 =
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(0).getPubkey());
     final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
     when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
 

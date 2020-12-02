@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -28,7 +29,7 @@ class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private int seed = 100;
-  private BLSPublicKey pubkey = BLSPublicKey.random(seed);
+  private Bytes48 pubkey = BLSPublicKey.random(seed).toBytesCompressed();
   private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
   private UInt64 activationEligibilityEpoch = dataStructureUtil.randomUInt64();
   private UInt64 activationEpoch = dataStructureUtil.randomUInt64();
@@ -73,7 +74,7 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
+    Bytes48 differentPublicKey = BLSPublicKey.random(99).toBytesCompressed();
     Validator testValidator =
         Validator.create(
             differentPublicKey,

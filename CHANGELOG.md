@@ -1,50 +1,47 @@
 # Changelog
 
-## Timeline to Mainnet
-
-The journey to launching the beacon chain is in its final stage with the announcement of the Eth2 deposit contract, and minimum genesis time of Tuesday, December 1, 2020 12:00:00 PM UTC.
-
-Teku is ready to be a part of the Mainnet launch, and we're coordinating with other client teams to make the launch a success. Here's a timeline of key events, including the Teku releases that will lead up to Mainnet launch.
-
-**Note**: The exact genesis time depends on when enough deposits are received. If it takes longer
-to reach the minimum validators required, then the Mainnet genesis won't be set until enough 
-validators are registered.  The Mainnet chain will then start 7 days after the genesis 
-is set. There will be a Teku release within the 7 days before the Mainnet chain starts, and users 
-should ensure they upgrade to it.
-
-----------------------------------------------------------------------------------------------------
-Event                            | Scheduled Date       | Notes
----------------------------------|----------------------|-------------------------------------------
-Teku 0.12.14 release             | 11 November          | Includes the Mainnet ready specification available with the `--network mainnet` command line option.
-Teku 20.11.0-RC1 release         | 18 November          | Makes `mainnet` the default network. Legacy options and APIs will be removed, see [20.11.0-RC1 Breaking Changes](#20.11.0-RC1)
-Earliest date for Mainnet genesis state to be set | 24 November | If enough deposits are received by this time, the Mainnet genesis state will be generated. Otherwise this will be delayed until enough deposits are received
-Teku 20.11.0 release             | Around 26 November   | First full production-ready release of Teku.
-Earliest date for Mainnet launch | 1 December   | This will be delayed if required deposit amounts are not received by 24 November. The chain will always launch 7 days after the genesis state is set. 
-
-### Mainnet Genesis Release
-
-Regardless of the Mainnet launch date, users should expect a Teku release in the week leading up to 
-the chain starting. It is important to upgrade your nodes to this version before the chain starts to
-ensure a smooth launch.
-
-### CalVer Versioning
-
-Teku will adopt the CalVer versioning convention for our production ready releases using the 
-`YY.M.patch` format. `YY` for year (20, 21, 22 etc), `M` for month (1, 2, 3, …, 11, 12) and `patch` for patch release number.
-
-The final release on the old versioning system will be 0.12.14.
-
-The first production-ready release will be 20.11.0.  
-
-#### Backward Compatibility Policy
-
-Only versions with a 0 patch number may contain backwards incompatible changes (e.g. 20.11.0, 20.12.0 etc).
-Upcoming backwards incompatible changes will be noted in the changelog at least one month prior to being applied.
-
 ## Upcoming Breaking Changes
 
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
+
+## 20.11.1
+
+### Bug Fixes
+- Resolve slow lookup for validators by public key, particularly when the public key is not a known validator.
+- Ensure correct source target is used when creating attestations for an empty slot at the start of the epoch.
+- Fix `--initial-state` option so it is included in help output and support `--initial-state ""` to ignore built-in states and recalculate genesis from the Eth1 chain.
+- Improved error message when Eth1 node fails to return data for a requested block.
+- Reduced batch size when retrieving deposits from the Eth1 chain. Improves compatibility with Geth nodes with limited resources. 
+
+## 20.11.0
+
+The beacon chain is set to launch with the MainNet genesis state now set. The beacon chain will launch on 1 December 2020 at 12:00:23 UTC. 
+Teku 20.11.0 is fully production ready and has full support for the beacon chain Mainnet.
+
+### Breaking Changes
+
+- REST API endpoint `/eth/v1/beacon/pool/attestations` now accepts an array of attestations instead of a single attestation.
+
+### Additions and Improvements
+
+- Full support for Eth2 MainNet. Genesis state and bootnodes are now configured as part of the `--network mainnet` option. 
+- Voluntary exits and slashings submitted via the REST API are now broadcast to the gossip network.
+- Added `/teku/v1/admin/liveness` endpoint which always returns 200 OK to be used to check if the REST API is live.
+- Added `dependent_root` field to attester and block producer duties as well as 
+  `current_duty_dependent_root` and `previous_duty_dependent_root` to the `head` events to aid validator clients in determining when duties are invalidated by changes in the chain.
+- Tightened validation of data from the beacon node in the validator client to ensure blocks and attestations from far future slots are not signed. 
+
+### Bug Fixes
+
+- Fixed incorrect expected attestation metric.
+- Fixed incorrect `beacon_previous_correct_validators` metrics.
+- Fixed race condition during validator startup which could lead to duties not being performed for the first two epochs.
+- Provide a human-friendly error message when the `--network` argument is unknown.
+- Provide more human-friendly error messages when invalid options are given to the `voluntary-exit` subcommand.
+- Avoided duplicate epoch processing during block creation.
+- Reduce noise from `UNKNOWN_PARENT` errors when syncing.
+- Drop discovery session when a malformed `authheadermessage` packet is received.
 
 ## 20.11.0-RC2
 
@@ -326,7 +323,7 @@ New REST APIs
 - Operations (e.g. attestations, slashings etc) included in blocks are now readded to the pending pool if a reorg causes them to no longer be in the canonical chain
 - Removed support for generating unencrypted keystores
 - Discv5 now caches the hash of the local node to reduce load caused by significant numbers of incoming discovery messages
-- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/PegaSysEng/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
+- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/ConsenSys/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
 
 ### Bug Fixes
 - Gossip messages with null `from`, `signature` or `seqNo` fields are now rebroadcast with the fields still null instead of replaced by default values
@@ -354,7 +351,7 @@ New REST APIs
 
 ### Additions and Improvements
 
-- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/PegaSysEng/teku/issues/2596 for a full list of related issues.
+- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/ConsenSys/teku/issues/2596 for a full list of related issues.
 - Support loading an entire directory of validator keys using `--validator-keys=<keyDir>:<passDir>`. Individual keystore and password files can also be specified using this new argument. 
 - Major reduction in CPU and memory usage during periods of non-finalization by intelligently queuing and combining requests for beacon states and checkpoint states
 - Fixed slow startup times during long periods of non-finalization.  Non-finalized states are now periodically persisted to disk to avoid needing to replay large numbers of blocks to regenerate state.
@@ -418,7 +415,7 @@ New REST APIs
 
 - Fixed vector for DOS attack caused by not throttling libp2p response rate. (See https://github.com/libp2p/jvm-libp2p/pull/127 and https://github.com/ethereum/public-attacknets/issues/7 for futher details)
 - Fixed issue that delayed publication of created attestations by a slot
-- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/PegaSysEng/teku/pull/2501 for further details)
+- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/ConsenSys/teku/pull/2501 for further details)
 - Fixed issues where validators failed to perform duties because the node incorrectly returned to syncing state
 - Fixed `--logging` option to accept lowercase `debug` option. Renamed the `debug` subcommand to avoid the naming conflict
 - Avoid lock contention when reading in-memory storage metrics
@@ -550,7 +547,7 @@ New REST APIs
 
 ### Known Issues
 
-- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/ConsenSys/teku/issues/2179))
 
 
 ## 0.11.5

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,9 +35,12 @@ public class MinimumGenesisTimeBlockFinder {
   private static final UInt64 TWO = UInt64.valueOf(2);
 
   private final Eth1Provider eth1Provider;
+  private final Optional<UInt64> eth1DepositContractDeployBlock;
 
-  public MinimumGenesisTimeBlockFinder(Eth1Provider eth1Provider) {
+  public MinimumGenesisTimeBlockFinder(
+      Eth1Provider eth1Provider, Optional<UInt64> eth1DepositContractDeployBlock) {
     this.eth1Provider = eth1Provider;
+    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
   }
 
   /**
@@ -47,7 +51,8 @@ public class MinimumGenesisTimeBlockFinder {
    */
   public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
       final BigInteger headBlockNumber) {
-    return binarySearchLoop(new SearchContext(headBlockNumber));
+    return binarySearchLoop(
+        new SearchContext(eth1DepositContractDeployBlock.orElse(ZERO), headBlockNumber));
   }
 
   private SafeFuture<EthBlock.Block> binarySearchLoop(final SearchContext searchContext) {
@@ -107,10 +112,11 @@ public class MinimumGenesisTimeBlockFinder {
   }
 
   private static class SearchContext {
-    private UInt64 low = UInt64.ZERO;
+    private UInt64 low;
     private UInt64 high;
 
-    public SearchContext(final BigInteger headBlockNumber) {
+    public SearchContext(final UInt64 minSearchBlock, final BigInteger headBlockNumber) {
+      this.low = minSearchBlock;
       this.high = UInt64.valueOf(headBlockNumber);
     }
   }

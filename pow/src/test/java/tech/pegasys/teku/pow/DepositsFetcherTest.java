@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.pow.DepositFetcher.DEFAULT_BATCH_SIZE;
 
 import com.google.common.primitives.Longs;
 import java.math.BigInteger;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 
 public class DepositsFetcherTest {
 
+  private static final int MAX_BLOCK_RANGE = 10_000;
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositContract depositContract = mock(DepositContract.class);
@@ -54,7 +54,12 @@ public class DepositsFetcherTest {
 
   private final DepositFetcher depositFetcher =
       new DepositFetcher(
-          eth1Provider, eth1EventsChannel, depositContract, eth1BlockFetcher, asyncRunner);
+          eth1Provider,
+          eth1EventsChannel,
+          depositContract,
+          eth1BlockFetcher,
+          asyncRunner,
+          MAX_BLOCK_RANGE);
 
   @Test
   void depositsInConsecutiveBlocks() {
@@ -86,11 +91,11 @@ public class DepositsFetcherTest {
   @Test
   void shouldUseMultipleBatchesWhenRangeIsLarge() {
     final BigInteger fromBlockNumber = BigInteger.ZERO;
-    final BigInteger toBlockNumber = BigInteger.valueOf(3 * DEFAULT_BATCH_SIZE - 10);
+    final BigInteger toBlockNumber = BigInteger.valueOf(3 * MAX_BLOCK_RANGE - 10);
 
-    final BigInteger batch1End = fromBlockNumber.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE));
+    final BigInteger batch1End = fromBlockNumber.add(BigInteger.valueOf(MAX_BLOCK_RANGE));
     final BigInteger batch2Start = batch1End.add(BigInteger.ONE);
-    final BigInteger batch2End = batch2Start.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE));
+    final BigInteger batch2End = batch2Start.add(BigInteger.valueOf(MAX_BLOCK_RANGE));
     final BigInteger batch3Start = batch2End.add(BigInteger.ONE);
     final SafeFuture<List<DepositContract.DepositEventEventResponse>> batch1Response =
         new SafeFuture<>();
@@ -135,7 +140,7 @@ public class DepositsFetcherTest {
   @Test
   void shouldReduceBatchSizeWhenRequestIsRejected() {
     final BigInteger fromBlockNumber = BigInteger.ZERO;
-    final BigInteger toBlockNumber = BigInteger.valueOf(DEFAULT_BATCH_SIZE + 1000);
+    final BigInteger toBlockNumber = BigInteger.valueOf(MAX_BLOCK_RANGE + 100);
 
     final SafeFuture<List<DepositContract.DepositEventEventResponse>> request1Response =
         new SafeFuture<>();
@@ -157,7 +162,7 @@ public class DepositsFetcherTest {
     verify(depositContract)
         .depositEventInRange(
             refEq(DefaultBlockParameter.valueOf(fromBlockNumber)),
-            refEq(DefaultBlockParameter.valueOf(BigInteger.valueOf(DEFAULT_BATCH_SIZE))));
+            refEq(DefaultBlockParameter.valueOf(BigInteger.valueOf(MAX_BLOCK_RANGE))));
     verifyNoMoreInteractions(depositContract);
 
     // But there are too many results
@@ -166,7 +171,7 @@ public class DepositsFetcherTest {
     // So it halves the batch size and retries
     asyncRunner.executeQueuedActions();
     final BigInteger endSuccessfulRange =
-        fromBlockNumber.add(BigInteger.valueOf(DEFAULT_BATCH_SIZE / 2));
+        fromBlockNumber.add(BigInteger.valueOf(MAX_BLOCK_RANGE / 2));
     verify(depositContract)
         .depositEventInRange(
             refEq(DefaultBlockParameter.valueOf(fromBlockNumber)),

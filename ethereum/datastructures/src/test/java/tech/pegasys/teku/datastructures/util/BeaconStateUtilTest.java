@@ -409,8 +409,12 @@ class BeaconStateUtilTest {
     deposits.get(1).getData().setSignature(BLSSignature.empty());
     BeaconState state = initialize_beacon_state_from_eth1(Bytes32.ZERO, UInt64.ZERO, deposits);
     assertEquals(2, state.getValidators().size());
-    assertEquals(deposits.get(0).getData().getPubkey(), state.getValidators().get(0).getPubkey());
-    assertEquals(deposits.get(2).getData().getPubkey(), state.getValidators().get(1).getPubkey());
+    assertEquals(
+        deposits.get(0).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(0).getPubkey());
+    assertEquals(
+        deposits.get(2).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(1).getPubkey());
   }
 
   @Test

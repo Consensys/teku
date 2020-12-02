@@ -318,8 +318,10 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     final String key = internalState.getValidators().get(12).getPubkey().toString();
+    final String missingKey = data.randomPublicKey().toString();
     List<String> pubkeys =
-        provider.getFilteredValidatorList(internalState, List.of(key), emptySet()).stream()
+        provider.getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())
+            .stream()
             .map(v -> v.validator.pubkey.toHexString())
             .collect(toList());
     assertThat(pubkeys).containsExactly(key);
