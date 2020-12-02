@@ -160,7 +160,7 @@ public class ExternalSigner implements Signer {
       final Map<String, Object> metadata,
       final Supplier<String> slashableMessage) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
-    return SafeFuture.ofComposed(
+    return SafeFuture.of(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
           final URI uri =

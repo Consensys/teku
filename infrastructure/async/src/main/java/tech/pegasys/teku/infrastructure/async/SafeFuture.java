@@ -80,15 +80,6 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     }
   }
 
-  public static <U> SafeFuture<U> ofComposed(
-      final ExceptionThrowingSupplier<CompletionStage<U>> futureSupplier) {
-    try {
-      return SafeFuture.of(futureSupplier.get());
-    } catch (final Throwable e) {
-      return SafeFuture.failedFuture(e);
-    }
-  }
-
   /**
    * Creates a completed {@link SafeFuture} instance if none of the supplied interruptors are
    * completed, else creates an exceptionally completed {@link SafeFuture} instance
