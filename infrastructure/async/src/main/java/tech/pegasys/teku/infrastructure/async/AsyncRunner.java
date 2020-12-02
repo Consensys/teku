@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public interface AsyncRunner {
 
@@ -25,10 +24,10 @@ public interface AsyncRunner {
     return runAsync(() -> SafeFuture.fromRunnable(action));
   }
 
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action);
+  <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action);
 
   <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
+      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit);
 
   void shutdown();
 

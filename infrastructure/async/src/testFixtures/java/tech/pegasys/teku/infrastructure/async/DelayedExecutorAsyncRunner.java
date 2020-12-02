@@ -18,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,14 +38,14 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
   }
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+  public <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action) {
     final Executor executor = getAsyncExecutor();
     return runAsync(action, executor);
   }
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
+      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit) {
     final Executor executor = getDelayedExecutor(delayAmount, delayUnit);
     return runAsync(action, executor);
   }
@@ -55,7 +54,8 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
   public void shutdown() {}
 
   @VisibleForTesting
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
+  <U> SafeFuture<U> runAsync(
+      final ExceptionThrowingFutureSupplier<U> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
       executor.execute(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
