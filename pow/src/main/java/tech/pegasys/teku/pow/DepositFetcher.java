@@ -16,6 +16,7 @@ package tech.pegasys.teku.pow;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
@@ -101,7 +102,7 @@ public class DepositFetcher {
               final Throwable rootCause = Throwables.getRootCause(err);
               if (rootCause instanceof SocketTimeoutException
                   || rootCause instanceof RejectedRequestException) {
-                LOG.debug("Request timed out or was rejected, reduce the batch size and retry");
+                STATUS_LOG.eth1FetchDepositsTimeout(fetchState.batchSize);
                 fetchState.reduceBatchSize();
               }
 
