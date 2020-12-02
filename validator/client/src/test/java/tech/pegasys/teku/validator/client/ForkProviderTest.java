@@ -50,7 +50,7 @@ class ForkProviderTest {
     when(genesisDataProvider.getGenesisValidatorsRoot())
         .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
 
-    forkProvider.doStart().reportExceptions();
+    forkProvider.start().reportExceptions();
     final SafeFuture<ForkInfo> result = forkProvider.getForkInfo();
 
     assertThat(result).isNotDone();
@@ -67,7 +67,7 @@ class ForkProviderTest {
         .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
 
     // First request loads the fork
-    forkProvider.doStart().reportExceptions();
+    forkProvider.start().reportExceptions();
     assertThat(forkProvider.getForkInfo()).isCompletedWithValue(forkInfo);
     verify(validatorApiChannel).getFork();
 
@@ -86,7 +86,7 @@ class ForkProviderTest {
         .thenReturn(completedFuture(Optional.of(forkInfo.getFork())))
         .thenReturn(completedFuture(Optional.of(updatedFork.getFork())));
 
-    forkProvider.doStart().reportExceptions();
+    forkProvider.start().reportExceptions();
     assertThat(forkProvider.getForkInfo()).isCompletedWithValue(forkInfo);
 
     // Update is scheduled
@@ -98,13 +98,38 @@ class ForkProviderTest {
   }
 
   @Test
+  public void shouldOnlySendSingleRequestWhenForkNotPreviouslyLoaded() {
+    final SafeFuture<Optional<Fork>> forkFuture = new SafeFuture<>();
+    when(validatorApiChannel.getFork()).thenReturn(forkFuture);
+    when(genesisDataProvider.getGenesisValidatorsRoot())
+        .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
+
+    forkProvider.start().reportExceptions();
+    // First request loads the fork
+    final SafeFuture<ForkInfo> result1 = forkProvider.getForkInfo();
+    final SafeFuture<ForkInfo> result2 = forkProvider.getForkInfo();
+    assertThat(result1).isNotCompleted();
+    assertThat(result2).isNotCompleted();
+    verify(validatorApiChannel).getFork();
+    verifyNoMoreInteractions(validatorApiChannel);
+
+    forkFuture.complete(Optional.of(forkInfo.getFork()));
+    assertThat(result1).isCompletedWithValue(this.forkInfo);
+    assertThat(result2).isCompletedWithValue(this.forkInfo);
+
+    // Subsequent requests just return the cached version
+    assertThat(forkProvider.getForkInfo()).isCompletedWithValue(this.forkInfo);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldRetryWhenForkFailsToLoad() {
     when(genesisDataProvider.getGenesisValidatorsRoot())
         .thenReturn(SafeFuture.completedFuture(forkInfo.getGenesisValidatorsRoot()));
     when(validatorApiChannel.getFork())
         .thenReturn(failedFuture(new RuntimeException("Nope")))
         .thenReturn(completedFuture(Optional.of(forkInfo.getFork())));
-    forkProvider.doStart().reportExceptions();
+    forkProvider.start().reportExceptions();
     // First request fails
     final SafeFuture<ForkInfo> result = forkProvider.getForkInfo();
     verify(validatorApiChannel).getFork();

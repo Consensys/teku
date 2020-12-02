@@ -141,7 +141,7 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    forkProvider.doStart().reportExceptions();
+    forkProvider.start().reportExceptions();
     validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,

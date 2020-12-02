@@ -19,7 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.state.Fork;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,41 +50,40 @@ public class ForkProvider extends Service {
     return currentFork;
   }
 
-  private SafeFuture<ForkInfo> getForkAndPeriodicallyUpdate() {
+  public SafeFuture<ForkInfo> loadForkInfo() {
+    return requestForkInfo()
+        .exceptionallyCompose(
+            error -> {
+              LOG.error("Failed to retrieve current fork info. Retrying after delay", error);
+              return asyncRunner.runAfterDelay(
+                  this::loadForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+            });
+  }
+
+  private SafeFuture<ForkInfo> requestForkInfo() {
+    return genesisDataProvider.getGenesisValidatorsRoot().thenCompose(this::requestFork);
+  }
+
+  public SafeFuture<ForkInfo> requestFork(final Bytes32 genesisValidatorsRoot) {
     return validatorApiChannel
         .getFork()
         .thenCompose(
             maybeFork -> {
               if (maybeFork.isEmpty()) {
                 LOG.trace("Fork info not available, retrying");
-                return scheduleNextRequest(FORK_RETRY_DELAY_SECONDS);
+                return asyncRunner.runAfterDelay(
+                    this::requestForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
               }
-
-              scheduleNextRequest(FORK_REFRESH_TIME_SECONDS).reportExceptions();
-              return getValidatorsRootAndCreateForkInfo(maybeFork.orElseThrow());
-            })
-        .exceptionallyCompose(
-            error -> {
-              LOG.error("Failed to retrieve current fork info. Retrying after delay", error);
-              return scheduleNextRequest(FORK_RETRY_DELAY_SECONDS);
-            });
-  }
-
-  private SafeFuture<ForkInfo> getValidatorsRootAndCreateForkInfo(Fork fork) {
-    return genesisDataProvider
-        .getGenesisValidatorsRoot()
-        .thenCompose(
-            root -> {
-              final ForkInfo forkInfo = new ForkInfo(fork, root);
-              // anything waiting on the current future needs to be notified
+              final ForkInfo forkInfo =
+                  new ForkInfo(maybeFork.orElseThrow(), genesisValidatorsRoot);
               currentFork.complete(forkInfo);
               currentFork = SafeFuture.completedFuture(forkInfo);
-              return currentFork;
+              // Periodically refresh the current fork info.
+              asyncRunner
+                  .runAfterDelay(this::loadForkInfo, FORK_REFRESH_TIME_SECONDS, TimeUnit.SECONDS)
+                  .reportExceptions();
+              return SafeFuture.completedFuture(forkInfo);
             });
-  }
-
-  private SafeFuture<ForkInfo> scheduleNextRequest(final long seconds) {
-    return asyncRunner.runAfterDelay(this::getForkAndPeriodicallyUpdate, seconds, TimeUnit.SECONDS);
   }
 
   @Override
@@ -94,7 +93,7 @@ public class ForkProvider extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    currentFork = getForkAndPeriodicallyUpdate();
+    loadForkInfo().propagateTo(currentFork);
     return SafeFuture.COMPLETE;
   }
 
