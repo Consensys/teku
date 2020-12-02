@@ -20,9 +20,9 @@ import tech.pegasys.teku.ssz.backing.VectorViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
@@ -73,7 +73,7 @@ public class VectorViewWriteImpl<
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =
-                  nodeVals.size() == elementsPerChunk ? TreeUtil.EMPTY_LEAF : original.get(gIndex);
+                  nodeVals.size() == elementsPerChunk ? LeafNode.EMPTY_LEAF : original.get(gIndex);
               for (Map.Entry<Integer, ElementReadType> entry : nodeVals) {
                 node =
                     elementType.updateBackingNode(

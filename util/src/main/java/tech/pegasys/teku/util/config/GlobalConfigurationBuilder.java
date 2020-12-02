@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
@@ -37,6 +38,8 @@ public class GlobalConfigurationBuilder {
   private boolean interopEnabled;
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
+  private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+  private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
@@ -64,6 +67,7 @@ public class GlobalConfigurationBuilder {
   private boolean restApiEnabled;
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
+  private List<String> restApiCorsAllowedOrigins;
   private NetworkDefinition network;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
@@ -128,6 +132,17 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
     this.eth1Endpoint = eth1Endpoint;
+    return this;
+  }
+
+  public GlobalConfigurationBuilder setEth1DepositContractDeployBlock(
+      final Optional<UInt64> eth1DepositContractDeployBlock) {
+    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    return this;
+  }
+
+  public GlobalConfigurationBuilder setEth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
+    this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     return this;
   }
 
@@ -275,6 +290,12 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
+  public GlobalConfigurationBuilder setRestApiCorsAllowedOrigins(
+      final List<String> restApiCorsAllowedOrigins) {
+    this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
+    return this;
+  }
+
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -290,6 +311,7 @@ public class GlobalConfigurationBuilder {
       eth1DepositContractAddress =
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+      eth1DepositContractDeployBlock = network.getEth1DepositContractDeployBlock();
     }
 
     if (eth1DepositContractAddress == null && eth1Endpoint != null) {
@@ -311,6 +333,8 @@ public class GlobalConfigurationBuilder {
         interopEnabled,
         eth1DepositContractAddress,
         eth1Endpoint,
+        eth1DepositContractDeployBlock,
+        eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,
         logColorEnabled,
         logIncludeEventsEnabled,
@@ -337,7 +361,8 @@ public class GlobalConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostAllowlist);
+        restApiHostAllowlist,
+        restApiCorsAllowedOrigins);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

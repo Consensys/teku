@@ -16,6 +16,7 @@ package tech.pegasys.teku.pow;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
@@ -46,8 +47,6 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
 
-  static final int DEFAULT_BATCH_SIZE = 500_000;
-
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1Provider eth1Provider;
@@ -55,18 +54,21 @@ public class DepositFetcher {
   private final DepositContract depositContract;
   private final Eth1BlockFetcher eth1BlockFetcher;
   private final AsyncRunner asyncRunner;
+  private final int maxBlockRange;
 
   public DepositFetcher(
       final Eth1Provider eth1Provider,
       final Eth1EventsChannel eth1EventsChannel,
       final DepositContract depositContract,
       final Eth1BlockFetcher eth1BlockFetcher,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final int maxBlockRange) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.depositContract = depositContract;
     this.eth1BlockFetcher = eth1BlockFetcher;
     this.asyncRunner = asyncRunner;
+    this.maxBlockRange = maxBlockRange;
   }
 
   // Inclusive on both sides
@@ -101,7 +103,7 @@ public class DepositFetcher {
               final Throwable rootCause = Throwables.getRootCause(err);
               if (rootCause instanceof SocketTimeoutException
                   || rootCause instanceof RejectedRequestException) {
-                LOG.debug("Request timed out or was rejected, reduce the batch size and retry");
+                STATUS_LOG.eth1FetchDepositsTimeout(fetchState.batchSize);
                 fetchState.reduceBatchSize();
               }
 
@@ -124,7 +126,6 @@ public class DepositFetcher {
 
   private SafeFuture<Void> processDepositsInBatch(
       final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
-
     return depositContract
         .depositEventInRange(
             DefaultBlockParameter.valueOf(fromBlockNumber),
@@ -222,12 +223,12 @@ public class DepositFetcher {
     eth1EventsChannel.onDepositsFromBlock(event);
   }
 
-  private static class DepositFetchState {
+  private class DepositFetchState {
     // Both inclusive
     BigInteger nextBatchStart;
 
     final BigInteger lastBlock;
-    int batchSize = DEFAULT_BATCH_SIZE;
+    int batchSize = maxBlockRange;
 
     public DepositFetchState(final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
       this.nextBatchStart = fromBlockNumber;
@@ -236,10 +237,10 @@ public class DepositFetcher {
 
     public void moveToNextBatch() {
       nextBatchStart = getNextBatchEnd().add(BigInteger.ONE);
-      if (batchSize < DEFAULT_BATCH_SIZE) {
+      if (batchSize < maxBlockRange) {
         // Grow the batch size slowly as we may be past a large blob of logs that caused trouble
         // +1 to guarantee it grows by at least 1
-        batchSize = Math.min(DEFAULT_BATCH_SIZE, (int) (batchSize * 1.1 + 1));
+        batchSize = Math.min(maxBlockRange, (int) (batchSize * 1.1 + 1));
       }
     }
 

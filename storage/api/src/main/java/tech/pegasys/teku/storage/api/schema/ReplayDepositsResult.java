@@ -18,7 +18,7 @@ import java.util.Optional;
 
 public class ReplayDepositsResult {
   private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1);
-  private static ReplayDepositsResult EMPTY =
+  private static final ReplayDepositsResult EMPTY =
       new ReplayDepositsResult(NEGATIVE_ONE, Optional.empty(), false);
 
   private final BigInteger lastProcessedBlockNumber;

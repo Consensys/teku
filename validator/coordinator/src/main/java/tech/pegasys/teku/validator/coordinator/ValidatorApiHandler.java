@@ -249,7 +249,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
-    final UInt64 minQuerySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
+    final UInt64 epoch = compute_epoch_at_slot(slot);
+    final UInt64 minQuerySlot = compute_start_slot_at_epoch(epoch);
 
     return combinedChainDataClient
         .getSignedBlockAndStateInEffectAtSlot(slot)
@@ -262,8 +263,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               final BeaconBlock block = blockAndState.getBlock().getMessage();
               if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
                 // The current effective block is too far in the past - so roll the state
-                // forward to the minimum epoch
-                final UInt64 epoch = compute_epoch_at_slot(minQuerySlot);
+                // forward to the current epoch. Ensures we have the latest justified checkpoint
                 return combinedChainDataClient
                     .getCheckpointState(epoch, blockAndState)
                     .thenApply(
