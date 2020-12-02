@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import static java.util.Collections.singletonList;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,117 +30,6 @@ import org.jetbrains.annotations.NotNull;
  * data nodes and old unmodified nodes
  */
 public interface TreeNode {
-
-  int NODE_BYTE_SIZE = 32;
-  int NODE_BIT_SIZE = NODE_BYTE_SIZE * 8;
-
-  static LeafNode createLeafNode(Bytes data) {
-    return new LeafNodeImpl(data);
-  }
-
-  /**
-   * Leaf node of a tree which contains 'bytes32' value. This node type corresponds to the 'Root'
-   * node in the spec:
-   * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
-   */
-  interface LeafNode extends TreeNode {
-
-    /**
-     * Returns only data bytes without zero right padding (unlike {@link #hashTreeRoot()}) E.g. if a
-     * {@code LeafNode} corresponds to a contained UInt64 field, then {@code getData()} returns only
-     * 8 bytes corresponding to the field value If a {@code Vector[Byte, 48]} is stored across two
-     * {@code LeafNode}s then the second node {@code getData} would return just the last 16 bytes of
-     * the vector (while {@link #hashTreeRoot()} would return zero padded 32 bytes)
-     */
-    Bytes getData();
-
-    @Override
-    default Bytes32 hashTreeRoot() {
-      return Bytes32.rightPad(getData());
-    }
-
-    /**
-     * @param target generalized index. Should be equal to 1
-     * @return this node if 'target' == 1
-     * @throws IllegalArgumentException if 'target' != 1
-     */
-    @NotNull
-    @Override
-    default TreeNode get(long target) {
-      checkArgument(target == 1, "Invalid root index: %s", target);
-      return this;
-    }
-
-    @Override
-    default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
-      checkArgument(target == 1, "Invalid root index: %s", target);
-      return nodeUpdater.apply(this);
-    }
-  }
-
-  /**
-   * Branch node of a tree. This node type corresponds to the 'Commit' node in the spec:
-   * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
-   */
-  interface BranchNode extends TreeNode {
-
-    /**
-     * Returns left child node. It can be either a default or non-default node. Note that both left
-     * and right child may be the same default instance
-     */
-    @NotNull
-    TreeNode left();
-
-    /**
-     * Returns right child node. It can be either a default or non-default node. Note that both left
-     * and right child may be the same default instance
-     */
-    @NotNull
-    TreeNode right();
-
-    /**
-     * Rebind 'sets' a new left/right child of this node. Rebind doesn't modify this instance but
-     * creates and returns a new one which contains a new assigned and old unmodified child
-     */
-    BranchNode rebind(boolean left, TreeNode newNode);
-
-    @Override
-    default Bytes32 hashTreeRoot() {
-      return Hash.sha2_256(Bytes.concatenate(left().hashTreeRoot(), right().hashTreeRoot()));
-    }
-
-    @NotNull
-    @Override
-    default TreeNode get(long target) {
-      checkArgument(target >= 1, "Invalid index: %s", target);
-      if (target == 1) {
-        return this;
-      } else {
-        long anchor = Long.highestOneBit(target);
-        long pivot = anchor >>> 1;
-        return target < (target | pivot)
-            ? left().get((target ^ anchor) | pivot)
-            : right().get((target ^ anchor) | pivot);
-      }
-    }
-
-    @Override
-    default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
-      if (target == 1) {
-        return nodeUpdater.apply(this);
-      } else {
-        long anchor = Long.highestOneBit(target);
-        long pivot = anchor >>> 1;
-        if (target < (target | pivot)) {
-          TreeNode newLeftChild = left().updated((target ^ anchor) | pivot, nodeUpdater);
-          return rebind(true, newLeftChild);
-        } else {
-          TreeNode newRightChild = right().updated((target ^ anchor) | pivot, nodeUpdater);
-          return rebind(false, newRightChild);
-        }
-      }
-    }
-  }
 
   /**
    * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
@@ -160,16 +49,92 @@ public interface TreeNode {
   TreeNode get(long generalizedIndex);
 
   /**
+   * Iterates recursively this node children (including the node itself) in the order Self -> Left
+   * subtree -> Right subtree
+   *
+   * <p>This method can be considered low-level and mostly intended as a single implementation point
+   * for subclasses. Consider using higher-level methods {@link #iterateRange(long, long,
+   * TreeVisitor)}, {@link #iterateAll(TreeVisitor)} and {@link #iterateAll(Consumer)}
+   *
+   * @param thisGeneralizedIndex the generalized index of this node or {@link
+   *     GIndexUtil#SELF_G_INDEX} if this node is considered the root. {@link
+   *     TreeVisitor#visit(TreeNode, long)} index will be calculated with respect to this parameter
+   * @param startGeneralizedIndex The generalized index to start iteration from. All tree
+   *     predecessor and successor nodes of a node at this index will be visited. All nodes 'to the
+   *     left' of start node are to be skipped. The index may point to a non-existing node, in this
+   *     case the nearest existing predecessor node would be the starting node To start iteration
+   *     from the leftmost node use {@link GIndexUtil#LEFTMOST_G_INDEX}
+   * @param visitor Callback for nodes. When visitor returns false, iteration breaks
+   * @return true if the iteration should proceed or false to break iteration
+   */
+  boolean iterate(long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor);
+
+  /**
+   * Iterates all nodes between and including startGeneralizedIndex and endGeneralizedIndexInclusive
+   * in order Self -> Left subtree -> Right subtree
+   *
+   * <p>All tree predecessor and successor nodes of startGeneralizedIndex and
+   * endGeneralizedIndexInclusive nodes will be visited. All nodes 'to the left' of the start node
+   * and 'to the right' of the end node are to be skipped. An index may point to a non-existing
+   * node, in this case the nearest existing predecessor node would be considered the starting node.
+   *
+   * <p>To start iteration from the leftmost node specify startGeneralizedIndex equal to {@link
+   * GIndexUtil#LEFTMOST_G_INDEX} To iteration till the rightmost node specify
+   * endGeneralizedIndexInclusive equal to {@link GIndexUtil#RIGHTMOST_G_INDEX}
+   */
+  default void iterateRange(
+      long startGeneralizedIndex, long endGeneralizedIndexInclusive, TreeVisitor visitor) {
+    iterate(
+        SELF_G_INDEX,
+        startGeneralizedIndex,
+        TillIndexVisitor.create(visitor, endGeneralizedIndexInclusive));
+  }
+
+  /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
+  default void iterateAll(TreeVisitor visitor) {
+    iterate(SELF_G_INDEX, LEFTMOST_G_INDEX, visitor);
+  }
+
+  /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
+  default void iterateAll(Consumer<TreeNode> simpleVisitor) {
+    iterateAll(
+        (node, __) -> {
+          simpleVisitor.accept(node);
+          return true;
+        });
+  }
+
+  /**
    * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate
    * a new node
+   *
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
+   * one of them and may override more for efficiency
+   *
+   * @see #updated(TreeUpdates)
+   * @see #updated(long, TreeNode)
+   * @see #updated(long, Function)
    */
-  TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+  default TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater) {
+    TreeNode newNode = nodeUpdater.apply(get(generalizedIndex));
+    return updated(
+        new TreeUpdates(singletonList(new TreeUpdates.Update(generalizedIndex, newNode))));
+  }
 
-  /** Updates the tree in a batch */
+  /**
+   * Updates the tree in a batch.
+   *
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
+   * one of them and may override more for efficiency
+   *
+   * @see #updated(TreeUpdates)
+   * @see #updated(long, TreeNode)
+   * @see #updated(long, Function)
+   */
   default TreeNode updated(TreeUpdates newNodes) {
     TreeNode ret = this;
     for (int i = 0; i < newNodes.size(); i++) {
-      ret = ret.updated(newNodes.getGIndex(i), newNodes.getNode(i));
+      ret = ret.updated(newNodes.getRelativeGIndex(i), newNodes.getNode(i));
     }
     return ret;
   }
@@ -178,9 +143,15 @@ public interface TreeNode {
    * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
    * are left immutable. The updated subtree node is returned.
    *
+   * <p>Three method overloads call each other in a cycle. The implementation class should override
+   * one of them and may override more for efficiency
+   *
    * @param generalizedIndex index of tree node to be replaced
    * @param node new node either leaf of subtree root node
    * @return the updated subtree root node
+   * @see #updated(TreeUpdates)
+   * @see #updated(long, TreeNode)
+   * @see #updated(long, Function)
    */
   default TreeNode updated(long generalizedIndex, TreeNode node) {
     return updated(generalizedIndex, oldNode -> node);

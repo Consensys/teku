@@ -28,7 +28,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,10 +43,11 @@ public class DelayedExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldExecuteActionWithExecutorAndReturnResult() {
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnResult() throws Throwable {
     final SafeFuture<String> actionResult = new SafeFuture<>();
     final Executor executor = mock(Executor.class);
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     when(action.get()).thenReturn(actionResult);
 
     final SafeFuture<String> result = asyncRunner.runAsync(action, executor);
@@ -66,10 +66,12 @@ public class DelayedExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldExecuteActionWithExecutorAndReturnExceptionalResult() {
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnExceptionalResult()
+      throws Throwable {
     final SafeFuture<String> actionResult = new SafeFuture<>();
     final Executor executor = mock(Executor.class);
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     when(action.get()).thenReturn(actionResult);
 
     final SafeFuture<String> result = asyncRunner.runAsync(action, executor);
@@ -89,9 +91,10 @@ public class DelayedExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldCompleteExceptionallyWhenExecutorFails() {
+  public void runAsync_shouldCompleteExceptionallyWhenExecutorFails() throws Throwable {
     final Executor executor = mock(Executor.class);
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     final RuntimeException exception = new RuntimeException("Nope");
     doThrow(exception).when(executor).execute(any());
 
@@ -114,7 +117,7 @@ public class DelayedExecutorAsyncRunnerTest {
             executorException.set(t);
           }
         };
-    final Supplier<SafeFuture<String>> action =
+    final ExceptionThrowingFutureSupplier<String> action =
         () -> {
           throw exception;
         };

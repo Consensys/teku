@@ -90,7 +90,8 @@ public class PowchainService extends Service {
             eth1EventsPublisher,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
-            asyncRunner);
+            asyncRunner,
+            tekuConfig.getEth1LogsMaxBlockRange());
 
     headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
     final DepositProcessingController depositProcessingController =
