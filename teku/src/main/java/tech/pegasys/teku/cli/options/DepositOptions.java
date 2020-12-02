@@ -45,11 +45,10 @@ public class DepositOptions {
   private boolean eth1DepositsFromStorageEnabled = true;
 
   @Option(
-      hidden = true,
-      names = {"--Xeth1-logs-max-block-range"},
+      names = {"--eth1-deposit-contract-max-request-size"},
       paramLabel = "<INTEGER>",
       description =
-          "Maximum number of blocks to request deposit event logs for in a single request.",
+          "Maximum number of blocks to request deposit contract event logs for in a single request.",
       arity = "1")
   private int eth1LogsMaxBlockRange = 10_000;
 
