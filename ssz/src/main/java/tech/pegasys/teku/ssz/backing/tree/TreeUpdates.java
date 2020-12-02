@@ -125,25 +125,6 @@ public class TreeUpdates {
             heightFromLeaf - 1));
   }
 
-  public List<TreeUpdates> splitToDepth(int depth) {
-    List<TreeUpdates> ret = new ArrayList<>(1 << depth);
-    splitToDepth(depth, ret);
-    return ret;
-  }
-
-  private void splitToDepth(int depth, List<TreeUpdates> dest) {
-    assert !isFinal();
-
-    Pair<TreeUpdates, TreeUpdates> split = splitAtPivot();
-    if (depth == 1) {
-      dest.add(split.getLeft());
-      dest.add(split.getRight());
-    } else {
-      split.getLeft().splitToDepth(depth - 1, dest);
-      split.getRight().splitToDepth(depth - 1, dest);
-    }
-  }
-
   /** Number of updated nodes in this set */
   public int size() {
     return gIndexes.size();
