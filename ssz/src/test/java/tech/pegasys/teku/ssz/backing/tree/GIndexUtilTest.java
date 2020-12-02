@@ -195,6 +195,7 @@ public class GIndexUtilTest {
     assertThatThrownBy(() -> gIdxGetChildIndex(INVALID_G_INDEX, 1));
     assertThatThrownBy(() -> gIdxGetChildIndex(SELF_G_INDEX, 1));
     assertThatThrownBy(() -> gIdxGetChildIndex(SELF_G_INDEX, 2));
+    assertThatThrownBy(() -> gIdxGetChildIndex(SELF_G_INDEX, -1));
     assertThatThrownBy(() -> gIdxGetChildIndex(RIGHTMOST_G_INDEX, 64));
   }
 

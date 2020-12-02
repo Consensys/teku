@@ -168,8 +168,7 @@ class GIndexUtil {
   public static long gIdxChildGIndex(long generalizedIndex, int childIdx, int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth < 64;
-    assert childIdx >= 0;
-    assert childIdx < (1 << childDepth);
+    assert childIdx >= 0 && childIdx < (1 << childDepth);
     assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
     return (generalizedIndex << childDepth) | childIdx;
   }
@@ -237,7 +236,7 @@ class GIndexUtil {
    */
   public static int gIdxGetChildIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    assert childDepth < 64;
+    assert childDepth >= 0 && childDepth < 64;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     int indexBitCount = Long.bitCount(anchor - 1);
@@ -261,7 +260,7 @@ class GIndexUtil {
    */
   public static long gIdxGetRelativeGIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    assert childDepth < 64;
+    assert childDepth >= 0 && childDepth < 64;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     long pivot = anchor >>> childDepth;
