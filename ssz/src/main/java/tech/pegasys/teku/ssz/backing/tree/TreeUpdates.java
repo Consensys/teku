@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetDepth;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collector;
