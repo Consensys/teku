@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -77,9 +78,13 @@ public class MinimumGenesisTimeBlockFinder {
     assertBlockIsAtOrAfterMinGenesis(candidateMinGenesisBlock);
     if (blockIsAtMinimalMinGenesisPosition(candidateMinGenesisBlock)) {
       // We've found min genesis
+      traceWithBlock(
+          "Confirmed minimum genesis block at minimal position: ", candidateMinGenesisBlock);
       return SafeFuture.completedFuture(candidateMinGenesisBlock);
     }
 
+    traceWithBlock(
+        "Confirm minimum genesis block retrieved via binary search: ", candidateMinGenesisBlock);
     final SafeFuture<EthBlock.Block> minGenesisFuture = new SafeFuture<>();
 
     final AtomicReference<EthBlock.Block> currentMinGenesisCandidate =
@@ -95,10 +100,14 @@ public class MinimumGenesisTimeBlockFinder {
                           examinedAncestorsCount.incrementAndGet();
                           if (blockIsPriorToMinGenesis(parent)) {
                             // We've confirmed the current candidate is at the boundary
+                            traceWithBlock(
+                                "Confirmed min genesis block: ", currentMinGenesisCandidate.get());
                             minGenesisFuture.complete(currentMinGenesisCandidate.get());
                             return false;
                           } else if (blockIsAtMinGenesis(parent)) {
                             // We've found the min genesis block
+                            traceWithBlock(
+                                "Confirmed min genesis block at exact genesis time: ", parent);
                             minGenesisFuture.complete(parent);
                             return false;
                           } else {
@@ -112,6 +121,9 @@ public class MinimumGenesisTimeBlockFinder {
                                       parent.getNumber(),
                                       parent.getHash()));
                             }
+                            traceWithBlock(
+                                "Continue searching ancestors to confirm min genesis at or prior to: ",
+                                parent);
                             currentMinGenesisCandidate.set(parent);
                             return true;
                           }
@@ -194,6 +206,23 @@ public class MinimumGenesisTimeBlockFinder {
 
   private boolean blockIsAtOrAfterMinGenesis(final EthBlock.Block block) {
     return compareBlockTimestampToMinGenesisTime(block) >= 0;
+  }
+
+  private void traceWithBlock(
+      final String message, final EthBlock.Block block, Object... otherArgs) {
+    logWithBlock(Level.TRACE, message, block, otherArgs);
+  }
+
+  private void logWithBlock(
+      final Level level, final String message, final EthBlock.Block block, Object... otherArgs) {
+    final Object[] args = new Object[otherArgs.length + 3];
+    System.arraycopy(otherArgs, 0, args, 0, otherArgs.length);
+
+    args[otherArgs.length] = block.getNumber();
+    args[otherArgs.length + 1] = block.getHash();
+    args[otherArgs.length + 2] = block.getTimestamp();
+
+    LOG.log(level, message + "#{} (hash = {}, timestamp = {})", args);
   }
 
   static UInt64 calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
