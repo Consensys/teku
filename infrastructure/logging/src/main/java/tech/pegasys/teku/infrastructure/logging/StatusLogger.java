@@ -58,6 +58,12 @@ public class StatusLogger {
         cause);
   }
 
+  public void eth1FetchDepositsTimeout(final int batchSize) {
+    log.warn(
+        "Request for eth1 deposit logs from {} blocks failed. Retrying with a smaller block range.",
+        batchSize);
+  }
+
   public void unexpectedFailure(final String description, final Throwable cause) {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
