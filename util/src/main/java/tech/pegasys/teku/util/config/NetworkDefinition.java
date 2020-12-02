@@ -63,6 +63,7 @@ public class NetworkDefinition {
                   .initialStateFromClasspath("medalla-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
+                  .eth1DepositContractDeployBlock(3085928)
                   .discoveryBootnodes(
                       // PegaSys Teku
                       "enr:-KG4QFuKQ9eeXDTf8J4tBxFvs3QeMrr72mvS7qJgL9ieO6k9Rq5QuGqtGK4VlXMNHfe34Khhw427r7peSoIbGcN91fUDhGV0aDKQD8XYjwAAAAH__________4JpZIJ2NIJpcIQDhMExiXNlY3AyNTZrMaEDESplmV9c2k73v0DjxVXJ6__2bWyP-tK28_80lf7dUhqDdGNwgiMog3VkcIIjKA",
@@ -93,6 +94,7 @@ public class NetworkDefinition {
                   .constants("toledo")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x47709dC7a8c18688a1f051761fc34ac253970bC0")
+                  .eth1DepositContractDeployBlock(3702432)
                   .discoveryBootnodes(
                       // discv5.1-only bootnode @protolambda
                       "enr:-Ku4QL5E378NT4-vqP6v1mZ7kHxiTHJvuBvQixQsuTTCffa0PJNWMBlG3Mduvsvd6T2YP1U3l5tBKO5H-9wyX2SCtPkBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC4EvfsAHAe0P__________gmlkgnY0gmlwhDaetEeJc2VjcDI1NmsxoQKtGC2CAuba7goLLdle899M3esUmoWRvzi7GBVhq6ViCYN1ZHCCIyg",
@@ -115,6 +117,7 @@ public class NetworkDefinition {
                   .constants("pyrmont")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
+                  .eth1DepositContractDeployBlock(3743587)
                   .initialStateFromClasspath("pyrmont-genesis.ssz")
                   .discoveryBootnodes(
                       // @protolambda bootnode 1

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
@@ -70,9 +71,11 @@ public class Eth1DepositManager {
                   .map(UInt64::valueOf)
                   .ifPresent(eth1EventsPublisher::setLatestPublishedDeposit);
               return getHead()
-                  .thenCompose(headBlock -> processStart(headBlock, replayDepositsResult));
+                  .thenCompose(
+                      headBlock ->
+                          processStart(headBlock, replayDepositsResult).thenApply(__ -> headBlock));
             })
-        .thenAccept(__ -> LOG.info("Eth1DepositsManager successfully ran startup sequence."))
+        .thenAccept(headBlock -> STATUS_LOG.eth1AtHead(headBlock.getNumber()))
         .exceptionally(
             (err) -> {
               throw new FatalServiceFailureException(getClass(), err);
