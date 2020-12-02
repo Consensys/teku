@@ -81,7 +81,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public static <U> SafeFuture<U> ofComposed(
-      final ExceptionThrowingSupplier<CompletionStage<U>> futureSupplier) {
+      final ExceptionThrowingFutureSupplier<U> futureSupplier) {
     try {
       return SafeFuture.of(futureSupplier.get());
     } catch (final Throwable e) {

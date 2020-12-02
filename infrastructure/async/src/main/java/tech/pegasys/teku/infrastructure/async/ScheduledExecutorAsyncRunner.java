@@ -117,6 +117,6 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
 
   private <U> Runnable createRunnableForAction(
       final ExceptionThrowingFutureSupplier<U> action, final SafeFuture<U> result) {
-    return () -> SafeFuture.ofComposed(action::get).propagateTo(result);
+    return () -> SafeFuture.ofComposed(action).propagateTo(result);
   }
 }
