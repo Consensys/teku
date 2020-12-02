@@ -70,4 +70,36 @@ public interface AsyncRunner {
         this, runnable, cancellable, delayAmount, delayUnit, exceptionHandler);
     return cancellable;
   }
+
+  /**
+   * Execute the future supplier until it succeeds up to some maximum number of retries.
+   *
+   * @param action The action to run
+   * @param retryDelay The time to wait before retrying
+   * @param maxRetries The maximum number of retries. A value of 0 means the action is run only once
+   *     (no retries).
+   * @param <T> The value return by the action future
+   * @return A future that resolve with the first successful result, or else an error if the maximum
+   *     retries are exhausted.
+   */
+  default <T> SafeFuture<T> runWithRetry(
+      final ExceptionThrowingFutureSupplier<T> action,
+      final Duration retryDelay,
+      final int maxRetries) {
+
+    return SafeFuture.of(action)
+        .exceptionallyCompose(
+            err -> {
+              if (maxRetries > 0) {
+                // Retry after delay, decrementing the remaining available retries
+                final int remainingRetries = maxRetries - 1;
+                return runAfterDelay(
+                    () -> runWithRetry(action, retryDelay, remainingRetries),
+                    retryDelay.toMillis(),
+                    TimeUnit.MILLISECONDS);
+              } else {
+                return SafeFuture.failedFuture(err);
+              }
+            });
+  }
 }
