@@ -120,13 +120,16 @@ public class ValidatorClientService extends Service {
 
     addValidatorCountMetric(metricsSystem, validators.size());
 
-    ValidatorStatusLogger validatorStatusLogger;
-    if (validators.keySet().size() > 0) {
-      validatorStatusLogger =
-          new DefaultValidatorStatusLogger(validators.keySet(), validatorApiChannel);
-    } else {
-      validatorStatusLogger = ValidatorStatusLogger.NOOP;
-    }
+    //    TODO: once the voluntary exit acceptance test PR is merged, activate validator status
+    // logger.
+    //    ValidatorStatusLogger validatorStatusLogger;
+    //    if (validators.keySet().size() > 0) {
+    //            validatorStatusLogger =
+    //                new DefaultValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+    //    } else {
+    //      validatorStatusLogger = ValidatorStatusLogger.NOOP;
+    //    }
+    ValidatorStatusLogger validatorStatusLogger = ValidatorStatusLogger.NOOP;
 
     return new ValidatorClientService(
         validatorStatusLogger,
