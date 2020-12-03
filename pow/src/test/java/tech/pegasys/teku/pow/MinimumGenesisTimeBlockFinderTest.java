@@ -385,7 +385,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     when(eth1Provider.getEth1Block(UInt64.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(eth1Provider.getEth1BlockWithRetry(eq(blockHash), any(), anyInt()))
-        .thenReturn(SafeFuture.completedFuture(block));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
     return block;
   }

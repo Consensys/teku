@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
-import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -57,7 +56,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1BlockWithRetry(
+  public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       final String blockHash, final Duration retryDuration, final int maxRetries) {
     return queueRequest(() -> delegate.getEth1BlockWithRetry(blockHash, retryDuration, maxRetries));
   }

@@ -95,6 +95,7 @@ public class MinimumGenesisTimeBlockFinder {
                 eth1Provider
                     .getEth1BlockWithRetry(
                         currentMinGenesisCandidate.get().getParentHash(), Duration.ofSeconds(5), 3)
+                    .thenApply(Optional::get)
                     .thenApply(
                         parent -> {
                           examinedAncestorsCount.incrementAndGet();

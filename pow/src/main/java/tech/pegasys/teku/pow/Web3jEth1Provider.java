@@ -62,10 +62,9 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1BlockWithRetry(
+  public SafeFuture<Optional<EthBlock.Block>> getEth1BlockWithRetry(
       final String blockHash, final Duration retryDuration, final int maxRetries) {
-    return asyncRunner.runWithRetry(
-        () -> getEth1Block(blockHash).thenApply(Optional::get), retryDuration, maxRetries);
+    return asyncRunner.runWithRetry(() -> getEth1Block(blockHash), retryDuration, maxRetries);
   }
 
   @Override
