@@ -73,4 +73,9 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   public int hashCode() {
     return Objects.hash(get());
   }
+
+  @Override
+  public String toString() {
+    return get().toString();
+  }
 }

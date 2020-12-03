@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
@@ -93,7 +94,7 @@ public class CompositeListViewTest {
     @Override
     public TreeNode getBackingNode() {
       if (node == null) {
-        node = TreeNode.createLeafNode(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
+        node = LeafNode.create(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
       }
       return node;
     }

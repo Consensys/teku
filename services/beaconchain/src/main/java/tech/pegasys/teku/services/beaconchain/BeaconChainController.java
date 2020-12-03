@@ -436,7 +436,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
-    depositProvider = new DepositProvider(recentChainData, eth1DataCache);
+    depositProvider = new DepositProvider(metricsSystem, recentChainData, eth1DataCache);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointChannel.class, depositProvider);

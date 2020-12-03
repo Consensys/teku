@@ -29,6 +29,9 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getRestApiPort()).isEqualTo(5055);
     assertThat(config.isRestApiDocsEnabled()).isTrue();
     assertThat(config.isRestApiEnabled()).isTrue();
+    assertThat(config.getRestApiHostAllowlist()).containsExactly("test.domain.com", "11.12.13.14");
+    assertThat(config.getRestApiCorsAllowedOrigins())
+        .containsExactly("127.1.2.3", "origin.allowed.com");
   }
 
   @Test
@@ -70,5 +73,27 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   public void restApiHostAllowlist_shouldDefaultToLocalhost() {
     assertThat(getGlobalConfigurationFromArguments().getRestApiHostAllowlist())
         .containsOnly("localhost", "127.0.0.1");
+  }
+
+  @Test
+  public void restApiCorsAllowedOrigins_shouldNotRequireAValue() {
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--rest-api-cors-origins");
+    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins()).isEmpty();
+  }
+
+  @Test
+  public void restApiCorsAllowedOrigins_shouldSupportAllowingMultipleHosts() {
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--rest-api-cors-origins", "my.host,their.host");
+    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins())
+        .containsOnly("my.host", "their.host");
+  }
+
+  @Test
+  public void restApiCorsAllowedOrigins_shouldSupportAllowingAllHosts() {
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--rest-api-cors-origins", "*");
+    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins()).containsOnly("*");
   }
 }

@@ -26,6 +26,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -402,6 +403,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setInteropEnabled(true)
         .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
+        .setEth1LogsMaxBlockRange(10_000)
         .setEth1DepositsFromStorageEnabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
@@ -424,7 +426,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
         .setRestApiInterface("127.0.0.1")
-        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"));
+        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+        .setRestApiCorsAllowedOrigins(new ArrayList<>());
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
