@@ -116,7 +116,7 @@ class ValidatorStatusTest {
     assertThat(validatorStatus.isActiveInPreviousEpoch()).isEqualTo(isActive);
   }
 
-  private static Stream<Arguments> activeEpochs() {
+  static Stream<Arguments> activeEpochs() {
     return Stream.of(
         Arguments.of(FAR_FUTURE_EPOCH, FAR_FUTURE_EPOCH, UInt64.valueOf(0), false),
         Arguments.of(UInt64.valueOf(0), FAR_FUTURE_EPOCH, UInt64.valueOf(0), true),
@@ -248,7 +248,7 @@ class ValidatorStatusTest {
     assertThat(status.getInclusionInfo()).contains(oldValue);
   }
 
-  private static Stream<Arguments> flags() {
+  static Stream<Arguments> flags() {
     return Stream.of(
         flag(
             "currentEpochAttester",
