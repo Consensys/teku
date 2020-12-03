@@ -13,24 +13,20 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-import javax.net.SocketFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.net.SocketFactory;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class TrackedSocketFactory extends SocketFactory {
   private static final Logger LOG = LogManager.getLogger();
-  private volatile Set<Socket> socketSet = new ConcurrentSkipListSet<>();
-  private final SocketFactory delegate;
-
-  public TrackedSocketFactory(final SocketFactory delegate) {
-    this.delegate = delegate;
-  }
+  private volatile Queue<Socket> socketSet = new ConcurrentLinkedQueue<>();
+  private final SocketFactory delegate = SocketFactory.getDefault();
 
   public void closeAllSockets() {
     cleanup();
@@ -45,6 +41,14 @@ public class TrackedSocketFactory extends SocketFactory {
   }
 
   @Override
+  public Socket createSocket() throws IOException {
+    cleanup();
+    final Socket socket = delegate.createSocket();
+    socketSet.add(socket);
+    return socket;
+  }
+
+  @Override
   public Socket createSocket(final String host, final int port) throws IOException {
     cleanup();
     final Socket socket = delegate.createSocket(host, port);
@@ -55,7 +59,7 @@ public class TrackedSocketFactory extends SocketFactory {
   @Override
   public Socket createSocket(
       final String host, final int port, final InetAddress localAddress, final int localPort)
-      throws IOException, UnknownHostException {
+      throws IOException {
     cleanup();
     final Socket socket = delegate.createSocket(host, port, localAddress, localPort);
     socketSet.add(socket);
@@ -84,6 +88,6 @@ public class TrackedSocketFactory extends SocketFactory {
   }
 
   private void cleanup() {
-    socketSet.removeIf(Socket::isClosed);
+    socketSet.removeIf(s -> s.isBound() && s.isClosed());
   }
 }

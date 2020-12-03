@@ -56,7 +56,7 @@ public class PowchainService extends Service {
   private final Eth1ChainIdValidator chainIdValidator;
   private final Web3j web3j;
   private final TrackedSocketFactory trackedSocketFactory =
-      new TrackedSocketFactory(SocketFactory.getDefault());
+      new TrackedSocketFactory();
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
@@ -128,7 +128,7 @@ public class PowchainService extends Service {
     return Web3j.build(web3jService);
   }
 
-  private static OkHttpClient createOkHttpClient(final TrackedSocketFactory socketFactory) {
+  private static OkHttpClient createOkHttpClient(final SocketFactory socketFactory) {
     final OkHttpClient.Builder builder =
         new OkHttpClient.Builder()
             // Increased read timeout allows ETH1 nodes time to process large log requests
