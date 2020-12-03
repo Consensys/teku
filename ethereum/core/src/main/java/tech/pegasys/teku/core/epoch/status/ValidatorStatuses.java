@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.epoch;
+package tech.pegasys.teku.core.epoch.status;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
@@ -34,7 +34,7 @@ public class ValidatorStatuses {
   private final List<ValidatorStatus> statuses;
   private final TotalBalances totalBalances;
 
-  public ValidatorStatuses(
+  private ValidatorStatuses(
       final List<ValidatorStatus> statuses, final TotalBalances totalBalances) {
     this.statuses = statuses;
     this.totalBalances = totalBalances;

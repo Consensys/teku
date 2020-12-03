@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.epoch;
+package tech.pegasys.teku.core.epoch.status;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 

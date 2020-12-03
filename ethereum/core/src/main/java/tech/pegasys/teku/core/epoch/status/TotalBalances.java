@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.epoch;
+package tech.pegasys.teku.core.epoch.status;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class TotalBalances {
 
-  private final UInt64 effectiveBalanceIncrement = Constants.EFFECTIVE_BALANCE_INCREMENT;
   private UInt64 currentEpoch = UInt64.ZERO;
   private UInt64 previousEpoch = UInt64.ZERO;
   private UInt64 currentEpochAttesters = UInt64.ZERO;
@@ -46,25 +44,53 @@ public class TotalBalances {
       }
       if (status.isCurrentEpochAttester()) {
         totalBalances.currentEpochAttesters = totalBalances.currentEpochAttesters.plus(balance);
-      }
 
-      if (status.isCurrentEpochTargetAttester()) {
-        totalBalances.currentEpochTargetAttesters =
-            totalBalances.currentEpochTargetAttesters.plus(balance);
+        if (status.isCurrentEpochTargetAttester()) {
+          totalBalances.currentEpochTargetAttesters =
+              totalBalances.currentEpochTargetAttesters.plus(balance);
+        }
       }
 
       if (status.isPreviousEpochAttester()) {
         totalBalances.previousEpochAttesters = totalBalances.previousEpochAttesters.plus(balance);
-      }
-      if (status.isPreviousEpochTargetAttester()) {
-        totalBalances.previousEpochTargetAttesters =
-            totalBalances.previousEpochTargetAttesters.plus(balance);
-      }
-      if (status.isPreviousEpochHeadAttester()) {
-        totalBalances.previousEpochHeadAttesters =
-            totalBalances.previousEpochHeadAttesters.plus(balance);
+        if (status.isPreviousEpochTargetAttester()) {
+          totalBalances.previousEpochTargetAttesters =
+              totalBalances.previousEpochTargetAttesters.plus(balance);
+        }
+        if (status.isPreviousEpochHeadAttester()) {
+          totalBalances.previousEpochHeadAttesters =
+              totalBalances.previousEpochHeadAttesters.plus(balance);
+        }
       }
     }
     return totalBalances;
+  }
+
+  public UInt64 getCurrentEpoch() {
+    return currentEpoch;
+  }
+
+  public UInt64 getPreviousEpoch() {
+    return previousEpoch;
+  }
+
+  public UInt64 getCurrentEpochAttesters() {
+    return currentEpochAttesters;
+  }
+
+  public UInt64 getCurrentEpochTargetAttesters() {
+    return currentEpochTargetAttesters;
+  }
+
+  public UInt64 getPreviousEpochAttesters() {
+    return previousEpochAttesters;
+  }
+
+  public UInt64 getPreviousEpochTargetAttesters() {
+    return previousEpochTargetAttesters;
+  }
+
+  public UInt64 getPreviousEpochHeadAttesters() {
+    return previousEpochHeadAttesters;
   }
 }
