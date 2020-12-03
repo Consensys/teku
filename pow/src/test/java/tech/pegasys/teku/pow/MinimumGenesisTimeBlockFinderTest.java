@@ -287,6 +287,24 @@ public class MinimumGenesisTimeBlockFinderTest {
             "Failed to retrieve min genesis block.  Check that your eth1 node is fully synced.");
   }
 
+  @Test
+  public void confirmOrFindMinGenesisBlock_withCandidateBlockTooRecent() {
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
+
+    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+    final Block[] blocks = withBlockTimestamps(timestamps);
+    withUnavailableBlocks(Arrays.copyOfRange(blocks, 0, 4));
+    Constants.MIN_GENESIS_TIME = UInt64.valueOf(3500);
+
+    final SafeFuture<Block> res = minimumGenesisTimeBlockFinder.confirmMinGenesisBlock(blocks[7]);
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get)
+        .hasCauseInstanceOf(FailedToFindMinGenesisBlockException.class)
+        .hasMessageContaining(
+            "Failed to retrieve min genesis block.  Check that your eth1 node is fully synced.");
+  }
+
   private void assertMinGenesisBlock(
       final Block[] blocks, final long minGenesisTime, final Block expectedMinGenesisTimeBlock) {
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(minGenesisTime);

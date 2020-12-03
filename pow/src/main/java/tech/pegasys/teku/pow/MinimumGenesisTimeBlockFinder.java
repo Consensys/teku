@@ -87,8 +87,11 @@ public class MinimumGenesisTimeBlockFinder {
               if (!blockIsPriorToMinGenesis(parent)) {
                 throw new IllegalStateException(
                     String.format(
-                        "Candidate min genesis block is too recent.  It's parent's timestamp (%s) must be prior to %s.",
-                        candidate.getTimestamp(), calculateMinGenesisTimeThreshold()));
+                        "Candidate min genesis block (#%s, %s) is too recent.  It's parent's timestamp (%s) must be prior to %s.",
+                        candidate.getNumber(),
+                        candidate.getHash(),
+                        parent.getTimestamp(),
+                        calculateMinGenesisTimeThreshold()));
               }
 
               traceWithBlock("Confirmed min genesis block: ", candidate);
