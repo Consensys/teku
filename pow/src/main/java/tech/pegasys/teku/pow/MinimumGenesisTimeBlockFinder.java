@@ -62,8 +62,8 @@ public class MinimumGenesisTimeBlockFinder {
 
   /**
    * The binary search may return a block that is too new (if historical blocks are unavailable
-   * during the search), so walk back though chain to confirm or else pull the correct min genesis
-   * block.
+   * during the search), so pull the candidate's parent block to confirm that we actually found the
+   * min genesis block.
    *
    * @param candidate A candidate block that may be the min genesis block
    * @return The confirmed min genesis block
