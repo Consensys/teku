@@ -38,10 +38,10 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.KeystoreGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
 
-public class ValidatorExitAcceptanceTest extends AcceptanceTestBase {
+public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  void blabla() throws Exception {
+  void test() throws Exception {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
@@ -93,8 +93,8 @@ public class ValidatorExitAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withValidatorKeys("/opt/teku/keys:/opt/teku/passwords")
-                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl())
-                    .withExitAtEpoch(0));
+                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()),
+            "0");
     voluntaryExitProcess.copyContentsToWorkingDirectory(validatorInfoTar);
 
     beaconNode.start();
@@ -106,10 +106,10 @@ public class ValidatorExitAcceptanceTest extends AcceptanceTestBase {
 
     voluntaryExitProcess.start();
 
-    validatorClient.waitForLogMessageContaining("Published aggregate");
+    validatorClient.waitForLogMessageContaining("has changed status from");
   }
 
-  public Path copyDirectoryToTarFile(Path inputDirectoryPath, Path outputPath) throws IOException {
+  private void copyDirectoryToTarFile(Path inputDirectoryPath, Path outputPath) throws IOException {
     File outputFile = outputPath.toFile();
 
     try (FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
@@ -139,7 +139,7 @@ public class ValidatorExitAcceptanceTest extends AcceptanceTestBase {
         tarArchiveOutputStream.closeArchiveEntry();
       }
       tarArchiveOutputStream.close();
-      return outputFile.toPath();
+      outputFile.toPath();
     }
   }
 }

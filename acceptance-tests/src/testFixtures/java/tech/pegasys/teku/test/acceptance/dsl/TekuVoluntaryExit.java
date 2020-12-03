@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -34,22 +33,23 @@ public class TekuVoluntaryExit extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuVoluntaryExit(final Network network, final TekuVoluntaryExit.Config config) {
+  private TekuVoluntaryExit(
+      final Network network, final TekuVoluntaryExit.Config config, final String exitEpoch) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.config = config;
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withCommand("validator-client", "--config-file", CONFIG_FILE_PATH);
+        .withCommand("voluntary-exit", "--epoch", exitEpoch, "--config-file", CONFIG_FILE_PATH);
   }
 
   public static TekuVoluntaryExit create(
-      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions) {
+      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions, String exitEpoch) {
 
     final TekuVoluntaryExit.Config config = new TekuVoluntaryExit.Config();
     configOptions.accept(config);
 
-    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config);
+    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config, exitEpoch);
 
     return node;
   }
@@ -84,7 +84,6 @@ public class TekuVoluntaryExit extends Node {
 
   public static class Config {
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
 
@@ -113,11 +112,6 @@ public class TekuVoluntaryExit extends Node {
       return this;
     }
 
-    public TekuVoluntaryExit.Config withExitAtEpoch(final int exitEpoch) {
-      configMap.put("epoch", exitEpoch);
-      return this;
-    }
-
     public TekuVoluntaryExit.Config withBeaconNodeEndpoint(final String beaconNodeEndpoint) {
       configMap.put("beacon-node-api-endpoint", beaconNodeEndpoint);
       return this;
@@ -125,13 +119,6 @@ public class TekuVoluntaryExit extends Node {
 
     public Map<File, String> write() throws Exception {
       final Map<File, String> configFiles = new HashMap<>();
-      if (validatorKeys.isPresent()) {
-        final File validatorsFile = Files.createTempFile("validators", ".yml").toFile();
-        validatorsFile.deleteOnExit();
-        Files.writeString(validatorsFile.toPath(), validatorKeys.get());
-        configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
-
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
       writeTo(configFile);
