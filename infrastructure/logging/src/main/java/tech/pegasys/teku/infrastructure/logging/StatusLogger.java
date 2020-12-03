@@ -235,4 +235,28 @@ public class StatusLogger {
         expectedChainId,
         eth1ChainId);
   }
+
+  public void unableToRetrieveValidatorStatusesFromBeaconNode() {
+    log.error("Unable to retrieve validator statuses from BeaconNode.");
+  }
+
+  public void validatorStatus(String validatorStatus, String publicKey) {
+    log.info("Validator {} status is {}.", validatorStatus, publicKey);
+  }
+
+  public void unableToRetrieveValidatorStatus(String publicKey) {
+    log.warn("Unable to retrieve status for validator {}.", publicKey);
+  }
+
+  public void unableToRetrieveValidatorStatusSummary(int n) {
+    log.warn("Unable to retrieve status for {} validators.", n);
+  }
+
+  public void validatorStatusSummary(int n, String validatorStatus) {
+    log.info("{} validators are in {} state.", n, validatorStatus);
+  }
+
+  public void validatorStatusChange(String oldStatus, String newStatus, String publicKey) {
+    log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
+  }
 }
