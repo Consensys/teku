@@ -18,18 +18,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class InclusionInfo {
 
   private final UInt64 delay;
-  private final UInt64 proposerIndex;
+  private final int proposerIndex;
 
   public InclusionInfo(final UInt64 delay, final UInt64 proposerIndex) {
     this.delay = delay;
-    this.proposerIndex = proposerIndex;
+    this.proposerIndex = proposerIndex.intValue();
   }
 
   public UInt64 getDelay() {
     return delay;
   }
 
-  public UInt64 getProposerIndex() {
+  public int getProposerIndex() {
     return proposerIndex;
   }
 }

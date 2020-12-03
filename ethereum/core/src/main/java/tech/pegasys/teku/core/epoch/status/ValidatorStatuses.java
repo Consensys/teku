@@ -78,13 +78,14 @@ public class ValidatorStatuses {
                     matchesEpochStartBlock(state, currentEpoch, target.getRoot());
               } else if (target.getEpoch().equals(previousEpoch)) {
                 updates.previousEpochAttester = true;
+
+                updates.inclusionInfo =
+                    Optional.of(
+                        new InclusionInfo(
+                            attestation.getInclusion_delay(), attestation.getProposer_index()));
+
                 if (matchesEpochStartBlock(state, previousEpoch, target.getRoot())) {
                   updates.previousEpochTargetAttester = true;
-
-                  updates.inclusionInfo =
-                      Optional.of(
-                          new InclusionInfo(
-                              attestation.getInclusion_delay(), attestation.getProposer_index()));
 
                   updates.previousEpochHeadAttester =
                       get_block_root_at_slot(state, data.getSlot())
@@ -105,6 +106,18 @@ public class ValidatorStatuses {
     return BeaconStateUtil.get_block_root(state, currentEpoch).equals(root);
   }
 
+  public TotalBalances getTotalBalances() {
+    return totalBalances;
+  }
+
+  public List<ValidatorStatus> getStatuses() {
+    return statuses;
+  }
+
+  public int getValidatorCount() {
+    return statuses.size();
+  }
+
   private static class AttestationUpdates {
     private boolean currentEpochAttester = false;
     private boolean currentEpochTargetAttester = false;
@@ -118,7 +131,7 @@ public class ValidatorStatuses {
       status.updateCurrentEpochAttester(currentEpochAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
       status.updatePreviousEpochAttester(previousEpochAttester);
-      status.updateCurrentEpochTargetAttester(previousEpochTargetAttester);
+      status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);
       status.updateInclusionInfo(inclusionInfo);
     }

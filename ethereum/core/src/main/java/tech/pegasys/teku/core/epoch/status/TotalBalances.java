@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
+import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
+
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -67,30 +69,30 @@ public class TotalBalances {
   }
 
   public UInt64 getCurrentEpoch() {
-    return currentEpoch;
+    return currentEpoch.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getPreviousEpoch() {
-    return previousEpoch;
+    return previousEpoch.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getCurrentEpochAttesters() {
-    return currentEpochAttesters;
+    return currentEpochAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getCurrentEpochTargetAttesters() {
-    return currentEpochTargetAttesters;
+    return currentEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getPreviousEpochAttesters() {
-    return previousEpochAttesters;
+    return previousEpochAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getPreviousEpochTargetAttesters() {
-    return previousEpochTargetAttesters;
+    return previousEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   public UInt64 getPreviousEpochHeadAttesters() {
-    return previousEpochHeadAttesters;
+    return previousEpochHeadAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
@@ -21,7 +20,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
@@ -43,16 +41,14 @@ import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
+import tech.pegasys.teku.core.Deltas.Delta;
+import tech.pegasys.teku.core.epoch.status.TotalBalances;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
@@ -69,60 +65,14 @@ public final class EpochProcessorUtil {
   // State Transition Helper Functions
 
   /**
-   * Return a sorted list of all the distinct Validators that have attested in the given list of
-   * attestations
-   *
-   * @param state
-   * @param attestations
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
-   */
-  public static List<Integer> get_unslashed_attesting_indices(
-      BeaconState state, SSZList<PendingAttestation> attestations) {
-    return get_unslashed_attesting_indices(state, attestations, ArrayList::new);
-  }
-
-  public static <T extends Collection<Integer>> T get_unslashed_attesting_indices(
-      BeaconState state,
-      SSZList<PendingAttestation> attestations,
-      final Supplier<T> collectionFactory) {
-    TreeSet<Integer> output = new TreeSet<>();
-    for (PendingAttestation a : attestations) {
-      output.addAll(get_attesting_indices(state, a.getData(), a.getAggregation_bits()));
-    }
-    List<Integer> output_list = new ArrayList<>(output);
-    return output_list.stream()
-        .filter(index -> !state.getValidators().get(index).isSlashed())
-        .collect(Collectors.toCollection(collectionFactory));
-  }
-
-  /**
-   * Returns the combined effective balance of the set of unslashed validators participating in
-   * attestations. Note: get_total_balance returns EFFECTIVE_BALANCE_INCREMENT Gwei minimum to avoid
-   * divisions by zero. attestations
-   *
-   * @param state
-   * @param attestations
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
-   */
-  private static UInt64 get_attesting_balance(
-      BeaconState state, SSZList<PendingAttestation> attestations) {
-    return get_total_balance(state, get_unslashed_attesting_indices(state, attestations));
-  }
-
-  /**
    * Processes justification and finalization
    *
    * @param state
-   * @param matchingAttestations
+   * @param totalBalances
    * @throws EpochProcessingException
    */
   public static void process_justification_and_finalization(
-      MutableBeaconState state, MatchingAttestations matchingAttestations)
-      throws EpochProcessingException {
+      MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
     try {
       if (get_current_epoch(state)
           .isLessThanOrEqualTo(UInt64.valueOf(GENESIS_EPOCH).plus(UInt64.ONE))) {
@@ -138,9 +88,8 @@ public final class EpochProcessorUtil {
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
       Bitvector justificationBits = state.getJustification_bits().rightShift(1);
 
-      SSZList<PendingAttestation> matching_target_attestations =
-          matchingAttestations.getMatchingTargetAttestations(previous_epoch);
-      if (get_attesting_balance(state, matching_target_attestations)
+      if (totalBalances
+          .getPreviousEpochTargetAttesters()
           .times(3)
           .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
         Checkpoint newCheckpoint =
@@ -148,9 +97,9 @@ public final class EpochProcessorUtil {
         state.setCurrent_justified_checkpoint(newCheckpoint);
         justificationBits.setBit(1);
       }
-      matching_target_attestations =
-          matchingAttestations.getMatchingTargetAttestations(current_epoch);
-      if (get_attesting_balance(state, matching_target_attestations)
+
+      if (totalBalances
+          .getCurrentEpochTargetAttesters()
           .times(3)
           .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
         Checkpoint newCheckpoint =
@@ -189,15 +138,9 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * Processes rewards and penalties
-   *
-   * @param state
-   * @param matchingAttestations
-   * @throws EpochProcessingException
-   */
+  /** Processes rewards and penalties */
   public static void process_rewards_and_penalties(
-      MutableBeaconState state, MatchingAttestations matchingAttestations)
+      MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException {
     try {
       if (get_current_epoch(state).equals(UInt64.valueOf(GENESIS_EPOCH))) {
@@ -205,11 +148,12 @@ public final class EpochProcessorUtil {
       }
 
       Deltas attestation_deltas =
-          new RewardsAndPenaltiesCalculator(state, matchingAttestations).getAttestationDeltas();
+          new RewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
 
       for (int i = 0; i < state.getValidators().size(); i++) {
-        increase_balance(state, i, attestation_deltas.getReward(i));
-        decrease_balance(state, i, attestation_deltas.getPenalty(i));
+        final Delta delta = attestation_deltas.getDelta(i);
+        increase_balance(state, i, delta.getReward());
+        decrease_balance(state, i, delta.getPenalty());
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
@@ -302,9 +246,8 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slashings</a>
    */
-  public static void process_slashings(MutableBeaconState state) {
+  public static void process_slashings(MutableBeaconState state, final UInt64 total_balance) {
     UInt64 epoch = get_current_epoch(state);
-    UInt64 total_balance = get_total_active_balance(state);
     UInt64 adjusted_total_slashing_balance =
         state.getSlashings().stream()
             .reduce(UInt64.ZERO, UInt64::plus)

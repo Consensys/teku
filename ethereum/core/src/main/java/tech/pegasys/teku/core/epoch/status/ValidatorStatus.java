@@ -60,6 +60,10 @@ public class ValidatorStatus {
         is_active_validator(validator, previousEpoch));
   }
 
+  public boolean isEligibleValidator() {
+    return activeInPreviousEpoch || (slashed && !withdrawableInCurrentEpoch);
+  }
+
   public boolean isSlashed() {
     return slashed;
   }
