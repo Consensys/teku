@@ -129,7 +129,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public String toString() {
-      return "(" + left + ", " + right + ')';
+      return left == right ? ("(2x " + left + ")") : ("(" + left + ", " + right + ')');
     }
   }
 }
