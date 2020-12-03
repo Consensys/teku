@@ -279,11 +279,12 @@ class Eth1DepositManagerTest {
 
   @Test
   void shouldStartWithNoStoredDepositsAndHeadAfterMinGenesisTime_withDeployBlockNumber() {
+    final UInt64 deployBlockNumber = UInt64.valueOf(50);
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
-    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, UInt64.valueOf(50));
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, deployBlockNumber);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
@@ -294,7 +295,7 @@ class Eth1DepositManagerTest {
     // Process blocks from genesis to min genesis block
     inOrder
         .verify(depositProcessingController)
-        .fetchDepositsInRange(BigInteger.valueOf(50), minGenesisBlockNumber);
+        .fetchDepositsInRange(deployBlockNumber.bigIntegerValue(), minGenesisBlockNumber);
 
     // Send min genesis event
     inOrder
