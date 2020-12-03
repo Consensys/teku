@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -83,29 +82,12 @@ public class TekuVoluntaryExit extends Node {
   }
 
   public static class Config {
-    private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-
     private Map<String, Object> configMap = new HashMap<>();
 
-    private Optional<String> validatorKeys = Optional.empty();
-
     public Config() {
-      configMap.put("epoch", 1);
-      //      configMap.put("validators-keystore-locking-enabled", false);
-      //      configMap.put("Xinterop-owned-validator-start-index", 0);
-      //      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      //      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      //      configMap.put("Xinterop-enabled", true);
-      //      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
-      //      configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
     }
-
-    //    public TekuVoluntaryExit.Config withInteropModeDisabled() {
-    //      configMap.put("Xinterop-enabled", false);
-    //      return this;
-    //    }
 
     public TekuVoluntaryExit.Config withValidatorKeys(final String validatorKeyInformation) {
       configMap.put("validator-keys", validatorKeyInformation);

@@ -35,8 +35,8 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.KeystoreGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystoreGenerator;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
@@ -57,8 +57,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final String passwordsDirectory = "passwords";
     final Path keysOutputPath = validatorInfoDirectoryPath.resolve(keysDirectory);
     final Path passwordsOutputPath = validatorInfoDirectoryPath.resolve(passwordsDirectory);
-    final KeystoreGenerator keystoreGenerator =
-        new KeystoreGenerator(
+    final ValidatorKeystoreGenerator keystoreGenerator =
+        new ValidatorKeystoreGenerator(
             validatorKeysPassword, keysOutputPath, passwordsOutputPath, (__) -> {});
 
     // create temporary tar file which will be copied to docker containers

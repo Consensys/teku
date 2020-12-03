@@ -23,18 +23,17 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.EncryptedKeystoreWriter;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
-public class KeystoreGenerator {
+public class ValidatorKeystoreGenerator {
   private final EncryptedKeystoreWriter encryptedKeystoreWriter;
   private final String validatorKeyPassword;
-  private final Path keysOutputPath;
   private final Path passwordsOutputPath;
 
-  public KeystoreGenerator(
+  public ValidatorKeystoreGenerator(
       String validatorKeyPassword,
       Path keysOutputPath,
       Path passwordsOutputPath,
       Consumer<String> commandOutput) {
-    // Withdrawal key password is dismissed for now.
+    // Withdrawal key password is unnecessary for this mode of running.
     this.encryptedKeystoreWriter =
         new EncryptedKeystoreWriter(
             SecureRandomProvider.createSecureRandom(),
@@ -43,7 +42,6 @@ public class KeystoreGenerator {
             keysOutputPath,
             commandOutput);
     this.validatorKeyPassword = validatorKeyPassword;
-    this.keysOutputPath = keysOutputPath;
     this.passwordsOutputPath = passwordsOutputPath;
     createDirectory(passwordsOutputPath);
   }
