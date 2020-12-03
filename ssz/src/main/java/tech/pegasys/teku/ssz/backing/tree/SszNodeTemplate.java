@@ -16,13 +16,13 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -34,84 +34,99 @@ public class SszNodeTemplate {
   public static final class Location {
     public final int offset;
     public final int length;
+    public final boolean leaf;
 
-    public Location(int offset, int length) {
+    public Location(int offset, int length, boolean leaf) {
       this.offset = offset;
       this.length = length;
+      this.leaf = leaf;
     }
   }
 
+  public static SszNodeTemplate createFromType(ViewType viewType) {
+    checkArgument(viewType.isFixedSize(), "Only fixed size containers supported");
+
+    return createFromTree(viewType.getDefaultTree());
+  }
+
+  // This should be CANONICAL binary tree
+  public static SszNodeTemplate createFromTree(TreeNode defaultTree) {
+    IdentityHashMap<TreeNode, Location> nodeToLoc = new IdentityHashMap<>();
+    calcOffsets(0, defaultTree, GIndexUtil.SELF_G_INDEX, nodeToLoc);
+    return new SszNodeTemplate(nodeToLoc, defaultTree);
+  }
+
   private static Location calcOffsets(
-      int offset, TreeNode node, long thisGIdx, Map<Long, Location> locations) {
+      int offset, TreeNode node, long thisGIdx, IdentityHashMap<TreeNode, Location> nodeToLoc) {
+    final Location nodeLocation;
     if (node instanceof LeafNode) {
-      Location location = new Location(offset, ((LeafNode) node).getData().size());
-      locations.put(thisGIdx, location);
-      return location;
-    } else {
+      nodeLocation = new Location(offset, ((LeafNode) node).getData().size(), true);
+    } else if (node instanceof BranchNode) {
       BranchNode branchNode = (BranchNode) node;
       Location leftLoc =
-          calcOffsets(offset, branchNode.left(), GIndexUtil.gIdxLeftGIndex(thisGIdx), locations);
+          calcOffsets(offset, branchNode.left(), GIndexUtil.gIdxLeftGIndex(thisGIdx), nodeToLoc);
       Location rightLoc =
           calcOffsets(
               offset + leftLoc.length,
               branchNode.right(),
               GIndexUtil.gIdxRightGIndex(thisGIdx),
-              locations);
-      Location thisLoc = new Location(offset, leftLoc.length + rightLoc.length);
-      locations.put(thisGIdx, thisLoc);
-      return thisLoc;
+              nodeToLoc);
+      nodeLocation = new Location(offset, leftLoc.length + rightLoc.length, false);
+    } else {
+      throw new IllegalArgumentException(
+          "Canonical binary tree (only LeafNode and BranchNode instances) expected here");
     }
+    nodeToLoc.put(node, nodeLocation);
+    return nodeLocation;
   }
 
-  public static SszNodeTemplate createFromType(ViewType containerType) {
-    checkArgument(containerType.isFixedSize(), "Only fixed size containers supported");
-
-    // This should be CANONICAL binary tree
-    TreeNode defaultTree = containerType.getDefaultTree();
-
-    Map<Long, Location> gIndexToLoc = new HashMap<>();
-    Location rootLoc = calcOffsets(0, defaultTree, GIndexUtil.SELF_G_INDEX, gIndexToLoc);
-    Map<TreeNode, Location> nodeToLoc = new IdentityHashMap<>();
-    AtomicInteger off = new AtomicInteger();
-    defaultTree.iterateAll(
-        (node, idx) -> {
-          if (node instanceof LeafNode) {
-            int leafSszSize = ((LeafNode) node).getData().size();
-            Location nodeSszLocation = new Location(off.get(), leafSszSize);
-            nodeToLoc.put(node, nodeSszLocation);
-            off.addAndGet(leafSszSize);
-          }
-          return true;
-        });
-    assert rootLoc.length == off.get();
-    return new SszNodeTemplate(gIndexToLoc, nodeToLoc, off.get(), defaultTree);
+  private static List<Bytes> nodeSsz(TreeNode node) {
+    List<Bytes> sszBytes = new ArrayList<>();
+    TreeUtil.iterateLeavesData(node, LEFTMOST_G_INDEX, RIGHTMOST_G_INDEX, sszBytes::add);
+    return sszBytes;
   }
 
-  private final Map<Long, Location> gIndexToLoc;
-  private final Map<TreeNode, Location> nodeToLoc;
-  private final int sszLength;
+  private final IdentityHashMap<TreeNode, Location> nodeToLoc;
   private final TreeNode defaultTree;
+  private final Map<Long, SszNodeTemplate> subTemplatesCache = new ConcurrentHashMap<>();
 
   public SszNodeTemplate(
-      Map<Long, Location> gIndexToLoc,
-      Map<TreeNode, Location> nodeToLoc,
-      int sszLength,
+      IdentityHashMap<TreeNode, Location> nodeToLoc,
       TreeNode defaultTree) {
-    this.gIndexToLoc = gIndexToLoc;
     this.nodeToLoc = nodeToLoc;
-    this.sszLength = sszLength;
     this.defaultTree = defaultTree;
   }
 
   public Location getNodeSszLocation(long generalizedIndex) {
-    return gIndexToLoc.get(generalizedIndex);
+    return nodeToLoc.get(defaultTree.get(generalizedIndex));
+  }
+
+  public int getSszLength() {
+    return nodeToLoc.get(defaultTree).length;
+  }
+
+  public SszNodeTemplate getSubTemplate(long generalizedIndex) {
+    return subTemplatesCache.computeIfAbsent(generalizedIndex, this::calcSubTemplate);
+  }
+
+  private SszNodeTemplate calcSubTemplate(long generalizedIndex) {
+    if (gIdxIsSelf(generalizedIndex)) {
+      return this;
+    }
+    TreeNode subTree = defaultTree.get(generalizedIndex);
+    IdentityHashMap<TreeNode, Location> nodeToLocSubMap = new IdentityHashMap<>();
+    subTree.iterateAll(n -> nodeToLocSubMap.put(n, nodeToLoc.get(n)));
+    return new SszNodeTemplate(nodeToLocSubMap, subTree);
   }
 
   public void update(long generalizedIndex, TreeNode newNode, MutableBytes dest) {
+    update(generalizedIndex, nodeSsz(newNode), dest);
+  }
+
+  private void update(long generalizedIndex, List<Bytes> nodeSsz, MutableBytes dest) {
     // sub-optimal update implementation
     // implement other method to optimize
     Location leafPos = getNodeSszLocation(generalizedIndex);
-    List<Bytes> nodeSsz = nodeSsz(newNode);
     int off = 0;
     for (int i = 0; i < nodeSsz.size(); i++) {
       Bytes newSszChunk = nodeSsz.get(i);
@@ -121,21 +136,11 @@ public class SszNodeTemplate {
     checkArgument(off == leafPos.length);
   }
 
-  private static List<Bytes> nodeSsz(TreeNode node) {
-    List<Bytes> sszBytes = new ArrayList<>();
-    TreeUtil.iterateLeavesData(node, LEFTMOST_G_INDEX, RIGHTMOST_G_INDEX, sszBytes::add);
-    return sszBytes;
-  }
-
-  public int getSszLength() {
-    return sszLength;
-  }
-
   public Bytes32 calculateHashTreeRoot(Bytes ssz, int offset) {
-    return calcHash(ssz, offset, defaultTree);
+    return calcHash(ssz, defaultTree, offset);
   }
 
-  private Bytes32 calcHash(Bytes ssz, int offset, TreeNode node) {
+  private Bytes32 calcHash(Bytes ssz, TreeNode node, int offset) {
     if (node instanceof LeafNode) {
       Location location = nodeToLoc.get(node);
       return Bytes32.rightPad(ssz.slice(offset + location.offset, location.length));
@@ -143,7 +148,7 @@ public class SszNodeTemplate {
       BranchNode branchNode = (BranchNode) node;
       return Hash.sha2_256(
           Bytes.wrap(
-              calcHash(ssz, offset, branchNode.left()), calcHash(ssz, offset, branchNode.right())));
+              calcHash(ssz, branchNode.left(), offset), calcHash(ssz, branchNode.right(), offset)));
     }
   }
 }

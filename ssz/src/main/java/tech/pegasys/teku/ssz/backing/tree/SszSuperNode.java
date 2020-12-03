@@ -91,8 +91,17 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
     int childOffset = childIndex * elementTemplate.getSszLength();
     checkArgument(childOffset < ssz.size(), "Invalid index");
     long relativeGIndex = gIdxGetRelativeGIndex(generalizedIndex, depth);
-    Location leafPos = elementTemplate.getNodeSszLocation(relativeGIndex);
-    return LeafNode.create(ssz.slice(childOffset + leafPos.offset, leafPos.length));
+    Location nodeLoc = elementTemplate.getNodeSszLocation(relativeGIndex);
+    if (nodeLoc.leaf) {
+      return LeafNode.create(ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
+    } else if (gIdxIsSelf(relativeGIndex)) {
+      return new SszSuperNode(0, elementTemplate,
+          ssz.slice(childOffset, elementTemplate.getSszLength()));
+    } else {
+      SszNodeTemplate subTemplate = elementTemplate.getSubTemplate(relativeGIndex);
+      return new SszSuperNode(0, subTemplate,
+          ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
+    }
   }
 
   @Override
@@ -131,9 +140,10 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
 
   @Override
   public String toString() {
+    int sszLength = elementTemplate.getSszLength();
     return "SszSuperNode{"
         + IntStream.range(0, getElementsCount())
-            .mapToObj(i -> ssz.slice(i, elementTemplate.getSszLength()).toString())
+            .mapToObj(i -> ssz.slice(i * sszLength, sszLength).toString())
             .collect(Collectors.joining(", "))
         + "}";
   }
