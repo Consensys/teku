@@ -314,16 +314,6 @@ public class TekuNode extends Node {
     return dbTar;
   }
 
-  /**
-   * Copies contents of the given directory into node's working directory.
-   *
-   * @param tarFile
-   * @throws IOException
-   */
-  public void copyContentsToWorkingDirectory(File tarFile) throws IOException {
-    container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
-  }
-
   public void copyFileToContainer(File file, String containerPath) {
     container.withCopyFileToContainer(
         MountableFile.forHostPath(file.getAbsolutePath()), containerPath);

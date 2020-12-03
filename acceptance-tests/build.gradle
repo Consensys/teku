@@ -9,6 +9,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':util')
+  testFixturesImplementation project(':teku')
 
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'

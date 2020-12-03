@@ -5,7 +5,7 @@
 # SLOTS_PER_EPOCH is 4 instead of 8
 # MIN_GENESIS_ACTIVE_VALIDATOR_COUNT is 4 instead of 64
 
-CONFIG_NAME: "less-swift"
+CONFIG_NAME: "swift"
 
 # Misc
 # ---------------------------------------------------------------
@@ -88,7 +88,7 @@ BLS_WITHDRAWAL_PREFIX: 0x00
 # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
 GENESIS_DELAY: 30
 # [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 3
+SECONDS_PER_SLOT: 6
 # 2**0 (= 1) slots 6 seconds
 MIN_ATTESTATION_INCLUSION_DELAY: 1
 # [customized] fast epochs

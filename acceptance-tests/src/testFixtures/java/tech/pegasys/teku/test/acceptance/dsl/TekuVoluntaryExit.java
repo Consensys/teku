@@ -27,14 +27,14 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
 
-public class TekuValidatorNode extends Node {
+public class TekuVoluntaryExit extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final TekuValidatorNode.Config config;
+  private final TekuVoluntaryExit.Config config;
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuValidatorNode(final Network network, final TekuValidatorNode.Config config) {
+  private TekuVoluntaryExit(final Network network, final TekuVoluntaryExit.Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.config = config;
 
@@ -43,20 +43,20 @@ public class TekuValidatorNode extends Node {
         .withCommand("validator-client", "--config-file", CONFIG_FILE_PATH);
   }
 
-  public static TekuValidatorNode create(
-      final Network network, Consumer<TekuValidatorNode.Config> configOptions) {
+  public static TekuVoluntaryExit create(
+      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions) {
 
-    final TekuValidatorNode.Config config = new TekuValidatorNode.Config();
+    final TekuVoluntaryExit.Config config = new TekuVoluntaryExit.Config();
     configOptions.accept(config);
 
-    final TekuValidatorNode node = new TekuValidatorNode(network, config);
+    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config);
 
     return node;
   }
 
   public void start() throws Exception {
     assertThat(started).isFalse();
-    LOG.debug("Start validator node {}", nodeAlias);
+    LOG.debug("Start voluntary exit command line process {}", nodeAlias);
     started = true;
     final Map<File, String> configFiles = config.write();
     this.configFiles = configFiles.keySet();
@@ -91,41 +91,35 @@ public class TekuValidatorNode extends Node {
     private Optional<String> validatorKeys = Optional.empty();
 
     public Config() {
-      configMap.put("validators-keystore-locking-enabled", false);
-      configMap.put("Xinterop-owned-validator-start-index", 0);
-      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-enabled", true);
-      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
-      configMap.put("data-path", DATA_PATH);
+      configMap.put("epoch", 1);
+      //      configMap.put("validators-keystore-locking-enabled", false);
+      //      configMap.put("Xinterop-owned-validator-start-index", 0);
+      //      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
+      //      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
+      //      configMap.put("Xinterop-enabled", true);
+      //      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
+      //      configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
     }
 
-    public TekuValidatorNode.Config withInteropModeDisabled() {
-      configMap.put("Xinterop-enabled", false);
-      return this;
-    }
+    //    public TekuVoluntaryExit.Config withInteropModeDisabled() {
+    //      configMap.put("Xinterop-enabled", false);
+    //      return this;
+    //    }
 
-    public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
+    public TekuVoluntaryExit.Config withValidatorKeys(final String validatorKeyInformation) {
       configMap.put("validator-keys", validatorKeyInformation);
       return this;
     }
 
-    public TekuValidatorNode.Config withBeaconNodeEndpoint(final String beaconNodeEndpoint) {
+    public TekuVoluntaryExit.Config withExitAtEpoch(final int exitEpoch) {
+      configMap.put("epoch", exitEpoch);
+      return this;
+    }
+
+    public TekuVoluntaryExit.Config withBeaconNodeEndpoint(final String beaconNodeEndpoint) {
       configMap.put("beacon-node-api-endpoint", beaconNodeEndpoint);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withNetwork(String networkName) {
-      configMap.put("network", networkName);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withInteropValidators(
-        final int startIndex, final int validatorCount) {
-      configMap.put("Xinterop-owned-validator-start-index", startIndex);
-      configMap.put("Xinterop-owned-validator-count", validatorCount);
       return this;
     }
 
