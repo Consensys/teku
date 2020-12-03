@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -21,26 +23,30 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class TotalBalancesTest {
 
+  private UInt64 balance(final int amount) {
+    return EFFECTIVE_BALANCE_INCREMENT.times(amount);
+  }
+
   @Test
   void shouldAddCurrentEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, UInt64.valueOf(7), true, false),
-            new ValidatorStatus(true, true, UInt64.valueOf(5), true, true),
-            new ValidatorStatus(false, false, UInt64.valueOf(13), false, false));
+            new ValidatorStatus(false, false, balance(7), true, false),
+            new ValidatorStatus(true, true, balance(5), true, true),
+            new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in current epoch for a total of 12.
-    assertThat(TotalBalances.create(statuses).getCurrentEpoch()).isEqualTo(UInt64.valueOf(12));
+    assertThat(TotalBalances.create(statuses).getCurrentEpoch()).isEqualTo(balance(12));
   }
 
   @Test
   void shouldAddPreviousEpochActiveBalance() {
     final List<ValidatorStatus> statuses =
         List.of(
-            new ValidatorStatus(false, false, UInt64.valueOf(7), false, true),
-            new ValidatorStatus(true, true, UInt64.valueOf(5), true, true),
-            new ValidatorStatus(false, false, UInt64.valueOf(13), false, false));
+            new ValidatorStatus(false, false, balance(7), false, true),
+            new ValidatorStatus(true, true, balance(5), true, true),
+            new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in previous epoch for a total of 12.
-    assertThat(TotalBalances.create(statuses).getPreviousEpoch()).isEqualTo(UInt64.valueOf(12));
+    assertThat(TotalBalances.create(statuses).getPreviousEpoch()).isEqualTo(balance(12));
   }
 
   @Test
@@ -51,7 +57,7 @@ class TotalBalancesTest {
             createWithAllAttesterFlags(false, 11),
             createWithAllAttesterFlags(false, 6));
 
-    final UInt64 expectedBalance = UInt64.valueOf(11 + 6);
+    final UInt64 expectedBalance = balance(11 + 6);
     final TotalBalances balances = TotalBalances.create(statuses);
     assertThat(balances.getCurrentEpochAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(expectedBalance);
@@ -76,8 +82,8 @@ class TotalBalancesTest {
                 .updatePreviousEpochAttester(true));
 
     final TotalBalances balances = TotalBalances.create(statuses);
-    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(UInt64.valueOf(7 + 9 + 14));
-    assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(UInt64.valueOf(7 + 9));
+    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
+    assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(balance(7 + 9));
   }
 
   @Test
@@ -95,18 +101,30 @@ class TotalBalancesTest {
             createValidator(17).updateCurrentEpochAttester(true));
 
     final TotalBalances balances = TotalBalances.create(statuses);
-    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(UInt64.valueOf(7 + 9 + 14));
-    assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(UInt64.valueOf(7 + 9));
-    assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(UInt64.valueOf(9));
+    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
+    assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(balance(7 + 9));
+    assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(balance(9));
   }
 
-  private ValidatorStatus createValidator(final long effectiveBalance) {
-    return new ValidatorStatus(false, false, UInt64.valueOf(effectiveBalance), true, true);
+  @Test
+  void shouldReturnMinimumOfOneEffectiveBalanceIncrement() {
+    final TotalBalances balances = TotalBalances.create(emptyList());
+    assertThat(balances.getCurrentEpoch()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getPreviousEpoch()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+    assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
+  }
+
+  private ValidatorStatus createValidator(final int effectiveBalance) {
+    return new ValidatorStatus(false, false, balance(effectiveBalance), true, true);
   }
 
   private ValidatorStatus createWithAllAttesterFlags(
-      final boolean slashed, final long effectiveBalance) {
-    return new ValidatorStatus(slashed, true, UInt64.valueOf(effectiveBalance), true, true)
+      final boolean slashed, final int effectiveBalance) {
+    return new ValidatorStatus(slashed, true, balance(effectiveBalance), true, true)
         .updateCurrentEpochAttester(true)
         .updatePreviousEpochAttester(true)
         .updateCurrentEpochTargetAttester(true)
