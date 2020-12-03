@@ -11,6 +11,7 @@ dependencies {
   testFixturesImplementation project(':util')
   testFixturesImplementation project(':teku')
 
+  testFixturesImplementation 'tech.pegasys.signers.internal:bls-keystore'
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
