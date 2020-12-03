@@ -55,6 +55,10 @@ public class MinimumGenesisTimeBlockFinder {
         new SearchContext(eth1DepositContractDeployBlock.orElse(ZERO), headBlockNumber));
   }
 
+  public UInt64 getMinFirstDepositBlock() {
+    return eth1DepositContractDeployBlock.orElse(UInt64.ZERO);
+  }
+
   private SafeFuture<EthBlock.Block> binarySearchLoop(final SearchContext searchContext) {
     if (searchContext.low.compareTo(searchContext.high) <= 0) {
       final UInt64 mid = searchContext.low.plus(searchContext.high).dividedBy(TWO);

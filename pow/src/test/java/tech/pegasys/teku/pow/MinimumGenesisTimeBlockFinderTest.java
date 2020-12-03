@@ -48,6 +48,23 @@ public class MinimumGenesisTimeBlockFinderTest {
   }
 
   @Test
+  public void getMinFirstDepositBlock_withDeployBlock() {
+    final UInt64 deployBlock = UInt64.valueOf(2); // Block number
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.of(deployBlock));
+
+    assertThat(minimumGenesisTimeBlockFinder.getMinFirstDepositBlock()).isEqualTo(deployBlock);
+  }
+
+  @Test
+  public void getMinFirstDepositBlock_withNoDeployBlock() {
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
+
+    assertThat(minimumGenesisTimeBlockFinder.getMinFirstDepositBlock()).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
   public void shouldFindMinGenesisTime() {
     final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
     final Block[] blocks = withBlockTimestamps(timestamps);

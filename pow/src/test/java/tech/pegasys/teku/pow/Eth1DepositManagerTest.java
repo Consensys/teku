@@ -208,7 +208,7 @@ class Eth1DepositManagerTest {
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
-    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber);
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, UInt64.ZERO);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
@@ -246,7 +246,7 @@ class Eth1DepositManagerTest {
     final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
-    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber);
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, UInt64.ZERO);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
@@ -258,6 +258,133 @@ class Eth1DepositManagerTest {
     inOrder
         .verify(depositProcessingController)
         .fetchDepositsInRange(BigInteger.ZERO, minGenesisBlockNumber);
+
+    // Send min genesis event
+    inOrder
+        .verify(eth1EventsChannel)
+        .onMinGenesisTimeBlock(
+            new MinGenesisTimeBlockEvent(
+                UInt64.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
+                UInt64.valueOf(minGenesisBlockNumber),
+                Bytes32.ZERO));
+
+    // Then start the subscription to process any blocks after min genesis
+    // Adding one to ensure we don't process the min genesis block a second time
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(minGenesisBlockNumber.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldStartWithNoStoredDepositsAndHeadAfterMinGenesisTime_withDeployBlockNumber() {
+    final BigInteger headBlockNumber = BigInteger.valueOf(100);
+    final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
+    when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
+    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, UInt64.valueOf(50));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    // Find min genesis block
+    inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
+    // Process blocks from genesis to min genesis block
+    inOrder
+        .verify(depositProcessingController)
+        .fetchDepositsInRange(BigInteger.valueOf(50), minGenesisBlockNumber);
+
+    // Send min genesis event
+    inOrder
+        .verify(eth1EventsChannel)
+        .onMinGenesisTimeBlock(
+            new MinGenesisTimeBlockEvent(
+                UInt64.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
+                UInt64.valueOf(minGenesisBlockNumber),
+                Bytes32.ZERO));
+
+    // Then start the subscription to process any blocks after min genesis
+    // Adding one to ensure we don't process the min genesis block a second time
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(minGenesisBlockNumber.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void
+      shouldStartWithStoredDepositsAndHeadAfterMinGenesisTime_withDeployBlockNumberAfterReplayPoint() {
+    final UInt64 deployBlockNumber = UInt64.valueOf(50);
+    final BigInteger headBlockNumber = BigInteger.valueOf(100);
+    final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
+    final BigInteger lastReplayedBlock = BigInteger.valueOf(10);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(11);
+    when(eth1DepositStorageChannel.replayDepositEvents())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
+    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, deployBlockNumber);
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    // Find min genesis block
+    inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
+    // Process blocks from after the last stored block to min genesis
+    inOrder
+        .verify(depositProcessingController)
+        .fetchDepositsInRange(deployBlockNumber.bigIntegerValue(), minGenesisBlockNumber);
+
+    // Send min genesis event
+    inOrder
+        .verify(eth1EventsChannel)
+        .onMinGenesisTimeBlock(
+            new MinGenesisTimeBlockEvent(
+                UInt64.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
+                UInt64.valueOf(minGenesisBlockNumber),
+                Bytes32.ZERO));
+
+    // Then start the subscription to process any blocks after min genesis
+    // Adding one to ensure we don't process the min genesis block a second time
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(minGenesisBlockNumber.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void
+      shouldStartWithStoredDepositsAndHeadAfterMinGenesisTime_withDeployBlockNumberBeforeReplayPoint() {
+    final UInt64 deployBlockNumber = UInt64.valueOf(50);
+    final BigInteger headBlockNumber = BigInteger.valueOf(100);
+    final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
+    final BigInteger lastReplayedBlock = BigInteger.valueOf(55);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(11);
+    when(eth1DepositStorageChannel.replayDepositEvents())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
+    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber, deployBlockNumber);
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    // Find min genesis block
+    inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
+    // Process blocks from after the last stored block to min genesis
+    inOrder
+        .verify(depositProcessingController)
+        .fetchDepositsInRange(lastReplayedBlock.add(BigInteger.ONE), minGenesisBlockNumber);
 
     // Send min genesis event
     inOrder
@@ -383,10 +510,14 @@ class Eth1DepositManagerTest {
   }
 
   private void withMinGenesisBlock(
-      final BigInteger headBlockNumber, final BigInteger minGenesisBlockNumber) {
+      final BigInteger headBlockNumber,
+      final BigInteger minGenesisBlockNumber,
+      final UInt64 minFirstDepositBlockNumber) {
     final Block minGenesisBlock = block(minGenesisBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP);
     when(minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(headBlockNumber))
         .thenReturn(SafeFuture.completedFuture(minGenesisBlock));
+    when(minimumGenesisTimeBlockFinder.getMinFirstDepositBlock())
+        .thenReturn(minFirstDepositBlockNumber);
   }
 
   private void withFollowDistanceHead(final BigInteger number, final long timestamp) {

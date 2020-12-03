@@ -159,9 +159,11 @@ public class Eth1DepositManager {
 
   private SafeFuture<EthBlock.Block> sendDepositsUpToMinGenesis(
       final EthBlock.Block minGenesisTimeBlock, final ReplayDepositsResult replayDepositsResult) {
+    final BigInteger startBlock =
+        getFirstUnprocessedBlockNumber(replayDepositsResult)
+            .max(minimumGenesisTimeBlockFinder.getMinFirstDepositBlock().bigIntegerValue());
     return depositProcessingController
-        .fetchDepositsInRange(
-            getFirstUnprocessedBlockNumber(replayDepositsResult), minGenesisTimeBlock.getNumber())
+        .fetchDepositsInRange(startBlock, minGenesisTimeBlock.getNumber())
         .thenApply(__ -> minGenesisTimeBlock);
   }
 
