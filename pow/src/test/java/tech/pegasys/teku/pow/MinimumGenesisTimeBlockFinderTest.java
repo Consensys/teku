@@ -15,10 +15,7 @@ package tech.pegasys.teku.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -241,40 +238,8 @@ public class MinimumGenesisTimeBlockFinderTest {
     final Block[] blocks = withBlockTimestamps(timestamps);
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(3500);
 
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[4]);
+    final SafeFuture<Block> res = minimumGenesisTimeBlockFinder.confirmMinGenesisBlock(blocks[4]);
     assertThat(res).isCompletedWithValue(blocks[4]);
-  }
-
-  @Test
-  public void confirmOrFindMinGenesisBlock_withParentAtExactMinGenesis() {
-    minimumGenesisTimeBlockFinder =
-        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
-
-    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
-    final Block[] blocks = withBlockTimestamps(timestamps);
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(3000).plus(Constants.GENESIS_DELAY);
-
-    // Make earlier block unavailable so we're sure we don't search more than we need to
-    withUnavailableBlocks(Arrays.copyOfRange(blocks, 1, 3));
-
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[4]);
-    assertThat(res).isCompletedWithValue(blocks[3]);
-  }
-
-  @Test
-  public void confirmOrFindMinGenesisBlock_withParentAtMinGenesis() {
-    minimumGenesisTimeBlockFinder =
-        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
-
-    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
-    final Block[] blocks = withBlockTimestamps(timestamps);
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(2500);
-
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[4]);
-    assertThat(res).isCompletedWithValue(blocks[3]);
   }
 
   @Test
@@ -286,8 +251,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     final Block[] blocks = withBlockTimestamps(timestamps);
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(500);
 
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[0]);
+    final SafeFuture<Block> res = minimumGenesisTimeBlockFinder.confirmMinGenesisBlock(blocks[0]);
     assertThat(res).isCompletedWithValue(blocks[0]);
   }
 
@@ -301,37 +265,21 @@ public class MinimumGenesisTimeBlockFinderTest {
     final Block[] blocks = withBlockTimestamps(timestamps);
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(500);
 
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[3]);
+    final SafeFuture<Block> res = minimumGenesisTimeBlockFinder.confirmMinGenesisBlock(blocks[3]);
     assertThat(res).isCompletedWithValue(blocks[3]);
   }
 
   @Test
-  public void confirmOrFindMinGenesisBlock_withMinGenesisAtDistantAncestor() {
+  public void confirmOrFindMinGenesisBlock_withParentUnavailable() {
     minimumGenesisTimeBlockFinder =
         new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
 
     final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
     final Block[] blocks = withBlockTimestamps(timestamps);
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(500);
+    withUnavailableBlocks(Arrays.copyOfRange(blocks, 0, 7));
+    Constants.MIN_GENESIS_TIME = UInt64.valueOf(6500);
 
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[7]);
-    assertThat(res).isCompletedWithValue(blocks[1]);
-  }
-
-  @Test
-  public void confirmOrFindMinGenesisBlock_withAncestorsUnavailable() {
-    minimumGenesisTimeBlockFinder =
-        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
-
-    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
-    final Block[] blocks = withBlockTimestamps(timestamps);
-    withUnavailableBlocks(Arrays.copyOfRange(blocks, 0, 4));
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(500);
-
-    final SafeFuture<Block> res =
-        minimumGenesisTimeBlockFinder.confirmOrFindMinGenesisBlock(blocks[7]);
+    final SafeFuture<Block> res = minimumGenesisTimeBlockFinder.confirmMinGenesisBlock(blocks[7]);
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get)
         .hasCauseInstanceOf(FailedToFindMinGenesisBlockException.class)
@@ -364,7 +312,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     for (Block block : blocks) {
       when(eth1Provider.getEth1Block(UInt64.valueOf(block.getNumber())))
           .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-      when(eth1Provider.getEth1BlockWithRetry(eq(block.getHash()), any(), anyInt()))
+      when(eth1Provider.getEth1BlockWithRetry(block.getHash()))
           .thenReturn(SafeFuture.failedFuture(new NoSuchElementException()));
     }
   }
@@ -384,7 +332,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     // Setup eth1 provider to return block
     when(eth1Provider.getEth1Block(UInt64.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(eth1Provider.getEth1BlockWithRetry(eq(blockHash), any(), anyInt()))
+    when(eth1Provider.getEth1BlockWithRetry(blockHash))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
     return block;

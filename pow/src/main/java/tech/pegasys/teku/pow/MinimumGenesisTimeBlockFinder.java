@@ -19,10 +19,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,7 +36,6 @@ public class MinimumGenesisTimeBlockFinder {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int MAX_ANCESTORS_TO_SEARCH = 500;
   private static final UInt64 TWO = UInt64.valueOf(2);
 
   private final Eth1Provider eth1Provider;
@@ -61,7 +57,7 @@ public class MinimumGenesisTimeBlockFinder {
       final BigInteger headBlockNumber) {
     return binarySearchLoop(
             new SearchContext(eth1DepositContractDeployBlock.orElse(ZERO), headBlockNumber))
-        .thenCompose(this::confirmOrFindMinGenesisBlock);
+        .thenCompose(this::confirmMinGenesisBlock);
   }
 
   /**
@@ -69,78 +65,41 @@ public class MinimumGenesisTimeBlockFinder {
    * during the search), so walk back though chain to confirm or else pull the correct min genesis
    * block.
    *
-   * @param candidateMinGenesisBlock A candidate block that may be the min genesis block
+   * @param candidate A candidate block that may be the min genesis block
    * @return The confirmed min genesis block
    */
   @VisibleForTesting
-  SafeFuture<EthBlock.Block> confirmOrFindMinGenesisBlock(
-      final EthBlock.Block candidateMinGenesisBlock) {
-    assertBlockIsAtOrAfterMinGenesis(candidateMinGenesisBlock);
-    if (blockIsAtMinimalMinGenesisPosition(candidateMinGenesisBlock)) {
+  SafeFuture<EthBlock.Block> confirmMinGenesisBlock(final EthBlock.Block candidate) {
+    assertBlockIsAtOrAfterMinGenesis(candidate);
+    if (blockIsAtMinimalMinGenesisPosition(candidate)) {
       // We've found min genesis
-      traceWithBlock(
-          "Confirmed minimum genesis block at minimal position: ", candidateMinGenesisBlock);
-      return SafeFuture.completedFuture(candidateMinGenesisBlock);
+      traceWithBlock("Confirmed minimum genesis block at minimal position: ", candidate);
+      return SafeFuture.completedFuture(candidate);
     }
 
-    traceWithBlock(
-        "Confirm minimum genesis block retrieved via binary search: ", candidateMinGenesisBlock);
-    final SafeFuture<EthBlock.Block> minGenesisFuture = new SafeFuture<>();
+    return eth1Provider
+        .getEth1BlockWithRetry(candidate.getParentHash())
+        .thenApply(Optional::get)
+        .thenApply(
+            parent -> {
+              // Parent must be prior to min genesis to confirm that our candidate is the first min
+              // genesis block
+              if (!blockIsPriorToMinGenesis(parent)) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Candidate min genesis block is too recent.  It's parent's timestamp (%s) must be prior to %s.",
+                        candidate.getTimestamp(), calculateMinGenesisTimeThreshold()));
+              }
 
-    final AtomicReference<EthBlock.Block> currentMinGenesisCandidate =
-        new AtomicReference<>(candidateMinGenesisBlock);
-    final AtomicInteger examinedAncestorsCount = new AtomicInteger(0);
-    SafeFuture.asyncDoWhile(
-            () ->
-                eth1Provider
-                    .getEth1BlockWithRetry(
-                        currentMinGenesisCandidate.get().getParentHash(), Duration.ofSeconds(5), 3)
-                    .thenApply(Optional::get)
-                    .thenApply(
-                        parent -> {
-                          examinedAncestorsCount.incrementAndGet();
-                          if (blockIsPriorToMinGenesis(parent)) {
-                            // We've confirmed the current candidate is at the boundary
-                            traceWithBlock(
-                                "Confirmed min genesis block: ", currentMinGenesisCandidate.get());
-                            minGenesisFuture.complete(currentMinGenesisCandidate.get());
-                            return false;
-                          } else if (blockIsAtMinGenesis(parent)) {
-                            // We've found the min genesis block
-                            traceWithBlock(
-                                "Confirmed min genesis block at exact genesis time: ", parent);
-                            minGenesisFuture.complete(parent);
-                            return false;
-                          } else {
-                            // The parent block is after min genesis
-                            // Keep searching through ancestors up to our limit
-                            if (examinedAncestorsCount.get() >= MAX_ANCESTORS_TO_SEARCH) {
-                              throw new IllegalStateException(
-                                  String.format(
-                                      "Unable to locate min genesis block after walking back through %s eth1 blocks to block #%s (%s)",
-                                      examinedAncestorsCount.get(),
-                                      parent.getNumber(),
-                                      parent.getHash()));
-                            }
-                            traceWithBlock(
-                                "Continue searching ancestors to confirm min genesis at or prior to: ",
-                                parent);
-                            currentMinGenesisCandidate.set(parent);
-                            return true;
-                          }
-                        }))
-        .finish(
-            () ->
-                minGenesisFuture.completeExceptionally(
-                    new FailedToFindMinGenesisBlockException(
-                        "Failed to retrieve min genesis block.  Check that your eth1 node is fully synced.")),
-            (err) ->
-                minGenesisFuture.completeExceptionally(
-                    new FailedToFindMinGenesisBlockException(
-                        "Failed to retrieve min genesis block.  Check that your eth1 node is fully synced.",
-                        err)));
-
-    return minGenesisFuture;
+              traceWithBlock("Confirmed min genesis block: ", candidate);
+              return candidate;
+            })
+        .exceptionally(
+            err -> {
+              throw new FailedToFindMinGenesisBlockException(
+                  "Failed to retrieve min genesis block.  Check that your eth1 node is fully synced.",
+                  err);
+            });
   }
 
   private boolean blockIsAtMinimalMinGenesisPosition(final EthBlock.Block block) {
@@ -225,6 +184,10 @@ public class MinimumGenesisTimeBlockFinder {
     args[otherArgs.length + 2] = block.getTimestamp();
 
     LOG.log(level, message + "#{} (hash = {}, timestamp = {})", args);
+  }
+
+  private UInt64 calculateMinGenesisTimeThreshold() {
+    return Constants.MIN_GENESIS_TIME.minusMinZero(Constants.GENESIS_DELAY);
   }
 
   static UInt64 calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
