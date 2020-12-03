@@ -39,8 +39,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class StateAtSlotTaskTest {
-  private static final UInt64 EPOCHx = UInt64.valueOf(2);
-  private static final UInt64 SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCHx);
+  private static final UInt64 EPOCH = UInt64.valueOf(2);
+  private static final UInt64 SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
 
   private final AsyncStateProvider stateProvider = mock(AsyncStateProvider.class);
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
