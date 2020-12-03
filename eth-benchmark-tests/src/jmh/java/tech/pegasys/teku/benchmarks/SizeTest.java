@@ -14,9 +14,11 @@
 package tech.pegasys.teku.benchmarks;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -49,5 +51,23 @@ public class SizeTest {
     System.out.println("Serialized size: " + serializeBytes.size());
 
     return state.getBackingNode();
+  }
+
+  @Test
+  void b() {
+    DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    BeaconState state0 = dataStructureUtil.randomBeaconState(4);
+    BeaconState state = BeaconState.getSSZType().createFromBackingNode(state0.getBackingNode());
+    Bytes32 treeRoot = state.getValidators().hash_tree_root();
+    Validator validator0 = state.getValidators().get(0);
+    Validator validator1 = state.getValidators().get(1);
+
+    //    System.out.println(state);
+    System.out.println(state.getBackingNode());
+    System.out.println(state.getValidators().get(0));
+    System.out.println(state.getValidators().get(0).getBackingNode());
+    System.out.println(state.getValidators().get(1));
+    System.out.println(state.getValidators().get(1).getBackingNode());
+    System.out.println();
   }
 }

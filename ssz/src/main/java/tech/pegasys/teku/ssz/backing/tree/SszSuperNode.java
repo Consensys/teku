@@ -95,12 +95,12 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
     if (nodeLoc.leaf) {
       return LeafNode.create(ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
     } else if (gIdxIsSelf(relativeGIndex)) {
-      return new SszSuperNode(0, elementTemplate,
-          ssz.slice(childOffset, elementTemplate.getSszLength()));
+      return new SszSuperNode(
+          0, elementTemplate, ssz.slice(childOffset, elementTemplate.getSszLength()));
     } else {
       SszNodeTemplate subTemplate = elementTemplate.getSubTemplate(relativeGIndex);
-      return new SszSuperNode(0, subTemplate,
-          ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
+      return new SszSuperNode(
+          0, subTemplate, ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
     }
   }
 

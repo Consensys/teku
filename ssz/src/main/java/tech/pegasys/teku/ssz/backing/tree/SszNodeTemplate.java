@@ -90,9 +90,7 @@ public class SszNodeTemplate {
   private final TreeNode defaultTree;
   private final Map<Long, SszNodeTemplate> subTemplatesCache = new ConcurrentHashMap<>();
 
-  public SszNodeTemplate(
-      IdentityHashMap<TreeNode, Location> nodeToLoc,
-      TreeNode defaultTree) {
+  public SszNodeTemplate(IdentityHashMap<TreeNode, Location> nodeToLoc, TreeNode defaultTree) {
     this.nodeToLoc = nodeToLoc;
     this.defaultTree = defaultTree;
   }
