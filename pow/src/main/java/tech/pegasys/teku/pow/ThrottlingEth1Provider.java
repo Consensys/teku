@@ -41,6 +41,12 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
+  public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
+      final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
+    return queueRequest(() -> delegate.getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries));
+  }
+
+  @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
     return queueRequest(() -> delegate.getGuaranteedEth1Block(blockHash));
   }
@@ -57,8 +63,8 @@ public class ThrottlingEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
-      final String blockHash, final Duration retryDuration, final int maxRetries) {
-    return queueRequest(() -> delegate.getEth1BlockWithRetry(blockHash, retryDuration, maxRetries));
+      final String blockHash, final Duration retryDelay, final int maxRetries) {
+    return queueRequest(() -> delegate.getEth1BlockWithRetry(blockHash, retryDelay, maxRetries));
   }
 
   @Override

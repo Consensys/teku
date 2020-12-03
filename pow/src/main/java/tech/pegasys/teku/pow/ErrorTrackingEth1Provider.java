@@ -40,14 +40,20 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
+  public SafeFuture<Optional<EthBlock.Block>> getEth1BlockWithRetry(
+      final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
+    return logStatus(delegate.getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries));
+  }
+
+  @Override
   public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final String blockHash) {
     return logStatus(delegate.getEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Optional<EthBlock.Block>> getEth1BlockWithRetry(
-      final String blockHash, final Duration retryDuration, final int maxRetries) {
-    return delegate.getEth1BlockWithRetry(blockHash, retryDuration, maxRetries);
+      final String blockHash, final Duration retryDelay, final int maxRetries) {
+    return delegate.getEth1BlockWithRetry(blockHash, retryDelay, maxRetries);
   }
 
   @Override

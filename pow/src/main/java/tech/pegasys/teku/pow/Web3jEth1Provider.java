@@ -54,6 +54,12 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
+  public SafeFuture<Optional<EthBlock.Block>> getEth1BlockWithRetry(
+      final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
+    return asyncRunner.runWithRetry(() -> getEth1Block(blockNumber), retryDelay, maxRetries);
+  }
+
+  @Override
   public SafeFuture<Optional<EthBlock.Block>> getEth1Block(final String blockHash) {
     LOG.trace("Getting eth1 block {}", blockHash);
     return sendAsync(web3j.ethGetBlockByHash(blockHash, false))
@@ -63,8 +69,8 @@ public class Web3jEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Optional<EthBlock.Block>> getEth1BlockWithRetry(
-      final String blockHash, final Duration retryDuration, final int maxRetries) {
-    return asyncRunner.runWithRetry(() -> getEth1Block(blockHash), retryDuration, maxRetries);
+      final String blockHash, final Duration retryDelay, final int maxRetries) {
+    return asyncRunner.runWithRetry(() -> getEth1Block(blockHash), retryDelay, maxRetries);
   }
 
   @Override

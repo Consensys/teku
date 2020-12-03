@@ -310,7 +310,7 @@ public class MinimumGenesisTimeBlockFinderTest {
 
   private void withUnavailableBlocks(final Block[] blocks) {
     for (Block block : blocks) {
-      when(eth1Provider.getEth1Block(UInt64.valueOf(block.getNumber())))
+      when(eth1Provider.getEth1BlockWithRetry(UInt64.valueOf(block.getNumber())))
           .thenReturn(SafeFuture.completedFuture(Optional.empty()));
       when(eth1Provider.getEth1BlockWithRetry(block.getHash()))
           .thenReturn(SafeFuture.failedFuture(new NoSuchElementException()));
@@ -330,7 +330,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     when(block.toString()).thenReturn("Block " + blockNumber + " at timestamp " + timestamp);
 
     // Setup eth1 provider to return block
-    when(eth1Provider.getEth1Block(UInt64.valueOf(blockNumber)))
+    when(eth1Provider.getEth1BlockWithRetry(UInt64.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(eth1Provider.getEth1BlockWithRetry(blockHash))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));

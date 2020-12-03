@@ -113,7 +113,7 @@ public class MinimumGenesisTimeBlockFinder {
     if (searchContext.low.compareTo(searchContext.high) <= 0) {
       final UInt64 mid = searchContext.low.plus(searchContext.high).dividedBy(TWO);
       return eth1Provider
-          .getEth1Block(mid)
+          .getEth1BlockWithRetry(mid)
           .thenCompose(
               maybeMidBlock -> {
                 if (maybeMidBlock.isEmpty()) {
@@ -142,7 +142,7 @@ public class MinimumGenesisTimeBlockFinder {
               });
     } else {
       // Completed search
-      return eth1Provider.getEth1Block(searchContext.low).thenApply(Optional::get);
+      return eth1Provider.getEth1BlockWithRetry(searchContext.low).thenApply(Optional::get);
     }
   }
 
