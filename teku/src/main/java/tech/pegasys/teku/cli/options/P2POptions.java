@@ -107,6 +107,15 @@ public class P2POptions {
   private int p2pTargetSubnetSubscriberCount = 2;
 
   @Option(
+      names = {"--Xp2p-minimum-randomly-selected-peer-count"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Number of peers that should be selected randomly (default 20% of lower-bound target)",
+      arity = "1",
+      hidden = true)
+  private Integer minimumRandomlySelectedPeerCount;
+
+  @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description = "Static peers",
@@ -148,6 +157,12 @@ public class P2POptions {
     }
   }
 
+  private int getMinimumRandomlySelectedPeerCount() {
+    return minimumRandomlySelectedPeerCount == null
+        ? Math.max(1, getP2pLowerBound() * 2 / 10)
+        : minimumRandomlySelectedPeerCount;
+  }
+
   public void configure(
       final TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
     builder.p2p(
@@ -170,6 +185,7 @@ public class P2POptions {
                 .p2pPeerLowerBound(getP2pLowerBound())
                 .p2pPeerUpperBound(getP2pUpperBound())
                 .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+                .minimumRandomlySelectedPeerCount(getMinimumRandomlySelectedPeerCount())
                 .p2pStaticPeers(p2pStaticPeers)
                 .multiPeerSyncEnabled(multiPeerSyncEnabled)
                 .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled));
