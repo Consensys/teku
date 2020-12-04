@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
@@ -31,6 +32,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +41,9 @@ import java.util.function.BiFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
@@ -94,6 +99,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
+  private final ChainDataProvider chainDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final StateTransition stateTransition;
@@ -108,6 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final PerformanceTracker performanceTracker;
 
   public ValidatorApiHandler(
+      final ChainDataProvider chainDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final StateTransition stateTransition,
@@ -120,6 +127,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
+    this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.stateTransition = stateTransition;
@@ -214,6 +222,25 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 optionalState
                     .map(state -> processSlots(state, slot))
                     .map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
+  }
+
+  @Override
+  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+      Set<BLSPublicKey> validatorIdentifiers) {
+    return chainDataProvider
+        .getStateValidators(
+            "head",
+            validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
+            new HashSet<>())
+        .thenApply(
+            (maybeList) ->
+                maybeList.map(
+                    list ->
+                        list.stream()
+                            .collect(
+                                toMap(
+                                    ValidatorResponse::getPublicKey,
+                                    ValidatorResponse::getStatus))));
   }
 
   private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {

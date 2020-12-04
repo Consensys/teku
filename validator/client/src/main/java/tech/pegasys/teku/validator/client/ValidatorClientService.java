@@ -43,16 +43,19 @@ public class ValidatorClientService extends Service {
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
   private final ValidatorIndexProvider validatorIndexProvider;
+  private final ValidatorStatusLogger validatorStatusLogger;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
 
   private ValidatorClientService(
+      final ValidatorStatusLogger validatorStatusLogger,
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconNodeApi beaconNodeApi,
       final ForkProvider forkProvider) {
+    this.validatorStatusLogger = validatorStatusLogger;
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
@@ -117,7 +120,19 @@ public class ValidatorClientService extends Service {
 
     addValidatorCountMetric(metricsSystem, validators.size());
 
+    //    TODO: once the voluntary exit acceptance test PR is merged, activate validator status
+    // logger.
+    //    ValidatorStatusLogger validatorStatusLogger;
+    //    if (validators.keySet().size() > 0) {
+    //            validatorStatusLogger =
+    //                new DefaultValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+    //    } else {
+    //      validatorStatusLogger = ValidatorStatusLogger.NOOP;
+    //    }
+    ValidatorStatusLogger validatorStatusLogger = ValidatorStatusLogger.NOOP;
+
     return new ValidatorClientService(
+        validatorStatusLogger,
         eventChannels,
         attestationDutyScheduler,
         blockDutyScheduler,
@@ -146,7 +161,11 @@ public class ValidatorClientService extends Service {
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
         new ValidatorTimingActions(
-            validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
+            validatorStatusLogger,
+            validatorIndexProvider,
+            blockProductionTimingChannel,
+            attestationTimingChannel));
+    validatorStatusLogger.printInitialValidatorStatuses();
     return beaconNodeApi.subscribeToEvents();
   }
 
