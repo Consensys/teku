@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.math.BigInteger;
 import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.TreeSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,6 +102,7 @@ public class Eth1BlockFetcher {
     LOG.debug("Requesting block {}", blockNumberToRequest);
     return eth1Provider
         .getEth1Block(blockNumberToRequest)
+        .thenApply(Optional::get)
         .thenAccept(
             block -> {
               if (isAboveLowerBound(UInt64.valueOf(block.getTimestamp()))) {

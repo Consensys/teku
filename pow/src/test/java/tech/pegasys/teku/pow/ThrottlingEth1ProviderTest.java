@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -40,11 +41,11 @@ class ThrottlingEth1ProviderTest {
   private final Block block2 = mock(Block.class);
   private final Eth1Provider delegateProvider = mock(Eth1Provider.class);
   private final ThrottlingEth1Provider provider = new ThrottlingEth1Provider(delegateProvider, 3);
-  private final List<SafeFuture<Block>> blockRequests = new ArrayList<>();
+  private final List<SafeFuture<Optional<Block>>> blockRequests = new ArrayList<>();
 
   private final Answer<Object> returnBlockFuture =
       call -> {
-        final SafeFuture<Block> future = new SafeFuture<>();
+        final SafeFuture<Optional<Block>> future = new SafeFuture<>();
         blockRequests.add(future);
         return future;
       };
@@ -72,27 +73,27 @@ class ThrottlingEth1ProviderTest {
 
   @Test
   void shouldProcessNextRequestWhenInFlightOneCompletes() {
-    final SafeFuture<Block> request1 = provider.getEth1Block(ONE);
-    final SafeFuture<Block> request2 = provider.getEth1Block(TWO);
-    final SafeFuture<Block> request3 = provider.getEth1Block(THREE);
-    final SafeFuture<Block> request4 = provider.getEth1Block(FOUR);
+    final SafeFuture<Optional<Block>> request1 = provider.getEth1Block(ONE);
+    final SafeFuture<Optional<Block>> request2 = provider.getEth1Block(TWO);
+    final SafeFuture<Optional<Block>> request3 = provider.getEth1Block(THREE);
+    final SafeFuture<Optional<Block>> request4 = provider.getEth1Block(FOUR);
 
     verify(delegateProvider).getEth1Block(ONE);
     verify(delegateProvider).getEth1Block(TWO);
     verify(delegateProvider).getEth1Block(THREE);
     verifyNoMoreInteractions(delegateProvider);
 
-    blockRequests.get(1).complete(block2);
+    blockRequests.get(1).complete(Optional.of(block2));
     assertThat(request1).isNotDone();
-    assertThat(request2).isCompletedWithValue(block2);
+    assertThat(request2).isCompletedWithValue(Optional.of(block2));
     assertThat(request3).isNotDone();
     assertThat(request4).isNotDone();
 
     verify(delegateProvider).getEth1Block(FOUR);
 
-    blockRequests.get(0).complete(block1);
-    assertThat(request1).isCompletedWithValue(block1);
-    assertThat(request2).isCompletedWithValue(block2);
+    blockRequests.get(0).complete(Optional.of(block1));
+    assertThat(request1).isCompletedWithValue(Optional.of(block1));
+    assertThat(request2).isCompletedWithValue(Optional.of(block2));
     assertThat(request3).isNotDone();
     assertThat(request4).isNotDone();
 
