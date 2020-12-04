@@ -209,16 +209,7 @@ public class VoluntaryExitCommand implements Runnable {
       System.exit(1);
     }
     fork = maybeFork.get();
-
-    if (epoch == null) {
-      final Optional<UInt64> maybeEpoch = getEpoch();
-      if (maybeEpoch.isEmpty()) {
-        SUB_COMMAND_LOG.error(
-            "Could not calculate epoch from latest block header, please specify --epoch");
-        System.exit(1);
-      }
-      epoch = maybeEpoch.orElseThrow();
-    }
+    validateOrDefaultEpoch();
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
@@ -241,6 +232,25 @@ public class VoluntaryExitCommand implements Runnable {
     }
     if (blsPublicKeyValidatorMap.isEmpty()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
+      System.exit(1);
+    }
+  }
+
+  private void validateOrDefaultEpoch() {
+    final Optional<UInt64> maybeEpoch = getEpoch();
+
+    if (epoch == null) {
+      if (maybeEpoch.isEmpty()) {
+        SUB_COMMAND_LOG.error(
+            "Could not calculate epoch from latest block header, please specify --epoch");
+        System.exit(1);
+      }
+      epoch = maybeEpoch.orElseThrow();
+    } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
+      SUB_COMMAND_LOG.error(
+          String.format(
+              "The specified epoch %s is greater than current epoch %s, cannot continue.",
+              epoch, maybeEpoch.get()));
       System.exit(1);
     }
   }
