@@ -30,12 +30,11 @@ class CompoundWeakSubjectivityViolationPolicy implements WeakSubjectivityViolati
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,
-      final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod) {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod);
+          latestFinalizedCheckpoint, currentSlot, wsPeriod);
     }
   }
 

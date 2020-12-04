@@ -210,11 +210,10 @@ public class WeakSubjectivityValidator {
 
   private void handleFinalizedCheckpointOutsideWSPeriod(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
-    final int activeValidators =
-        calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
-    final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(activeValidators);
+    final UInt64 wsPeriod =
+        calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint.getState());
     violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-        latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
+        latestFinalizedCheckpoint, currentSlot, wsPeriod);
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {

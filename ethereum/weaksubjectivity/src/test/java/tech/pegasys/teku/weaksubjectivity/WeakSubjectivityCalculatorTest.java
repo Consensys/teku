@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,29 +28,48 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityCalculatorTest {
 
-  @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
+  @BeforeAll
+  public static void setup() {
+    Constants.setConstants("mainnet");
+  }
+
+  @AfterAll
+  public static void tearDown() {
+    Constants.setConstants("minimal");
+  }
+
+  @ParameterizedTest(name = "safetyDecay: {0}, avgBalance: {1}, validatorCount: {2}")
   @MethodSource("computeWeakSubjectivityParams")
   public void computeWeakSubjectivity(
-      final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
+      final UInt64 safetyDecay,
+      final UInt64 avgActiveValidatorBalance,
+      final int validatorCount,
+      final int expectedResult) {
     final WeakSubjectivityConfig config =
         WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    UInt64 result = calculator.computeWeakSubjectivityPeriod(validatorCount);
+    UInt64 result =
+        calculator.computeWeakSubjectivityPeriod(validatorCount, avgActiveValidatorBalance);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 
-  @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
+  @ParameterizedTest(name = "safetyDecay: {0}, avgBalance: {1}, validatorCount: {2}")
   @MethodSource("computeWeakSubjectivityParams")
   public void isWithinWeakSubjectivityPeriod(
-      final int validatorCount,
       final UInt64 safetyDecay,
+      final UInt64 avgActiveValidatorBalance,
+      final int validatorCount,
       final int expectedWeakSubjectivityPeriod) {
     final WeakSubjectivityCalculator calculator =
-        new WeakSubjectivityCalculator(safetyDecay, __ -> validatorCount);
+        new WeakSubjectivityCalculator(
+            safetyDecay,
+            WeakSubjectivityCalculator.StateCalculator.createStaticCalculator(
+                validatorCount, avgActiveValidatorBalance));
 
     final UInt64 finalizedEpoch = UInt64.valueOf(10_000);
     final CheckpointState finalizedCheckpoint = createMockCheckpointState(finalizedEpoch);
@@ -94,19 +115,25 @@ public class WeakSubjectivityCalculatorTest {
   }
 
   // Parameters from the table here:
-  // https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md#calculating-the-weak-subjectivity-period
+  // https://github.com/ethereum/eth2.0-specs/blob/77e07adad499f34a8a909acd25d4d69cbc1c87a0/specs/phase0/weak-subjectivity.md#weak-subjectivity-period
   public static Stream<Arguments> computeWeakSubjectivityParams() {
+    final UInt64 ethToGwei = UInt64.valueOf(1_000_000_000);
     return Stream.of(
-        Arguments.of(1024, UInt64.valueOf(10), 268),
-        Arguments.of(2048, UInt64.valueOf(10), 281),
-        Arguments.of(4096, UInt64.valueOf(10), 307),
-        Arguments.of(8192, UInt64.valueOf(10), 358),
-        Arguments.of(16384, UInt64.valueOf(10), 460),
-        Arguments.of(32768, UInt64.valueOf(10), 665),
-        Arguments.of(65536, UInt64.valueOf(10), 1075),
-        Arguments.of(131072, UInt64.valueOf(10), 1894),
-        Arguments.of(262144, UInt64.valueOf(10), 3532),
-        Arguments.of(524288, UInt64.valueOf(10), 3532));
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(24), 8192, 262),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(24), 16384, 269),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(24), 32768, 282),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 8192, 270),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 16384, 284),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 32768, 313),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 8192, 358),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 16384, 460),
+        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 32768, 665),
+        Arguments.of(UInt64.valueOf(20), ethToGwei.times(24), 16384, 282),
+        Arguments.of(UInt64.valueOf(20), ethToGwei.times(28), 16384, 313),
+        Arguments.of(UInt64.valueOf(20), ethToGwei.times(32), 16384, 665),
+        Arguments.of(UInt64.valueOf(33), ethToGwei.times(24), 16384, 300),
+        Arguments.of(UInt64.valueOf(33), ethToGwei.times(28), 16384, 350),
+        Arguments.of(UInt64.valueOf(33), ethToGwei.times(32), 16384, 931));
   }
 
   private CheckpointState createMockCheckpointState(final UInt64 finalizedEpoch) {

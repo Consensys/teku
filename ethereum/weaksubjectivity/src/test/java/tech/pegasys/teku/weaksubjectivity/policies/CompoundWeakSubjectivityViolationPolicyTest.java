@@ -35,20 +35,19 @@ public class CompoundWeakSubjectivityViolationPolicyTest {
   @Test
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod() {
     final CheckpointState latestFinalizedCheckpoint = mock(CheckpointState.class);
-    final int activeValidators = 2;
     final UInt64 currentSlot = UInt64.valueOf(11);
     final UInt64 wsPeriod = UInt64.valueOf(100);
     policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-        latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
+        latestFinalizedCheckpoint, currentSlot, wsPeriod);
 
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
+            latestFinalizedCheckpoint, currentSlot, wsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
+            latestFinalizedCheckpoint, currentSlot, wsPeriod);
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
 
