@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -54,7 +55,7 @@ public class ValidatorKeystoreGenerator {
             keyPair.getPublicKey().toAbbreviatedString() + "_validator.txt";
         Path validatorPasswordFile =
             Files.createFile(passwordsOutputPath.resolve(validatorPasswordFileName));
-        Files.write(validatorPasswordFile, validatorKeyPassword.getBytes());
+        Files.write(validatorPasswordFile, validatorKeyPassword.getBytes(Charset.defaultCharset()));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);

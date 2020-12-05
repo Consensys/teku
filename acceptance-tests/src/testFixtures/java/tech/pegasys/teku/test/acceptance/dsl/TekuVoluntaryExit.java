@@ -32,23 +32,23 @@ public class TekuVoluntaryExit extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuVoluntaryExit(
-      final Network network, final TekuVoluntaryExit.Config config, final String exitEpoch) {
+  private TekuVoluntaryExit(final Network network, final TekuVoluntaryExit.Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.config = config;
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withCommand("voluntary-exit", "--epoch", exitEpoch, "--config-file", CONFIG_FILE_PATH);
+        .withCommand(
+            "voluntary-exit", "--confirmation-enabled=false", "--config-file", CONFIG_FILE_PATH);
   }
 
   public static TekuVoluntaryExit create(
-      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions, String exitEpoch) {
+      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions) {
 
     final TekuVoluntaryExit.Config config = new TekuVoluntaryExit.Config();
     configOptions.accept(config);
 
-    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config, exitEpoch);
+    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config);
 
     return node;
   }
