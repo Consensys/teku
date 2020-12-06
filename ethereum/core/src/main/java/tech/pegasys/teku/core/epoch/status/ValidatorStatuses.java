@@ -128,7 +128,6 @@ public class ValidatorStatuses {
 
     public void apply(final ValidatorStatus status) {
       status.updateCurrentEpochAttester(currentEpochAttester);
-      status.updateCurrentEpochAttester(currentEpochAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
       status.updatePreviousEpochAttester(previousEpochAttester);
       status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
