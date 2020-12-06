@@ -59,13 +59,15 @@ public class RewardsAndPenaltiesCalculator {
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
     final UInt64 finalityDelay = getFinalityDelay();
 
+    final UInt64 totalActiveBalanceSquareRoot = squareRootOrZero(totalBalances.getCurrentEpoch());
+
     for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus validator = statuses.get(index);
       if (!validator.isEligibleValidator()) {
         continue;
       }
 
-      final UInt64 baseReward = getBaseReward(validator, totalBalances.getCurrentEpoch());
+      final UInt64 baseReward = getBaseReward(validator, totalActiveBalanceSquareRoot);
       final Delta delta = deltas.getDelta(index);
       step.apply(deltas, totalBalances, finalityDelay, validator, baseReward, delta);
     }
@@ -214,14 +216,19 @@ public class RewardsAndPenaltiesCalculator {
     return get_previous_epoch(state).minus(state.getFinalized_checkpoint().getEpoch());
   }
 
-  private UInt64 getBaseReward(final ValidatorStatus validator, final UInt64 totalActiveBalance) {
-    if (totalActiveBalance.equals(UInt64.ZERO)) {
+  private UInt64 getBaseReward(
+      final ValidatorStatus validator, final UInt64 totalActiveBalanceSquareRoot) {
+    if (totalActiveBalanceSquareRoot.isZero()) {
       return UInt64.ZERO;
     }
     return validator
         .getCurrentEpochEffectiveBalance()
         .times(Constants.BASE_REWARD_FACTOR)
-        .dividedBy(integer_squareroot(totalActiveBalance))
+        .dividedBy(totalActiveBalanceSquareRoot)
         .dividedBy(BASE_REWARDS_PER_EPOCH);
+  }
+
+  private UInt64 squareRootOrZero(final UInt64 totalActiveBalance) {
+    return totalActiveBalance.isZero() ? UInt64.ZERO : integer_squareroot(totalActiveBalance);
   }
 }
