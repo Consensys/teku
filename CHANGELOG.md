@@ -5,6 +5,28 @@
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
+## 20.12.0
+
+### Additions and Improvements
+
+- Improved support for Nethermind and OpenEthereum when historic blocks are not fully available.
+- Improved logging for Eth1 status to provide a warning when the node fails to respond to requests for deposit logs.
+  Also includes a message to the console when all current deposit logs have been received.
+- Maximum number of blocks per request for Eth1 deposit logs can now be configured with `--eth1-deposit-contract-max-request-size`.
+- Added support for setting CORS headers in REST API to enable access from browser-based apps.
+- `voluntary-exit` sumcommand now defaults to using the current epoch.
+
+
+### Bug Fixes
+
+- Improved help text for `--eth1-deposit-contract-address` to clarify it is not required for named networks.
+- Reduced default number of blocks per request for eth_getLogs requests further.
+- Fixed issue in external validator which could result in multiple requests for fork data from the beacon node at startup.
+- Reduced memory usage of in memory beacon states.
+- Fix `AbstractRouter internal error on message control` exception.
+- Fix incorrect penalty applied to peers when requested gossip data was received from a different peer before the original peer's response.
+
+
 ## 20.11.1
 
 ### Bug Fixes
