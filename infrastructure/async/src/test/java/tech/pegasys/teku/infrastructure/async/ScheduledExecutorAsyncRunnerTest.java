@@ -33,7 +33,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,9 +70,10 @@ class ScheduledExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldExecuteActionWithExecutorAndReturnResult() {
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnResult() throws Throwable {
     final SafeFuture<String> actionResult = new SafeFuture<>();
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     when(action.get()).thenReturn(actionResult);
 
     final SafeFuture<String> result = asyncRunner.runAsync(action);
@@ -87,9 +87,11 @@ class ScheduledExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldExecuteActionWithExecutorAndReturnExceptionalResult() {
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnExceptionalResult()
+      throws Throwable {
     final SafeFuture<String> actionResult = new SafeFuture<>();
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     when(action.get()).thenReturn(actionResult);
 
     final SafeFuture<String> result = asyncRunner.runAsync(action);
@@ -104,8 +106,9 @@ class ScheduledExecutorAsyncRunnerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void runAsync_shouldCompleteExceptionallyWhenExecutorFails() {
-    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+  public void runAsync_shouldCompleteExceptionallyWhenExecutorFails() throws Throwable {
+    final ExceptionThrowingFutureSupplier<String> action =
+        mock(ExceptionThrowingFutureSupplier.class);
     final RuntimeException exception = new RuntimeException("Nope");
     doThrow(exception).when(workerPool).execute(any());
 
@@ -118,7 +121,7 @@ class ScheduledExecutorAsyncRunnerTest {
   @Test
   void runAsyc_shouldCompleteExceptionallyWhenSupplierThrowsException() {
     final RuntimeException exception = new RuntimeException("My bad...");
-    final Supplier<SafeFuture<String>> action =
+    final ExceptionThrowingFutureSupplier<String> action =
         () -> {
           throw exception;
         };

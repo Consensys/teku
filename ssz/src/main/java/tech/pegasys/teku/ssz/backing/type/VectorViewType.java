@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
@@ -26,8 +27,8 @@ public class VectorViewType<C> extends CollectionViewType {
 
   private final boolean isListBacking;
 
-  public VectorViewType(ViewType elementType, long maxLength) {
-    this(elementType, maxLength, false);
+  public VectorViewType(ViewType elementType, long vectorLength) {
+    this(elementType, vectorLength, false);
   }
 
   VectorViewType(ViewType elementType, long maxLength, boolean isListBacking) {
@@ -43,19 +44,19 @@ public class VectorViewType<C> extends CollectionViewType {
   @Override
   protected TreeNode createDefaultTree() {
     if (isListBacking) {
-      return TreeUtil.createDefaultTree(maxChunks(), TreeUtil.EMPTY_LEAF);
-    } else if (getElementType().getBitsSize() == TreeNode.NODE_BIT_SIZE) {
+      return TreeUtil.createDefaultTree(maxChunks(), LeafNode.EMPTY_LEAF);
+    } else if (getElementType().getBitsSize() == LeafNode.MAX_BIT_SIZE) {
       return TreeUtil.createDefaultTree(maxChunks(), getElementType().getDefaultTree());
     } else {
       // packed vector
       int totalBytes = (getLength() * getElementType().getBitsSize() + 7) / 8;
-      int lastNodeSizeBytes = totalBytes % TreeNode.NODE_BYTE_SIZE;
-      int fullZeroNodesCount = totalBytes / TreeNode.NODE_BYTE_SIZE;
+      int lastNodeSizeBytes = totalBytes % LeafNode.MAX_BYTE_SIZE;
+      int fullZeroNodesCount = totalBytes / LeafNode.MAX_BYTE_SIZE;
       Stream<TreeNode> fullZeroNodes =
-          Stream.generate(() -> TreeUtil.ZERO_LEAVES[32]).limit(fullZeroNodesCount);
+          Stream.<TreeNode>generate(() -> LeafNode.ZERO_LEAVES[32]).limit(fullZeroNodesCount);
       Stream<TreeNode> lastZeroNode =
           lastNodeSizeBytes > 0
-              ? Stream.of(TreeUtil.ZERO_LEAVES[lastNodeSizeBytes])
+              ? Stream.of(LeafNode.ZERO_LEAVES[lastNodeSizeBytes])
               : Stream.empty();
       return TreeUtil.createTree(
           Stream.concat(fullZeroNodes, lastZeroNode).collect(Collectors.toList()));

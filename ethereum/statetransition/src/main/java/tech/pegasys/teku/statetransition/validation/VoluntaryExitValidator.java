@@ -52,7 +52,9 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   @Override
   public InternalValidationResult validateFully(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
-      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
+      LOG.trace(
+          "VoluntaryExitValidator: Exit is not the first one for validator {}.",
+          exit.getMessage().getValidator_index());
       return IGNORE;
     }
 
@@ -63,7 +65,9 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
       return ACCEPT;
     } else {
-      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
+      LOG.trace(
+          "VoluntaryExitValidator: Exit is not the first one for validator {}.",
+          exit.getMessage().getValidator_index());
       return IGNORE;
     }
   }
@@ -73,8 +77,9 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
 
     if (invalidReason.isPresent()) {
-      LOG.trace(
-          "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
+      LOG.debug(
+          "VoluntaryExitValidator: Exit for validator {} fails process voluntary exit conditions {}.",
+          exit.getMessage().getValidator_index(),
           invalidReason.get().describe());
       return false;
     }
@@ -89,7 +94,9 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     }
 
     if (!signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
-      LOG.trace("VoluntaryExitValidator: Exit fails signature verification.");
+      LOG.trace(
+          "VoluntaryExitValidator: Exit for validator {} fails signature verification.",
+          exit.getMessage().getValidator_index());
       return false;
     }
     return true;

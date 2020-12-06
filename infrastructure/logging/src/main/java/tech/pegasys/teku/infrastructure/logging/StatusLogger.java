@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
 
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -57,6 +58,12 @@ public class StatusLogger {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint.",
         cause);
+  }
+
+  public void eth1FetchDepositsTimeout(final int batchSize) {
+    log.warn(
+        "Request for eth1 deposit logs from {} blocks failed. Retrying with a smaller block range.",
+        batchSize);
   }
 
   public void unexpectedFailure(final String description, final Throwable cause) {
@@ -194,8 +201,8 @@ public class StatusLogger {
     log.warn("Eth1 service down for {}s, retrying", interval);
   }
 
-  public void eth1AtHead() {
-    log.info("Eth1 tracker successfully caught up to chain head");
+  public void eth1AtHead(final BigInteger headBlockNumber) {
+    log.info("Successfully loaded deposits up to Eth1 block {}", headBlockNumber);
   }
 
   public void usingGeneratedP2pPrivateKey(final String key, final boolean justGenerated) {
@@ -236,5 +243,29 @@ public class StatusLogger {
     } else {
       log.warn("External signer is currently not reachable at {}", externalSignerUrl);
     }
+  }
+
+  public void unableToRetrieveValidatorStatusesFromBeaconNode() {
+    log.error("Unable to retrieve validator statuses from BeaconNode.");
+  }
+
+  public void validatorStatus(String validatorStatus, String publicKey) {
+    log.info("Validator {} status is {}.", validatorStatus, publicKey);
+  }
+
+  public void unableToRetrieveValidatorStatus(String publicKey) {
+    log.warn("Unable to retrieve status for validator {}.", publicKey);
+  }
+
+  public void unableToRetrieveValidatorStatusSummary(int n) {
+    log.warn("Unable to retrieve status for {} validators.", n);
+  }
+
+  public void validatorStatusSummary(int n, String validatorStatus) {
+    log.info("{} validators are in {} state.", n, validatorStatus);
+  }
+
+  public void validatorStatusChange(String oldStatus, String newStatus, String publicKey) {
+    log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
   }
 }

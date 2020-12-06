@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetDepth;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collector;
@@ -81,7 +84,14 @@ public class TreeUpdates {
     this(gIndexes, nodes, 1, getDepthAndValidate(gIndexes));
   }
 
+  private static TreeUpdates create(
+      List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+    return new TreeUpdates(gIndexes, nodes, prefix, heightFromLeaf);
+  }
+
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+    assert gIndexes.size() == nodes.size();
+
     this.gIndexes = gIndexes;
     this.nodes = nodes;
     this.prefix = prefix;
@@ -105,9 +115,9 @@ public class TreeUpdates {
     int idx = Collections.binarySearch(gIndexes, pivotGIndex);
     int insIdx = idx < 0 ? -idx - 1 : idx;
     return Pair.of(
-        new TreeUpdates(
+        TreeUpdates.create(
             gIndexes.subList(0, insIdx), nodes.subList(0, insIdx), lPrefix, heightFromLeaf - 1),
-        new TreeUpdates(
+        TreeUpdates.create(
             gIndexes.subList(insIdx, gIndexes.size()),
             nodes.subList(insIdx, nodes.size()),
             rPrefix,
@@ -119,9 +129,17 @@ public class TreeUpdates {
     return gIndexes.size();
   }
 
+  public boolean isEmpty() {
+    return size() == 0;
+  }
+
   /** Gets generalized index for update at position [index] */
   public long getGIndex(int index) {
     return gIndexes.get(index);
+  }
+
+  public long getRelativeGIndex(int index) {
+    return gIdxGetRelativeGIndex(gIndexes.get(index), gIdxGetDepth(prefix));
   }
 
   /** Gets new tree node for update at position [index] */
