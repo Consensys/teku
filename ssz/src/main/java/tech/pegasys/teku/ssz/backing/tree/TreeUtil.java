@@ -162,8 +162,8 @@ public class TreeUtil {
         fromGeneralIndex,
         toGeneralIndex,
         (n, idx) -> {
-          if (n instanceof LeadDataNode) {
-            visitor.accept(((LeadDataNode) n).getData());
+          if (n instanceof LeafDataNode) {
+            visitor.accept(((LeafDataNode) n).getData());
           }
           return true;
         });

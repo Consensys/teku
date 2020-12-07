@@ -47,7 +47,7 @@ import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate.Location;
  * rarely updated and space consuming structures (e.g. Eth2 <code>BeaconState.validators</code>
  * list)
  */
-public class SszSuperNode implements TreeNode, LeadDataNode {
+public class SszSuperNode implements TreeNode, LeafDataNode {
   private static final TreeNode DEFAULT_NODE = LeafNode.EMPTY_LEAF;
 
   private final int depth;

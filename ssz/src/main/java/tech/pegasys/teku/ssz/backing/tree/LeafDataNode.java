@@ -15,7 +15,13 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import org.apache.tuweni.bytes.Bytes;
 
-public interface LeadDataNode extends TreeNode {
+/** Represents a tree node which can supply its leaves data */
+public interface LeafDataNode extends TreeNode {
 
+  /**
+   * Returns the merged leaf data of this node's leaf descendants (see {@link SszSuperNode} for
+   * example) or just a leaf data if this node represents a single leaf (see {@link
+   * LeafNode#getData()}
+   */
   Bytes getData();
 }

@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil.ZeroLeafNode;
  * in the spec:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
  */
-public interface LeafNode extends TreeNode, LeadDataNode {
+public interface LeafNode extends TreeNode, LeafDataNode {
 
   int MAX_BYTE_SIZE = 32;
   int MAX_BIT_SIZE = MAX_BYTE_SIZE * 8;
