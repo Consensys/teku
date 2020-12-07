@@ -10,3 +10,4 @@ p2p-static-peers: "127.1.0.1,127.1.1.1"
 p2p-peer-lower-bound: 70
 p2p-peer-upper-bound: 85
 Xp2p-target-subnet-subscriber-count: 5
+Xp2p-minimum-randomly-selected-peer-count: 1

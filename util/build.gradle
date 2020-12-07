@@ -1,7 +1,3 @@
-plugins {
-  id 'me.champeau.gradle.jmh'
-}
-
 dependencies {
   api project(':infrastructure:crypto')
   api project(':infrastructure:metrics')
