@@ -366,6 +366,15 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Returns true if this value is zero.
+   *
+   * @return true if this value is zero.
+   */
+  public boolean isZero() {
+    return value == 0;
+  }
+
+  /**
    * Returns true if this value is strictly greater than the specified value.
    *
    * @param other the value to compare to
