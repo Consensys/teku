@@ -104,16 +104,8 @@ public class ValidatorLoader {
       return Collections.emptyMap();
     }
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
-    final ExternalSignerUpcheck externalSignerUpcheck =
-        new ExternalSignerUpcheck(
-            remoteValidatorHttpClientFactory.get(),
-            config.getValidatorExternalSignerUrl(),
-            timeout);
-    final ExternalSignerStatusLogger externalSignerStatusLogger =
-        new ExternalSignerStatusLogger(
-            externalSignerUpcheck::upcheck, config.getValidatorExternalSignerUrl(), asyncRunner);
-    externalSignerStatusLogger.log();
-    externalSignerStatusLogger.logWithFixedDelay();
+
+    setupExternalSignerStatusLogging(config, timeout);
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -131,6 +123,25 @@ public class ValidatorLoader {
               return new Validator(publicKey, signer, Optional.ofNullable(config.getGraffiti()));
             })
         .collect(toMap(Validator::getPublicKey, Function.identity()));
+  }
+
+  private void setupExternalSignerStatusLogging(
+      final ValidatorConfig config, final Duration timeout) {
+    final ExternalSignerUpcheck externalSignerUpcheck =
+        new ExternalSignerUpcheck(
+            remoteValidatorHttpClientFactory.get(),
+            config.getValidatorExternalSignerUrl(),
+            timeout);
+    final ExternalSignerStatusLogger externalSignerStatusLogger =
+        new ExternalSignerStatusLogger(
+            STATUS_LOG,
+            externalSignerUpcheck::upcheck,
+            config.getValidatorExternalSignerUrl(),
+            asyncRunner);
+    // initial status log
+    externalSignerStatusLogger.log();
+    // recurring status log
+    externalSignerStatusLogger.logWithFixedDelay();
   }
 
   private Signer createSlashingProtectedSigner(final BLSPublicKey publicKey, final Signer signer) {

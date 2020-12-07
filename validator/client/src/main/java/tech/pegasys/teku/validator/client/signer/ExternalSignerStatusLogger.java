@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,19 +20,23 @@ import java.util.function.BooleanSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
 public class ExternalSignerStatusLogger {
   private static final Logger LOG = LogManager.getLogger();
   private static final long DELAY_SECONDS = 30;
+  private final StatusLogger statusLogger;
   private final BooleanSupplier upcheckSupplier;
   private final URL signingServiceUrl;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean isReachable = new AtomicBoolean(false);
 
   public ExternalSignerStatusLogger(
+      final StatusLogger statusLogger,
       final BooleanSupplier upcheckSupplier,
       final URL signingServiceUrl,
       final AsyncRunner asyncRunner) {
+    this.statusLogger = statusLogger;
     this.upcheckSupplier = upcheckSupplier;
     this.signingServiceUrl = signingServiceUrl;
     this.asyncRunner = asyncRunner;
@@ -52,11 +54,11 @@ public class ExternalSignerStatusLogger {
     final boolean upcheckStatus = upcheckSupplier.getAsBoolean();
     if (upcheckStatus) {
       if (isReachable.compareAndSet(false, true)) {
-        STATUS_LOG.externalSignerStatus(signingServiceUrl, true);
+        statusLogger.externalSignerStatus(signingServiceUrl, true);
       }
     } else {
       isReachable.set(false);
-      STATUS_LOG.externalSignerStatus(signingServiceUrl, false);
+      statusLogger.externalSignerStatus(signingServiceUrl, false);
     }
   }
 }
