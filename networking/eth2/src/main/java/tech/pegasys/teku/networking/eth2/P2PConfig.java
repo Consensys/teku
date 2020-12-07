@@ -31,6 +31,7 @@ public class P2PConfig {
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
   private final int targetSubnetSubscriberCount;
+  private final int minimumRandomlySelectedPeerCount;
   private final List<String> p2pStaticPeers;
   private final boolean multiPeerSyncEnabled;
   private final boolean subscribeAllSubnetsEnabled;
@@ -47,6 +48,7 @@ public class P2PConfig {
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
       final int targetSubnetSubscriberCount,
+      final int minimumRandomlySelectedPeerCount,
       final List<String> p2pStaticPeers,
       final boolean multiPeerSyncEnabled,
       final boolean subscribeAllSubnetsEnabled) {
@@ -61,6 +63,7 @@ public class P2PConfig {
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+    this.minimumRandomlySelectedPeerCount = minimumRandomlySelectedPeerCount;
     this.p2pStaticPeers = p2pStaticPeers;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
@@ -115,7 +118,7 @@ public class P2PConfig {
   }
 
   public int getMinimumRandomlySelectedPeerCount() {
-    return Math.min(1, p2pPeerLowerBound * 2 / 10);
+    return minimumRandomlySelectedPeerCount;
   }
 
   public List<String> getP2pStaticPeers() {
@@ -143,6 +146,7 @@ public class P2PConfig {
     private int p2pPeerLowerBound;
     private int p2pPeerUpperBound;
     private int targetSubnetSubscriberCount;
+    private int minimumRandomlySelectedPeerCount;
     private List<String> p2pStaticPeers = new ArrayList<>();
     private boolean multiPeerSyncEnabled;
     private boolean subscribeAllSubnetsEnabled;
@@ -204,6 +208,11 @@ public class P2PConfig {
       return this;
     }
 
+    public P2PConfigBuilder minimumRandomlySelectedPeerCount(int minimumRandomlySelectedPeerCount) {
+      this.minimumRandomlySelectedPeerCount = minimumRandomlySelectedPeerCount;
+      return this;
+    }
+
     public P2PConfigBuilder p2pStaticPeers(List<String> p2pStaticPeers) {
       this.p2pStaticPeers = p2pStaticPeers;
       return this;
@@ -232,6 +241,7 @@ public class P2PConfig {
           p2pPeerLowerBound,
           p2pPeerUpperBound,
           targetSubnetSubscriberCount,
+          minimumRandomlySelectedPeerCount,
           p2pStaticPeers,
           multiPeerSyncEnabled,
           subscribeAllSubnetsEnabled);

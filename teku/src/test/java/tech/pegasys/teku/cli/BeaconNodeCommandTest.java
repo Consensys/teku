@@ -382,6 +382,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pPeerLowerBound(64)
                     .p2pPeerUpperBound(74)
                     .targetSubnetSubscriberCount(2)
+                    .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
                     .p2pStaticPeers(Collections.emptyList()))
         .validator(
             b ->
