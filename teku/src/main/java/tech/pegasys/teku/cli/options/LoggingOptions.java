@@ -25,6 +25,7 @@ public class LoggingOptions {
 
   private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN = "teku_%d{yyyy-MM-dd}.log";
+  public static final String DEFAULT_VALIDATOR_LOG_FILE_NAME_PATTERN = "teku-validator_%d{yyyy-MM-dd}.log";
   public static final String DEFAULT_LOG_PATH_PATTERN =
       StringUtils.joinWith(
           SEP, VersionProvider.defaultStoragePath(), "logs", DEFAULT_LOG_FILE_NAME_PATTERN);
@@ -163,9 +164,10 @@ public class LoggingOptions {
   }
 
   public static String getLogPatternGivenDataDir(
-      final String dataPath, final String logFileNamePattern) {
+      final String dataPath, final String logFileNamePattern, final boolean isValidator) {
     if (logFileNamePattern.equals(DEFAULT_LOG_PATH_PATTERN)) {
-      return StringUtils.joinWith(SEP, dataPath, "logs", DEFAULT_LOG_FILE_NAME_PATTERN);
+      return StringUtils.joinWith(SEP, dataPath, "logs",
+          (isValidator ? DEFAULT_VALIDATOR_LOG_FILE_NAME_PATTERN : DEFAULT_LOG_FILE_NAME_PATTERN));
     }
     if (!logFileNamePattern.contains(SEP)) {
       return StringUtils.joinWith(SEP, dataPath, "logs", logFileNamePattern);

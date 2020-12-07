@@ -390,7 +390,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
     final String logPattern =
         LoggingOptions.getLogPatternGivenDataDir(
-            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern());
+            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern(), false);
 
     builder.setLogFileNamePattern(logPattern);
   }

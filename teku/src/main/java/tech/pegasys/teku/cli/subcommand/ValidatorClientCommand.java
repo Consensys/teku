@@ -134,7 +134,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
     final String logPattern =
         LoggingOptions.getLogPatternGivenDataDir(
-            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern());
+            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern(),true);
 
     builder.setLogFileNamePattern(logPattern);
   }

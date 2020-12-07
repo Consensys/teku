@@ -92,18 +92,26 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void defaultLogPatternGivenDataDir_shouldDeterminePathFromDefaultPattern() {
     assertThat(
             LoggingOptions.getLogPatternGivenDataDir(
-                "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN))
+                "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN, false))
         .isEqualTo("/foo/logs/" + LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN);
   }
 
   @Test
+  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromDefaultValidatorPattern() {
+    assertThat(
+        LoggingOptions.getLogPatternGivenDataDir(
+            "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN, true))
+        .isEqualTo("/foo/logs/" + LoggingOptions.DEFAULT_VALIDATOR_LOG_FILE_NAME_PATTERN);
+  }
+
+  @Test
   public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithoutPath() {
-    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "%d.log"))
+    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "%d.log", false))
         .isEqualTo("/foo/logs/%d.log");
   }
 
   @Test
   public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithPath() {
-    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "/%d.log")).isEqualTo("/%d.log");
+    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "/%d.log", false)).isEqualTo("/%d.log");
   }
 }

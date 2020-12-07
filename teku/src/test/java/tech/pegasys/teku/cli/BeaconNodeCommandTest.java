@@ -407,7 +407,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .setLogDestination(LoggingDestination.BOTH)
                     .setLogFileNamePattern(
                         LoggingOptions.getLogPatternGivenDataDir(
-                            dataPath.toString(), DEFAULT_LOG_PATH_PATTERN)));
+                            dataPath.toString(), DEFAULT_LOG_PATH_PATTERN, false)));
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
@@ -460,7 +460,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogDestination(DEFAULT_BOTH)
         .setLogFile(getDefaultLogFileGivenDataDir(dataPath.toString(), false))
         .setLogFileNamePattern(
-            LoggingOptions.getLogPatternGivenDataDir(dataPath.toString(), DEFAULT_LOG_PATH_PATTERN))
+            LoggingOptions.getLogPatternGivenDataDir(dataPath.toString(), DEFAULT_LOG_PATH_PATTERN, false))
         .setLogIncludeEventsEnabled(true)
         .setLogIncludeValidatorDutiesEnabled(true)
         .setDataStorageMode(PRUNE)
