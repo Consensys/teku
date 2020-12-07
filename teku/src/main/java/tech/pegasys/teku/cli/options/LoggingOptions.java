@@ -16,18 +16,10 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-import tech.pegasys.teku.util.cli.VersionProvider;
 
 public class LoggingOptions {
-
-  private static final String SEP = System.getProperty("file.separator");
-  public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
-      StringUtils.joinWith(
-          SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
-
   @CommandLine.Option(
       names = {"--log-color-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -65,17 +57,19 @@ public class LoggingOptions {
       paramLabel = "<FILENAME>",
       description =
           "Path containing the location (relative or absolute) and the log filename. If not set "
-              + "will default to <data-path>/logs/teku.logs",
+              + "will default to <data-path>/logs/teku.log",
       showDefaultValue = CommandLine.Help.Visibility.NEVER,
       arity = "1")
-  private String logFile = null;
+  private String logFile;
 
   @CommandLine.Option(
       names = {"--log-file-name-pattern"},
       paramLabel = "<REGEX>",
-      description = "Pattern for the filename to apply to rolled over log files.",
+      description =
+          "Pattern for the filename to apply to rolled over log files. If not set "
+              + "will default to <data-path>/logs/teku_%d{yyyy-MM-dd}.log",
       arity = "1")
-  private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
+  private String logFileNamePattern;
 
   @CommandLine.Option(
       names = {"--Xlog-wire-cipher-enabled"},
@@ -133,8 +127,8 @@ public class LoggingOptions {
     return Optional.ofNullable(logFile);
   }
 
-  public String getLogFileNamePattern() {
-    return logFileNamePattern;
+  public Optional<String> getMaybeLogPattern() {
+    return Optional.ofNullable(logFileNamePattern);
   }
 
   public boolean isLogWireCipherEnabled() {
@@ -151,13 +145,5 @@ public class LoggingOptions {
 
   public boolean isLogWireGossipEnabled() {
     return logWireGossipEnabled;
-  }
-
-  public static String getDefaultLogFileGivenDataDir(String dataPath, boolean isValidator) {
-    if (isValidator) {
-      return dataPath + SEP + "logs" + SEP + "teku-validator.log";
-    } else {
-      return dataPath + SEP + "logs" + SEP + "teku.log";
-    }
   }
 }
