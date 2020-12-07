@@ -82,7 +82,7 @@ public class ChainDataProviderTest {
   @BeforeEach
   public void setup() {
     slot = UInt64.valueOf(SLOTS_PER_EPOCH * 3);
-    actualBalance = UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE + 100000);
+    actualBalance = Constants.MAX_EFFECTIVE_BALANCE.plus(100000);
     storageSystem.chainUpdater().initializeGenesis(true, actualBalance);
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);

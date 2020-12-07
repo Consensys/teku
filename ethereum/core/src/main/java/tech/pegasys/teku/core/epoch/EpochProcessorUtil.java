@@ -184,9 +184,7 @@ public final class EpochProcessorUtil {
         // or if effective balance is too low.  Only get the validator if both those checks pass to
         // confirm it isn't already in the queue.
         if (!status.isActiveInCurrentEpoch()
-            && status
-                .getCurrentEpochEffectiveBalance()
-                .equals(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))) {
+            && status.getCurrentEpochEffectiveBalance().equals(MAX_EFFECTIVE_BALANCE)) {
           final Validator validator = validators.get(index);
           if (validator.getActivation_eligibility_epoch().equals(FAR_FUTURE_EPOCH)) {
             validators.set(
@@ -195,9 +193,7 @@ public final class EpochProcessorUtil {
         }
 
         if (status.isActiveInCurrentEpoch()
-            && status
-                .getCurrentEpochEffectiveBalance()
-                .isLessThanOrEqualTo(UInt64.valueOf(EJECTION_BALANCE))) {
+            && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(EJECTION_BALANCE)) {
           initiate_validator_exit(state, index);
         }
       }
@@ -319,7 +315,7 @@ public final class EpochProcessorUtil {
                 validator.withEffective_balance(
                     balance
                         .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
-                        .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))));
+                        .min(MAX_EFFECTIVE_BALANCE)));
       }
     }
 

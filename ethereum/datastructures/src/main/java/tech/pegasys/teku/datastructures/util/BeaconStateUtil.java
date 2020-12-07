@@ -185,9 +185,7 @@ public class BeaconStateUtil {
   private static Validator getValidatorFromDeposit(Deposit deposit) {
     final UInt64 amount = deposit.getData().getAmount();
     final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT))
-            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+        amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
     return new Validator(
         deposit.getData().getPubkey().toBytesCompressed(),
         deposit.getData().getWithdrawal_credentials(),
