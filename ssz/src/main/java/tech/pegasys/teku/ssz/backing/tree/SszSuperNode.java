@@ -108,15 +108,15 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
     checkArgument(childOffset < ssz.size(), "Invalid index");
     long relativeGIndex = gIdxGetRelativeGIndex(generalizedIndex, depth);
     Location nodeLoc = elementTemplate.getNodeSszLocation(relativeGIndex);
-    if (nodeLoc.leaf) {
-      return LeafNode.create(ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
+    if (nodeLoc.isLeaf()) {
+      return LeafNode.create(ssz.slice(childOffset + nodeLoc.getOffset(), nodeLoc.getLength()));
     } else if (gIdxIsSelf(relativeGIndex)) {
       return new SszSuperNode(
           0, elementTemplate, ssz.slice(childOffset, elementTemplate.getSszLength()));
     } else {
       SszNodeTemplate subTemplate = elementTemplate.getSubTemplate(relativeGIndex);
       return new SszSuperNode(
-          0, subTemplate, ssz.slice(childOffset + nodeLoc.offset, nodeLoc.length));
+          0, subTemplate, ssz.slice(childOffset + nodeLoc.getOffset(), nodeLoc.getLength()));
     }
   }
 

@@ -39,9 +39,9 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 public class SszNodeTemplate {
 
   static final class Location {
-    public final int offset;
-    public final int length;
-    public final boolean leaf;
+    private final int offset;
+    private final int length;
+    private final boolean leaf;
 
     public Location(int offset, int length, boolean leaf) {
       this.offset = offset;
@@ -49,8 +49,20 @@ public class SszNodeTemplate {
       this.leaf = leaf;
     }
 
-    public Location addedOffset(int addOffset) {
-      return new Location(offset + addOffset, length, leaf);
+    public Location withAddedOffset(int addOffset) {
+      return new Location(getOffset() + addOffset, getLength(), isLeaf());
+    }
+
+    public int getOffset() {
+      return offset;
+    }
+
+    public int getLength() {
+      return length;
+    }
+
+    public boolean isLeaf() {
+      return leaf;
     }
   }
 
@@ -61,7 +73,7 @@ public class SszNodeTemplate {
   }
 
   // This should be CANONICAL binary tree
-  public static SszNodeTemplate createFromTree(TreeNode defaultTree) {
+  private static SszNodeTemplate createFromTree(TreeNode defaultTree) {
     Map<Long, Location> gIdxToLoc =
         binaryTraverse(
             GIndexUtil.SELF_G_INDEX,
@@ -82,10 +94,12 @@ public class SszNodeTemplate {
                   Map<Long, Location> rightVisitResult) {
                 Location leftChildLoc = leftVisitResult.get(gIdxLeftGIndex(gIndex));
                 Location rightChildLoc = rightVisitResult.get(gIdxRightGIndex(gIndex));
-                rightVisitResult.replaceAll((idx, loc) -> loc.addedOffset(leftChildLoc.length));
+                rightVisitResult.replaceAll(
+                    (idx, loc) -> loc.withAddedOffset(leftChildLoc.getLength()));
                 leftVisitResult.putAll(rightVisitResult);
                 leftVisitResult.put(
-                    gIndex, new Location(0, leftChildLoc.length + rightChildLoc.length, false));
+                    gIndex,
+                    new Location(0, leftChildLoc.getLength() + rightChildLoc.getLength(), false));
                 return leftVisitResult;
               }
             });
@@ -112,7 +126,7 @@ public class SszNodeTemplate {
   }
 
   public int getSszLength() {
-    return gIdxToLoc.get(SELF_G_INDEX).length;
+    return gIdxToLoc.get(SELF_G_INDEX).getLength();
   }
 
   public SszNodeTemplate getSubTemplate(long generalizedIndex) {
@@ -136,10 +150,10 @@ public class SszNodeTemplate {
     int off = 0;
     for (int i = 0; i < nodeSsz.size(); i++) {
       Bytes newSszChunk = nodeSsz.get(i);
-      newSszChunk.copyTo(dest, leafPos.offset + off);
+      newSszChunk.copyTo(dest, leafPos.getOffset() + off);
       off += newSszChunk.size();
     }
-    checkArgument(off == leafPos.length);
+    checkArgument(off == leafPos.getLength());
   }
 
   public Bytes32 calculateHashTreeRoot(Bytes ssz, int offset) {
@@ -150,7 +164,7 @@ public class SszNodeTemplate {
           @Override
           public Bytes32 visitLeaf(long gIndex, LeafNode node) {
             Location location = gIdxToLoc.get(gIndex);
-            return Bytes32.rightPad(ssz.slice(offset + location.offset, location.length));
+            return Bytes32.rightPad(ssz.slice(offset + location.getOffset(), location.getLength()));
           }
 
           @Override
