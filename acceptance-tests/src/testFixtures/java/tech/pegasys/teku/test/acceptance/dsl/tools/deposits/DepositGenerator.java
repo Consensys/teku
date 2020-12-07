@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Eth1Address;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DepositGenerator implements AutoCloseable {
   private final ValidatorKeyGenerator validatorKeyGenerator;
@@ -48,7 +47,10 @@ public class DepositGenerator implements AutoCloseable {
     return SafeFuture.of(
         () -> {
           final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-              generateKeysStream().peek(keys::add).map(this::sendDeposit).collect(Collectors.toList());
+              generateKeysStream()
+                  .peek(keys::add)
+                  .map(this::sendDeposit)
+                  .collect(Collectors.toList());
           return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
         });
   }
@@ -57,8 +59,7 @@ public class DepositGenerator implements AutoCloseable {
     return validatorKeyGenerator.generateKeysStream();
   }
 
-  public SafeFuture<TransactionReceipt> sendDeposit(
-      ValidatorKeys validatorKeys) {
+  public SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
     return depositSenderService.sendDeposit(validatorKeys);
   }
 

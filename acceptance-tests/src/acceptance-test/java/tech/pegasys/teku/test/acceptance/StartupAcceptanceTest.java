@@ -58,7 +58,8 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final TekuBeaconNode tekuBeaconNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode tekuBeaconNode =
+        createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuBeaconNode.start();
 
     createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);

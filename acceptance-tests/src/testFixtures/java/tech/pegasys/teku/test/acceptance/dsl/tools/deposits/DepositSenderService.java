@@ -14,6 +14,8 @@
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.Credentials;
@@ -25,9 +27,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Eth1Address;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class DepositSenderService implements AutoCloseable {
   private final UInt64 amount;
@@ -58,8 +57,7 @@ public class DepositSenderService implements AutoCloseable {
     executorService.shutdownNow();
   }
 
-  public SafeFuture<TransactionReceipt> sendDeposit(
-      ValidatorKeys validatorKeys) {
+  public SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
     final BLSKeyPair validatorKey = validatorKeys.getValidatorKey();
     final BLSPublicKey withdrawalPublicKey = validatorKeys.getWithdrawalKey().getPublicKey();
     return sender.sendDepositTransaction(validatorKey, withdrawalPublicKey, amount);

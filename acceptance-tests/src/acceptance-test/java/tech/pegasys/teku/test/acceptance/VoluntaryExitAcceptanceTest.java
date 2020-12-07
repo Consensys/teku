@@ -28,7 +28,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final ValidatorKeystores validatorKeystores = createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
+    final ValidatorKeystores validatorKeystores =
+        createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
 
     final TekuBeaconNode beaconNode =
         createTekuNode(config -> config.withNetwork("less-swift").withDepositsFrom(eth1Node));
@@ -43,9 +44,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.withValidatorKeystores(validatorKeystores);
 
     final TekuVoluntaryExit voluntaryExitProcess =
-        createVoluntaryExit(
-            config ->
-                config.withBeaconNode(beaconNode));
+        createVoluntaryExit(config -> config.withBeaconNode(beaconNode));
     voluntaryExitProcess.withValidatorKeystores(validatorKeystores);
 
     beaconNode.start();

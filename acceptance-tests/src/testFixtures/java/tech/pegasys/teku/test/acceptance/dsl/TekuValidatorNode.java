@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.Network;
-import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -26,8 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Network;
+import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -58,9 +57,11 @@ public class TekuValidatorNode extends Node {
 
   public void withValidatorKeystores(ValidatorKeystores validatorKeytores) throws Exception {
     this.config.withValidatorKeys(
-            WORKING_DIRECTORY + validatorKeytores.getKeysDirectoryName() + ":" +
-            WORKING_DIRECTORY + validatorKeytores.getPasswordsDirectoryName()
-    );
+        WORKING_DIRECTORY
+            + validatorKeytores.getKeysDirectoryName()
+            + ":"
+            + WORKING_DIRECTORY
+            + validatorKeytores.getPasswordsDirectoryName());
     this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
   }
 

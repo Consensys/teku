@@ -13,10 +13,33 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,30 +59,6 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
-
 public class TekuBeaconNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -70,7 +69,8 @@ public class TekuBeaconNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuBeaconNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
+  private TekuBeaconNode(
+      final SimpleHttpClient httpClient, final Network network, final Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
@@ -430,7 +430,9 @@ public class TekuBeaconNode extends Node {
 
     public Config withPeers(final TekuBeaconNode... nodes) {
       final String peers =
-          asList(nodes).stream().map(TekuBeaconNode::getMultiAddr).collect(Collectors.joining(", "));
+          asList(nodes).stream()
+              .map(TekuBeaconNode::getMultiAddr)
+              .collect(Collectors.joining(", "));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;

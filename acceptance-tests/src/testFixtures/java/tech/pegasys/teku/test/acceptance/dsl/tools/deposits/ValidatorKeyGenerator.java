@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
-
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeyGenerator {
   private final int validatorCount;
@@ -38,5 +37,4 @@ public class ValidatorKeyGenerator {
     final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
     return new ValidatorKeys(validatorKey, withdrawalKey);
   }
-
 }

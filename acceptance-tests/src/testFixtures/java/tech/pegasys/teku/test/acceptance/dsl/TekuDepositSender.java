@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -28,14 +35,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 import tech.pegasys.teku.util.config.Eth1Address;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
-
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -43,9 +42,10 @@ public class TekuDepositSender extends Node {
     super(network, TekuBeaconNode.TEKU_DOCKER_IMAGE, LOG);
   }
 
-  public ValidatorKeystores sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators)
+  public ValidatorKeystores sendValidatorDeposits(
+      final BesuNode eth1Node, final int numberOfValidators)
       throws InterruptedException, ExecutionException, TimeoutException {
-   return sendValidatorDeposits(eth1Node, numberOfValidators, MAX_EFFECTIVE_BALANCE);
+    return sendValidatorDeposits(eth1Node, numberOfValidators, MAX_EFFECTIVE_BALANCE);
   }
 
   public ValidatorKeystores sendValidatorDeposits(
@@ -68,9 +68,7 @@ public class TekuDepositSender extends Node {
   }
 
   public void sendValidatorDeposits(
-      final BesuNode eth1Node,
-      final List<ValidatorKeys> validatorKeys,
-      long amount)
+      final BesuNode eth1Node, final List<ValidatorKeys> validatorKeys, long amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());

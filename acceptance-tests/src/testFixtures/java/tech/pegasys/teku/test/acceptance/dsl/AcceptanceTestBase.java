@@ -13,6 +13,15 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -24,16 +33,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
@@ -55,7 +54,8 @@ public class AcceptanceTestBase {
 
   protected TekuBeaconNode createTekuNode(final Consumer<TekuBeaconNode.Config> configOptions) {
     try {
-      return addNode(TekuBeaconNode.create(httpClient, network, configOptions, genesisStateGenerator));
+      return addNode(
+          TekuBeaconNode.create(httpClient, network, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -81,11 +81,8 @@ public class AcceptanceTestBase {
     final List<ValidatorKeys> validatorKeys =
         depositSender.generateValidatorKeys(numberOfValidators);
     depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE);
-    return validatorKeys.stream()
-        .map(ValidatorKeys::getValidatorKey)
-        .collect(Collectors.toList());
+    return validatorKeys.stream().map(ValidatorKeys::getValidatorKey).collect(Collectors.toList());
   }
-
 
   protected BesuNode createBesuNode() {
     return addNode(new BesuNode(network));
