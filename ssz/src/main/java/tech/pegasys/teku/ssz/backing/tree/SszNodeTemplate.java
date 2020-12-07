@@ -128,8 +128,6 @@ public class SszNodeTemplate {
   }
 
   private void update(long generalizedIndex, List<Bytes> nodeSsz, MutableBytes dest) {
-    // sub-optimal update implementation
-    // implement other method to optimize
     Location leafPos = getNodeSszLocation(generalizedIndex);
     int off = 0;
     for (int i = 0; i < nodeSsz.size(); i++) {

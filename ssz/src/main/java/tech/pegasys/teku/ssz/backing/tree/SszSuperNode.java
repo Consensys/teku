@@ -115,21 +115,27 @@ public class SszSuperNode implements TreeNode, LeadDataNode {
   }
 
   @Override
-  public TreeNode updated(long generalizedIndex, TreeNode node) {
-    // sub-optimal update implementation
-    // implement other method to optimize
-    int childIndex = gIdxGetChildIndex(generalizedIndex, depth);
-    int childOffset = childIndex * elementTemplate.getSszLength();
-    checkArgument(childOffset <= ssz.size(), "Invalid index");
-    long relativeGIndex = gIdxGetRelativeGIndex(generalizedIndex, depth);
-    Bytes sszNewSize =
-        childOffset < ssz.size()
+  public TreeNode updated(TreeUpdates newNodes) {
+    if (newNodes.isEmpty()) {
+      return this;
+    }
+    long leftmostUpdateIndex = newNodes.getRelativeGIndex(newNodes.size() - 1);
+    int leftmostChildIndex = gIdxGetChildIndex(leftmostUpdateIndex, depth);
+    int newSszSize = (leftmostChildIndex + 1) * elementTemplate.getSszLength();
+    Bytes updatedSizeSsz =
+        newSszSize <= ssz.size()
             ? ssz
-            : Bytes.wrap(ssz, Bytes.wrap(new byte[elementTemplate.getSszLength()]));
-    MutableBytes mutableCopy = sszNewSize.mutableCopy();
-    MutableBytes childMutableSlice =
-        mutableCopy.mutableSlice(childOffset, elementTemplate.getSszLength());
-    elementTemplate.update(relativeGIndex, node, childMutableSlice);
+            : Bytes.wrap(ssz, Bytes.wrap(new byte[newSszSize - ssz.size()]));
+    MutableBytes mutableCopy = updatedSizeSsz.mutableCopy();
+    for (int i = 0; i < newNodes.size(); i++) {
+      long updateGIndex = newNodes.getRelativeGIndex(i);
+      int childIndex = gIdxGetChildIndex(updateGIndex, depth);
+      long childGIndex = gIdxGetRelativeGIndex(updateGIndex, depth);
+      int childOffset = childIndex * elementTemplate.getSszLength();
+      MutableBytes childMutableSlice =
+          mutableCopy.mutableSlice(childOffset, elementTemplate.getSszLength());
+      elementTemplate.update(childGIndex, newNodes.getNode(i), childMutableSlice);
+    }
     return new SszSuperNode(depth, elementTemplate, mutableCopy);
   }
 
