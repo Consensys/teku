@@ -551,7 +551,10 @@ class UInt64Test {
         Arguments.of(Long.divideUnsigned(-1, 2) + 1, 2),
         Arguments.of(Long.MAX_VALUE, 3),
         Arguments.of(Long.MIN_VALUE, 2),
-        Arguments.of(UInt64.SQRT_MAX_VALUE + 1, UInt64.SQRT_MAX_VALUE + 1));
+        Arguments.of(UInt64.SQRT_MAX_VALUE + 1, UInt64.SQRT_MAX_VALUE + 1),
+        Arguments.of(
+            UInt64.SPECIAL_CASE_MULTIPLICAND,
+            UInt64.MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND + 1));
   }
 
   static List<Arguments> additionNumbers() {
@@ -584,6 +587,11 @@ class UInt64Test {
         Arguments.of(0, 1, 0),
         Arguments.of(1, 1, 1),
         Arguments.of(2, 4, 8),
+        Arguments.of(3, 4, 12),
+        Arguments.of(
+            UInt64.SPECIAL_CASE_MULTIPLICAND,
+            UInt64.MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND,
+            Long.parseUnsignedLong("18446744073709551552")),
         Arguments.of(Integer.MAX_VALUE, 2, ((long) Integer.MAX_VALUE) * 2),
         Arguments.of(Long.MIN_VALUE, 1, Long.MIN_VALUE),
         Arguments.of(Long.MAX_VALUE, 1, Long.MAX_VALUE),
