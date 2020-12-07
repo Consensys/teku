@@ -32,9 +32,13 @@ import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
+/**
+ * Represents the tree structure for a fixed size SSZ type See {@link SszSuperNode} docs for more
+ * details
+ */
 public class SszNodeTemplate {
 
-  public static final class Location {
+  static final class Location {
     public final int offset;
     public final int length;
     public final boolean leaf;
@@ -51,7 +55,7 @@ public class SszNodeTemplate {
   }
 
   public static SszNodeTemplate createFromType(ViewType viewType) {
-    checkArgument(viewType.isFixedSize(), "Only fixed size containers supported");
+    checkArgument(viewType.isFixedSize(), "Only fixed size types supported");
 
     return createFromTree(viewType.getDefaultTree());
   }

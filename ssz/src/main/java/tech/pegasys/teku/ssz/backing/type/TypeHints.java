@@ -17,10 +17,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A set of hints for {@link ViewType} classes on strategies to use for optimizing memory or/and
+ * performance.
+ */
 public class TypeHints {
 
   private static class TypeHint {}
 
+  /**
+   * Hint to use {@link tech.pegasys.teku.ssz.backing.tree.SszSuperNode} for lists/vectors to save
+   * the memory when the list content is expected to be rarely updated
+   *
+   * <p>The <code>depth</code> parameter specifies the maximum number (<code>1 << depth</code>) of
+   * list/vector elements a single node can contain. Increasing this parameter saves memory but
+   * makes list/vector update and hashTreeRoot recalculation more CPU expensive
+   */
   public static final class SszSuperNodeHint extends TypeHint {
     private final int depth;
 

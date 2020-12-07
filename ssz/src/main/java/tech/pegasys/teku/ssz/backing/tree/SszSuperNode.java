@@ -31,6 +31,22 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate.Location;
 
+/**
+ * Stores consecutive elements of the same fixed size type as a single packed bytes of their leaves
+ * (this representation exactly matches SSZ representation of elements sequence).
+ *
+ * <p>This node represents a subtree of binary merkle tree for sequence (list or vector) of elements
+ * with maximum length of <code>1 << depth</code>. If the sequence has less than maximum elements
+ * then <code>ssz</code> bytes store only existing elements (what again matches SSZ representation
+ * of a list)
+ *
+ * <p>To address individual nodes inside elements and resolve their internal generalized indexes the
+ * node uses {@link SszNodeTemplate} which represents element type tree structure
+ *
+ * <p>This node favors memory efficiency over update performance and thus is the best choice for
+ * rarely updated and space consuming structures (e.g. Eth2 <code>BeaconState.validators</code>
+ * list)
+ */
 public class SszSuperNode implements TreeNode, LeadDataNode {
   private static final TreeNode DEFAULT_NODE = LeafNode.EMPTY_LEAF;
 
