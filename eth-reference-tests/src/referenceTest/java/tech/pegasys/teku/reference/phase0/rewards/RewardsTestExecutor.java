@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.reference.phase0.rewards;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
@@ -24,8 +23,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
-import tech.pegasys.teku.core.epoch.MatchingAttestations;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
+import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator.Step;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,15 +42,52 @@ public class RewardsTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final BeaconState state = loadStateFromSsz(testDefinition, "pre.ssz");
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(state);
     final RewardsAndPenaltiesCalculator calculator =
-        new RewardsAndPenaltiesCalculator(state, new MatchingAttestations(state));
-    assertDeltas(testDefinition, "head_deltas.yaml", calculator::getHeadDeltas);
+        new RewardsAndPenaltiesCalculator(state, validatorStatuses);
     assertDeltas(
-        testDefinition, "inactivity_penalty_deltas.yaml", calculator::getInactivityPenaltyDeltas);
+        testDefinition,
+        "head_deltas.yaml",
+        apply(
+            calculator,
+            (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
+                calculator.applyHeadDelta(
+                    validator, baseReward, totalBalances, finalityDelay, delta)));
     assertDeltas(
-        testDefinition, "inclusion_delay_deltas.yaml", calculator::getInclusionDelayDeltas);
-    assertDeltas(testDefinition, "source_deltas.yaml", calculator::getSourceDeltas);
-    assertDeltas(testDefinition, "target_deltas.yaml", calculator::getTargetDeltas);
+        testDefinition,
+        "inactivity_penalty_deltas.yaml",
+        apply(
+            calculator,
+            (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
+                calculator.applyInactivityPenaltyDelta(
+                    validator, baseReward, finalityDelay, delta)));
+    assertDeltas(
+        testDefinition,
+        "inclusion_delay_deltas.yaml",
+        apply(
+            calculator,
+            (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
+                calculator.applyInclusionDelayDelta(validator, baseReward, delta, deltas)));
+    assertDeltas(
+        testDefinition,
+        "source_deltas.yaml",
+        apply(
+            calculator,
+            (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
+                calculator.applySourceDelta(
+                    validator, baseReward, totalBalances, finalityDelay, delta)));
+    assertDeltas(
+        testDefinition,
+        "target_deltas.yaml",
+        apply(
+            calculator,
+            (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
+                calculator.applyTargetDelta(
+                    validator, baseReward, totalBalances, finalityDelay, delta)));
+  }
+
+  private Supplier<Deltas> apply(final RewardsAndPenaltiesCalculator calculator, final Step step) {
+    return () -> calculator.getDeltas(step);
   }
 
   private void assertDeltas(
@@ -75,9 +112,12 @@ public class RewardsTestExecutor implements TestExecutor {
     private List<Long> penalties;
 
     public Deltas getDeltas() {
-      return new Deltas(
-          rewards.stream().map(UInt64::fromLongBits).collect(toList()),
-          penalties.stream().map(UInt64::fromLongBits).collect(toList()));
+      final Deltas deltas = new Deltas(rewards.size());
+      for (int i = 0; i < rewards.size(); i++) {
+        deltas.getDelta(i).reward(UInt64.fromLongBits(rewards.get(i)));
+        deltas.getDelta(i).penalize(UInt64.fromLongBits(penalties.get(i)));
+      }
+      return deltas;
     }
   }
 }
