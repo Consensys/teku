@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;

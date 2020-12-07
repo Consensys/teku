@@ -144,7 +144,7 @@ public class SszNodeTemplate {
     return binaryTraverse(
         SELF_G_INDEX,
         defaultTree,
-        new BinaryVisitor<Bytes32>() {
+        new BinaryVisitor<>() {
           @Override
           public Bytes32 visitLeaf(long gIndex, LeafNode node) {
             Location location = gIdxToLoc.get(gIndex);
