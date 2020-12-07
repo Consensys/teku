@@ -241,7 +241,10 @@ public class StatusLogger {
     if (isReachable) {
       log.info("External signer is reachable at {}", externalSignerUrl);
     } else {
-      log.warn("External signer is currently not reachable at {}", externalSignerUrl);
+      log.error(
+          ColorConsolePrinter.print(
+              "External signer is currently not reachable at " + externalSignerUrl,
+              ColorConsolePrinter.Color.RED));
     }
   }
 
