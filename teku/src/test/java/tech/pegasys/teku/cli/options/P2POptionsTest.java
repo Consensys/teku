@@ -38,6 +38,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pPeerLowerBound()).isEqualTo(70);
     assertThat(config.getP2pPeerUpperBound()).isEqualTo(85);
     assertThat(config.getTargetSubnetSubscriberCount()).isEqualTo(5);
+    assertThat(config.getMinimumRandomlySelectedPeerCount()).isEqualTo(1);
   }
 
   @Test
@@ -85,5 +86,30 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
                 .p2pConfig()
                 .getP2pAdvertisedPort())
         .hasValue(8056);
+  }
+
+  @Test
+  public void minimumRandomlySelectedPeerCount_shouldDefaultTo20PercentOfLowerBound() {
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--p2p-peer-lower-bound", "100",
+                    "--p2p-peer-upper-bound", "110")
+                .beaconChain()
+                .p2pConfig()
+                .getMinimumRandomlySelectedPeerCount())
+        .isEqualTo(20);
+  }
+
+  @Test
+  public void minimumRandomlySelectedPeerCount_canBeOverriden() {
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--p2p-peer-lower-bound", "100",
+                    "--p2p-peer-upper-bound", "110",
+                    "--Xp2p-minimum-randomly-selected-peer-count", "40")
+                .beaconChain()
+                .p2pConfig()
+                .getMinimumRandomlySelectedPeerCount())
+        .isEqualTo(40);
   }
 }

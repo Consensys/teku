@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -181,8 +182,8 @@ class Eth1BlockFetcherTest {
 
   @Test
   void shouldFetchBlocksLaterThanOneWhichWasBeforeTheCachePeriod() {
-    final SafeFuture<Block> block5Future = new SafeFuture<>();
-    final SafeFuture<Block> block6Future = new SafeFuture<>();
+    final SafeFuture<Optional<Block>> block5Future = new SafeFuture<>();
+    final SafeFuture<Optional<Block>> block6Future = new SafeFuture<>();
     final Block block5 = block(5, BEFORE_CACHE_PERIOD);
     final Block block6 = block(6, IN_CACHE_PERIOD_1);
 
@@ -202,12 +203,12 @@ class Eth1BlockFetcherTest {
     verifyNoMoreInteractions(eth1Provider);
 
     // When block 5 complete, it should request block 6
-    block5Future.complete(block5);
+    block5Future.complete(Optional.of(block5));
     verify(eth1Provider).getEth1Block(UInt64.valueOf(6));
     verifyNoMoreInteractions(eth1Provider);
 
     // But we shouldn't go back to get blocks 3 & 4 because we know they're too early
-    block6Future.complete(block6);
+    block6Future.complete(Optional.of(block6));
     verifyNoMoreInteractions(eth1Provider);
     verifyBlockSent(block6);
     verifyNoMoreBlocksSent();
@@ -230,7 +231,8 @@ class Eth1BlockFetcherTest {
   private Map<Integer, Block> withBlocks(final Block... blocks) {
     for (Block block : blocks) {
       final UInt64 blockNumber = UInt64.valueOf(block.getNumber());
-      when(eth1Provider.getEth1Block(blockNumber)).thenReturn(SafeFuture.completedFuture(block));
+      when(eth1Provider.getEth1Block(blockNumber))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
       when(eth1Provider.getGuaranteedEth1Block(blockNumber))
           .thenReturn(SafeFuture.completedFuture(block));
     }

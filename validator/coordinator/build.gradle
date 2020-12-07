@@ -15,6 +15,8 @@ dependencies {
   implementation project(':pow')
   implementation project(':ssz')
   implementation project(':sync')
+  implementation project(':data:serializer')
+  implementation project(':data:provider')
   implementation project(':infrastructure:events')
 
   implementation 'org.apache.tuweni:tuweni-kv'

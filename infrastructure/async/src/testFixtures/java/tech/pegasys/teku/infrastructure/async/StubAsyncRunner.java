@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -40,13 +39,13 @@ public class StubAsyncRunner implements AsyncRunner {
   }
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+  public <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action) {
     // Schedule for immediate execution
     return schedule(action, 0L);
   }
 
   private <U> SafeFuture<U> schedule(
-      final Supplier<SafeFuture<U>> action, final long scheduledTimeMillis) {
+      final ExceptionThrowingFutureSupplier<U> action, final long scheduledTimeMillis) {
     final SafeFuture<U> result = new SafeFuture<>();
     queuedActions.add(
         new Task(
@@ -63,7 +62,7 @@ public class StubAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
+      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit) {
     return schedule(
         action, timeProvider.getTimeInMillis().longValue() + delayUnit.toMillis(delayAmount));
   }

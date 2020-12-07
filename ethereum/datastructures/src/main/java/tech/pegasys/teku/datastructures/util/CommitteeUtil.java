@@ -178,7 +178,7 @@ public class CommitteeUtil {
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(UInt64.valueOf(MAX_EFFECTIVE_BALANCE).times(random_byte))) {
+          .isGreaterThanOrEqualTo(MAX_EFFECTIVE_BALANCE.times(random_byte))) {
         return candidate_index;
       }
       i++;
