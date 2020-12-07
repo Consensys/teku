@@ -16,8 +16,8 @@ package tech.pegasys.teku.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_PATH_PATTERN;
-import static tech.pegasys.teku.cli.options.LoggingOptions.getDefaultLogFileGivenDataDir;
+import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
+import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
@@ -38,7 +38,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -277,8 +276,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFile())
         .isEqualTo(
-            LoggingOptions.getDefaultLogFileGivenDataDir(
-                VersionProvider.defaultStoragePath(), false));
+            StringUtils.joinWith("/", VersionProvider.defaultStoragePath(), "logs", LOG_FILE));
   }
 
   @Test
@@ -286,15 +284,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--data-path", "/my/path"};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFileNamePattern())
-        .isEqualTo("/my/path/logs/" + LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN);
-  }
-
-  @Test
-  public void shouldSetDefaultLogPatternWithoutDataPath() {
-    final String[] args = {};
-    beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.tekuConfiguration().global().getLogFileNamePattern())
-        .isEqualTo(DEFAULT_LOG_PATH_PATTERN);
+        .isEqualTo("/my/path/logs/" + LOG_PATTERN);
   }
 
   @Test
@@ -379,11 +369,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .setInteropGenesisTime(0)
                     .setInteropOwnedValidatorCount(0)
                     .setLogDestination(DEFAULT_BOTH)
-                    .setLogFile(getDefaultLogFileGivenDataDir(dataPath.toString(), false))
+                    .setLogFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .setLogFileNamePattern(
-                        dataPath.toString()
-                            + "/logs/"
-                            + LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN))
+                        StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
@@ -403,11 +391,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .globalConfig(
             builder ->
                 builder
-                    .setLogFile("teku.log")
+                    .setLogFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .setLogDestination(LoggingDestination.BOTH)
                     .setLogFileNamePattern(
-                        LoggingOptions.getLogPatternGivenDataDir(
-                            dataPath.toString(), DEFAULT_LOG_PATH_PATTERN, false)));
+                        StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)));
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
@@ -458,9 +445,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_BOTH)
-        .setLogFile(getDefaultLogFileGivenDataDir(dataPath.toString(), false))
-        .setLogFileNamePattern(
-            LoggingOptions.getLogPatternGivenDataDir(dataPath.toString(), DEFAULT_LOG_PATH_PATTERN, false))
+        .setLogFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
+        .setLogFileNamePattern(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN))
         .setLogIncludeEventsEnabled(true)
         .setLogIncludeValidatorDutiesEnabled(true)
         .setDataStorageMode(PRUNE)

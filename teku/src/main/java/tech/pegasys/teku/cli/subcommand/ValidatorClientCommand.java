@@ -28,6 +28,7 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -47,6 +48,8 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
+  public static final String LOG_FILE = "teku-validator.log";
+  public static final String LOG_PATTERN = "teku-validator_%d{yyyy-MM-dd}.log";
 
   @Mixin(name = "Validator")
   private ValidatorOptions validatorOptions;
@@ -124,18 +127,19 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
 
-    String logFile =
-        loggingOptions
-            .getMaybeLogFile()
-            .orElse(
-                LoggingOptions.getDefaultLogFileGivenDataDir(
-                    dataOptions.getDataBasePath().toString(), true));
-    builder.setLogFile(logFile);
+    final String dataBasePath = dataOptions.getDataBasePath().toString();
+    builder.setLogFile(
+        new LoggingPathBuilder()
+            .defaultBasename(LOG_FILE)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(loggingOptions.getMaybeLogFile())
+            .build());
 
-    final String logPattern =
-        LoggingOptions.getLogPatternGivenDataDir(
-            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern(),true);
-
-    builder.setLogFileNamePattern(logPattern);
+    builder.setLogFileNamePattern(
+        new LoggingPathBuilder()
+            .defaultBasename(LOG_PATTERN)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(loggingOptions.getMaybeLogPattern())
+            .build());
   }
 }

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAUL
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -30,8 +31,9 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getLogDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(config.isLogColorEnabled()).isFalse();
     assertThat(config.isLogIncludeEventsEnabled()).isFalse();
-    assertThat(config.getLogFile()).isEqualTo("a.log");
-    assertThat(config.getLogFileNamePattern()).endsWith("a%d.log");
+    assertThat(config.getLogFile()).isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a.log");
+    assertThat(config.getLogFileNamePattern())
+        .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a%d.log");
     assertThat(config.isLogWireCipher()).isTrue();
     assertThat(config.isLogWirePlain()).isTrue();
     assertThat(config.isLogWireMuxFrames()).isTrue();
@@ -74,44 +76,5 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final GlobalConfiguration globalConfiguration =
         getGlobalConfigurationFromArguments("--log-destination", "both");
     assertThat(globalConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
-  }
-
-  @Test
-  public void defaultLogfileGivenDataDir_shouldDetermineForBeaconNode() {
-    assertThat(LoggingOptions.getDefaultLogFileGivenDataDir("/foo", false))
-        .isEqualTo("/foo/logs/teku.log");
-  }
-
-  @Test
-  public void defaultLogfileGivenDataDir_shouldDetermineForValidator() {
-    assertThat(LoggingOptions.getDefaultLogFileGivenDataDir("/foo", true))
-        .isEqualTo("/foo/logs/teku-validator.log");
-  }
-
-  @Test
-  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromDefaultPattern() {
-    assertThat(
-            LoggingOptions.getLogPatternGivenDataDir(
-                "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN, false))
-        .isEqualTo("/foo/logs/" + LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN);
-  }
-
-  @Test
-  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromDefaultValidatorPattern() {
-    assertThat(
-        LoggingOptions.getLogPatternGivenDataDir(
-            "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN, true))
-        .isEqualTo("/foo/logs/" + LoggingOptions.DEFAULT_VALIDATOR_LOG_FILE_NAME_PATTERN);
-  }
-
-  @Test
-  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithoutPath() {
-    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "%d.log", false))
-        .isEqualTo("/foo/logs/%d.log");
-  }
-
-  @Test
-  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithPath() {
-    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "/%d.log", false)).isEqualTo("/%d.log");
   }
 }
