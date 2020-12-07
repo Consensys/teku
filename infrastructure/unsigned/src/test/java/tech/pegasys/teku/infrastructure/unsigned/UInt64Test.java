@@ -149,17 +149,17 @@ class UInt64Test {
 
   @Test
   void isZero_shouldBeTrueWhenZero() {
-      assertThat(UInt64.ZERO.isZero()).isTrue();
-      assertThat(UInt64.valueOf(0).isZero()).isTrue();
-      assertThat(UInt64.valueOf(1).minus(1).isZero()).isTrue();
+    assertThat(UInt64.ZERO.isZero()).isTrue();
+    assertThat(UInt64.valueOf(0).isZero()).isTrue();
+    assertThat(UInt64.valueOf(1).minus(1).isZero()).isTrue();
   }
 
   @Test
   void isZero_shouldBeFalseWhenNotZero() {
-      assertThat(UInt64.ONE.isZero()).isFalse();
-      assertThat(UInt64.MAX_VALUE.isZero()).isFalse();
-      assertThat(UInt64.ZERO.plus(1).isZero()).isFalse();
-      assertThat(UInt64.valueOf(2).isZero()).isFalse();
+    assertThat(UInt64.ONE.isZero()).isFalse();
+    assertThat(UInt64.MAX_VALUE.isZero()).isFalse();
+    assertThat(UInt64.ZERO.plus(1).isZero()).isFalse();
+    assertThat(UInt64.valueOf(2).isZero()).isFalse();
   }
 
   @ParameterizedTest
