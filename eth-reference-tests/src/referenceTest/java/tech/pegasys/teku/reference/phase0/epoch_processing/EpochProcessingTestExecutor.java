@@ -18,7 +18,7 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.core.epoch.EpochProcessorUtil;
-import tech.pegasys.teku.core.epoch.MatchingAttestations;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconState.Mutator;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -30,10 +30,17 @@ public class EpochProcessingTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "epoch_processing/slashings",
-              new EpochProcessingTestExecutor(EpochProcessorUtil::process_slashings))
+              new EpochProcessingTestExecutor(
+                  state ->
+                      EpochProcessorUtil.process_slashings(
+                          state,
+                          ValidatorStatuses.create(state).getTotalBalances().getCurrentEpoch())))
           .put(
               "epoch_processing/registry_updates",
-              new EpochProcessingTestExecutor(EpochProcessorUtil::process_registry_updates))
+              new EpochProcessingTestExecutor(
+                  state ->
+                      EpochProcessorUtil.process_registry_updates(
+                          state, ValidatorStatuses.create(state).getStatuses())))
           .put(
               "epoch_processing/final_updates",
               new EpochProcessingTestExecutor(EpochProcessorUtil::process_final_updates))
@@ -42,13 +49,13 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               new EpochProcessingTestExecutor(
                   state ->
                       EpochProcessorUtil.process_rewards_and_penalties(
-                          state, new MatchingAttestations(state))))
+                          state, ValidatorStatuses.create(state))))
           .put(
               "epoch_processing/justification_and_finalization",
               new EpochProcessingTestExecutor(
                   state ->
                       EpochProcessorUtil.process_justification_and_finalization(
-                          state, new MatchingAttestations(state))))
+                          state, ValidatorStatuses.create(state).getTotalBalances())))
           .build();
 
   private final Mutator<? extends Throwable, ? extends Throwable, ? extends Throwable> operation;
