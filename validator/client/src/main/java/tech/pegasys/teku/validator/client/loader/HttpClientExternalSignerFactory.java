@@ -55,7 +55,7 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
 
   private boolean isTLSEnabled() {
     final String protocol = validatorConfig.getValidatorExternalSignerUrl().getProtocol();
-    return protocol != null && protocol.toLowerCase().equals("https");
+    return protocol != null && protocol.equalsIgnoreCase("https");
   }
 
   private SSLContext getSSLContext(
