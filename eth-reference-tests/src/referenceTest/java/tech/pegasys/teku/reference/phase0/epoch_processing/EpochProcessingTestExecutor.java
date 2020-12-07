@@ -37,7 +37,10 @@ public class EpochProcessingTestExecutor implements TestExecutor {
                           ValidatorStatuses.create(state).getTotalBalances().getCurrentEpoch())))
           .put(
               "epoch_processing/registry_updates",
-              new EpochProcessingTestExecutor(EpochProcessorUtil::process_registry_updates))
+              new EpochProcessingTestExecutor(
+                  state ->
+                      EpochProcessorUtil.process_registry_updates(
+                          state, ValidatorStatuses.create(state).getStatuses())))
           .put(
               "epoch_processing/final_updates",
               new EpochProcessingTestExecutor(EpochProcessorUtil::process_final_updates))

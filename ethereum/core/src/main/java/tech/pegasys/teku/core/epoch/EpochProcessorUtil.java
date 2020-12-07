@@ -23,14 +23,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_ac
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_eligible_for_activation;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_eligible_for_activation_queue;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.EJECTION_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.HYSTERESIS_DOWNWARD_MULTIPLIER;
 import static tech.pegasys.teku.util.config.Constants.HYSTERESIS_QUOTIENT;
@@ -46,6 +45,7 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.Deltas.Delta;
 import tech.pegasys.teku.core.epoch.status.TotalBalances;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -171,25 +171,34 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#registry-updates</a>
    */
-  public static void process_registry_updates(MutableBeaconState state)
-      throws EpochProcessingException {
+  public static void process_registry_updates(
+      MutableBeaconState state, List<ValidatorStatus> statuses) throws EpochProcessingException {
     try {
 
       // Process activation eligibility and ejections
       SSZMutableList<Validator> validators = state.getValidators();
+      final UInt64 currentEpoch = get_current_epoch(state);
       for (int index = 0; index < validators.size(); index++) {
-        Validator validator = validators.get(index);
+        final ValidatorStatus status = statuses.get(index);
 
-        if (is_eligible_for_activation_queue(validator)) {
-          validators.set(
-              index,
-              validator.withActivation_eligibility_epoch(
-                  get_current_epoch(state).plus(UInt64.ONE)));
+        // Slightly optimised form of is_eligible_for_activation_queue to avoid accessing the
+        // state for the majority of validators.  Can't be eligible for activation if already active
+        // or if effective balance is too low.  Only get the validator if both those checks pass to
+        // confirm it isn't already in the queue.
+        if (!status.isActiveInCurrentEpoch()
+            && status
+                .getCurrentEpochEffectiveBalance()
+                .equals(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))) {
+          final Validator validator = validators.get(index);
+          if (validator.getActivation_eligibility_epoch().equals(FAR_FUTURE_EPOCH)) {
+            validators.set(
+                index, validator.withActivation_eligibility_epoch(currentEpoch.plus(UInt64.ONE)));
+          }
         }
 
-        if (is_active_validator(validator, get_current_epoch(state))
-            && validator
-                .getEffective_balance()
+        if (status.isActiveInCurrentEpoch()
+            && status
+                .getCurrentEpochEffectiveBalance()
                 .isLessThanOrEqualTo(UInt64.valueOf(EJECTION_BALANCE))) {
           initiate_validator_exit(state, index);
         }
@@ -198,7 +207,8 @@ public final class EpochProcessorUtil {
       // Queue validators eligible for activation and not yet dequeued for activation
       List<Integer> activation_queue =
           IntStream.range(0, state.getValidators().size())
-              .sequential()
+              // Cheap filter first before accessing state
+              .filter(index -> !statuses.get(index).isActiveInCurrentEpoch())
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
@@ -234,8 +244,7 @@ public final class EpochProcessorUtil {
             .update(
                 index,
                 validator ->
-                    validator.withActivation_epoch(
-                        compute_activation_exit_epoch(get_current_epoch(state))));
+                    validator.withActivation_epoch(compute_activation_exit_epoch(currentEpoch)));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);

@@ -43,17 +43,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Check if validator is eligible to be placed into the activation queue.
-   *
-   * @param validator the validator
-   * @return true if eligible for the activation queue otherwise false
-   */
-  public static boolean is_eligible_for_activation_queue(Validator validator) {
-    return validator.getActivation_eligibility_epoch().equals(Constants.FAR_FUTURE_EPOCH)
-        && validator.getEffective_balance().equals(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
-  }
-
-  /**
    * Check if validator is eligible for activation.
    *
    * @param state the beacon state

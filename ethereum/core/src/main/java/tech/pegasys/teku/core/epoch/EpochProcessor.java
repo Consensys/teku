@@ -33,7 +33,7 @@ public class EpochProcessor {
           EpochProcessorUtil.process_justification_and_finalization(
               state, validatorStatuses.getTotalBalances());
           EpochProcessorUtil.process_rewards_and_penalties(state, validatorStatuses);
-          EpochProcessorUtil.process_registry_updates(state);
+          EpochProcessorUtil.process_registry_updates(state, validatorStatuses.getStatuses());
           EpochProcessorUtil.process_slashings(
               state, validatorStatuses.getTotalBalances().getCurrentEpoch());
           EpochProcessorUtil.process_final_updates(state);
