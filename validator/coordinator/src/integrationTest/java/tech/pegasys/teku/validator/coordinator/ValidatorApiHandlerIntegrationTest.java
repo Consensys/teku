@@ -24,6 +24,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -64,10 +65,12 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
+  private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
+          chainDataProvider,
           combinedChainDataClient,
           syncStateProvider,
           blockFactory,

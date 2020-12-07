@@ -39,6 +39,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -97,9 +98,11 @@ class ValidatorApiHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
+  private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
+          chainDataProvider,
           chainDataClient,
           syncStateProvider,
           blockFactory,

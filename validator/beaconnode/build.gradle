@@ -6,6 +6,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':util')
   implementation project(':validator:api')
+  implementation project(':data:serializer')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
