@@ -20,13 +20,13 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame.OutputType;
 import org.testcontainers.containers.output.WaitingConsumer;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 
 class TekuCLI extends GenericContainer<TekuCLI> {
   private static final Logger LOG = LogManager.getLogger();
 
   public TekuCLI() {
-    super(TekuNode.TEKU_DOCKER_IMAGE);
+    super(TekuBeaconNode.TEKU_DOCKER_IMAGE);
     this.withLogConsumer(frame -> LOG.info(frame.getUtf8String().trim()));
   }
 

@@ -16,19 +16,19 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 
 public class AttestationGossipAcceptanceTest extends AcceptanceTestBase {
   @Test
   public void shouldFinalizeWithTwoNodes() throws Exception {
-    final TekuNode node1 =
+    final TekuBeaconNode node1 =
         createTekuNode(
             config -> config.withRealNetwork().withNetwork("minimal").withInteropValidators(0, 32));
 
     node1.start();
     final UInt64 genesisTime = node1.getGenesisTime();
 
-    final TekuNode node2 =
+    final TekuBeaconNode node2 =
         createTekuNode(
             config ->
                 config

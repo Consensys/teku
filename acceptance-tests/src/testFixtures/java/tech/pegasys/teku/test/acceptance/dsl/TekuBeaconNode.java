@@ -13,33 +13,10 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
-
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,7 +36,31 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
-public class TekuNode extends Node {
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+
+public class TekuBeaconNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SimpleHttpClient httpClient;
@@ -69,7 +70,7 @@ public class TekuNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
+  private TekuBeaconNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
@@ -85,7 +86,7 @@ public class TekuNode extends Node {
         .withCommand("--config-file", CONFIG_FILE_PATH);
   }
 
-  public static TekuNode create(
+  public static TekuBeaconNode create(
       final SimpleHttpClient httpClient,
       final Network network,
       Consumer<Config> configOptions,
@@ -95,7 +96,7 @@ public class TekuNode extends Node {
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(httpClient, network, config);
+    final TekuBeaconNode node = new TekuBeaconNode(httpClient, network, config);
 
     if (config.getGenesisStateConfig().isPresent()) {
       final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
@@ -156,7 +157,7 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  public void waitUntilInSyncWith(final TekuNode targetNode) {
+  public void waitUntilInSyncWith(final TekuBeaconNode targetNode) {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
         () -> {
@@ -427,9 +428,9 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withPeers(final TekuNode... nodes) {
+    public Config withPeers(final TekuBeaconNode... nodes) {
       final String peers =
-          asList(nodes).stream().map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
+          asList(nodes).stream().map(TekuBeaconNode::getMultiAddr).collect(Collectors.joining(", "));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;

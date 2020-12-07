@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Network;
+import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -22,10 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.Network;
-import org.testcontainers.utility.MountableFile;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,6 +54,14 @@ public class TekuValidatorNode extends Node {
     final TekuValidatorNode node = new TekuValidatorNode(network, config);
 
     return node;
+  }
+
+  public void withValidatorKeystores(ValidatorKeystores validatorKeytores) throws Exception {
+    this.config.withValidatorKeys(
+            WORKING_DIRECTORY + validatorKeytores.getKeysDirectoryName() + ":" +
+            WORKING_DIRECTORY + validatorKeytores.getPasswordsDirectoryName()
+    );
+    this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
   }
 
   public void start() throws Exception {
@@ -112,8 +122,8 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public TekuValidatorNode.Config withBeaconNodeEndpoint(final String beaconNodeEndpoint) {
-      configMap.put("beacon-node-api-endpoint", beaconNodeEndpoint);
+    public TekuValidatorNode.Config withBeaconNode(final TekuBeaconNode beaconNode) {
+      configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
       return this;
     }
 

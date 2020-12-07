@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.OutputFrame;
+import tech.pegasys.teku.infrastructure.async.Waiter;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,11 +30,10 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import org.apache.commons.compress.utils.IOUtils;
-import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.OutputFrame;
-import tech.pegasys.teku.infrastructure.async.Waiter;
+
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 public abstract class Node {
   public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";

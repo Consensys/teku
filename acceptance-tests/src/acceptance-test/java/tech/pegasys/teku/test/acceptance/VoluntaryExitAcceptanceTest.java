@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.io.File;
-import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
@@ -30,11 +28,9 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final List<BLSKeyPair> validatorKeys = createKeysAndSendDeposits(eth1Node, 4);
+    final ValidatorKeystores validatorKeystores = createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
 
-    final File validatorInfoTar = createValidatorKeystores(validatorKeys, "keys", "passwords");
-
-    final TekuNode beaconNode =
+    final TekuBeaconNode beaconNode =
         createTekuNode(config -> config.withNetwork("less-swift").withDepositsFrom(eth1Node));
 
     final TekuValidatorNode validatorClient =
@@ -43,17 +39,14 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork("less-swift")
                     .withInteropModeDisabled()
-                    .withValidatorKeys("/opt/teku/keys:/opt/teku/passwords")
-                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
-    validatorClient.copyContentsToWorkingDirectory(validatorInfoTar);
+                    .withBeaconNode(beaconNode));
+    validatorClient.withValidatorKeystores(validatorKeystores);
 
     final TekuVoluntaryExit voluntaryExitProcess =
         createVoluntaryExit(
             config ->
-                config
-                    .withValidatorKeys("/opt/teku/keys:/opt/teku/passwords")
-                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
-    voluntaryExitProcess.copyContentsToWorkingDirectory(validatorInfoTar);
+                config.withBeaconNode(beaconNode));
+    voluntaryExitProcess.withValidatorKeystores(validatorKeystores);
 
     beaconNode.start();
     validatorClient.start();
