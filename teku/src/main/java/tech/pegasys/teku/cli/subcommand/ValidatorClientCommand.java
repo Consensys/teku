@@ -114,7 +114,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
         .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
@@ -132,5 +131,11 @@ public class ValidatorClientCommand implements Callable<Integer> {
                 LoggingOptions.getDefaultLogFileGivenDataDir(
                     dataOptions.getDataBasePath().toString(), true));
     builder.setLogFile(logFile);
+
+    final String logPattern =
+        LoggingOptions.getLogPatternGivenDataDir(
+            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern());
+
+    builder.setLogFileNamePattern(logPattern);
   }
 }

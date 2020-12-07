@@ -31,7 +31,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.isLogColorEnabled()).isFalse();
     assertThat(config.isLogIncludeEventsEnabled()).isFalse();
     assertThat(config.getLogFile()).isEqualTo("a.log");
-    assertThat(config.getLogFileNamePattern()).isEqualTo("a%d.log");
+    assertThat(config.getLogFileNamePattern()).endsWith("a%d.log");
     assertThat(config.isLogWireCipher()).isTrue();
     assertThat(config.isLogWirePlain()).isTrue();
     assertThat(config.isLogWireMuxFrames()).isTrue();
@@ -74,5 +74,36 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final GlobalConfiguration globalConfiguration =
         getGlobalConfigurationFromArguments("--log-destination", "both");
     assertThat(globalConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
+  }
+
+  @Test
+  public void defaultLogfileGivenDataDir_shouldDetermineForBeaconNode() {
+    assertThat(LoggingOptions.getDefaultLogFileGivenDataDir("/foo", false))
+        .isEqualTo("/foo/logs/teku.log");
+  }
+
+  @Test
+  public void defaultLogfileGivenDataDir_shouldDetermineForValidator() {
+    assertThat(LoggingOptions.getDefaultLogFileGivenDataDir("/foo", true))
+        .isEqualTo("/foo/logs/teku-validator.log");
+  }
+
+  @Test
+  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromDefaultPattern() {
+    assertThat(
+            LoggingOptions.getLogPatternGivenDataDir(
+                "/foo", LoggingOptions.DEFAULT_LOG_PATH_PATTERN))
+        .isEqualTo("/foo/logs/" + LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN);
+  }
+
+  @Test
+  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithoutPath() {
+    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "%d.log"))
+        .isEqualTo("/foo/logs/%d.log");
+  }
+
+  @Test
+  public void defaultLogPatternGivenDataDir_shouldDeterminePathFromPatternWithPath() {
+    assertThat(LoggingOptions.getLogPatternGivenDataDir("/foo", "/%d.log")).isEqualTo("/%d.log");
   }
 }

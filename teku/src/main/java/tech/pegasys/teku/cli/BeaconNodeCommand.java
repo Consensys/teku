@@ -357,7 +357,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
         .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
@@ -381,13 +380,19 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
         .setRestApiCorsAllowedOrigins(beaconRestApiOptions.getRestApiCorsAllowedOrigins());
 
-    String logFile =
+    final String logFile =
         loggingOptions
             .getMaybeLogFile()
             .orElse(
                 LoggingOptions.getDefaultLogFileGivenDataDir(
                     dataOptions.getDataBasePath().toString(), false));
     builder.setLogFile(logFile);
+
+    final String logPattern =
+        LoggingOptions.getLogPatternGivenDataDir(
+            dataOptions.getDataBasePath().toString(), loggingOptions.getLogFileNamePattern());
+
+    builder.setLogFileNamePattern(logPattern);
   }
 
   @FunctionalInterface
