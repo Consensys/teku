@@ -16,10 +16,13 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.LEFTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxIsSelf;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxLeftGIndex;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxRightGIndex;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +44,10 @@ public class SszNodeTemplate {
       this.length = length;
       this.leaf = leaf;
     }
+
+    public Location addedOffset(int addOffset) {
+      return new Location(offset + addOffset, length, leaf);
+    }
   }
 
   public static SszNodeTemplate createFromType(ViewType viewType) {
@@ -51,33 +58,34 @@ public class SszNodeTemplate {
 
   // This should be CANONICAL binary tree
   public static SszNodeTemplate createFromTree(TreeNode defaultTree) {
-    IdentityHashMap<TreeNode, Location> nodeToLoc = new IdentityHashMap<>();
-    calcOffsets(0, defaultTree, GIndexUtil.SELF_G_INDEX, nodeToLoc);
-    return new SszNodeTemplate(nodeToLoc, defaultTree);
-  }
+    Map<Long, Location> gIdxToLoc =
+        binaryTraverse(
+            GIndexUtil.SELF_G_INDEX,
+            defaultTree,
+            new BinaryVisitor<>() {
+              @Override
+              public Map<Long, Location> visitLeaf(long gIndex, LeafNode node) {
+                Map<Long, Location> ret = new HashMap<>();
+                ret.put(gIndex, new Location(0, node.getData().size(), true));
+                return ret;
+              }
 
-  private static Location calcOffsets(
-      int offset, TreeNode node, long thisGIdx, IdentityHashMap<TreeNode, Location> nodeToLoc) {
-    final Location nodeLocation;
-    if (node instanceof LeafNode) {
-      nodeLocation = new Location(offset, ((LeafNode) node).getData().size(), true);
-    } else if (node instanceof BranchNode) {
-      BranchNode branchNode = (BranchNode) node;
-      Location leftLoc =
-          calcOffsets(offset, branchNode.left(), GIndexUtil.gIdxLeftGIndex(thisGIdx), nodeToLoc);
-      Location rightLoc =
-          calcOffsets(
-              offset + leftLoc.length,
-              branchNode.right(),
-              GIndexUtil.gIdxRightGIndex(thisGIdx),
-              nodeToLoc);
-      nodeLocation = new Location(offset, leftLoc.length + rightLoc.length, false);
-    } else {
-      throw new IllegalArgumentException(
-          "Canonical binary tree (only LeafNode and BranchNode instances) expected here");
-    }
-    nodeToLoc.put(node, nodeLocation);
-    return nodeLocation;
+              @Override
+              public Map<Long, Location> visitBranch(
+                  long gIndex,
+                  TreeNode node,
+                  Map<Long, Location> leftVisitResult,
+                  Map<Long, Location> rightVisitResult) {
+                Location leftChildLoc = leftVisitResult.get(gIdxLeftGIndex(gIndex));
+                Location rightChildLoc = rightVisitResult.get(gIdxRightGIndex(gIndex));
+                rightVisitResult.replaceAll((idx, loc) -> loc.addedOffset(leftChildLoc.length));
+                leftVisitResult.putAll(rightVisitResult);
+                leftVisitResult.put(
+                    gIndex, new Location(0, leftChildLoc.length + rightChildLoc.length, false));
+                return leftVisitResult;
+              }
+            });
+    return new SszNodeTemplate(gIdxToLoc, defaultTree);
   }
 
   private static List<Bytes> nodeSsz(TreeNode node) {
@@ -86,21 +94,21 @@ public class SszNodeTemplate {
     return sszBytes;
   }
 
-  private final IdentityHashMap<TreeNode, Location> nodeToLoc;
+  private final Map<Long, Location> gIdxToLoc;
   private final TreeNode defaultTree;
   private final Map<Long, SszNodeTemplate> subTemplatesCache = new ConcurrentHashMap<>();
 
-  public SszNodeTemplate(IdentityHashMap<TreeNode, Location> nodeToLoc, TreeNode defaultTree) {
-    this.nodeToLoc = nodeToLoc;
+  public SszNodeTemplate(Map<Long, Location> gIdxToLoc, TreeNode defaultTree) {
+    this.gIdxToLoc = gIdxToLoc;
     this.defaultTree = defaultTree;
   }
 
   public Location getNodeSszLocation(long generalizedIndex) {
-    return nodeToLoc.get(defaultTree.get(generalizedIndex));
+    return gIdxToLoc.get(generalizedIndex);
   }
 
   public int getSszLength() {
-    return nodeToLoc.get(defaultTree).length;
+    return gIdxToLoc.get(SELF_G_INDEX).length;
   }
 
   public SszNodeTemplate getSubTemplate(long generalizedIndex) {
@@ -112,9 +120,7 @@ public class SszNodeTemplate {
       return this;
     }
     TreeNode subTree = defaultTree.get(generalizedIndex);
-    IdentityHashMap<TreeNode, Location> nodeToLocSubMap = new IdentityHashMap<>();
-    subTree.iterateAll(n -> nodeToLocSubMap.put(n, nodeToLoc.get(n)));
-    return new SszNodeTemplate(nodeToLocSubMap, subTree);
+    return createFromTree(subTree);
   }
 
   public void update(long generalizedIndex, TreeNode newNode, MutableBytes dest) {
@@ -135,18 +141,43 @@ public class SszNodeTemplate {
   }
 
   public Bytes32 calculateHashTreeRoot(Bytes ssz, int offset) {
-    return calcHash(ssz, defaultTree, offset);
+    return binaryTraverse(
+        SELF_G_INDEX,
+        defaultTree,
+        new BinaryVisitor<Bytes32>() {
+          @Override
+          public Bytes32 visitLeaf(long gIndex, LeafNode node) {
+            Location location = gIdxToLoc.get(gIndex);
+            return Bytes32.rightPad(ssz.slice(offset + location.offset, location.length));
+          }
+
+          @Override
+          public Bytes32 visitBranch(
+              long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
+            return Hash.sha2_256(Bytes.wrap(leftVisitResult, rightVisitResult));
+          }
+        });
   }
 
-  private Bytes32 calcHash(Bytes ssz, TreeNode node, int offset) {
+  private static <T> T binaryTraverse(long gIndex, TreeNode node, BinaryVisitor<T> visitor) {
     if (node instanceof LeafNode) {
-      Location location = nodeToLoc.get(node);
-      return Bytes32.rightPad(ssz.slice(offset + location.offset, location.length));
-    } else {
+      return visitor.visitLeaf(gIndex, (LeafNode) node);
+    } else if (node instanceof BranchNode) {
       BranchNode branchNode = (BranchNode) node;
-      return Hash.sha2_256(
-          Bytes.wrap(
-              calcHash(ssz, branchNode.left(), offset), calcHash(ssz, branchNode.right(), offset)));
+      return visitor.visitBranch(
+          gIndex,
+          branchNode,
+          binaryTraverse(gIdxLeftGIndex(gIndex), branchNode.left(), visitor),
+          binaryTraverse(gIdxRightGIndex(gIndex), branchNode.right(), visitor));
+    } else {
+      throw new IllegalArgumentException("Unexpected node type: " + node.getClass());
     }
+  }
+
+  private interface BinaryVisitor<T> {
+
+    T visitLeaf(long gIndex, LeafNode node);
+
+    T visitBranch(long gIndex, TreeNode node, T leftVisitResult, T rightVisitResult);
   }
 }
