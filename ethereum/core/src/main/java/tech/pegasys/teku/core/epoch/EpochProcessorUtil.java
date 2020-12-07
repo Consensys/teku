@@ -23,7 +23,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_ac
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_eligible_for_activation;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_eligible_for_activation_queue;
@@ -150,13 +149,17 @@ public final class EpochProcessorUtil {
       Deltas attestation_deltas =
           new RewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
 
-      for (int i = 0; i < state.getValidators().size(); i++) {
-        final Delta delta = attestation_deltas.getDelta(i);
-        increase_balance(state, i, delta.getReward());
-        decrease_balance(state, i, delta.getPenalty());
-      }
+      applyDeltas(state, attestation_deltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
+    }
+  }
+
+  private static void applyDeltas(final MutableBeaconState state, final Deltas attestation_deltas) {
+    final SSZMutableList<UInt64> balances = state.getBalances();
+    for (int i = 0; i < state.getValidators().size(); i++) {
+      final Delta delta = attestation_deltas.getDelta(i);
+      balances.set(i, balances.get(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
   }
 

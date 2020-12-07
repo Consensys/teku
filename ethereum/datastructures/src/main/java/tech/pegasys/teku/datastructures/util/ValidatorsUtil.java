@@ -132,11 +132,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
-    UInt64 newBalance =
-        delta.compareTo(state.getBalances().get(index)) > 0
-            ? UInt64.ZERO
-            : state.getBalances().get(index).minus(delta);
-    state.getBalances().set(index, newBalance);
+    state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
   }
 
   /**
