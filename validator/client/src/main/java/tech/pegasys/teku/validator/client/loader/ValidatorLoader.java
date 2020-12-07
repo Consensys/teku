@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
@@ -41,22 +44,6 @@ import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
@@ -76,7 +63,7 @@ public class ValidatorLoader {
   public Map<BLSPublicKey, Validator> initializeValidators(
       final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
-            Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
+        Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return initializeValidators(config, globalConfiguration, externalSignerHttpClientFactory);
   }
 
