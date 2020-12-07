@@ -36,7 +36,7 @@ import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate.Location;
  * (this representation exactly matches SSZ representation of elements sequence).
  *
  * <p>This node represents a subtree of binary merkle tree for sequence (list or vector) of elements
- * with maximum length of <code>1 << depth</code>. If the sequence has less than maximum elements
+ * with maximum length of <code>2 ^ depth</code>. If the sequence has less than maximum elements
  * then <code>ssz</code> bytes store only existing elements (what again matches SSZ representation
  * of a list)
  *

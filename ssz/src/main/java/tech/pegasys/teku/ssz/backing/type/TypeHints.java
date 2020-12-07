@@ -29,7 +29,7 @@ public class TypeHints {
    * Hint to use {@link tech.pegasys.teku.ssz.backing.tree.SszSuperNode} for lists/vectors to save
    * the memory when the list content is expected to be rarely updated
    *
-   * <p>The <code>depth</code> parameter specifies the maximum number (<code>1 << depth</code>) of
+   * <p>The <code>depth</code> parameter specifies the maximum number (<code>2 ^ depth</code>) of
    * list/vector elements a single node can contain. Increasing this parameter saves memory but
    * makes list/vector update and hashTreeRoot recalculation more CPU expensive
    */
