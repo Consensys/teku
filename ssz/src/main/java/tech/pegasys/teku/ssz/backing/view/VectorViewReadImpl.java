@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.Objects;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -72,5 +74,21 @@ public class VectorViewReadImpl<ElementReadType extends ViewRead>
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof VectorViewRead)) {
+      return false;
+    }
+    return hashTreeRoot().equals(((ViewRead) o).hashTreeRoot());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(hashTreeRoot());
   }
 }

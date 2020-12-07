@@ -99,6 +99,7 @@ public class ListViewHintsTest {
       ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
+    assertThat(list1).isEqualTo(list2);
 
     for (int i = 0; i < list1.size(); i++) {
       TElement el1 = list1.get(i);
@@ -126,10 +127,6 @@ public class ListViewHintsTest {
         };
 
     return Stream.of(
-        //        Arguments.of(generateTypesWithHints(new ListViewType<>(listElementType1, 1)),
-        // elementSupplier1),
-        //        Arguments.of(generateTypesWithHints(new ListViewType<>(listElementType1, 2)),
-        // elementSupplier1),
         Arguments.of(
             generateTypesWithHints(new ListViewType<>(listElementType1, 3)), elementSupplier1),
         Arguments.of(
