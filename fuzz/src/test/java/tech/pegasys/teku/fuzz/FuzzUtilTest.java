@@ -115,7 +115,6 @@ class FuzzUtilTest {
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconStateImpl.class);
     final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), BeaconStateImpl.class);
 
-    preState.getValidators().hash_tree_root();
     BeaconState currentState = preState;
     for (SignedBeaconBlock block : blocks) {
       BlockFuzzInput input = new BlockFuzzInput((BeaconStateImpl) currentState, block);
