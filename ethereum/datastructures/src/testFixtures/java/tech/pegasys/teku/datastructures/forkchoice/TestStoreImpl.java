@@ -186,6 +186,12 @@ class TestStoreImpl implements MutableStore {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
