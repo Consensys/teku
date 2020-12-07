@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_ro
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
@@ -73,13 +72,11 @@ public final class EpochProcessorUtil {
   public static void process_justification_and_finalization(
       MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
     try {
-      if (get_current_epoch(state)
-          .isLessThanOrEqualTo(UInt64.valueOf(GENESIS_EPOCH).plus(UInt64.ONE))) {
+      UInt64 current_epoch = get_current_epoch(state);
+      if (current_epoch.isLessThanOrEqualTo(UInt64.valueOf(GENESIS_EPOCH + 1))) {
         return;
       }
 
-      UInt64 previous_epoch = get_previous_epoch(state);
-      UInt64 current_epoch = get_current_epoch(state);
       Checkpoint old_previous_justified_checkpoint = state.getPrevious_justified_checkpoint();
       Checkpoint old_current_justified_checkpoint = state.getCurrent_justified_checkpoint();
 
@@ -90,7 +87,8 @@ public final class EpochProcessorUtil {
       if (totalBalances
           .getPreviousEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+        UInt64 previous_epoch = get_previous_epoch(state);
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
@@ -100,7 +98,7 @@ public final class EpochProcessorUtil {
       if (totalBalances
           .getCurrentEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
