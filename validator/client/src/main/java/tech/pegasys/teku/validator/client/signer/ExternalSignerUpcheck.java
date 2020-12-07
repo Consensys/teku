@@ -20,8 +20,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ExternalSignerUpcheck {
+  private static final Logger LOG = LogManager.getLogger();
   private final URL signingServiceUrl;
   private final Duration timeout;
   private final HttpClient httpClient;
@@ -46,7 +49,11 @@ public class ExternalSignerUpcheck {
       final HttpResponse<Void> response =
           httpClient.send(request, HttpResponse.BodyHandlers.discarding());
       return response.statusCode() == 200;
-    } catch (final URISyntaxException | IOException | InterruptedException e) {
+    } catch (final URISyntaxException e) {
+      LOG.debug("Unexpected error while converting external signer upcheck URL", e);
+      return false;
+    } catch (final IOException | InterruptedException e) {
+      LOG.debug("Unable to connect to external signer: {}", e.getMessage());
       return false;
     }
   }
