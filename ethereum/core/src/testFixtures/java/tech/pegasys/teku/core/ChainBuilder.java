@@ -225,8 +225,7 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
-    return generateGenesis(
-        genesisTime, signDeposits, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+    return generateGenesis(genesisTime, signDeposits, Constants.MAX_EFFECTIVE_BALANCE);
   }
 
   public SignedBlockAndState generateGenesis(

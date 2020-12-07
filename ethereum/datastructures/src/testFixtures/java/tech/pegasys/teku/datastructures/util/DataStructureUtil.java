@@ -463,8 +463,7 @@ public final class DataStructureUtil {
     Bytes32 withdrawal_credentials = randomBytes32();
 
     DepositMessage proof_of_possession_data =
-        new DepositMessage(
-            pubkey, withdrawal_credentials, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+        new DepositMessage(pubkey, withdrawal_credentials, Constants.MAX_EFFECTIVE_BALANCE);
 
     final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
     final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
@@ -558,7 +557,7 @@ public final class DataStructureUtil {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositData depositData =
           depositGenerator.createDepositData(
-              keypair, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE), keypair.getPublicKey());
+              keypair, Constants.MAX_EFFECTIVE_BALANCE, keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
           SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
@@ -572,7 +571,7 @@ public final class DataStructureUtil {
     return Validator.create(
         randomPublicKeyBytes(),
         randomBytes32(),
-        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        Constants.MAX_EFFECTIVE_BALANCE,
         false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,

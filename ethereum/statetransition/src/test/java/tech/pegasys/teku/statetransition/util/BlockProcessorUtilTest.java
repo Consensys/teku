@@ -216,7 +216,7 @@ class BlockProcessorUtilTest {
     return Validator.create(
         pubkey.toBytesCompressed(),
         withdrawalCredentials,
-        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        Constants.MAX_EFFECTIVE_BALANCE,
         false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
