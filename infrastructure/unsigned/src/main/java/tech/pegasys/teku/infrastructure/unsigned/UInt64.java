@@ -37,7 +37,7 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   static final long SQRT_MAX_VALUE = 4294967295L;
 
-  static final int SPECIAL_CASE_MULTIPLICAND = 64;
+  static final long SPECIAL_CASE_MULTIPLICAND = 64L;
   static final long MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND =
       Long.divideUnsigned(-1L, SPECIAL_CASE_MULTIPLICAND);
 
