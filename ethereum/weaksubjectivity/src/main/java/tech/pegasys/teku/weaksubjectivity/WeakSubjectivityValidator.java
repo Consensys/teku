@@ -195,7 +195,6 @@ public class WeakSubjectivityValidator {
     }
 
     // If block is prior to the checkpoint, we can't yet validate
-    // TODO(#2779) If we have the ws state, we can look up the block in the state's history
     return true;
   }
 

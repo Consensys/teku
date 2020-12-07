@@ -42,17 +42,6 @@ public class WeakSubjectivityCalculatorTest {
   }
 
   @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
-  @MethodSource("getWeakSubjectivityModParams")
-  public void getWeakSubjectivityMod(
-      final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
-    final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    UInt64 result = calculator.getWeakSubjectivityMod(validatorCount);
-    assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
-  }
-
-  @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
   @MethodSource("computeWeakSubjectivityParams")
   public void isWithinWeakSubjectivityPeriod(
       final int validatorCount,
@@ -118,18 +107,6 @@ public class WeakSubjectivityCalculatorTest {
         Arguments.of(131072, UInt64.valueOf(10), 1894),
         Arguments.of(262144, UInt64.valueOf(10), 3532),
         Arguments.of(524288, UInt64.valueOf(10), 3532));
-  }
-
-  // Parameters from the table here:
-  // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Updating-Weak-Subjectivity-Checkpoint-States
-  public static Stream<Arguments> getWeakSubjectivityModParams() {
-    return Stream.of(
-        Arguments.of(8191, UInt64.valueOf(10), 256),
-        Arguments.of(16384, UInt64.valueOf(10), 256),
-        Arguments.of(32768, UInt64.valueOf(10), 512),
-        Arguments.of(65536, UInt64.valueOf(10), 1024),
-        Arguments.of(131072, UInt64.valueOf(10), 1792),
-        Arguments.of(262144, UInt64.valueOf(10), 3328));
   }
 
   private CheckpointState createMockCheckpointState(final UInt64 finalizedEpoch) {
