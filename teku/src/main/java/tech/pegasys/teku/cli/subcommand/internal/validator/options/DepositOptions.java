@@ -108,7 +108,7 @@ public class DepositOptions {
   }
 
   UInt64 getAmount() {
-    return Optional.ofNullable(this.amount).orElse(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+    return Optional.ofNullable(this.amount).orElse(MAX_EFFECTIVE_BALANCE);
   }
 
   private Eth1Address getContractAddress(final NetworkDefinition networkDefinition) {
