@@ -61,7 +61,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(signDeposits, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+    return initializeGenesis(signDeposits, Constants.MAX_EFFECTIVE_BALANCE);
   }
 
   public SignedBlockAndState initializeGenesis(

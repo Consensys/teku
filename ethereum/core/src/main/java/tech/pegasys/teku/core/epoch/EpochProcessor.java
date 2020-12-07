@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.epoch;
 
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
@@ -26,13 +27,15 @@ public class EpochProcessor {
    */
   public static BeaconState processEpoch(final BeaconState preState)
       throws EpochProcessingException {
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     return preState.updated(
         state -> {
-          final MatchingAttestations matchingAttestations = new MatchingAttestations(state);
-          EpochProcessorUtil.process_justification_and_finalization(state, matchingAttestations);
-          EpochProcessorUtil.process_rewards_and_penalties(state, matchingAttestations);
-          EpochProcessorUtil.process_registry_updates(state);
-          EpochProcessorUtil.process_slashings(state);
+          EpochProcessorUtil.process_justification_and_finalization(
+              state, validatorStatuses.getTotalBalances());
+          EpochProcessorUtil.process_rewards_and_penalties(state, validatorStatuses);
+          EpochProcessorUtil.process_registry_updates(state, validatorStatuses.getStatuses());
+          EpochProcessorUtil.process_slashings(
+              state, validatorStatuses.getTotalBalances().getCurrentEpoch());
           EpochProcessorUtil.process_final_updates(state);
         });
   }

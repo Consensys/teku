@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.io.Resources;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
@@ -74,8 +76,17 @@ class ValidatorLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
 
+  @SuppressWarnings("unchecked")
+  private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
+
   private final ValidatorLoader validatorLoader =
       ValidatorLoader.create(slashingProtector, asyncRunner);
+
+  @BeforeEach
+  void initUpcheckMockResponse() throws IOException, InterruptedException {
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
+  }
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {

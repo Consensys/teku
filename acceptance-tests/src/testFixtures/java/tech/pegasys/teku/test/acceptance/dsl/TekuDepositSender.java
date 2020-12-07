@@ -46,18 +46,17 @@ public class TekuDepositSender extends Node {
   }
 
   public void sendValidatorDeposits(
-      final BesuNode eth1Node, final int numberOfValidators, long amount)
+      final BesuNode eth1Node, final int numberOfValidators, UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
-    final UInt64 depositAmount = UInt64.valueOf(amount);
     try (final DepositGenerator depositGenerator =
         new DepositGenerator(
             eth1Node.getExternalJsonRpcUrl(),
             eth1Address,
             eth1Credentials,
             numberOfValidators,
-            depositAmount)) {
+            amount)) {
       final SafeFuture<Void> future = depositGenerator.generate();
       Waiter.waitFor(future, Duration.ofMinutes(2));
     }
@@ -66,14 +65,13 @@ public class TekuDepositSender extends Node {
   public void sendValidatorDeposits(
       final BesuNode eth1Node,
       final List<ValidatorKeyGenerator.ValidatorKeys> validatorKeys,
-      long amount)
+      UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
-    final UInt64 depositAmount = UInt64.valueOf(amount);
     final DepositSenderService depositSenderService =
         new DepositSenderService(
-            eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, depositAmount);
+            eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount);
     final List<SafeFuture<TransactionReceipt>> transactionReceipts =
         validatorKeys.stream().map(depositSenderService::sendDeposit).collect(Collectors.toList());
     final SafeFuture<Void> future =

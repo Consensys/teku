@@ -185,9 +185,7 @@ public class BeaconStateUtil {
   private static Validator getValidatorFromDeposit(Deposit deposit) {
     final UInt64 amount = deposit.getData().getAmount();
     final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT))
-            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+        amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
     return new Validator(
         deposit.getData().getPubkey().toBytesCompressed(),
         deposit.getData().getWithdrawal_credentials(),
@@ -495,8 +493,8 @@ public class BeaconStateUtil {
     // Compute exit queue epoch
     List<UInt64> exit_epochs =
         state.getValidators().stream()
-            .filter(v -> !v.getExit_epoch().equals(FAR_FUTURE_EPOCH))
             .map(Validator::getExit_epoch)
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
             .collect(Collectors.toList());
     exit_epochs.add(compute_activation_exit_epoch(get_current_epoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
