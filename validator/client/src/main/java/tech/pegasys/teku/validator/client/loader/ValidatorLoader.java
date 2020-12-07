@@ -13,11 +13,20 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalSigner;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
+import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.signer.ExternalSigner;
+
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Collection;
@@ -30,18 +39,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalSigner;
-import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
-import tech.pegasys.teku.core.signatures.SlashingProtector;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.signer.ExternalSigner;
-import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
+
+import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 public class ValidatorLoader {
 
@@ -62,7 +62,7 @@ public class ValidatorLoader {
   public Map<BLSPublicKey, Validator> initializeValidators(
       final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
-        Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
+            Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return initializeValidators(config, globalConfiguration, externalSignerHttpClientFactory);
   }
 
@@ -106,14 +106,6 @@ public class ValidatorLoader {
     }
 
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
-
-    final boolean isReachable =
-        new ExternalSignerUpcheck(
-                externalSignerHttpClientFactory.get(),
-                config.getValidatorExternalSignerUrl(),
-                timeout)
-            .upcheck();
-    STATUS_LOG.externalSignerStatus(config.getValidatorExternalSignerUrl(), isReachable);
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
