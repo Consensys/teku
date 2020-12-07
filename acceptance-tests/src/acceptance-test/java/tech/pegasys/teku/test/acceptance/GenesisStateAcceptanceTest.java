@@ -57,7 +57,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
         depositSender.generateValidatorKeys(numberOfValidators);
     depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MIN_DEPOSIT_AMOUNT);
     depositSender.sendValidatorDeposits(
-        eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE - MIN_DEPOSIT_AMOUNT);
+        eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE.minus(MIN_DEPOSIT_AMOUNT));
 
     final TekuNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     teku.start();

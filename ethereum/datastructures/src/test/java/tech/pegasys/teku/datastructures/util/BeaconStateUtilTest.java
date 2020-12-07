@@ -157,7 +157,7 @@ class BeaconStateUtilTest {
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
     for (UInt64 balance : state.getBalances()) {
-      if (balance.isLessThan(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE))) {
+      if (balance.isLessThan(Constants.MAX_EFFECTIVE_BALANCE)) {
         expectedBalance = expectedBalance.plus(balance);
       } else {
         expectedBalance = expectedBalance.plus(Constants.MAX_EFFECTIVE_BALANCE);
@@ -363,8 +363,7 @@ class BeaconStateUtilTest {
                           dataStructureUtil.randomValidator(),
                           dataStructureUtil.randomValidator()));
               List<UInt64> balanceList =
-                  new ArrayList<>(
-                      Collections.nCopies(3, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));
+                  new ArrayList<>(Collections.nCopies(3, Constants.MAX_EFFECTIVE_BALANCE));
 
               if (addToList) {
                 validatorList.add(knownValidator);
