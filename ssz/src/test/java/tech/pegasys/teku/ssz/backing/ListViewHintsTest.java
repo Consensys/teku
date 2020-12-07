@@ -30,8 +30,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.TestUtil.TestContainer;
-import tech.pegasys.teku.ssz.TestUtil.TestSubContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestByteVectorContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
@@ -126,39 +129,49 @@ public class ListViewHintsTest {
           return new TestContainer(subContainer, UInt64.fromLongBits(random.nextLong()));
         };
 
+    ViewType listElementType2 = TestSmallContainer.TYPE;
+    Supplier<TestSmallContainer> elementSupplier2 =
+        () -> new TestSmallContainer(random.nextBoolean());
+
+    ViewType listElementType3 = TestByteVectorContainer.TYPE;
+    Supplier<TestByteVectorContainer> elementSupplier3 =
+        () -> TestByteVectorContainer.random(random);
+
+    ViewType listElementType4 = TestDoubleSuperContainer.TYPE;
+    Supplier<TestDoubleSuperContainer> elementSupplier4 =
+        () ->
+            new TestDoubleSuperContainer(
+                random.nextLong(),
+                TestByteVectorContainer.random(random),
+                random.nextLong(),
+                TestByteVectorContainer.random(random),
+                random.nextLong());
+
     return Stream.of(
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 3)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 4)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 5)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 15)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 16)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 17)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 100)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 127)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 128)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 129)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 255)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 256)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 257)), elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, Integer.MAX_VALUE)),
-            elementSupplier1),
-        Arguments.of(
-            generateTypesWithHints(new ListViewType<>(listElementType1, 16L * Integer.MAX_VALUE)),
-            elementSupplier1));
+        Arguments.of(listElementType1, 3, elementSupplier1),
+        Arguments.of(listElementType1, 4, elementSupplier1),
+        Arguments.of(listElementType1, 5, elementSupplier1),
+        Arguments.of(listElementType1, 15, elementSupplier1),
+        Arguments.of(listElementType1, 16, elementSupplier1),
+        Arguments.of(listElementType1, 17, elementSupplier1),
+        Arguments.of(listElementType1, 100, elementSupplier1),
+        Arguments.of(listElementType1, 127, elementSupplier1),
+        Arguments.of(listElementType1, 128, elementSupplier1),
+        Arguments.of(listElementType1, 129, elementSupplier1),
+        Arguments.of(listElementType1, 255, elementSupplier1),
+        Arguments.of(listElementType1, 256, elementSupplier1),
+        Arguments.of(listElementType1, 257, elementSupplier1),
+        Arguments.of(listElementType1, Integer.MAX_VALUE, elementSupplier1),
+        Arguments.of(listElementType1, 16L * Integer.MAX_VALUE, elementSupplier1),
+        Arguments.of(listElementType2, 15, elementSupplier2),
+        Arguments.of(listElementType2, 16, elementSupplier2),
+        Arguments.of(listElementType2, 17, elementSupplier2),
+        Arguments.of(listElementType3, 15, elementSupplier3),
+        Arguments.of(listElementType3, 16, elementSupplier3),
+        Arguments.of(listElementType3, 17, elementSupplier3),
+        Arguments.of(listElementType4, 15, elementSupplier4),
+        Arguments.of(listElementType4, 16, elementSupplier4),
+        Arguments.of(listElementType4, 17, elementSupplier4));
   }
 
   static <TElement extends ViewRead> List<ListViewType<TElement>> generateTypesWithHints(
@@ -178,7 +191,10 @@ public class ListViewHintsTest {
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
   <TElement extends ViewRead> void testIdenticalTypes(
-      List<ListViewType<TElement>> types, Supplier<TElement> listElementsFactory) {
+      ViewType listElementType, long maxListSize, Supplier<TElement> listElementsFactory) {
+
+    List<ListViewType<TElement>> types =
+        generateTypesWithHints(new ListViewType<>(listElementType, maxListSize));
 
     RewindingSupplier<TElement> rewindingSupplier = new RewindingSupplier<>(listElementsFactory);
     ArrayList<ListViewRead<TElement>> resultsToCompare = new ArrayList<>();
@@ -189,7 +205,13 @@ public class ListViewHintsTest {
       rewindingSupplier.rewind();
       ArrayDeque<ListViewRead<TElement>> resQueue = new ArrayDeque<>(resultsToCompare);
       testList(
-          type, rewindingSupplier, r -> assertListEqualsVariants(type, r, resQueue.removeFirst()));
+          type,
+          rewindingSupplier,
+          r -> {
+            ListViewRead<TElement> compareToList = resQueue.removeFirst();
+            assertListEqualsVariants(type, r, compareToList);
+            assertThat(r.sszSerialize()).isEqualTo(compareToList.sszSerialize());
+          });
     }
   }
 
@@ -290,7 +312,7 @@ public class ListViewHintsTest {
               results.accept(r1_0);
             });
 
-    if (type.getMaxLength() <= (1 << 16)) {
+    if (type.getMaxLength() <= (1 << 10)) {
       // check max capacity if the max len is not too huge
       ListViewWrite<TElement> w5 = def.createWritableCopy();
       for (long i = 0; i < type.getMaxLength(); i++) {
