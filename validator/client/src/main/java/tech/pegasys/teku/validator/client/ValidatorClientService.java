@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -123,7 +124,8 @@ public class ValidatorClientService extends Service {
     ValidatorStatusLogger validatorStatusLogger;
     if (validators.keySet().size() > 0) {
       validatorStatusLogger =
-          new DefaultValidatorStatusLogger(validators.keySet(), validatorApiChannel);
+          new DefaultValidatorStatusLogger(
+              new ArrayList<>(validators.keySet()), validatorApiChannel);
     } else {
       validatorStatusLogger = ValidatorStatusLogger.NOOP;
     }

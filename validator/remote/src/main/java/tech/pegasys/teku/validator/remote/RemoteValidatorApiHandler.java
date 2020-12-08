@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -99,54 +100,42 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(emptyMap());
     }
-    return sendRequest(
-        () -> {
-          final Map<BLSPublicKey, Integer> indices = new HashMap<>();
-          for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
-            final List<BLSPublicKey> batch =
-                publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-            requestValidatorIndices(batch).ifPresent(indices::putAll);
-          }
-          return indices;
-        });
+    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      Set<BLSPublicKey> validatorPublicKeys) {
+      List<BLSPublicKey> publicKeys) {
     return sendRequest(
-        () ->
-            apiClient
-                .getValidators(
-                    validatorPublicKeys.stream()
-                        .map(BLSPublicKey::toString)
-                        .collect(Collectors.toList()))
-                .map(
-                    list ->
-                        list.stream()
-                            .collect(
-                                toMap(
-                                    ValidatorResponse::getPublicKey,
-                                    ValidatorResponse::getStatus))));
+        () -> Optional.of(makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus)));
   }
 
-  private Optional<Map<BLSPublicKey, Integer>> requestValidatorIndices(
-      final List<BLSPublicKey> batch) {
+  private <T> Map<BLSPublicKey, T> makeBatchedValidatorRequest(
+      List<BLSPublicKey> publicKeys, Function<ValidatorResponse, T> valueExtractor) {
+    final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
+    for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
+      final List<BLSPublicKey> batch =
+          publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
+      requestValidatorObject(batch, valueExtractor).ifPresent(returnedObjects::putAll);
+    }
+    return returnedObjects;
+  }
+
+  private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
+      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
         .getValidators(
             batch.stream()
                 .map(key -> key.toBytesCompressed().toHexString())
                 .collect(Collectors.toList()))
-        .map(this::convertToValidatorIndexMap);
+        .map(responses -> convertToValidatorMap(responses, valueExtractor));
   }
 
-  private Map<BLSPublicKey, Integer> convertToValidatorIndexMap(
-      final List<ValidatorResponse> validatorResponses) {
+  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
+      final List<ValidatorResponse> validatorResponses,
+      Function<ValidatorResponse, T> valueExtractor) {
     return validatorResponses.stream()
-        .collect(
-            Collectors.<ValidatorResponse, BLSPublicKey, Integer>toMap(
-                response -> response.validator.pubkey.asBLSPublicKey(),
-                response -> response.index.intValue()));
+        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   @Override
