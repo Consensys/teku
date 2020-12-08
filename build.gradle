@@ -11,15 +11,6 @@ plugins {
   id 'me.champeau.gradle.jmh' version '0.5.0' apply false
   id 'de.undercouch.download' version '4.1.0'
   id 'org.ajoberstar.grgit' version '4.0.2'
-  id "org.sonarqube" version "3.0"
-}
-
-sonarqube {
-  properties {
-    property "sonar.projectKey", "abdelhamidbakhta_teku"
-    property "sonar.organization", "abdelhamidbakhta"
-    property "sonar.host.url", "https://sonarcloud.io"
-  }
 }
 
 rootProject.version = calculatePublishVersion()
@@ -31,24 +22,24 @@ apply plugin: 'application'
 defaultTasks 'build','checkLicenses'
 
 def buildAliases = [
-  'dev': [
-    'compileJava',
-    'compileTestJava',
-    'compileJmhJava',
-    'compileIntegrationTestJava',
-    'compileCompatibilityTestJava',
-    'compileReferenceTestJava',
-    'spotlessApply',
-    'build',
-    'checkLicenses',
-    // TODO - Fix javadoc task
-    /*'javadoc'*/],
-  'mash': [
-    'clean',
-    'spotlessApply',
-    'build',
-    'test']
-  ]
+        'dev': [
+                'compileJava',
+                'compileTestJava',
+                'compileJmhJava',
+                'compileIntegrationTestJava',
+                'compileCompatibilityTestJava',
+                'compileReferenceTestJava',
+                'spotlessApply',
+                'build',
+                'checkLicenses',
+                // TODO - Fix javadoc task
+                /*'javadoc'*/],
+        'mash': [
+                'clean',
+                'spotlessApply',
+                'build',
+                'test']
+]
 
 def expandedTaskList = []
 
@@ -138,17 +129,17 @@ allprojects {
 
   tasks.withType(JavaCompile) {
     options.compilerArgs += [
-      '-Xlint:unchecked',
-      '-Xlint:cast',
-      '-Xlint:rawtypes',
-      '-Xlint:overloads',
-      '-Xlint:divzero',
-      '-Xlint:finally',
-      '-Xlint:static',
-      '-Werror',
+            '-Xlint:unchecked',
+            '-Xlint:cast',
+            '-Xlint:rawtypes',
+            '-Xlint:overloads',
+            '-Xlint:divzero',
+            '-Xlint:finally',
+            '-Xlint:static',
+            '-Werror',
     ]
     options.forkOptions.jvmArgs += [
-        '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+            '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
     ]
 
     options.errorprone {
@@ -205,14 +196,14 @@ allprojects {
    */
   test {
     jvmArgs = [
-      '-Xmx4g',
-      '-XX:-UseGCOverheadLimit'
+            '-Xmx4g',
+            '-XX:-UseGCOverheadLimit'
     ]
     Set toImport = [
-      'test.ethereum.include',
-      'test.ethereum.state.eip',
-      'root.log.level',
-      'evm.log.level'
+            'test.ethereum.include',
+            'test.ethereum.state.eip',
+            'root.log.level',
+            'evm.log.level'
     ]
     testLogging.showStandardStreams = project.hasProperty("showOutput") ? project.property("showOutput") : false
     for (String name : toImport) {
@@ -242,9 +233,9 @@ def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest
 
 task downloadRefTests(type: Download) {
   src([
-      "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
-      "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
-      "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+          "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
   ])
   dest "${refTestDownloadDir}"
   overwrite false
@@ -286,16 +277,16 @@ application {
   applicationName = "teku"
   mainClassName = "tech.pegasys.teku.Teku"
   applicationDefaultJvmArgs = [
-      "-Dvertx.disableFileCPResolving=true",
-      "-Dteku.home=TEKU_HOME",
-      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-      // happens during shutdown is not logged.
-      "-Dlog4j.shutdownHookEnabled=false",
-      "-XX:+HeapDumpOnOutOfMemoryError",
-      // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
-      "-XX:NativeMemoryTracking=summary",
-      // 32Mb for Netty Direct ByteBuf
-      "-Dio.netty.maxDirectMemory=33554432"
+          "-Dvertx.disableFileCPResolving=true",
+          "-Dteku.home=TEKU_HOME",
+          // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+          // happens during shutdown is not logged.
+          "-Dlog4j.shutdownHookEnabled=false",
+          "-XX:+HeapDumpOnOutOfMemoryError",
+          // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
+          "-XX:NativeMemoryTracking=summary",
+          // 32Mb for Netty Direct ByteBuf
+          "-Dio.netty.maxDirectMemory=33554432"
   ]
 }
 
@@ -338,10 +329,10 @@ startScripts {
 
     // Prevent the error originating from the 8191 chars limit on Windows
     windowsScript.text =
-        windowsScript
-            .readLines()
-            .collect(shortenWindowsClasspath)
-            .join('\r\n')
+            windowsScript
+                    .readLines()
+                    .collect(shortenWindowsClasspath)
+                    .join('\r\n')
   }
 }
 
@@ -388,7 +379,7 @@ task distDocker(type: Exec) {
 subprojects {
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
-   maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
+    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
     useJUnitPlatform()
     reports {
       junitXml.enabled = true
@@ -536,10 +527,10 @@ subprojects {
     baseName jarName
     manifest {
       attributes(
-          'Specification-Title': jarName,
-          'Specification-Version': project.version,
-          'Implementation-Title': jarName,
-          'Implementation-Version': specificVersion
+              'Specification-Title': jarName,
+              'Specification-Version': project.version,
+              'Implementation-Title': jarName,
+              'Implementation-Version': specificVersion
       )
     }
   }
@@ -608,13 +599,13 @@ jar { enabled = false }
 run {
   if(project.hasProperty('generateFlow')){
     def flowJVMArgs = [
-      "-javaagent:${userHome}/.flow/resources/javaagent.jar",
-      "-Dflow.agent.include=tech.pegasys.teku,tech.pegasys.teku.services.beaconchain,tech.pegasys.teku.statetransition,tech.pegasys.teku.statetransition.util",
-      "-Dflow.agent.exclude=tech.pegasys.teku.datastructures.state,tech.pegasys.teku.datastructures.blocks,tech.pegasys.teku.datastructures.operations,tech.pegasys.teku.datastructures.util.bitwise,tech.pegasys.teku.util.hashtree,tech.pegasys.teku.util.alogger,tech.pegasys.teku.storage,tech.pegasys.teku.util.bls,tech.pegasys.teku.util.mikuli,tech.pegasys.teku.networking.p2p,tech.pegasys.teku.validator.coordinator",
-      "-Dflow.agent.autostart",
-      "-Dflow.agent.execution-name=teku"
-      ]
-   applicationDefaultJvmArgs.addAll(flowJVMArgs)
+            "-javaagent:${userHome}/.flow/resources/javaagent.jar",
+            "-Dflow.agent.include=tech.pegasys.teku,tech.pegasys.teku.services.beaconchain,tech.pegasys.teku.statetransition,tech.pegasys.teku.statetransition.util",
+            "-Dflow.agent.exclude=tech.pegasys.teku.datastructures.state,tech.pegasys.teku.datastructures.blocks,tech.pegasys.teku.datastructures.operations,tech.pegasys.teku.datastructures.util.bitwise,tech.pegasys.teku.util.hashtree,tech.pegasys.teku.util.alogger,tech.pegasys.teku.storage,tech.pegasys.teku.util.bls,tech.pegasys.teku.util.mikuli,tech.pegasys.teku.networking.p2p,tech.pegasys.teku.validator.coordinator",
+            "-Dflow.agent.autostart",
+            "-Dflow.agent.execution-name=teku"
+    ]
+    applicationDefaultJvmArgs.addAll(flowJVMArgs)
   }
   args project.hasProperty("teku.run.args") ? project.property("teku.run.args").toString().split("\\s+") : []
   doFirst {
