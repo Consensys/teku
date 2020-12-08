@@ -111,31 +111,31 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private <T> Map<BLSPublicKey, T> makeBatchedValidatorRequest(
-      List<BLSPublicKey> publicKeys, Function<ValidatorResponse, T> validatorResponseTFunction) {
+      List<BLSPublicKey> publicKeys, Function<ValidatorResponse, T> valueExtractor) {
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<BLSPublicKey> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      requestValidatorObject(batch, validatorResponseTFunction).ifPresent(returnedObjects::putAll);
+      requestValidatorObject(batch, valueExtractor).ifPresent(returnedObjects::putAll);
     }
     return returnedObjects;
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
-      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> validatorResponseTFunction) {
+      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
         .getValidators(
             batch.stream()
                 .map(key -> key.toBytesCompressed().toHexString())
                 .collect(Collectors.toList()))
-        .map(responses -> convertToValidatorMap(responses, validatorResponseTFunction));
+        .map(responses -> convertToValidatorMap(responses, valueExtractor));
   }
 
   private <T> Map<BLSPublicKey, T> convertToValidatorMap(
       final List<ValidatorResponse> validatorResponses,
-      Function<ValidatorResponse, T> validatorResponseTFunction) {
+      Function<ValidatorResponse, T> valueExtractor) {
     return validatorResponses.stream()
-        .collect(toMap(ValidatorResponse::getPublicKey, validatorResponseTFunction));
+        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   @Override
