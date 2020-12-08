@@ -127,8 +127,10 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);
-    return Optional.ofNullable(columnData.get(column).lastKey())
-        .map(data -> columnKey(column, data));
+    final NavigableMap<Bytes, Bytes> values = columnData.get(column);
+    return values.isEmpty()
+        ? Optional.empty()
+        : Optional.of(values.lastKey()).map(data -> columnKey(column, data));
   }
 
   @Override
@@ -144,8 +146,11 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final K from, final K to) {
     assertOpen();
-    return columnData.get(column)
-        .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true).entrySet().stream()
+    return columnData
+        .get(column)
+        .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true)
+        .entrySet()
+        .stream()
         .peek(value -> assertOpen())
         .map(e -> columnEntry(column, e));
   }
