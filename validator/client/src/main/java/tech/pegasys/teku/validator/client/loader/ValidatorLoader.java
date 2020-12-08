@@ -21,6 +21,7 @@ import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
+import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
+import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 
 public class ValidatorLoader {
 
@@ -97,7 +100,13 @@ public class ValidatorLoader {
   }
 
   private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
+    if (config.getValidatorExternalSignerPublicKeys().isEmpty()) {
+      return Collections.emptyMap();
+    }
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
+
+    setupExternalSignerStatusLogging(config, timeout);
+
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
             publicKey -> {
@@ -114,6 +123,25 @@ public class ValidatorLoader {
               return new Validator(publicKey, signer, Optional.ofNullable(config.getGraffiti()));
             })
         .collect(toMap(Validator::getPublicKey, Function.identity()));
+  }
+
+  private void setupExternalSignerStatusLogging(
+      final ValidatorConfig config, final Duration timeout) {
+    final ExternalSignerUpcheck externalSignerUpcheck =
+        new ExternalSignerUpcheck(
+            remoteValidatorHttpClientFactory.get(),
+            config.getValidatorExternalSignerUrl(),
+            timeout);
+    final ExternalSignerStatusLogger externalSignerStatusLogger =
+        new ExternalSignerStatusLogger(
+            STATUS_LOG,
+            externalSignerUpcheck::upcheck,
+            config.getValidatorExternalSignerUrl(),
+            asyncRunner);
+    // initial status log
+    externalSignerStatusLogger.log();
+    // recurring status log
+    externalSignerStatusLogger.logWithFixedDelay();
   }
 
   private Signer createSlashingProtectedSigner(final BLSPublicKey publicKey, final Signer signer) {
