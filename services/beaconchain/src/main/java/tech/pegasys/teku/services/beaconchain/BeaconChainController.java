@@ -482,7 +482,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             new ChainDataProvider(recentChainData, combinedChainDataClient),
             combinedChainDataClient,
             syncService,
-            stateTransition,
             blockFactory,
             blockImportChannel,
             attestationPool,
