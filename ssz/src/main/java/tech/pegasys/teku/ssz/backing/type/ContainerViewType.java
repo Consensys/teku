@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -150,5 +154,49 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       }
     }
     return variableChildOffset;
+  }
+
+  @Override
+  public TreeNode sszDeserialize(BytesReader reader) {
+    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
+    Queue<Integer> variableChildrenOffsets = new ArrayDeque<>();
+    int originalAvailableBytes = reader.getAvailableBytes();
+    for (int i = 0; i < getChildCount(); i++) {
+      ViewType childType = getChildType(i);
+      if (childType.isFixedSize()) {
+        TreeNode childNode = childType.sszDeserialize(reader.slice(childType.getFixedPartSize()));
+        fixedChildrenSubtrees.add(childNode);
+      } else {
+        int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        variableChildrenOffsets.add(childOffset);
+      }
+    }
+    int readBytes = reader.getAvailableBytes() - originalAvailableBytes;
+
+    Integer curVariableChildOffset = variableChildrenOffsets.remove();
+    if (variableChildrenOffsets.isEmpty()) {
+
+    } else if (readBytes != curVariableChildOffset) {
+      throw new SSZException("Invalid SSZ");
+    }
+
+    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
+    for (int i = 0; i < getChildCount(); i++) {
+      ViewType childType = getChildType(i);
+      if (childType.isFixedSize()) {
+        childrenSubtrees.add(fixedChildrenSubtrees.remove());
+      } else {
+        Integer nextVariableChildOffset = variableChildrenOffsets.poll();
+        BytesReader childReader = nextVariableChildOffset == null ? reader :
+            reader.slice(nextVariableChildOffset - curVariableChildOffset);
+        TreeNode childNode = childType.sszDeserialize(childReader);
+        if (childReader.getAvailableBytes() > 0) {
+          throw new SSZException("Invalid SSZ");
+        }
+        childrenSubtrees.add(childNode);
+        curVariableChildOffset = nextVariableChildOffset;
+      }
+    }
+    return TreeUtil.createTree(childrenSubtrees);
   }
 }

@@ -13,11 +13,18 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
@@ -131,5 +138,10 @@ public class VectorViewType<C> extends CollectionViewType {
   @Override
   public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
     return sszSerializeVector(node, writer, getLength());
+  }
+
+  @Override
+  public TreeNode sszDeserialize(BytesReader reader) {
+    return sszDeserializeVector(reader, getLength());
   }
 }

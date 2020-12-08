@@ -77,7 +77,7 @@ public class TreeUtil {
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
-  public static TreeNode createTree(List<TreeNode> leafNodes) {
+  public static TreeNode createTree(List<? extends TreeNode> leafNodes) {
     return createTree(leafNodes, treeDepth(leafNodes.size()));
   }
 
@@ -99,7 +99,7 @@ public class TreeUtil {
     }
   }
 
-  private static TreeNode createTree(List<TreeNode> leafNodes, int depth) {
+  public static TreeNode createTree(List<? extends TreeNode> leafNodes, int depth) {
     if (leafNodes.isEmpty()) {
       return ZERO_TREES[depth];
     } else if (depth == 0) {
@@ -109,8 +109,8 @@ public class TreeUtil {
       long index = 1L << (depth - 1);
       int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
 
-      List<TreeNode> leftSublist = leafNodes.subList(0, iIndex);
-      List<TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
+      List<? extends TreeNode> leftSublist = leafNodes.subList(0, iIndex);
+      List<? extends TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
       return new BranchNodeImpl(
           createTree(leftSublist, depth - 1), createTree(rightSublist, depth - 1));
     }

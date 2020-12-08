@@ -21,6 +21,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil.ZeroLeafNode;
@@ -93,5 +94,11 @@ public interface LeafNode extends TreeNode, LeafDataNode {
   default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
     checkArgument(target == 1, "Invalid root index: %s", target);
     return nodeUpdater.apply(this);
+  }
+
+  @Override
+  default LeafDataNode updatedWithData(BytesReader reader) {
+    int dataSize = getData().size();
+    return create(reader.read(dataSize));
   }
 }

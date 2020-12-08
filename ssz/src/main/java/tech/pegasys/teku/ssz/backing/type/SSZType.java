@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.type;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /** Collection of SSZ related methods for {@link ViewType} */
@@ -73,4 +74,7 @@ public interface SSZType {
    * {@code writer}
    */
   int sszSerialize(TreeNode node, Consumer<Bytes> writer);
+
+  TreeNode sszDeserialize(BytesReader reader);
+
 }

@@ -13,9 +13,19 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.teku.ssz.backing.BytesReader;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
@@ -121,6 +131,56 @@ public abstract class CollectionViewType implements CompositeViewType {
       elementType.sszSerialize(childSubtree, writer);
     }
     return variableOffset;
+  }
+
+  public TreeNode sszDeserializeVector(BytesReader reader, int elementsCount) {
+    checkArgument(reader.getAvailableBytes() >= getFixedPartSize());
+    if (getElementType().isFixedSize()) {
+      return sszDeserializeFixed(reader, elementsCount);
+    } else {
+      return sszDeserializeVariable(reader, elementsCount);
+    }
+  }
+
+  protected static final int UNKNOWN_ELEMENTS_COUNT = -1;
+
+  public TreeNode sszDeserializeFixed(BytesReader reader, int elementsCount) {
+    final List<TreeNode> childNodes;
+    if (getElementType() instanceof BasicViewType) {
+      int bytesSize = (elementsCount * getBitsSize() + 7) / 8;
+      childNodes = chunks(bytesSize)
+          .mapToObj(reader::read)
+          .map(LeafNode::create)
+          .collect(Collectors.toList());
+    } else {
+      childNodes = Stream.generate(() -> getElementType().sszDeserialize(reader))
+          .limit(elementsCount)
+          .collect(Collectors.toList());
+    }
+    return TreeUtil.createTree(childNodes);
+  }
+
+  public TreeNode sszDeserializeVariable(BytesReader reader, int elementsCount) {
+    int[] elementOffsets = Stream.generate(() -> reader.read(LeafNode.MAX_BYTE_SIZE))
+        .mapToInt(SSZType::bytesToLength)
+        .limit(elementsCount).toArray();
+    int[] elementSizes = new int[elementOffsets.length];
+    for (int i = 0; i < elementOffsets.length - 1; i++) {
+      elementSizes[i] = elementOffsets[i + 1] - elementOffsets[i];
+    }
+    List<TreeNode> childNodes = Arrays.stream(elementSizes)
+        .mapToObj(size -> getElementType().sszDeserialize(reader.slice(size)))
+        .collect(Collectors.toList());
+    if (reader.getAvailableBytes() > 0) {
+      throw new SSZException("Invalid SSZ");
+    }
+    return TreeUtil.createTree(childNodes, treeDepth());
+  }
+
+  private static IntStream chunks(int totalSize) {
+    return IntStream.concat(
+        IntStream.generate(() -> LeafNode.MAX_BYTE_SIZE).limit(totalSize / LeafNode.MAX_BYTE_SIZE),
+        IntStream.of(totalSize % LeafNode.MAX_BYTE_SIZE).filter(i -> i > 0));
   }
 
   public TypeHints getHints() {

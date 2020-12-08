@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -81,5 +82,11 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
     Bytes ret = node.hashTreeRoot().slice(0, getSSZBytesSize());
     writer.accept(ret);
     return ret.size();
+  }
+
+  @Override
+  public TreeNode sszDeserialize(BytesReader reader) {
+    Bytes bytes = reader.read(getSSZBytesSize());
+    return LeafNode.create(bytes);
   }
 }
