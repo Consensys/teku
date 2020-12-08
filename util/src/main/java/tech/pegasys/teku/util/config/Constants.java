@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 public class Constants {
 
   static final String[] NETWORK_DEFINITIONS = {
-    "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont"
+    "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont", "less-swift"
   };
 
   // Non-configurable constants

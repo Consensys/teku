@@ -1,5 +1,6 @@
 dependencies {
   acceptanceTestImplementation project(":util")
+  acceptanceTestImplementation project(":bls")
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
@@ -9,11 +10,14 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':util')
+  testFixturesImplementation project(':teku')
 
+  testFixturesImplementation 'tech.pegasys.signers.internal:bls-keystore'
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'org.apache.commons:commons-lang3'
+  testFixturesImplementation 'commons-io:commons-io'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.apache.tuweni:tuweni-toml'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'

@@ -37,22 +37,4 @@ public class ValidatorKeyGenerator {
     final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
     return new ValidatorKeys(validatorKey, withdrawalKey);
   }
-
-  public static class ValidatorKeys {
-    private final BLSKeyPair validatorKey;
-    private final BLSKeyPair withdrawalKey;
-
-    public ValidatorKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey) {
-      this.validatorKey = validatorKey;
-      this.withdrawalKey = withdrawalKey;
-    }
-
-    public BLSKeyPair getValidatorKey() {
-      return validatorKey;
-    }
-
-    public BLSKeyPair getWithdrawalKey() {
-      return withdrawalKey;
-    }
-  }
 }
