@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,35 +47,36 @@ public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
-  private final Supplier<HttpClient> remoteValidatorHttpClientFactory;
 
-  @VisibleForTesting
-  ValidatorLoader(
-      final SlashingProtector slashingProtector,
-      final AsyncRunner asyncRunner,
-      final Supplier<HttpClient> remoteValidatorHttpClientFactory) {
+  private ValidatorLoader(
+      final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
     this.slashingProtector = slashingProtector;
     this.asyncRunner = asyncRunner;
-    this.remoteValidatorHttpClientFactory = remoteValidatorHttpClientFactory;
   }
 
   public static ValidatorLoader create(
       final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
-    return new ValidatorLoader(
-        slashingProtector,
-        asyncRunner,
-        Suppliers.memoize(
-            () -> HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()));
+    return new ValidatorLoader(slashingProtector, asyncRunner);
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(
-      ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
+    return initializeValidators(config, globalConfiguration, externalSignerHttpClientFactory);
+  }
+
+  @VisibleForTesting
+  Map<BLSPublicKey, Validator> initializeValidators(
+      final ValidatorConfig config,
+      final GlobalConfiguration globalConfiguration,
+      final Supplier<HttpClient> externalSignerHttpClientFactory) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
     final Map<BLSPublicKey, Validator> validators = new HashMap<>();
     validators.putAll(createLocalSignerValidator(config, globalConfiguration));
-    validators.putAll(createExternalSignerValidator(config));
+    validators.putAll(createExternalSignerValidator(config, externalSignerHttpClientFactory));
 
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
@@ -99,23 +99,23 @@ public class ValidatorLoader {
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
+  private Map<BLSPublicKey, Validator> createExternalSignerValidator(
+      final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
     if (config.getValidatorExternalSignerPublicKeys().isEmpty()) {
       return Collections.emptyMap();
     }
-    final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
 
-    setupExternalSignerStatusLogging(config, timeout);
+    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory);
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
             publicKey -> {
               final ExternalSigner externalSigner =
                   new ExternalSigner(
-                      remoteValidatorHttpClientFactory.get(),
+                      externalSignerHttpClientFactory.get(),
                       config.getValidatorExternalSignerUrl(),
                       publicKey,
-                      timeout);
+                      config.getValidatorExternalSignerTimeout());
               final Signer signer =
                   config.isValidatorExternalSignerSlashingProtectionEnabled()
                       ? createSlashingProtectedSigner(publicKey, externalSigner)
@@ -126,12 +126,12 @@ public class ValidatorLoader {
   }
 
   private void setupExternalSignerStatusLogging(
-      final ValidatorConfig config, final Duration timeout) {
+      final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
     final ExternalSignerUpcheck externalSignerUpcheck =
         new ExternalSignerUpcheck(
-            remoteValidatorHttpClientFactory.get(),
+            externalSignerHttpClientFactory.get(),
             config.getValidatorExternalSignerUrl(),
-            timeout);
+            config.getValidatorExternalSignerTimeout());
     final ExternalSignerStatusLogger externalSignerStatusLogger =
         new ExternalSignerStatusLogger(
             STATUS_LOG,
