@@ -55,9 +55,9 @@ public class Constants {
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
-  public static long MIN_DEPOSIT_AMOUNT;
-  public static long MAX_EFFECTIVE_BALANCE;
-  public static long EJECTION_BALANCE;
+  public static UInt64 MIN_DEPOSIT_AMOUNT;
+  public static UInt64 MAX_EFFECTIVE_BALANCE;
+  public static UInt64 EJECTION_BALANCE;
   public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values

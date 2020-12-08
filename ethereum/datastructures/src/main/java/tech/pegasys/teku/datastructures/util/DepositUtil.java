@@ -21,7 +21,6 @@ import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 
 public class DepositUtil {
@@ -29,8 +28,7 @@ public class DepositUtil {
   public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.teku.pow.event.Deposit event) {
     checkArgument(
-        event.getAmount().compareTo(UInt64.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0,
-        "Deposit amount too low");
+        event.getAmount().isGreaterThanOrEqualTo(MIN_DEPOSIT_AMOUNT), "Deposit amount too low");
     DepositData data =
         new DepositData(
             event.getPubkey(),

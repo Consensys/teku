@@ -294,7 +294,9 @@ public class TekuNode extends Node {
           } else {
             throw new IllegalStateException("Proposer index greater than total validator count");
           }
-        });
+        },
+        2,
+        MINUTES);
   }
 
   public Config getConfig() {

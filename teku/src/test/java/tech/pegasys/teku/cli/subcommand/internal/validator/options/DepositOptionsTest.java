@@ -155,13 +155,12 @@ class DepositOptionsTest {
 
   @Test
   public void shouldUseMaxEffectiveBalanceAsDefaultAmount() {
-    Constants.MAX_EFFECTIVE_BALANCE = 12345678;
+    Constants.MAX_EFFECTIVE_BALANCE = UInt64.valueOf(12345678);
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
     final DepositOptions depositOptions =
         new DepositOptions(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
-    assertThat(depositOptions.getAmount())
-        .isEqualTo(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+    assertThat(depositOptions.getAmount()).isEqualTo(Constants.MAX_EFFECTIVE_BALANCE);
   }
 }

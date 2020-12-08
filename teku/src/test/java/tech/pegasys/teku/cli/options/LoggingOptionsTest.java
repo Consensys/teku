@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAUL
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -30,8 +31,9 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getLogDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(config.isLogColorEnabled()).isFalse();
     assertThat(config.isLogIncludeEventsEnabled()).isFalse();
-    assertThat(config.getLogFile()).isEqualTo("a.log");
-    assertThat(config.getLogFileNamePattern()).isEqualTo("a%d.log");
+    assertThat(config.getLogFile()).isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a.log");
+    assertThat(config.getLogFileNamePattern())
+        .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a%d.log");
     assertThat(config.isLogWireCipher()).isTrue();
     assertThat(config.isLogWirePlain()).isTrue();
     assertThat(config.isLogWireMuxFrames()).isTrue();

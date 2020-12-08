@@ -22,20 +22,14 @@ import java.util.Optional;
 public final class UInt64 implements Comparable<UInt64> {
 
   private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
+  private static final long HIGH_MASK = 0xffffffff00000000L;
+  private static final long LOW_MASK = 0x00000000ffffffffL;
 
   public static final int BYTES = 8;
 
   public static final UInt64 ZERO = new UInt64(0);
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);
-
-  /**
-   * Square root of the maximum uint64 value. Any two values less than or equal to this can be
-   * safely multiplied together without overflowing a long.
-   *
-   * <p>If either value is greater than this number, overflow checks must be performed.
-   */
-  static final long SQRT_MAX_VALUE = 4294967295L;
 
   private final long value;
 
@@ -234,32 +228,25 @@ public final class UInt64 implements Comparable<UInt64> {
     return times(value, other.value);
   }
 
+  /** Naive long-multiplication is quite efficient */
   private UInt64 times(final long longBits1, final long longBits2) {
-    if ((isSafeMultiplicand(longBits1) && isSafeMultiplicand(longBits2))
-        // 0 and 1 do not increase the size so will not overflow regardless of the second number
-        || longBits1 == 0
-        || longBits1 == 1
-        || longBits2 == 0
-        || longBits2 == 1) {
-      // We can use the fast method
-      return fromLongBits(longBits1 * longBits2);
+    if (Long.numberOfLeadingZeros(longBits1) + Long.numberOfLeadingZeros(longBits2) >= 64) {
+      return UInt64.fromLongBits(longBits1 * longBits2);
     }
-    if (longBits1 < 0 || longBits2 < 0) {
-      // Already in the upper half of the range so multiplying by anything except 0 or 1 overflows
+    final long longBits1Hi = longBits1 >>> 32;
+    final long longBits1Lo = longBits1 & LOW_MASK;
+    final long longBits2Hi = longBits2 >>> 32;
+    final long longBits2Lo = longBits2 & LOW_MASK;
+    if (longBits1Hi * longBits2Hi != 0) {
       throw new ArithmeticException("uint64 overflow");
     }
-    // Overflow is a possibility (but not guaranteed, use the slower approach)
-    final BigInteger value1 = toUnsignedBigInteger(longBits1);
-    final BigInteger value2 = toUnsignedBigInteger(longBits2);
-    final BigInteger result = value1.multiply(value2);
-    if (result.bitLength() > Long.SIZE) {
+    // One or the other of longBits1Hi and longBits2Hi is zero
+    final long crossProduct =
+        (longBits1Hi == 0) ? longBits1Lo * longBits2Hi : longBits1Hi * longBits2Lo;
+    if ((crossProduct & HIGH_MASK) != 0) {
       throw new ArithmeticException("uint64 overflow");
     }
-    return fromLongBits(result.longValue());
-  }
-
-  private boolean isSafeMultiplicand(final long longBits) {
-    return Long.compareUnsigned(longBits, SQRT_MAX_VALUE) <= 0;
+    return plus(crossProduct << 32, longBits1Lo * longBits2Lo);
   }
 
   /**
@@ -363,6 +350,15 @@ public final class UInt64 implements Comparable<UInt64> {
   @Override
   public int compareTo(final UInt64 o) {
     return Long.compareUnsigned(value, o.value);
+  }
+
+  /**
+   * Returns true if this value is zero.
+   *
+   * @return true if this value is zero.
+   */
+  public boolean isZero() {
+    return value == 0;
   }
 
   /**
