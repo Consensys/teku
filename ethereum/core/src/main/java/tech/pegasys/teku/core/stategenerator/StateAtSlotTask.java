@@ -22,66 +22,67 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconState> {
+public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconState> {
 
   /**
-   * The number of previous epochs to search for an existing checkpoint state with the same root but
+   * The number of previous slots to search for an existing checkpoint state with the same root but
    * earlier epoch. While we could search back to zero, that potentially means a lot of cache
    * look-ups that are extremely unlikely to succeed which is wasteful.
    */
-  private final UInt64 INTERIM_EPOCHS_TO_SEARCH = UInt64.valueOf(20);
+  private final UInt64 INTERIM_SLOTS_TO_SEARCH = UInt64.valueOf(640);
 
-  private final Checkpoint checkpoint;
+  private final SlotAndBlockRoot slotAndBlockRoot;
   private final AsyncStateProvider stateProvider;
   private final Optional<BeaconState> baseState;
 
-  public CheckpointStateTask(final Checkpoint checkpoint, final AsyncStateProvider stateProvider) {
-    this.checkpoint = checkpoint;
+  public StateAtSlotTask(
+      final SlotAndBlockRoot slotAndBlockRoot, final AsyncStateProvider stateProvider) {
+    this.slotAndBlockRoot = slotAndBlockRoot;
     this.stateProvider = stateProvider;
     baseState = Optional.empty();
   }
 
-  private CheckpointStateTask(
-      final Checkpoint checkpoint,
+  private StateAtSlotTask(
+      final SlotAndBlockRoot slotAndBlockRoot,
       final AsyncStateProvider stateProvider,
       final BeaconState baseState) {
-    this.checkpoint = checkpoint;
+    this.slotAndBlockRoot = slotAndBlockRoot;
     this.stateProvider = stateProvider;
     this.baseState = Optional.of(baseState);
   }
 
   @Override
-  public Checkpoint getKey() {
-    return checkpoint;
+  public SlotAndBlockRoot getKey() {
+    return slotAndBlockRoot;
   }
 
   @Override
-  public Stream<Checkpoint> streamIntermediateSteps() {
-    if (checkpoint.getEpoch().equals(UInt64.ZERO)) {
+  public Stream<SlotAndBlockRoot> streamIntermediateSteps() {
+    if (slotAndBlockRoot.getSlot().equals(UInt64.ZERO)) {
       return Stream.empty();
     }
     return Stream.iterate(
-            checkpoint.getEpoch().minus(1),
+            slotAndBlockRoot.getSlot().minus(1),
             current ->
                 current != null
                     && current.isGreaterThanOrEqualTo(UInt64.ZERO)
                     && current
-                        .plus(INTERIM_EPOCHS_TO_SEARCH)
-                        .isGreaterThanOrEqualTo(checkpoint.getEpoch()),
+                        .plus(INTERIM_SLOTS_TO_SEARCH)
+                        .isGreaterThanOrEqualTo(slotAndBlockRoot.getSlot()),
             current -> current.equals(UInt64.ZERO) ? null : current.minus(1))
-        .map(epoch -> new Checkpoint(epoch, checkpoint.getRoot()));
+        .map(slot -> new SlotAndBlockRoot(slot, slotAndBlockRoot.getBlockRoot()));
   }
 
   @Override
-  public CacheableTask<Checkpoint, BeaconState> rebase(final BeaconState newBaseValue) {
-    return new CheckpointStateTask(checkpoint, stateProvider, newBaseValue);
+  public CacheableTask<SlotAndBlockRoot, BeaconState> rebase(final BeaconState newBaseValue) {
+    return new StateAtSlotTask(slotAndBlockRoot, stateProvider, newBaseValue);
   }
 
   @Override
@@ -92,22 +93,22 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
   private SafeFuture<Optional<BeaconState>> getBaseState() {
     return baseState.isPresent()
         ? SafeFuture.completedFuture(baseState)
-        : stateProvider.getState(checkpoint.getRoot());
+        : stateProvider.getState(slotAndBlockRoot.getBlockRoot());
   }
 
   private BeaconState regenerateFromState(final BeaconState state) {
-    if (state.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
+    if (state.getSlot().isGreaterThan(slotAndBlockRoot.getSlot())) {
       throw new InvalidCheckpointException(
           String.format(
               "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
-              state.getSlot(), checkpoint.getEpochStartSlot()));
+              state.getSlot(), slotAndBlockRoot.getSlot()));
     }
     try {
-      if (state.getSlot().equals(checkpoint.getEpochStartSlot())) {
+      if (state.getSlot().equals(slotAndBlockRoot.getSlot())) {
         return state;
       }
 
-      return new StateTransition().process_slots(state, checkpoint.getEpochStartSlot());
+      return new StateTransition().process_slots(state, slotAndBlockRoot.getSlot());
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }
@@ -123,7 +124,7 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
           return SafeFuture.completedFuture(Optional.empty());
         }
       };
-    };
+    }
 
     static AsyncStateProvider fromAnchor(final AnchorPoint anchor) {
       return (Bytes32 root) -> {
@@ -133,7 +134,7 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
           return SafeFuture.completedFuture(Optional.empty());
         }
       };
-    };
+    }
 
     SafeFuture<Optional<BeaconState>> getState(Bytes32 blockRoot);
   }
