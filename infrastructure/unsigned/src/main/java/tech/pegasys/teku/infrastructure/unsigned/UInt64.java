@@ -31,18 +31,6 @@ public final class UInt64 implements Comparable<UInt64> {
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);
 
-  /**
-   * Square root of the maximum uint64 value. Any two values less than or equal to this can be
-   * safely multiplied together without overflowing a long.
-   *
-   * <p>If either value is greater than this number, overflow checks must be performed.
-   */
-  static final long SQRT_MAX_VALUE = 4294967295L;
-
-  static final long SPECIAL_CASE_MULTIPLICAND = 64L;
-  static final long MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND =
-      Long.divideUnsigned(-1L, SPECIAL_CASE_MULTIPLICAND);
-
   private final long value;
 
   private UInt64(final long value) {
