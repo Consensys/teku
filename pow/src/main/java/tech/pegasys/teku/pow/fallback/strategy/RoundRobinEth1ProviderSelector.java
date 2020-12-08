@@ -34,6 +34,7 @@ public class RoundRobinEth1ProviderSelector implements Eth1ProviderSelector {
     this(candidates, eth1ProviderReadiness, DEFAULT_PROVIDER_READINESS_CHECK_INTERVAL_SECONDS);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public RoundRobinEth1ProviderSelector(
       final List<Eth1Provider> candidates,
       final Eth1ProviderReadiness eth1ProviderReadiness,
