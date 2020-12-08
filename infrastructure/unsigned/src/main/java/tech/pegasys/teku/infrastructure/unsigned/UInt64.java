@@ -37,6 +37,10 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   static final long SQRT_MAX_VALUE = 4294967295L;
 
+  static final long SPECIAL_CASE_MULTIPLICAND = 64L;
+  static final long MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND =
+      Long.divideUnsigned(-1L, SPECIAL_CASE_MULTIPLICAND);
+
   private final long value;
 
   private UInt64(final long value) {
@@ -235,7 +239,8 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   private UInt64 times(final long longBits1, final long longBits2) {
-    if ((isSafeMultiplicand(longBits1) && isSafeMultiplicand(longBits2))
+    if (isSafeMultiplication(longBits1, longBits2)
+        || (isSafeMultiplicand(longBits1) && isSafeMultiplicand(longBits2))
         // 0 and 1 do not increase the size so will not overflow regardless of the second number
         || longBits1 == 0
         || longBits1 == 1
@@ -256,6 +261,13 @@ public final class UInt64 implements Comparable<UInt64> {
       throw new ArithmeticException("uint64 overflow");
     }
     return fromLongBits(result.longValue());
+  }
+
+  private boolean isSafeMultiplication(final long longBits1, final long longBits2) {
+    return (Long.compareUnsigned(longBits1, SPECIAL_CASE_MULTIPLICAND) <= 0
+            && Long.compareUnsigned(longBits2, MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND) <= 0)
+        || (Long.compareUnsigned(longBits2, SPECIAL_CASE_MULTIPLICAND) <= 0
+            && Long.compareUnsigned(longBits1, MAX_SAFE_VALUE_WITH_SPECIAL_CASE_MULTIPLICAND) <= 0);
   }
 
   private boolean isSafeMultiplicand(final long longBits) {
@@ -363,6 +375,15 @@ public final class UInt64 implements Comparable<UInt64> {
   @Override
   public int compareTo(final UInt64 o) {
     return Long.compareUnsigned(value, o.value);
+  }
+
+  /**
+   * Returns true if this value is zero.
+   *
+   * @return true if this value is zero.
+   */
+  public boolean isZero() {
+    return value == 0;
   }
 
   /**

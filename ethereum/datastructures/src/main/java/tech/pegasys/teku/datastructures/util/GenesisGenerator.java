@@ -99,14 +99,12 @@ public class GenesisGenerator {
     }
     UInt64 balance = state.getBalances().get(index);
     UInt64 effective_balance =
-        balance
-            .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
-            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+        balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
 
     UInt64 activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
     UInt64 activation_epoch = validator.getActivation_epoch();
 
-    if (effective_balance.equals(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))) {
+    if (effective_balance.equals(MAX_EFFECTIVE_BALANCE)) {
       activation_eligibility_epoch = UInt64.valueOf(GENESIS_EPOCH);
       activation_epoch = UInt64.valueOf(GENESIS_EPOCH);
       activeValidatorCount++;

@@ -46,7 +46,7 @@ public class MockStartDepositGenerator {
 
   private DepositData createDepositData(final BLSKeyPair keyPair) {
     return depositGenerator.createDepositData(
-        keyPair, UInt64.valueOf(MAX_EFFECTIVE_BALANCE), keyPair.getPublicKey());
+        keyPair, MAX_EFFECTIVE_BALANCE, keyPair.getPublicKey());
   }
 
   private DepositData createDepositData(final BLSKeyPair keyPair, final UInt64 depositBalance) {

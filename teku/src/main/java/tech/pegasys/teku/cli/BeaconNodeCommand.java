@@ -58,6 +58,7 @@ import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
+import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
@@ -95,6 +96,9 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
+
+  public static final String LOG_FILE = "teku.log";
+  public static final String LOG_PATTERN = "teku_%d{yyyy-MM-dd}.log";
 
   public static final String CONFIG_FILE_OPTION_NAME = "--config-file";
   static final String TEKU_CONFIG_FILE_ENV = "TEKU_CONFIG_FILE";
@@ -351,12 +355,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
+        .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setLogColorEnabled(loggingOptions.isLogColorEnabled())
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
-        .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
         .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
         .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
         .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
@@ -380,13 +384,20 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
         .setRestApiCorsAllowedOrigins(beaconRestApiOptions.getRestApiCorsAllowedOrigins());
 
-    String logFile =
-        loggingOptions
-            .getMaybeLogFile()
-            .orElse(
-                LoggingOptions.getDefaultLogFileGivenDataDir(
-                    dataOptions.getDataBasePath().toString(), false));
-    builder.setLogFile(logFile);
+    final String dataBasePath = dataOptions.getDataBasePath().toString();
+    builder.setLogFile(
+        new LoggingPathBuilder()
+            .defaultBasename(LOG_FILE)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(loggingOptions.getMaybeLogFile())
+            .build());
+
+    builder.setLogFileNamePattern(
+        new LoggingPathBuilder()
+            .defaultBasename(LOG_PATTERN)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(loggingOptions.getMaybeLogPattern())
+            .build());
   }
 
   @FunctionalInterface

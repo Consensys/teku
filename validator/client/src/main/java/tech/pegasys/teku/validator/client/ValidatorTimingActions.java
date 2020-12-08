@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -20,11 +22,14 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final ValidatorTimingChannel blockDuties;
   private final ValidatorTimingChannel attestationDuties;
+  private final ValidatorStatusLogger statusLogger;
 
   public ValidatorTimingActions(
+      final ValidatorStatusLogger statusLogger,
       final ValidatorIndexProvider validatorIndexProvider,
       final ValidatorTimingChannel blockDuties,
       final ValidatorTimingChannel attestationDuties) {
+    this.statusLogger = statusLogger;
     this.validatorIndexProvider = validatorIndexProvider;
     this.blockDuties = blockDuties;
     this.attestationDuties = attestationDuties;
@@ -35,6 +40,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     validatorIndexProvider.lookupValidators();
     blockDuties.onSlot(slot);
     attestationDuties.onSlot(slot);
+    if (slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
+      statusLogger.checkValidatorStatusChanges();
+    }
   }
 
   @Override

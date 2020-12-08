@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
@@ -31,6 +32,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,16 +41,18 @@ import java.util.function.BiFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
-import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
@@ -61,7 +65,6 @@ import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -94,9 +97,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
+  private final ChainDataProvider chainDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
-  private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
   private final AggregatingAttestationPool attestationPool;
@@ -108,9 +111,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final PerformanceTracker performanceTracker;
 
   public ValidatorApiHandler(
+      final ChainDataProvider chainDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
-      final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final AggregatingAttestationPool attestationPool,
@@ -120,9 +123,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
+    this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
-    this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
     this.attestationPool = attestationPool;
@@ -183,14 +186,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
-        .getLatestStateAtSlot(slot)
+        .getStateAtSlotExact(slot)
         .thenApply(
             optionalState ->
-                optionalState
-                    .map(state -> processSlots(state, slot))
-                    .map(
-                        state ->
-                            getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
+                optionalState.map(
+                    state -> getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
   }
 
   @Override
@@ -205,54 +205,68 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
                   combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
     }
-    final UInt64 slot = compute_start_slot_at_epoch(epoch);
-    LOG.trace("Retrieving proposer duties from epoch {} using state at slot {}", epoch, slot);
+    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
-        .getLatestStateAtSlot(slot)
+        .getStateAtSlotExact(compute_start_slot_at_epoch(epoch))
         .thenApply(
             optionalState ->
-                optionalState
-                    .map(state -> processSlots(state, slot))
-                    .map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
+                optionalState.map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
   }
 
-  private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
-    if (startingState.getSlot().compareTo(targetSlot) >= 0) {
-      return startingState;
-    }
-    try {
-      return stateTransition.process_slots(startingState, targetSlot);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      throw new IllegalStateException("Unable to process slots", e);
-    }
+  @Override
+  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+      Set<BLSPublicKey> validatorIdentifiers) {
+    return chainDataProvider
+        .getStateValidators(
+            "head",
+            validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
+            new HashSet<>())
+        .thenApply(
+            (maybeList) ->
+                maybeList.map(
+                    list ->
+                        list.stream()
+                            .collect(
+                                toMap(
+                                    ValidatorResponse::getPublicKey,
+                                    ValidatorResponse::getStatus))));
   }
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    LOG.trace("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    return createFromBlockAndState(
-        slot.minus(UInt64.ONE),
-        blockAndState ->
-            blockFactory.createUnsignedBlock(
-                blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal, graffiti));
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot.minus(UInt64.ONE))
+        .thenCompose(
+            maybePreState ->
+                combinedChainDataClient
+                    .getStateAtSlotExact(slot)
+                    .thenApplyChecked(
+                        maybeBlockSlotState ->
+                            createBlock(
+                                slot, randaoReveal, graffiti, maybePreState, maybeBlockSlotState)));
   }
 
-  private <T> SafeFuture<Optional<T>> createFromBlockAndState(
-      final UInt64 maximumSlot, final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
-
-    return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(maximumSlot)
-        .thenApplyChecked(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return Optional.empty();
-              }
-              return Optional.of(creator.apply(maybeBlockAndState.get()));
-            });
+  private Optional<BeaconBlock> createBlock(
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<BeaconState> maybePreState,
+      final Optional<BeaconState> maybeBlockSlotState)
+      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
+    if (maybePreState.isEmpty()) {
+      return Optional.empty();
+    }
+    LOG.trace(
+        "Delegating to block factory. Has block slot state? {}", maybeBlockSlotState.isPresent());
+    return Optional.of(
+        blockFactory.createUnsignedBlock(
+            maybePreState.get(), maybeBlockSlotState, slot, randaoReveal, graffiti));
   }
 
   @Override

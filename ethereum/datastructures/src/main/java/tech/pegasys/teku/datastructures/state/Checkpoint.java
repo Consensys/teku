@@ -20,6 +20,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -98,6 +99,10 @@ public class Checkpoint extends AbstractImmutableContainer
 
   public UInt64 getEpochStartSlot() {
     return compute_start_slot_at_epoch(getEpoch());
+  }
+
+  public SlotAndBlockRoot toSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(getEpochStartSlot(), getRoot());
   }
 
   @Override
