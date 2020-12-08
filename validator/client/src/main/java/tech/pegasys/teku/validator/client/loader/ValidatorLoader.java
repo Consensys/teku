@@ -108,7 +108,7 @@ public class ValidatorLoader {
 
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
 
-    setupExternalSignerStatusLogging(config, timeout);
+    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, timeout);
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -129,12 +129,12 @@ public class ValidatorLoader {
   }
 
   private void setupExternalSignerStatusLogging(
-      final ValidatorConfig config, final Duration timeout) {
+      final ValidatorConfig config,
+      final Supplier<HttpClient> externalSignerHttpClientFactory,
+      final Duration timeout) {
     final ExternalSignerUpcheck externalSignerUpcheck =
         new ExternalSignerUpcheck(
-            remoteValidatorHttpClientFactory.get(),
-            config.getValidatorExternalSignerUrl(),
-            timeout);
+            externalSignerHttpClientFactory.get(), config.getValidatorExternalSignerUrl(), timeout);
     final ExternalSignerStatusLogger externalSignerStatusLogger =
         new ExternalSignerStatusLogger(
             STATUS_LOG,
