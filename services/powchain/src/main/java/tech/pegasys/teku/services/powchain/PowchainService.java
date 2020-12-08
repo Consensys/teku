@@ -16,6 +16,8 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -62,11 +65,16 @@ public class PowchainService extends Service {
 
     this.web3j = createWeb3j(tekuConfig);
 
-    final Eth1Provider eth1Provider =
-        new ThrottlingEth1Provider(
-            new ErrorTrackingEth1Provider(
-                new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
-            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+    // TODO init list with multiple endpoints from CLI options
+    final List<Eth1Provider> eth1Providers =
+        Arrays.asList(
+            new ThrottlingEth1Provider(
+                new ErrorTrackingEth1Provider(
+                    new Web3jEth1Provider(web3j, asyncRunner),
+                    asyncRunner,
+                    config.getTimeProvider()),
+                MAXIMUM_CONCURRENT_ETH1_REQUESTS));
+    final Eth1Provider eth1Provider = new FallbackAwareEth1Provider(eth1Providers);
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
