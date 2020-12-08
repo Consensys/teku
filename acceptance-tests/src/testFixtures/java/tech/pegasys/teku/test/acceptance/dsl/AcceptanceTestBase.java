@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -22,13 +28,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
@@ -50,8 +49,7 @@ public class AcceptanceTestBase {
 
   protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
     try {
-      return addNode(
-          TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
+      return addNode(TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }

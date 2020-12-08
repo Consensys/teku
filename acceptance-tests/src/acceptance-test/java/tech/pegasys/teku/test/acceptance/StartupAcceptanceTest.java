@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-
-import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
@@ -59,8 +58,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final TekuNode tekuNode =
-        createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuNode.start();
 
     createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);

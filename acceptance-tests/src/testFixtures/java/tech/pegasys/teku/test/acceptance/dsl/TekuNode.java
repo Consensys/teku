@@ -69,8 +69,7 @@ public class TekuNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(
-      final SimpleHttpClient httpClient, final Network network, final Config config) {
+  private TekuNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
@@ -430,9 +429,7 @@ public class TekuNode extends Node {
 
     public Config withPeers(final TekuNode... nodes) {
       final String peers =
-          asList(nodes).stream()
-              .map(TekuNode::getMultiAddr)
-              .collect(Collectors.joining(", "));
+          asList(nodes).stream().map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;

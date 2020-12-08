@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
-
-import java.util.List;
-
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 

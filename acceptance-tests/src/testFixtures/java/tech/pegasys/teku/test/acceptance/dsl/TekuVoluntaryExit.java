@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.Network;
-import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Network;
+import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuVoluntaryExit extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -55,7 +54,8 @@ public class TekuVoluntaryExit extends Node {
     return node;
   }
 
-  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeytores) throws Exception {
+  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeytores)
+      throws Exception {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
             + validatorKeytores.getKeysDirectoryName()

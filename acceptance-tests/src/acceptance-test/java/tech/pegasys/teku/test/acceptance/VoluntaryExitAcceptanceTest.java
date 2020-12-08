@@ -36,11 +36,11 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork("less-swift")
-                    .withInteropModeDisabled()
-                    .withBeaconNode(beaconNode))
+                config ->
+                    config
+                        .withNetwork("less-swift")
+                        .withInteropModeDisabled()
+                        .withBeaconNode(beaconNode))
             .withValidatorKeystores(validatorKeystores);
 
     final TekuVoluntaryExit voluntaryExitProcess =

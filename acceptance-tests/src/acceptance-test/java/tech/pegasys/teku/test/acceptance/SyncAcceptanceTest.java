@@ -38,7 +38,7 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
   }
 
   private Consumer<Config> configureLateJoiningNode(
-          final TekuNode primaryNode, final int genesisTime) {
+      final TekuNode primaryNode, final int genesisTime) {
     return c ->
         c.withGenesisTime(genesisTime)
             .withRealNetwork()
