@@ -242,13 +242,13 @@ public final class UInt64 implements Comparable<UInt64> {
 
   /** Naive long-multiplication is quite efficient */
   private UInt64 times(final long longBits1, final long longBits2) {
+    if (Long.numberOfLeadingZeros(longBits1) + Long.numberOfLeadingZeros(longBits2) >= 64) {
+      return UInt64.fromLongBits(longBits1 * longBits2);
+    }
     final long longBits1Hi = longBits1 >>> 32;
     final long longBits1Lo = longBits1 & LOW_MASK;
     final long longBits2Hi = longBits2 >>> 32;
     final long longBits2Lo = longBits2 & LOW_MASK;
-    if (longBits1Hi == 0 && longBits2Hi == 0) {
-      return UInt64.fromLongBits(longBits1Lo * longBits2Lo);
-    }
     if (longBits1Hi * longBits2Hi != 0) {
       throw new ArithmeticException("uint64 overflow");
     }
