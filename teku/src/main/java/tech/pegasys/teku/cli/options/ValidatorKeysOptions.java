@@ -108,7 +108,7 @@ public class ValidatorKeysOptions {
       names = {"--validators-external-signer-truststore-password-file"},
       paramLabel = "<FILE>",
       description =
-          "Password file to decrypt keystore (PKCS12/JSK) that will be used to trust external signer's self-signed certificate",
+          "Password file to decrypt keystore (PKCS12/JKS) that will be used to trust external signer's self-signed certificate",
       arity = "1")
   private String validatorExternalSignerTruststorePasswordFile = null;
 
