@@ -40,7 +40,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork("swift")
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodeEndpoint(beaconNode.getBeaconRestApiUrl()));
+                    .withBeaconNode(beaconNode));
   }
 
   @Test
