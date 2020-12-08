@@ -17,6 +17,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class ValidatorConfig {
   private final List<BLSPublicKey> validatorExternalSignerPublicKeys;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
-  private final int validatorExternalSignerTimeout;
+  private final Duration validatorExternalSignerTimeout;
   private final Path validatorExternalSignerKeystore;
   private final Path validatorExternalSignerKeystorePasswordFile;
   private final Path validatorExternalSignerTruststore;
@@ -52,7 +53,7 @@ public class ValidatorConfig {
       final List<String> validatorKeystorePasswordFiles,
       final List<BLSPublicKey> validatorExternalSignerPublicKeys,
       final URL validatorExternalSignerUrl,
-      final int validatorExternalSignerTimeout,
+      final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
       final Path validatorExternalSignerKeystorePasswordFile,
       final Path validatorExternalSignerTruststore,
@@ -113,7 +114,7 @@ public class ValidatorConfig {
     return validatorExternalSignerUrl;
   }
 
-  public int getValidatorExternalSignerTimeout() {
+  public Duration getValidatorExternalSignerTimeout() {
     return validatorExternalSignerTimeout;
   }
 
@@ -157,7 +158,7 @@ public class ValidatorConfig {
     private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
-    private int validatorExternalSignerTimeout = 1000;
+    private Duration validatorExternalSignerTimeout = Duration.ofSeconds(1);
     private Path validatorExternalSignerKeystore;
     private Path validatorExternalSignerKeystorePasswordFile;
     private Path validatorExternalSignerTruststore;
@@ -203,7 +204,7 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorExternalSignerTimeout(int validatorExternalSignerTimeout) {
+    public Builder validatorExternalSignerTimeout(final Duration validatorExternalSignerTimeout) {
       this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
       return this;
     }

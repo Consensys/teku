@@ -17,6 +17,7 @@ import com.google.common.base.Strings;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -79,7 +80,7 @@ public class ValidatorKeysOptions {
       paramLabel = "<INTEGER>",
       description = "Timeout (in milliseconds) for the external signing service",
       arity = "1")
-  private int validatorExternalSignerTimeout = 1000;
+  private long validatorExternalSignerTimeout = 1000;
 
   @CommandLine.Option(
       names = {"--validators-external-signer-keystore"},
@@ -119,7 +120,7 @@ public class ValidatorKeysOptions {
                 .validatorKeys(validatorKeys)
                 .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
-                .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
+                .validatorExternalSignerTimeout(Duration.ofMillis(validatorExternalSignerTimeout))
                 .validatorExternalSignerKeystore(convertToPath(validatorExternalSignerKeystore))
                 .validatorExternalSignerKeystorePasswordFile(
                     convertToPath(validatorExternalSignerKeystorePasswordFile))

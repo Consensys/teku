@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -106,9 +105,7 @@ public class ValidatorLoader {
       return Collections.emptyMap();
     }
 
-    final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
-
-    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, timeout);
+    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory);
 
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -118,7 +115,7 @@ public class ValidatorLoader {
                       externalSignerHttpClientFactory.get(),
                       config.getValidatorExternalSignerUrl(),
                       publicKey,
-                      timeout);
+                      config.getValidatorExternalSignerTimeout());
               final Signer signer =
                   config.isValidatorExternalSignerSlashingProtectionEnabled()
                       ? createSlashingProtectedSigner(publicKey, externalSigner)
@@ -129,12 +126,12 @@ public class ValidatorLoader {
   }
 
   private void setupExternalSignerStatusLogging(
-      final ValidatorConfig config,
-      final Supplier<HttpClient> externalSignerHttpClientFactory,
-      final Duration timeout) {
+      final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
     final ExternalSignerUpcheck externalSignerUpcheck =
         new ExternalSignerUpcheck(
-            externalSignerHttpClientFactory.get(), config.getValidatorExternalSignerUrl(), timeout);
+            externalSignerHttpClientFactory.get(),
+            config.getValidatorExternalSignerUrl(),
+            config.getValidatorExternalSignerTimeout());
     final ExternalSignerStatusLogger externalSignerStatusLogger =
         new ExternalSignerStatusLogger(
             STATUS_LOG,
