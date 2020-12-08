@@ -122,8 +122,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
       this.transaction = db.startTransaction();
       this.schema = schema;
       this.stateStorageFrequency = stateStorageFrequency;
-      lastStateStoredSlot =
-          db.getLastEntry(schema.getColumnFinalizedStatesBySlot()).map(ColumnEntry::getKey);
+      lastStateStoredSlot = db.getLastKey(schema.getColumnFinalizedStatesBySlot());
     }
 
     @Override

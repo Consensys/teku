@@ -59,6 +59,16 @@ public interface RocksDbAccessor extends AutoCloseable {
    */
   <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column);
 
+  /**
+   * Returns the last key in the given column without loading the associated value.
+   *
+   * @param column The column we want to query
+   * @param <K> The key type of the column
+   * @param <V> The value type of the column
+   * @return The last key in this column - the key with the greatest value
+   */
+  <K, V> Optional<K> getLastKey(RocksDbColumn<K, V> column);
+
   @MustBeClosed
   <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column);
 
