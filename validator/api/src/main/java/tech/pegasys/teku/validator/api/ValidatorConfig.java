@@ -258,6 +258,7 @@ public class ValidatorConfig {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
+      validateExternalSignerURLScheme();
       return new ValidatorConfig(
           validatorKeys,
           validatorKeystoreFiles,
@@ -302,8 +303,7 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
-      if (validatorExternalSignerPublicKeys == null
-          || validatorExternalSignerPublicKeys.isEmpty()) {
+      if (externalPublicKeysNotDefined()) {
         return;
       }
 
@@ -330,6 +330,32 @@ public class ValidatorConfig {
             "Invalid configuration. '--validators-external-signer-truststore' and '--validators-external-signer-truststore-password-file' must be specified together";
         throw new InvalidConfigurationException(errorMessage);
       }
+    }
+
+    private void validateExternalSignerURLScheme() {
+      if (externalPublicKeysNotDefined() || validatorExternalSignerUrl == null) {
+        return;
+      }
+
+      if (validatorExternalSignerKeystore != null || validatorExternalSignerTruststore != null) {
+        if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
+          final String errorMessage =
+              String.format(
+                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined",
+                  validatorExternalSignerUrl);
+          throw new InvalidConfigurationException(errorMessage);
+        }
+      }
+    }
+
+    private boolean externalPublicKeysNotDefined() {
+      return validatorExternalSignerPublicKeys == null
+          || validatorExternalSignerPublicKeys.isEmpty();
+    }
+
+    private static boolean isURLSchemeHttps(final URL url) {
+      final String protocol = url.getProtocol();
+      return protocol != null && protocol.equalsIgnoreCase("https");
     }
 
     private boolean onlyOneInitialized(final Object o1, final Object o2) {
