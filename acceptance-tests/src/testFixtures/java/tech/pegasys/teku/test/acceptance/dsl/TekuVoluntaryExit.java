@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Network;
+import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.Network;
-import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TekuVoluntaryExit extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -54,7 +55,7 @@ public class TekuVoluntaryExit extends Node {
     return node;
   }
 
-  public void withValidatorKeystores(ValidatorKeystores validatorKeytores) throws Exception {
+  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeytores) throws Exception {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
             + validatorKeytores.getKeysDirectoryName()
@@ -62,6 +63,7 @@ public class TekuVoluntaryExit extends Node {
             + WORKING_DIRECTORY
             + validatorKeytores.getPasswordsDirectoryName());
     this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
+    return this;
   }
 
   public void start() throws Exception {
@@ -104,7 +106,7 @@ public class TekuVoluntaryExit extends Node {
       return this;
     }
 
-    public TekuVoluntaryExit.Config withBeaconNode(final TekuBeaconNode beaconNode) {
+    public TekuVoluntaryExit.Config withBeaconNode(final TekuNode beaconNode) {
       configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
       return this;
     }

@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -31,7 +31,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
 
-    final TekuBeaconNode beaconNode =
+    final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork("less-swift").withDepositsFrom(eth1Node));
 
     final TekuValidatorNode validatorClient =
@@ -40,12 +40,12 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork("less-swift")
                     .withInteropModeDisabled()
-                    .withBeaconNode(beaconNode));
-    validatorClient.withValidatorKeystores(validatorKeystores);
+                    .withBeaconNode(beaconNode))
+            .withValidatorKeystores(validatorKeystores);
 
     final TekuVoluntaryExit voluntaryExitProcess =
-        createVoluntaryExit(config -> config.withBeaconNode(beaconNode));
-    voluntaryExitProcess.withValidatorKeystores(validatorKeystores);
+        createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
+            .withValidatorKeystores(validatorKeystores);
 
     beaconNode.start();
     validatorClient.start();

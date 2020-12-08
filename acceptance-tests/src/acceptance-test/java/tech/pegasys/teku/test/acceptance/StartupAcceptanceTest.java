@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+
+import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
-    final TekuBeaconNode node = createTekuNode();
+    final TekuNode node = createTekuNode();
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
@@ -32,13 +33,13 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
-    final TekuBeaconNode node1 = createTekuNode();
+    final TekuNode node1 = createTekuNode();
     node1.start();
     final UInt64 genesisTime = node1.getGenesisTime();
     File dataDirectory = node1.getDataDirectoryFromContainer();
     node1.stop();
 
-    final TekuBeaconNode node2 = createTekuNode();
+    final TekuNode node2 = createTekuNode();
     node2.copyContentsToWorkingDirectory(dataDirectory);
     node2.start();
     node2.waitForGenesisTime(genesisTime);
@@ -47,7 +48,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldFinalize() throws Exception {
-    final TekuBeaconNode node1 = createTekuNode();
+    final TekuNode node1 = createTekuNode();
     node1.start();
     node1.waitForNewFinalization();
     node1.stop();
@@ -58,11 +59,11 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final TekuBeaconNode tekuBeaconNode =
+    final TekuNode tekuNode =
         createTekuNode(config -> config.withDepositsFrom(eth1Node));
-    tekuBeaconNode.start();
+    tekuNode.start();
 
     createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
-    tekuBeaconNode.waitForGenesis();
+    tekuNode.waitForGenesis();
   }
 }

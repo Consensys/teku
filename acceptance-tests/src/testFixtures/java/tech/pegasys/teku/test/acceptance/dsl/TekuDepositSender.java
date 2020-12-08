@@ -39,7 +39,7 @@ public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
   public TekuDepositSender(final Network network) {
-    super(network, TekuBeaconNode.TEKU_DOCKER_IMAGE, LOG);
+    super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
   }
 
   public ValidatorKeystores sendValidatorDeposits(

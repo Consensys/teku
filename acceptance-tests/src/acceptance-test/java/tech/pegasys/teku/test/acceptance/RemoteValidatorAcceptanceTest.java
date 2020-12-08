@@ -16,13 +16,13 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   static final int VALIDATOR_COUNT = 8;
 
-  private TekuBeaconNode beaconNode;
+  private TekuNode beaconNode;
   private TekuValidatorNode validatorClient;
 
   @BeforeEach

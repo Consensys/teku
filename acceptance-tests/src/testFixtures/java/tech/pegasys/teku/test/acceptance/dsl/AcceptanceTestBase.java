@@ -13,15 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -29,10 +20,15 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
@@ -48,14 +44,14 @@ public class AcceptanceTestBase {
     network.close();
   }
 
-  protected TekuBeaconNode createTekuNode() {
+  protected TekuNode createTekuNode() {
     return createTekuNode(config -> {});
   }
 
-  protected TekuBeaconNode createTekuNode(final Consumer<TekuBeaconNode.Config> configOptions) {
+  protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
     try {
       return addNode(
-          TekuBeaconNode.create(httpClient, network, configOptions, genesisStateGenerator));
+          TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -73,15 +69,6 @@ public class AcceptanceTestBase {
 
   protected TekuDepositSender createTekuDepositSender() {
     return addNode(new TekuDepositSender(network));
-  }
-
-  protected List<BLSKeyPair> createKeysAndSendDeposits(
-      final BesuNode eth1Node, final int numberOfValidators) throws Exception {
-    final TekuDepositSender depositSender = createTekuDepositSender();
-    final List<ValidatorKeys> validatorKeys =
-        depositSender.generateValidatorKeys(numberOfValidators);
-    depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MAX_EFFECTIVE_BALANCE);
-    return validatorKeys.stream().map(ValidatorKeys::getValidatorKey).collect(Collectors.toList());
   }
 
   protected BesuNode createBesuNode() {

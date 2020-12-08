@@ -17,18 +17,18 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
-    final TekuBeaconNode primaryNode = createTekuNode(Config::withRealNetwork);
+    final TekuNode primaryNode = createTekuNode(Config::withRealNetwork);
 
     primaryNode.start();
     UInt64 genesisTime = primaryNode.getGenesisTime();
-    final TekuBeaconNode lateJoiningNode =
+    final TekuNode lateJoiningNode =
         createTekuNode(configureLateJoiningNode(primaryNode, genesisTime.intValue()));
     primaryNode.waitForNewFinalization();
 
@@ -38,7 +38,7 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
   }
 
   private Consumer<Config> configureLateJoiningNode(
-      final TekuBeaconNode primaryNode, final int genesisTime) {
+          final TekuNode primaryNode, final int genesisTime) {
     return c ->
         c.withGenesisTime(genesisTime)
             .withRealNetwork()
