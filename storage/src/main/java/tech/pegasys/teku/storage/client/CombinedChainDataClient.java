@@ -162,6 +162,21 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot);
+    if (recentBlockRoot.isPresent()) {
+      return getStore()
+          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .thenCompose(
+              maybeState ->
+                  maybeState.isPresent()
+                      ? SafeFuture.completedFuture(maybeState)
+                      // Check if we can get it from historical state
+                      : regenerateStateAndSlotExact(slot));
+    }
+    return regenerateStateAndSlotExact(slot);
+  }
+
+  private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
     return getBlockAndStateInEffectAtSlot(slot)
         .thenApplyChecked(
             maybeBlockAndState ->
@@ -209,13 +224,6 @@ public class CombinedChainDataClient {
   public boolean isFinalizedEpoch(final UInt64 epoch) {
     final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
     return finalizedEpoch.compareTo(epoch) >= 0;
-  }
-
-  public SafeFuture<Optional<CheckpointState>> retrieveFinalizedCheckpointAndState() {
-    if (recentChainData.getStore() == null) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    return recentChainData.getStore().retrieveFinalizedCheckpointAndState().thenApply(Optional::of);
   }
 
   /**
@@ -289,7 +297,27 @@ public class CombinedChainDataClient {
 
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace(
+          "No state at slot and block root {} because the store is not set", slotAndBlockRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return store
+        .retrieveStateAtSlot(slotAndBlockRoot)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isPresent()) {
+                return SafeFuture.completedFuture(maybeState);
+              }
+              return getFinalizedStateFromSlotAndBlock(slotAndBlockRoot);
+            });
+  }
+
+  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return historicalChainData
+        .getFinalizedStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
         .thenApply(
             maybeState ->
                 maybeState.flatMap(
