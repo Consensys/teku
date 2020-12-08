@@ -80,7 +80,7 @@ public class ValidatorKeysOptions {
       paramLabel = "<INTEGER>",
       description = "Timeout (in milliseconds) for the external signing service",
       arity = "1")
-  private long validatorExternalSignerTimeout = 1000;
+  private long validatorExternalSignerTimeout = 5000;
 
   @CommandLine.Option(
       names = {"--validators-external-signer-keystore"},

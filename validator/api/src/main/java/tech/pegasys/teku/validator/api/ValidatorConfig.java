@@ -158,7 +158,7 @@ public class ValidatorConfig {
     private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
-    private Duration validatorExternalSignerTimeout = Duration.ofSeconds(1);
+    private Duration validatorExternalSignerTimeout = Duration.ofSeconds(5);
     private Path validatorExternalSignerKeystore;
     private Path validatorExternalSignerKeystorePasswordFile;
     private Path validatorExternalSignerTruststore;
