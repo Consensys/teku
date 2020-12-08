@@ -17,7 +17,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -25,8 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -67,7 +66,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   private final AsyncRunner asyncRunner;
 
   public RemoteValidatorApiHandler(
-          final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
+      final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
   }
@@ -75,243 +74,224 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Fork>> getFork() {
     return sendRequest(
-            () ->
-                    apiClient
-                            .getFork()
-                            .map(
-                                    result ->
-                                            new Fork(result.previous_version, result.current_version, result.epoch)));
+        () ->
+            apiClient
+                .getFork()
+                .map(
+                    result ->
+                        new Fork(result.previous_version, result.current_version, result.epoch)));
   }
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
     return sendRequest(
-            () ->
-                    apiClient
-                            .getGenesis()
-                            .map(
-                                    response ->
-                                            new GenesisData(
-                                                    response.data.genesisTime, response.data.genesisValidatorsRoot)));
+        () ->
+            apiClient
+                .getGenesis()
+                .map(
+                    response ->
+                        new GenesisData(
+                            response.data.genesisTime, response.data.genesisValidatorsRoot)));
   }
 
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
-          final List<BLSPublicKey> publicKeys) {
+      final List<BLSPublicKey> publicKeys) {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(emptyMap());
     }
-    return sendRequest(
-            () -> {
-              final Map<BLSPublicKey, Integer> indices = new HashMap<>();
-              for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
-                final List<BLSPublicKey> batch =
-                        publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-                requestValidatorIndices(batch).ifPresent(indices::putAll);
-              }
-              return indices;
-            });
+    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-          Set<BLSPublicKey> publicKeys) {
+      List<BLSPublicKey> publicKeys) {
     return sendRequest(
-            () -> {
-              final Map<BLSPublicKey, ValidatorStatus> statuses = new HashMap<>();
-              for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
-                final List<BLSPublicKey> batch =
-                        publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-                apiClient
-                        .getValidators(
-                                publicKeys.stream()
-                                        .map(BLSPublicKey::toString)
-                                        .collect(Collectors.toList()))
-                        .map(
-                                list ->
-                                        list.stream()
-                                                .collect(
-                                                        toMap(
-                                                                ValidatorResponse::getPublicKey,
-                                                                ValidatorResponse::getStatus)));
-              }
-              return statuses;
-            });
+        () -> Optional.of(makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus)));
   }
 
-  private Optional<Map<BLSPublicKey, Integer>> requestValidatorIndices(
-          final List<BLSPublicKey> batch) {
+  private <T> Map<BLSPublicKey, T> makeBatchedValidatorRequest(
+      List<BLSPublicKey> publicKeys, Function<ValidatorResponse, T> validatorResponseTFunction) {
+    final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
+    for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
+      final List<BLSPublicKey> batch =
+          publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
+      requestValidatorObject(batch, validatorResponseTFunction).ifPresent(returnedObjects::putAll);
+    }
+    return returnedObjects;
+  }
+
+  private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
+      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> validatorResponseTFunction) {
     return apiClient
-            .getValidators(
-                    batch.stream()
-                            .map(key -> key.toBytesCompressed().toHexString())
-                            .collect(Collectors.toList()))
-            .map(this::convertToValidatorIndexMap);
+        .getValidators(
+            batch.stream()
+                .map(key -> key.toBytesCompressed().toHexString())
+                .collect(Collectors.toList()))
+        .map(responses -> convertToValidatorMap(responses, validatorResponseTFunction));
   }
 
-  private Map<BLSPublicKey, Integer> convertToValidatorIndexMap(
-          final List<ValidatorResponse> validatorResponses) {
+  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
+      final List<ValidatorResponse> validatorResponses,
+      Function<ValidatorResponse, T> validatorResponseTFunction) {
     return validatorResponses.stream()
-            .collect(
-                    Collectors.<ValidatorResponse, BLSPublicKey, Integer>toMap(
-                            response -> response.validator.pubkey.asBLSPublicKey(),
-                            response -> response.index.intValue()));
+        .collect(toMap(ValidatorResponse::getPublicKey, validatorResponseTFunction));
   }
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-          final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return sendRequest(
-            () ->
-                    apiClient
-                            .getAttestationDuties(epoch, validatorIndexes)
-                            .map(
-                                    response ->
-                                            new AttesterDuties(
-                                                    response.dependentRoot,
-                                                    response.data.stream()
-                                                            .map(this::mapToApiAttesterDuties)
-                                                            .collect(Collectors.toList()))));
+        () ->
+            apiClient
+                .getAttestationDuties(epoch, validatorIndexes)
+                .map(
+                    response ->
+                        new AttesterDuties(
+                            response.dependentRoot,
+                            response.data.stream()
+                                .map(this::mapToApiAttesterDuties)
+                                .collect(Collectors.toList()))));
   }
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return sendRequest(
-            () ->
-                    apiClient
-                            .getProposerDuties(epoch)
-                            .map(
-                                    response ->
-                                            new ProposerDuties(
-                                                    response.dependentRoot,
-                                                    response.data.stream()
-                                                            .map(this::mapToProposerDuties)
-                                                            .collect(Collectors.toList()))));
+        () ->
+            apiClient
+                .getProposerDuties(epoch)
+                .map(
+                    response ->
+                        new ProposerDuties(
+                            response.dependentRoot,
+                            response.data.stream()
+                                .map(this::mapToProposerDuties)
+                                .collect(Collectors.toList()))));
   }
 
   private ProposerDuty mapToProposerDuties(
-          final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
+      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
     return new ProposerDuty(
-            proposerDuty.pubkey.asBLSPublicKey(),
-            proposerDuty.validatorIndex.intValue(),
-            proposerDuty.slot);
+        proposerDuty.pubkey.asBLSPublicKey(),
+        proposerDuty.validatorIndex.intValue(),
+        proposerDuty.slot);
   }
 
   private AttesterDuty mapToApiAttesterDuties(
-          final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
+      final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
     return new AttesterDuty(
-            attesterDuty.pubkey.asBLSPublicKey(),
-            attesterDuty.validatorIndex.intValue(),
-            attesterDuty.committeeLength.intValue(),
-            attesterDuty.committeeIndex.intValue(),
-            attesterDuty.committeesAtSlot.intValue(),
-            attesterDuty.validatorCommitteeIndex.intValue(),
-            attesterDuty.slot);
+        attesterDuty.pubkey.asBLSPublicKey(),
+        attesterDuty.validatorIndex.intValue(),
+        attesterDuty.committeeLength.intValue(),
+        attesterDuty.committeeIndex.intValue(),
+        attesterDuty.committeesAtSlot.intValue(),
+        attesterDuty.validatorCommitteeIndex.intValue(),
+        attesterDuty.slot);
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-          final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final int committeeIndex) {
     return sendRequest(
-            () ->
-                    apiClient
-                            .createUnsignedAttestation(slot, committeeIndex)
-                            .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
+        () ->
+            apiClient
+                .createUnsignedAttestation(slot, committeeIndex)
+                .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
   }
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
-          final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final int committeeIndex) {
     return sendRequest(
-            () ->
-                    apiClient
-                            .createAttestationData(slot, committeeIndex)
-                            .map(tech.pegasys.teku.api.schema.AttestationData::asInternalAttestationData));
+        () ->
+            apiClient
+                .createAttestationData(slot, committeeIndex)
+                .map(tech.pegasys.teku.api.schema.AttestationData::asInternalAttestationData));
   }
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-            new tech.pegasys.teku.api.schema.Attestation(attestation);
+        new tech.pegasys.teku.api.schema.Attestation(attestation);
 
     sendRequest(() -> apiClient.sendSignedAttestation(schemaAttestation))
-            .finish(error -> LOG.error("Failed to send signed attestation", error));
+        .finish(error -> LOG.error("Failed to send signed attestation", error));
   }
 
   @Override
   public void sendSignedAttestation(
-          final Attestation attestation, final Optional<Integer> validatorIndex) {
+      final Attestation attestation, final Optional<Integer> validatorIndex) {
     sendSignedAttestation(attestation);
   }
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-          final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     return sendRequest(
-            () -> {
-              final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
-                      new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
+        () -> {
+          final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
+              new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
 
-              return apiClient
-                      .createUnsignedBlock(slot, schemaBLSSignature, graffiti)
-                      .map(tech.pegasys.teku.api.schema.BeaconBlock::asInternalBeaconBlock);
-            });
+          return apiClient
+              .createUnsignedBlock(slot, schemaBLSSignature, graffiti)
+              .map(tech.pegasys.teku.api.schema.BeaconBlock::asInternalBeaconBlock);
+        });
   }
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     return sendRequest(
-            () -> apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)));
+        () -> apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)));
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-          final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return sendRequest(
-            () ->
-                    apiClient
-                            .createAggregate(slot, attestationHashTreeRoot)
-                            .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
+        () ->
+            apiClient
+                .createAggregate(slot, attestationHashTreeRoot)
+                .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     sendRequest(
             () ->
-                    apiClient.sendAggregateAndProofs(
-                            List.of(
-                                    new tech.pegasys.teku.api.schema.SignedAggregateAndProof(
-                                            aggregateAndProof))))
-            .finish(error -> LOG.error("Failed to send aggregate and proof", error));
+                apiClient.sendAggregateAndProofs(
+                    List.of(
+                        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(
+                            aggregateAndProof))))
+        .finish(error -> LOG.error("Failed to send aggregate and proof", error));
   }
 
   @Override
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests))
-            .finish(
-                    error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
+        .finish(
+            error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
   }
 
   @Override
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     final Set<tech.pegasys.teku.api.schema.SubnetSubscription> schemaSubscriptions =
-            subnetSubscriptions.stream()
-                    .map(
-                            s ->
-                                    new tech.pegasys.teku.api.schema.SubnetSubscription(
-                                            s.getSubnetId(), s.getUnsubscriptionSlot()))
-                    .collect(Collectors.toSet());
+        subnetSubscriptions.stream()
+            .map(
+                s ->
+                    new tech.pegasys.teku.api.schema.SubnetSubscription(
+                        s.getSubnetId(), s.getUnsubscriptionSlot()))
+            .collect(Collectors.toSet());
 
     sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
-            .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
+        .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
     return sendRequest(
-            () -> {
-              requestExecutor.run();
-              return null;
-            });
+        () -> {
+          requestExecutor.run();
+          return null;
+        });
   }
 
   private <T> SafeFuture<T> sendRequest(final ExceptionThrowingSupplier<T> requestExecutor) {
@@ -319,18 +299,18 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private <T> SafeFuture<T> sendRequest(
-          final ExceptionThrowingSupplier<T> requestExecutor, final int attempt) {
+      final ExceptionThrowingSupplier<T> requestExecutor, final int attempt) {
     return SafeFuture.of(requestExecutor)
-            .exceptionallyCompose(
-                    error -> {
-                      if (Throwables.getRootCause(error) instanceof RateLimitedException
-                              && attempt < MAX_RATE_LIMITING_RETRIES) {
-                        LOG.warn("Beacon node request rate limit has been exceeded. Retrying after delay.");
-                        return asyncRunner.runAfterDelay(
-                                () -> sendRequest(requestExecutor, attempt + 1), 2, TimeUnit.SECONDS);
-                      } else {
-                        return SafeFuture.failedFuture(error);
-                      }
-                    });
+        .exceptionallyCompose(
+            error -> {
+              if (Throwables.getRootCause(error) instanceof RateLimitedException
+                  && attempt < MAX_RATE_LIMITING_RETRIES) {
+                LOG.warn("Beacon node request rate limit has been exceeded. Retrying after delay.");
+                return asyncRunner.runAfterDelay(
+                    () -> sendRequest(requestExecutor, attempt + 1), 2, TimeUnit.SECONDS);
+              } else {
+                return SafeFuture.failedFuture(error);
+              }
+            });
   }
 }
