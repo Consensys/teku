@@ -55,6 +55,11 @@ public class AcceptanceTestBase {
     }
   }
 
+  protected TekuVoluntaryExit createVoluntaryExit(
+      final Consumer<TekuVoluntaryExit.Config> configOptions) {
+    return addNode(TekuVoluntaryExit.create(network, configOptions));
+  }
+
   protected TekuValidatorNode createValidatorNode(
       final Consumer<TekuValidatorNode.Config> configOptions) {
     return addNode(TekuValidatorNode.create(network, configOptions));

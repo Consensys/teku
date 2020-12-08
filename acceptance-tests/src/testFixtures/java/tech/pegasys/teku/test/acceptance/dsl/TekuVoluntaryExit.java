@@ -16,10 +16,8 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -28,34 +26,35 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class TekuValidatorNode extends Node {
+public class TekuVoluntaryExit extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final TekuValidatorNode.Config config;
+  private final TekuVoluntaryExit.Config config;
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuValidatorNode(final Network network, final TekuValidatorNode.Config config) {
+  private TekuVoluntaryExit(final Network network, final TekuVoluntaryExit.Config config) {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.config = config;
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withCommand("validator-client", "--config-file", CONFIG_FILE_PATH);
+        .withCommand(
+            "voluntary-exit", "--confirmation-enabled=false", "--config-file", CONFIG_FILE_PATH);
   }
 
-  public static TekuValidatorNode create(
-      final Network network, Consumer<TekuValidatorNode.Config> configOptions) {
+  public static TekuVoluntaryExit create(
+      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions) {
 
-    final TekuValidatorNode.Config config = new TekuValidatorNode.Config();
+    final TekuVoluntaryExit.Config config = new TekuVoluntaryExit.Config();
     configOptions.accept(config);
 
-    final TekuValidatorNode node = new TekuValidatorNode(network, config);
+    final TekuVoluntaryExit node = new TekuVoluntaryExit(network, config);
 
     return node;
   }
 
-  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeytores)
+  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeytores)
       throws Exception {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
@@ -69,7 +68,7 @@ public class TekuValidatorNode extends Node {
 
   public void start() throws Exception {
     assertThat(started).isFalse();
-    LOG.debug("Start validator node {}", nodeAlias);
+    LOG.debug("Start voluntary exit command line process {}", nodeAlias);
     started = true;
     final Map<File, String> configFiles = config.write();
     this.configFiles = configFiles.keySet();
@@ -96,61 +95,24 @@ public class TekuValidatorNode extends Node {
   }
 
   public static class Config {
-    private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final int DEFAULT_VALIDATOR_COUNT = 64;
-
     private Map<String, Object> configMap = new HashMap<>();
 
-    private Optional<String> validatorKeys = Optional.empty();
-
     public Config() {
-      configMap.put("validators-keystore-locking-enabled", false);
-      configMap.put("Xinterop-owned-validator-start-index", 0);
-      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-enabled", true);
-      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
-      configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
-      configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
     }
 
-    public TekuValidatorNode.Config withInteropModeDisabled() {
-      configMap.put("Xinterop-enabled", false);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
+    public TekuVoluntaryExit.Config withValidatorKeys(final String validatorKeyInformation) {
       configMap.put("validator-keys", validatorKeyInformation);
       return this;
     }
 
-    public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
+    public TekuVoluntaryExit.Config withBeaconNode(final TekuNode beaconNode) {
       configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
-      return this;
-    }
-
-    public TekuValidatorNode.Config withNetwork(String networkName) {
-      configMap.put("network", networkName);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withInteropValidators(
-        final int startIndex, final int validatorCount) {
-      configMap.put("Xinterop-owned-validator-start-index", startIndex);
-      configMap.put("Xinterop-owned-validator-count", validatorCount);
       return this;
     }
 
     public Map<File, String> write() throws Exception {
       final Map<File, String> configFiles = new HashMap<>();
-      if (validatorKeys.isPresent()) {
-        final File validatorsFile = Files.createTempFile("validators", ".yml").toFile();
-        validatorsFile.deleteOnExit();
-        Files.writeString(validatorsFile.toPath(), validatorKeys.get());
-        configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
-
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
       writeTo(configFile);
