@@ -418,7 +418,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pStaticPeers(Collections.emptyList()))
         .validator(
             b ->
-                b.validatorExternalSignerTimeout(Duration.ofSeconds(1))
+                b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));
   }
