@@ -80,7 +80,7 @@ class ValidatorLoaderTest {
   private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
 
   private final ValidatorLoader validatorLoader =
-      new ValidatorLoader(slashingProtector, asyncRunner, () -> httpClient);
+      ValidatorLoader.create(slashingProtector, asyncRunner);
 
   @BeforeEach
   void initUpcheckMockResponse() throws IOException, InterruptedException {
@@ -89,7 +89,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithExternalSignerAndSlashingProtection() {
+  void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {
     final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -97,8 +97,9 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
+
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     assertThat(validators).hasSize(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
@@ -119,7 +120,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
+  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() throws Exception {
     final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -127,8 +128,9 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
+
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     assertThat(validators).hasSize(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
@@ -164,8 +166,9 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     assertThat(validators).hasSize(2);
 
@@ -196,8 +199,9 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);
@@ -225,7 +229,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     assertThat(validators).hasSize(ownedValidatorCount);
   }
@@ -240,7 +244,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig);
+        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
 
     assertThat(validators).isEmpty();
   }
