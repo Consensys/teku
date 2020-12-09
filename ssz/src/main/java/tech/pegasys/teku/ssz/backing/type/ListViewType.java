@@ -115,9 +115,6 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   public TreeNode sszDeserializeTree(BytesReader reader) {
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      if ((getMaxLength() + 7) / 8 < reader.getAvailableBytes()) {
-        throw new SSZException("Too long bitlist");
-      }
       Bytes bytes = reader.read(reader.getAvailableBytes());
       int highestByte = 0xFF & bytes.get(bytes.size() - 1);
       int boundaryBit = Integer.highestOneBit(highestByte);
