@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.Eth1Provider;
 import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PriorityEth1ProviderSelectorTest {
 
   @Test
