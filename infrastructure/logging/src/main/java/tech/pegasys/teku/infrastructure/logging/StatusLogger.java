@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.logging;
 import static java.util.stream.Collectors.joining;
 
 import java.math.BigInteger;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -234,6 +235,17 @@ public class StatusLogger {
         "PLEASE CHECK YOUR ETH1 NODE | Wrong Eth1 chain id (expected={}, actual={})",
         expectedChainId,
         eth1ChainId);
+  }
+
+  public void externalSignerStatus(final URL externalSignerUrl, boolean isReachable) {
+    if (isReachable) {
+      log.info("External signer is reachable at {}", externalSignerUrl);
+    } else {
+      log.error(
+          ColorConsolePrinter.print(
+              "External signer is currently not reachable at " + externalSignerUrl,
+              ColorConsolePrinter.Color.RED));
+    }
   }
 
   public void unableToRetrieveValidatorStatusesFromBeaconNode() {

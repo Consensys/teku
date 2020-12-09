@@ -119,6 +119,18 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
+    assertOpen();
+    final ColumnFamilyHandle handle = columnHandles.get(column);
+    try (final RocksIterator rocksDbIterator = db.newIterator(handle)) {
+      rocksDbIterator.seekToLast();
+      return rocksDbIterator.isValid()
+          ? Optional.of(column.getKeySerializer().deserialize(rocksDbIterator.key()))
+          : Optional.empty();
+    }
+  }
+
+  @Override
   @MustBeClosed
   public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
     assertOpen();

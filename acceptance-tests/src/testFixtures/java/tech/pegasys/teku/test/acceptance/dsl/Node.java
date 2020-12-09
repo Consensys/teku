@@ -111,4 +111,14 @@ public abstract class Node {
       throw new RuntimeException("Failed to copy directory from " + nodeAlias, e);
     }
   }
+
+  /**
+   * Copies contents of the given directory into node's working directory.
+   *
+   * @param tarFile
+   * @throws IOException
+   */
+  public void copyContentsToWorkingDirectory(File tarFile) throws IOException {
+    container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
+  }
 }
