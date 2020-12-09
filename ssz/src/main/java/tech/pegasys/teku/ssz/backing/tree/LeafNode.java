@@ -95,10 +95,4 @@ public interface LeafNode extends TreeNode, LeafDataNode {
     checkArgument(target == 1, "Invalid root index: %s", target);
     return nodeUpdater.apply(this);
   }
-
-  @Override
-  default LeafDataNode updatedWithData(BytesReader reader) {
-    int dataSize = getData().size();
-    return create(reader.read(dataSize));
-  }
 }

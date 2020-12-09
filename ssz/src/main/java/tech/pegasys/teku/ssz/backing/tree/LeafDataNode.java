@@ -25,6 +25,4 @@ public interface LeafDataNode extends TreeNode {
    * LeafNode#getData()}
    */
   Bytes getData();
-
-  LeafDataNode updatedWithData(BytesReader reader);
 }

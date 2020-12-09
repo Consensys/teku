@@ -164,14 +164,6 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   }
 
   @Override
-  public LeafDataNode updatedWithData(BytesReader reader) {
-    int sszSize = min(reader.getAvailableBytes(),
-        getMaxElements() * elementTemplate.getSszLength());
-    checkArgument(sszSize % elementTemplate.getSszLength() == 0);
-    return new SszSuperNode(depth, elementTemplate, reader.read(sszSize));
-  }
-
-  @Override
   public String toString() {
     int sszLength = elementTemplate.getSszLength();
     return "SszSuperNode{"
