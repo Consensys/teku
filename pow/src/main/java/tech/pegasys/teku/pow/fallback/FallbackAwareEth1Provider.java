@@ -86,13 +86,12 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
 
   private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
     final SafeFuture<T> result = task.apply(eth1ProviderSelector.bestCandidate());
-    result.catchAndRethrow(
+    return result.catchAndRethrow(
         throwable -> {
           LOG.warn(
               "Error caught while calling Eth1Provider, switching provider for next calls",
               throwable);
           eth1ProviderSelector.updateBestCandidate();
         });
-    return result;
   }
 }
