@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.SSZTypes;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
 import java.util.ArrayList;
@@ -23,27 +22,15 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
-public class DefaultBitlist implements MutableBitlist {
+class DefaultBitlist implements MutableBitlist {
 
   private final BitSet data;
   private final int size;
   private final long maxSize;
 
-  public DefaultBitlist(int arraySize, long maxSize) {
-    this.size = arraySize;
-    this.data = new BitSet(arraySize);
-    this.maxSize = maxSize;
-  }
-
-  public DefaultBitlist(DefaultBitlist bitlist) {
-    this.size = bitlist.size;
-    this.data = (BitSet) bitlist.data.clone();
-    this.maxSize = bitlist.getMaxSize();
-  }
-
-  private DefaultBitlist(int size, BitSet data, long maxSize) {
-    this.size = size;
+  DefaultBitlist(BitSet data, int size, long maxSize) {
     this.data = data;
+    this.size = size;
     this.maxSize = maxSize;
   }
 
@@ -130,40 +117,15 @@ public class DefaultBitlist implements MutableBitlist {
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = size;
-    byte[] array = new byte[sszSerializationLength(len)];
+    byte[] array = new byte[Bitlist.sszSerializationLength(len)];
     IntStream.range(0, len).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
     array[len / 8] |= 1 << (len % 8);
     return Bytes.wrap(array);
   }
 
-  public static int sszSerializationLength(final int size) {
-    return (size / 8) + 1;
-  }
-
-  public static Bitlist fromBytes(Bytes bytes, long maxSize) {
-    int numBytes = bytes.size();
-    checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
-    checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
-    int leadingBitIndex = 0;
-    while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
-      leadingBitIndex++;
-    }
-
-    int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
-    BitSet byteArray = new BitSet(bitlistSize);
-
-    for (int i = bitlistSize - 1; i >= 0; i--) {
-      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray.set(i);
-      }
-    }
-
-    return new DefaultBitlist(bitlistSize, byteArray, maxSize);
-  }
-
   @Override
   public MutableBitlist copy() {
-    return new DefaultBitlist(this);
+    return new DefaultBitlist((BitSet) data.clone(), getCurrentSize(), getMaxSize());
   }
 
   @Override

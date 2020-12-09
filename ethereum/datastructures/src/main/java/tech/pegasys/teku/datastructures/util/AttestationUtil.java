@@ -43,7 +43,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -54,7 +53,7 @@ public class AttestationUtil {
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
     MutableBitlist aggregationBits =
-        new DefaultBitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
+        MutableBitlist.create(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
     aggregationBits.setBit(indexIntoCommittee);
     return aggregationBits;
   }

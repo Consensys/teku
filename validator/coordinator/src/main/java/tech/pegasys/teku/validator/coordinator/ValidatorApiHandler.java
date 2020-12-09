@@ -69,7 +69,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -336,7 +336,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
     final Bitlist aggregationBits =
-        new DefaultBitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
+        MutableBitlist.create(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
     return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
   }
 

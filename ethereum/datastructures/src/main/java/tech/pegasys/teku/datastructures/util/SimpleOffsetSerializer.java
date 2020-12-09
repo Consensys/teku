@@ -71,7 +71,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -409,7 +408,7 @@ public class SimpleOffsetSerializer {
         reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
     int numBytesToRead = currentObjectEndByte - bytesPointer.intValue();
     bytesPointer.add(numBytesToRead);
-    return DefaultBitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
+    return Bitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
   }
 
   private static void deserializeVariableElementList(

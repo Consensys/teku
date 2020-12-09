@@ -60,7 +60,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -375,7 +375,7 @@ class ValidatorApiHandlerTest {
     assertThat(maybeAttestation).isPresent();
     final Attestation attestation = maybeAttestation.orElseThrow();
     assertThat(attestation.getAggregation_bits())
-        .isEqualTo(new DefaultBitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+        .isEqualTo(MutableBitlist.create(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
     assertThat(attestation.getData())
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(
@@ -416,7 +416,7 @@ class ValidatorApiHandlerTest {
     assertThat(maybeAttestation).isPresent();
     final Attestation attestation = maybeAttestation.orElseThrow();
     assertThat(attestation.getAggregation_bits())
-        .isEqualTo(new DefaultBitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+        .isEqualTo(MutableBitlist.create(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
     assertThat(attestation.getData())
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(

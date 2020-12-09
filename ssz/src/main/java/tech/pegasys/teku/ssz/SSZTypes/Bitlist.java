@@ -18,6 +18,14 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface Bitlist {
+  static int sszSerializationLength(final int size) {
+    return (size / 8) + 1;
+  }
+
+  static Bitlist fromBytes(Bytes bytes, long maxSize) {
+    return MutableBitlist.fromBytes(bytes, maxSize);
+  }
+
   boolean getBit(int i);
 
   int getBitCount();
@@ -34,7 +42,6 @@ public interface Bitlist {
 
   int getCurrentSize();
 
-  @SuppressWarnings("NarrowingCompoundAssignment")
   Bytes serialize();
 
   MutableBitlist copy();

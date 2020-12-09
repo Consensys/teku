@@ -68,7 +68,6 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -160,7 +159,7 @@ public final class DataStructureUtil {
   }
 
   public MutableBitlist randomBitlist(int n) {
-    MutableBitlist bitlist = new DefaultBitlist(n, n);
+    MutableBitlist bitlist = MutableBitlist.create(n, n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {

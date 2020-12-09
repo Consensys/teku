@@ -41,7 +41,6 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -381,7 +380,7 @@ class AttestationProductionDutyTest {
       final int commiteeSize,
       final BLSSignature signature) {
     final MutableBitlist expectedAggregationBits =
-        new DefaultBitlist(commiteeSize, MAX_VALIDATORS_PER_COMMITTEE);
+        MutableBitlist.create(commiteeSize, MAX_VALIDATORS_PER_COMMITTEE);
     expectedAggregationBits.setBit(committeePosition);
     return new Attestation(expectedAggregationBits, attestationData, signature);
   }

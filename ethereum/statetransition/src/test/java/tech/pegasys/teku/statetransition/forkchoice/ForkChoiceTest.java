@@ -44,7 +44,7 @@ import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -221,7 +221,7 @@ class ForkChoiceTest {
     final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
     final Attestation attestation =
         new Attestation(
-            new DefaultBitlist(5, 5),
+            MutableBitlist.create(5, 5),
             new AttestationData(
                 targetBlock.getSlot(),
                 compute_epoch_at_slot(targetBlock.getSlot()),
@@ -247,7 +247,7 @@ class ForkChoiceTest {
     final ValidateableAttestation updatedVote =
         ValidateableAttestation.from(
             new Attestation(
-                new DefaultBitlist(16, 16),
+                MutableBitlist.create(16, 16),
                 new AttestationData(
                     updatedAttestationSlot,
                     UInt64.ONE,

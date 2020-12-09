@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.backing;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -26,7 +25,7 @@ public class BitlistViewTest {
   @Test
   public void basicTest() {
     for (int size : new int[] {100, 255, 256, 300, 1000, 1023}) {
-      MutableBitlist bitlist = new DefaultBitlist(size, size);
+      MutableBitlist bitlist = MutableBitlist.create(size, size);
       for (int i = 0; i < size; i++) {
         if (i % 2 == 0) {
           bitlist.setBit(i);

@@ -23,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 
 class BitlistTest {
@@ -123,13 +122,13 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = DefaultBitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
+    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void serializationTest2() {
-    MutableBitlist bitlist = new DefaultBitlist(9, BITLIST_MAX_SIZE);
+    MutableBitlist bitlist = MutableBitlist.create(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -144,7 +143,7 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    MutableBitlist bitlist = new DefaultBitlist(9, BITLIST_MAX_SIZE);
+    MutableBitlist bitlist = MutableBitlist.create(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -153,26 +152,26 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = DefaultBitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
+    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void deserializationShouldRejectZeroLengthBytes() {
-    assertThatThrownBy(() -> DefaultBitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one byte");
   }
 
   @Test
   void deserializationShouldRejectDataWhenEndMarkerBitNotSet() {
-    assertThatThrownBy(() -> DefaultBitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("marker bit");
   }
 
   private static MutableBitlist create(int... bits) {
-    MutableBitlist bitlist = new DefaultBitlist(18, BITLIST_MAX_SIZE);
+    MutableBitlist bitlist = MutableBitlist.create(18, BITLIST_MAX_SIZE);
     IntStream.of(bits).forEach(bitlist::setBit);
     return bitlist;
   }

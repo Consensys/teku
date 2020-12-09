@@ -62,7 +62,7 @@ public class BitlistBenchmark {
   }
 
   private static MutableBitlist createBitlist(final int... setBits) {
-    final MutableBitlist bitlist = new DefaultBitlist(BITLIST_SIZE, BITLIST_SIZE);
+    final MutableBitlist bitlist = MutableBitlist.create(BITLIST_SIZE, BITLIST_SIZE);
     IntStream.of(setBits).forEach(bitlist::setBit);
     return bitlist;
   }
