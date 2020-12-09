@@ -28,6 +28,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 
 class JsonProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -63,7 +64,7 @@ class JsonProviderTest {
     final int BITLIST_SIZE = 40;
     final Bitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
     final String asJson = jsonProvider.objectToJSON(data);
-    final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
+    final Bitlist asData = jsonProvider.jsonToObject(asJson, DefaultBitlist.class);
 
     assertThat(data).isEqualToIgnoringGivenFields(asData, "maxSize");
     assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);

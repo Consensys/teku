@@ -66,9 +66,10 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
@@ -154,12 +155,12 @@ public final class DataStructureUtil {
     return sszvector;
   }
 
-  public Bitlist randomBitlist() {
+  public MutableBitlist randomBitlist() {
     return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public Bitlist randomBitlist(int n) {
-    Bitlist bitlist = new Bitlist(n, n);
+  public MutableBitlist randomBitlist(int n) {
+    MutableBitlist bitlist = new DefaultBitlist(n, n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {

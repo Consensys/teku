@@ -51,6 +51,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -130,8 +132,9 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     final Bitlist validAggregationBits = attestation.getAggregation_bits();
-    final Bitlist invalidAggregationBits =
-        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
+    final MutableBitlist invalidAggregationBits =
+        new DefaultBitlist(
+            validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
     invalidAggregationBits.setAllBits(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(

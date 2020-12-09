@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 
@@ -42,6 +43,14 @@ class SimpleOffsetSerializerTest {
     final BLSSignature original = dataStructureUtil.randomSignature();
     final Bytes data = SimpleOffsetSerializer.serialize(original);
     final BLSSignature result = SimpleOffsetSerializer.deserialize(data, BLSSignature.class);
+    assertThat(result).isEqualTo(original);
+  }
+
+  @Test
+  public void shouldRoundTripAttestation() {
+    final Attestation original = dataStructureUtil.randomAttestation();
+    final Bytes data = SimpleOffsetSerializer.serialize(original);
+    final Attestation result = SimpleOffsetSerializer.deserialize(data, Attestation.class);
     assertThat(result).isEqualTo(original);
   }
 

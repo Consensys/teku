@@ -43,6 +43,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class AttestationUtil {
@@ -51,7 +53,8 @@ public class AttestationUtil {
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
-    Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
+    MutableBitlist aggregationBits =
+        new DefaultBitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
     aggregationBits.setBit(indexIntoCommittee);
     return aggregationBits;
   }
@@ -193,7 +196,8 @@ public class AttestationUtil {
 
   // Set bits of the newAttestation on the oldBitlist
   // return true if any new bit was set
-  public static boolean setBitsForNewAttestation(Bitlist oldBitlist, Attestation newAttesation) {
+  public static boolean setBitsForNewAttestation(
+      MutableBitlist oldBitlist, Attestation newAttesation) {
     Bitlist newBitlist = newAttesation.getAggregation_bits();
     if (oldBitlist.getCurrentSize() != newBitlist.getCurrentSize())
       throw new UnsupportedOperationException("Attestation bitlist size's don't match");

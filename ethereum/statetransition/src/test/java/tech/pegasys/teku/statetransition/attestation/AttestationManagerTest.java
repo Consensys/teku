@@ -44,7 +44,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -210,7 +210,7 @@ class AttestationManagerTest {
 
   private Attestation attestationFromSlot(final long slot, final Bytes32 targetRoot) {
     return new Attestation(
-        new Bitlist(1, 1),
+        new DefaultBitlist(1, 1),
         new AttestationData(
             UInt64.valueOf(slot),
             UInt64.ZERO,

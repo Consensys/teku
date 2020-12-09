@@ -48,7 +48,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
@@ -178,7 +178,7 @@ public class ValidatorDataProviderTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         new tech.pegasys.teku.datastructures.operations.Attestation(
-            new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+            new DefaultBitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE),
             attestationData,
             tech.pegasys.teku.bls.BLSSignature.empty());
 

@@ -41,7 +41,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
@@ -203,15 +203,15 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
-    Map<Bytes32, NavigableMap<UInt64, Bitlist>> slotAndBitlistsByAttestationDataHash =
+    Map<Bytes32, NavigableMap<UInt64, MutableBitlist>> slotAndBitlistsByAttestationDataHash =
         new HashMap<>();
     for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
       for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
         Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
-        NavigableMap<UInt64, Bitlist> slotToBitlists =
+        NavigableMap<UInt64, MutableBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        Bitlist bitlistToInsert =
+        MutableBitlist bitlistToInsert =
             slotToBitlists.computeIfAbsent(slot, __ -> attestation.getAggregation_bits().copy());
         bitlistToInsert.setAllBits(attestation.getAggregation_bits());
       }
@@ -223,7 +223,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
         continue;
       }
-      NavigableMap<UInt64, Bitlist> slotAndBitlists =
+      NavigableMap<UInt64, MutableBitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
         if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {

@@ -71,6 +71,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -377,7 +378,7 @@ public class SimpleOffsetSerializer {
         }
         sszListCounter++;
         fieldObject = newSSZList;
-      } else if (fieldClass == Bitlist.class) {
+      } else if (fieldClass.isAssignableFrom(Bitlist.class)) {
         fieldObject =
             deserializeBitlist(
                 reflectionInformation, reader, bytesPointer, bitlistCounter, currentObjectEndByte);
@@ -408,7 +409,7 @@ public class SimpleOffsetSerializer {
         reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
     int numBytesToRead = currentObjectEndByte - bytesPointer.intValue();
     bytesPointer.add(numBytesToRead);
-    return Bitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
+    return DefaultBitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
   }
 
   private static void deserializeVariableElementList(
@@ -523,8 +524,8 @@ public class SimpleOffsetSerializer {
     return reader.readInt32();
   }
 
-  static boolean isVariable(Class classInfo) {
-    if (classInfo == SSZList.class || classInfo == Bitlist.class) {
+  static boolean isVariable(Class<?> classInfo) {
+    if (classInfo == SSZList.class || classInfo.isAssignableFrom(Bitlist.class)) {
       return true;
     } else {
       return getOptionalReflectionInfo(classInfo)

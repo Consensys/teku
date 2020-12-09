@@ -24,6 +24,8 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -54,7 +56,7 @@ public class PendingAttestation extends AbstractImmutableContainer
 
   @SuppressWarnings("unused")
   private final Bitlist aggregation_bits =
-      new Bitlist(
+      new DefaultBitlist(
           0,
           Constants
               .MAX_VALIDATORS_PER_COMMITTEE); // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
@@ -138,7 +140,7 @@ public class PendingAttestation extends AbstractImmutableContainer
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bitlist getAggregation_bits() {
+  public MutableBitlist getAggregation_bits() {
     return ViewUtils.getBitlist(getAny(0));
   }
 

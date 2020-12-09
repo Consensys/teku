@@ -23,6 +23,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 
 class BitlistTest {
   private static final int BITLIST_MAX_SIZE = 4000;
@@ -62,7 +64,7 @@ class BitlistTest {
   @Test
   void intersects_noOverlap() {
     Bitlist bitlist1 = create(1, 3, 5);
-    Bitlist bitlist2 = create(0, 2, 4);
+    MutableBitlist bitlist2 = create(0, 2, 4);
 
     assertThat(bitlist1.intersects(bitlist2)).isFalse();
   }
@@ -70,7 +72,7 @@ class BitlistTest {
   @Test
   void intersects_withOverlap() {
     Bitlist bitlist1 = create(1, 3, 5);
-    Bitlist bitlist2 = create(0, 3, 4);
+    MutableBitlist bitlist2 = create(0, 3, 4);
 
     assertThat(bitlist1.intersects(bitlist2)).isTrue();
   }
@@ -121,13 +123,13 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
+    Bitlist newBitlist = DefaultBitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void serializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
+    MutableBitlist bitlist = new DefaultBitlist(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -142,7 +144,7 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
+    MutableBitlist bitlist = new DefaultBitlist(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -151,26 +153,26 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
+    Bitlist newBitlist = DefaultBitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void deserializationShouldRejectZeroLengthBytes() {
-    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> DefaultBitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one byte");
   }
 
   @Test
   void deserializationShouldRejectDataWhenEndMarkerBitNotSet() {
-    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> DefaultBitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("marker bit");
   }
 
-  private static Bitlist create(int... bits) {
-    Bitlist bitlist = new Bitlist(18, BITLIST_MAX_SIZE);
+  private static MutableBitlist create(int... bits) {
+    MutableBitlist bitlist = new DefaultBitlist(18, BITLIST_MAX_SIZE);
     IntStream.of(bits).forEach(bitlist::setBit);
     return bitlist;
   }

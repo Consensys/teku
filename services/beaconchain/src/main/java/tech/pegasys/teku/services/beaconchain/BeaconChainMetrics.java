@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -207,10 +208,10 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private CorrectAndLiveValidators getNumberOfValidators(
       final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
 
-    final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
+    final Map<UInt64, Map<UInt64, MutableBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
-    final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
-        new HashMap<>();
+    final Map<UInt64, Map<UInt64, MutableBitlist>>
+        correctValidatorsAggregationBitsBySlotAndCommittee = new HashMap<>();
 
     attestations.forEach(
         attestation -> {

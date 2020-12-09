@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 class PendingAttestationTest {
@@ -103,7 +104,7 @@ class PendingAttestationTest {
   void testSszRoundtripWithEmptyBitlist() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            new Bitlist(0, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+            new DefaultBitlist(0, Constants.MAX_VALIDATORS_PER_COMMITTEE),
             data,
             inclusionDelay,
             proposerIndex.plus(dataStructureUtil.randomUInt64()));

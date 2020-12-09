@@ -30,6 +30,8 @@ import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.config.Constants;
@@ -59,8 +61,8 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.aggregation_bits = createEmptyAggregationBits();
   }
 
-  public static Bitlist createEmptyAggregationBits() {
-    return new Bitlist(
+  public static MutableBitlist createEmptyAggregationBits() {
+    return new DefaultBitlist(
         Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 

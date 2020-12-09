@@ -26,7 +26,8 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 
 class AggregateAttestationBuilderTest {
 
@@ -76,7 +77,8 @@ class AggregateAttestationBuilderTest {
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
 
-    final Bitlist expectedAggregationBits = new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
+    final MutableBitlist expectedAggregationBits =
+        new DefaultBitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
     expectedAggregationBits.setBit(1);
     expectedAggregationBits.setBit(2);
     expectedAggregationBits.setBit(3);
@@ -100,7 +102,8 @@ class AggregateAttestationBuilderTest {
   }
 
   private ValidateableAttestation createAttestation(final int... validators) {
-    final Bitlist aggregationBits = new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
+    final MutableBitlist aggregationBits =
+        new DefaultBitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
     return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));

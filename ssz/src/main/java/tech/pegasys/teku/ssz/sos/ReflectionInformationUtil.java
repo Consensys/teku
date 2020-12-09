@@ -26,12 +26,11 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 class ReflectionInformationUtil {
-  @SuppressWarnings("rawtypes")
   public static boolean isVariable(ReflectionInformation reflectionInformation)
       throws SecurityException {
     for (Field field : reflectionInformation.getFields()) {
-      Class type = field.getType();
-      if (type.equals(SSZList.class) || type.equals(Bitlist.class)) {
+      Class<?> type = field.getType();
+      if (type.equals(SSZList.class) || type.isAssignableFrom(Bitlist.class)) {
         return true;
       }
       if (SSZContainer.class.isAssignableFrom(type)) {
@@ -43,11 +42,10 @@ class ReflectionInformationUtil {
     return false;
   }
 
-  @SuppressWarnings("rawtypes")
-  private static boolean containsClass(Field[] fields, Class classInfo) {
+  private static boolean containsClass(Field[] fields, Class<?> classInfo) {
     for (Field field : fields) {
-      Class type = field.getType();
-      if (type.equals(classInfo)) {
+      Class<?> type = field.getType();
+      if (type.equals(classInfo) || type.isAssignableFrom(classInfo)) {
         return true;
       }
     }
@@ -179,7 +177,7 @@ class ReflectionInformationUtil {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
         List<Field> listVariables =
             Arrays.stream(fields)
-                .filter(f -> f.getType().equals(Bitlist.class))
+                .filter(f -> f.getType().isAssignableFrom(Bitlist.class))
                 .collect(Collectors.toList());
 
         listVariables.forEach(f -> f.setAccessible(true));

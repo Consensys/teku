@@ -25,9 +25,9 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 public class BitlistBenchmark {
   private static final int BITLIST_SIZE = 128; // MainNet target committee size
-  private static final Bitlist LAST_BIT_SET = createBitlist(127);
+  private static final MutableBitlist LAST_BIT_SET = createBitlist(127);
 
-  private static final Bitlist MANY_BITS_SET =
+  private static final MutableBitlist MANY_BITS_SET =
       createBitlist(
           1, 2, 6, 16, 23, 33, 65, 87, 96, 100, 101, 102, 103, 104, 110, 115, 120, 121, 125);
 
@@ -42,7 +42,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void setAllBits(Blackhole bh) {
-    final Bitlist target = createBitlist();
+    final MutableBitlist target = createBitlist();
     target.setAllBits(MANY_BITS_SET);
     bh.consume(target);
   }
@@ -61,8 +61,8 @@ public class BitlistBenchmark {
     bh.consume(MANY_BITS_SET.getBitCount());
   }
 
-  private static Bitlist createBitlist(final int... setBits) {
-    final Bitlist bitlist = new Bitlist(BITLIST_SIZE, BITLIST_SIZE);
+  private static MutableBitlist createBitlist(final int... setBits) {
+    final MutableBitlist bitlist = new DefaultBitlist(BITLIST_SIZE, BITLIST_SIZE);
     IntStream.of(setBits).forEach(bitlist::setBit);
     return bitlist;
   }

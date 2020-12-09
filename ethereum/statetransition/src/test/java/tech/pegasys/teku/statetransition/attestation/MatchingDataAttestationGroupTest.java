@@ -26,7 +26,8 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 
 class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
@@ -197,7 +198,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   private ValidateableAttestation createAttestation(final int... validators) {
-    final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
+    final MutableBitlist aggregationBits = new DefaultBitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
     return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));

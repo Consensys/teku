@@ -20,8 +20,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -97,7 +98,7 @@ class BitvectorTest {
 
   @Test
   void bitlistHashTest() {
-    Bitlist bitlist = new Bitlist(2048, 2048);
+    MutableBitlist bitlist = new DefaultBitlist(2048, 2048);
     for (int i = 0; i < 44; i++) {
       bitlist.setBit(i);
     }

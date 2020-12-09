@@ -18,12 +18,12 @@ import java.util.List;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(
       final Attestation firstAttestation, final Attestation... attestations) {
-    final Bitlist aggregateBits = firstAttestation.getAggregation_bits().copy();
+    final MutableBitlist aggregateBits = firstAttestation.getAggregation_bits().copy();
     final List<BLSSignature> signatures = new ArrayList<>();
     signatures.add(firstAttestation.getAggregate_signature());
 

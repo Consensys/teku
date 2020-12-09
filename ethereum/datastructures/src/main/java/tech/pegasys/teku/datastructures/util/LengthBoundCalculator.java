@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 
@@ -49,7 +50,7 @@ public class LengthBoundCalculator {
       if (getOptionalReflectionInfo(fieldType).isPresent()) {
         fieldLengthBounds = calculateLengthBounds(fieldType);
 
-      } else if (fieldType == Bitlist.class) {
+      } else if (fieldType.isAssignableFrom(Bitlist.class)) {
         fieldLengthBounds = calculateBitlistLength(reflectionInfo, bitlistCount);
         bitlistCount++;
 
@@ -124,8 +125,8 @@ public class LengthBoundCalculator {
     final long maxSize = reflectionInfo.getBitlistElementMaxSizes().get(variableFieldCount);
     fieldLengthBounds =
         new LengthBounds(
-            Bitlist.sszSerializationLength(Math.toIntExact(0)),
-            Bitlist.sszSerializationLength(Math.toIntExact(maxSize)));
+            DefaultBitlist.sszSerializationLength(Math.toIntExact(0)),
+            DefaultBitlist.sszSerializationLength(Math.toIntExact(maxSize)));
     return fieldLengthBounds;
   }
 

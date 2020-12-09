@@ -13,29 +13,11 @@
 
 package tech.pegasys.teku.ssz.SSZTypes;
 
-import java.util.List;
-import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
+public interface MutableBitlist extends Bitlist {
+  void setBit(int i);
 
-public interface Bitlist {
-  boolean getBit(int i);
+  void setBits(int... indexes);
 
-  int getBitCount();
-
-  boolean intersects(Bitlist other);
-
-  boolean isSuperSetOf(Bitlist other);
-
-  List<Integer> getAllSetBits();
-
-  IntStream streamAllSetBits();
-
-  long getMaxSize();
-
-  int getCurrentSize();
-
-  @SuppressWarnings("NarrowingCompoundAssignment")
-  Bytes serialize();
-
-  MutableBitlist copy();
+  /** Sets all bits in this bitlist which are set in the [other] list */
+  void setAllBits(Bitlist other);
 }

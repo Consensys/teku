@@ -46,6 +46,8 @@ import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationGenerator {
@@ -67,8 +69,8 @@ public class AttestationGenerator {
 
   public static Attestation withNewSingleAttesterBit(Attestation oldAttestation) {
     Attestation attestation = new Attestation(oldAttestation);
-    Bitlist newBitlist =
-        new Bitlist(
+    MutableBitlist newBitlist =
+        new DefaultBitlist(
             attestation.getAggregation_bits().getCurrentSize(),
             attestation.getAggregation_bits().getMaxSize());
     List<Integer> unsetBits = new ArrayList<>();
@@ -114,7 +116,8 @@ public class AttestationGenerator {
             .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
             .max()
             .getAsInt();
-    Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    MutableBitlist targetBitlist =
+        new DefaultBitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
     BLSSignature targetSig =
         BLS.aggregate(

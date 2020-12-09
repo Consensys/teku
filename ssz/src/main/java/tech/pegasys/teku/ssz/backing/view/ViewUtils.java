@@ -17,6 +17,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -53,7 +55,7 @@ public class ViewUtils {
 
   /**
    * Creates immutable list of bits with size `bitlist.size()` and maxSize = `bitlist.getMaxSize()`
-   * from {@link Bitlist} value
+   * from {@link DefaultBitlist} value
    */
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
     ListViewWrite<BitView> viewWrite =
@@ -66,9 +68,10 @@ public class ViewUtils {
     return viewWrite.commitChanges();
   }
 
-  /** Converts list of bits to {@link Bitlist} value */
-  public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
-    Bitlist ret = new Bitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
+  /** Converts list of bits to {@link MutableBitlist} value */
+  public static MutableBitlist getBitlist(ListViewRead<BitView> bitlistView) {
+    MutableBitlist ret =
+        new DefaultBitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
     for (int i = 0; i < bitlistView.size(); i++) {
       if (bitlistView.get(i).get()) {
         ret.setBit(i);

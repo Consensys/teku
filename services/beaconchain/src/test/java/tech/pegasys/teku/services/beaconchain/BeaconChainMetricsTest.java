@@ -45,6 +45,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.DefaultBitlist;
+import tech.pegasys.teku.ssz.SSZTypes.MutableBitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -507,7 +509,7 @@ class BeaconChainMetricsTest {
   }
 
   private Bitlist bitlistOf(final int... indices) {
-    final Bitlist bitlist = new Bitlist(10, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    final MutableBitlist bitlist = new DefaultBitlist(10, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     bitlist.setBits(indices);
     return bitlist;
   }
