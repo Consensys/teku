@@ -22,7 +22,7 @@ import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMEN
 
 public class TotalBalances {
 
-  public static Optional<TotalBalances> latestTotalBalances = Optional.empty();
+  public static volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private UInt64 currentEpoch = UInt64.ZERO;
   private UInt64 previousEpoch = UInt64.ZERO;

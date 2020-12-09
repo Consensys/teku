@@ -206,7 +206,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(this::updateMetrics);
+    recentChainData.getChainHead().ifPresent(head -> updateMetrics(slot, head));
   }
 
   private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
