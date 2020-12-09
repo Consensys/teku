@@ -57,8 +57,7 @@ public class DepositSenderService implements AutoCloseable {
     executorService.shutdownNow();
   }
 
-  public SafeFuture<TransactionReceipt> sendDeposit(
-      ValidatorKeyGenerator.ValidatorKeys validatorKeys) {
+  public SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
     final BLSKeyPair validatorKey = validatorKeys.getValidatorKey();
     final BLSPublicKey withdrawalPublicKey = validatorKeys.getWithdrawalKey().getPublicKey();
     return sender.sendDepositTransaction(validatorKey, withdrawalPublicKey, amount);
