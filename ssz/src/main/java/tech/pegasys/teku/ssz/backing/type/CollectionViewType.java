@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -136,13 +137,14 @@ public abstract class CollectionViewType implements CompositeViewType {
   static class DeserializedData {
     private final TreeNode dataTree;
     private final int childrenCount;
-    private final byte lastSszByte;
+    private final Optional<Byte> lastSszByte;
 
     public DeserializedData(TreeNode dataTree, int childrenCount) {
-      this(dataTree, childrenCount, (byte) 0);
+      this(dataTree, childrenCount, Optional.empty());
     }
 
-    public DeserializedData(TreeNode dataTree, int childrenCount, byte lastSszByte) {
+    public DeserializedData(TreeNode dataTree, int childrenCount,
+        Optional<Byte> lastSszByte) {
       this.dataTree = dataTree;
       this.childrenCount = childrenCount;
       this.lastSszByte = lastSszByte;
@@ -156,7 +158,7 @@ public abstract class CollectionViewType implements CompositeViewType {
       return childrenCount;
     }
 
-    public byte getLastSszByte() {
+    public Optional<Byte> getLastSszByte() {
       return lastSszByte;
     }
   }
@@ -178,10 +180,16 @@ public abstract class CollectionViewType implements CompositeViewType {
           .mapToObj(reader::read)
           .map(LeafNode::create)
           .collect(Collectors.toList());
-      Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
+
+      Optional<Byte> lastByte;
+      if (childNodes.isEmpty()) {
+        lastByte = Optional.empty();
+      } else {
+        Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
+        lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
+      }
       return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()),
-          bytesSize / getElementType().getFixedPartSize(),
-          lastNodeData.get(lastNodeData.size() - 1));
+          bytesSize / getElementType().getFixedPartSize(),lastByte);
     } else {
       checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
