@@ -171,12 +171,12 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
         variableChildrenOffsets.add(childOffset);
       }
     }
-    int readBytes = reader.getAvailableBytes() - originalAvailableBytes;
 
     List<TreeNode> childrenSubtrees;
     if (variableChildrenOffsets.isEmpty()) {
       childrenSubtrees = new ArrayList<>(fixedChildrenSubtrees);
     } else {
+      int readBytes = originalAvailableBytes - reader.getAvailableBytes();
       Integer curVariableChildOffset = variableChildrenOffsets.remove();
       if (readBytes != curVariableChildOffset) {
         throw new SSZException("Invalid SSZ");
