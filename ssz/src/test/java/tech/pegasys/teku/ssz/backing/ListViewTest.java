@@ -19,14 +19,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.TestUtil.TestSubContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 
 public class ListViewTest {
 
   @Test
   void clearTest() {
-    ListViewType<TestSubContainer> type = new ListViewType<>(TestSubContainer.TYPE, 100);
+    ListViewType<TestSubContainer> type =
+        new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
     ListViewRead<TestSubContainer> lr1 = type.getDefault();
     ListViewWrite<TestSubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
