@@ -13,19 +13,9 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.core.epoch.status.TotalBalances;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -40,23 +30,47 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
 
-  private final SettableGauge previousLiveValidators;
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
+
   private final SettableGauge currentLiveValidators;
-  private final SettableGauge previousCorrectValidators;
+  private final SettableGauge previousLiveValidators;
+
   private final SettableGauge currentCorrectValidators;
+  private final SettableGauge previousCorrectValidators;
+
   private final SettableGauge finalizedEpoch;
   private final SettableGauge finalizedRoot;
+
   private final SettableGauge currentJustifiedEpoch;
-  private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedEpoch;
+
+  private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedRoot;
+
+  private final SettableGauge currentEpochParticipationWeight;
+  private final SettableGauge previousEpochParticipationWeight;
+
+  private final SettableGauge currentEpochTotalWeight;
+  private final SettableGauge previousEpochTotalWeight;
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -162,6 +176,32 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_correct_validators",
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
+
+    currentEpochParticipationWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_participation_weight",
+                    "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
+    previousEpochParticipationWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "previous_epoch_participation_weight",
+                    "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
+
+    currentEpochTotalWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "current_epoch_total_weight",
+                    "Total effective balance of all active validators in the current epoch");
+    previousEpochTotalWeight =
+            SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.BEACON,
+                    "previous_epoch_total_weight",
+                    "Total effective balance of all active validators in the previous epoch");
   }
 
   @Override
@@ -169,8 +209,21 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     recentChainData.getChainHead().ifPresent(this::updateMetrics);
   }
 
-  private void updateMetrics(final StateAndBlockSummary head) {
+  private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
+    TotalBalances.latestTotalBalances.ifPresent(totalBalances -> {
+      // Update participation weights only once per epoch, a slot after epoch transition to make sure
+      // total balances are properly updated.
+      if (!slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
+        return;
+      }
+
+      currentEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
+      previousEpochTotalWeight.set(totalBalances.getPreviousEpoch().longValue());
+
+      currentEpochParticipationWeight.set(totalBalances.getCurrentEpochAttesters().longValue());
+      previousEpochParticipationWeight.set(totalBalances.getPreviousEpochAttesters().longValue());
+    });
 
     final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());
     final UInt64 previousEpoch = currentEpoch.minusMinZero(1);

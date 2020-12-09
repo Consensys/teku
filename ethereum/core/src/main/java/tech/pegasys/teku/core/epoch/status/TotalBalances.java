@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
-import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
-
-import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+import java.util.List;
+import java.util.Optional;
+
+import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
+
 public class TotalBalances {
+
+  public static Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private UInt64 currentEpoch = UInt64.ZERO;
   private UInt64 previousEpoch = UInt64.ZERO;
