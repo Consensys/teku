@@ -28,6 +28,7 @@ public interface Bitlist {
 
   boolean getBit(int i);
 
+  /** @return Returns the number of bits set to {@code true} in this {@code Bitlist}. */
   int getBitCount();
 
   boolean intersects(Bitlist other);
@@ -42,7 +43,14 @@ public interface Bitlist {
 
   int getCurrentSize();
 
-  Bytes serialize();
+  @SuppressWarnings("NarrowingCompoundAssignment")
+  default Bytes serialize() {
+    int len = getCurrentSize();
+    byte[] array = new byte[Bitlist.sszSerializationLength(len)];
+    IntStream.range(0, len).forEach(i -> array[i / 8] |= ((getBit(i) ? 1 : 0) << (i % 8)));
+    array[len / 8] |= 1 << (len % 8);
+    return Bytes.wrap(array);
+  }
 
   MutableBitlist copy();
 }

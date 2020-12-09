@@ -139,7 +139,7 @@ public class PendingAttestation extends AbstractImmutableContainer
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public MutableBitlist getAggregation_bits() {
+  public Bitlist getAggregation_bits() {
     return ViewUtils.getBitlist(getAny(0));
   }
 

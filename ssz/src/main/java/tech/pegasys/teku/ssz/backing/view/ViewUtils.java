@@ -67,16 +67,9 @@ public class ViewUtils {
     return viewWrite.commitChanges();
   }
 
-  /** Converts list of bits to {@link MutableBitlist} value */
-  public static MutableBitlist getBitlist(ListViewRead<BitView> bitlistView) {
-    MutableBitlist ret =
-        MutableBitlist.create(bitlistView.size(), bitlistView.getType().getMaxLength());
-    for (int i = 0; i < bitlistView.size(); i++) {
-      if (bitlistView.get(i).get()) {
-        ret.setBit(i);
-      }
-    }
-    return ret;
+  /** Converts list of bits to {@link Bitlist} value */
+  public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
+    return new ViewBackedBitlist(bitlistView);
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */

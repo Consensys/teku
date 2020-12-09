@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 
 class SimpleOffsetSerializerTest {
@@ -51,6 +52,15 @@ class SimpleOffsetSerializerTest {
     final Attestation original = dataStructureUtil.randomAttestation();
     final Bytes data = SimpleOffsetSerializer.serialize(original);
     final Attestation result = SimpleOffsetSerializer.deserialize(data, Attestation.class);
+    assertThat(result).isEqualTo(original);
+  }
+
+  @Test
+  public void shouldRoundTripPendingAttestation() {
+    final PendingAttestation original = dataStructureUtil.randomPendingAttestation();
+    final Bytes data = SimpleOffsetSerializer.serialize(original);
+    final PendingAttestation result =
+        SimpleOffsetSerializer.deserialize(data, PendingAttestation.class);
     assertThat(result).isEqualTo(original);
   }
 
