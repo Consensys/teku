@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -22,14 +29,6 @@ import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class ValidatorStatuses {
   private final List<ValidatorStatus> statuses;

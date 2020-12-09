@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 
 import java.util.List;
 import java.util.Optional;
-
-import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TotalBalances {
 
