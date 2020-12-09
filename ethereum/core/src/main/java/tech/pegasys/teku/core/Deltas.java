@@ -13,23 +13,79 @@
 
 package tech.pegasys.teku.core;
 
+import com.google.common.base.MoreObjects;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Deltas {
-  private final List<UInt64> rewards;
-  private final List<UInt64> penalties;
+  private final List<Delta> deltas;
 
-  public Deltas(final List<UInt64> rewards, final List<UInt64> penalties) {
-    this.rewards = rewards;
-    this.penalties = penalties;
+  public Deltas(final int validatorCount) {
+    this.deltas = new ArrayList<>(validatorCount);
+    for (int i = 0; i < validatorCount; i++) {
+      deltas.add(new Delta());
+    }
   }
 
-  public UInt64 getReward(final int validatorIndex) {
-    return rewards.get(validatorIndex);
+  public Delta getDelta(final int validatorIndex) {
+    return deltas.get(validatorIndex);
   }
 
-  public UInt64 getPenalty(final int validatorIndex) {
-    return penalties.get(validatorIndex);
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("deltas", deltas).toString();
+  }
+
+  public static class Delta {
+    private UInt64 reward = UInt64.ZERO;
+    private UInt64 penalty = UInt64.ZERO;
+
+    public void reward(final UInt64 amount) {
+      reward = reward.plus(amount);
+    }
+
+    public void penalize(final UInt64 amount) {
+      penalty = penalty.plus(amount);
+    }
+
+    public void add(final Delta other) {
+      reward(other.reward);
+      penalize(other.penalty);
+    }
+
+    public UInt64 getReward() {
+      return reward;
+    }
+
+    public UInt64 getPenalty() {
+      return penalty;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final Delta delta = (Delta) o;
+      return Objects.equals(reward, delta.reward) && Objects.equals(penalty, delta.penalty);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(reward, penalty);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("reward", reward)
+          .add("penalty", penalty)
+          .toString();
+    }
   }
 }

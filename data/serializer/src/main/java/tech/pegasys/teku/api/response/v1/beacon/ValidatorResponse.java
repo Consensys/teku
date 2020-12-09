@@ -133,6 +133,11 @@ public class ValidatorResponse {
   }
 
   @JsonIgnore
+  public Integer getIndex() {
+    return index.intValue();
+  }
+
+  @JsonIgnore
   public BLSPublicKey getPublicKey() {
     return validator.pubkey.asBLSPublicKey();
   }

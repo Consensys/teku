@@ -25,10 +25,8 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorP
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -112,20 +110,18 @@ public class AttestationUtil {
    */
   public static List<Integer> get_attesting_indices(
       BeaconState state, AttestationData data, Bitlist bits) {
+    return stream_attesting_indices(state, data, bits).boxed().collect(toList());
+  }
+
+  public static IntStream stream_attesting_indices(
+      BeaconState state, AttestationData data, Bitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
     checkArgument(
         bits.getCurrentSize() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
         bits.getCurrentSize(),
         committee.size());
-    Set<Integer> attesting_indices = new HashSet<>();
-    for (int i = 0; i < committee.size(); i++) {
-      int index = committee.get(i);
-      if (bits.getBit(i)) {
-        attesting_indices.add(index);
-      }
-    }
-    return new ArrayList<>(attesting_indices);
+    return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
   }
 
   public static AttestationProcessingResult is_valid_indexed_attestation(

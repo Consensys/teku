@@ -30,7 +30,8 @@ import tech.pegasys.signers.bls.keystore.model.Cipher;
 import tech.pegasys.signers.bls.keystore.model.CipherFunction;
 import tech.pegasys.signers.bls.keystore.model.KdfParam;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.signers.bls.keystore.model.SCryptParam;
+import tech.pegasys.signers.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.signers.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class EncryptedKeystoreWriter implements KeysWriter {
@@ -87,6 +88,18 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         "Validator keystore [" + outputPath.resolve(withdrawalFileName) + "] saved successfully.");
   }
 
+  public void writeValidatorKey(final BLSKeyPair validatorKey)
+      throws UncheckedIOException, KeyStoreValidationException {
+
+    final KeyStoreData validatorKeyStoreData =
+        generateKeystoreData(validatorKey, validatorKeyPassword);
+
+    final String validatorFileName =
+        validatorKey.getPublicKey().toAbbreviatedString() + "_validator.json";
+
+    saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
+  }
+
   private void createKeystoreDirectory() {
     try {
       Files.createDirectories(outputPath);
@@ -98,7 +111,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   }
 
   private KeyStoreData generateKeystoreData(final BLSKeyPair key, final String password) {
-    final KdfParam kdfParam = new SCryptParam(32, Bytes32.random(secureRandom));
+    final KdfParam kdfParam =
+        new Pbkdf2Param(
+            32, 1, Pbkdf2PseudoRandomFunction.HMAC_SHA256, Bytes32.random(secureRandom));
     final Cipher cipher = new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, secureRandom));
     return KeyStore.encrypt(
         key.getSecretKey().toBytes(),
