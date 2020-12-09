@@ -122,7 +122,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
         throw new SSZException("Too long bitlist");
       }
       Bytes bytes = reader.read(reader.getAvailableBytes());
-      int highestByte = 0xFF & bytes.get(bytes.size());
+      int highestByte = 0xFF & bytes.get(bytes.size() - 1);
       int boundaryBit = Integer.highestOneBit(highestByte);
       int usedBitsCount = Integer.bitCount(boundaryBit - 1);
       int length = 8 * (bytes.size() - 1) + usedBitsCount;
