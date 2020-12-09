@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -30,13 +30,13 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
 
-  final Set<BLSPublicKey> validatorPublicKeys;
+  final List<BLSPublicKey> validatorPublicKeys;
   final ValidatorApiChannel validatorApiChannel;
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
 
   public DefaultValidatorStatusLogger(
-      Set<BLSPublicKey> validatorPublicKeys, ValidatorApiChannel validatorApiChannel) {
+      List<BLSPublicKey> validatorPublicKeys, ValidatorApiChannel validatorApiChannel) {
     checkArgument(!validatorPublicKeys.isEmpty());
     this.validatorPublicKeys = validatorPublicKeys;
     this.validatorApiChannel = validatorApiChannel;

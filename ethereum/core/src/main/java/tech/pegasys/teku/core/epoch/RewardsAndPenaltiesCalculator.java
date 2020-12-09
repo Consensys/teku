@@ -13,258 +13,34 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import static java.lang.Math.toIntExact;
-import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.core.epoch.EpochProcessorUtil.get_unslashed_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance_with_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_balance;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.teku.util.config.Constants.BASE_REWARDS_PER_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.BASE_REWARD_FACTOR;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.teku.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 
-import com.google.common.base.Suppliers;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.core.Deltas;
+import tech.pegasys.teku.core.Deltas.Delta;
+import tech.pegasys.teku.core.epoch.status.InclusionInfo;
+import tech.pegasys.teku.core.epoch.status.TotalBalances;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.util.config.Constants;
 
 public class RewardsAndPenaltiesCalculator {
 
   private final BeaconState state;
-  private final MatchingAttestations matchingAttestations;
-  private final List<UInt64> noValues;
-  private final Supplier<Map<Integer, UInt64>> eligibleValidatorBaseRewards;
-  private final boolean isInInactivityLeak;
+  private final ValidatorStatuses validatorStatuses;
 
   public RewardsAndPenaltiesCalculator(
-      final BeaconState state, final MatchingAttestations matchingAttestations) {
+      final BeaconState state, final ValidatorStatuses validatorStatuses) {
     this.state = state;
-    this.matchingAttestations = matchingAttestations;
-    noValues = Collections.nCopies(state.getValidators().size(), UInt64.ZERO);
-    eligibleValidatorBaseRewards = Suppliers.memoize(this::calculateEligibleValidatorBaseRewards);
-    isInInactivityLeak = getFinalityDelay().compareTo(MIN_EPOCHS_TO_INACTIVITY_PENALTY) > 0;
-  }
-
-  private Map<Integer, UInt64> getEligibleValidatorBaseRewards() {
-    return eligibleValidatorBaseRewards.get();
-  }
-
-  /**
-   * Returns the base reward specific to the validator with the given index
-   *
-   * @param index
-   * @return
-   */
-  private UInt64 getBaseReward(int index) {
-    final UInt64 baseReward = getEligibleValidatorBaseRewards().get(index);
-    return baseReward != null ? baseReward : calculateBaseReward(index);
-  }
-
-  private UInt64 calculateBaseReward(int index) {
-    UInt64 totalBalanceSquareRoot = get_total_active_balance_with_root(state).getRight();
-    UInt64 effectiveBalance = state.getValidators().get(index).getEffective_balance();
-    return effectiveBalance
-        .times(BASE_REWARD_FACTOR)
-        .dividedBy(totalBalanceSquareRoot)
-        .dividedBy(BASE_REWARDS_PER_EPOCH);
-  }
-
-  private Map<Integer, UInt64> calculateEligibleValidatorBaseRewards() {
-    final UInt64 previousEpoch = get_previous_epoch(state);
-    final UInt64 previousEpochPlusOne = previousEpoch.plus(UInt64.ONE);
-    return IntStream.range(0, state.getValidators().size())
-        .filter(
-            index -> {
-              final Validator v = state.getValidators().get(index);
-              return is_active_validator(v, previousEpoch)
-                  || (v.isSlashed()
-                      && previousEpochPlusOne.compareTo(v.getWithdrawable_epoch()) < 0);
-            })
-        .boxed()
-        .collect(toMap(i -> i, this::calculateBaseReward));
-  }
-
-  private Collection<Integer> getEligibleValidatorIndices() {
-    return getEligibleValidatorBaseRewards().keySet();
-  }
-
-  private UInt64 getProposerReward(int attestingIndex) {
-    return getBaseReward(attestingIndex).dividedBy(PROPOSER_REWARD_QUOTIENT);
-  }
-
-  private UInt64 getFinalityDelay() {
-    return get_previous_epoch(state).minus(state.getFinalized_checkpoint().getEpoch());
-  }
-
-  /**
-   * Helper with shared logic for use by get source, target and head deltas functions
-   *
-   * @param attestations
-   * @return
-   */
-  private Deltas getAttestationComponentDeltas(SSZList<PendingAttestation> attestations) {
-    int validatorCount = state.getValidators().size();
-    List<UInt64> rewards = new ArrayList<>(validatorCount);
-    List<UInt64> penalties = new ArrayList<>(validatorCount);
-    for (int i = 0; i < validatorCount; i++) {
-      rewards.add(UInt64.ZERO);
-      penalties.add(UInt64.ZERO);
-    }
-    UInt64 totalBalance = get_total_active_balance(state);
-    Set<Integer> unslashedAttestingIndices =
-        get_unslashed_attesting_indices(state, attestations, HashSet::new);
-    UInt64 attestingBalance = get_total_balance(state, unslashedAttestingIndices);
-
-    for (int index : getEligibleValidatorIndices()) {
-      if (unslashedAttestingIndices.contains(index)) {
-        UInt64 increment = EFFECTIVE_BALANCE_INCREMENT;
-
-        if (isInInactivityLeak) {
-          // Since full base reward will be canceled out by inactivity penalty deltas,
-          // optimal participation receives full base reward compensation here.
-          add(rewards, index, getBaseReward(index));
-        } else {
-          UInt64 rewardNumerator =
-              getBaseReward(index).times(attestingBalance.dividedBy(increment));
-          add(rewards, index, rewardNumerator.dividedBy(totalBalance.dividedBy(increment)));
-        }
-      } else {
-        add(penalties, index, getBaseReward(index));
-      }
-    }
-    return new Deltas(rewards, penalties);
-  }
-
-  /**
-   * Return attester micro-rewards/penalties for source-vote for each validator.
-   *
-   * @return
-   */
-  public Deltas getSourceDeltas() {
-    final SSZList<PendingAttestation> matchingSourceAttestations =
-        matchingAttestations.getMatchingSourceAttestations(get_previous_epoch(state));
-    return getAttestationComponentDeltas(matchingSourceAttestations);
-  }
-
-  /**
-   * Return attester micro-rewards/penalties for target-vote for each validator.
-   *
-   * @return
-   */
-  public Deltas getTargetDeltas() {
-    final SSZList<PendingAttestation> matchingTargetAttestations =
-        matchingAttestations.getMatchingTargetAttestations(get_previous_epoch(state));
-    return getAttestationComponentDeltas(matchingTargetAttestations);
-  }
-
-  /**
-   * Return attester micro-rewards/penalties for head-vote for each validator.
-   *
-   * @return
-   */
-  public Deltas getHeadDeltas() {
-    final SSZList<PendingAttestation> matchingHeadAttestations =
-        matchingAttestations.getMatchingHeadAttestations(get_previous_epoch(state));
-    return getAttestationComponentDeltas(matchingHeadAttestations);
-  }
-
-  /** Return proposer and inclusion delay micro-rewards/penalties for each validator */
-  public Deltas getInclusionDelayDeltas() {
-    int validatorCount = state.getValidators().size();
-    List<UInt64> rewards = new ArrayList<>(validatorCount);
-    for (int i = 0; i < validatorCount; i++) {
-      rewards.add(UInt64.ZERO);
-    }
-    SSZList<PendingAttestation> matchingSourceAttestations =
-        matchingAttestations.getMatchingSourceAttestations(get_previous_epoch(state));
-
-    // map (unslashed attester index) -> (list of source attestations)
-    Map<Integer, List<PendingAttestation>> validator_source_attestations =
-        matchingSourceAttestations.stream()
-            .flatMap(
-                a ->
-                    get_unslashed_attesting_indices(state, SSZList.singleton(a)).stream()
-                        .map(i -> Pair.of(i, a)))
-            .collect(
-                Collectors.groupingBy(
-                    Pair::getLeft, Collectors.mapping(Pair::getRight, Collectors.toList())));
-
-    validator_source_attestations.forEach(
-        (index, attestations) ->
-            attestations.stream()
-                .min(Comparator.comparing(PendingAttestation::getInclusion_delay))
-                .ifPresent(
-                    a -> {
-                      add(
-                          rewards,
-                          toIntExact(a.getProposer_index().longValue()),
-                          getProposerReward(index));
-
-                      UInt64 maxAttesterReward =
-                          getBaseReward(index).minus(getProposerReward(index));
-                      add(rewards, index, maxAttesterReward.dividedBy(a.getInclusion_delay()));
-                    }));
-
-    // No penalties associtated with inclusion delay
-    return new Deltas(rewards, noValues);
-  }
-
-  /**
-   * Return inactivity reward/penalty deltas for each validator
-   *
-   * @return
-   */
-  public Deltas getInactivityPenaltyDeltas() {
-    int validatorCount = state.getValidators().size();
-    List<UInt64> penalties = new ArrayList<>(validatorCount);
-    for (int i = 0; i < validatorCount; i++) {
-      penalties.add(UInt64.ZERO);
-    }
-
-    if (isInInactivityLeak) {
-      SSZList<PendingAttestation> matchingTargetAttestations =
-          matchingAttestations.getMatchingTargetAttestations(get_previous_epoch(state));
-      Set<Integer> matchingTargetAttestingIndices =
-          get_unslashed_attesting_indices(state, matchingTargetAttestations, HashSet::new);
-      for (int index : getEligibleValidatorIndices()) {
-        // If validator is performing optimally this cancels all rewards for a neutral balance
-        UInt64 baseReward = getBaseReward(index);
-        add(
-            penalties,
-            index,
-            BASE_REWARDS_PER_EPOCH.times(baseReward).minus(getProposerReward(index)));
-        if (!matchingTargetAttestingIndices.contains(index)) {
-          final UInt64 effectiveBalance = state.getValidators().get(index).getEffective_balance();
-          add(
-              penalties,
-              index,
-              effectiveBalance.times(getFinalityDelay()).dividedBy(INACTIVITY_PENALTY_QUOTIENT));
-        }
-      }
-    }
-
-    // No rewards associated with inactivity penalties
-    return new Deltas(noValues, penalties);
+    this.validatorStatuses = validatorStatuses;
   }
 
   /**
@@ -274,33 +50,185 @@ public class RewardsAndPenaltiesCalculator {
    * @throws IllegalArgumentException
    */
   public Deltas getAttestationDeltas() throws IllegalArgumentException {
-    Deltas sourceDeltas = getSourceDeltas();
-    Deltas targetDeltas = getTargetDeltas();
-    Deltas headDeltas = getHeadDeltas();
-    Deltas inclusionDelayDeltas = getInclusionDelayDeltas();
-    Deltas inactivityDeltas = getInactivityPenaltyDeltas();
-
-    List<UInt64> rewards = new ArrayList<>();
-    List<UInt64> penalties = new ArrayList<>();
-    for (int i = 0; i < state.getValidators().size(); i++) {
-      rewards.add(
-          sourceDeltas
-              .getReward(i)
-              .plus(targetDeltas.getReward(i))
-              .plus(headDeltas.getReward(i))
-              .plus(inclusionDelayDeltas.getReward(i)));
-      penalties.add(
-          sourceDeltas
-              .getPenalty(i)
-              .plus(targetDeltas.getPenalty(i))
-              .plus(headDeltas.getPenalty(i))
-              .plus(inactivityDeltas.getPenalty(i)));
-    }
-    return new Deltas(rewards, penalties);
+    return getDeltas(this::applyAllDeltas);
   }
 
-  private void add(final List<UInt64> list, int index, UInt64 amount) {
-    final UInt64 current = list.get(index);
-    list.set(index, current.plus(amount));
+  public Deltas getDeltas(final Step step) throws IllegalArgumentException {
+    final Deltas deltas = new Deltas(validatorStatuses.getValidatorCount());
+    final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+    final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
+    final UInt64 finalityDelay = getFinalityDelay();
+
+    final UInt64 totalActiveBalanceSquareRoot = squareRootOrZero(totalBalances.getCurrentEpoch());
+
+    for (int index = 0; index < statuses.size(); index++) {
+      final ValidatorStatus validator = statuses.get(index);
+      if (!validator.isEligibleValidator()) {
+        continue;
+      }
+
+      final UInt64 baseReward = getBaseReward(validator, totalActiveBalanceSquareRoot);
+      final Delta delta = deltas.getDelta(index);
+      step.apply(deltas, totalBalances, finalityDelay, validator, baseReward, delta);
+    }
+    return deltas;
+  }
+
+  public interface Step {
+    void apply(
+        final Deltas deltas,
+        final TotalBalances totalBalances,
+        final UInt64 finalityDelay,
+        final ValidatorStatus validator,
+        final UInt64 baseReward,
+        final Delta delta);
+  }
+
+  private void applyAllDeltas(
+      final Deltas deltas,
+      final TotalBalances totalBalances,
+      final UInt64 finalityDelay,
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final Delta delta) {
+    applySourceDelta(validator, baseReward, totalBalances, finalityDelay, delta);
+    applyTargetDelta(validator, baseReward, totalBalances, finalityDelay, delta);
+    applyHeadDelta(validator, baseReward, totalBalances, finalityDelay, delta);
+    applyInclusionDelayDelta(validator, baseReward, delta, deltas);
+    applyInactivityPenaltyDelta(validator, baseReward, finalityDelay, delta);
+  }
+
+  public void applySourceDelta(
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final TotalBalances totalBalances,
+      final UInt64 finalityDelay,
+      final Delta delta) {
+    applyAttestationComponentDelta(
+        validator.isPreviousEpochAttester() && !validator.isSlashed(),
+        totalBalances.getPreviousEpochAttesters(),
+        totalBalances,
+        baseReward,
+        finalityDelay,
+        delta);
+  }
+
+  public void applyTargetDelta(
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final TotalBalances totalBalances,
+      final UInt64 finalityDelay,
+      final Delta delta) {
+    applyAttestationComponentDelta(
+        validator.isPreviousEpochTargetAttester() && !validator.isSlashed(),
+        totalBalances.getPreviousEpochTargetAttesters(),
+        totalBalances,
+        baseReward,
+        finalityDelay,
+        delta);
+  }
+
+  public void applyHeadDelta(
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final TotalBalances totalBalances,
+      final UInt64 finalityDelay,
+      final Delta delta) {
+    applyAttestationComponentDelta(
+        validator.isPreviousEpochHeadAttester() && !validator.isSlashed(),
+        totalBalances.getPreviousEpochHeadAttesters(),
+        totalBalances,
+        baseReward,
+        finalityDelay,
+        delta);
+  }
+
+  public void applyInclusionDelayDelta(
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final Delta delta,
+      final Deltas deltas) {
+    if (validator.isPreviousEpochAttester() && !validator.isSlashed()) {
+      final InclusionInfo inclusionInfo =
+          validator
+              .getInclusionInfo()
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "Validator was active in previous epoch but has no inclusion information."));
+      final UInt64 proposerReward = getProposerReward(baseReward);
+      final UInt64 maxAttesterReward = baseReward.minus(proposerReward);
+      delta.reward(maxAttesterReward.dividedBy(inclusionInfo.getDelay()));
+
+      deltas.getDelta(inclusionInfo.getProposerIndex()).reward(getProposerReward(baseReward));
+    }
+  }
+
+  public void applyInactivityPenaltyDelta(
+      final ValidatorStatus validator,
+      final UInt64 baseReward,
+      final UInt64 finalityDelay,
+      final Delta delta) {
+
+    if (finalityDelay.isGreaterThan(MIN_EPOCHS_TO_INACTIVITY_PENALTY)) {
+      // If validator is performing optimally this cancels all rewards for a neutral balance
+      delta.penalize(BASE_REWARDS_PER_EPOCH.times(baseReward).minus(getProposerReward(baseReward)));
+
+      if (validator.isSlashed() || !validator.isPreviousEpochTargetAttester()) {
+        delta.penalize(
+            validator
+                .getCurrentEpochEffectiveBalance()
+                .times(finalityDelay)
+                .dividedBy(INACTIVITY_PENALTY_QUOTIENT));
+      }
+    }
+  }
+
+  private UInt64 getProposerReward(final UInt64 baseReward) {
+    return baseReward.dividedBy(PROPOSER_REWARD_QUOTIENT);
+  }
+
+  public void applyAttestationComponentDelta(
+      final boolean indexInUnslashedAttestingIndices,
+      final UInt64 attestingBalance,
+      final TotalBalances totalBalances,
+      final UInt64 baseReward,
+      final UInt64 finalityDelay,
+      final Delta delta) {
+    final UInt64 totalBalance = totalBalances.getCurrentEpoch();
+    if (indexInUnslashedAttestingIndices) {
+      if (finalityDelay.isGreaterThan(MIN_EPOCHS_TO_INACTIVITY_PENALTY)) {
+        // Since full base reward will be canceled out by inactivity penalty deltas,
+        // optimal participation receives full base reward compensation here.
+        delta.reward(baseReward);
+      } else {
+        final UInt64 rewardNumerator =
+            baseReward.times(attestingBalance.dividedBy(EFFECTIVE_BALANCE_INCREMENT));
+        delta.reward(
+            rewardNumerator.dividedBy(totalBalance.dividedBy(EFFECTIVE_BALANCE_INCREMENT)));
+      }
+    } else {
+      delta.penalize(baseReward);
+    }
+  }
+
+  private UInt64 getFinalityDelay() {
+    return get_previous_epoch(state).minus(state.getFinalized_checkpoint().getEpoch());
+  }
+
+  private UInt64 getBaseReward(
+      final ValidatorStatus validator, final UInt64 totalActiveBalanceSquareRoot) {
+    if (totalActiveBalanceSquareRoot.isZero()) {
+      return UInt64.ZERO;
+    }
+    return validator
+        .getCurrentEpochEffectiveBalance()
+        .times(Constants.BASE_REWARD_FACTOR)
+        .dividedBy(totalActiveBalanceSquareRoot)
+        .dividedBy(BASE_REWARDS_PER_EPOCH);
+  }
+
+  private UInt64 squareRootOrZero(final UInt64 totalActiveBalance) {
+    return totalActiveBalance.isZero() ? UInt64.ZERO : integer_squareroot(totalActiveBalance);
   }
 }

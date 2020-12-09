@@ -493,8 +493,8 @@ public class BeaconStateUtil {
     // Compute exit queue epoch
     List<UInt64> exit_epochs =
         state.getValidators().stream()
-            .filter(v -> !v.getExit_epoch().equals(FAR_FUTURE_EPOCH))
             .map(Validator::getExit_epoch)
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
             .collect(Collectors.toList());
     exit_epochs.add(compute_activation_exit_epoch(get_current_epoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
