@@ -199,6 +199,9 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
         }
       }
     }
+    if (reader.getAvailableBytes() > 0) {
+      throw new SSZException("Invalid SSZ");
+    }
 
     return TreeUtil.createTree(childrenSubtrees);
   }
