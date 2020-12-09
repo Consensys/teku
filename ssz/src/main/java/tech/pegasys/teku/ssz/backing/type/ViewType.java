@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.Optional;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
@@ -21,6 +23,15 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
 public interface ViewType extends SSZType {
+
+  static Optional<ViewType> getType(Class<?> clazz) {
+    try {
+      ViewType type = (ViewType) clazz.getDeclaredField("TYPE").get(null);
+      return Optional.of(type);
+    } catch (IllegalAccessException | NoSuchFieldException e) {
+      return Optional.empty();
+    }
+  }
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally
@@ -66,5 +77,9 @@ public interface ViewType extends SSZType {
    */
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
+  }
+
+  default ViewRead sszDeserialize(BytesReader reader) {
+    return createFromBackingNode(sszDeserializeTree(reader));
   }
 }

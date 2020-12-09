@@ -157,14 +157,14 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   @Override
-  public TreeNode sszDeserialize(BytesReader reader) {
+  public TreeNode sszDeserializeTree(BytesReader reader) {
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
     Queue<Integer> variableChildrenOffsets = new ArrayDeque<>();
     int originalAvailableBytes = reader.getAvailableBytes();
     for (int i = 0; i < getChildCount(); i++) {
       ViewType childType = getChildType(i);
       if (childType.isFixedSize()) {
-        TreeNode childNode = childType.sszDeserialize(reader.slice(childType.getFixedPartSize()));
+        TreeNode childNode = childType.sszDeserializeTree(reader.slice(childType.getFixedPartSize()));
         fixedChildrenSubtrees.add(childNode);
       } else {
         int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
@@ -173,30 +173,33 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     }
     int readBytes = reader.getAvailableBytes() - originalAvailableBytes;
 
-    Integer curVariableChildOffset = variableChildrenOffsets.remove();
+    List<TreeNode> childrenSubtrees;
     if (variableChildrenOffsets.isEmpty()) {
-
-    } else if (readBytes != curVariableChildOffset) {
-      throw new SSZException("Invalid SSZ");
-    }
-
-    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
-    for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
-      if (childType.isFixedSize()) {
-        childrenSubtrees.add(fixedChildrenSubtrees.remove());
-      } else {
-        Integer nextVariableChildOffset = variableChildrenOffsets.poll();
-        BytesReader childReader = nextVariableChildOffset == null ? reader :
-            reader.slice(nextVariableChildOffset - curVariableChildOffset);
-        TreeNode childNode = childType.sszDeserialize(childReader);
-        if (childReader.getAvailableBytes() > 0) {
-          throw new SSZException("Invalid SSZ");
+      childrenSubtrees = new ArrayList<>(fixedChildrenSubtrees);
+    } else {
+      Integer curVariableChildOffset = variableChildrenOffsets.remove();
+      if (readBytes != curVariableChildOffset) {
+        throw new SSZException("Invalid SSZ");
+      }
+      childrenSubtrees = new ArrayList<>(getChildCount());
+      for (int i = 0; i < getChildCount(); i++) {
+        ViewType childType = getChildType(i);
+        if (childType.isFixedSize()) {
+          childrenSubtrees.add(fixedChildrenSubtrees.remove());
+        } else {
+          Integer nextVariableChildOffset = variableChildrenOffsets.poll();
+          BytesReader childReader = nextVariableChildOffset == null ? reader :
+              reader.slice(nextVariableChildOffset - curVariableChildOffset);
+          TreeNode childNode = childType.sszDeserializeTree(childReader);
+          if (childReader.getAvailableBytes() > 0) {
+            throw new SSZException("Invalid SSZ");
+          }
+          childrenSubtrees.add(childNode);
+          curVariableChildOffset = nextVariableChildOffset;
         }
-        childrenSubtrees.add(childNode);
-        curVariableChildOffset = nextVariableChildOffset;
       }
     }
+
     return TreeUtil.createTree(childrenSubtrees);
   }
 }

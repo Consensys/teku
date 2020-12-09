@@ -133,48 +133,88 @@ public abstract class CollectionViewType implements CompositeViewType {
     return variableOffset;
   }
 
-  public TreeNode sszDeserializeVector(BytesReader reader, int elementsCount) {
-    checkArgument(reader.getAvailableBytes() >= getFixedPartSize());
-    if (getElementType().isFixedSize()) {
-      return sszDeserializeFixed(reader, elementsCount);
-    } else {
-      return sszDeserializeVariable(reader, elementsCount);
+  static class DeserializedData {
+    private final TreeNode dataTree;
+    private final int childrenCount;
+    private final byte lastSszByte;
+
+    public DeserializedData(TreeNode dataTree, int childrenCount) {
+      this(dataTree, childrenCount, (byte) 0);
+    }
+
+    public DeserializedData(TreeNode dataTree, int childrenCount, byte lastSszByte) {
+      this.dataTree = dataTree;
+      this.childrenCount = childrenCount;
+      this.lastSszByte = lastSszByte;
+    }
+
+    public TreeNode getDataTree() {
+      return dataTree;
+    }
+
+    public int getChildrenCount() {
+      return childrenCount;
+    }
+
+    public byte getLastSszByte() {
+      return lastSszByte;
     }
   }
 
-  protected static final int UNKNOWN_ELEMENTS_COUNT = -1;
+  protected DeserializedData sszDeserializeVector(BytesReader reader) {
+    checkSsz(reader.getAvailableBytes() >= getFixedPartSize());
+    if (getElementType().isFixedSize()) {
+      return sszDeserializeFixed(reader);
+    } else {
+      return sszDeserializeVariable(reader);
+    }
+  }
 
-  public TreeNode sszDeserializeFixed(BytesReader reader, int elementsCount) {
-    final List<TreeNode> childNodes;
+  private DeserializedData sszDeserializeFixed(BytesReader reader) {
+    int bytesSize = reader.getAvailableBytes();
     if (getElementType() instanceof BasicViewType) {
-      int bytesSize = (elementsCount * getBitsSize() + 7) / 8;
-      childNodes = chunks(bytesSize)
+      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
+      List<LeafNode> childNodes = chunks(bytesSize)
           .mapToObj(reader::read)
           .map(LeafNode::create)
           .collect(Collectors.toList());
+      Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
+      return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()),
+          bytesSize / getElementType().getFixedPartSize(),
+          lastNodeData.get(lastNodeData.size() - 1));
     } else {
-      childNodes = Stream.generate(() -> getElementType().sszDeserialize(reader))
+      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
+      int elementsCount = bytesSize / getElementType().getFixedPartSize();
+      List<TreeNode> childNodes = Stream.generate(() -> getElementType().sszDeserializeTree(reader))
           .limit(elementsCount)
           .collect(Collectors.toList());
+      return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
     }
-    return TreeUtil.createTree(childNodes);
   }
 
-  public TreeNode sszDeserializeVariable(BytesReader reader, int elementsCount) {
-    int[] elementOffsets = Stream.generate(() -> reader.read(LeafNode.MAX_BYTE_SIZE))
-        .mapToInt(SSZType::bytesToLength)
-        .limit(elementsCount).toArray();
-    int[] elementSizes = new int[elementOffsets.length];
-    for (int i = 0; i < elementOffsets.length - 1; i++) {
-      elementSizes[i] = elementOffsets[i + 1] - elementOffsets[i];
+  private DeserializedData sszDeserializeVariable(BytesReader reader) {
+    final int endVarOffset = reader.getAvailableBytes();
+    int varElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+    checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0);
+    int elementsCount = varElementOffset / SSZ_LENGTH_SIZE;
+    int[] elementSizes = new int[elementsCount];
+    for (int i = 1; i < elementsCount; i++) {
+      int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      elementSizes[i - 1] = offset - varElementOffset;
+      varElementOffset = offset;
     }
+    elementSizes[elementsCount - 1] = endVarOffset - varElementOffset;
+
     List<TreeNode> childNodes = Arrays.stream(elementSizes)
-        .mapToObj(size -> getElementType().sszDeserialize(reader.slice(size)))
+        .mapToObj(size -> getElementType().sszDeserializeTree(reader.slice(size)))
         .collect(Collectors.toList());
-    if (reader.getAvailableBytes() > 0) {
+    return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
+  }
+
+  private static void checkSsz(boolean condition) {
+    if (!condition) {
       throw new SSZException("Invalid SSZ");
     }
-    return TreeUtil.createTree(childNodes, treeDepth());
   }
 
   private static IntStream chunks(int totalSize) {

@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
+import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
@@ -39,8 +43,12 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   @Override
   protected TreeNode createDefaultTree() {
-    return BranchNode.create(
-        getCompatibleVectorType().createDefaultTree(), LeafNode.ZERO_LEAVES[8]);
+    return createTree(
+        getCompatibleVectorType().createDefaultTree(), 0);
+  }
+
+  private TreeNode createTree(TreeNode dataNode, int length) {
+    return BranchNode.create(dataNode, LeafNode.create(SSZType.lengthToBytes(length)));
   }
 
   @Override
@@ -103,6 +111,31 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       return sizeBytes;
     } else {
       return sszSerializeVector(getVectorNode(node), writer, elementsCount);
+    }
+  }
+
+  @Override
+  public TreeNode sszDeserializeTree(BytesReader reader) {
+    if (getElementType().getBitsSize() == 1) {
+      // Bitlist is handled specially
+      if ((getMaxLength() + 7) / 8 < reader.getAvailableBytes()) {
+        throw new SSZException("Too long bitlist");
+      }
+      Bytes bytes = reader.read(reader.getAvailableBytes());
+      int highestByte = 0xFF & bytes.get(bytes.size());
+      int boundaryBit = Integer.highestOneBit(highestByte);
+      int usedBitsCount = Integer.bitCount(boundaryBit - 1);
+      int length = 8 * (bytes.size() - 1) + usedBitsCount;
+      if (length > getMaxLength()) {
+        throw new SSZException("Too long bitlist");
+      }
+      Bytes newHighestByte = usedBitsCount == 0 ? Bytes.EMPTY : Bytes.of(highestByte ^ boundaryBit);
+      Bytes treeBytes = Bytes.wrap(bytes.slice(0, bytes.size() - 1), newHighestByte);
+      DeserializedData data = sszDeserializeVector(BytesReader.fromBytes(treeBytes));
+      return createTree(data.getDataTree(), length);
+    } else {
+      DeserializedData data = sszDeserializeVector(reader);
+      return createTree(data.getDataTree(), data.getChildrenCount());
     }
   }
 

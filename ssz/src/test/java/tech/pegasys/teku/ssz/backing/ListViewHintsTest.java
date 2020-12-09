@@ -41,12 +41,24 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class ListViewHintsTest {
 
+  @SuppressWarnings("unchecked")
+  <TElement extends ViewRead> List<ListViewRead<TElement>> createListVariants(
+      ListViewType<TElement> type,
+      ListViewRead<TElement> list0) {
+    List<ListViewRead<TElement>> ret = new ArrayList<>();
+    ret.add(list0);
+    if (!(list0 instanceof ViewWrite)) {
+      ret.add(type.createFromBackingNode(list0.getBackingNode()));
+      ret.add(
+          (ListViewRead<TElement>) type
+              .sszDeserialize(BytesReader.fromBytes(list0.sszSerialize())));
+    }
+    return ret;
+  }
+
   <TElement extends ViewRead> void assertEmptyListVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0) {
-    assertEmptyList(type, list0);
-    if (!(list0 instanceof ViewWrite)) {
-      assertEmptyList(type, type.createFromBackingNode(list0.getBackingNode()));
-    }
+    createListVariants(type, list0).forEach(l -> assertEmptyList(type, l));
   }
 
   <TElement extends ViewRead> void assertEmptyList(
@@ -66,11 +78,7 @@ public class ListViewHintsTest {
 
   <TElement extends ViewRead> void assertListElementsVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0, List<TElement> expectedElements) {
-    assertListElements(type, list0, expectedElements);
-    if (!(list0 instanceof ViewWrite)) {
-      assertListElements(
-          type, type.createFromBackingNode(list0.getBackingNode()), expectedElements);
-    }
+    createListVariants(type, list0).forEach(l -> assertListElements(type, l, expectedElements));
   }
 
   <TElement extends ViewRead> void assertListElements(
@@ -89,13 +97,12 @@ public class ListViewHintsTest {
 
   <TElement extends ViewRead> void assertListEqualsVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
-    assertListEquals(type, list1, list2);
-    if (!(list1 instanceof ViewWrite)) {
-      assertListEquals(type, type.createFromBackingNode(list1.getBackingNode()), list2);
-    }
-    if (!(list2 instanceof ViewWrite)) {
-      assertListEquals(type, list1, type.createFromBackingNode(list2.getBackingNode()));
-    }
+    List<ListViewRead<TElement>> listVariants1 = createListVariants(type, list1);
+    List<ListViewRead<TElement>> listVariants2 = createListVariants(type, list2);
+
+    listVariants1.forEach(listVariant1 ->
+        listVariants2.forEach(listVariant2 -> assertListEquals(type, listVariant1, listVariant2))
+    );
   }
 
   <TElement extends ViewRead> void assertListEquals(

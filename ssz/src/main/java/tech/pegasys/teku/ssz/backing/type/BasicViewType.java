@@ -85,7 +85,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public TreeNode sszDeserialize(BytesReader reader) {
+  public TreeNode sszDeserializeTree(BytesReader reader) {
     Bytes bytes = reader.read(getSSZBytesSize());
     return LeafNode.create(bytes);
   }

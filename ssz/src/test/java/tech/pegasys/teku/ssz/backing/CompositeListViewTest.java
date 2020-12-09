@@ -71,6 +71,11 @@ public class CompositeListViewTest {
         public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
           return 0;
         }
+
+        @Override
+        public TreeNode sszDeserializeTree(BytesReader reader) {
+          return null;
+        }
       };
 
   static class TestView implements ViewRead {

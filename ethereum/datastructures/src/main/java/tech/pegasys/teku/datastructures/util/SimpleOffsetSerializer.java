@@ -75,7 +75,9 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -210,14 +212,19 @@ public class SimpleOffsetSerializer {
   public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     MutableInt bytePointer = new MutableInt(0);
     if (!isPrimitive(classInfo)) {
-      return SSZ.decode(
-          bytes,
-          reader -> {
-            final T result =
-                deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size());
-            assertAllDataRead(reader);
-            return result;
-          });
+      Optional<ViewType> maybeType = ViewType.getType(classInfo);
+      if (maybeType.isPresent()) {
+        return (T) maybeType.get().sszDeserializeTree(BytesReader.fromBytes(bytes));
+      } else {
+        return SSZ.decode(
+            bytes,
+            reader -> {
+              final T result =
+                  deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size());
+              assertAllDataRead(reader);
+              return result;
+            });
+      }
     } else {
       return SSZ.decode(
           bytes,

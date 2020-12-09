@@ -141,7 +141,18 @@ public class VectorViewType<C> extends CollectionViewType {
   }
 
   @Override
-  public TreeNode sszDeserialize(BytesReader reader) {
-    return sszDeserializeVector(reader, getLength());
+  public TreeNode sszDeserializeTree(BytesReader reader) {
+    DeserializedData data = sszDeserializeVector(reader);
+    if (data.getChildrenCount() != getLength()) {
+      throw new SSZException("Invalid SSZ");
+    }
+    if (getElementType() == BasicViewTypes.BIT_TYPE && getLength() % 8 > 0) {
+      // for BitVector we need to check that all 'unused' bits in the last byte are 0
+      int usedBitCount = getLength() % 8;
+      if (data.getLastSszByte() >>> usedBitCount != 0) {
+        throw new SSZException("Invalid Bitvector");
+      }
+    }
+    return data.getDataTree();
   }
 }
