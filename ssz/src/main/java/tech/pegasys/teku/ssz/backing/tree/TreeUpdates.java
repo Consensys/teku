@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetDepth;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collector;
@@ -134,10 +135,12 @@ public class TreeUpdates {
   }
 
   /** Gets generalized index for update at position [index] */
-  public long getGIndex(int index) {
+  @VisibleForTesting
+  long getGIndex(int index) {
     return gIndexes.get(index);
   }
 
+  /** Calculates and returns relative generalized index */
   public long getRelativeGIndex(int index) {
     return gIdxGetRelativeGIndex(gIndexes.get(index), gIdxGetDepth(prefix));
   }
