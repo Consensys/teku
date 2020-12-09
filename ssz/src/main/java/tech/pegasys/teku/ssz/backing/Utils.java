@@ -15,7 +15,9 @@ package tech.pegasys.teku.ssz.backing;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +34,8 @@ public class Utils {
   }
 
   private static Optional<ViewType> calcSszType(Class<?> clazz) {
-    return Arrays.stream(clazz.getMethods())
+    return getAllPredecessors(clazz).stream()
+        .flatMap(c -> Arrays.stream(c.getDeclaredMethods()))
         .filter(f -> Modifier.isStatic(f.getModifiers()))
         .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
         .findFirst()
@@ -46,7 +49,8 @@ public class Utils {
             })
         .or(
             () ->
-                Arrays.stream(clazz.getFields())
+                getAllPredecessors(clazz).stream()
+                    .flatMap(c -> Arrays.stream(c.getDeclaredFields()))
                     .filter(f -> Modifier.isStatic(f.getModifiers()))
                     .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
                     .findFirst()
@@ -58,6 +62,17 @@ public class Utils {
                             return Optional.empty();
                           }
                         }));
+  }
+
+  private static List<Class<?>> getAllPredecessors(Class<?> clazz) {
+    List<Class<?>> ret = new ArrayList<>();
+    Class<?> c = clazz;
+    do {
+      ret.add(c);
+      c = c.getSuperclass();
+    } while (c != null);
+    ret.addAll(Arrays.asList(clazz.getInterfaces()));
+    return ret;
   }
 
   public static long nextPowerOf2(long x) {
