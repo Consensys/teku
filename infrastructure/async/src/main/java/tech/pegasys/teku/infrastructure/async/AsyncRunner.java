@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public interface AsyncRunner {
 
@@ -25,10 +24,10 @@ public interface AsyncRunner {
     return runAsync(() -> SafeFuture.fromRunnable(action));
   }
 
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action);
+  <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action);
 
   <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
+      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit);
 
   void shutdown();
 
@@ -70,5 +69,37 @@ public interface AsyncRunner {
     FutureUtil.runWithFixedDelay(
         this, runnable, cancellable, delayAmount, delayUnit, exceptionHandler);
     return cancellable;
+  }
+
+  /**
+   * Execute the future supplier until it completes normally up to some maximum number of retries.
+   *
+   * @param action The action to run
+   * @param retryDelay The time to wait before retrying
+   * @param maxRetries The maximum number of retries. A value of 0 means the action is run only once
+   *     (no retries).
+   * @param <T> The value returned by the action future
+   * @return A future that resolves with the first successful result, or else an error if the
+   *     maximum retries are exhausted.
+   */
+  default <T> SafeFuture<T> runWithRetry(
+      final ExceptionThrowingFutureSupplier<T> action,
+      final Duration retryDelay,
+      final int maxRetries) {
+
+    return SafeFuture.of(action)
+        .exceptionallyCompose(
+            err -> {
+              if (maxRetries > 0) {
+                // Retry after delay, decrementing the remaining available retries
+                final int remainingRetries = maxRetries - 1;
+                return runAfterDelay(
+                    () -> runWithRetry(action, retryDelay, remainingRetries),
+                    retryDelay.toMillis(),
+                    TimeUnit.MILLISECONDS);
+              } else {
+                return SafeFuture.failedFuture(err);
+              }
+            });
   }
 }

@@ -241,9 +241,7 @@ public final class EpochProcessorUtil {
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
-            && validator
-                .getEffective_balance()
-                .isLessThanOrEqualTo(UInt64.valueOf(EJECTION_BALANCE))) {
+            && validator.getEffective_balance().isLessThanOrEqualTo(EJECTION_BALANCE)) {
           initiate_validator_exit(state, index);
         }
       }
@@ -366,7 +364,7 @@ public final class EpochProcessorUtil {
                 validator.withEffective_balance(
                     balance
                         .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
-                        .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))));
+                        .min(MAX_EFFECTIVE_BALANCE)));
       }
     }
 
