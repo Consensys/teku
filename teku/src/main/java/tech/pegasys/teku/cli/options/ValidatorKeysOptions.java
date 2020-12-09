@@ -16,6 +16,8 @@ package tech.pegasys.teku.cli.options;
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,7 +80,38 @@ public class ValidatorKeysOptions {
       paramLabel = "<INTEGER>",
       description = "Timeout (in milliseconds) for the external signing service",
       arity = "1")
-  private int validatorExternalSignerTimeout = 1000;
+  private long validatorExternalSignerTimeout = 5000;
+
+  @CommandLine.Option(
+      names = {"--validators-external-signer-keystore"},
+      paramLabel = "<FILE>",
+      description =
+          "Keystore (PKCS12/JKS) to use for TLS mutual authentication with external signer",
+      arity = "1")
+  private String validatorExternalSignerKeystore = null;
+
+  @CommandLine.Option(
+      names = {"--validators-external-signer-keystore-password-file"},
+      paramLabel = "<FILE>",
+      description =
+          "Password file to decrypt keystore (PKCS12/JKS) that will be used for TLS mutual authentication with external signer",
+      arity = "1")
+  private String validatorExternalSignerKeystorePasswordFile = null;
+
+  @CommandLine.Option(
+      names = {"--validators-external-signer-truststore"},
+      paramLabel = "<FILE>",
+      description = "Keystore (PKCS12/JKS) to trust external signer's self-signed certificate",
+      arity = "1")
+  private String validatorExternalSignerTruststore = null;
+
+  @CommandLine.Option(
+      names = {"--validators-external-signer-truststore-password-file"},
+      paramLabel = "<FILE>",
+      description =
+          "Password file to decrypt keystore (PKCS12/JKS) that will be used to trust external signer's self-signed certificate",
+      arity = "1")
+  private String validatorExternalSignerTruststorePasswordFile = null;
 
   @CommandLine.Option(
       names = {"--Xvalidators-external-signer-concurrent-limit"},
@@ -97,7 +130,13 @@ public class ValidatorKeysOptions {
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)
-                .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
+                .validatorExternalSignerTimeout(Duration.ofMillis(validatorExternalSignerTimeout))
+                .validatorExternalSignerKeystore(convertToPath(validatorExternalSignerKeystore))
+                .validatorExternalSignerKeystorePasswordFile(
+                    convertToPath(validatorExternalSignerKeystorePasswordFile))
+                .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
+                .validatorExternalSignerTruststorePasswordFile(
+                    convertToPath(validatorExternalSignerTruststorePasswordFile))
                 .validatorKeystoreFiles(validatorKeystoreFiles)
                 .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles));
   }
@@ -126,5 +165,12 @@ public class ValidatorKeysOptions {
       throw new InvalidConfigurationException(
           "Invalid configuration. Signer URL has invalid syntax", e);
     }
+  }
+
+  private Path convertToPath(final String option) {
+    if (Strings.isNullOrEmpty(option)) {
+      return null;
+    }
+    return Path.of(option);
   }
 }

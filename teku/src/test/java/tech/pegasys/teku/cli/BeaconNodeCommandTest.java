@@ -26,6 +26,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -417,7 +418,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pStaticPeers(Collections.emptyList()))
         .validator(
             b ->
-                b.validatorExternalSignerTimeout(1000)
+                b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
                     .validatorExternalSignerConcurrentRequestLimit(32)
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));

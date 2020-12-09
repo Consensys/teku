@@ -34,8 +34,8 @@ import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashable
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -62,6 +62,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalSignerIntegrationTest {
@@ -80,11 +82,20 @@ public class ExternalSignerIntegrationTest {
   @BeforeEach
   void setup(final ClientAndServer client) throws MalformedURLException {
     this.client = client;
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerPublicKeys(List.of(KEYPAIR.getPublicKey()))
+            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
+            .validatorExternalSignerTimeout(TIMEOUT)
+            .build();
+    final HttpClientExternalSignerFactory httpClientExternalSignerFactory =
+        new HttpClientExternalSignerFactory(config);
+
     externalSigner =
         new ExternalSigner(
-            HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build(),
-            new URL("http://127.0.0.1:" + client.getLocalPort()),
-            KEYPAIR.getPublicKey(),
+            httpClientExternalSignerFactory.get(),
+            config.getValidatorExternalSignerUrl(),
+            config.getValidatorExternalSignerPublicKeys().get(0),
             TIMEOUT,
             queue);
   }
