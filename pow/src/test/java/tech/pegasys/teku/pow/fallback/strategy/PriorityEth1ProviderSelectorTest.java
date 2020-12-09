@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.Eth1Provider;
-import tech.pegasys.teku.pow.fallback.readiness.Eth1ProviderChainHeadReadiness;
+import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
 
-public class RoundRobinEth1ProviderSelectorTest {
+public class PriorityEth1ProviderSelectorTest {
 
   @Test
   void assertThatSelectionWorks() {
@@ -33,34 +33,30 @@ public class RoundRobinEth1ProviderSelectorTest {
     final Eth1Provider node2 = mock(Eth1Provider.class);
     final Eth1Provider node3 = mock(Eth1Provider.class);
     final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
-
-    // pass -1 to manually check the updates
-    final RoundRobinEth1ProviderSelector roundRobinEth1ProviderSelector =
-        new RoundRobinEth1ProviderSelector(
-            providers, new Eth1ProviderChainHeadReadiness(providers), -1);
+    final Eth1ProviderSelector providerSelector = new PriorityEth1ProviderSelector(providers);
+    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
+        new FallbackAwareEth1Provider(providerSelector);
     // check that first provider is the best candidate after initialization
-    assertThat(roundRobinEth1ProviderSelector.bestCandidate()).isEqualTo(node1);
+    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
     // node1 is still ready, no update needed
     when(node1.getLatestEth1Block()).thenReturn(readyProvider());
-    roundRobinEth1ProviderSelector.checkIfUpdateNeeded();
+    fallbackAwareEth1Provider.getLatestEth1Block();
     // check that node1 is still the best candidate
-    assertThat(roundRobinEth1ProviderSelector.bestCandidate()).isEqualTo(node1);
+    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
     // node1 is now down
     when(node1.getLatestEth1Block()).thenReturn(koProvider());
     // and node2 is ready
     when(node2.getLatestEth1Block()).thenReturn(readyProvider());
     // then node2 should be the best candidate
-    roundRobinEth1ProviderSelector.checkIfUpdateNeeded();
-    assertThat(roundRobinEth1ProviderSelector.bestCandidate()).isEqualTo(node2);
+    fallbackAwareEth1Provider.getLatestEth1Block();
+    assertThat(providerSelector.bestCandidate()).isEqualTo(node2);
     // node2 is now down
     when(node2.getLatestEth1Block()).thenReturn(koProvider());
-    // and node3 is down as well
-    when(node3.getLatestEth1Block()).thenReturn(koProvider());
-    // and node1 is ready
-    when(node1.getLatestEth1Block()).thenReturn(readyProvider());
-    // then node1 should be the best candidate
-    roundRobinEth1ProviderSelector.checkIfUpdateNeeded();
-    assertThat(roundRobinEth1ProviderSelector.bestCandidate()).isEqualTo(node1);
+    // and node3 is ready
+    when(node3.getLatestEth1Block()).thenReturn(readyProvider());
+    // then node3 should be the best candidate
+    fallbackAwareEth1Provider.getLatestEth1Block();
+    assertThat(providerSelector.bestCandidate()).isEqualTo(node3);
   }
 
   private static SafeFuture<EthBlock.Block> readyProvider() {

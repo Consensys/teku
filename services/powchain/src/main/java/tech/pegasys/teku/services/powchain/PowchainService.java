@@ -43,6 +43,7 @@ import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
+import tech.pegasys.teku.pow.fallback.strategy.PriorityEth1ProviderSelector;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -74,7 +75,10 @@ public class PowchainService extends Service {
                     asyncRunner,
                     config.getTimeProvider()),
                 MAXIMUM_CONCURRENT_ETH1_REQUESTS));
-    final Eth1Provider eth1Provider = new FallbackAwareEth1Provider(eth1Providers);
+    final Eth1Provider eth1Provider =
+        eth1Providers.size() == 1
+            ? eth1Providers.get(0)
+            : new FallbackAwareEth1Provider(new PriorityEth1ProviderSelector(eth1Providers));
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(

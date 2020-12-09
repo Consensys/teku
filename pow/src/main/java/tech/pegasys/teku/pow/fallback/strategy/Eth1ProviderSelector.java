@@ -18,4 +18,6 @@ import tech.pegasys.teku.pow.Eth1Provider;
 public interface Eth1ProviderSelector {
 
   Eth1Provider bestCandidate();
+
+  void updateBestCandidate();
 }

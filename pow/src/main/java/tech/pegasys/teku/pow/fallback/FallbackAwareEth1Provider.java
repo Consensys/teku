@@ -15,76 +15,84 @@ package tech.pegasys.teku.pow.fallback;
 
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1Provider;
-import tech.pegasys.teku.pow.fallback.readiness.Eth1ProviderChainHeadReadiness;
 import tech.pegasys.teku.pow.fallback.strategy.Eth1ProviderSelector;
-import tech.pegasys.teku.pow.fallback.strategy.RoundRobinEth1ProviderSelector;
 
 public class FallbackAwareEth1Provider implements Eth1Provider {
+  private static final Logger LOG = LogManager.getLogger();
   private final Eth1ProviderSelector eth1ProviderSelector;
 
-  public FallbackAwareEth1Provider(final List<Eth1Provider> delegates) {
-    // TODO change providerReadinessCheckIntervalSeconds to a positive value
-    this.eth1ProviderSelector =
-        new RoundRobinEth1ProviderSelector(
-            delegates, new Eth1ProviderChainHeadReadiness(delegates), -1);
+  public FallbackAwareEth1Provider(final Eth1ProviderSelector eth1ProviderSelector) {
+    this.eth1ProviderSelector = eth1ProviderSelector;
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final UInt64 blockNumber) {
-    return eth1ProviderSelector.bestCandidate().getEth1Block(blockNumber);
+    return run(eth1Provider -> eth1Provider.getEth1Block(blockNumber));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
-    return eth1ProviderSelector
-        .bestCandidate()
-        .getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries);
+    return run(
+        eth1Provider -> eth1Provider.getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
-    return eth1ProviderSelector.bestCandidate().getGuaranteedEth1Block(blockHash);
+    return run(eth1Provider -> eth1Provider.getGuaranteedEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
-    return eth1ProviderSelector.bestCandidate().getGuaranteedEth1Block(blockNumber);
+    return run(eth1Provider -> eth1Provider.getGuaranteedEth1Block(blockNumber));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
-    return eth1ProviderSelector.bestCandidate().getEth1Block(blockHash);
+    return run(eth1Provider -> eth1Provider.getEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       final String blockHash, final Duration retryDelay, final int maxRetries) {
-    return eth1ProviderSelector
-        .bestCandidate()
-        .getEth1BlockWithRetry(blockHash, retryDelay, maxRetries);
+    return run(
+        eth1Provider -> eth1Provider.getEth1BlockWithRetry(blockHash, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getLatestEth1Block() {
-    return eth1ProviderSelector.bestCandidate().getLatestEth1Block();
+    return run(Eth1Provider::getLatestEth1Block);
   }
 
   @Override
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
-    return eth1ProviderSelector.bestCandidate().ethCall(from, to, data, blockNumber);
+    return run(eth1Provider -> eth1Provider.ethCall(from, to, data, blockNumber));
   }
 
   @Override
   public SafeFuture<BigInteger> getChainId() {
-    return eth1ProviderSelector.bestCandidate().getChainId();
+    return run(Eth1Provider::getChainId);
+  }
+
+  private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
+    final SafeFuture<T> result = task.apply(eth1ProviderSelector.bestCandidate());
+    result.catchAndRethrow(
+        throwable -> {
+          LOG.warn(
+              "Error caught while calling Eth1Provider, switching provider for next calls",
+              throwable);
+          eth1ProviderSelector.updateBestCandidate();
+        });
+    return result;
   }
 }
