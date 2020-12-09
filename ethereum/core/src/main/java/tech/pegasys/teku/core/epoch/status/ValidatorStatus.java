@@ -107,34 +107,32 @@ public class ValidatorStatus {
     return inclusionInfo;
   }
 
-  public ValidatorStatus updateCurrentEpochAttester(final boolean currentEpochAttester) {
+  ValidatorStatus updateCurrentEpochAttester(final boolean currentEpochAttester) {
     this.currentEpochAttester |= currentEpochAttester;
     return this;
   }
 
-  public ValidatorStatus updateCurrentEpochTargetAttester(
-      final boolean currentEpochTargetAttester) {
+  ValidatorStatus updateCurrentEpochTargetAttester(final boolean currentEpochTargetAttester) {
     this.currentEpochTargetAttester |= currentEpochTargetAttester;
     return this;
   }
 
-  public ValidatorStatus updatePreviousEpochAttester(final boolean previousEpochAttester) {
+  ValidatorStatus updatePreviousEpochAttester(final boolean previousEpochAttester) {
     this.previousEpochAttester |= previousEpochAttester;
     return this;
   }
 
-  public ValidatorStatus updatePreviousEpochTargetAttester(
-      final boolean previousEpochTargetAttester) {
+  ValidatorStatus updatePreviousEpochTargetAttester(final boolean previousEpochTargetAttester) {
     this.previousEpochTargetAttester |= previousEpochTargetAttester;
     return this;
   }
 
-  public ValidatorStatus updatePreviousEpochHeadAttester(final boolean previousEpochHeadAttester) {
+  ValidatorStatus updatePreviousEpochHeadAttester(final boolean previousEpochHeadAttester) {
     this.previousEpochHeadAttester |= previousEpochHeadAttester;
     return this;
   }
 
-  public ValidatorStatus updateInclusionInfo(final Optional<InclusionInfo> inclusionInfo) {
+  ValidatorStatus updateInclusionInfo(final Optional<InclusionInfo> inclusionInfo) {
     if (inclusionInfo.isEmpty()) {
       return this;
     }

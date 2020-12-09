@@ -44,6 +44,7 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.Deltas.Delta;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;

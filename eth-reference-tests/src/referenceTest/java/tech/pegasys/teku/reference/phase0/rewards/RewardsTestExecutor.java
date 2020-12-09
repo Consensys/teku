@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator.Step;
-import tech.pegasys.teku.core.epoch.ValidatorStatuses;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

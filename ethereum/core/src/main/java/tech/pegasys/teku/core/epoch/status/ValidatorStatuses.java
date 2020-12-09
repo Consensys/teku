@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.epoch;
+package tech.pegasys.teku.core.epoch.status;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.epoch.status.InclusionInfo;
-import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;

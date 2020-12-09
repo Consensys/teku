@@ -26,6 +26,7 @@ import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.Deltas.Delta;
 import tech.pegasys.teku.core.epoch.status.InclusionInfo;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

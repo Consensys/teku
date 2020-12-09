@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.epoch;
 
+import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
