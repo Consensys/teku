@@ -67,7 +67,7 @@ public class TransitionCaches {
   private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
-  private Optional<TotalBalances> latestTotalBalances = Optional.empty();
+  private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private TransitionCaches() {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);

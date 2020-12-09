@@ -42,7 +42,7 @@ public class RewardsTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final BeaconState state = loadStateFromSsz(testDefinition, "pre.ssz");
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.createTotalBalances(state);
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(state);
     final RewardsAndPenaltiesCalculator calculator =
         new RewardsAndPenaltiesCalculator(state, validatorStatuses);
     assertDeltas(

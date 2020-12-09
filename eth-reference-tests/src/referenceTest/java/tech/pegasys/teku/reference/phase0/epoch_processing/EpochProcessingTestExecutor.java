@@ -34,15 +34,13 @@ public class EpochProcessingTestExecutor implements TestExecutor {
                   state ->
                       EpochProcessorUtil.process_slashings(
                           state,
-                          ValidatorStatuses.createTotalBalances(state)
-                              .getTotalBalances()
-                              .getCurrentEpoch())))
+                          ValidatorStatuses.create(state).getTotalBalances().getCurrentEpoch())))
           .put(
               "epoch_processing/registry_updates",
               new EpochProcessingTestExecutor(
                   state ->
                       EpochProcessorUtil.process_registry_updates(
-                          state, ValidatorStatuses.createTotalBalances(state).getStatuses())))
+                          state, ValidatorStatuses.create(state).getStatuses())))
           .put(
               "epoch_processing/final_updates",
               new EpochProcessingTestExecutor(EpochProcessorUtil::process_final_updates))
@@ -51,13 +49,13 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               new EpochProcessingTestExecutor(
                   state ->
                       EpochProcessorUtil.process_rewards_and_penalties(
-                          state, ValidatorStatuses.createTotalBalances(state))))
+                          state, ValidatorStatuses.create(state))))
           .put(
               "epoch_processing/justification_and_finalization",
               new EpochProcessingTestExecutor(
                   state ->
                       EpochProcessorUtil.process_justification_and_finalization(
-                          state, ValidatorStatuses.createTotalBalances(state).getTotalBalances())))
+                          state, ValidatorStatuses.create(state).getTotalBalances())))
           .build();
 
   private final Mutator<? extends Throwable, ? extends Throwable, ? extends Throwable> operation;

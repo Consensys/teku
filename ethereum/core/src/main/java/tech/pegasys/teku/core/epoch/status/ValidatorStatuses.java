@@ -41,7 +41,7 @@ public class ValidatorStatuses {
     this.totalBalances = totalBalances;
   }
 
-  public static ValidatorStatuses createTotalBalances(final BeaconState state) {
+  public static ValidatorStatuses create(final BeaconState state) {
     final SSZList<Validator> validators = state.getValidators();
 
     final UInt64 currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -138,7 +138,7 @@ public class ValidatorStatuses {
     }
   }
 
-  public static TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
+  static TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
     UInt64 currentEpoch = UInt64.ZERO;
     UInt64 previousEpoch = UInt64.ZERO;
     UInt64 currentEpochAttesters = UInt64.ZERO;

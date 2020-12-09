@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_ro
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -204,24 +203,16 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(head -> updateMetrics(slot, head));
+    recentChainData.getChainHead().ifPresent(this::updateMetrics);
   }
 
-  private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
+  private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
     state
         .getTransitionCaches()
         .getLatestTotalBalances()
         .ifPresent(
             totalBalances -> {
-              // Update participation weights only once per epoch, a slot after epoch transition to
-              // make
-              // sure
-              // total balances are properly updated.
-              if (!slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
-                return;
-              }
-
               currentEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
               previousEpochTotalWeight.set(totalBalances.getPreviousEpoch().longValue());
 

@@ -36,7 +36,8 @@ class TotalBalancesTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in current epoch for a total of 12.
-    assertThat(TotalBalances.create(statuses).getCurrentEpoch()).isEqualTo(balance(12));
+    assertThat(ValidatorStatuses.createTotalBalances(statuses).getCurrentEpoch())
+        .isEqualTo(balance(12));
   }
 
   @Test
@@ -47,7 +48,8 @@ class TotalBalancesTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in previous epoch for a total of 12.
-    assertThat(TotalBalances.create(statuses).getPreviousEpoch()).isEqualTo(balance(12));
+    assertThat(ValidatorStatuses.createTotalBalances(statuses).getPreviousEpoch())
+        .isEqualTo(balance(12));
   }
 
   @Test
@@ -59,7 +61,7 @@ class TotalBalancesTest {
             createWithAllAttesterFlags(false, 6));
 
     final UInt64 expectedBalance = balance(11 + 6);
-    final TotalBalances balances = TotalBalances.create(statuses);
+    final TotalBalances balances = ValidatorStatuses.createTotalBalances(statuses);
     assertThat(balances.getCurrentEpochAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getPreviousEpochAttesters()).isEqualTo(expectedBalance);
@@ -82,7 +84,7 @@ class TotalBalancesTest {
                 .updateCurrentEpochAttester(false)
                 .updatePreviousEpochAttester(true));
 
-    final TotalBalances balances = TotalBalances.create(statuses);
+    final TotalBalances balances = ValidatorStatuses.createTotalBalances(statuses);
     assertThat(balances.getCurrentEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(balance(7 + 9));
   }
@@ -101,7 +103,7 @@ class TotalBalancesTest {
             createValidator(14).updatePreviousEpochAttester(true),
             createValidator(17).updateCurrentEpochAttester(true));
 
-    final TotalBalances balances = TotalBalances.create(statuses);
+    final TotalBalances balances = ValidatorStatuses.createTotalBalances(statuses);
     assertThat(balances.getPreviousEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
     assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(balance(7 + 9));
     assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(balance(9));
@@ -109,7 +111,7 @@ class TotalBalancesTest {
 
   @Test
   void shouldReturnMinimumOfOneEffectiveBalanceIncrement() {
-    final TotalBalances balances = TotalBalances.create(emptyList());
+    final TotalBalances balances = ValidatorStatuses.createTotalBalances(emptyList());
     assertThat(balances.getCurrentEpoch()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
     assertThat(balances.getPreviousEpoch()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);
     assertThat(balances.getCurrentEpochAttesters()).isEqualTo(EFFECTIVE_BALANCE_INCREMENT);

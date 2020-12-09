@@ -27,7 +27,7 @@ public class EpochProcessor {
    */
   public static BeaconState processEpoch(final BeaconState preState)
       throws EpochProcessingException {
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.createTotalBalances(preState);
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     return preState.updated(
         state -> {
           EpochProcessorUtil.process_justification_and_finalization(
