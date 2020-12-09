@@ -41,6 +41,7 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
+  private final int validatorExternalSignerConcurrentRequestLimit;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -53,7 +54,8 @@ public class ValidatorConfig {
       final Bytes32 graffiti,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
-      final boolean validatorExternalSignerSlashingProtectionEnabled) {
+      final boolean validatorExternalSignerSlashingProtectionEnabled,
+      final int validatorExternalSignerConcurrentRequestLimit) {
     this.validatorKeys = validatorKeys;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -66,6 +68,8 @@ public class ValidatorConfig {
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
     this.validatorExternalSignerSlashingProtectionEnabled =
         validatorExternalSignerSlashingProtectionEnabled;
+    this.validatorExternalSignerConcurrentRequestLimit =
+        validatorExternalSignerConcurrentRequestLimit;
   }
 
   public static Builder builder() {
@@ -104,6 +108,10 @@ public class ValidatorConfig {
     return validatorExternalSignerTimeout;
   }
 
+  public int getValidatorExternalSignerConcurrentRequestLimit() {
+    return validatorExternalSignerConcurrentRequestLimit;
+  }
+
   public Optional<URI> getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
   }
@@ -136,6 +144,7 @@ public class ValidatorConfig {
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerTimeout = 1000;
+    private int validatorExternalSignerConcurrentRequestLimit;
     private Bytes32 graffiti;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
@@ -182,6 +191,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorExternalSignerConcurrentRequestLimit(
+        int validatorExternalSignerConcurrentRequestLimit) {
+      this.validatorExternalSignerConcurrentRequestLimit =
+          validatorExternalSignerConcurrentRequestLimit;
+      return this;
+    }
+
     public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
       this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
       return this;
@@ -216,7 +232,8 @@ public class ValidatorConfig {
           graffiti,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
-          validatorExternalSignerSlashingProtectionEnabled);
+          validatorExternalSignerSlashingProtectionEnabled,
+          validatorExternalSignerConcurrentRequestLimit);
     }
 
     private void validateKeyStoreFilesAndPasswordFilesConfig() {

@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -36,6 +37,8 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
@@ -45,23 +48,30 @@ public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
+  private final MetricsSystem metricsSystem;
+  private ThrottlingTaskQueue externalSignerTaskQueue;
   private final Supplier<HttpClient> remoteValidatorHttpClientFactory;
 
   @VisibleForTesting
   ValidatorLoader(
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem,
       final Supplier<HttpClient> remoteValidatorHttpClientFactory) {
     this.slashingProtector = slashingProtector;
     this.asyncRunner = asyncRunner;
+    this.metricsSystem = metricsSystem;
     this.remoteValidatorHttpClientFactory = remoteValidatorHttpClientFactory;
   }
 
   public static ValidatorLoader create(
-      final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
+      final SlashingProtector slashingProtector,
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem) {
     return new ValidatorLoader(
         slashingProtector,
         asyncRunner,
+        metricsSystem,
         Suppliers.memoize(
             () -> HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()));
   }
@@ -98,6 +108,12 @@ public class ValidatorLoader {
 
   private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
+    externalSignerTaskQueue =
+        new ThrottlingTaskQueue(
+            config.getValidatorExternalSignerConcurrentRequestLimit(),
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "ExternalSigner");
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
             publicKey -> {
@@ -106,7 +122,8 @@ public class ValidatorLoader {
                       remoteValidatorHttpClientFactory.get(),
                       config.getValidatorExternalSignerUrl(),
                       publicKey,
-                      timeout);
+                      timeout,
+                      externalSignerTaskQueue);
               final Signer signer =
                   config.isValidatorExternalSignerSlashingProtectionEnabled()
                       ? createSlashingProtectedSigner(publicKey, externalSigner)

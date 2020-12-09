@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
@@ -71,9 +73,10 @@ class ValidatorLoaderTest {
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ValidatorLoader validatorLoader =
-      new ValidatorLoader(slashingProtector, asyncRunner, () -> httpClient);
+      new ValidatorLoader(slashingProtector, asyncRunner, metricsSystem, () -> httpClient);
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() {

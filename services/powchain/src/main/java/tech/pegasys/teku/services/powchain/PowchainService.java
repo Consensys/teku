@@ -66,7 +66,8 @@ public class PowchainService extends Service {
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
                 new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
-            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+            config.getMetricsSystem());
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(

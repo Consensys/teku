@@ -80,6 +80,14 @@ public class ValidatorKeysOptions {
       arity = "1")
   private int validatorExternalSignerTimeout = 1000;
 
+  @CommandLine.Option(
+      names = {"--Xvalidators-external-signer-concurrent-limit"},
+      paramLabel = "<INTEGER>",
+      description = "The maximum number of concurrent background requests to make to the signer.",
+      hidden = true,
+      arity = "1")
+  private int validatorExternalSignerConcurrentRequestLimit = 32;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -87,6 +95,8 @@ public class ValidatorKeysOptions {
                 .validatorKeys(validatorKeys)
                 .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
+                .validatorExternalSignerConcurrentRequestLimit(
+                    validatorExternalSignerConcurrentRequestLimit)
                 .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
                 .validatorKeystoreFiles(validatorKeystoreFiles)
                 .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles));
