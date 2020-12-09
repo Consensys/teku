@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorStatus {
@@ -56,8 +55,8 @@ public class ValidatorStatus {
         validator.isSlashed(),
         validator.getWithdrawable_epoch().isLessThanOrEqualTo(currentEpoch),
         validator.getEffective_balance(),
-        is_active_validator(validator, currentEpoch),
-        is_active_validator(validator, previousEpoch));
+        ValidatorsUtil.is_active_validator(validator, currentEpoch),
+        ValidatorsUtil.is_active_validator(validator, previousEpoch));
   }
 
   public boolean isEligibleValidator() {
@@ -108,32 +107,34 @@ public class ValidatorStatus {
     return inclusionInfo;
   }
 
-  ValidatorStatus updateCurrentEpochAttester(final boolean currentEpochAttester) {
+  public ValidatorStatus updateCurrentEpochAttester(final boolean currentEpochAttester) {
     this.currentEpochAttester |= currentEpochAttester;
     return this;
   }
 
-  ValidatorStatus updateCurrentEpochTargetAttester(final boolean currentEpochTargetAttester) {
+  public ValidatorStatus updateCurrentEpochTargetAttester(
+      final boolean currentEpochTargetAttester) {
     this.currentEpochTargetAttester |= currentEpochTargetAttester;
     return this;
   }
 
-  ValidatorStatus updatePreviousEpochAttester(final boolean previousEpochAttester) {
+  public ValidatorStatus updatePreviousEpochAttester(final boolean previousEpochAttester) {
     this.previousEpochAttester |= previousEpochAttester;
     return this;
   }
 
-  ValidatorStatus updatePreviousEpochTargetAttester(final boolean previousEpochTargetAttester) {
+  public ValidatorStatus updatePreviousEpochTargetAttester(
+      final boolean previousEpochTargetAttester) {
     this.previousEpochTargetAttester |= previousEpochTargetAttester;
     return this;
   }
 
-  ValidatorStatus updatePreviousEpochHeadAttester(final boolean previousEpochHeadAttester) {
+  public ValidatorStatus updatePreviousEpochHeadAttester(final boolean previousEpochHeadAttester) {
     this.previousEpochHeadAttester |= previousEpochHeadAttester;
     return this;
   }
 
-  ValidatorStatus updateInclusionInfo(final Optional<InclusionInfo> inclusionInfo) {
+  public ValidatorStatus updateInclusionInfo(final Optional<InclusionInfo> inclusionInfo) {
     if (inclusionInfo.isEmpty()) {
       return this;
     }

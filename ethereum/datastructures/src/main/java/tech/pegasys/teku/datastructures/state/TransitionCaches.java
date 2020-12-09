@@ -14,9 +14,11 @@
 package tech.pegasys.teku.datastructures.state;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
@@ -65,6 +67,8 @@ public class TransitionCaches {
   private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
+  private Optional<TotalBalances> latestTotalBalances = Optional.empty();
+
   private TransitionCaches() {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
@@ -90,6 +94,14 @@ public class TransitionCaches {
     this.validatorsPubKeys = validatorsPubKeys;
     this.validatorIndexCache = validatorIndexCache;
     this.committeeShuffle = committeeShuffle;
+  }
+
+  public void setLatestTotalBalances(TotalBalances totalBalances) {
+    this.latestTotalBalances = Optional.of(totalBalances);
+  }
+
+  public Optional<TotalBalances> getLatestTotalBalances() {
+    return latestTotalBalances;
   }
 
   /** (epoch) -> (active validators) cache */

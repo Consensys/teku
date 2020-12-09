@@ -193,6 +193,8 @@ public interface BeaconState
             });
   }
 
+  TransitionCaches getTransitionCaches();
+
   // Versioning
   default UInt64 getGenesis_time() {
     return ((UInt64View) get(GENESIS_TIME_FIELD.getIndex())).get();

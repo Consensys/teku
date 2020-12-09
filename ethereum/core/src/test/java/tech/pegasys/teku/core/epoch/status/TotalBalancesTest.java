@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMEN
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class TotalBalancesTest {

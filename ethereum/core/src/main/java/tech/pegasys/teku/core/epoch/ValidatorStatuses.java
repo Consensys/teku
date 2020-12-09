@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.epoch.status;
+package tech.pegasys.teku.core.epoch;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
@@ -21,12 +21,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.epoch.status.InclusionInfo;
+import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -40,7 +43,7 @@ public class ValidatorStatuses {
     this.totalBalances = totalBalances;
   }
 
-  public static ValidatorStatuses create(final BeaconState state) {
+  public static ValidatorStatuses createTotalBalances(final BeaconState state) {
     final SSZList<Validator> validators = state.getValidators();
 
     final UInt64 currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -53,8 +56,8 @@ public class ValidatorStatuses {
 
     processAttestations(statuses, state, previousEpoch, currentEpoch);
 
-    final TotalBalances totalBalances = TotalBalances.create(statuses);
-    TotalBalances.latestTotalBalances = Optional.of(totalBalances);
+    final TotalBalances totalBalances = createTotalBalances(statuses);
+    state.getTransitionCaches().setLatestTotalBalances(totalBalances);
 
     return new ValidatorStatuses(statuses, totalBalances);
   }
@@ -135,5 +138,54 @@ public class ValidatorStatuses {
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);
       status.updateInclusionInfo(inclusionInfo);
     }
+  }
+
+  public static TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
+    UInt64 currentEpoch = UInt64.ZERO;
+    UInt64 previousEpoch = UInt64.ZERO;
+    UInt64 currentEpochAttesters = UInt64.ZERO;
+    UInt64 currentEpochTargetAttesters = UInt64.ZERO;
+    UInt64 previousEpochAttesters = UInt64.ZERO;
+    UInt64 previousEpochTargetAttesters = UInt64.ZERO;
+    UInt64 previousEpochHeadAttesters = UInt64.ZERO;
+
+    for (ValidatorStatus status : statuses) {
+      final UInt64 balance = status.getCurrentEpochEffectiveBalance();
+      if (status.isActiveInCurrentEpoch()) {
+        currentEpoch = currentEpoch.plus(balance);
+      }
+      if (status.isActiveInPreviousEpoch()) {
+        previousEpoch = previousEpoch.plus(balance);
+      }
+
+      if (status.isSlashed()) {
+        continue;
+      }
+      if (status.isCurrentEpochAttester()) {
+        currentEpochAttesters = currentEpochAttesters.plus(balance);
+
+        if (status.isCurrentEpochTargetAttester()) {
+          currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
+        }
+      }
+
+      if (status.isPreviousEpochAttester()) {
+        previousEpochAttesters = previousEpochAttesters.plus(balance);
+        if (status.isPreviousEpochTargetAttester()) {
+          previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
+        }
+        if (status.isPreviousEpochHeadAttester()) {
+          previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
+        }
+      }
+    }
+    return new TotalBalances(
+        currentEpoch,
+        previousEpoch,
+        currentEpochAttesters,
+        currentEpochTargetAttesters,
+        previousEpochAttesters,
+        previousEpochTargetAttesters,
+        previousEpochHeadAttesters);
   }
 }

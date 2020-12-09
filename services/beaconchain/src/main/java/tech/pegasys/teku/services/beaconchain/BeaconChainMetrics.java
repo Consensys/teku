@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.epoch.status.TotalBalances;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -210,22 +209,27 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
-    TotalBalances.latestTotalBalances.ifPresent(
-        totalBalances -> {
-          // Update participation weights only once per epoch, a slot after epoch transition to make
-          // sure
-          // total balances are properly updated.
-          if (!slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
-            return;
-          }
+    state
+        .getTransitionCaches()
+        .getLatestTotalBalances()
+        .ifPresent(
+            totalBalances -> {
+              // Update participation weights only once per epoch, a slot after epoch transition to
+              // make
+              // sure
+              // total balances are properly updated.
+              if (!slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
+                return;
+              }
 
-          currentEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
-          previousEpochTotalWeight.set(totalBalances.getPreviousEpoch().longValue());
+              currentEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
+              previousEpochTotalWeight.set(totalBalances.getPreviousEpoch().longValue());
 
-          currentEpochParticipationWeight.set(totalBalances.getCurrentEpochAttesters().longValue());
-          previousEpochParticipationWeight.set(
-              totalBalances.getPreviousEpochAttesters().longValue());
-        });
+              currentEpochParticipationWeight.set(
+                  totalBalances.getCurrentEpochAttesters().longValue());
+              previousEpochParticipationWeight.set(
+                  totalBalances.getPreviousEpochAttesters().longValue());
+            });
 
     final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());
     final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
