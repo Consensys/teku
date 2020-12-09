@@ -31,6 +31,7 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Checkpoint extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
@@ -38,6 +39,7 @@ public class Checkpoint extends AbstractImmutableContainer
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
+  @SszTypeDescriptor
   public static final ContainerViewType<Checkpoint> TYPE =
       new ContainerViewType<>(
           List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), Checkpoint::new);

@@ -13,7 +13,46 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+
 public class Utils {
+
+  private final static Map<Class<?>, Optional<ViewType>> classToSszTypeMap = new ConcurrentHashMap<>();
+
+  public static Optional<ViewType> getSszType(Class<?> clazz) {
+    return classToSszTypeMap.computeIfAbsent(clazz, Utils::calcSszType);
+  }
+
+  private static Optional<ViewType> calcSszType(Class<?> clazz) {
+    return Arrays.stream(clazz.getMethods())
+        .filter(f -> Modifier.isStatic(f.getModifiers()))
+        .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
+        .findFirst()
+        .flatMap(method -> {
+          try {
+            return Optional.of((ViewType) method.invoke(null));
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            return Optional.empty();
+          }
+        }).or(() -> Arrays.stream(clazz.getFields())
+            .filter(f -> Modifier.isStatic(f.getModifiers()))
+            .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
+            .findFirst()
+            .flatMap(field -> {
+              try {
+                return Optional.of((ViewType) field.get(null));
+              } catch (IllegalAccessException e) {
+                return Optional.empty();
+              }
+            }));
+  }
 
   public static long nextPowerOf2(long x) {
     return x <= 1 ? 1 : Long.highestOneBit(x - 1) << 1;

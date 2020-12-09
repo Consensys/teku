@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import java.util.Optional;
 import tech.pegasys.teku.ssz.backing.BytesReader;
+import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
@@ -25,12 +26,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public interface ViewType extends SSZType {
 
   static Optional<ViewType> getType(Class<?> clazz) {
-    try {
-      ViewType type = (ViewType) clazz.getDeclaredField("TYPE").get(null);
-      return Optional.of(type);
-    } catch (IllegalAccessException | NoSuchFieldException e) {
-      return Optional.empty();
-    }
+    return Utils.getSszType(clazz);
   }
 
   /**
