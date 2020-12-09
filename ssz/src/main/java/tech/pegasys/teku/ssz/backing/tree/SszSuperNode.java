@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Integer.min;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetRelativeGIndex;
@@ -29,7 +28,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate.Location;
 

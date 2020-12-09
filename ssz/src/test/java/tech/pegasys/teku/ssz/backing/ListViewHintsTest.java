@@ -43,15 +43,14 @@ public class ListViewHintsTest {
 
   @SuppressWarnings("unchecked")
   <TElement extends ViewRead> List<ListViewRead<TElement>> createListVariants(
-      ListViewType<TElement> type,
-      ListViewRead<TElement> list0) {
+      ListViewType<TElement> type, ListViewRead<TElement> list0) {
     List<ListViewRead<TElement>> ret = new ArrayList<>();
     ret.add(list0);
     if (!(list0 instanceof ViewWrite)) {
       ret.add(type.createFromBackingNode(list0.getBackingNode()));
       ret.add(
-          (ListViewRead<TElement>) type
-              .sszDeserialize(BytesReader.fromBytes(list0.sszSerialize())));
+          (ListViewRead<TElement>)
+              type.sszDeserialize(BytesReader.fromBytes(list0.sszSerialize())));
     }
     return ret;
   }
@@ -100,9 +99,10 @@ public class ListViewHintsTest {
     List<ListViewRead<TElement>> listVariants1 = createListVariants(type, list1);
     List<ListViewRead<TElement>> listVariants2 = createListVariants(type, list2);
 
-    listVariants1.forEach(listVariant1 ->
-        listVariants2.forEach(listVariant2 -> assertListEquals(type, listVariant1, listVariant2))
-    );
+    listVariants1.forEach(
+        listVariant1 ->
+            listVariants2.forEach(
+                listVariant2 -> assertListEquals(type, listVariant1, listVariant2)));
   }
 
   <TElement extends ViewRead> void assertListEquals(

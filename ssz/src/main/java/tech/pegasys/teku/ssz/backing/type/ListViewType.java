@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -24,7 +23,6 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
@@ -43,8 +41,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   @Override
   protected TreeNode createDefaultTree() {
-    return createTree(
-        getCompatibleVectorType().createDefaultTree(), 0);
+    return createTree(getCompatibleVectorType().createDefaultTree(), 0);
   }
 
   private TreeNode createTree(TreeNode dataNode, int length) {

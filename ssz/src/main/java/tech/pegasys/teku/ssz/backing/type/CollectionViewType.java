@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -143,8 +141,7 @@ public abstract class CollectionViewType implements CompositeViewType {
       this(dataTree, childrenCount, Optional.empty());
     }
 
-    public DeserializedData(TreeNode dataTree, int childrenCount,
-        Optional<Byte> lastSszByte) {
+    public DeserializedData(TreeNode dataTree, int childrenCount, Optional<Byte> lastSszByte) {
       this.dataTree = dataTree;
       this.childrenCount = childrenCount;
       this.lastSszByte = lastSszByte;
@@ -176,10 +173,11 @@ public abstract class CollectionViewType implements CompositeViewType {
     int bytesSize = reader.getAvailableBytes();
     if (getElementType() instanceof BasicViewType) {
       checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
-      List<LeafNode> childNodes = chunks(bytesSize)
-          .mapToObj(reader::read)
-          .map(LeafNode::create)
-          .collect(Collectors.toList());
+      List<LeafNode> childNodes =
+          chunks(bytesSize)
+              .mapToObj(reader::read)
+              .map(LeafNode::create)
+              .collect(Collectors.toList());
 
       Optional<Byte> lastByte;
       if (childNodes.isEmpty()) {
@@ -188,14 +186,17 @@ public abstract class CollectionViewType implements CompositeViewType {
         Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
         lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
       }
-      return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()),
-          bytesSize / getElementType().getFixedPartSize(),lastByte);
+      return new DeserializedData(
+          TreeUtil.createTree(childNodes, treeDepth()),
+          bytesSize / getElementType().getFixedPartSize(),
+          lastByte);
     } else {
       checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
-      List<TreeNode> childNodes = Stream.generate(() -> getElementType().sszDeserializeTree(reader))
-          .limit(elementsCount)
-          .collect(Collectors.toList());
+      List<TreeNode> childNodes =
+          Stream.generate(() -> getElementType().sszDeserializeTree(reader))
+              .limit(elementsCount)
+              .collect(Collectors.toList());
       return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
     }
   }
@@ -213,9 +214,10 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
     elementSizes[elementsCount - 1] = endVarOffset - varElementOffset;
 
-    List<TreeNode> childNodes = Arrays.stream(elementSizes)
-        .mapToObj(size -> getElementType().sszDeserializeTree(reader.slice(size)))
-        .collect(Collectors.toList());
+    List<TreeNode> childNodes =
+        Arrays.stream(elementSizes)
+            .mapToObj(size -> getElementType().sszDeserializeTree(reader.slice(size)))
+            .collect(Collectors.toList());
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
   }
 

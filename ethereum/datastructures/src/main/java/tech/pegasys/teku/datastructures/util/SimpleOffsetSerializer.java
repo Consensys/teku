@@ -59,7 +59,6 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -213,19 +212,19 @@ public class SimpleOffsetSerializer {
   public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     MutableInt bytePointer = new MutableInt(0);
     if (!isPrimitive(classInfo)) {
-        Optional<ViewType> maybeViewType = ViewType.getType(classInfo);
-        if (maybeViewType.isPresent()) {
-          return (T) deserialize(bytes, maybeViewType.get());
-        } else {
-          return SSZ.decode(
-              bytes,
-              reader -> {
-                final T result =
-                    deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size());
-                assertAllDataRead(reader);
-                return result;
-              });
-        }
+      Optional<ViewType> maybeViewType = ViewType.getType(classInfo);
+      if (maybeViewType.isPresent()) {
+        return (T) deserialize(bytes, maybeViewType.get());
+      } else {
+        return SSZ.decode(
+            bytes,
+            reader -> {
+              final T result =
+                  deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size());
+              assertAllDataRead(reader);
+              return result;
+            });
+      }
     } else {
       return SSZ.decode(
           bytes,

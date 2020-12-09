@@ -17,7 +17,6 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.BytesReader;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /** Collection of SSZ related methods for {@link ViewType} */

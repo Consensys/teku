@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.backing.tree;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 
 /** Represents a tree node which can supply its leaves data */
 public interface LeafDataNode extends TreeNode {

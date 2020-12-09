@@ -13,14 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
