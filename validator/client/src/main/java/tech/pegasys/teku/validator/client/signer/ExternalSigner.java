@@ -110,7 +110,7 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
-    return taskQueue.queueRequest(
+    return taskQueue.queueTask(
         () ->
             sign(
                 signingRootForSignAggregationSlot(slot, forkInfo),

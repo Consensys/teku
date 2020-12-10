@@ -35,56 +35,59 @@ public class ThrottlingEth1Provider implements Eth1Provider {
     this.delegate = delegate;
     taskQueue =
         new ThrottlingTaskQueue(
-            maximumConcurrentRequests, metricsSystem, TekuMetricCategory.BEACON, "eth1Queue");
+            maximumConcurrentRequests,
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "eth1_request_queue_size");
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final UInt64 blockNumber) {
-    return taskQueue.queueRequest(() -> delegate.getEth1Block(blockNumber));
+    return taskQueue.queueTask(() -> delegate.getEth1Block(blockNumber));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
-    return taskQueue.queueRequest(
+    return taskQueue.queueTask(
         () -> delegate.getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
-    return taskQueue.queueRequest(() -> delegate.getGuaranteedEth1Block(blockHash));
+    return taskQueue.queueTask(() -> delegate.getGuaranteedEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
-    return taskQueue.queueRequest(() -> delegate.getGuaranteedEth1Block(blockNumber));
+    return taskQueue.queueTask(() -> delegate.getGuaranteedEth1Block(blockNumber));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
-    return taskQueue.queueRequest(() -> delegate.getEth1Block(blockHash));
+    return taskQueue.queueTask(() -> delegate.getEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       final String blockHash, final Duration retryDelay, final int maxRetries) {
-    return taskQueue.queueRequest(
+    return taskQueue.queueTask(
         () -> delegate.getEth1BlockWithRetry(blockHash, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getLatestEth1Block() {
-    return taskQueue.queueRequest(delegate::getLatestEth1Block);
+    return taskQueue.queueTask(delegate::getLatestEth1Block);
   }
 
   @Override
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
-    return taskQueue.queueRequest(() -> delegate.ethCall(from, to, data, blockNumber));
+    return taskQueue.queueTask(() -> delegate.ethCall(from, to, data, blockNumber));
   }
 
   @Override
   public SafeFuture<BigInteger> getChainId() {
-    return taskQueue.queueRequest(delegate::getChainId);
+    return taskQueue.queueTask(delegate::getChainId);
   }
 }

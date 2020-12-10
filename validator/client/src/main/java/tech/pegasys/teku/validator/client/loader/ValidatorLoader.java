@@ -51,7 +51,6 @@ public class ValidatorLoader {
   private final SlashingProtector slashingProtector;
   private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
-  private ThrottlingTaskQueue externalSignerTaskQueue;
 
   private ValidatorLoader(
       final SlashingProtector slashingProtector,
@@ -114,12 +113,12 @@ public class ValidatorLoader {
     if (config.getValidatorExternalSignerPublicKeys().isEmpty()) {
       return Collections.emptyMap();
     }
-    externalSignerTaskQueue =
+    final ThrottlingTaskQueue externalSignerTaskQueue =
         new ThrottlingTaskQueue(
             config.getValidatorExternalSignerConcurrentRequestLimit(),
             metricsSystem,
             TekuMetricCategory.VALIDATOR,
-            "ExternalSigner");
+            "external_signer_request_queue_size");
 
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory);
 
