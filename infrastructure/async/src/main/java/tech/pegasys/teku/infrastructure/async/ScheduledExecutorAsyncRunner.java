@@ -44,14 +44,14 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder()
                 .setNameFormat(name + "-async-scheduler-%d")
-                .setDaemon(true)
+                .setDaemon(false)
                 .build());
     final ExecutorService workerPool =
         executorFactory.newCachedThreadPool(
             name,
             maxThreads,
             QUEUE_CAPACITY,
-            new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(true).build());
+            new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(false).build());
 
     return new ScheduledExecutorAsyncRunner(scheduler, workerPool);
   }

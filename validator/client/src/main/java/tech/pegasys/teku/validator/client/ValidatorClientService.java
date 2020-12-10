@@ -58,18 +58,10 @@ public class ValidatorClientService extends Service {
   private ValidatorClientService(
       final EventChannels eventChannels,
       final BeaconNodeApi beaconNodeApi,
-      final ForkProvider forkProvider,
-      final AsyncRunner asyncRunner,
-      final ValidatorClientConfiguration config,
-      final ValidatorApiChannel validatorApiChannel,
-      final ServiceConfig serviceConfig) {
+      final ForkProvider forkProvider) {
     this.eventChannels = eventChannels;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
-    asyncRunner
-        .runAsync(
-            () -> initializeValidators(config, validatorApiChannel, asyncRunner, serviceConfig))
-        .finish(err -> LOG.error("Unable to initialize validators correctly", err));
   }
 
   public static ValidatorClientService create(
@@ -88,14 +80,17 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider =
         new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
 
-    return new ValidatorClientService(
-        eventChannels,
-        beaconNodeApi,
-        forkProvider,
-        asyncRunner,
-        config,
-        validatorApiChannel,
-        services);
+    ValidatorClientService validatorClientService =
+        new ValidatorClientService(eventChannels, beaconNodeApi, forkProvider);
+
+    asyncRunner
+        .runAsync(
+            () ->
+                validatorClientService.initializeValidators(
+                    config, validatorApiChannel, asyncRunner, services))
+        .finish(err -> LOG.error("Unable to initialize validators", err));
+
+    return validatorClientService;
   }
 
   void initializeValidators(
@@ -147,7 +142,7 @@ public class ValidatorClientService extends Service {
     } else {
       this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
     }
-    this.initializationComplete.complete(null);
+    initializationComplete.complete(null);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -167,6 +162,7 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     return initializationComplete.thenCompose(
         (__) -> {
+          System.out.println("initialization complete");
           forkProvider.start().reportExceptions();
           validatorIndexProvider.lookupValidators();
           eventChannels.subscribe(
