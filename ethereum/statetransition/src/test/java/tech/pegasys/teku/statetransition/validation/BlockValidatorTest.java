@@ -26,7 +26,6 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -50,7 +49,7 @@ public class BlockValidatorTest {
   @BeforeEach
   void setUp() {
     beaconChainUtil.initializeStorage();
-    blockValidator = new BlockValidator(recentChainData, new StateTransition());
+    blockValidator = new BlockValidator(recentChainData);
   }
 
   @Test
@@ -182,8 +181,7 @@ public class BlockValidatorTest {
     ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
-    BlockValidator blockValidator =
-        new BlockValidator(storageSystem.recentChainData(), new StateTransition());
+    BlockValidator blockValidator = new BlockValidator(storageSystem.recentChainData());
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
