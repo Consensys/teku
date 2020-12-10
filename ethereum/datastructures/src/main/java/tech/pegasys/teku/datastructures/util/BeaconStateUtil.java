@@ -792,8 +792,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#bytes_to_int</a>
    */
-  public static long bytes_to_int64(Bytes data) {
-    return data.toLong(ByteOrder.LITTLE_ENDIAN);
+  public static UInt64 bytes_to_int64(Bytes data) {
+    return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
   }
 
   public static Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
