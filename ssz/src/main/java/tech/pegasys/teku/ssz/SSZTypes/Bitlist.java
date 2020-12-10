@@ -26,6 +26,21 @@ public interface Bitlist {
     return MutableBitlist.fromBytes(bytes, maxSize);
   }
 
+  static boolean equals(final Bitlist a, final Bitlist b) {
+    if (a.getCurrentSize() != b.getCurrentSize() || a.getMaxSize() != b.getMaxSize()) {
+      return false;
+    }
+
+    // Check each bit
+    for (int i = 0; i < a.getCurrentSize(); i++) {
+      if (a.getBit(i) != b.getBit(i)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   boolean getBit(int i);
 
   /** @return Returns the number of bits set to {@code true} in this {@code Bitlist}. */
