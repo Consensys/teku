@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.datastructures.state;
 
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -37,9 +39,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public interface BeaconState
     extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
