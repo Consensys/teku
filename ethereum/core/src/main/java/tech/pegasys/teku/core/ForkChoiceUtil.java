@@ -17,6 +17,7 @@ import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
@@ -26,8 +27,9 @@ import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static UInt64 get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UInt64 time = useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -209,34 +212,22 @@ public class ForkChoiceUtil {
     }
   }
 
-  /**
-   * @param store
-   * @param signed_block
-   * @param maybePreState
-   * @param st
-   * @param forkChoiceStrategy
-   * @param beaconStateConsumer
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
-   */
   @CheckReturnValue
   public static BlockImportResult on_block(
       final MutableStore store,
       final SignedBeaconBlock signed_block,
-      Optional<BeaconState> maybePreState,
+      BeaconState blockSlotState,
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final Consumer<BeaconState> beaconStateConsumer,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;
     final Optional<BlockImportResult> maybeFailure =
-        checkOnBlockConditions(block, maybePreState.orElse(null), store, forkChoiceStrategy);
+        checkOnBlockConditions(block, blockSlotState, store, forkChoiceStrategy);
     if (maybeFailure.isPresent()) {
       return maybeFailure.get();
     }
-    final BeaconState preState = maybePreState.orElseThrow();
 
     // Make a copy of the state to avoid mutability issues
     BeaconState state;
@@ -244,8 +235,8 @@ public class ForkChoiceUtil {
     // Check the block is valid and compute the post-state
     try {
       state =
-          st.initiate(
-              preState, signed_block, true, beaconStateConsumer, indexedAttestationProvider);
+          st.processAndValidateBlock(
+              signed_block, indexedAttestationProvider, blockSlotState, true);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
@@ -285,7 +276,7 @@ public class ForkChoiceUtil {
       }
     }
 
-    final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
+    final BlockProcessingRecord record = new BlockProcessingRecord(signed_block, state);
     return BlockImportResult.successful(record);
   }
 
@@ -301,14 +292,27 @@ public class ForkChoiceUtil {
 
   private static Optional<BlockImportResult> checkOnBlockConditions(
       final BeaconBlock block,
-      final BeaconState preState,
+      final BeaconState blockSlotState,
       final ReadOnlyStore store,
       final ForkChoiceStrategy forkChoiceStrategy) {
     final UInt64 blockSlot = block.getSlot();
-    if (preState == null) {
+    if (blockSlotState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
-    if (preState.getSlot().compareTo(blockSlot) >= 0) {
+    if (blockSlotState.getSlot().isGreaterThan(blockSlot)) {
+      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+    }
+    if (!blockSlotState.getSlot().equals(blockSlot)) {
+      LOG.warn(
+          "Attempting to process block on old state. Block slot {}, state slot {}",
+          blockSlot,
+          blockSlotState.getSlot());
+      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+    }
+    if (blockSlot.isGreaterThan(UInt64.valueOf(GENESIS_SLOT))
+        && !get_block_root_at_slot(blockSlotState, blockSlot.minus(1))
+            .equals(block.getParentRoot())) {
+      // Block is at same slot as its parent or the parent root doesn't match the state
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
     if (blockIsFromFuture(store, blockSlot)) {

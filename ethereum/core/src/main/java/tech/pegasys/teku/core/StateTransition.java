@@ -18,7 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.ZERO_HASH;
 
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -77,41 +76,44 @@ public class StateTransition {
         preState,
         signed_block,
         validateStateRootAndSignatures,
-        interimState -> {},
         IndexedAttestationProvider.DIRECT_PROVIDER);
   }
 
   public BeaconState initiate(
       BeaconState preState,
-      SignedBeaconBlock signed_block,
+      SignedBeaconBlock signedBlock,
       boolean validateStateRootAndSignatures,
-      final Consumer<BeaconState> beaconStateConsumer,
       final IndexedAttestationProvider indexedAttestationProvider)
       throws StateTransitionException {
     try {
-      BlockValidator blockValidator =
-          validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
-      final BeaconBlock block = signed_block.getMessage();
-
       // * Process slots (including those with no blocks) since block
       // * beaconStateConsumer only consumes the missing slots here,
       //   the new block will be processed when adding to the store.
-      BeaconState postSlotState =
-          process_slots(
-              preState,
-              block.getSlot(),
-              state -> {
-                if (!state.getSlot().equals(block.getSlot())) {
-                  beaconStateConsumer.accept(state);
-                }
-              });
+      BeaconState postSlotState = process_slots(preState, signedBlock.getMessage().getSlot());
 
+      return processAndValidateBlock(
+          signedBlock, indexedAttestationProvider, postSlotState, validateStateRootAndSignatures);
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.warn("State Transition error", e);
+      throw new StateTransitionException(e);
+    }
+  }
+
+  public BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures)
+      throws StateTransitionException {
+    BlockValidator blockValidator =
+        validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
+    try {
       // Process_block
-      BeaconState postState = process_block(postSlotState, block);
+      BeaconState postState = process_block(blockSlotState, signedBlock.getMessage());
 
       BlockValidationResult blockValidationResult =
           blockValidator
-              .validate(postSlotState, signed_block, postState, indexedAttestationProvider)
+              .validate(blockSlotState, signedBlock, postState, indexedAttestationProvider)
               .join();
 
       if (!blockValidationResult.isValid()) {
@@ -119,10 +121,7 @@ public class StateTransition {
       }
 
       return postState;
-    } catch (SlotProcessingException
-        | BlockProcessingException
-        | EpochProcessingException
-        | IllegalArgumentException e) {
+    } catch (final IllegalArgumentException | BlockProcessingException e) {
       LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }
@@ -187,12 +186,6 @@ public class StateTransition {
    * @throws SlotProcessingException
    */
   public BeaconState process_slots(BeaconState preState, UInt64 slot)
-      throws EpochProcessingException, SlotProcessingException {
-    return process_slots(preState, slot, interimState -> {});
-  }
-
-  public BeaconState process_slots(
-      BeaconState preState, UInt64 slot, final Consumer<BeaconState> beaconStateConsumer)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -208,7 +201,6 @@ public class StateTransition {
           state = EpochProcessor.processEpoch(state);
         }
         state = state.updated(s -> s.setSlot(s.getSlot().plus(UInt64.ONE)));
-        beaconStateConsumer.accept(state);
       }
       return state;
     } catch (IllegalArgumentException e) {
