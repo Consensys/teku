@@ -22,18 +22,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -196,6 +201,26 @@ public class ProfilingRun {
           }
         }
       }
+    }
+  }
+
+  @Disabled
+  @Test
+  void runSszDeserialize() {
+    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    System.out.println("Generating state...");
+    BeaconState beaconState =
+        new DataStructureUtil().withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
+    System.out.println("Serializing...");
+    Bytes bytes = beaconState.sszSerialize();
+
+    System.out.println("Deserializing...");
+    while (true) {
+      long s = System.currentTimeMillis();
+      for (int i = 0; i < 1; i++) {
+        SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+      }
+      System.out.println("Time: " + (System.currentTimeMillis() - s));
     }
   }
 
