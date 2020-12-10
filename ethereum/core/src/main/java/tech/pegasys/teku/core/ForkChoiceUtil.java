@@ -299,14 +299,7 @@ public class ForkChoiceUtil {
     if (blockSlotState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
-    if (blockSlotState.getSlot().isGreaterThan(blockSlot)) {
-      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
-    }
     if (!blockSlotState.getSlot().equals(blockSlot)) {
-      LOG.warn(
-          "Attempting to process block on old state. Block slot {}, state slot {}",
-          blockSlot,
-          blockSlotState.getSlot());
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
     if (blockSlot.isGreaterThan(UInt64.valueOf(GENESIS_SLOT))
