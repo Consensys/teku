@@ -133,16 +133,16 @@ class DefaultBitlist implements MutableBitlist {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (o == null) {
       return false;
     }
-    final DefaultBitlist bitlist = (DefaultBitlist) o;
-    return size == bitlist.size && maxSize == bitlist.maxSize && Objects.equals(data, bitlist.data);
+
+    return Bitlist.equals(this, (Bitlist) o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, size, maxSize);
+    return Objects.hash(Bitlist.hashBits(this), size, maxSize);
   }
 
   @Override

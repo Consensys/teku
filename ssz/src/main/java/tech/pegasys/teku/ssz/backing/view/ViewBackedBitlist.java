@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
@@ -80,5 +81,22 @@ public class ViewBackedBitlist implements Bitlist {
       }
     }
     return ret;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null) {
+      return false;
+    }
+
+    return Bitlist.equals(this, (Bitlist) o);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(Bitlist.hashBits(this), size, maxSize);
   }
 }

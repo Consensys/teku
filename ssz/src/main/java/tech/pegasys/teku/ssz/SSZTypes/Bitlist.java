@@ -41,6 +41,16 @@ public interface Bitlist {
     return true;
   }
 
+  static int hashBits(final Bitlist bitlist) {
+    int result = 1;
+    int size = bitlist.getCurrentSize();
+    for (int i = 0; i < size; i++) {
+      final int bit = bitlist.getBit(i) ? 1 : 0;
+      result = 31 * result + bit;
+    }
+    return result;
+  }
+
   boolean getBit(int i);
 
   /** @return Returns the number of bits set to {@code true} in this {@code Bitlist}. */
