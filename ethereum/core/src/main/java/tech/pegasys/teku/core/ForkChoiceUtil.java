@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -209,6 +210,10 @@ public class ForkChoiceUtil {
     }
   }
 
+  /**
+   * Perform block processing. The supplied blockSlotState must already have empty slots processed
+   * to the same slot as the block.
+   */
   @CheckReturnValue
   public static BlockImportResult on_block(
       final MutableStore store,
@@ -217,6 +222,9 @@ public class ForkChoiceUtil {
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy,
       final IndexedAttestationProvider indexedAttestationProvider) {
+    checkArgument(
+        blockSlotState.getSlot().equals(signed_block.getSlot()),
+        "State must have slots processed up to the block slot");
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;

@@ -75,7 +75,7 @@ class ForkChoiceTest {
 
     storageSystem
         .chainUpdater()
-        .setTime(genesis.getState().getGenesis_time().plus(10 * SECONDS_PER_SLOT));
+        .setTime(genesis.getState().getGenesis_time().plus(10L * SECONDS_PER_SLOT));
   }
 
   @Test

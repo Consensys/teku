@@ -114,6 +114,10 @@ public class ForkChoice {
         .join();
   }
 
+  /**
+   * Import a block to the store. The supplied blockSlotState must already have empty slots
+   * processed to the same slot as the block.
+   */
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
