@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.type;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -241,21 +242,29 @@ public abstract class CollectionViewType implements CompositeViewType {
 
   private DeserializedData sszDeserializeVariable(BytesReader reader) {
     final int endVarOffset = reader.getAvailableBytes();
-    int varElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
-    checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
-    int elementsCount = varElementOffset / SSZ_LENGTH_SIZE;
-    int[] elementSizes = new int[elementsCount];
-    for (int i = 1; i < elementsCount; i++) {
-      int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
-      elementSizes[i - 1] = offset - varElementOffset;
-      varElementOffset = offset;
-    }
-    elementSizes[elementsCount - 1] = endVarOffset - varElementOffset;
+    final int elementsCount;
+    final List<TreeNode> childNodes;
+    if (endVarOffset == 0) {
+      // empty list
+      elementsCount = 0;
+      childNodes = Collections.emptyList();
+    } else {
+      int varElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
+      elementsCount = varElementOffset / SSZ_LENGTH_SIZE;
+      int[] elementSizes = new int[elementsCount];
+      for (int i = 1; i < elementsCount; i++) {
+        int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        elementSizes[i - 1] = offset - varElementOffset;
+        varElementOffset = offset;
+      }
+      elementSizes[elementsCount - 1] = endVarOffset - varElementOffset;
 
-    List<TreeNode> childNodes =
-        Arrays.stream(elementSizes)
-            .mapToObj(size -> getElementType().sszDeserializeTree(reader.slice(size)))
-            .collect(Collectors.toList());
+      childNodes =
+          Arrays.stream(elementSizes)
+              .mapToObj(size -> getElementType().sszDeserializeTree(reader.slice(size)))
+              .collect(Collectors.toList());
+    }
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
   }
 
