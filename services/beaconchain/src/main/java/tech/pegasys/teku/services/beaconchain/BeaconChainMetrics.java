@@ -13,22 +13,12 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -39,6 +29,18 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
@@ -208,18 +210,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
-    state
-        .getTransitionCaches()
+    BeaconStateCache.getTransitionCaches(state)
         .getLatestTotalBalances()
         .ifPresent(
             totalBalances -> {
-              currentEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
-              previousEpochTotalWeight.set(totalBalances.getPreviousEpoch().longValue());
-
-              currentEpochParticipationWeight.set(
-                  totalBalances.getCurrentEpochAttesters().longValue());
+              // The TotalBalances are created at the end of the epoch so the "current" balance
+              // is actually "previous" by the time we're actually updating the metrics
+              previousEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
               previousEpochParticipationWeight.set(
-                  totalBalances.getPreviousEpochAttesters().longValue());
+                      totalBalances.getCurrentEpochAttesters().longValue());
             });
 
     final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());

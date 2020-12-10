@@ -13,16 +13,11 @@
 
 package tech.pegasys.teku.core.epoch.status;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
@@ -30,6 +25,14 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class ValidatorStatuses {
   private final List<ValidatorStatus> statuses;
@@ -55,7 +58,7 @@ public class ValidatorStatuses {
     processAttestations(statuses, state, previousEpoch, currentEpoch);
 
     final TotalBalances totalBalances = createTotalBalances(statuses);
-    state.getTransitionCaches().setLatestTotalBalances(totalBalances);
+    BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
 
     return new ValidatorStatuses(statuses, totalBalances);
   }
@@ -138,6 +141,7 @@ public class ValidatorStatuses {
     }
   }
 
+  @VisibleForTesting
   static TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
     UInt64 currentEpoch = UInt64.ZERO;
     UInt64 previousEpoch = UInt64.ZERO;
