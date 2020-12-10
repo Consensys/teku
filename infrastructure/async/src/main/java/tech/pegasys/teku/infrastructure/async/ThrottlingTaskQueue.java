@@ -15,19 +15,15 @@ package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
-  private static final Logger LOG = LogManager.getLogger();
   private final int maximumConcurrentRequests;
   private volatile Queue<Runnable> queuedRequests = new ConcurrentLinkedQueue<>();
-  private volatile AtomicInteger activeTasks = new AtomicInteger(0);
+  private int inflightRequestCount = 0;
 
   private final SettableGauge queueSizeGauge;
 
@@ -59,22 +55,16 @@ public class ThrottlingTaskQueue {
     return future;
   }
 
-  private void requestComplete() {
-    activeTasks.decrementAndGet();
+  private synchronized void requestComplete() {
+    inflightRequestCount--;
     processQueuedRequests();
   }
 
-  private void processQueuedRequests() {
-    while (activeTasks.get() < maximumConcurrentRequests && !queuedRequests.isEmpty()) {
-      // technically this could go beyond maximumConcurrentRequests
-      final int i = activeTasks.incrementAndGet();
-      if (i > maximumConcurrentRequests) {
-        LOG.trace("Skipping queued requests, already exceeding maximum as activeTasks is {}", i);
-        activeTasks.decrementAndGet();
-        break;
-      }
+  private synchronized void processQueuedRequests() {
+    while (inflightRequestCount < maximumConcurrentRequests && !queuedRequests.isEmpty()) {
+      inflightRequestCount++;
       queuedRequests.remove().run();
-      queueSizeGauge.set(queuedRequests.size());
     }
+    queueSizeGauge.set(queuedRequests.size());
   }
 }
