@@ -162,7 +162,6 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     return initializationComplete.thenCompose(
         (__) -> {
-          System.out.println("initialization complete");
           forkProvider.start().reportExceptions();
           validatorIndexProvider.lookupValidators();
           eventChannels.subscribe(
