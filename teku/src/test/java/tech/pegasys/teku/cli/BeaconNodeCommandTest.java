@@ -419,6 +419,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
+                    .validatorExternalSignerConcurrentRequestLimit(32)
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));
   }
