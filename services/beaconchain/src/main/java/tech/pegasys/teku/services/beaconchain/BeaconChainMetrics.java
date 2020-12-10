@@ -64,10 +64,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedRoot;
 
-  private final SettableGauge currentEpochParticipationWeight;
   private final SettableGauge previousEpochParticipationWeight;
-
-  private final SettableGauge currentEpochTotalWeight;
   private final SettableGauge previousEpochTotalWeight;
 
   public BeaconChainMetrics(
