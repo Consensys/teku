@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +59,32 @@ import tech.pegasys.teku.util.config.Constants;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  @Test
+  void a() {
+    Bytes signingRoot =
+        compute_signing_root(
+            57950,
+            Bytes32.fromHexString(
+                "0x05000000b5303f2ad2010d699a76c8e62350947421a3e4a979779642cfdb0f66"));
+    BLSSignature selectionProof =
+        BLSSignature.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xaa176502f0a5e954e4c6b452d0e11a03513c19b6d189f125f07b6c5c120df011c31da4c4a9c4a52a5a48fcba5b14d7b316b986a146187966d2341388bbf1f86c42e90553ba009ba10edc6b5544a6e945ce6d2419197f66ab2b9df2b0a0c89987"));
+    BLSPublicKey pKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0xb0861f72583516b17a3fdc33419d5c04c0a4444cc2478136b4935f3148797699e3ef4a4b2227b14876b3d49ff03b796d"));
+
+    System.out.println(BLS.verify(pKey, signingRoot, selectionProof));
+
+    int committeeLen = 146;
+
+    int aggregatorModulo = CommitteeUtil.getAggregatorModulo(committeeLen);
+    boolean isAggr = CommitteeUtil.isAggregator(selectionProof, aggregatorModulo);
+
+    System.out.println(isAggr);
+  }
 
   @Test
   void minReturnsMin() {
@@ -257,12 +284,23 @@ class BeaconStateUtilTest {
 
   @Test
   void bytesToInt() {
-    assertEquals(0L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x00")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x01")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(UInt64.valueOf(0), BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x00")));
+    assertEquals(UInt64.valueOf(1), BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x01")));
     assertEquals(
-        0x123456789abcdef0L,
+        UInt64.valueOf(1),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(
+        UInt64.valueOf(0x123456789abcdef0L),
         BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0xf0debc9a78563412")));
+    assertEquals(
+        UInt64.fromLongBits(0xffffffffffffffffL),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0xffffffffffffffff")));
+    assertEquals(
+        UInt64.fromLongBits(0x0000000000000080L),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x8000000000000000")));
+    assertEquals(
+        UInt64.fromLongBits(0xffffffffffffff7fL),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x7fffffffffffffff")));
   }
 
   @Test
