@@ -36,11 +36,10 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.backing.CompositeViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -210,30 +209,22 @@ public class ProfilingRun {
     BLSPublicKey publicKey = BLSPublicKey.random(1);
     System.out.println("Generating state...");
     BeaconState beaconState =
-        new DataStructureUtil().withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
+        new DataStructureUtil(1).withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
     System.out.println("Serializing...");
     Bytes bytes = beaconState.sszSerialize();
 
     System.out.println("Deserializing...");
     while (true) {
       long s = System.currentTimeMillis();
+      long sum = 0;
       for (int i = 0; i < 1; i++) {
-        SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
-      }
-      System.out.println("Time: " + (System.currentTimeMillis() - s));
-    }
-  }
-
-  private static void traverseViewHierarchy(Object view, Consumer<ViewRead> visitor) {
-    if (view instanceof ViewRead) {
-      visitor.accept((ViewRead) view);
-      if (view instanceof CompositeViewRead) {
-        CompositeViewRead<?> cView = (CompositeViewRead<?>) view;
-
-        for (int i = 0; i < cView.size(); i++) {
-          traverseViewHierarchy(cView.get(i), visitor);
+        BeaconStateImpl state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+        blackHole.accept(state);
+        for (Validator validator : state.getValidators()) {
+          sum += validator.getEffective_balance().longValue();
         }
       }
+      System.out.println("Time: " + (System.currentTimeMillis() - s) + ", sum = " + sum);
     }
   }
 }

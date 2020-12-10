@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -45,7 +46,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   private TreeNode createTree(TreeNode dataNode, int length) {
-    return BranchNode.create(dataNode, LeafNode.create(SSZType.lengthToBytes(length)));
+    return BranchNode.create(dataNode, toLengthNode(length));
   }
 
   @Override
@@ -133,11 +134,24 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
     }
   }
 
+  private static TreeNode toLengthNode(int length) {
+    return length == 0
+        ? LeafNode.ZERO_LEAVES[8]
+        : LeafNode.create(Bytes.ofUnsignedLong(length, ByteOrder.LITTLE_ENDIAN));
+  }
+
+  private static long fromLengthNode(TreeNode lengthNode) {
+    assert lengthNode instanceof LeafNode;
+    return ((LeafNode) lengthNode).getData().toLong(ByteOrder.LITTLE_ENDIAN);
+  }
+
   private static int getLength(TreeNode listNode) {
     if (!(listNode instanceof BranchNode)) {
       throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);
     }
-    return SSZType.bytesToLength(((BranchNode) listNode).right().hashTreeRoot());
+    long longLength = fromLengthNode(((BranchNode) listNode).right());
+    assert longLength < Integer.MAX_VALUE;
+    return (int) longLength;
   }
 
   private static TreeNode getVectorNode(TreeNode listNode) {

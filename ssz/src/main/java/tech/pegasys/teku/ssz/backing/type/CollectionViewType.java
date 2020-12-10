@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +27,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
+import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
+import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 
 /** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType implements CompositeViewType {
@@ -34,6 +39,8 @@ public abstract class CollectionViewType implements CompositeViewType {
   private final long maxLength;
   private final ViewType elementType;
   private final TypeHints hints;
+  protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
+      Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
   protected CollectionViewType(long maxLength, ViewType elementType, TypeHints hints) {
@@ -133,6 +140,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   }
 
   static class DeserializedData {
+
     private final TreeNode dataTree;
     private final int childrenCount;
     private final Optional<Byte> lastSszByte;
@@ -163,10 +171,35 @@ public abstract class CollectionViewType implements CompositeViewType {
   protected DeserializedData sszDeserializeVector(BytesReader reader) {
     checkSsz(reader.getAvailableBytes() >= getFixedPartSize());
     if (getElementType().isFixedSize()) {
-      return sszDeserializeFixed(reader);
+      Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
+      if (sszSuperNodeHint.isPresent()) {
+        return sszDeserializeSupernode(reader, sszSuperNodeHint.get().getDepth());
+      } else {
+        return sszDeserializeFixed(reader);
+      }
     } else {
       return sszDeserializeVariable(reader);
     }
+  }
+
+  private DeserializedData sszDeserializeSupernode(BytesReader reader, int supernodeDepth) {
+    SszNodeTemplate template = elementSszSupernodeTemplate.get();
+    int sszSize = reader.getAvailableBytes();
+    if (sszSize % template.getSszLength() != 0) {
+      throw new SSZException("Invalid SSZ");
+    }
+    int elementsCount = sszSize / template.getSszLength();
+    List<SszSuperNode> sszNodes =
+        chunks(sszSize, (1 << supernodeDepth) * template.getSszLength())
+            .mapToObj(reader::read)
+            .map(bb -> new SszSuperNode(supernodeDepth, template, bb))
+            .collect(Collectors.toList());
+    TreeNode tree =
+        TreeUtil.createTree(
+            sszNodes,
+            new SszSuperNode(supernodeDepth, template, Bytes.EMPTY),
+            treeDepth() - supernodeDepth);
+    return new DeserializedData(tree, elementsCount);
   }
 
   private DeserializedData sszDeserializeFixed(BytesReader reader) {
@@ -174,7 +207,7 @@ public abstract class CollectionViewType implements CompositeViewType {
     if (getElementType() instanceof BasicViewType) {
       checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
       List<LeafNode> childNodes =
-          chunks(bytesSize)
+          chunks(bytesSize, LeafNode.MAX_BYTE_SIZE)
               .mapToObj(reader::read)
               .map(LeafNode::create)
               .collect(Collectors.toList());
@@ -230,10 +263,10 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
   }
 
-  private static IntStream chunks(int totalSize) {
+  protected static IntStream chunks(int totalSize, int chunkSize) {
     return IntStream.concat(
-        IntStream.generate(() -> LeafNode.MAX_BYTE_SIZE).limit(totalSize / LeafNode.MAX_BYTE_SIZE),
-        IntStream.of(totalSize % LeafNode.MAX_BYTE_SIZE).filter(i -> i > 0));
+        IntStream.generate(() -> chunkSize).limit(totalSize / chunkSize),
+        IntStream.of(totalSize % chunkSize).filter(i -> i > 0));
   }
 
   public TypeHints getHints() {
