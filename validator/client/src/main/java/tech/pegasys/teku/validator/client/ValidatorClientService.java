@@ -16,6 +16,8 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
@@ -40,6 +42,8 @@ import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final EventChannels eventChannels;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
@@ -62,8 +66,10 @@ public class ValidatorClientService extends Service {
     this.eventChannels = eventChannels;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
-    asyncRunner.runAsync(
-        () -> initializeValidators(config, validatorApiChannel, asyncRunner, serviceConfig));
+    asyncRunner
+        .runAsync(
+            () -> initializeValidators(config, validatorApiChannel, asyncRunner, serviceConfig))
+        .finish(err -> LOG.error("Unable to initialize validators correctly", err));
   }
 
   public static ValidatorClientService create(
@@ -92,7 +98,7 @@ public class ValidatorClientService extends Service {
         services);
   }
 
-  SafeFuture<Void> initializeValidators(
+  void initializeValidators(
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner,
