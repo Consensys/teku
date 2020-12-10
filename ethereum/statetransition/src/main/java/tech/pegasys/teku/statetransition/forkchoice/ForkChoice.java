@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
@@ -118,6 +119,11 @@ public class ForkChoice {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
+    checkArgument(
+        block.getSlot().equals(blockSlotState.get().getSlot()),
+        "State must have processed slots up to the block slot. Block slot %s, state slot %s",
+        block.getSlot(),
+        blockSlotState.get().getSlot());
     return onForkChoiceThread(
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -32,6 +33,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -93,7 +97,8 @@ class ForkChoiceTest {
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.of(processSlots(blockAndState, genesis.getState())));
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -108,7 +113,8 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.of(processSlots(blockAndState, genesis.getState())));
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -273,11 +279,23 @@ class ForkChoiceTest {
   }
 
   private void importBlock(final ChainBuilder chainBuilder, final SignedBlockAndState block) {
+    BeaconState preState =
+        processSlots(
+            block,
+            chainBuilder.getLatestBlockAndStateAtSlot(block.getSlot().minus(ONE)).getState());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(
-            block.getBlock(),
-            Optional.of(
-                chainBuilder.getLatestBlockAndStateAtSlot(block.getSlot().minus(ONE)).getState()));
+        forkChoice.onBlock(block.getBlock(), Optional.of(preState));
     assertBlockImportedSuccessfully(result);
+  }
+
+  private BeaconState processSlots(final SignedBlockAndState block, BeaconState preState) {
+    try {
+      if (preState.getSlot().isLessThan(block.getSlot())) {
+        preState = new StateTransition().process_slots(preState, block.getSlot());
+      }
+    } catch (final SlotProcessingException | EpochProcessingException e) {
+      Assertions.fail("State transition failed", e);
+    }
+    return preState;
   }
 }
