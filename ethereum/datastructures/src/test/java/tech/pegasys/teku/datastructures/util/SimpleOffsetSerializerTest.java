@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 class SimpleOffsetSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -87,8 +88,7 @@ class SimpleOffsetSerializerTest {
     final Bytes checkpointData = SimpleOffsetSerializer.serialize(checkpoint);
     final Bytes encoded = Bytes.concatenate(checkpointData, extraData);
     assertThatThrownBy(() -> SimpleOffsetSerializer.deserialize(encoded, Checkpoint.class))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Unread data detected");
+        .isInstanceOf(SSZDeserializeException.class);
   }
 
   @Test

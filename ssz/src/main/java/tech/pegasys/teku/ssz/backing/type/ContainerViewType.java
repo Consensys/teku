@@ -21,11 +21,11 @@ import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
 
@@ -180,7 +180,8 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       int readBytes = originalAvailableBytes - reader.getAvailableBytes();
       Integer curVariableChildOffset = variableChildrenOffsets.remove();
       if (readBytes != curVariableChildOffset) {
-        throw new SSZException("Invalid SSZ");
+        throw new SSZDeserializeException(
+            "First variable element offset doesn't match the end of fixed part");
       }
       childrenSubtrees = new ArrayList<>(getChildCount());
       for (int i = 0; i < getChildCount(); i++) {
@@ -195,7 +196,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
                   : reader.slice(nextVariableChildOffset - curVariableChildOffset);
           TreeNode childNode = childType.sszDeserializeTree(childReader);
           if (childReader.getAvailableBytes() > 0) {
-            throw new SSZException("Invalid SSZ");
+            throw new SSZDeserializeException("Extra bytes left after deserializing child " + i);
           }
           childrenSubtrees.add(childNode);
           curVariableChildOffset = nextVariableChildOffset;
@@ -203,7 +204,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       }
     }
     if (reader.getAvailableBytes() > 0) {
-      throw new SSZException("Invalid SSZ");
+      throw new SSZDeserializeException("Extra bytes left after deserializing container" + this);
     }
 
     return TreeUtil.createTree(childrenSubtrees);

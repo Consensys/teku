@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 public class VectorViewType<C> extends CollectionViewType {
 
@@ -133,11 +133,11 @@ public class VectorViewType<C> extends CollectionViewType {
       // for BitVector we need to check that all 'unused' bits in the last byte are 0
       int usedBitCount = getLength() % 8;
       if (data.getLastSszByte().orElseThrow() >>> usedBitCount != 0) {
-        throw new SSZException("Invalid Bitvector");
+        throw new SSZDeserializeException("Invalid Bitvector ssz: trailing bits are not 0");
       }
     } else {
       if (data.getChildrenCount() != getLength()) {
-        throw new SSZException("Invalid SSZ");
+        throw new SSZDeserializeException("Invalid Vector ssz");
       }
     }
     return data.getDataTree();

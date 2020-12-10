@@ -17,7 +17,6 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
@@ -122,7 +122,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       int usedBitsCount = Integer.bitCount(boundaryBit - 1);
       int length = 8 * (bytes.size() - 1) + usedBitsCount;
       if (length > getMaxLength()) {
-        throw new SSZException("Too long bitlist");
+        throw new SSZDeserializeException("Too long bitlist");
       }
       Bytes newHighestByte = usedBitsCount == 0 ? Bytes.EMPTY : Bytes.of(highestByte ^ boundaryBit);
       Bytes treeBytes = Bytes.wrap(bytes.slice(0, bytes.size() - 1), newHighestByte);

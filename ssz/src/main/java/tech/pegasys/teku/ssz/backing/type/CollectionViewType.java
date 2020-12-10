@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 /** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType implements CompositeViewType {
@@ -169,7 +169,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   }
 
   protected DeserializedData sszDeserializeVector(BytesReader reader) {
-    checkSsz(reader.getAvailableBytes() >= getFixedPartSize());
+    checkSsz(reader.getAvailableBytes() >= getFixedPartSize(), "Ssz is too large");
     if (getElementType().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       if (sszSuperNodeHint.isPresent()) {
@@ -186,7 +186,7 @@ public abstract class CollectionViewType implements CompositeViewType {
     SszNodeTemplate template = elementSszSupernodeTemplate.get();
     int sszSize = reader.getAvailableBytes();
     if (sszSize % template.getSszLength() != 0) {
-      throw new SSZException("Invalid SSZ");
+      throw new SSZDeserializeException("Ssz length is not multiple of element length");
     }
     int elementsCount = sszSize / template.getSszLength();
     List<SszSuperNode> sszNodes =
@@ -205,7 +205,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   private DeserializedData sszDeserializeFixed(BytesReader reader) {
     int bytesSize = reader.getAvailableBytes();
     if (getElementType() instanceof BasicViewType) {
-      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
+      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0, "");
       List<LeafNode> childNodes =
           chunks(bytesSize, LeafNode.MAX_BYTE_SIZE)
               .mapToObj(reader::read)
@@ -224,7 +224,9 @@ public abstract class CollectionViewType implements CompositeViewType {
           bytesSize / getElementType().getFixedPartSize(),
           lastByte);
     } else {
-      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0);
+      checkSsz(
+          bytesSize % getElementType().getFixedPartSize() == 0,
+          "Ssz length is not multiple of element length");
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
       List<TreeNode> childNodes =
           Stream.generate(
@@ -240,7 +242,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   private DeserializedData sszDeserializeVariable(BytesReader reader) {
     final int endVarOffset = reader.getAvailableBytes();
     int varElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
-    checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0);
+    checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
     int elementsCount = varElementOffset / SSZ_LENGTH_SIZE;
     int[] elementSizes = new int[elementsCount];
     for (int i = 1; i < elementsCount; i++) {
@@ -257,9 +259,9 @@ public abstract class CollectionViewType implements CompositeViewType {
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
   }
 
-  private static void checkSsz(boolean condition) {
+  private static void checkSsz(boolean condition, String error) {
     if (!condition) {
-      throw new SSZException("Invalid SSZ");
+      throw new SSZDeserializeException(error);
     }
   }
 
