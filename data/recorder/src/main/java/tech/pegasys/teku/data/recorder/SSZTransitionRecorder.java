@@ -49,7 +49,6 @@ public class SSZTransitionRecorder {
   @Subscribe
   public void onBlockProcessingRecord(final BlockProcessingRecord record) {
     final Path slotDirectory = slotDirectory(record.getBlock().getSlot());
-    store(slotDirectory.resolve("pre.ssz"), record.getPreState());
     store(slotDirectory.resolve("block.ssz"), record.getBlock());
     store(slotDirectory.resolve("post.ssz"), record.getPostState());
   }

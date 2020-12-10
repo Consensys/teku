@@ -161,7 +161,6 @@ class BatchImporterTest {
     ignoreFuture(verify(blockImporter).importBlock(block));
     verifyNoMoreInteractions(blockImporter);
 
-    importResult1.complete(
-        BlockImportResult.successful(new BlockProcessingRecord(null, block, null)));
+    importResult1.complete(BlockImportResult.successful(new BlockProcessingRecord(block, null)));
   }
 }

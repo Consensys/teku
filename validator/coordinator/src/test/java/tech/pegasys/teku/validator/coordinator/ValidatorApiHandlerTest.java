@@ -513,10 +513,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 BlockImportResult.successful(
-                    new BlockProcessingRecord(
-                        dataStructureUtil.randomBeaconState(),
-                        block,
-                        dataStructureUtil.randomBeaconState()))));
+                    new BlockProcessingRecord(block, dataStructureUtil.randomBeaconState()))));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(eventBus).post(new ProposedBlockEvent(block));
