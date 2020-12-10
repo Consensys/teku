@@ -257,12 +257,23 @@ class BeaconStateUtilTest {
 
   @Test
   void bytesToInt() {
-    assertEquals(0L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x00")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x01")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(UInt64.valueOf(0), BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x00")));
+    assertEquals(UInt64.valueOf(1), BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x01")));
     assertEquals(
-        0x123456789abcdef0L,
+        UInt64.valueOf(1),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(
+        UInt64.valueOf(0x123456789abcdef0L),
         BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0xf0debc9a78563412")));
+    assertEquals(
+        UInt64.fromLongBits(0xffffffffffffffffL),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0xffffffffffffffff")));
+    assertEquals(
+        UInt64.fromLongBits(0x0000000000000080L),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x8000000000000000")));
+    assertEquals(
+        UInt64.fromLongBits(0xffffffffffffff7fL),
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x7fffffffffffffff")));
   }
 
   @Test
