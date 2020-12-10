@@ -288,13 +288,13 @@ class ForkChoiceTest {
     assertBlockImportedSuccessfully(result);
   }
 
-  private BeaconState processSlots(final SignedBlockAndState block, BeaconState preState) {
-    try {
-      if (preState.getSlot().isLessThan(block.getSlot())) {
-        preState = new StateTransition().process_slots(preState, block.getSlot());
+  private BeaconState processSlots(final SignedBlockAndState block, final BeaconState preState) {
+    if (preState.getSlot().isLessThan(block.getSlot())) {
+      try {
+        return new StateTransition().process_slots(preState, block.getSlot());
+      } catch (final SlotProcessingException | EpochProcessingException e) {
+        Assertions.fail("State transition failed", e);
       }
-    } catch (final SlotProcessingException | EpochProcessingException e) {
-      Assertions.fail("State transition failed", e);
     }
     return preState;
   }
