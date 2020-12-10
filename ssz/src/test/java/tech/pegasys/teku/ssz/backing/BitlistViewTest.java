@@ -36,7 +36,10 @@ public class BitlistViewTest {
       ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
       Bitlist bitlist1 = ViewUtils.getBitlist(bitlistView);
 
-      Assertions.assertThat(bitlist1).isEqualTo(bitlist);
+      Assertions.assertThat(bitlist1.getCurrentSize()).isEqualTo(bitlist.getCurrentSize());
+      for (int i = 0; i < bitlist.getCurrentSize(); i++) {
+        Assertions.assertThat(bitlist1.getBit(i)).isEqualTo(bitlist.getBit(i));
+      }
     }
   }
 }
