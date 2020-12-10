@@ -175,25 +175,12 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "previous_correct_validators",
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
 
-    currentEpochParticipationWeight =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "current_epoch_participation_weight",
-            "Total effective balance of all validators who voted for correct source and target checkpoints in the current epoch");
     previousEpochParticipationWeight =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "previous_epoch_participation_weight",
             "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
-
-    currentEpochTotalWeight =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "current_epoch_total_weight",
-            "Total effective balance of all active validators in the current epoch");
     previousEpochTotalWeight =
         SettableGauge.create(
             metricsSystem,
