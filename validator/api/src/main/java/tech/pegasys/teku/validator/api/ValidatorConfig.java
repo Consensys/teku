@@ -46,6 +46,7 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
+  private final int validatorExternalSignerConcurrentRequestLimit;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -62,7 +63,8 @@ public class ValidatorConfig {
       final Bytes32 graffiti,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
-      final boolean validatorExternalSignerSlashingProtectionEnabled) {
+      final boolean validatorExternalSignerSlashingProtectionEnabled,
+      final int validatorExternalSignerConcurrentRequestLimit) {
     this.validatorKeys = validatorKeys;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -80,6 +82,8 @@ public class ValidatorConfig {
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
     this.validatorExternalSignerSlashingProtectionEnabled =
         validatorExternalSignerSlashingProtectionEnabled;
+    this.validatorExternalSignerConcurrentRequestLimit =
+        validatorExternalSignerConcurrentRequestLimit;
   }
 
   public static Builder builder() {
@@ -116,6 +120,10 @@ public class ValidatorConfig {
 
   public Duration getValidatorExternalSignerTimeout() {
     return validatorExternalSignerTimeout;
+  }
+
+  public int getValidatorExternalSignerConcurrentRequestLimit() {
+    return validatorExternalSignerConcurrentRequestLimit;
   }
 
   public Pair<Path, Path> getValidatorExternalSignerKeystorePasswordFilePair() {
@@ -158,6 +166,7 @@ public class ValidatorConfig {
     private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
     private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
     private URL validatorExternalSignerUrl;
+    private int validatorExternalSignerConcurrentRequestLimit;
     private Duration validatorExternalSignerTimeout = Duration.ofSeconds(5);
     private Path validatorExternalSignerKeystore;
     private Path validatorExternalSignerKeystorePasswordFile;
@@ -206,6 +215,13 @@ public class ValidatorConfig {
 
     public Builder validatorExternalSignerTimeout(final Duration validatorExternalSignerTimeout) {
       this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
+      return this;
+    }
+
+    public Builder validatorExternalSignerConcurrentRequestLimit(
+        int validatorExternalSignerConcurrentRequestLimit) {
+      this.validatorExternalSignerConcurrentRequestLimit =
+          validatorExternalSignerConcurrentRequestLimit;
       return this;
     }
 
@@ -275,7 +291,8 @@ public class ValidatorConfig {
           graffiti,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
-          validatorExternalSignerSlashingProtectionEnabled);
+          validatorExternalSignerSlashingProtectionEnabled,
+          validatorExternalSignerConcurrentRequestLimit);
     }
 
     private void validateKeyStoreFilesAndPasswordFilesConfig() {

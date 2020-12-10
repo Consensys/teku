@@ -23,11 +23,13 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ThrottlingEth1ProviderTest {
@@ -40,7 +42,9 @@ class ThrottlingEth1ProviderTest {
   private final Block block1 = mock(Block.class);
   private final Block block2 = mock(Block.class);
   private final Eth1Provider delegateProvider = mock(Eth1Provider.class);
-  private final ThrottlingEth1Provider provider = new ThrottlingEth1Provider(delegateProvider, 3);
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final ThrottlingEth1Provider provider =
+      new ThrottlingEth1Provider(delegateProvider, 3, metricsSystem);
   private final List<SafeFuture<Optional<Block>>> blockRequests = new ArrayList<>();
 
   private final Answer<Object> returnBlockFuture =
