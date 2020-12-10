@@ -35,7 +35,7 @@ public class StateRootCollector {
     final UInt64 minimumSlot = newBlockSlot.minusMinZero(SLOTS_PER_HISTORICAL_ROOT);
     // Get the parent block root from the state as the genesis block root is recorded as 0
     final Bytes32 parentBlockRoot =
-        blockRoots.get(newBlockSlot.minus(1).mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
+        blockRoots.get(newBlockSlot.minusMinZero(1).mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
     UInt64 slot = newBlockSlot.minus(1);
     while (slot.isGreaterThanOrEqualTo(minimumSlot) && !slot.isZero()) {
       final Bytes32 previousBlockRoot = getValue(blockRoots, slot.minus(1));
