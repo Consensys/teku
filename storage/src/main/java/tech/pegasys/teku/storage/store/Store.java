@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
   Checkpoint best_justified_checkpoint;
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
-  private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
+  final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   final Map<UInt64, VoteTracker> votes;
   private ProtoArrayForkChoiceStrategy forkChoiceStrategy;
 
