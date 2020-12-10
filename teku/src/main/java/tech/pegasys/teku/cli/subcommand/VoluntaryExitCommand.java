@@ -31,6 +31,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -73,6 +74,7 @@ public class VoluntaryExitCommand implements Runnable {
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
   private TekuConfiguration config;
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -189,7 +191,7 @@ public class VoluntaryExitCommand implements Runnable {
   private void initialise() {
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
-        new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+        new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
     final OkHttpClient okHttpClient =
         new OkHttpClient.Builder()
@@ -220,7 +222,7 @@ public class VoluntaryExitCommand implements Runnable {
     genesisRoot = maybeRoot.get();
 
     final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner);
+        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner, metricsSystem);
 
     try {
       blsPublicKeyValidatorMap =
