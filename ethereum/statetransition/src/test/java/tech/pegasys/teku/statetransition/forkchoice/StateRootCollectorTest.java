@@ -44,8 +44,6 @@ class StateRootCollectorTest {
 
   @Test
   void shouldNotCaptureAnyStateRootsForGenesisState() {
-    final BeaconState state = storageSystem.chainUpdater().advanceChain(1).getState();
-
     StateRootCollector.addParentStateRoots(genesis.getState(), transaction);
     verifyNoInteractions(transaction);
   }
