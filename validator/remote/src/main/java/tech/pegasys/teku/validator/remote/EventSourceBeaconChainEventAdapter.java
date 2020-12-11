@@ -39,10 +39,11 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final EventSource eventSource;
 
   public EventSourceBeaconChainEventAdapter(
+          final RemoteValidatorApiHandler remoteValidatorApiHandler,
       final HttpUrl baseEndpoint,
-      final OkHttpClient okHttpClient,
-      final BeaconChainEventAdapter timeBasedEventAdapter,
-      final ValidatorTimingChannel validatorTimingChannel) {
+          final OkHttpClient okHttpClient,
+          final BeaconChainEventAdapter timeBasedEventAdapter,
+          final ValidatorTimingChannel validatorTimingChannel) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
@@ -55,7 +56,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + EventType.sync_state
         );
     this.eventSource =
-        new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
+        new EventSource.Builder(new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler), eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))

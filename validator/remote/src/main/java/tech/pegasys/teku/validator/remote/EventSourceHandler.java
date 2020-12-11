@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 import java.net.SocketTimeoutException;
@@ -36,9 +37,12 @@ class EventSourceHandler implements EventHandler {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel;
+  private final RemoteValidatorApiHandler remoteValidatorApiHandler;
 
-  public EventSourceHandler(final ValidatorTimingChannel validatorTimingChannel) {
+  public EventSourceHandler(final ValidatorTimingChannel validatorTimingChannel,
+                            final RemoteValidatorApiHandler remoteValidatorApiHandler) {
     this.validatorTimingChannel = validatorTimingChannel;
+    this.remoteValidatorApiHandler = remoteValidatorApiHandler;
   }
 
   @Override
@@ -102,7 +106,7 @@ class EventSourceHandler implements EventHandler {
           throws JsonProcessingException {
     final SyncStateChangeEvent reorgEvent =
             jsonProvider.jsonToObject(messageEvent.getData(), SyncStateChangeEvent.class);
-    validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
+    remoteValidatorApiHandler.notifySyncStateSubscribers(SyncState.valueOf(reorgEvent.sync_state));
   }
 
   @Override

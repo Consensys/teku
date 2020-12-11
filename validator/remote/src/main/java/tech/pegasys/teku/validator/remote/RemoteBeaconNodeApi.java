@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import java.net.URI;
-import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -30,6 +28,9 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
@@ -57,15 +58,18 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 
+    final RemoteValidatorApiHandler remoteValidatorApiHandler =
+            new RemoteValidatorApiHandler(apiClient, asyncRunner);
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             serviceConfig.getMetricsSystem(),
-            new RemoteValidatorApiHandler(apiClient, asyncRunner));
+            remoteValidatorApiHandler);
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
+            remoteValidatorApiHandler,
             apiEndpoint,
             okHttpClient,
             new TimeBasedEventAdapter(

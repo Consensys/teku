@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -40,6 +35,12 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
@@ -237,6 +238,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     subscribePersistentRequestCounter.inc();
     delegate.subscribeToPersistentSubnets(subnetSubscriptions);
+  }
+
+  @Override
+  public void subscribeToSyncStateChanges(tech.pegasys.teku.sync.events.SyncStateProvider.SyncStateSubscriber subscriber) {
+    delegate.subscribeToSyncStateChanges(subscriber);
   }
 
   @Override

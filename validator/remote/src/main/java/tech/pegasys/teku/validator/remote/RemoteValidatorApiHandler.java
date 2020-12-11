@@ -13,19 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toMap;
-
 import com.google.common.base.Throwables;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -45,7 +33,10 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.events.SyncState;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -56,6 +47,19 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
+
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -64,6 +68,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
+  private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers = Subscribers.create(true);
 
   public RemoteValidatorApiHandler(
       final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
@@ -284,6 +289,15 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
     sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
         .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
+  }
+
+  @Override
+  public void subscribeToSyncStateChanges(final SyncStateProvider.SyncStateSubscriber subscriber) {
+    syncStateSubscribers.subscribe(subscriber);
+  }
+
+  public void notifySyncStateSubscribers(final SyncState syncState) {
+    syncStateSubscribers.forEach(s -> s.onSyncStateChange(syncState));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
