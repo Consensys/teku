@@ -58,8 +58,14 @@ class BeaconRestApiTest {
 
   @BeforeEach
   public void setup() {
-    GlobalConfiguration config =
-        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
+    GlobalConfiguration config = GlobalConfiguration.builder().build();
+    BeaconRestApiConfig beaconRestApiConfig =
+        BeaconRestApiConfig.builder()
+            .restApiDocsEnabled(false)
+            .restApiPort(THE_PORT)
+            .eth1DepositContractAddress(config.getEth1DepositContractAddress())
+            .build();
+
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
@@ -72,7 +78,7 @@ class BeaconRestApiTest {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool),
-        config,
+        beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
         app);
