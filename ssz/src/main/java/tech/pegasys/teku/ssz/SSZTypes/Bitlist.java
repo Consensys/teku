@@ -165,7 +165,7 @@ public class Bitlist {
     checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
     int lastByte = 0xFF & bytes.get(bytes.size() - 1);
     int leadingBitIndex = Integer.bitCount(Integer.highestOneBit(lastByte) - 1);
-    return (7 - leadingBitIndex) + (8 * (numBytes - 1));
+    return leadingBitIndex + 8 * (numBytes - 1);
   }
 
   public Bitlist copy() {
