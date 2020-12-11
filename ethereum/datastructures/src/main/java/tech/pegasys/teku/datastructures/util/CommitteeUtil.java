@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -66,10 +65,9 @@ public class CommitteeUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          toIntExact(
-              Long.remainderUnsigned(
-                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  index_count));
+          bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+              .mod(index_count)
+              .intValue();
       int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
       int position = Math.max(indexRet, flip);
 
@@ -119,10 +117,9 @@ public class CommitteeUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          toIntExact(
-              Long.remainderUnsigned(
-                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  listSize));
+          bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+              .mod(listSize)
+              .intValue();
 
       Bytes hashBytes = Bytes.EMPTY;
       int mirror1 = (pivot + 2) / 2;
@@ -178,7 +175,7 @@ public class CommitteeUtil {
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(UInt64.valueOf(MAX_EFFECTIVE_BALANCE).times(random_byte))) {
+          .isGreaterThanOrEqualTo(MAX_EFFECTIVE_BALANCE.times(random_byte))) {
         return candidate_index;
       }
       i++;
@@ -285,7 +282,9 @@ public class CommitteeUtil {
   }
 
   public static boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
-    return (bytes_to_int64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8)) % modulo) == 0;
+    return bytes_to_int64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8))
+        .mod(modulo)
+        .isZero();
   }
 
   /**

@@ -34,10 +34,11 @@ import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashable
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,8 +56,14 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalSignerIntegrationTest {
@@ -65,6 +72,9 @@ public class ExternalSignerIntegrationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final JsonProvider jsonProvider = new JsonProvider();
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final ThrottlingTaskQueue queue =
+      new ThrottlingTaskQueue(8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
 
   private ClientAndServer client;
   private ExternalSigner externalSigner;
@@ -72,12 +82,22 @@ public class ExternalSignerIntegrationTest {
   @BeforeEach
   void setup(final ClientAndServer client) throws MalformedURLException {
     this.client = client;
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerPublicKeys(List.of(KEYPAIR.getPublicKey()))
+            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
+            .validatorExternalSignerTimeout(TIMEOUT)
+            .build();
+    final HttpClientExternalSignerFactory httpClientExternalSignerFactory =
+        new HttpClientExternalSignerFactory(config);
+
     externalSigner =
         new ExternalSigner(
-            HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build(),
-            new URL("http://127.0.0.1:" + client.getLocalPort()),
-            KEYPAIR.getPublicKey(),
-            TIMEOUT);
+            httpClientExternalSignerFactory.get(),
+            config.getValidatorExternalSignerUrl(),
+            config.getValidatorExternalSignerPublicKeys().get(0),
+            TIMEOUT,
+            queue);
   }
 
   @AfterEach
@@ -228,9 +248,9 @@ public class ExternalSignerIntegrationTest {
                 "hnCLCZlbEyzMFq2JLHl6wk4W6gpbFGoQA2N4WB+CpgqVg3gcxJpRKOswtSTU4XdSEU2x3Hf0oTlxer/gVaFwAh84Mm4VLH67LNUxVO4+o2Q5TxOD1sArnvMcOJdGMGp2"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.signAggregationSlot(slot, fork).join();
+    final SafeFuture<BLSSignature> future = externalSigner.signAggregationSlot(slot, fork);
 
-    assertThat(response).isEqualTo(expectedSignature);
+    assertThat(future.get()).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(

@@ -59,7 +59,7 @@ public class ProfilingRun {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
-    int iterationBlockLimit = Integer.MAX_VALUE;
+    int iterationBlockLimit = 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -90,13 +90,14 @@ public class ProfilingRun {
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
+      int measuredBlockCount = 0;
 
       long totalS = 0;
       try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
         for (SignedBeaconBlock block : blockReader) {
           if (block.getSlot().intValue() == 65) {
             totalS = System.currentTimeMillis();
-            blockCount = 0;
+            measuredBlockCount = 0;
           }
           long s = System.currentTimeMillis();
           localChain.setSlot(block.getSlot());
@@ -109,11 +110,13 @@ public class ProfilingRun {
                   + " ms: "
                   + result);
           blockCount++;
+          measuredBlockCount++;
           if (blockCount > iterationBlockLimit) break;
         }
       }
       long totalT = System.currentTimeMillis() - totalS;
-      System.out.printf("############# Total: %f.2 blocks/sec\n", blockCount / (totalT / 1000.0));
+      System.out.printf(
+          "############# Total: %f.2 blocks/sec\n", measuredBlockCount / (totalT / 1000.0));
     }
   }
 

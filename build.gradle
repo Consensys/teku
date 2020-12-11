@@ -61,9 +61,9 @@ def bintrayPackage = bintray.pkg {
   userOrg = 'consensys'
   desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
   licenses = ['Apache-2.0']
-  websiteUrl = 'https://github.com/PegaSysEng/teku'
-  issueTrackerUrl = 'https://github.com/PegaSysEng/teku/issues'
-  vcsUrl = 'https://github.com/PegaSysEng/teku.git'
+  websiteUrl = 'https://github.com/ConsenSys/teku'
+  issueTrackerUrl = 'https://github.com/ConsenSys/teku/issues'
+  vcsUrl = 'https://github.com/ConsenSys/teku.git'
 
   version {
     name = project.version
@@ -472,7 +472,7 @@ subprojects {
           }
           pom {
             name = "Teku - ${project.name}"
-            url = 'https://github.com/PegaSysEng/teku'
+            url = 'https://github.com/ConsenSys/teku'
             licenses {
               license {
                 name = 'The Apache License, Version 2.0'
@@ -480,9 +480,9 @@ subprojects {
               }
             }
             scm {
-              connection = 'scm:git:git://github.com/PegaSysEng/teku.git'
-              developerConnection = 'https://github.com/PegaSysEng/teku.git'
-              url = 'https://github.com/PegaSysEng/teku'
+              connection = 'scm:git:git://github.com/ConsenSys/teku.git'
+              developerConnection = 'https://github.com/ConsenSys/teku.git'
+              url = 'https://github.com/ConsenSys/teku'
             }
           }
         }

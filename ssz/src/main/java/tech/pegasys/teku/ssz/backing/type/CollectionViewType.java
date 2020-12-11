@@ -24,11 +24,13 @@ public abstract class CollectionViewType implements CompositeViewType {
 
   private final long maxLength;
   private final ViewType elementType;
+  private final TypeHints hints;
   private volatile TreeNode defaultTree;
 
-  CollectionViewType(long maxLength, ViewType elementType) {
+  protected CollectionViewType(long maxLength, ViewType elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
+    this.hints = hints;
   }
 
   protected abstract TreeNode createDefaultTree();
@@ -93,14 +95,13 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
     int nodesCount = getChunks(elementsCount);
     int[] bytesCnt = new int[1];
-    TreeUtil.iterateLeaves(
+    TreeUtil.iterateLeavesData(
         vectorNode,
         getGeneralizedIndex(0),
         getGeneralizedIndex(nodesCount - 1),
-        leaf -> {
-          Bytes ssz = leaf.getData();
-          writer.accept(ssz);
-          bytesCnt[0] += ssz.size();
+        leafData -> {
+          writer.accept(leafData);
+          bytesCnt[0] += leafData.size();
         });
     return bytesCnt[0];
   }
@@ -120,6 +121,10 @@ public abstract class CollectionViewType implements CompositeViewType {
       elementType.sszSerialize(childSubtree, writer);
     }
     return variableOffset;
+  }
+
+  public TypeHints getHints() {
+    return hints;
   }
 
   @Override

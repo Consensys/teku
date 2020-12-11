@@ -201,6 +201,15 @@ public class BeaconRestApi {
               config.defaultContentType = "application/json";
               config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
+              if (configuration.getRestApiCorsAllowedOrigins() != null
+                  && !configuration.getRestApiCorsAllowedOrigins().isEmpty()) {
+                if (configuration.getRestApiCorsAllowedOrigins().contains("*")) {
+                  config.enableCorsForAllOrigins();
+                } else {
+                  config.enableCorsForOrigin(
+                      configuration.getRestApiCorsAllowedOrigins().toArray(new String[0]));
+                }
+              }
             });
     initialize(dataProvider, configuration, eventChannels, asyncRunner);
   }

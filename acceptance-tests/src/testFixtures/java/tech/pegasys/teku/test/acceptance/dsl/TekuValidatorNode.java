@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,6 +53,18 @@ public class TekuValidatorNode extends Node {
     final TekuValidatorNode node = new TekuValidatorNode(network, config);
 
     return node;
+  }
+
+  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeytores)
+      throws Exception {
+    this.config.withValidatorKeys(
+        WORKING_DIRECTORY
+            + validatorKeytores.getKeysDirectoryName()
+            + ":"
+            + WORKING_DIRECTORY
+            + validatorKeytores.getPasswordsDirectoryName());
+    this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
+    return this;
   }
 
   public void start() throws Exception {
@@ -91,6 +104,7 @@ public class TekuValidatorNode extends Node {
     private Optional<String> validatorKeys = Optional.empty();
 
     public Config() {
+      configMap.put("validators-keystore-locking-enabled", false);
       configMap.put("Xinterop-owned-validator-start-index", 0);
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
@@ -101,8 +115,18 @@ public class TekuValidatorNode extends Node {
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
     }
 
-    public TekuValidatorNode.Config withBeaconNodeEndpoint(final String beaconNodeEndpoint) {
-      configMap.put("beacon-node-api-endpoint", beaconNodeEndpoint);
+    public TekuValidatorNode.Config withInteropModeDisabled() {
+      configMap.put("Xinterop-enabled", false);
+      return this;
+    }
+
+    public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
+      configMap.put("validator-keys", validatorKeyInformation);
+      return this;
+    }
+
+    public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
+      configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
       return this;
     }
 

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
@@ -31,7 +31,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
+import tech.pegasys.teku.core.stategenerator.StateAtSlotTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -336,10 +336,24 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
-      return new CheckpointStateTask(checkpoint, fromBlockAndState(inMemoryCheckpointBlockState))
+      return new StateAtSlotTask(
+              checkpoint.toSlotAndBlockRoot(), fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
+    SignedBlockAndState inMemoryCheckpointBlockState =
+        blockAndStates.get(slotAndBlockRoot.getBlockRoot());
+    if (inMemoryCheckpointBlockState != null) {
+      // Not executing the task via the task queue to avoid caching the result before the tx is
+      // committed
+      return new StateAtSlotTask(slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+          .performTask();
+    }
+    return store.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Override

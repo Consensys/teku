@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
+import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
 import java.util.List;
@@ -27,7 +29,6 @@ import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -113,27 +114,36 @@ public class ForkChoice {
         .join();
   }
 
+  /**
+   * Import a block to the store. The supplied blockSlotState must already have empty slots
+   * processed to the same slot as the block.
+   */
   public SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block, Optional<BeaconState> preState) {
+      final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
+    if (blockSlotState.isEmpty()) {
+      return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
+    }
+    checkArgument(
+        block.getSlot().equals(blockSlotState.get().getSlot()),
+        "State must have processed slots up to the block slot. Block slot %s, state slot %s",
+        block.getSlot(),
+        blockSlotState.get().getSlot());
     return onForkChoiceThread(
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
           final CapturingIndexedAttestationProvider indexedAttestationProvider =
               new CapturingIndexedAttestationProvider();
+
+          addParentStateRoots(blockSlotState.get(), transaction);
+
           final BlockImportResult result =
               on_block(
                   transaction,
                   block,
-                  preState,
+                  blockSlotState.get(),
                   stateTransition,
                   forkChoiceStrategy,
-                  beaconState ->
-                      transaction.putStateRoot(
-                          beaconState.hash_tree_root(),
-                          new SlotAndBlockRoot(
-                              beaconState.getSlot(),
-                              beaconState.getLatest_block_header().hash_tree_root())),
                   indexedAttestationProvider);
 
           if (!result.isSuccessful()) {

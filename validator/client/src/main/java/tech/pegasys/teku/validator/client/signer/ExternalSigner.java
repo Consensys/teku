@@ -45,6 +45,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -56,16 +57,19 @@ public class ExternalSigner implements Signer {
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
   private final HttpClient httpClient;
+  private final ThrottlingTaskQueue taskQueue;
 
   public ExternalSigner(
       final HttpClient httpClient,
       final URL signingServiceUrl,
       final BLSPublicKey blsPublicKey,
-      final Duration timeout) {
+      final Duration timeout,
+      final ThrottlingTaskQueue taskQueue) {
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
+    this.taskQueue = taskQueue;
   }
 
   @Override
@@ -106,11 +110,13 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
-    return sign(
-        signingRootForSignAggregationSlot(slot, forkInfo),
-        SignType.AGGREGATION_SLOT,
-        Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
-        slashableGenericMessage("aggregation slot"));
+    return taskQueue.queueTask(
+        () ->
+            sign(
+                signingRootForSignAggregationSlot(slot, forkInfo),
+                SignType.AGGREGATION_SLOT,
+                Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
+                slashableGenericMessage("aggregation slot")));
   }
 
   @Override
@@ -160,7 +166,7 @@ public class ExternalSigner implements Signer {
       final Map<String, Object> metadata,
       final Supplier<String> slashableMessage) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
-    return SafeFuture.ofComposed(
+    return SafeFuture.of(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
           final URI uri =

@@ -21,6 +21,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -177,6 +178,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final List<BLSPublicKey> publicKeys) {
     getValidatorIndicesRequestCounter.inc();
     return delegate.getValidatorIndices(publicKeys);
+  }
+
+  @Override
+  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+      final List<BLSPublicKey> validatorIdentifiers) {
+    return delegate.getValidatorStatuses(validatorIdentifiers);
   }
 
   @Override

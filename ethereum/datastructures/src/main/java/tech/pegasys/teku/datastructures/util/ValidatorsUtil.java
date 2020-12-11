@@ -43,17 +43,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Check if validator is eligible to be placed into the activation queue.
-   *
-   * @param validator the validator
-   * @return true if eligible for the activation queue otherwise false
-   */
-  public static boolean is_eligible_for_activation_queue(Validator validator) {
-    return validator.getActivation_eligibility_epoch().equals(Constants.FAR_FUTURE_EPOCH)
-        && validator.getEffective_balance().equals(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
-  }
-
-  /**
    * Check if validator is eligible for activation.
    *
    * @param state the beacon state
@@ -132,11 +121,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
-    UInt64 newBalance =
-        delta.compareTo(state.getBalances().get(index)) > 0
-            ? UInt64.ZERO
-            : state.getBalances().get(index).minus(delta);
-    state.getBalances().set(index, newBalance);
+    state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
   }
 
   /**

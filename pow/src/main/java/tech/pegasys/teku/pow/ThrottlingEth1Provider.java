@@ -14,82 +14,80 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Supplier;
+import java.time.Duration;
+import java.util.Optional;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ThrottlingEth1Provider implements Eth1Provider {
   private final Eth1Provider delegate;
-  private final int maximumConcurrentRequests;
-  private final Queue<Runnable> queuedRequests = new ConcurrentLinkedQueue<>();
-  private int inflightRequestCount = 0;
+  private final ThrottlingTaskQueue taskQueue;
 
-  public ThrottlingEth1Provider(final Eth1Provider delegate, final int maximumConcurrentRequests) {
+  public ThrottlingEth1Provider(
+      final Eth1Provider delegate,
+      final int maximumConcurrentRequests,
+      final MetricsSystem metricsSystem) {
     this.delegate = delegate;
-    this.maximumConcurrentRequests = maximumConcurrentRequests;
+    taskQueue =
+        new ThrottlingTaskQueue(
+            maximumConcurrentRequests,
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "eth1_request_queue_size");
   }
 
   @Override
-  public SafeFuture<Block> getEth1Block(final UInt64 blockNumber) {
-    return queueRequest(() -> delegate.getEth1Block(blockNumber));
+  public SafeFuture<Optional<Block>> getEth1Block(final UInt64 blockNumber) {
+    return taskQueue.queueTask(() -> delegate.getEth1Block(blockNumber));
+  }
+
+  @Override
+  public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
+      final UInt64 blockNumber, final Duration retryDelay, final int maxRetries) {
+    return taskQueue.queueTask(
+        () -> delegate.getEth1BlockWithRetry(blockNumber, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
-    return queueRequest(() -> delegate.getGuaranteedEth1Block(blockHash));
+    return taskQueue.queueTask(() -> delegate.getGuaranteedEth1Block(blockHash));
   }
 
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
-    return queueRequest(() -> delegate.getGuaranteedEth1Block(blockNumber));
+    return taskQueue.queueTask(() -> delegate.getGuaranteedEth1Block(blockNumber));
   }
 
   @Override
-  public SafeFuture<Block> getEth1Block(final String blockHash) {
-    return queueRequest(() -> delegate.getEth1Block(blockHash));
+  public SafeFuture<Optional<Block>> getEth1Block(final String blockHash) {
+    return taskQueue.queueTask(() -> delegate.getEth1Block(blockHash));
+  }
+
+  @Override
+  public SafeFuture<Optional<Block>> getEth1BlockWithRetry(
+      final String blockHash, final Duration retryDelay, final int maxRetries) {
+    return taskQueue.queueTask(
+        () -> delegate.getEth1BlockWithRetry(blockHash, retryDelay, maxRetries));
   }
 
   @Override
   public SafeFuture<Block> getLatestEth1Block() {
-    return queueRequest(delegate::getLatestEth1Block);
+    return taskQueue.queueTask(delegate::getLatestEth1Block);
   }
 
   @Override
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
-    return queueRequest(() -> delegate.ethCall(from, to, data, blockNumber));
+    return taskQueue.queueTask(() -> delegate.ethCall(from, to, data, blockNumber));
   }
 
   @Override
   public SafeFuture<BigInteger> getChainId() {
-    return queueRequest(delegate::getChainId);
-  }
-
-  private <T> SafeFuture<T> queueRequest(final Supplier<SafeFuture<T>> request) {
-    final SafeFuture<T> future = new SafeFuture<>();
-    queuedRequests.add(
-        () -> {
-          final SafeFuture<T> requestFuture = request.get();
-          requestFuture.propagateTo(future);
-          requestFuture.always(this::requestComplete);
-        });
-    processQueuedRequests();
-    return future;
-  }
-
-  private synchronized void requestComplete() {
-    inflightRequestCount--;
-    processQueuedRequests();
-  }
-
-  private synchronized void processQueuedRequests() {
-    while (inflightRequestCount < maximumConcurrentRequests && !queuedRequests.isEmpty()) {
-      inflightRequestCount++;
-      queuedRequests.remove().run();
-    }
+    return taskQueue.queueTask(delegate::getChainId);
   }
 }

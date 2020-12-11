@@ -294,7 +294,9 @@ public class TekuNode extends Node {
           } else {
             throw new IllegalStateException("Proposer index greater than total validator count");
           }
-        });
+        },
+        2,
+        MINUTES);
   }
 
   public Config getConfig() {
@@ -312,16 +314,6 @@ public class TekuNode extends Node {
     dbTar.deleteOnExit();
     copyDirectoryToTar(DATA_PATH, dbTar);
     return dbTar;
-  }
-
-  /**
-   * Copies contents of the given directory into node's working directory.
-   *
-   * @param tarFile
-   * @throws IOException
-   */
-  public void copyContentsToWorkingDirectory(File tarFile) throws IOException {
-    container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
   }
 
   public void copyFileToContainer(File file, String containerPath) {

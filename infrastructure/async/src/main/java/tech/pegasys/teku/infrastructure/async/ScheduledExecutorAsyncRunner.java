@@ -20,7 +20,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,7 +57,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   }
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+  public <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action) {
     if (shutdown.get()) {
       LOG.debug("Ignoring async task because shutdown is in progress");
       return new SafeFuture<>();
@@ -75,7 +74,9 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public <U> SafeFuture<U> runAfterDelay(
-      final Supplier<SafeFuture<U>> action, final long delayAmount, final TimeUnit delayUnit) {
+      final ExceptionThrowingFutureSupplier<U> action,
+      final long delayAmount,
+      final TimeUnit delayUnit) {
     if (shutdown.get()) {
       LOG.debug("Ignoring async task because shutdown is in progress");
       return new SafeFuture<>();
@@ -115,7 +116,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   }
 
   private <U> Runnable createRunnableForAction(
-      final Supplier<SafeFuture<U>> action, final SafeFuture<U> result) {
-    return () -> SafeFuture.ofComposed(action::get).propagateTo(result);
+      final ExceptionThrowingFutureSupplier<U> action, final SafeFuture<U> result) {
+    return () -> SafeFuture.of(action).propagateTo(result);
   }
 }

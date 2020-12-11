@@ -28,7 +28,7 @@ abstract class TreeNodeImpl implements TreeNode {
     private final byte[] data;
 
     public LeafNodeImpl(Bytes data) {
-      checkArgument(data.size() <= TreeNode.NODE_BYTE_SIZE);
+      checkArgument(data.size() <= LeafNode.MAX_BYTE_SIZE);
       this.data = data.toArrayUnsafe();
     }
 
@@ -39,16 +39,16 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public Bytes32 hashTreeRoot() {
-      if (data.length == TreeNode.NODE_BYTE_SIZE) {
+      if (data.length == LeafNode.MAX_BYTE_SIZE) {
         return Bytes32.wrap(data);
       } else {
-        return Bytes32.wrap(Arrays.copyOf(data, TreeNode.NODE_BYTE_SIZE));
+        return Bytes32.wrap(Arrays.copyOf(data, LeafNode.MAX_BYTE_SIZE));
       }
     }
 
     @Override
     public TreeNode updated(TreeUpdates newNodes) {
-      if (newNodes.size() == 0) {
+      if (newNodes.isEmpty()) {
         return this;
       } else {
         newNodes.checkLeaf();
@@ -108,7 +108,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public TreeNode updated(TreeUpdates newNodes) {
-      if (newNodes.size() == 0) {
+      if (newNodes.isEmpty()) {
         return this;
       } else if (newNodes.isFinal()) {
         return newNodes.getNode(0);
@@ -129,7 +129,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public String toString() {
-      return "(" + left + ", " + right + ')';
+      return left == right ? ("(2x " + left + ")") : ("(" + left + ", " + right + ')');
     }
   }
 }

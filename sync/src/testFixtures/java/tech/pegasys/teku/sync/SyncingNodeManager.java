@@ -95,7 +95,7 @@ public class SyncingNodeManager {
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
 
-    BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
+    BlockValidator blockValidator = new BlockValidator(recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);

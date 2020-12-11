@@ -98,6 +98,8 @@ class StoreTransactionUpdates {
         (root) -> {
           store.blocks.remove(root);
           store.states.remove(root);
+          store.checkpointStates.removeIf(
+              slotAndBlockRoot -> slotAndBlockRoot.getBlockRoot().equals(root));
         });
 
     store.blockMetadata =

@@ -38,7 +38,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.6.2-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.6.3-RELEASE'
     dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
@@ -100,6 +100,7 @@ dependencyManagement {
 
     dependency 'org.apache.commons:commons-text:1.8'
     dependency 'org.apache.commons:commons-lang3:3.10'
+    dependency 'commons-io:commons-io:2.6'
     dependency 'org.apache.commons:commons-compress:1.20'
 
     dependencySet(group: 'org.apache.logging.log4j', version: '2.13.3') {

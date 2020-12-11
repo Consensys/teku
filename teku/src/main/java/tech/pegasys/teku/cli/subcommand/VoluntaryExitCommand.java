@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
@@ -29,6 +31,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -71,6 +74,7 @@ public class VoluntaryExitCommand implements Runnable {
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
   private TekuConfiguration config;
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -81,17 +85,26 @@ public class VoluntaryExitCommand implements Runnable {
   @CommandLine.Option(
       names = {"--epoch"},
       paramLabel = "<EPOCH>",
-      description = "Earliest epoch that the voluntary exit can be processed.",
-      required = true,
+      description =
+          "Earliest epoch that the voluntary exit can be processed. Defaults to current epoch.",
       arity = "1")
   private UInt64 epoch;
+
+  @CommandLine.Option(
+      names = {"--confirmation-enabled"},
+      description = "Request confirmation before submitting voluntary exits.",
+      paramLabel = "<BOOLEAN>",
+      arity = "1")
+  private boolean confirmationEnabled = true;
 
   @Override
   public void run() {
     SUB_COMMAND_LOG.display("Loading configuration...");
     try {
       initialise();
-      confirmExits();
+      if (confirmationEnabled) {
+        confirmExits();
+      }
       getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
     } catch (UncheckedIOException ex) {
       if (Throwables.getRootCause(ex) instanceof ConnectException) {
@@ -102,10 +115,6 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private void confirmExits() {
-    if (blsPublicKeyValidatorMap.isEmpty()) {
-      SUB_COMMAND_LOG.error("No validators were found to exit.");
-      System.exit(1);
-    }
     SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
     SUB_COMMAND_LOG.display("");
@@ -115,7 +124,7 @@ public class VoluntaryExitCommand implements Runnable {
     Scanner scanner = new Scanner(System.in, Charset.defaultCharset().name());
     final String confirmation = scanner.next();
 
-    if (!confirmation.toLowerCase().equals("yes")) {
+    if (!confirmation.equalsIgnoreCase("yes")) {
       SUB_COMMAND_LOG.display("Cancelled sending voluntary exit.");
       System.exit(1);
     }
@@ -161,7 +170,14 @@ public class VoluntaryExitCommand implements Runnable {
     } catch (IllegalArgumentException ex) {
       SUB_COMMAND_LOG.error(
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());
+      SUB_COMMAND_LOG.error(ex.getMessage());
     }
+  }
+
+  private Optional<UInt64> getEpoch() {
+    return apiClient
+        .getBlockHeader("head")
+        .map(response -> compute_epoch_at_slot(response.data.header.message.slot));
   }
 
   private Optional<Bytes32> getGenesisRoot() {
@@ -175,7 +191,7 @@ public class VoluntaryExitCommand implements Runnable {
   private void initialise() {
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
-        new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+        new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
     final OkHttpClient okHttpClient =
         new OkHttpClient.Builder()
@@ -195,6 +211,7 @@ public class VoluntaryExitCommand implements Runnable {
       System.exit(1);
     }
     fork = maybeFork.get();
+    validateOrDefaultEpoch();
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
@@ -205,7 +222,7 @@ public class VoluntaryExitCommand implements Runnable {
     genesisRoot = maybeRoot.get();
 
     final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner);
+        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner, metricsSystem);
 
     try {
       blsPublicKeyValidatorMap =
@@ -213,6 +230,29 @@ public class VoluntaryExitCommand implements Runnable {
               config.validatorClient().getValidatorConfig(), config.global());
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
+      System.exit(1);
+    }
+    if (blsPublicKeyValidatorMap.isEmpty()) {
+      SUB_COMMAND_LOG.error("No validators were found to exit.");
+      System.exit(1);
+    }
+  }
+
+  private void validateOrDefaultEpoch() {
+    final Optional<UInt64> maybeEpoch = getEpoch();
+
+    if (epoch == null) {
+      if (maybeEpoch.isEmpty()) {
+        SUB_COMMAND_LOG.error(
+            "Could not calculate epoch from latest block header, please specify --epoch");
+        System.exit(1);
+      }
+      epoch = maybeEpoch.orElseThrow();
+    } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
+      SUB_COMMAND_LOG.error(
+          String.format(
+              "The specified epoch %s is greater than current epoch %s, cannot continue.",
+              epoch, maybeEpoch.get()));
       System.exit(1);
     }
   }

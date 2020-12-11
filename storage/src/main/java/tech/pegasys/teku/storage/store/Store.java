@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
-import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromAnchor;
+import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
+import tech.pegasys.teku.core.stategenerator.StateAtSlotTask;
 import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
 import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
   Checkpoint best_justified_checkpoint;
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
-  private final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates;
+  final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   final Map<UInt64, VoteTracker> votes;
   private ProtoArrayForkChoiceStrategy forkChoiceStrategy;
 
@@ -112,7 +112,7 @@ class Store implements UpdatableStore {
       final BlockMetadataStore blockMetadata,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates) {
+      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesis_time),
         "Time must be greater than or equal to genesisTime");
@@ -172,7 +172,7 @@ class Store implements UpdatableStore {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
-    final CachingTaskQueue<Checkpoint, BeaconState> checkpointStateTaskQueue =
+    final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner,
             metricsSystem,
@@ -458,7 +458,14 @@ class Store implements UpdatableStore {
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
-    return checkpointStates.perform(new CheckpointStateTask(checkpoint, this::retrieveBlockState));
+    return checkpointStates.perform(
+        new StateAtSlotTask(checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
+    return checkpointStates.perform(
+        new StateAtSlotTask(slotAndBlockRoot, this::retrieveBlockState));
   }
 
   @Override
@@ -473,7 +480,9 @@ class Store implements UpdatableStore {
     }
 
     return checkpointStates
-        .perform(new CheckpointStateTask(finalized.getCheckpoint(), fromAnchor(finalized)))
+        .perform(
+            new StateAtSlotTask(
+                finalized.getCheckpoint().toSlotAndBlockRoot(), fromAnchor(finalized)))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
@@ -486,8 +495,9 @@ class Store implements UpdatableStore {
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     return checkpointStates.perform(
-        new CheckpointStateTask(
-            checkpoint, blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
+        new StateAtSlotTask(
+            checkpoint.toSlotAndBlockRoot(),
+            blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
   @Override

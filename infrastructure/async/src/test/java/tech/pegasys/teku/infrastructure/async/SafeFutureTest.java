@@ -185,7 +185,7 @@ public class SafeFutureTest {
     final SafeFuture<Void> suppliedFuture = new SafeFuture<>();
     final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
     final SafeFuture<Void> future =
-        SafeFuture.ofComposed(
+        SafeFuture.of(
             () -> {
               supplierWasProcessed.set(true);
               return suppliedFuture;
@@ -202,7 +202,7 @@ public class SafeFutureTest {
     final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
     final Throwable error = new IOException("failed");
     final SafeFuture<Void> future =
-        SafeFuture.ofComposed(
+        SafeFuture.of(
             () -> {
               supplierWasProcessed.set(true);
               throw error;

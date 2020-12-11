@@ -22,9 +22,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -53,12 +52,12 @@ public class BasicViewTypes {
             b = (byte) (b & ~(1 << bitIndex));
           }
           Bytes newBytes = updateExtending(originalBytes, byteIndex, Bytes.of(b));
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[1];
+          return LeafNode.ZERO_LEAVES[1];
         }
       };
 
@@ -74,12 +73,12 @@ public class BasicViewTypes {
           byte aByte = ((ByteView) newValue).get();
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[1];
+          return LeafNode.ZERO_LEAVES[1];
         }
       };
 
@@ -117,12 +116,12 @@ public class BasicViewTypes {
               Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[8];
+          return LeafNode.ZERO_LEAVES[8];
         }
       };
 
@@ -140,12 +139,12 @@ public class BasicViewTypes {
           Bytes bytes = ((Bytes4View) newValue).get().getWrappedBytes();
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, internalIndex * 4, bytes);
-          return TreeNode.createLeafNode(newBytes);
+          return LeafNode.create(newBytes);
         }
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[4];
+          return LeafNode.ZERO_LEAVES[4];
         }
       };
 
@@ -158,12 +157,12 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-          return TreeNode.createLeafNode(((Bytes32View) newValue).get());
+          return LeafNode.create(((Bytes32View) newValue).get());
         }
 
         @Override
         public TreeNode getDefaultTree() {
-          return TreeUtil.ZERO_LEAVES[32];
+          return LeafNode.ZERO_LEAVES[32];
         }
       };
 

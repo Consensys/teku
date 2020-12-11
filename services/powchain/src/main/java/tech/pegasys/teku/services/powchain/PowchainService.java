@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -25,6 +26,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -51,19 +53,21 @@ public class PowchainService extends Service {
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
   private final Eth1ChainIdValidator chainIdValidator;
+  private final Web3j web3j;
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    Web3j web3j = createWeb3j(tekuConfig);
+    this.web3j = createWeb3j(tekuConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
                 new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
-            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+            config.getMetricsSystem());
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
@@ -87,7 +91,8 @@ public class PowchainService extends Service {
             eth1EventsPublisher,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
-            asyncRunner);
+            asyncRunner,
+            tekuConfig.getEth1LogsMaxBlockRange());
 
     headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
     final DepositProcessingController depositProcessingController =
@@ -99,6 +104,8 @@ public class PowchainService extends Service {
             eth1BlockFetcher,
             headTracker);
 
+    final Optional<UInt64> eth1DepositContractDeployBlock =
+        tekuConfig.getEth1DepositContractDeployBlock();
     eth1DepositManager =
         new Eth1DepositManager(
             eth1Provider,
@@ -106,7 +113,8 @@ public class PowchainService extends Service {
             eth1EventsPublisher,
             eth1DepositStorageChannel,
             depositProcessingController,
-            new MinimumGenesisTimeBlockFinder(eth1Provider));
+            new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
+            eth1DepositContractDeployBlock);
 
     chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
   }
@@ -144,6 +152,7 @@ public class PowchainService extends Service {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::stop),
         SafeFuture.fromRunnable(eth1DepositManager::stop),
-        SafeFuture.fromRunnable(chainIdValidator::stop));
+        SafeFuture.fromRunnable(chainIdValidator::stop),
+        SafeFuture.fromRunnable(web3j::shutdown));
   }
 }

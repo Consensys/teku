@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -43,19 +44,25 @@ public class ValidatorClientService extends Service {
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
   private final ValidatorIndexProvider validatorIndexProvider;
+  private final ValidatorStatusLogger validatorStatusLogger;
   private final BeaconNodeApi beaconNodeApi;
+  private final ForkProvider forkProvider;
 
   private ValidatorClientService(
+      final ValidatorStatusLogger validatorStatusLogger,
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
       final ValidatorIndexProvider validatorIndexProvider,
-      final BeaconNodeApi beaconNodeApi) {
+      final BeaconNodeApi beaconNodeApi,
+      final ForkProvider forkProvider) {
+    this.validatorStatusLogger = validatorStatusLogger;
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.beaconNodeApi = beaconNodeApi;
+    this.forkProvider = forkProvider;
   }
 
   public static ValidatorClientService create(
@@ -66,7 +73,8 @@ public class ValidatorClientService extends Service {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
-    final ValidatorLoader validatorLoader = ValidatorLoader.create(slashingProtector, asyncRunner);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getGlobalConfiguration());
@@ -114,12 +122,23 @@ public class ValidatorClientService extends Service {
 
     addValidatorCountMetric(metricsSystem, validators.size());
 
+    ValidatorStatusLogger validatorStatusLogger;
+    if (validators.keySet().size() > 0) {
+      validatorStatusLogger =
+          new DefaultValidatorStatusLogger(
+              new ArrayList<>(validators.keySet()), validatorApiChannel);
+    } else {
+      validatorStatusLogger = ValidatorStatusLogger.NOOP;
+    }
+
     return new ValidatorClientService(
+        validatorStatusLogger,
         eventChannels,
         attestationDutyScheduler,
         blockDutyScheduler,
         validatorIndexProvider,
-        beaconNodeApi);
+        beaconNodeApi,
+        forkProvider);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -137,11 +156,16 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    forkProvider.start().reportExceptions();
     validatorIndexProvider.lookupValidators();
     eventChannels.subscribe(
         ValidatorTimingChannel.class,
         new ValidatorTimingActions(
-            validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
+            validatorStatusLogger,
+            validatorIndexProvider,
+            blockProductionTimingChannel,
+            attestationTimingChannel));
+    validatorStatusLogger.printInitialValidatorStatuses();
     return beaconNodeApi.subscribeToEvents();
   }
 

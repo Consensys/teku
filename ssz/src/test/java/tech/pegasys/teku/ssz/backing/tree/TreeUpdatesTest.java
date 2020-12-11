@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 
 import java.nio.ByteOrder;
 import java.util.stream.IntStream;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates.Update;
 public class TreeUpdatesTest {
 
   public static TreeNode newTestLeaf(long l) {
-    return TreeNode.createLeafNode(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
+    return LeafNode.create(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
   }
 
   @Test
@@ -104,6 +105,8 @@ public class TreeUpdatesTest {
     assertThatThrownBy(() -> n11.checkLeaf());
     assertThat(n10.isFinal()).isFalse();
     assertThat(n11.isFinal()).isFalse();
+    assertThat(n10.getRelativeGIndex(0)).isEqualTo(0b10);
+    assertThat(n11.getRelativeGIndex(0)).isEqualTo(0b11);
 
     Pair<TreeUpdates, TreeUpdates> s10 = n10.splitAtPivot();
     Pair<TreeUpdates, TreeUpdates> s11 = n11.splitAtPivot();
@@ -114,12 +117,14 @@ public class TreeUpdatesTest {
 
     assertThat(n100.size()).isEqualTo(1);
     assertThat(n100.getGIndex(0)).isEqualTo(treeWidth + 0);
+    assertThat(n100.getRelativeGIndex(0)).isEqualTo(SELF_G_INDEX);
     assertThat(n100.getNode(0)).isEqualTo(newTestLeaf(0));
     assertThat(n101.size()).isEqualTo(0);
     assertThat(n110.size()).isEqualTo(0);
 
     assertThat(n111.size()).isEqualTo(1);
     assertThat(n111.getGIndex(0)).isEqualTo(treeWidth + 3);
+    assertThat(n100.getRelativeGIndex(0)).isEqualTo(SELF_G_INDEX);
     assertThat(n111.getNode(0)).isEqualTo(newTestLeaf(3));
 
     n100.checkLeaf();
@@ -157,6 +162,7 @@ public class TreeUpdatesTest {
     assertThat(n110.size()).isEqualTo(0);
     assertThat(n111.size()).isEqualTo(1);
     assertThat(n111.getGIndex(0)).isEqualTo(treeWidth + 3);
+    assertThat(n111.getRelativeGIndex(0)).isEqualTo(SELF_G_INDEX);
     assertThat(n111.getNode(0)).isEqualTo(newTestLeaf(3));
 
     n111.checkLeaf();
