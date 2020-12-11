@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
@@ -50,26 +51,24 @@ public class Utils {
             .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
             .findFirst();
 
-    return () ->
-        maybeMethod
-            .flatMap(
-                method -> {
-                  try {
-                    return Optional.of((ViewType) method.invoke(null));
-                  } catch (IllegalAccessException | InvocationTargetException e) {
-                    return Optional.empty();
-                  }
-                })
-            .or(
-                () ->
-                    maybeField.flatMap(
-                        field -> {
-                          try {
-                            return Optional.of((ViewType) field.get(null));
-                          } catch (IllegalAccessException e) {
-                            return Optional.empty();
-                          }
-                        }));
+    Function<Method, Optional<ViewType>> methodFactory =
+        method -> {
+          try {
+            return Optional.of((ViewType) method.invoke(null));
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            return Optional.empty();
+          }
+        };
+    Function<Field, Optional<ViewType>> fieldFactory =
+        field -> {
+          try {
+            return Optional.of((ViewType) field.get(null));
+          } catch (IllegalAccessException e) {
+            return Optional.empty();
+          }
+        };
+
+    return () -> maybeMethod.flatMap(methodFactory).or(() -> maybeField.flatMap(fieldFactory));
   }
 
   private static List<Class<?>> getAllPredecessors(Class<?> clazz) {
