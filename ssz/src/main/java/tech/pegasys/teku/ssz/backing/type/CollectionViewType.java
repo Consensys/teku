@@ -229,8 +229,10 @@ public abstract class CollectionViewType implements CompositeViewType {
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
-        TreeNode childNode = getElementType().sszDeserializeTree(reader);
-        childNodes.add(childNode);
+        try (SszReader sszReader = reader.slice(getElementType().getFixedPartSize())) {
+          TreeNode childNode = getElementType().sszDeserializeTree(sszReader);
+          childNodes.add(childNode);
+        }
       }
       return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
     }
