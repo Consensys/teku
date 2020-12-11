@@ -138,37 +138,7 @@ public abstract class CollectionViewType implements CompositeViewType {
     return variableOffset;
   }
 
-  static class DeserializedData {
-
-    private final TreeNode dataTree;
-    private final int childrenCount;
-    private final Optional<Byte> lastSszByte;
-
-    public DeserializedData(TreeNode dataTree, int childrenCount) {
-      this(dataTree, childrenCount, Optional.empty());
-    }
-
-    public DeserializedData(TreeNode dataTree, int childrenCount, Optional<Byte> lastSszByte) {
-      this.dataTree = dataTree;
-      this.childrenCount = childrenCount;
-      this.lastSszByte = lastSszByte;
-    }
-
-    public TreeNode getDataTree() {
-      return dataTree;
-    }
-
-    public int getChildrenCount() {
-      return childrenCount;
-    }
-
-    public Optional<Byte> getLastSszByte() {
-      return lastSszByte;
-    }
-  }
-
   protected DeserializedData sszDeserializeVector(SszReader reader) {
-    checkSsz(reader.getAvailableBytes() >= getFixedPartSize(), "Ssz is too large");
     if (getElementType().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       if (sszSuperNodeHint.isPresent()) {
@@ -304,5 +274,34 @@ public abstract class CollectionViewType implements CompositeViewType {
   @Override
   public int hashCode() {
     return Objects.hash(maxLength, elementType);
+  }
+
+  static class DeserializedData {
+
+    private final TreeNode dataTree;
+    private final int childrenCount;
+    private final Optional<Byte> lastSszByte;
+
+    public DeserializedData(TreeNode dataTree, int childrenCount) {
+      this(dataTree, childrenCount, Optional.empty());
+    }
+
+    public DeserializedData(TreeNode dataTree, int childrenCount, Optional<Byte> lastSszByte) {
+      this.dataTree = dataTree;
+      this.childrenCount = childrenCount;
+      this.lastSszByte = lastSszByte;
+    }
+
+    public TreeNode getDataTree() {
+      return dataTree;
+    }
+
+    public int getChildrenCount() {
+      return childrenCount;
+    }
+
+    public Optional<Byte> getLastSszByte() {
+      return lastSszByte;
+    }
   }
 }
