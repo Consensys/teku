@@ -121,15 +121,7 @@ public class Bitlist {
   }
 
   public static Bitlist fromBytes(Bytes bytes, long maxSize) {
-    int numBytes = bytes.size();
-    checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
-    checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
-    int leadingBitIndex = 0;
-    while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
-      leadingBitIndex++;
-    }
-
-    int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
+    int bitlistSize = sszGetLengthAndValidate(bytes);
     BitSet byteArray = new BitSet(bitlistSize);
 
     for (int i = bitlistSize - 1; i >= 0; i--) {
@@ -139,6 +131,41 @@ public class Bitlist {
     }
 
     return new Bitlist(bitlistSize, byteArray, maxSize);
+  }
+
+  public static Bytes sszTruncateLeadingBit(Bytes bytes, int length) {
+    Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
+    if (length % 8 == 0) {
+      return bytesWithoutLast;
+    } else {
+      int lastByte = bytes.get(bytes.size() - 1);
+      int leadingBit = 1 << (length % 8);
+      int lastByteWithoutLeadingBit = lastByte ^ leadingBit;
+      return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithoutLeadingBit));
+    }
+  }
+
+  public static Bytes sszAppendLeadingBit(Bytes bytes, int length) {
+    checkArgument(length <= bytes.size() * 8 && length > (bytes.size() - 1) * 8);
+    if (length % 8 == 0) {
+      return Bytes.wrap(bytes, Bytes.of(1));
+    } else {
+      int lastByte = bytes.get(bytes.size() - 1);
+      int leadingBit = 1 << (length % 8);
+      checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
+      int lastByteWithLeadingBit = lastByte ^ (1 << (length % 8));
+      Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
+      return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithLeadingBit));
+    }
+  }
+
+  public static int sszGetLengthAndValidate(Bytes bytes) {
+    int numBytes = bytes.size();
+    checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
+    checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
+    int lastByte = 0xFF & bytes.get(bytes.size() - 1);
+    int leadingBitIndex = Integer.bitCount(Integer.highestOneBit(lastByte) - 1);
+    return (7 - leadingBitIndex) + (8 * (numBytes - 1));
   }
 
   public Bitlist copy() {
