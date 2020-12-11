@@ -76,14 +76,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final int hotStatePersistenceFrequencyInEpochs;
   private final boolean isBlockProcessingAtStartupDisabled;
 
-  // Beacon REST API
-  private final int restApiPort;
-  private final boolean restApiDocsEnabled;
-  private final boolean restApiEnabled;
-  private final String restApiInterface;
-  private final List<String> restApiHostAllowlist;
-  private final List<String> restApiCorsAllowedOrigins;
-
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
   }
@@ -125,13 +117,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
       final int hotStatePersistenceFrequencyInEpochs,
-      final boolean isBlockProcessingAtStartupDisabled,
-      final int restApiPort,
-      final boolean restApiDocsEnabled,
-      final boolean restApiEnabled,
-      final String restApiInterface,
-      final List<String> restApiHostAllowlist,
-      final List<String> restApiCorsAllowedOrigins) {
+      final boolean isBlockProcessingAtStartupDisabled) {
     this.networkDefinition = networkDefinition;
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -169,12 +155,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.isBlockProcessingAtStartupDisabled = isBlockProcessingAtStartupDisabled;
-    this.restApiPort = restApiPort;
-    this.restApiDocsEnabled = restApiDocsEnabled;
-    this.restApiEnabled = restApiEnabled;
-    this.restApiInterface = restApiInterface;
-    this.restApiHostAllowlist = restApiHostAllowlist;
-    this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
   }
 
   public NetworkDefinition getNetworkDefinition() {
@@ -336,30 +316,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isBlockProcessingAtStartupDisabled() {
     return isBlockProcessingAtStartupDisabled;
-  }
-
-  public int getRestApiPort() {
-    return restApiPort;
-  }
-
-  public boolean isRestApiDocsEnabled() {
-    return restApiDocsEnabled;
-  }
-
-  public boolean isRestApiEnabled() {
-    return restApiEnabled;
-  }
-
-  public String getRestApiInterface() {
-    return restApiInterface;
-  }
-
-  public List<String> getRestApiHostAllowlist() {
-    return restApiHostAllowlist;
-  }
-
-  public List<String> getRestApiCorsAllowedOrigins() {
-    return restApiCorsAllowedOrigins;
   }
 
   public void validate() throws IllegalArgumentException {

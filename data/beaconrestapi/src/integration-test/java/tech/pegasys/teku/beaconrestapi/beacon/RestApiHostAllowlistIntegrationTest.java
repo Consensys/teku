@@ -19,20 +19,20 @@ import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
-    final GlobalConfiguration config =
-        GlobalConfiguration.builder()
-            .setRestApiPort(0)
-            .setRestApiEnabled(true)
-            .setRestApiDocsEnabled(false)
-            .setRestApiHostAllowlist(List.of("not.authorized.host"))
-            .setRestApiCorsAllowedOrigins(new ArrayList<>())
+    final BeaconRestApiConfig config =
+        BeaconRestApiConfig.builder()
+            .restApiPort(0)
+            .restApiEnabled(true)
+            .restApiDocsEnabled(false)
+            .restApiHostAllowlist(List.of("not.authorized.host"))
+            .restApiCorsAllowedOrigins(new ArrayList<>())
             .build();
     startPreGenesisRestAPIWithConfig(config);
 
