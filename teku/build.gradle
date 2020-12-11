@@ -2,6 +2,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':data')
   implementation project(':data:serializer')
+  implementation project(':data:beaconrestapi')
   implementation project(':infrastructure:metrics')
   implementation project(':data:recorder')
   implementation project(':data:dataexchange')
