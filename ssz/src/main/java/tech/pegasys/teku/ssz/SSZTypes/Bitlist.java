@@ -138,7 +138,7 @@ public class Bitlist {
     if (length % 8 == 0) {
       return bytesWithoutLast;
     } else {
-      int lastByte = bytes.get(bytes.size() - 1);
+      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
       int leadingBit = 1 << (length % 8);
       int lastByteWithoutLeadingBit = lastByte ^ leadingBit;
       return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithoutLeadingBit));
