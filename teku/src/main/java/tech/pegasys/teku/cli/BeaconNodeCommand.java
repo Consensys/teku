@@ -334,6 +334,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
       p2POptions.configure(builder, networkOptions.getNetwork());
+      beaconRestApiOptions.configure(builder, networkOptions.getNetwork());
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -376,13 +377,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs())
-        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled())
-        .setRestApiPort(beaconRestApiOptions.getRestApiPort())
-        .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
-        .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
-        .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
-        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
-        .setRestApiCorsAllowedOrigins(beaconRestApiOptions.getRestApiCorsAllowedOrigins());
+        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled());
 
     final String dataBasePath = dataOptions.getDataBasePath().toString();
     builder.setLogFile(

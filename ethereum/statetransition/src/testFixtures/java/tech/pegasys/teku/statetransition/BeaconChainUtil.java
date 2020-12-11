@@ -31,6 +31,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -191,7 +192,9 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final Optional<BeaconState> preState =
-        recentChainData.retrieveBlockState(block.getParentRoot()).join();
+        recentChainData
+            .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+            .join();
     final BlockImportResult importResult = forkChoice.onBlock(block, preState).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

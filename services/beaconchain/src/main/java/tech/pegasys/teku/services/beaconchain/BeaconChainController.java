@@ -688,10 +688,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool);
-    if (config.isRestApiEnabled()) {
+    if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
 
       beaconRestAPI =
-          Optional.of(new BeaconRestApi(dataProvider, config, eventChannels, eventAsyncRunner));
+          Optional.of(
+              new BeaconRestApi(
+                  dataProvider,
+                  beaconConfig.beaconRestApiConfig(),
+                  eventChannels,
+                  eventAsyncRunner));
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }
