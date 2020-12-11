@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -216,6 +217,10 @@ public class CachingTaskQueue<K, V> {
 
   public void remove(final K key) {
     cache.remove(key);
+  }
+
+  public void removeIf(final Predicate<K> removalCondition) {
+    cache.keySet().removeIf(removalCondition);
   }
 
   public interface CacheableTask<K, V> {
