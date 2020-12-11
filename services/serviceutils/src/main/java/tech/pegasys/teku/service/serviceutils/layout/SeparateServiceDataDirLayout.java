@@ -52,8 +52,9 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   private void performMigration() throws IOException {
     STATUS_LOG.migratingDataDirectory(baseDir);
     final File dataSubdir = baseDir.resolve("data").toFile();
-    if (dataSubdir.isDirectory()) {
-      for (final File file : dataSubdir.listFiles()) {
+    File[] fileList = dataSubdir.listFiles();
+    if (fileList != null) {
+      for (final File file : fileList) {
         Files.move(file.toPath(), baseDir.resolve(file.getName()));
       }
     }
