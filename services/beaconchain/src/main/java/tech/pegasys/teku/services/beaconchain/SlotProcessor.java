@@ -15,17 +15,21 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -137,9 +141,28 @@ public class SlotProcessor {
                 recentChainData
                     .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlot, headBlock.getRoot()))
                     .finish(
-                        maybeState ->
-                            maybeState.ifPresent(BeaconStateUtil::get_beacon_proposer_index),
+                        maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
                         error -> LOG.warn("Failed to precompute epoch transition", error)));
+  }
+
+  private void primeEpochStateCaches(final BeaconState state) {
+    IntStream.range(0, SLOTS_PER_EPOCH)
+        .forEach(
+            slotInEpoch -> {
+              // Calculate all proposers
+              BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(slotInEpoch));
+
+              // Calculate committees for epoch + 1 (assume this epoch was already requested)
+              final UInt64 nextEpoch = get_current_epoch(state).plus(1);
+              final UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(nextEpoch);
+              final UInt64 committeeCount =
+                  BeaconStateUtil.get_committee_count_per_slot(state, nextEpoch);
+              for (UInt64 index = UInt64.ZERO;
+                  index.isLessThan(committeeCount);
+                  index = index.increment()) {
+                get_beacon_committee(state, nextEpochStartSlot.plus(slotInEpoch), index);
+              }
+            });
   }
 
   private void processSlotWhileSyncing() {
