@@ -165,7 +165,7 @@ public class SlotProcessor {
     onTickSlotAttestation = nodeSlot.getValue();
     this.forkChoice.processHead(onTickSlotAttestation);
     recentChainData
-        .getHeadBlock()
+        .getChainHead()
         .ifPresent(
             (head) ->
                 recentChainData
