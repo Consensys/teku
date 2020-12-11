@@ -36,7 +36,7 @@ public class SyncDataProvider {
     return syncService.subscribeToSyncStateChanges(subscriber);
   }
 
-  public boolean unsubscribeFromSyncStatusChanges(long subscriberId) {
+  public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
     return syncService.unsubscribeFromSyncStateChanges(subscriberId);
   }
 
