@@ -15,6 +15,8 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -229,50 +231,48 @@ public abstract class CollectionViewType implements CompositeViewType {
           bytesSize % getElementType().getFixedPartSize() == 0,
           "Ssz length is not multiple of element length");
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
-      List<TreeNode> childNodes =
-          Stream.generate(
-                  () -> {
-                    try (SszReader sszReader = reader.slice(getElementType().getFixedPartSize())) {
-                      return getElementType().sszDeserializeTree(sszReader);
-                    }
-                  })
-              .limit(elementsCount)
-              .collect(Collectors.toList());
+      List<TreeNode> childNodes = new ArrayList<>();
+      for (int i = 0; i < elementsCount; i++) {
+        TreeNode childNode = getElementType().sszDeserializeTree(reader);
+        childNodes.add(childNode);
+      }
       return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
     }
   }
 
   private DeserializedData sszDeserializeVariable(SszReader reader) {
-    final int endVarOffset = reader.getAvailableBytes();
-    final int elementsCount;
-    final List<TreeNode> childNodes;
-    if (endVarOffset == 0) {
-      // empty list
-      elementsCount = 0;
-      childNodes = Collections.emptyList();
-    } else {
-      int varElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
-      checkSsz(varElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
-      elementsCount = varElementOffset / SSZ_LENGTH_SIZE;
-      int[] elementSizes = new int[elementsCount];
+    final int endOffset = reader.getAvailableBytes();
+    final List<TreeNode> childNodes = new ArrayList<>();
+    if (endOffset > 0) {
+      int firstElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
+
+      List<Integer> elementOffsets = new ArrayList<>();
+      elementOffsets.add(firstElementOffset);
+      int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
       for (int i = 1; i < elementsCount; i++) {
         int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
-        elementSizes[i - 1] = offset - varElementOffset;
-        varElementOffset = offset;
+        elementOffsets.add(offset);
       }
-      elementSizes[elementsCount - 1] = endVarOffset - varElementOffset;
+      elementOffsets.add(endOffset);
 
-      childNodes =
-          Arrays.stream(elementSizes)
-              .mapToObj(
-                  size -> {
-                    try (SszReader sszReader = reader.slice(size)) {
-                      return getElementType().sszDeserializeTree(sszReader);
-                    }
-                  })
+      List<Integer> elementSizes =
+          IntStream.range(0, elementOffsets.size() - 1)
+              .map(i -> elementOffsets.get(i + 1) - elementOffsets.get(i))
+              .boxed()
               .collect(Collectors.toList());
+
+      if (elementSizes.stream().anyMatch(s -> s < 0)) {
+        throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
+      }
+
+      for (int elementSize : elementSizes) {
+        try (SszReader sszReader = reader.slice(elementSize)) {
+          childNodes.add(getElementType().sszDeserializeTree(sszReader));
+        }
+      }
     }
-    return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), elementsCount);
+    return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), childNodes.size());
   }
 
   private static void checkSsz(boolean condition, String error) {
