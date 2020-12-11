@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,9 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
@@ -70,7 +71,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           validatorStatus ->
-              STATUS_LOG.validatorStatus(validatorStatus.name(), publicKey.toAbbreviatedString()),
+              STATUS_LOG.validatorStatus(publicKey.toAbbreviatedString(), validatorStatus.name()),
           () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
     }
   }
