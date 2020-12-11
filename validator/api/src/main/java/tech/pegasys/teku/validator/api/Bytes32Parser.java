@@ -11,24 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.converter;
+package tech.pegasys.teku.validator.api;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.apache.tuweni.bytes.Bytes32;
-import picocli.CommandLine;
-import tech.pegasys.teku.validator.api.Bytes32Parser;
 
-public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
-  @Override
-  public Bytes32 convert(final String value) {
-    try {
-      return Bytes32Parser.toBytes32(value);
-    } catch (final IllegalArgumentException e) {
-      throw (new CommandLine.TypeConversionException(
+public class Bytes32Parser {
+
+  public static Bytes32 toBytes32(final String input) {
+    return toBytes32(input.getBytes(UTF_8));
+  }
+
+  public static Bytes32 toBytes32(final byte[] input) {
+    if (input.length > 32) {
+      throw new IllegalArgumentException(
           "'"
-              + value
+              + new String(input, UTF_8)
               + "' converts to "
-              + value.length()
-              + " bytes. A maximum of 32 bytes can be used as graffiti."));
+              + input.length
+              + " bytes. Input must be 32 bytes or less.");
     }
+    byte[] bytes = new byte[32];
+    System.arraycopy(input, 0, bytes, 0, input.length);
+    return Bytes32.wrap(bytes);
   }
 }

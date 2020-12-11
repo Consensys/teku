@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
@@ -42,7 +41,7 @@ public class ValidatorConfig {
   private final Path validatorExternalSignerKeystorePasswordFile;
   private final Path validatorExternalSignerTruststore;
   private final Path validatorExternalSignerTruststorePasswordFile;
-  private final Bytes32 graffiti;
+  private final GraffitiProvider graffitiProvider;
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
@@ -60,7 +59,7 @@ public class ValidatorConfig {
       final Path validatorExternalSignerTruststore,
       final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<URI> beaconNodeApiEndpoint,
-      final Bytes32 graffiti,
+      final GraffitiProvider graffitiProvider,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
@@ -76,7 +75,7 @@ public class ValidatorConfig {
     this.validatorExternalSignerTruststore = validatorExternalSignerTruststore;
     this.validatorExternalSignerTruststorePasswordFile =
         validatorExternalSignerTruststorePasswordFile;
-    this.graffiti = graffiti;
+    this.graffitiProvider = graffitiProvider;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
@@ -139,8 +138,8 @@ public class ValidatorConfig {
     return beaconNodeApiEndpoint;
   }
 
-  public Bytes32 getGraffiti() {
-    return graffiti;
+  public GraffitiProvider getGraffitiProvider() {
+    return graffitiProvider;
   }
 
   public List<String> getValidatorKeys() {
@@ -172,7 +171,7 @@ public class ValidatorConfig {
     private Path validatorExternalSignerKeystorePasswordFile;
     private Path validatorExternalSignerTruststore;
     private Path validatorExternalSignerTruststorePasswordFile;
-    private Bytes32 graffiti;
+    private GraffitiProvider graffitiProvider;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
@@ -254,8 +253,8 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder graffiti(Bytes32 graffiti) {
-      this.graffiti = graffiti;
+    public Builder graffitiProvider(GraffitiProvider graffitiProvider) {
+      this.graffitiProvider = graffitiProvider;
       return this;
     }
 
@@ -288,7 +287,7 @@ public class ValidatorConfig {
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoint,
-          graffiti,
+          graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
