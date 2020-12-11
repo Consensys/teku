@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.response.v1;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 
 public class SyncStateChangeEvent {
@@ -42,8 +41,6 @@ public class SyncStateChangeEvent {
 
   @Override
   public String toString() {
-    return "SyncStateEvent{" +
-            "sync_state='" + sync_state + '\'' +
-            '}';
+    return "SyncStateEvent{" + "sync_state='" + sync_state + '\'' + '}';
   }
 }

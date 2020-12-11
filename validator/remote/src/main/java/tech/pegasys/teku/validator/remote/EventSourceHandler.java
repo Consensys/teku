@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
+import java.net.SocketTimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
@@ -28,10 +31,6 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-import java.net.SocketTimeoutException;
-
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-
 class EventSourceHandler implements EventHandler {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -39,8 +38,9 @@ class EventSourceHandler implements EventHandler {
   private final ValidatorTimingChannel validatorTimingChannel;
   private final RemoteValidatorApiHandler remoteValidatorApiHandler;
 
-  public EventSourceHandler(final ValidatorTimingChannel validatorTimingChannel,
-                            final RemoteValidatorApiHandler remoteValidatorApiHandler) {
+  public EventSourceHandler(
+      final ValidatorTimingChannel validatorTimingChannel,
+      final RemoteValidatorApiHandler remoteValidatorApiHandler) {
     this.validatorTimingChannel = validatorTimingChannel;
     this.remoteValidatorApiHandler = remoteValidatorApiHandler;
   }
@@ -103,9 +103,9 @@ class EventSourceHandler implements EventHandler {
   }
 
   private void handleSyncStateChangeEvent(final MessageEvent messageEvent)
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     final SyncStateChangeEvent reorgEvent =
-            jsonProvider.jsonToObject(messageEvent.getData(), SyncStateChangeEvent.class);
+        jsonProvider.jsonToObject(messageEvent.getData(), SyncStateChangeEvent.class);
     remoteValidatorApiHandler.notifySyncStateSubscribers(SyncState.valueOf(reorgEvent.sync_state));
   }
 

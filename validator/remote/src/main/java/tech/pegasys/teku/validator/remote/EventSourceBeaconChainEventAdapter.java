@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyMap;
+
 import com.launchdarkly.eventsource.EventSource;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -27,11 +31,6 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
-import java.time.Duration;
-import java.util.concurrent.CountDownLatch;
-
-import static java.util.Collections.emptyMap;
-
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
   private final CountDownLatch runningLatch = new CountDownLatch(1);
@@ -39,11 +38,11 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final EventSource eventSource;
 
   public EventSourceBeaconChainEventAdapter(
-          final RemoteValidatorApiHandler remoteValidatorApiHandler,
+      final RemoteValidatorApiHandler remoteValidatorApiHandler,
       final HttpUrl baseEndpoint,
-          final OkHttpClient okHttpClient,
-          final BeaconChainEventAdapter timeBasedEventAdapter,
-          final ValidatorTimingChannel validatorTimingChannel) {
+      final OkHttpClient okHttpClient,
+      final BeaconChainEventAdapter timeBasedEventAdapter,
+      final ValidatorTimingChannel validatorTimingChannel) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
@@ -53,10 +52,11 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + ","
                 + EventType.chain_reorg
                 + ","
-                + EventType.sync_state
-        );
+                + EventType.sync_state);
     this.eventSource =
-        new EventSource.Builder(new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler), eventSourceUrl)
+        new EventSource.Builder(
+                new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler),
+                eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))

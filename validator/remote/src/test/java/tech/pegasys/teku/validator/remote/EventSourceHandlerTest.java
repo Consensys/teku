@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import com.launchdarkly.eventsource.MessageEvent;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
@@ -23,19 +29,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-
 class EventSourceHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
-  private final RemoteValidatorApiHandler remoteValidatorApiHandler = mock(RemoteValidatorApiHandler.class);
+  private final RemoteValidatorApiHandler remoteValidatorApiHandler =
+      mock(RemoteValidatorApiHandler.class);
 
-  private final EventSourceHandler handler = new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler);
+  private final EventSourceHandler handler =
+      new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {

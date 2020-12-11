@@ -27,7 +27,8 @@ public class SyncDataProvider {
   }
 
   public Syncing getSyncing() {
-    tech.pegasys.teku.sync.events.SyncingStatus syncStatus = syncService.getForwardSync().getSyncStatus();
+    tech.pegasys.teku.sync.events.SyncingStatus syncStatus =
+        syncService.getForwardSync().getSyncStatus();
     return new Syncing(syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus));
   }
 
