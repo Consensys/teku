@@ -62,12 +62,6 @@ public class GlobalConfigurationBuilder {
   private int hotStatePersistenceFrequencyInEpochs;
   private boolean isBlockProcessingAtStartupDisabled;
   private long dataStorageFrequency;
-  private int restApiPort;
-  private boolean restApiDocsEnabled;
-  private boolean restApiEnabled;
-  private String restApiInterface;
-  private List<String> restApiHostAllowlist;
-  private List<String> restApiCorsAllowedOrigins;
   private NetworkDefinition network;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
@@ -264,38 +258,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setRestApiPort(final int restApiPort) {
-    this.restApiPort = restApiPort;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRestApiDocsEnabled(final boolean restApiDocsEnabled) {
-    this.restApiDocsEnabled = restApiDocsEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRestApiEnabled(final boolean restApiEnabled) {
-    this.restApiEnabled = restApiEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRestApiInterface(final String restApiInterface) {
-    this.restApiInterface = restApiInterface;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRestApiHostAllowlist(
-      final List<String> restApiHostAllowlist) {
-    this.restApiHostAllowlist = restApiHostAllowlist;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRestApiCorsAllowedOrigins(
-      final List<String> restApiCorsAllowedOrigins) {
-    this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -356,13 +318,7 @@ public class GlobalConfigurationBuilder {
         dataStorageFrequency,
         dataStorageCreateDbVersion,
         hotStatePersistenceFrequencyInEpochs,
-        isBlockProcessingAtStartupDisabled,
-        restApiPort,
-        restApiDocsEnabled,
-        restApiEnabled,
-        restApiInterface,
-        restApiHostAllowlist,
-        restApiCorsAllowedOrigins);
+        isBlockProcessingAtStartupDisabled);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

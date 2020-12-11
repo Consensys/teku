@@ -16,14 +16,20 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
+
+  private BeaconRestApiConfig getConfig(final TekuConfiguration tekuConfiguration) {
+    return tekuConfiguration.beaconChain().beaconRestApiConfig();
+  }
+
   @Test
   public void shouldReadFromConfigurationFile() {
-    final GlobalConfiguration config =
-        getGlobalConfigurationFromFile("beaconRestApiOptions_config.yaml");
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromFile("beaconRestApiOptions_config.yaml"));
 
     assertThat(config.getRestApiInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getRestApiPort()).isEqualTo(5055);
@@ -36,64 +42,65 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-docs-enabled");
-    assertThat(globalConfiguration.isRestApiDocsEnabled()).isTrue();
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-docs-enabled"));
+    assertThat(config.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-enabled");
-    assertThat(globalConfiguration.isRestApiEnabled()).isTrue();
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-enabled"));
+    assertThat(config.isRestApiEnabled()).isTrue();
   }
 
   @Test
   public void restApiHostAllowlist_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-host-allowlist");
-    assertThat(globalConfiguration.getRestApiHostAllowlist()).isEmpty();
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-host-allowlist"));
+    assertThat(config.getRestApiHostAllowlist()).isEmpty();
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingMultipleHosts() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
-    assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
+    final BeaconRestApiConfig config =
+        getConfig(
+            getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host"));
+    assertThat(config.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingAllHosts() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-host-allowlist", "*");
-    assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("*");
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*"));
+    assertThat(config.getRestApiHostAllowlist()).containsOnly("*");
   }
 
   @Test
   public void restApiHostAllowlist_shouldDefaultToLocalhost() {
-    assertThat(getGlobalConfigurationFromArguments().getRestApiHostAllowlist())
-        .containsOnly("localhost", "127.0.0.1");
+    final BeaconRestApiConfig config = getConfig(getTekuConfigurationFromArguments());
+    assertThat(config.getRestApiHostAllowlist()).containsOnly("localhost", "127.0.0.1");
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-cors-origins");
-    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins()).isEmpty();
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-cors-origins"));
+    assertThat(config.getRestApiCorsAllowedOrigins()).isEmpty();
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldSupportAllowingMultipleHosts() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-cors-origins", "my.host,their.host");
-    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins())
-        .containsOnly("my.host", "their.host");
+    final BeaconRestApiConfig config =
+        getConfig(
+            getTekuConfigurationFromArguments("--rest-api-cors-origins", "my.host,their.host"));
+    assertThat(config.getRestApiCorsAllowedOrigins()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldSupportAllowingAllHosts() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--rest-api-cors-origins", "*");
-    assertThat(globalConfiguration.getRestApiCorsAllowedOrigins()).containsOnly("*");
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--rest-api-cors-origins", "*"));
+    assertThat(config.getRestApiCorsAllowedOrigins()).containsOnly("*");
   }
 }
