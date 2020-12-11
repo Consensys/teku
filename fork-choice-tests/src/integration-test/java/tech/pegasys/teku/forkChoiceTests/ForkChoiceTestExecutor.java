@@ -41,6 +41,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
@@ -259,7 +260,12 @@ public class ForkChoiceTestExecutor {
       RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
-                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParentRoot()))
+                block,
+                recentChainData
+                    .getStore()
+                    .retrieveStateAtSlot(
+                        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+                    .join())
             .join();
     return blockImportResult.isSuccessful();
   }

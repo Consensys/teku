@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -84,8 +85,11 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParentRoot()))
-        .thenCompose(preState -> forkChoice.onBlock(block, preState))
+        .thenCompose(
+            __ ->
+                recentChainData.retrieveStateAtSlot(
+                    new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
+        .thenCompose(blockSlotState -> forkChoice.onBlock(block, blockSlotState))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
