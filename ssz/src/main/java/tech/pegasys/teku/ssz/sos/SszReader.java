@@ -48,5 +48,6 @@ public interface SszReader extends Closeable {
    *
    * @throws SSZDeserializeException If unread bytes remain
    */
+  @Override
   void close() throws SSZDeserializeException;
 }
