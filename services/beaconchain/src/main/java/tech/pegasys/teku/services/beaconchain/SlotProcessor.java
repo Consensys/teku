@@ -18,10 +18,15 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -31,6 +36,8 @@ import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessor {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final RecentChainData recentChainData;
   private final ForwardSync syncService;
   private final ForkChoice forkChoice;
@@ -41,6 +48,7 @@ public class SlotProcessor {
 
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
+  private volatile UInt64 onTickEpochPrecompute;
   private final UInt64 oneThirdSlotSeconds = UInt64.valueOf(SECONDS_PER_SLOT / 3);
 
   @VisibleForTesting
@@ -111,6 +119,27 @@ public class SlotProcessor {
       processSlotAttestation(epoch);
       nodeSlot.inc();
     }
+
+    if (isEpochPrecalculationDue(epoch, currentTime, genesisTime)) {
+      processEpochPrecompute(epoch);
+    }
+  }
+
+  private void processEpochPrecompute(final UInt64 epoch) {
+    final UInt64 firstSlot = compute_start_slot_at_epoch(epoch);
+    onTickEpochPrecompute = firstSlot;
+    recentChainData
+        .getHeadBlock()
+        // Don't preprocess epoch if we're more than an epoch behind as we likely need to sync
+        .filter(block -> block.getSlot().plus(SLOTS_PER_EPOCH).isGreaterThanOrEqualTo(firstSlot))
+        .ifPresent(
+            headBlock ->
+                recentChainData
+                    .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlot, headBlock.getRoot()))
+                    .finish(
+                        maybeState ->
+                            maybeState.ifPresent(BeaconStateUtil::get_beacon_proposer_index),
+                        error -> LOG.warn("Failed to precompute epoch transition", error)));
   }
 
   private void processSlotWhileSyncing() {
@@ -143,6 +172,23 @@ public class SlotProcessor {
     final UInt64 earliestTime = nodeSlotStartTime.plus(oneThirdSlotSeconds);
     return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
         && isTimeReached(currentTime, earliestTime);
+  }
+
+  // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
+  boolean isEpochPrecalculationDue(
+      final UInt64 epoch, final UInt64 currentTime, final UInt64 genesisTime) {
+    final UInt64 firstSlotOfNextEpoch = compute_start_slot_at_epoch(epoch);
+    if (onTickEpochPrecompute == null) {
+      onTickEpochPrecompute = firstSlotOfNextEpoch.minusMinZero(SLOTS_PER_EPOCH);
+      return false;
+    }
+    final UInt64 nextEpochStartTime =
+        ForkChoiceUtil.getSlotStartTime(firstSlotOfNextEpoch, genesisTime);
+    final UInt64 earliestTime = nextEpochStartTime.minusMinZero(oneThirdSlotSeconds);
+    final boolean processingDueForSlot =
+        isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
+    final boolean timeReached = isTimeReached(currentTime, earliestTime);
+    return processingDueForSlot && timeReached;
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {
