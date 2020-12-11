@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -21,14 +22,17 @@ public class BeaconChainConfiguration {
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final ValidatorConfig validatorConfig;
   private final P2PConfig p2pConfig;
+  private final BeaconRestApiConfig beaconRestApiConfig;
 
   public BeaconChainConfiguration(
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
-      final P2PConfig p2pConfig) {
+      final P2PConfig p2pConfig,
+      final BeaconRestApiConfig beaconRestApiConfig) {
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
     this.p2pConfig = p2pConfig;
+    this.beaconRestApiConfig = beaconRestApiConfig;
   }
 
   public WeakSubjectivityConfig weakSubjectivity() {
@@ -41,5 +45,9 @@ public class BeaconChainConfiguration {
 
   public P2PConfig p2pConfig() {
     return p2pConfig;
+  }
+
+  public BeaconRestApiConfig beaconRestApiConfig() {
+    return beaconRestApiConfig;
   }
 }

@@ -70,13 +70,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
-  private static final GlobalConfiguration CONFIG =
-      GlobalConfiguration.builder()
-          .setRestApiPort(0)
-          .setRestApiEnabled(true)
-          .setRestApiDocsEnabled(true)
-          .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-          .setRestApiCorsAllowedOrigins(new ArrayList<>())
+  private static final BeaconRestApiConfig CONFIG =
+      BeaconRestApiConfig.builder()
+          .restApiPort(0)
+          .restApiEnabled(true)
+          .restApiDocsEnabled(true)
+          .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+          .restApiCorsAllowedOrigins(new ArrayList<>())
+          .eth1DepositContractAddress(
+              GlobalConfiguration.builder().build().getEth1DepositContractAddress())
           .build();
 
   protected static final UInt64 SIX = UInt64.valueOf(6);
@@ -134,7 +136,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
-  private void setupAndStartRestAPI(GlobalConfiguration config) {
+  private void setupAndStartRestAPI(BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
@@ -174,7 +176,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI();
   }
 
-  protected void startPreGenesisRestAPIWithConfig(GlobalConfiguration config) {
+  protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
     setupStorage(StateStorageMode.ARCHIVE, false);
     // Start API
     setupAndStartRestAPI(config);

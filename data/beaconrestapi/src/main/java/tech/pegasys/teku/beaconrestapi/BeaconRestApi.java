@@ -85,7 +85,6 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
@@ -99,7 +98,7 @@ public class BeaconRestApi {
 
   private void initialize(
       final DataProvider dataProvider,
-      final GlobalConfiguration configuration,
+      final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     if (app.config != null) {
@@ -144,7 +143,7 @@ public class BeaconRestApi {
         new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
   }
 
-  private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
+  private void addHostAllowlistHandler(final BeaconRestApiConfig configuration) {
     app.before(
         (ctx) -> {
           String header = ctx.host();
@@ -190,7 +189,7 @@ public class BeaconRestApi {
 
   public BeaconRestApi(
       final DataProvider dataProvider,
-      final GlobalConfiguration configuration,
+      final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     this.app =
@@ -216,7 +215,7 @@ public class BeaconRestApi {
 
   BeaconRestApi(
       final DataProvider dataProvider,
-      final GlobalConfiguration configuration,
+      final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final Javalin app) {
@@ -243,7 +242,7 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      final JsonProvider jsonProvider, final GlobalConfiguration config) {
+      final JsonProvider jsonProvider, final BeaconRestApiConfig config) {
     final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 

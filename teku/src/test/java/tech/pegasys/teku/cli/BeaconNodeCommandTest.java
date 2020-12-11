@@ -51,6 +51,8 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
+  final Eth1Address address =
+      Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
   @Test
   public void unknownOptionShouldDisplayShortHelpMessage() {
@@ -373,6 +375,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .setLogFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .setLogFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
+        .restApi(
+            b ->
+                b.eth1DepositContractAddress(
+                    networkDefinition.getEth1DepositContractAddress().orElse(null)))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
@@ -416,6 +422,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .targetSubnetSubscriberCount(2)
                     .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
                     .p2pStaticPeers(Collections.emptyList()))
+        .restApi(
+            b ->
+                b.restApiPort(5051)
+                    .restApiDocsEnabled(false)
+                    .restApiEnabled(false)
+                    .restApiInterface("127.0.0.1")
+                    .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+                    .restApiCorsAllowedOrigins(new ArrayList<>()))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
@@ -425,7 +439,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
     builder
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setInteropGenesisTime(1)
@@ -455,13 +468,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
         .setHotStatePersistenceFrequencyInEpochs(2)
-        .setIsBlockProcessingAtStartupDisabled(true)
-        .setRestApiPort(5051)
-        .setRestApiDocsEnabled(false)
-        .setRestApiEnabled(false)
-        .setRestApiInterface("127.0.0.1")
-        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-        .setRestApiCorsAllowedOrigins(new ArrayList<>());
+        .setIsBlockProcessingAtStartupDisabled(true);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
