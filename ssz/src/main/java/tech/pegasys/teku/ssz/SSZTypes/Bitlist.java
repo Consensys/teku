@@ -150,7 +150,7 @@ public class Bitlist {
     if (length % 8 == 0) {
       return Bytes.wrap(bytes, Bytes.of(1));
     } else {
-      int lastByte = bytes.get(bytes.size() - 1);
+      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
       int leadingBit = 1 << (length % 8);
       checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
       int lastByteWithLeadingBit = lastByte ^ (1 << (length % 8));
