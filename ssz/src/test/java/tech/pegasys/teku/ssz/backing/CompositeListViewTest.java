@@ -26,6 +26,7 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class CompositeListViewTest {
 
@@ -73,7 +74,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public TreeNode sszDeserializeTree(BytesReader reader) {
+        public TreeNode sszDeserializeTree(SszReader reader) {
           return null;
         }
       };

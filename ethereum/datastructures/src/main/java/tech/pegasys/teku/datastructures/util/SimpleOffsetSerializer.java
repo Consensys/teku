@@ -75,11 +75,11 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SimpleOffsetSerializer {
@@ -237,7 +237,9 @@ public class SimpleOffsetSerializer {
   }
 
   public static ViewRead deserialize(Bytes bytes, ViewType sszViewType) {
-    return sszViewType.sszDeserialize(BytesReader.fromBytes(bytes));
+    try (SszReader sszReader = SszReader.fromBytes(bytes)) {
+      return sszViewType.sszDeserialize(sszReader);
+    }
   }
 
   public static <T> Optional<LengthBounds> getLengthBounds(final Class<T> type) {

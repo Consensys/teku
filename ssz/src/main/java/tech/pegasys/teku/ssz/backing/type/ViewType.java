@@ -14,10 +14,10 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import java.util.Optional;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 /**
  * Base class for any SSZ type like Vector, List, Container, basic types
@@ -75,7 +75,7 @@ public interface ViewType extends SSZType {
     return newValue.getBackingNode();
   }
 
-  default ViewRead sszDeserialize(BytesReader reader) {
+  default ViewRead sszDeserialize(SszReader reader) {
     return createFromBackingNode(sszDeserializeTree(reader));
   }
 }

@@ -17,10 +17,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 /**
  * Represents primitive view type
@@ -85,7 +85,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public TreeNode sszDeserializeTree(BytesReader reader) {
+  public TreeNode sszDeserializeTree(SszReader reader) {
     Bytes bytes = reader.read(getSSZBytesSize());
     return LeafNode.create(bytes);
   }

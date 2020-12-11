@@ -38,6 +38,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
 
@@ -49,8 +50,7 @@ public class ListViewHintsTest {
     if (!(list0 instanceof ViewWrite)) {
       ret.add(type.createFromBackingNode(list0.getBackingNode()));
       ret.add(
-          (ListViewRead<TElement>)
-              type.sszDeserialize(BytesReader.fromBytes(list0.sszSerialize())));
+          (ListViewRead<TElement>) type.sszDeserialize(SszReader.fromBytes(list0.sszSerialize())));
     }
     return ret;
   }

@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class VectorViewType<C> extends CollectionViewType {
 
@@ -127,7 +127,7 @@ public class VectorViewType<C> extends CollectionViewType {
   }
 
   @Override
-  public TreeNode sszDeserializeTree(BytesReader reader) {
+  public TreeNode sszDeserializeTree(SszReader reader) {
     DeserializedData data = sszDeserializeVector(reader);
     if (getElementType() == BasicViewTypes.BIT_TYPE && getLength() % 8 > 0) {
       // for BitVector we need to check that all 'unused' bits in the last byte are 0

@@ -11,28 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing;
+package tech.pegasys.teku.ssz.sos;
 
 import org.apache.tuweni.bytes.Bytes;
 
-public interface BytesReader {
+class SimpleSszReader implements SszReader {
 
-  static BytesReader fromBytes(Bytes bytes) {
-    return new SimpleBytesReader(bytes);
-  }
+  private final Bytes bytes;
+  private int offset = 0;
 
-  int getAvailableBytes();
-
-  BytesReader slice(int size);
-
-  Bytes read(int length);
-}
-
-class SimpleBytesReader implements BytesReader {
-  Bytes bytes;
-  int offset = 0;
-
-  public SimpleBytesReader(Bytes bytes) {
+  public SimpleSszReader(Bytes bytes) {
     this.bytes = bytes;
   }
 
@@ -42,24 +30,31 @@ class SimpleBytesReader implements BytesReader {
   }
 
   @Override
-  public BytesReader slice(int size) {
-    checkOffset(offset + size);
-    SimpleBytesReader ret = new SimpleBytesReader(bytes.slice(offset, size));
+  public SszReader slice(int size) {
+    checkIfAvailable(size);
+    SimpleSszReader ret = new SimpleSszReader(bytes.slice(offset, size));
     offset += size;
     return ret;
   }
 
   @Override
   public Bytes read(int length) {
-    checkOffset(offset + length);
+    checkIfAvailable(length);
     Bytes ret = bytes.slice(offset, length);
     offset += length;
     return ret;
   }
 
-  private void checkOffset(int offset) {
-    if (offset > bytes.size()) {
-      throw new IndexOutOfBoundsException();
+  private void checkIfAvailable(int size) {
+    if (getAvailableBytes() < size) {
+      throw new SSZDeserializeException("Invalid SSZ: trying to read more bytes than available");
+    }
+  }
+
+  @Override
+  public void close() {
+    if (getAvailableBytes() > 0) {
+      throw new SSZDeserializeException("Invalid SSZ: unread bytes remain: " + getAvailableBytes());
     }
   }
 }

@@ -20,12 +20,14 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
 
@@ -157,54 +159,50 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   @Override
-  public TreeNode sszDeserializeTree(BytesReader reader) {
+  public TreeNode sszDeserializeTree(SszReader reader) {
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
-    Queue<Integer> variableChildrenOffsets = new ArrayDeque<>();
-    int originalAvailableBytes = reader.getAvailableBytes();
+    List<Integer> variableChildrenOffsets = new ArrayList<>();
+    int endOffset = reader.getAvailableBytes();
     for (int i = 0; i < getChildCount(); i++) {
       ViewType childType = getChildType(i);
       if (childType.isFixedSize()) {
-        TreeNode childNode =
-            childType.sszDeserializeTree(reader.slice(childType.getFixedPartSize()));
-        fixedChildrenSubtrees.add(childNode);
+        try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
+          TreeNode childNode = childType.sszDeserializeTree(sszReader);
+          fixedChildrenSubtrees.add(childNode);
+        }
       } else {
         int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         variableChildrenOffsets.add(childOffset);
       }
     }
+    variableChildrenOffsets.add(endOffset);
 
-    List<TreeNode> childrenSubtrees;
-    if (variableChildrenOffsets.isEmpty()) {
-      childrenSubtrees = new ArrayList<>(fixedChildrenSubtrees);
-    } else {
-      int readBytes = originalAvailableBytes - reader.getAvailableBytes();
-      Integer curVariableChildOffset = variableChildrenOffsets.remove();
-      if (readBytes != curVariableChildOffset) {
-        throw new SSZDeserializeException(
-            "First variable element offset doesn't match the end of fixed part");
-      }
-      childrenSubtrees = new ArrayList<>(getChildCount());
-      for (int i = 0; i < getChildCount(); i++) {
-        ViewType childType = getChildType(i);
-        if (childType.isFixedSize()) {
-          childrenSubtrees.add(fixedChildrenSubtrees.remove());
-        } else {
-          Integer nextVariableChildOffset = variableChildrenOffsets.poll();
-          BytesReader childReader =
-              nextVariableChildOffset == null
-                  ? reader
-                  : reader.slice(nextVariableChildOffset - curVariableChildOffset);
-          TreeNode childNode = childType.sszDeserializeTree(childReader);
-          if (childReader.getAvailableBytes() > 0) {
-            throw new SSZDeserializeException("Extra bytes left after deserializing child " + i);
-          }
+    if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
+      throw new SSZDeserializeException(
+          "First variable element offset doesn't match the end of fixed part");
+    }
+
+    ArrayDeque<Integer> variableChildrenSizes =
+        IntStream.range(0, variableChildrenOffsets.size() - 1)
+            .map(i -> variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i))
+            .boxed()
+            .collect(Collectors.toCollection(ArrayDeque::new));
+
+    if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
+      throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
+    }
+
+    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
+    for (int i = 0; i < getChildCount(); i++) {
+      ViewType childType = getChildType(i);
+      if (childType.isFixedSize()) {
+        childrenSubtrees.add(fixedChildrenSubtrees.remove());
+      } else {
+        try (SszReader sszReader = reader.slice(variableChildrenSizes.remove())) {
+          TreeNode childNode = childType.sszDeserializeTree(sszReader);
           childrenSubtrees.add(childNode);
-          curVariableChildOffset = nextVariableChildOffset;
         }
       }
-    }
-    if (reader.getAvailableBytes() > 0) {
-      throw new SSZDeserializeException("Extra bytes left after deserializing container" + this);
     }
 
     return TreeUtil.createTree(childrenSubtrees);

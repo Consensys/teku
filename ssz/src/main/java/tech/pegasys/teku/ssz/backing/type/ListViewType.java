@@ -17,7 +17,6 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import tech.pegasys.teku.ssz.backing.BytesReader;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
@@ -113,7 +113,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   @Override
-  public TreeNode sszDeserializeTree(BytesReader reader) {
+  public TreeNode sszDeserializeTree(SszReader reader) {
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
       Bytes bytes = reader.read(reader.getAvailableBytes());
@@ -126,8 +126,10 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       }
       Bytes newHighestByte = usedBitsCount == 0 ? Bytes.EMPTY : Bytes.of(highestByte ^ boundaryBit);
       Bytes treeBytes = Bytes.wrap(bytes.slice(0, bytes.size() - 1), newHighestByte);
-      DeserializedData data = sszDeserializeVector(BytesReader.fromBytes(treeBytes));
-      return createTree(data.getDataTree(), length);
+      try (SszReader sszReader = SszReader.fromBytes(treeBytes)) {
+        DeserializedData data = sszDeserializeVector(sszReader);
+        return createTree(data.getDataTree(), length);
+      }
     } else {
       DeserializedData data = sszDeserializeVector(reader);
       return createTree(data.getDataTree(), data.getChildrenCount());
