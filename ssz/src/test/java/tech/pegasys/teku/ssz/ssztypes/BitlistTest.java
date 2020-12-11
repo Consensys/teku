@@ -183,7 +183,7 @@ class BitlistTest {
     return create(1, 4, 5, 6, 11, 12, 17);
   }
 
-  private static Stream<Arguments> sszBitlistCases() {
+  static Stream<Arguments> sszBitlistCases() {
     return Stream.of(
         Arguments.of(Bytes.of(0b1)),
         Arguments.of(Bytes.of(0b11)),
@@ -220,7 +220,7 @@ class BitlistTest {
     assertThat(bitlistSsz2).isEqualTo(bitlistSsz);
   }
 
-  private static Stream<Arguments> sszInvalidBitlistCases() {
+  static Stream<Arguments> sszInvalidBitlistCases() {
     return Stream.of(
         Arguments.of(Bytes.of(0b0)),
         Arguments.of(Bytes.EMPTY),
