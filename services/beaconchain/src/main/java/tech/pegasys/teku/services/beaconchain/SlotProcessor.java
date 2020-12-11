@@ -135,7 +135,10 @@ public class SlotProcessor {
     recentChainData
         .getHeadBlock()
         // Don't preprocess epoch if we're more than an epoch behind as we likely need to sync
-        .filter(block -> block.getSlot().plus(SLOTS_PER_EPOCH).isGreaterThanOrEqualTo(firstSlot))
+        .filter(
+            block ->
+                block.getSlot().plus(SLOTS_PER_EPOCH).isGreaterThanOrEqualTo(firstSlot)
+                    && block.getSlot().isLessThan(firstSlot))
         .ifPresent(
             headBlock ->
                 recentChainData
