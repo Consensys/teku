@@ -13,21 +13,23 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
-import java.net.SocketTimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+
+import java.net.SocketTimeoutException;
+
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 class EventSourceHandler implements EventHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,6 +64,9 @@ class EventSourceHandler implements EventHandler {
         case chain_reorg:
           handleChainReorgEvent(messageEvent);
           return;
+        case sync_state:
+          handleSyncStateChangeEvent(messageEvent);
+          return;
         default:
           LOG.warn("Received unexpected event type: " + event);
       }
@@ -90,6 +95,13 @@ class EventSourceHandler implements EventHandler {
     } else {
       commonAncestorSlot = reorgEvent.slot.minus(reorgEvent.depth);
     }
+    validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
+  }
+
+  private void handleSyncStateChangeEvent(final MessageEvent messageEvent)
+          throws JsonProcessingException {
+    final SyncStateChangeEvent reorgEvent =
+            jsonProvider.jsonToObject(messageEvent.getData(), SyncStateChangeEvent.class);
     validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
   }
 

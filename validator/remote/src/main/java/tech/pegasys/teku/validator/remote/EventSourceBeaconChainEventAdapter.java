@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static java.util.Collections.emptyMap;
-
 import com.launchdarkly.eventsource.EventSource;
-import java.time.Duration;
-import java.util.concurrent.CountDownLatch;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -30,6 +26,11 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
+
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+
+import static java.util.Collections.emptyMap;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
@@ -49,7 +50,10 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + "?topics="
                 + EventType.head
                 + ","
-                + EventType.chain_reorg);
+                + EventType.chain_reorg
+                + ","
+                + EventType.sync_state
+        );
     this.eventSource =
         new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
