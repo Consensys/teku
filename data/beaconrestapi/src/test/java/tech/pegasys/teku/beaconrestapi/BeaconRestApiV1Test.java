@@ -85,7 +85,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
@@ -104,8 +103,8 @@ public class BeaconRestApiV1Test {
 
   @BeforeEach
   public void setup() {
-    GlobalConfiguration config =
-        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
+    BeaconRestApiConfig beaconRestApiConfig =
+        BeaconRestApiConfig.builder().restApiDocsEnabled(false).restApiPort(THE_PORT).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
@@ -118,7 +117,7 @@ public class BeaconRestApiV1Test {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool),
-        config,
+        beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
         app);

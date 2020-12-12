@@ -29,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -45,18 +46,26 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
 
-  private final SettableGauge previousLiveValidators;
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
+
   private final SettableGauge currentLiveValidators;
-  private final SettableGauge previousCorrectValidators;
+  private final SettableGauge previousLiveValidators;
+
   private final SettableGauge currentCorrectValidators;
+  private final SettableGauge previousCorrectValidators;
+
   private final SettableGauge finalizedEpoch;
   private final SettableGauge finalizedRoot;
+
   private final SettableGauge currentJustifiedEpoch;
-  private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedEpoch;
+
+  private final SettableGauge currentJustifiedRoot;
   private final SettableGauge previousJustifiedRoot;
+
+  private final SettableGauge previousEpochParticipationWeight;
+  private final SettableGauge previousEpochTotalWeight;
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -162,6 +171,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_correct_validators",
             "Number of validators who voted for correct source and target checkpoints in the previous epoch");
+
+    previousEpochParticipationWeight =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "previous_epoch_participation_weight",
+            "Total effective balance of all validators who voted for correct source and target checkpoints in the previous epoch");
+    previousEpochTotalWeight =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "previous_epoch_total_weight",
+            "Total effective balance of all active validators in the previous epoch");
   }
 
   @Override
@@ -171,6 +193,16 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
+    BeaconStateCache.getTransitionCaches(state)
+        .getLatestTotalBalances()
+        .ifPresent(
+            totalBalances -> {
+              // The TotalBalances are created at the end of the epoch so the "current" balance
+              // is actually "previous" by the time we're actually updating the metrics
+              previousEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
+              previousEpochParticipationWeight.set(
+                  totalBalances.getCurrentEpochAttesters().longValue());
+            });
 
     final UInt64 currentEpoch = compute_epoch_at_slot(head.getSlot());
     final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
