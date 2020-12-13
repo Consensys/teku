@@ -365,7 +365,7 @@ def dockerVariants = [
 task distDocker  {
   dependsOn dockerDistUntar
 
-  def dockerBuildVersion = rootProject.version
+  def dockerBuildVersion = 'develop'
   def dockerBuildDir = "build/docker-teku/"
   def imageName = "consensys/teku"
   
