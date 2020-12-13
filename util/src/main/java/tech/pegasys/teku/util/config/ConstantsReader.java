@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -87,9 +86,10 @@ class ConstantsReader {
     }
     final String value = input.toString();
     if (value.startsWith("0x")) {
-      return Bytes.fromHexString(value)
-          .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN)
-          .intValueExact();
+      if (value.length() != 10) {
+        throw new IllegalArgumentException("Little-endian constant is not four bytes: " + value);
+      }
+      return Integer.reverseBytes(Integer.decode(value));
     } else {
       return Integer.valueOf(value);
     }
