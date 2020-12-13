@@ -14,22 +14,30 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.ForkChoiceUtil.getSlotStartTime;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.core.ForkChoiceUtil;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -69,14 +77,14 @@ public class SlotProcessorTest {
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsNotDue() {
     slotProcessor.setCurrentSlot(desiredSlot.plus(ONE));
-    final UInt64 currentTime = ForkChoiceUtil.getSlotStartTime(desiredSlot, genesisTime);
+    final UInt64 currentTime = getSlotStartTime(desiredSlot, genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isFalse();
   }
 
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsDue() {
     slotProcessor.setCurrentSlot(desiredSlot);
-    final UInt64 currentTime = ForkChoiceUtil.getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
+    final UInt64 currentTime = getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isTrue();
   }
 
@@ -252,5 +260,43 @@ public class SlotProcessorTest {
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
     verify(forkChoice).processHead(ONE);
+  }
+
+  @Test
+  void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch() {
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    when(recentChainData.getGenesisTime()).thenReturn(genesisTime);
+    final Optional<SignedBeaconBlock> headBlock = storageSystem.recentChainData().getHeadBlock();
+    when(recentChainData.getHeadBlock()).thenReturn(headBlock);
+    when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
+
+    final SlotProcessor slotProcessor =
+        new SlotProcessor(
+            recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannel, eventLogger);
+    slotProcessor.setCurrentSlot(UInt64.valueOf(6));
+    final UInt64 slot6StartTime = getSlotStartTime(UInt64.valueOf(6), genesisTime);
+    final UInt64 slot7StartTime = getSlotStartTime(UInt64.valueOf(7), genesisTime);
+
+    // Progress through to end of initial epoch
+    slotProcessor.onTick(slot6StartTime);
+    slotProcessor.onTick(slot6StartTime.plus(SECONDS_PER_SLOT / 3));
+    slotProcessor.onTick(slot6StartTime.plus(SECONDS_PER_SLOT / 3 * 2));
+    slotProcessor.onTick(slot7StartTime);
+    slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3));
+
+    // Shouldn't have precomputed epoch transition yet.
+    verify(recentChainData, never()).retrieveStateAtSlot(any());
+
+    // But just before the last slot of the epoch ends, we should precompute the next epoch
+    slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3 * 2));
+    verify(recentChainData)
+        .retrieveStateAtSlot(
+            new SlotAndBlockRoot(
+                compute_start_slot_at_epoch(ONE), headBlock.orElseThrow().getRoot()));
+
+    // Should not repeat computation
+    slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3 * 2 + 1));
+    slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3 * 2 + 2));
+    verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
   }
 }

@@ -70,7 +70,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           validatorStatus ->
-              STATUS_LOG.validatorStatus(validatorStatus.name(), publicKey.toAbbreviatedString()),
+              STATUS_LOG.validatorStatus(publicKey.toAbbreviatedString(), validatorStatus.name()),
           () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
     }
   }
