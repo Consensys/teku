@@ -19,6 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.service.serviceutils.FeatureToggleConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -28,16 +29,20 @@ import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
+import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service {
   private volatile ChainStorage chainStorage;
   private volatile ProtoArrayStorage protoArrayStorage;
   private final ServiceConfig serviceConfig;
+  private final FeatureToggleConfig featureToggleConfig;
   private volatile Database database;
 
-  public StorageService(final ServiceConfig serviceConfig) {
+  public StorageService(
+      final ServiceConfig serviceConfig, final FeatureToggleConfig featureToggleConfig) {
     this.serviceConfig = serviceConfig;
+    this.featureToggleConfig = featureToggleConfig;
   }
 
   @Override
@@ -63,11 +68,15 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().isEth1DepositsFromStorageEnabled());
           protoArrayStorage = new ProtoArrayStorage(database);
 
+          final StorageUpdateChannel storageUpdateChannel =
+              featureToggleConfig.isAsyncStorageEnabled()
+                  ? new RetryingStorageUpdateChannel(chainStorage)
+                  : chainStorage;
           serviceConfig
               .getEventChannels()
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
-              .subscribe(StorageUpdateChannel.class, chainStorage)
+              .subscribe(StorageUpdateChannel.class, storageUpdateChannel)
               .subscribe(ProtoArrayStorageChannel.class, protoArrayStorage)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);

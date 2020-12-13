@@ -32,18 +32,21 @@ public class StoreConfig {
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
   private final boolean disableBlockProcessingAtStartup;
+  private final boolean asyncStorageEnabled;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
-      boolean disableBlockProcessingAtStartup) {
+      final boolean disableBlockProcessingAtStartup,
+      final boolean asyncStorageEnabled) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.disableBlockProcessingAtStartup = disableBlockProcessingAtStartup;
+    this.asyncStorageEnabled = asyncStorageEnabled;
   }
 
   public static Builder builder() {
@@ -72,6 +75,10 @@ public class StoreConfig {
 
   public boolean isBlockProcessingAtStartupDisabled() {
     return disableBlockProcessingAtStartup;
+  }
+
+  public boolean isAsyncStorageEnabled() {
+    return asyncStorageEnabled;
   }
 
   @Override
@@ -106,6 +113,7 @@ public class StoreConfig {
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
     private boolean disableBlockProcessingAtStartup = false;
+    private boolean asyncStorageEnabled;
 
     private Builder() {}
 
@@ -115,7 +123,8 @@ public class StoreConfig {
           blockCacheSize,
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
-          disableBlockProcessingAtStartup);
+          disableBlockProcessingAtStartup,
+          asyncStorageEnabled);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -144,6 +153,11 @@ public class StoreConfig {
 
     public Builder disableBlockProcessingAtStartup(final boolean disableBlockProcessingAtStartup) {
       this.disableBlockProcessingAtStartup = disableBlockProcessingAtStartup;
+      return this;
+    }
+
+    public Builder asyncStorageEnabled(final boolean asyncStorageEnabled) {
+      this.asyncStorageEnabled = asyncStorageEnabled;
       return this;
     }
 

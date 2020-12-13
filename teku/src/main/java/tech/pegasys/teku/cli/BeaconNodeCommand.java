@@ -37,6 +37,7 @@ import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
+import tech.pegasys.teku.cli.options.FeatureToggleOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
@@ -179,6 +180,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions;
+
+  @Mixin(name = "Feature Toggles")
+  private FeatureToggleOptions featureToggleOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -335,6 +339,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       dataOptions.configure(builder);
       p2POptions.configure(builder, networkOptions.getNetwork());
       beaconRestApiOptions.configure(builder, networkOptions.getNetwork());
+      featureToggleOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException e) {

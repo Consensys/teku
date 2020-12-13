@@ -79,6 +79,7 @@ class Store implements UpdatableStore {
   private final Lock readLock = lock.readLock();
   private final MetricsSystem metricsSystem;
   private final StateAndBlockSummaryProvider stateProvider;
+  private final boolean asyncStorageUpdates;
 
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
 
@@ -112,7 +113,9 @@ class Store implements UpdatableStore {
       final BlockMetadataStore blockMetadata,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
+      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
+      final boolean asyncStorageUpdates) {
+    this.asyncStorageUpdates = asyncStorageUpdates;
     checkArgument(
         time.isGreaterThanOrEqualTo(genesis_time),
         "Time must be greater than or equal to genesisTime");
@@ -225,7 +228,8 @@ class Store implements UpdatableStore {
             blockMetadataStore,
             votes,
             blocks,
-            checkpointStateTaskQueue);
+            checkpointStateTaskQueue,
+            config.isAsyncStorageEnabled());
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
           ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel)
@@ -305,7 +309,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        this, lock, storageUpdateChannel, updateHandler);
+        this, lock, storageUpdateChannel, updateHandler, asyncStorageUpdates);
   }
 
   @Override

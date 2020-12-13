@@ -28,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.service.serviceutils.FeatureToggleConfig;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -62,7 +63,8 @@ public class BeaconChainControllerTest {
         WeakSubjectivityConfig.builder().build(),
         ValidatorConfig.builder().build(),
         p2pConfig,
-        restApiConfig);
+        restApiConfig,
+        FeatureToggleConfig.builder().build());
   }
 
   @Test

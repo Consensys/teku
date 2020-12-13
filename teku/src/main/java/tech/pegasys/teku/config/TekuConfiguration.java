@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
+import tech.pegasys.teku.service.serviceutils.FeatureToggleConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
@@ -31,6 +32,7 @@ public class TekuConfiguration {
   private final DataConfig dataConfig;
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
+  private final FeatureToggleConfig featureToggleConfig;
 
   private TekuConfiguration(
       GlobalConfiguration globalConfiguration,
@@ -38,13 +40,19 @@ public class TekuConfiguration {
       final ValidatorConfig validatorConfig,
       final DataConfig dataConfig,
       final P2PConfig p2pConfig,
-      final BeaconRestApiConfig beaconRestApiConfig) {
+      final BeaconRestApiConfig beaconRestApiConfig,
+      final FeatureToggleConfig featureToggleConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.dataConfig = dataConfig;
+    this.featureToggleConfig = featureToggleConfig;
     this.beaconChainConfig =
         new BeaconChainConfiguration(
-            weakSubjectivityConfig, validatorConfig, p2pConfig, beaconRestApiConfig);
+            weakSubjectivityConfig,
+            validatorConfig,
+            p2pConfig,
+            beaconRestApiConfig,
+            featureToggleConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(globalConfiguration, validatorConfig, dataConfig);
   }
@@ -73,6 +81,10 @@ public class TekuConfiguration {
     return dataConfig;
   }
 
+  public FeatureToggleConfig featureToggleConfig() {
+    return featureToggleConfig;
+  }
+
   public void validate() {
     globalConfiguration.validate();
   }
@@ -87,6 +99,8 @@ public class TekuConfiguration {
     private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
         BeaconRestApiConfig.builder();
+    private final FeatureToggleConfig.Builder featureToggleConfigBuilder =
+        FeatureToggleConfig.builder();
 
     private Builder() {}
 
@@ -97,7 +111,8 @@ public class TekuConfiguration {
           validatorConfigBuilder.build(),
           dataConfigBuilder.build(),
           p2pConfigBuilder.build(),
-          restApiBuilder.build());
+          restApiBuilder.build(),
+          featureToggleConfigBuilder.build());
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
@@ -130,6 +145,11 @@ public class TekuConfiguration {
         final Consumer<BeaconRestApiConfig.BeaconRestApiConfigBuilder>
             beaconRestApiConfigConsumer) {
       beaconRestApiConfigConsumer.accept(restApiBuilder);
+      return this;
+    }
+
+    public Builder featureToggle(final Consumer<FeatureToggleConfig.Builder> consumer) {
+      consumer.accept(featureToggleConfigBuilder);
       return this;
     }
   }

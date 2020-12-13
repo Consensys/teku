@@ -61,16 +61,19 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+  private final boolean asyncStorageUpdates;
 
   StoreTransaction(
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
-      final UpdatableStore.StoreUpdateHandler updateHandler) {
+      final UpdatableStore.StoreUpdateHandler updateHandler,
+      final boolean asyncStorageUpdates) {
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
     this.updateHandler = updateHandler;
+    this.asyncStorageUpdates = asyncStorageUpdates;
   }
 
   @Override
@@ -172,23 +175,30 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 writeLock.unlock();
               }
 
-              return storageUpdateChannel
-                  .onStorageUpdate(updates.createStorageUpdate())
-                  .thenAccept(
-                      __ -> {
-                        // Propagate changes to Store
-                        writeLock.lock();
-                        try {
-                          // Add new data
-                          updates.applyToStore(store);
-                        } finally {
-                          writeLock.unlock();
-                        }
-
-                        // Signal back changes to the handler
-                        finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
-                      });
+              final SafeFuture<Void> storageResult =
+                  storageUpdateChannel.onStorageUpdate(updates.createStorageUpdate());
+              if (asyncStorageUpdates) {
+                storageResult.reportExceptions();
+                applyToStore(updates);
+                return SafeFuture.COMPLETE;
+              } else {
+                return storageResult.thenAccept(__ -> applyToStore(updates));
+              }
             });
+  }
+
+  private void applyToStore(final StoreTransactionUpdates updates) {
+    // Propagate changes to Store
+    lock.writeLock().lock();
+    try {
+      // Add new data
+      updates.applyToStore(store);
+    } finally {
+      lock.writeLock().unlock();
+    }
+
+    // Signal back changes to the handler
+    finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
   }
 
   @Override
