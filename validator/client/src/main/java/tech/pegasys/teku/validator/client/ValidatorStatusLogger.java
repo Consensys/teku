@@ -13,18 +13,22 @@
 
 package tech.pegasys.teku.validator.client;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
 public interface ValidatorStatusLogger {
 
   ValidatorStatusLogger NOOP =
       new ValidatorStatusLogger() {
         @Override
-        public void printInitialValidatorStatuses() {}
+        public SafeFuture<Void> printInitialValidatorStatuses() {
+          return SafeFuture.COMPLETE;
+        }
 
         @Override
         public void checkValidatorStatusChanges() {}
       };
 
-  void printInitialValidatorStatuses();
+  SafeFuture<Void> printInitialValidatorStatuses();
 
   void checkValidatorStatusChanges();
 }

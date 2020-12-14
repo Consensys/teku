@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
@@ -51,23 +52,18 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
   }
 
   @Override
-  public void printInitialValidatorStatuses() {
-    validatorApiChannel
+  public SafeFuture<Void> printInitialValidatorStatuses() {
+    return validatorApiChannel
         .getValidatorStatuses(validatorPublicKeys)
-        .thenAccept(
+        .thenCompose(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
-                STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
-                return;
+                return retryInitialValidatorStatusCheck();
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
               if (validatorStatuses.values().stream().allMatch(Objects::isNull)) {
-                asyncRunner.runAfterDelay(
-                    this::printInitialValidatorStatuses,
-                    INITIAL_STATUS_CHECK_RETRY_PERIOD,
-                    TimeUnit.SECONDS);
-                return;
+                return retryInitialValidatorStatusCheck();
               }
 
               if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
@@ -75,8 +71,14 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               } else {
                 printValidatorStatusSummary(validatorStatuses);
               }
-            })
-        .reportExceptions();
+
+              return SafeFuture.completedFuture(null);
+            });
+  }
+
+  private SafeFuture<Void> retryInitialValidatorStatusCheck() {
+    return asyncRunner.runAfterDelay(
+        this::printInitialValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD, TimeUnit.SECONDS);
   }
 
   private void printValidatorStatusesOneByOne(
