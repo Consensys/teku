@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,10 +61,6 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
-              if (validatorStatuses.values().stream().allMatch(Objects::isNull)) {
-                return retryInitialValidatorStatusCheck();
-              }
-
               if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {

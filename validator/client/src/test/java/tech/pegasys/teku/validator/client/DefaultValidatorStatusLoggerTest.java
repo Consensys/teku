@@ -20,10 +20,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -43,10 +41,8 @@ public class DefaultValidatorStatusLoggerTest {
   void shouldRetryPrintingInitialValidatorStatuses() {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(Collections.EMPTY_MAP)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKeys.get(0), ValidatorStatus.active_ongoing))));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(Collections.EMPTY_MAP)));
 
     logger.printInitialValidatorStatuses().reportExceptions();
     verify(validatorApiChannel).getValidatorStatuses(validatorKeys);
