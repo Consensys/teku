@@ -39,6 +39,7 @@ public class DefaultValidatorStatusLoggerTest {
       new DefaultValidatorStatusLogger(validatorKeys, validatorApiChannel, asyncRunner);
 
   @Test
+  @SuppressWarnings("unchecked")
   void shouldRetryPrintingInitialValidatorStatuses() {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()))
