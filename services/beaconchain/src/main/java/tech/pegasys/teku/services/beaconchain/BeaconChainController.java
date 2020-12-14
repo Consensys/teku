@@ -682,7 +682,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             combinedChainDataClient,
             p2pNetwork,
-            syncService.getForwardSync(),
+            syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
             attestationPool,
             attesterSlashingPool,

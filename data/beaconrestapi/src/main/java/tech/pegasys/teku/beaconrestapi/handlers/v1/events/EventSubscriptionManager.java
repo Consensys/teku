@@ -26,10 +26,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,6 +55,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   public EventSubscriptionManager(
       final ChainDataProvider provider,
       final JsonProvider jsonProvider,
+      final SyncDataProvider syncDataProvider,
       final AsyncRunner asyncRunner,
       final EventChannels eventChannels) {
     this.provider = provider;
@@ -60,6 +64,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
+    syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -132,6 +137,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
               new FinalizedCheckpointEvent(
                   checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch()));
       notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
+  }
+
+  public void onSyncStateChange(final SyncState syncState) {
+    try {
+      final String newSyncStateString =
+          jsonProvider.objectToJSON(new SyncStateChangeEvent(syncState.name()));
+      notifySubscribersOfEvent(EventType.sync_state, newSyncStateString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }
