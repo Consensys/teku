@@ -426,6 +426,15 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * This value as a double.
+   *
+   * @return this value as a double.
+   */
+  public double doubleValue() {
+    return value;
+  }
+
+  /**
    * Returns this value as a {@link BigInteger}
    *
    * @return this value as a BigInteger

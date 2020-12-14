@@ -148,7 +148,7 @@ public class HistoricalBlockSyncService extends Service {
 
   private void updateSyncMetrics() {
     if (earliestBlock.getBeaconBlock().isPresent()) {
-      historicSyncGauge.set(earliestBlock.getSlot().bigIntegerValue().doubleValue());
+      historicSyncGauge.set(earliestBlock.getSlot().doubleValue());
     }
   }
 
