@@ -48,7 +48,7 @@ public class DefaultValidatorStatusLoggerTest {
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKeys.get(0), ValidatorStatus.active_ongoing))));
 
-    logger.printInitialValidatorStatuses();
+    logger.printInitialValidatorStatuses().reportExceptions();
     verify(validatorApiChannel).getValidatorStatuses(validatorKeys);
 
     asyncRunner.executeQueuedActions();
