@@ -41,7 +41,7 @@ public class SyncDataProvider {
   }
 
   public boolean isSyncing() {
-    return syncService.getForwardSync().isSyncActive();
+    return syncService.isSyncActive();
   }
 
   private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus) {

@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
@@ -54,6 +55,7 @@ public class EventSubscriptionManagerTest {
   private final DataStructureUtil data = new DataStructureUtil();
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  protected final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
   private final UInt64 epoch = compute_epoch_at_slot(slot);
@@ -97,7 +99,9 @@ public class EventSubscriptionManagerTest {
     when(req.getAsyncContext()).thenReturn(async);
     when(async.getResponse()).thenReturn(srvResponse);
     when(srvResponse.getOutputStream()).thenReturn(outputStream);
-    manager = new EventSubscriptionManager(chainDataProvider, jsonProvider, asyncRunner, channels);
+    manager =
+        new EventSubscriptionManager(
+            chainDataProvider, jsonProvider, syncDataProvider, asyncRunner, channels);
     client1 = new SseClient(ctx);
   }
 
