@@ -2,6 +2,7 @@
 
 ## Upcoming Breaking Changes
 
+- The default docker image will be updated to Java 15. Java 15 based images are available now for testing with the `-jdk15` suffix (e.g `consensys/teku:develop-jdk15`)
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
