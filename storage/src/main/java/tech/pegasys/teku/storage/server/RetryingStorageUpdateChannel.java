@@ -55,7 +55,8 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
           delegate.onChainInitialized(arg);
           return SafeFuture.COMPLETE;
         },
-        initialAnchor);
+        initialAnchor)
+    .reportExceptions();
   }
 
   private <T> SafeFuture<Void> retry(final Function<T, SafeFuture<Void>> method, final T arg) {
