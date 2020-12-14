@@ -15,19 +15,28 @@ package tech.pegasys.teku.api;
 
 import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.events.SyncStateProvider;
 
 public class SyncDataProvider {
 
-  private final ForwardSync syncService;
+  private final SyncService syncService;
 
-  public SyncDataProvider(ForwardSync syncService) {
+  public SyncDataProvider(SyncService syncService) {
     this.syncService = syncService;
   }
 
   public Syncing getSyncing() {
     tech.pegasys.teku.sync.events.SyncingStatus syncStatus = syncService.getSyncStatus();
     return new Syncing(syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus));
+  }
+
+  public long subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {
+    return syncService.subscribeToSyncStateChanges(subscriber);
+  }
+
+  public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
+    return syncService.unsubscribeFromSyncStateChanges(subscriberId);
   }
 
   public boolean isSyncing() {
