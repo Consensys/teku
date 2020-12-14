@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -193,29 +194,22 @@ public class ForkChoice {
         .thenCompose(
             maybeTargetState -> {
               final UpdatableStore store = recentChainData.getStore();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               final AttestationProcessingResult validationResult =
-                  validateAttestation(
-                      store, attestation, maybeTargetState, getForkChoiceStrategy());
+                  validateAttestation(store, attestation, maybeTargetState, forkChoiceStrategy);
 
-              if (validationResult.isSuccessful()) {
-                return onForkChoiceThread(
-                        () -> {
-                          final StoreTransaction transaction =
-                              recentChainData.startStoreTransaction();
-                          getForkChoiceStrategy()
-                              .onAttestation(
-                                  transaction,
-                                  attestation
-                                      .getIndexedAttestation()
-                                      .orElseThrow(
-                                          () ->
-                                              new UnsupportedOperationException(
-                                                  "ValidateableAttestation does not have an IndexedAttestation.")));
-                          return transaction.commit();
-                        })
-                    .thenApply(__ -> validationResult);
+              if (!validationResult.isSuccessful()) {
+                return SafeFuture.completedFuture(validationResult);
               }
-              return SafeFuture.completedFuture(validationResult);
+              return onForkChoiceThread(
+                      () -> {
+                        final StoreTransaction transaction =
+                            recentChainData.startStoreTransaction();
+                        forkChoiceStrategy.onAttestation(
+                            transaction, getIndexedAttestation(attestation));
+                        return transaction.commit();
+                      })
+                  .thenApply(__ -> validationResult);
             })
         .exceptionallyCompose(
             error -> {
@@ -234,13 +228,7 @@ public class ForkChoice {
               final StoreTransaction transaction = recentChainData.startStoreTransaction();
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
-                  .map(
-                      a ->
-                          a.getIndexedAttestation()
-                              .orElseThrow(
-                                  () ->
-                                      new UnsupportedOperationException(
-                                          "ValidateableAttestation does not have an IndexedAttestation.")))
+                  .map(this::getIndexedAttestation)
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               return transaction.commit();
@@ -255,6 +243,15 @@ public class ForkChoice {
             () ->
                 new IllegalStateException(
                     "Attempting to perform fork choice operations before store has been initialized"));
+  }
+
+  private IndexedAttestation getIndexedAttestation(final ValidateableAttestation attestation) {
+    return attestation
+        .getIndexedAttestation()
+        .orElseThrow(
+            () ->
+                new UnsupportedOperationException(
+                    "ValidateableAttestation does not have an IndexedAttestation."));
   }
 
   private <T> SafeFuture<T> onForkChoiceThread(final ForkChoiceTask<T> task) {
