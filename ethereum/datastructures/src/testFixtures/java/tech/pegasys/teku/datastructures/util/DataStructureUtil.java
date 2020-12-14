@@ -344,6 +344,10 @@ public final class DataStructureUtil {
     return new BeaconBlock(slotNum, proposer_index, previous_root, state_root, body);
   }
 
+  public SignedBlockAndState randomSignedBlockAndState(final long slot) {
+    return randomSignedBlockAndState(UInt64.valueOf(slot));
+  }
+
   public SignedBlockAndState randomSignedBlockAndState(final UInt64 slot) {
     final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
 

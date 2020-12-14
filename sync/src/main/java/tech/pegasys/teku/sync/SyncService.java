@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
+import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
 
@@ -26,4 +27,12 @@ public interface SyncService extends SyncStateProvider {
   ForwardSync getForwardSync();
 
   RecentBlockFetcher getRecentBlockFetcher();
+
+  default boolean isSyncActive() {
+    return getForwardSync().isSyncActive();
+  }
+
+  default SyncingStatus getSyncStatus() {
+    return getForwardSync().getSyncStatus();
+  }
 }

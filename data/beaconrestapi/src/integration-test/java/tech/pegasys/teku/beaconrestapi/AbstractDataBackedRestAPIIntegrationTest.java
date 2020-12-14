@@ -60,7 +60,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -89,7 +89,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   // Mocks
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
-  protected final ForwardSync syncService = mock(ForwardSync.class);
+  protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
