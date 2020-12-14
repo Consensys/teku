@@ -33,11 +33,8 @@ class EventSourceHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
-  private final RemoteValidatorApiHandler remoteValidatorApiHandler =
-      mock(RemoteValidatorApiHandler.class);
 
-  private final EventSourceHandler handler =
-      new EventSourceHandler(validatorTimingChannel, remoteValidatorApiHandler);
+  private final EventSourceHandler handler = new EventSourceHandler(validatorTimingChannel);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {

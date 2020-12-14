@@ -25,10 +25,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
-import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandler implements EventHandler {
@@ -36,13 +34,9 @@ class EventSourceHandler implements EventHandler {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel;
-  private final RemoteValidatorApiHandler remoteValidatorApiHandler;
 
-  public EventSourceHandler(
-      final ValidatorTimingChannel validatorTimingChannel,
-      final RemoteValidatorApiHandler remoteValidatorApiHandler) {
+  public EventSourceHandler(final ValidatorTimingChannel validatorTimingChannel) {
     this.validatorTimingChannel = validatorTimingChannel;
-    this.remoteValidatorApiHandler = remoteValidatorApiHandler;
   }
 
   @Override
@@ -67,9 +61,6 @@ class EventSourceHandler implements EventHandler {
           return;
         case chain_reorg:
           handleChainReorgEvent(messageEvent);
-          return;
-        case sync_state:
-          handleSyncStateChangeEvent(messageEvent);
           return;
         default:
           LOG.warn("Received unexpected event type: " + event);
@@ -100,13 +91,6 @@ class EventSourceHandler implements EventHandler {
       commonAncestorSlot = reorgEvent.slot.minus(reorgEvent.depth);
     }
     validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
-  }
-
-  private void handleSyncStateChangeEvent(final MessageEvent messageEvent)
-      throws JsonProcessingException {
-    final SyncStateChangeEvent reorgEvent =
-        jsonProvider.jsonToObject(messageEvent.getData(), SyncStateChangeEvent.class);
-    remoteValidatorApiHandler.notifySyncStateSubscribers(SyncState.valueOf(reorgEvent.sync_state));
   }
 
   @Override

@@ -3,7 +3,6 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
-  implementation project(':sync')
   implementation project(':data:serializer')
   implementation project(':util')
   implementation 'org.apache.tuweni:tuweni-bytes'

@@ -33,7 +33,6 @@ import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.events.SyncStateProvider;
 
 public interface ValidatorApiChannel extends ChannelInterface {
   int UKNOWN_VALIDATOR_ID = -1;
@@ -64,8 +63,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
-
-  void subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber);
 
   void sendSignedAttestation(Attestation attestation);
 

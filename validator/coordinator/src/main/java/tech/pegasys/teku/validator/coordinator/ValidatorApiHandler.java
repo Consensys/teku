@@ -376,11 +376,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {
-    syncStateProvider.subscribeToSyncStateChanges(subscriber);
-  }
-
-  @Override
   public void sendSignedAttestation(
       final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager

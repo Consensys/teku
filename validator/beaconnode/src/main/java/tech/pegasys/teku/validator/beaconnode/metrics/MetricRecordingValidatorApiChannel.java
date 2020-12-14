@@ -240,12 +240,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToSyncStateChanges(
-      tech.pegasys.teku.sync.events.SyncStateProvider.SyncStateSubscriber subscriber) {
-    delegate.subscribeToSyncStateChanges(subscriber);
-  }
-
-  @Override
   public void sendSignedAttestation(final Attestation attestation) {
     sendAttestationRequestCounter.inc();
     delegate.sendSignedAttestation(attestation);

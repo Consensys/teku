@@ -6,12 +6,10 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:http')
   implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:subscribers')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
-  implementation project(':sync')
   implementation project(':validator:eventadapter')
 
   implementation 'com.launchdarkly:okhttp-eventsource'

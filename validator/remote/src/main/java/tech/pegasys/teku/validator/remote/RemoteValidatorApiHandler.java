@@ -45,10 +45,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -67,8 +64,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
-  private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
-      Subscribers.create(true);
 
   public RemoteValidatorApiHandler(
       final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
@@ -289,15 +284,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
     sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
         .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
-  }
-
-  @Override
-  public void subscribeToSyncStateChanges(final SyncStateProvider.SyncStateSubscriber subscriber) {
-    syncStateSubscribers.subscribe(subscriber);
-  }
-
-  public void notifySyncStateSubscribers(final SyncState syncState) {
-    syncStateSubscribers.forEach(s -> s.onSyncStateChange(syncState));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
