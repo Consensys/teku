@@ -119,11 +119,6 @@ public class Constants {
   public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
   public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
-  // Sync
-  public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
-  public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final int MAX_BLOCKS_PER_MINUTE = 500;
-
   public static int DEPOSIT_CHAIN_ID;
   public static int DEPOSIT_NETWORK_ID;
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
@@ -132,25 +127,6 @@ public class Constants {
   public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
 
   public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
-
-  // Teku specific
-  public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
-  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
-  public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
-  public static final long ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = 3; // in sec
-  public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
-  public static final int REPUTATION_MANAGER_CAPACITY = 1024;
-  public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec
-  public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
-  public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
-  public static final int ATTESTATION_RETENTION_EPOCHS = 2;
-  public static final int OPERATION_POOL_SIZE = 1000;
-
-  // Teku Validator Client Specific
-  public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
-  public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
-  public static final long GENESIS_DATA_RETRY_DELAY_SECONDS = 10; // in sec
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
@@ -167,6 +143,30 @@ public class Constants {
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
+
+  // Teku specific
+  public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
+  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
+  public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
+  public static final long ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = 3; // in sec
+  public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
+  public static final int REPUTATION_MANAGER_CAPACITY = 1024;
+  public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec
+  public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
+  public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
+  public static final int ATTESTATION_RETENTION_EPOCHS = 2;
+  public static final int OPERATION_POOL_SIZE = 1000;
+
+  // Teku Sync
+  public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
+  public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
+  public static final int MAX_BLOCKS_PER_MINUTE = 500;
+
+  // Teku Validator Client Specific
+  public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
+  public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
+  public static final long GENESIS_DATA_RETRY_DELAY_SECONDS = 10; // in sec
 
   public static final Map<String, Object> CONFIG_ITEM_MAP = new HashMap<>();
 
