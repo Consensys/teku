@@ -171,7 +171,7 @@ public class ValidatorClientService extends Service {
                   validatorIndexProvider,
                   blockProductionTimingChannel,
                   attestationTimingChannel));
-          validatorStatusLogger.printInitialValidatorStatuses();
+          validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
           return beaconNodeApi.subscribeToEvents();
         });
   }
