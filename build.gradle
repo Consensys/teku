@@ -742,16 +742,14 @@ bintray {
 bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
 
-task dockerUpload(type: Exec) {
+task dockerUpload {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}"
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
-  def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
 
   def psImageName = "pegasyseng/teku"
   def psImage = "${psImageName}:${dockerBuildVersion}"
-  cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
 
   def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
@@ -763,8 +761,26 @@ task dockerUpload(type: Exec) {
     additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }
 
-  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
-  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
-  executable "sh"
-  args '-c', cmd
+  doLast {
+    for (def variant in dockerVariants) {
+      def variantImage = "${image}-${variant}"
+      def variantBuildImage = "${imageName}:develop-${variant}"
+      def cmd = "docker tag '${variantBuildImage}' '${variantImage}' && docker push '${variantImage}'"
+      exec {
+        additionalTags.each { tag -> cmd += " && docker tag '${variantBuildImage}' '${imageName}:${tag.trim()}-${variant}' && docker push '${imageName}:${tag.trim()}-${variant}'" }
+        executable "sh"
+        args '-c', cmd
+      }
+    }
+
+    // Publish default version without variant suffix
+    exec {
+      def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
+      cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
+      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
+      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
+      executable "sh"
+      args '-c', cmd
+    }
+  }
 }
