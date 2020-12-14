@@ -31,15 +31,18 @@ public class Constants {
     "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont", "less-swift"
   };
 
+  public static String CONFIG_NAME;
+
   // Non-configurable constants
+  public static final long GENESIS_SLOT = 0;
+  public static final long GENESIS_EPOCH = 0;
   public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
   public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static final int JUSTIFICATION_BITS_LENGTH = 4;
 
-  public static String CONFIG_NAME;
-
   // Misc
+  public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
   public static int MAX_COMMITTEES_PER_SLOT;
   public static int TARGET_COMMITTEE_SIZE;
   public static int MAX_VALIDATORS_PER_COMMITTEE;
@@ -52,7 +55,6 @@ public class Constants {
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
   public static int PROPORTIONAL_SLASHING_MULTIPLIER;
-  public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
   public static UInt64 MIN_DEPOSIT_AMOUNT;
@@ -62,8 +64,6 @@ public class Constants {
 
   // Initial values
   public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-  public static final long GENESIS_SLOT = 0;
-  public static final long GENESIS_EPOCH = 0;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
@@ -108,28 +108,27 @@ public class Constants {
   public static Bytes4 DOMAIN_SELECTION_PROOF;
   public static Bytes4 DOMAIN_AGGREGATE_AND_PROOF;
 
-  // Honest Validator
+  // Validator
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
+  public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
+  public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
 
-  // Validator
-  public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
-  public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
-
+  // Deposit Contract
   public static int DEPOSIT_CHAIN_ID;
   public static int DEPOSIT_NETWORK_ID;
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
+  // SSZ
   public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
-
-  public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
+  public static final int MAX_REQUEST_BLOCKS = 1024;
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
   public static final int TTFB_TIMEOUT = 5; // in sec
