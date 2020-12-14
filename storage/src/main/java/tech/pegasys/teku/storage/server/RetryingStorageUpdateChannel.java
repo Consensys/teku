@@ -51,12 +51,12 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     retry(
-        arg -> {
-          delegate.onChainInitialized(arg);
-          return SafeFuture.COMPLETE;
-        },
-        initialAnchor)
-    .reportExceptions();
+            arg -> {
+              delegate.onChainInitialized(arg);
+              return SafeFuture.COMPLETE;
+            },
+            initialAnchor)
+        .reportExceptions();
   }
 
   private <T> SafeFuture<Void> retry(final Function<T, SafeFuture<Void>> method, final T arg) {
