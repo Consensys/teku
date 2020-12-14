@@ -252,8 +252,8 @@ public class StatusLogger {
     log.error("Unable to retrieve validator statuses from BeaconNode.");
   }
 
-  public void validatorStatus(String validatorStatus, String publicKey) {
-    log.info("Validator {} status is {}.", validatorStatus, publicKey);
+  public void validatorStatus(String publicKey, String validatorStatus) {
+    log.info("Validator {} status is {}.", publicKey, validatorStatus);
   }
 
   public void unableToRetrieveValidatorStatus(String publicKey) {

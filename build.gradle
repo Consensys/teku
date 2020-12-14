@@ -357,23 +357,37 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-task distDocker(type: Exec) {
+def dockerVariants = [
+  "jdk14",
+  "jdk15"
+]
+
+task distDocker  {
   dependsOn dockerDistUntar
 
-  def dockerBuildVersion = rootProject.version
-  def image = "consensys/teku:develop"
+  def dockerBuildVersion = 'develop'
   def dockerBuildDir = "build/docker-teku/"
-  workingDir "${dockerBuildDir}"
-
-  doFirst {
-    copy {
-      from file("${projectDir}/docker/Dockerfile")
-      into(workingDir)
+  def imageName = "consensys/teku"
+  
+  doLast {
+    for (def variant in dockerVariants) {
+      copy {
+        from file("${projectDir}/docker/${variant}/Dockerfile")
+        into(dockerBuildDir)
+      }
+      exec {
+        def image = "${imageName}:${dockerBuildVersion}-${variant}"
+        workingDir dockerBuildDir
+        executable "sh"
+        args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+      }
+    }
+    // tag the "default" (which is the variant in the zero position)
+    exec {
+      executable "sh"
+      args "-c", "docker tag '${imageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${imageName}:${dockerBuildVersion}'"
     }
   }
-
-  executable "sh"
-  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
 }
 
 subprojects {
