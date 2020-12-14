@@ -14,8 +14,8 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
+import static tech.pegasys.teku.core.ForkChoiceUtil.validateAttestation;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
@@ -190,17 +191,32 @@ public class ForkChoice {
     return recentChainData
         .retrieveCheckpointState(attestation.getData().getTarget())
         .thenCompose(
-            targetBlockState ->
-                onForkChoiceThread(
-                    () -> {
-                      final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                      final AttestationProcessingResult result =
-                          on_attestation(
-                              transaction, attestation, targetBlockState, getForkChoiceStrategy());
-                      return result.isSuccessful()
-                          ? transaction.commit().thenApply(__ -> result)
-                          : SafeFuture.completedFuture(result);
-                    }))
+            maybeTargetState -> {
+              final UpdatableStore store = recentChainData.getStore();
+              final AttestationProcessingResult validationResult =
+                  validateAttestation(
+                      store, attestation, maybeTargetState, getForkChoiceStrategy());
+
+              if (validationResult.isSuccessful()) {
+                return onForkChoiceThread(
+                        () -> {
+                          final StoreTransaction transaction =
+                              recentChainData.startStoreTransaction();
+                          getForkChoiceStrategy()
+                              .onAttestation(
+                                  transaction,
+                                  attestation
+                                      .getIndexedAttestation()
+                                      .orElseThrow(
+                                          () ->
+                                              new UnsupportedOperationException(
+                                                  "ValidateableAttestation does not have an IndexedAttestation.")));
+                          return transaction.commit();
+                        })
+                    .thenApply(__ -> validationResult);
+              }
+              return SafeFuture.completedFuture(validationResult);
+            })
         .exceptionallyCompose(
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
