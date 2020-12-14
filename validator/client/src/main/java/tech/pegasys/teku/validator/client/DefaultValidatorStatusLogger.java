@@ -19,27 +19,35 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
+  private static final long INITIAL_STATUS_CHECK_RETRY_PERIOD = 5; // seconds
 
   final List<BLSPublicKey> validatorPublicKeys;
   final ValidatorApiChannel validatorApiChannel;
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
+  final AsyncRunner asyncRunner;
 
   public DefaultValidatorStatusLogger(
-      List<BLSPublicKey> validatorPublicKeys, ValidatorApiChannel validatorApiChannel) {
+      List<BLSPublicKey> validatorPublicKeys,
+      ValidatorApiChannel validatorApiChannel,
+      AsyncRunner asyncRunner) {
     checkArgument(!validatorPublicKeys.isEmpty());
     this.validatorPublicKeys = validatorPublicKeys;
     this.validatorApiChannel = validatorApiChannel;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -54,6 +62,14 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
+              if (validatorStatuses.values().stream().allMatch(Objects::isNull)) {
+                asyncRunner.runAfterDelay(
+                    this::printInitialValidatorStatuses,
+                    INITIAL_STATUS_CHECK_RETRY_PERIOD,
+                    TimeUnit.SECONDS);
+                return;
+              }
+
               if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {
