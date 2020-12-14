@@ -21,7 +21,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DataProvider {
@@ -35,7 +35,7 @@ public class DataProvider {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final Eth2Network p2pNetwork,
-      final ForwardSync syncService,
+      final SyncService syncService,
       final ValidatorApiChannel validatorApiChannel,
       final AggregatingAttestationPool attestationPool,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
