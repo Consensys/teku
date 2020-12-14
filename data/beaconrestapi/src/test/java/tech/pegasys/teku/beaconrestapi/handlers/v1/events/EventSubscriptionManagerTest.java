@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.util.config.Constants;
 
 public class EventSubscriptionManagerTest {
@@ -81,6 +83,8 @@ public class EventSubscriptionManagerTest {
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
+
+  private final SyncState sampleSyncState = SyncState.IN_SYNC;
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -178,6 +182,22 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateSyncState() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=sync_state");
+    manager.registerClient(client1);
+
+    triggerSyncStateEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: sync_state\n");
+    final SyncStateChangeEvent event =
+        jsonProvider.jsonToObject(
+            eventString.substring(eventString.indexOf("{")), SyncStateChangeEvent.class);
+
+    assertThat(event).isEqualTo(new SyncStateChangeEvent(sampleSyncState.name()));
+  }
+
+  @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
@@ -201,6 +221,20 @@ public class EventSubscriptionManagerTest {
 
     triggerHeadEvent();
     verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldNotGetSyncStateChangeIfNotSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerSyncStateEvent();
+    verify(outputStream, never()).print(anyString());
+  }
+
+  private void triggerSyncStateEvent() {
+    manager.onSyncStateChange(sampleSyncState);
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerFinalizedCheckpointEvent() {
