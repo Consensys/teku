@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -49,9 +50,14 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 class BeaconBlocksByRangeMessageHandlerTest {
 
   private static final UInt64 MAX_REQUEST_SIZE = UInt64.valueOf(8);
-  private static final List<SignedBeaconBlock> BLOCKS =
+  private static final List<StateAndBlockSummary> BLOCKS_W_STATE =
       IntStream.rangeClosed(0, 10)
-          .mapToObj(slot -> new DataStructureUtil(slot).randomSignedBeaconBlock(slot))
+          .mapToObj(slot -> new DataStructureUtil(slot).randomSignedBlockAndState(slot))
+          .collect(Collectors.toList());
+  private static final List<SignedBeaconBlock> BLOCKS =
+      BLOCKS_W_STATE.stream()
+          .map(StateAndBlockSummary::getSignedBeaconBlock)
+          .flatMap(Optional::stream)
           .collect(Collectors.toList());
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -78,9 +84,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 10;
     final int count = 1;
     final int skip = 1;
-    final SignedBeaconBlock headBlock = BLOCKS.get(1);
     // Series of empty blocks leading up to our best slot.
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(1));
     withAncestorRoots(startBlock, count, skip, hotBlocks());
 
     when(combinedChainDataClient.getBlockAtSlotExact(any()))
@@ -96,7 +101,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
-    withCanonicalHeadBlock(BLOCKS.get(8));
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(8));
     withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
 
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
@@ -116,7 +121,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
-    withCanonicalHeadBlock(BLOCKS.get(8));
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(8));
     withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
 
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
@@ -136,9 +141,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 3;
     final int count = 5;
     final int skip = 1;
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
     withAncestorRoots(startBlock, count, skip, allBlocks());
 
     requestBlocks(startBlock, count, skip);
@@ -151,9 +154,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 3;
     final int count = 1;
     final int skip = 1;
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
     withAncestorRoots(startBlock, count, skip, allBlocks());
 
     requestBlocks(startBlock, count, skip);
@@ -167,8 +168,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 2;
     final int count = 5;
     final int skip = 2;
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
 
     withAncestorRoots(startBlock, count, skip, allBlocks());
 
@@ -183,9 +183,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 2;
     final int count = 5;
     final int skip = 1;
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
     withAncestorRoots(startBlock, count, skip, hotBlocks(2, 3, 5, 6, 7));
 
     requestBlocks(startBlock, count, skip);
@@ -199,9 +197,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 2;
     final int count = 4;
     final int skip = 2;
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
     withAncestorRoots(startBlock, count, skip, hotBlocks(2, 3, 5, 6, 8, 10));
 
     requestBlocks(startBlock, count, skip);
@@ -216,9 +212,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
-    final SignedBeaconBlock headBlock = BLOCKS.get(5);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(5));
     withAncestorRoots(startBlock, MAX_REQUEST_SIZE.intValue(), skip, hotBlocks());
 
     handler.onIncomingMessage(
@@ -238,9 +232,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
-    final SignedBeaconBlock headBlock = BLOCKS.get(5);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(5));
 
     handler.onIncomingMessage(
         peer,
@@ -261,9 +253,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UInt64 count = MAX_REQUEST_SIZE.plus(ONE);
     final int skip = 1;
 
-    final SignedBeaconBlock headBlock = BLOCKS.get(10);
-
-    withCanonicalHeadBlock(headBlock);
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(10));
     withAncestorRoots(
         startBlock, MAX_REQUEST_SIZE.intValue(), skip, hotBlocks(1, 2, 3, 6, 7, 8, 9));
 
@@ -281,7 +271,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
-    withCanonicalHeadBlock(BLOCKS.get(8));
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(8));
     withFinalizedBlocks(0, 1, 2, 3, 4, 5, 6, 7);
 
     requestBlocks(startBlock, count, skip);
@@ -295,7 +285,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final int startBlock = 1;
     final int count = 5;
     final int skip = 1;
-    withCanonicalHeadBlock(BLOCKS.get(8));
+    withCanonicalHeadBlock(BLOCKS_W_STATE.get(8));
     withAncestorRoots(startBlock, count, skip, hotBlocks(4, 5, 6));
     withFinalizedBlocks(0, 1, 2, 3);
 
@@ -366,7 +356,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
             });
   }
 
-  private void withCanonicalHeadBlock(final SignedBeaconBlock headBlock) {
-    when(combinedChainDataClient.getBestBlock()).thenReturn(Optional.of(headBlock));
+  private void withCanonicalHeadBlock(final StateAndBlockSummary chainHead) {
+    when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
   }
 }
