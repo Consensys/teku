@@ -39,7 +39,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -358,26 +357,12 @@ public class ForkChoiceUtil {
     }
   }
 
-  /**
-   * Run ``on_attestation`` upon receiving a new ``attestation`` from either within a block or
-   * directly on the wire.
-   *
-   * <p>An ``attestation`` that is asserted as invalid may be valid at a later time, consider
-   * scheduling it for later processing in such case.
-   *
-   * @param store
-   * @param validateableAttestation
-   * @param maybeTargetState The state corresponding to the attestation target
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
-   */
   @CheckReturnValue
-  public static AttestationProcessingResult on_attestation(
-      final MutableStore store,
+  public static AttestationProcessingResult validateAttestation(
+      final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState,
       final ForkChoiceStrategy forkChoiceStrategy) {
-
     Attestation attestation = validateableAttestation.getAttestation();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
@@ -390,19 +375,7 @@ public class ForkChoiceUtil {
                     maybeTargetState.get(), validateableAttestation);
               }
             })
-        .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
-        .ifSuccessful(
-            () -> {
-              IndexedAttestation indexedAttestation =
-                  validateableAttestation
-                      .getIndexedAttestation()
-                      .orElseThrow(
-                          () ->
-                              new UnsupportedOperationException(
-                                  "ValidateableAttestation does not have an IndexedAttestation yet."));
-              forkChoiceStrategy.onAttestation(store, indexedAttestation);
-              return SUCCESSFUL;
-            });
+        .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));
   }
 
   private static AttestationProcessingResult validateOnAttestation(
