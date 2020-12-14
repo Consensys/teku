@@ -492,4 +492,64 @@ public class WeakSubjectivityInitializerTest {
         .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Cannot set future initial state for an existing database");
   }
+
+  @Test
+  public void validateInitialAnchor_forGenesisAtGenesisSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
+
+    // Should not throw
+    initializer.validateInitialAnchor(anchor, UInt64.ZERO);
+  }
+
+  @Test
+  public void validateInitialAnchor_forGenesisAfterGenesisSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
+
+    // Should not throw
+    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10));
+  }
+
+  @Test
+  public void validateInitialAnchor_forInitialStateFromFuture() {
+    final UInt64 currentEpoch = UInt64.valueOf(10);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1));
+
+    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "The provided initial state appears to be from a future slot ("
+                + anchor.getBlockSlot()
+                + ").");
+  }
+
+  @Test
+  public void validateInitialAnchor_forEpochTooRecentToBeFinal() {
+    final UInt64 currentEpoch = UInt64.valueOf(10);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch).plus(1);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1));
+
+    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
+  }
+
+  @Test
+  public void validateInitialAnchor_atMostRecentPotentiallyFinalizedEpoch() {
+    final UInt64 currentEpoch = UInt64.valueOf(10);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(2));
+
+    // Should not throw
+    initializer.validateInitialAnchor(anchor, currentSlot);
+  }
 }
