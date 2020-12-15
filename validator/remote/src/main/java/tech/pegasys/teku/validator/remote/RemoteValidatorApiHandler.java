@@ -13,19 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toMap;
-
 import com.google.common.base.Throwables;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -55,6 +43,19 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
@@ -120,12 +121,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
       Optional<Map<BLSPublicKey, T>> validatorObjects =
           requestValidatorObject(batch, valueExtractor);
-      boolean requestSuccesful = validatorObjects.isPresent();
-      if (requestSuccesful) {
-        returnedObjects.putAll(validatorObjects.get());
-      } else {
+      if (validatorObjects.isEmpty()) {
         return Optional.empty();
       }
+      returnedObjects.putAll(validatorObjects.get());
     }
     return Optional.of(returnedObjects);
   }
