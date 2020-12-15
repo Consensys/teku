@@ -357,23 +357,37 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-task distDocker(type: Exec) {
+def dockerVariants = [
+  "jdk14",
+  "jdk15"
+]
+
+task distDocker  {
   dependsOn dockerDistUntar
 
-  def dockerBuildVersion = rootProject.version
-  def image = "consensys/teku:develop"
+  def dockerBuildVersion = 'develop'
   def dockerBuildDir = "build/docker-teku/"
-  workingDir "${dockerBuildDir}"
-
-  doFirst {
-    copy {
-      from file("${projectDir}/docker/Dockerfile")
-      into(workingDir)
+  def imageName = "consensys/teku"
+  
+  doLast {
+    for (def variant in dockerVariants) {
+      copy {
+        from file("${projectDir}/docker/${variant}/Dockerfile")
+        into(dockerBuildDir)
+      }
+      exec {
+        def image = "${imageName}:${dockerBuildVersion}-${variant}"
+        workingDir dockerBuildDir
+        executable "sh"
+        args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+      }
+    }
+    // tag the "default" (which is the variant in the zero position)
+    exec {
+      executable "sh"
+      args "-c", "docker tag '${imageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${imageName}:${dockerBuildVersion}'"
     }
   }
-
-  executable "sh"
-  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
 }
 
 subprojects {
@@ -728,16 +742,14 @@ bintray {
 bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
 
-task dockerUpload(type: Exec) {
+task dockerUpload {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}"
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
-  def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
 
   def psImageName = "pegasyseng/teku"
   def psImage = "${psImageName}:${dockerBuildVersion}"
-  cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
 
   def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
@@ -749,8 +761,26 @@ task dockerUpload(type: Exec) {
     additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }
 
-  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
-  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
-  executable "sh"
-  args '-c', cmd
+  doLast {
+    for (def variant in dockerVariants) {
+      def variantImage = "${image}-${variant}"
+      def variantBuildImage = "${imageName}:develop-${variant}"
+      def cmd = "docker tag '${variantBuildImage}' '${variantImage}' && docker push '${variantImage}'"
+      exec {
+        additionalTags.each { tag -> cmd += " && docker tag '${variantBuildImage}' '${imageName}:${tag.trim()}-${variant}' && docker push '${imageName}:${tag.trim()}-${variant}'" }
+        executable "sh"
+        args '-c', cmd
+      }
+    }
+
+    // Publish default version without variant suffix
+    exec {
+      def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
+      cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
+      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
+      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
+      executable "sh"
+      args '-c', cmd
+    }
+  }
 }
