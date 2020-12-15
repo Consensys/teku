@@ -352,6 +352,11 @@ public final class UInt64 implements Comparable<UInt64> {
     return Long.compareUnsigned(value, o.value);
   }
 
+  public int compareTo(final long other) {
+    checkPositive(other);
+    return Long.compareUnsigned(value, other);
+  }
+
   /**
    * Returns true if this value is zero.
    *
@@ -372,12 +377,32 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Returns true if this value is strictly greater than the specified value.
+   *
+   * @param other the value to compare to
+   * @return true if this value is strictly greater than the specified value
+   */
+  public boolean isGreaterThan(final long other) {
+    return compareTo(other) > 0;
+  }
+
+  /**
    * Returns true if this value is greater than or equal to the specified value.
    *
    * @param other the value to compare to
    * @return true if this value is greater or equal than the specified value
    */
   public boolean isGreaterThanOrEqualTo(final UInt64 other) {
+    return compareTo(other) >= 0;
+  }
+
+  /**
+   * Returns true if this value is greater than or equal to the specified value.
+   *
+   * @param other the value to compare to
+   * @return true if this value is greater or equal than the specified value
+   */
+  public boolean isGreaterThanOrEqualTo(final long other) {
     return compareTo(other) >= 0;
   }
 
@@ -392,12 +417,32 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Returns true if this value is strictly less than the specified value.
+   *
+   * @param other the value to compare to
+   * @return true if this value is strictly less than the specified value
+   */
+  public boolean isLessThan(final long other) {
+    return compareTo(other) < 0;
+  }
+
+  /**
    * Returns true if this value is less than or equal to the specified value.
    *
    * @param other the value to compare to
    * @return true if this value is less than or equal to the specified value
    */
   public boolean isLessThanOrEqualTo(final UInt64 other) {
+    return compareTo(other) <= 0;
+  }
+
+  /**
+   * Returns true if this value is less than or equal to the specified value.
+   *
+   * @param other the value to compare to
+   * @return true if this value is less than or equal to the specified value
+   */
+  public boolean isLessThanOrEqualTo(final long other) {
     return compareTo(other) <= 0;
   }
 

@@ -34,6 +34,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation extends AbstractImmutableContainer
@@ -42,6 +43,7 @@ public class PendingAttestation extends AbstractImmutableContainer
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
+  @SszTypeDescriptor
   public static final ContainerViewType<PendingAttestation> TYPE =
       new ContainerViewType<>(
           List.of(

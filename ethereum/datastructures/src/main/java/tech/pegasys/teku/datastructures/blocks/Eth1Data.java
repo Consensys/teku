@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Eth1Data extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
@@ -35,6 +36,7 @@ public class Eth1Data extends AbstractImmutableContainer
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 3;
 
+  @SszTypeDescriptor
   public static final ContainerViewType<Eth1Data> TYPE =
       new ContainerViewType<>(
           List.of(

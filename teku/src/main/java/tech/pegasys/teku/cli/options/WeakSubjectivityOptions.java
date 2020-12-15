@@ -28,7 +28,7 @@ public class WeakSubjectivityOptions {
       names = {"--initial-state"},
       paramLabel = "<STRING>",
       description =
-          "The initial state. This value should be a file or URL pointing to an SSZ encoded state.",
+          "The initial state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
       arity = "1")
   private String weakSubjectivityState;
 
