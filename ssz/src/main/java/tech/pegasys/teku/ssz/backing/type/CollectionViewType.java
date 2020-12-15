@@ -174,7 +174,8 @@ public abstract class CollectionViewType implements CompositeViewType {
   private DeserializedData sszDeserializeFixed(SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
     if (getElementType() instanceof BasicViewType) {
-      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0, "");
+      checkSsz(bytesSize % getElementType().getFixedPartSize() == 0,
+          "SSZ sequence length is not multiple of fixed element size");
       List<LeafNode> childNodes =
           chunks(bytesSize, LeafNode.MAX_BYTE_SIZE)
               .mapToObj(reader::read)
