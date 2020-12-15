@@ -236,7 +236,7 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  public static ViewRead deserialize(Bytes bytes, ViewType sszViewType) {
+  private static ViewRead deserialize(Bytes bytes, ViewType sszViewType) {
     try (SszReader sszReader = SszReader.fromBytes(bytes)) {
       return sszViewType.sszDeserialize(sszReader);
     }
