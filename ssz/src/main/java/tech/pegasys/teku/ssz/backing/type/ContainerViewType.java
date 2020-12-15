@@ -175,12 +175,19 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
         variableChildrenOffsets.add(childOffset);
       }
     }
-    variableChildrenOffsets.add(endOffset);
 
-    if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
-      throw new SSZDeserializeException(
-          "First variable element offset doesn't match the end of fixed part");
+    if (variableChildrenOffsets.isEmpty()) {
+      if (reader.getAvailableBytes() > 0) {
+        throw new SSZDeserializeException("Invalid SSZ: unread bytes for fixed size container");
+      }
+    } else {
+      if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
+        throw new SSZDeserializeException(
+            "First variable element offset doesn't match the end of fixed part");
+      }
     }
+
+    variableChildrenOffsets.add(endOffset);
 
     ArrayDeque<Integer> variableChildrenSizes =
         IntStream.range(0, variableChildrenOffsets.size() - 1)

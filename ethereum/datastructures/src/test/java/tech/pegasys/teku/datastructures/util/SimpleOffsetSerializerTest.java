@@ -88,7 +88,8 @@ class SimpleOffsetSerializerTest {
     final Bytes checkpointData = SimpleOffsetSerializer.serialize(checkpoint);
     final Bytes encoded = Bytes.concatenate(checkpointData, extraData);
     assertThatThrownBy(() -> SimpleOffsetSerializer.deserialize(encoded, Checkpoint.class))
-        .isInstanceOf(SSZDeserializeException.class);
+        .isInstanceOf(SSZDeserializeException.class)
+        .hasMessageContaining("unread bytes");
   }
 
   @Test
