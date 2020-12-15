@@ -77,8 +77,8 @@ public class TreeUtil {
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
-  public static TreeNode createTree(List<? extends TreeNode> leafNodes) {
-    return createTree(leafNodes, treeDepth(leafNodes.size()));
+  public static TreeNode createTree(List<? extends TreeNode> children) {
+    return createTree(children, treeDepth(children.size()));
   }
 
   private static TreeNode createTree(TreeNode defaultNode, long defaultNodesCount, int depth) {
