@@ -153,7 +153,7 @@ public class Bitlist {
       int lastByte = 0xFF & bytes.get(bytes.size() - 1);
       int leadingBit = 1 << (length % 8);
       checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
-      int lastByteWithLeadingBit = lastByte ^ (1 << (length % 8));
+      int lastByteWithLeadingBit = lastByte ^ leadingBit;
       Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
       return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithLeadingBit));
     }
