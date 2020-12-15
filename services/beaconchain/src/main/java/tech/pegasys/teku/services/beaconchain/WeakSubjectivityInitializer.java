@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +50,11 @@ class WeakSubjectivityInitializer {
                 final BeaconState state = ChainDataLoader.loadState(wsStateResource);
                 final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
                 STATUS_LOG.loadedInitialStateResource(
-                    state.hashTreeRoot(), anchor.getRoot(), state.getSlot());
+                    state.hashTreeRoot(),
+                    anchor.getRoot(),
+                    state.getSlot(),
+                    anchor.getEpoch(),
+                    anchor.getEpochStartSlot());
                 return anchor;
               } catch (IOException e) {
                 throw new IllegalStateException("Failed to load initial state", e);
@@ -130,6 +136,37 @@ class WeakSubjectivityInitializer {
 
               return SafeFuture.completedFuture(finalizedConfig);
             });
+  }
+
+  public void validateInitialAnchor(final AnchorPoint initialAnchor, final UInt64 currentSlot) {
+    if (initialAnchor.isGenesis()) {
+      // Skip extra validations for genesis state
+      return;
+    }
+
+    final UInt64 slotsBetweenBlockAndEpochStart =
+        initialAnchor.getEpochStartSlot().minus(initialAnchor.getBlockSlot());
+    final UInt64 anchorEpoch = initialAnchor.getEpoch();
+    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+
+    if (initialAnchor.getBlockSlot().isGreaterThanOrEqualTo(currentSlot)) {
+      throw new IllegalStateException(
+          String.format(
+              "The provided initial state appears to be from a future slot (%s). Please check that the initial state corresponds to a finalized checkpoint on the target chain.",
+              initialAnchor.getBlockSlot()));
+    } else if (anchorEpoch.plus(2).isGreaterThan(currentEpoch)) {
+      throw new IllegalStateException(
+          "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
+    }
+
+    if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {
+      Level level = slotsBetweenBlockAndEpochStart.isGreaterThan(2) ? Level.WARN : Level.INFO;
+      STATUS_LOG.warnOnInitialStateWithSkippedSlots(
+          level,
+          initialAnchor.getSlot(),
+          initialAnchor.getEpoch(),
+          initialAnchor.getEpochStartSlot());
+    }
   }
 
   /**

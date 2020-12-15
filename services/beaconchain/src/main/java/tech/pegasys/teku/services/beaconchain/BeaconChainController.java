@@ -407,6 +407,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
     this.initialAnchor = wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
+    // Validate
+    initialAnchor.ifPresent(
+        anchor -> {
+          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
+          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+        });
+
     return wsInitializer
         .finalizeAndStoreConfig(
             beaconConfig.weakSubjectivity(), initialAnchor, queryChannel, updateChannel)
@@ -791,20 +798,32 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void onStoreInitialized() {
     UInt64 genesisTime = recentChainData.getGenesisTime();
     UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final UInt64 currentSlot;
+    final UInt64 currentSlot = getCurrentSlot(genesisTime, currentTime);
     if (currentTime.compareTo(genesisTime) >= 0) {
-      UInt64 deltaTime = currentTime.minus(genesisTime);
-      currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
       // Validate that we're running within the weak subjectivity period
       validateChain(currentSlot);
     } else {
-      currentSlot = ZERO;
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
     slotProcessor.setCurrentSlot(currentSlot);
     performanceTracker.start(currentSlot);
+  }
+
+  private UInt64 getCurrentSlot(final UInt64 genesisTime) {
+    return getCurrentSlot(genesisTime, timeProvider.getTimeInSeconds());
+  }
+
+  private UInt64 getCurrentSlot(final UInt64 genesisTime, final UInt64 currentTime) {
+    final UInt64 currentSlot;
+    if (currentTime.compareTo(genesisTime) >= 0) {
+      UInt64 deltaTime = currentTime.minus(genesisTime);
+      currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
+    } else {
+      currentSlot = ZERO;
+    }
+    return currentSlot;
   }
 
   private void validateChain(final UInt64 currentSlot) {

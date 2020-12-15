@@ -159,6 +159,23 @@ class UInt64Test {
   }
 
   @Test
+  void compareTo_withLongLessThanZero() {
+    assertThatThrownBy(() -> UInt64.valueOf(10).compareTo(-1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("must be >= 0");
+  }
+
+  @Test
+  void compareTo_withNonZeroLong() {
+    final UInt64 value = UInt64.valueOf(10);
+    assertThat(value.compareTo(10)).isEqualTo(0);
+    assertThat(value.compareTo(11)).isEqualTo(-1);
+    assertThat(value.compareTo(1111)).isEqualTo(-1);
+    assertThat(value.compareTo(9)).isEqualTo(1);
+    assertThat(value.compareTo(0)).isEqualTo(1);
+  }
+
+  @Test
   void isZero_shouldBeTrueWhenZero() {
     assertThat(UInt64.ZERO.isZero()).isTrue();
     assertThat(UInt64.valueOf(0).isZero()).isTrue();
@@ -186,6 +203,18 @@ class UInt64Test {
   }
 
   @ParameterizedTest
+  @MethodSource("comparableLongValues")
+  void greaterThan_shouldReturnTrueWhenNumberIsStrictlyGreater(
+      final long smaller, final long bigger) {
+    assertThat(UInt64.valueOf(smaller).isGreaterThan(bigger)).isFalse();
+    assertThat(UInt64.valueOf(bigger).isGreaterThan(smaller)).isTrue();
+
+    // Must be strictly greater than
+    assertThat(UInt64.valueOf(smaller).isGreaterThan(smaller)).isFalse();
+    assertThat(UInt64.valueOf(bigger).isGreaterThan(bigger)).isFalse();
+  }
+
+  @ParameterizedTest
   @MethodSource("comparableNumbers")
   void greaterThanOrEqualTo_shouldReturnTrueWhenNumberIsGreaterOrEqual(
       final UInt64 smaller, final UInt64 bigger) {
@@ -195,6 +224,18 @@ class UInt64Test {
     // True when equal
     assertThat(smaller.isGreaterThanOrEqualTo(smaller)).isTrue();
     assertThat(bigger.isGreaterThanOrEqualTo(bigger)).isTrue();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableLongValues")
+  void greaterThanOrEqualTo_shouldReturnTrueWhenNumberIsGreaterOrEqual(
+      final long smaller, final long bigger) {
+    assertThat(UInt64.valueOf(smaller).isGreaterThanOrEqualTo(bigger)).isFalse();
+    assertThat(UInt64.valueOf(bigger).isGreaterThanOrEqualTo(smaller)).isTrue();
+
+    // True when equal
+    assertThat(UInt64.valueOf(smaller).isGreaterThanOrEqualTo(smaller)).isTrue();
+    assertThat(UInt64.valueOf(bigger).isGreaterThanOrEqualTo(bigger)).isTrue();
   }
 
   @ParameterizedTest
@@ -210,6 +251,18 @@ class UInt64Test {
   }
 
   @ParameterizedTest
+  @MethodSource("comparableLongValues")
+  void lessThan_shouldReturnTrueWhenNumberIsStrictlyLessThan(
+      final long smaller, final long bigger) {
+    assertThat(UInt64.valueOf(smaller).isLessThan(bigger)).isTrue();
+    assertThat(UInt64.valueOf(bigger).isLessThan(smaller)).isFalse();
+
+    // Must be strictly greater than
+    assertThat(UInt64.valueOf(smaller).isLessThan(smaller)).isFalse();
+    assertThat(UInt64.valueOf(bigger).isLessThan(bigger)).isFalse();
+  }
+
+  @ParameterizedTest
   @MethodSource("comparableNumbers")
   void lessThanOrEqualTo_shouldReturnTrueWhenNumberIsLessThanOrEqual(
       final UInt64 smaller, final UInt64 bigger) {
@@ -219,6 +272,18 @@ class UInt64Test {
     // Must be strictly greater than
     assertThat(smaller.isLessThanOrEqualTo(smaller)).isTrue();
     assertThat(bigger.isLessThanOrEqualTo(bigger)).isTrue();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableLongValues")
+  void lessThanOrEqualTo_shouldReturnTrueWhenNumberIsLessThanOrEqual(
+      final long smaller, final long bigger) {
+    assertThat(UInt64.valueOf(smaller).isLessThanOrEqualTo(bigger)).isTrue();
+    assertThat(UInt64.valueOf(bigger).isLessThanOrEqualTo(smaller)).isFalse();
+
+    // Must be strictly greater than
+    assertThat(UInt64.valueOf(smaller).isLessThanOrEqualTo(smaller)).isTrue();
+    assertThat(UInt64.valueOf(bigger).isLessThanOrEqualTo(bigger)).isTrue();
   }
 
   @Test
@@ -620,5 +685,15 @@ class UInt64Test {
         Arguments.of(UInt64.fromLongBits(-445), UInt64.fromLongBits(-444)),
         Arguments.of(UInt64.valueOf(22244), UInt64.valueOf(22245)),
         Arguments.of(UInt64.valueOf(Long.MAX_VALUE), UInt64.fromLongBits(Long.MIN_VALUE)));
+  }
+
+  static List<Arguments> comparableLongValues() {
+    // (Smaller Number, Bigger Number)
+    return List.of(
+        Arguments.of(0, 1),
+        Arguments.of(10, 11),
+        Arguments.of(100, 200),
+        Arguments.of(0, Long.MAX_VALUE),
+        Arguments.of(Long.MAX_VALUE - 1, Long.MAX_VALUE));
   }
 }
