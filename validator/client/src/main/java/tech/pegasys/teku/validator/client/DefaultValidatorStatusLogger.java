@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -39,6 +40,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
   final AsyncRunner asyncRunner;
+  final AtomicBoolean startupComplete = new AtomicBoolean(false);
 
   public DefaultValidatorStatusLogger(
       List<BLSPublicKey> validatorPublicKeys,
@@ -61,12 +63,14 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
+              latestValidatorStatuses.set(validatorStatuses);
               if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {
                 printValidatorStatusSummary(validatorStatuses);
               }
 
+              startupComplete.set(true);
               return SafeFuture.completedFuture(null);
             });
   }
@@ -115,6 +119,10 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   @Override
   public void checkValidatorStatusChanges() {
+    if (!startupComplete.get()) {
+      return;
+    }
+
     validatorApiChannel
         .getValidatorStatuses(validatorPublicKeys)
         .thenAccept(
