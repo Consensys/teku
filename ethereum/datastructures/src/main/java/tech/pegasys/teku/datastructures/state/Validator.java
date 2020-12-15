@@ -36,12 +36,15 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Validator extends AbstractImmutableContainer
     implements ContainerViewRead, SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 8;
+
+  @SszTypeDescriptor
   public static final ContainerViewType<Validator> TYPE =
       new ContainerViewType<>(
           List.of(

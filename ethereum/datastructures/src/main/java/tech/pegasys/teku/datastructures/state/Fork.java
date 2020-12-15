@@ -29,6 +29,7 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Fork extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
@@ -45,6 +46,7 @@ public class Fork extends AbstractImmutableContainer
   @SuppressWarnings("unused")
   private final UInt64 epoch = null;
 
+  @SszTypeDescriptor
   public static final ContainerViewType<Fork> TYPE =
       new ContainerViewType<>(
           List.of(

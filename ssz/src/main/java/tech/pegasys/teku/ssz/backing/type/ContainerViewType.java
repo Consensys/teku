@@ -13,15 +13,21 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
 
@@ -150,5 +156,62 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       }
     }
     return variableChildOffset;
+  }
+
+  @Override
+  public TreeNode sszDeserializeTree(SszReader reader) {
+    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
+    List<Integer> variableChildrenOffsets = new ArrayList<>();
+    int endOffset = reader.getAvailableBytes();
+    for (int i = 0; i < getChildCount(); i++) {
+      ViewType childType = getChildType(i);
+      if (childType.isFixedSize()) {
+        try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
+          TreeNode childNode = childType.sszDeserializeTree(sszReader);
+          fixedChildrenSubtrees.add(childNode);
+        }
+      } else {
+        int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        variableChildrenOffsets.add(childOffset);
+      }
+    }
+
+    if (variableChildrenOffsets.isEmpty()) {
+      if (reader.getAvailableBytes() > 0) {
+        throw new SSZDeserializeException("Invalid SSZ: unread bytes for fixed size container");
+      }
+    } else {
+      if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
+        throw new SSZDeserializeException(
+            "First variable element offset doesn't match the end of fixed part");
+      }
+    }
+
+    variableChildrenOffsets.add(endOffset);
+
+    ArrayDeque<Integer> variableChildrenSizes =
+        IntStream.range(0, variableChildrenOffsets.size() - 1)
+            .map(i -> variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i))
+            .boxed()
+            .collect(Collectors.toCollection(ArrayDeque::new));
+
+    if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
+      throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
+    }
+
+    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
+    for (int i = 0; i < getChildCount(); i++) {
+      ViewType childType = getChildType(i);
+      if (childType.isFixedSize()) {
+        childrenSubtrees.add(fixedChildrenSubtrees.remove());
+      } else {
+        try (SszReader sszReader = reader.slice(variableChildrenSizes.remove())) {
+          TreeNode childNode = childType.sszDeserializeTree(sszReader);
+          childrenSubtrees.add(childNode);
+        }
+      }
+    }
+
+    return TreeUtil.createTree(childrenSubtrees);
   }
 }
