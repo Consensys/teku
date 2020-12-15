@@ -138,7 +138,7 @@ public class ValidatorClientService extends Service {
     if (validators.keySet().size() > 0) {
       this.validatorStatusLogger =
           new DefaultValidatorStatusLogger(
-              new ArrayList<>(validators.keySet()), validatorApiChannel);
+              new ArrayList<>(validators.keySet()), validatorApiChannel, asyncRunner);
     } else {
       this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
     }
@@ -171,7 +171,7 @@ public class ValidatorClientService extends Service {
                   validatorIndexProvider,
                   blockProductionTimingChannel,
                   attestationTimingChannel));
-          validatorStatusLogger.printInitialValidatorStatuses();
+          validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
           return beaconNodeApi.subscribeToEvents();
         });
   }

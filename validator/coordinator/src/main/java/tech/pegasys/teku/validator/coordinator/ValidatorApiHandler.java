@@ -216,20 +216,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       List<BLSPublicKey> validatorIdentifiers) {
-    return chainDataProvider
-        .getStateValidators(
-            "head",
-            validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
-            new HashSet<>())
-        .thenApply(
-            (maybeList) ->
-                maybeList.map(
-                    list ->
-                        list.stream()
-                            .collect(
-                                toMap(
-                                    ValidatorResponse::getPublicKey,
-                                    ValidatorResponse::getStatus))));
+    return isSyncActive()
+        ? SafeFuture.completedFuture(Optional.empty())
+        : chainDataProvider
+            .getStateValidators(
+                "head",
+                validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
+                new HashSet<>())
+            .thenApply(
+                (maybeList) ->
+                    maybeList.map(
+                        list ->
+                            list.stream()
+                                .collect(
+                                    toMap(
+                                        ValidatorResponse::getPublicKey,
+                                        ValidatorResponse::getStatus))));
   }
 
   @Override

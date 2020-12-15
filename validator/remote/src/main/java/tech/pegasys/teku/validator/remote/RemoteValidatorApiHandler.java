@@ -100,25 +100,32 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(emptyMap());
     }
-    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex));
+    return sendRequest(
+        () ->
+            makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex)
+                .orElse(emptyMap()));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       List<BLSPublicKey> publicKeys) {
-    return sendRequest(
-        () -> Optional.of(makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus)));
+    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus));
   }
 
-  private <T> Map<BLSPublicKey, T> makeBatchedValidatorRequest(
+  private <T> Optional<Map<BLSPublicKey, T>> makeBatchedValidatorRequest(
       List<BLSPublicKey> publicKeys, Function<ValidatorResponse, T> valueExtractor) {
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<BLSPublicKey> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      requestValidatorObject(batch, valueExtractor).ifPresent(returnedObjects::putAll);
+      Optional<Map<BLSPublicKey, T>> validatorObjects =
+          requestValidatorObject(batch, valueExtractor);
+      if (validatorObjects.isEmpty()) {
+        return Optional.empty();
+      }
+      returnedObjects.putAll(validatorObjects.get());
     }
-    return returnedObjects;
+    return Optional.of(returnedObjects);
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
