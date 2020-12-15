@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
 import java.math.BigInteger;
 import java.net.URL;
@@ -159,12 +160,49 @@ public class StatusLogger {
   }
 
   public void loadedInitialStateResource(
-      final Bytes32 stateRoot, final Bytes32 blockRoot, final UInt64 slot) {
-    log.info(
-        "Loaded initial state at slot {} (state root = {}, block root = {})",
-        slot,
-        stateRoot,
-        blockRoot);
+      final Bytes32 stateRoot,
+      final Bytes32 blockRoot,
+      final UInt64 blockSlot,
+      final UInt64 epoch,
+      final UInt64 epochStartSlot) {
+    if (blockSlot.isGreaterThan(0)) {
+      log.info(
+          "Loaded initial state at epoch {} (state root = {}, block root = {}, block slot = {}).  Please ensure that the supplied initial state corresponds to the latest finalized block as of the start of epoch {} (slot {}).",
+          epoch,
+          stateRoot,
+          blockRoot,
+          blockSlot,
+          epoch,
+          epochStartSlot);
+    } else {
+      log.info(
+          "Loaded initial state at epoch {} (state root = {}, block root = {}, block slot = {}).",
+          epoch,
+          stateRoot,
+          blockRoot,
+          blockSlot);
+    }
+  }
+
+  public void warnOnInitialStateWithSkippedSlots(
+      final Level level,
+      final UInt64 anchorBlockSlot,
+      final UInt64 anchorEpoch,
+      final UInt64 anchorEpochStartSlot) {
+    final UInt64 slotsBetweenBlockAndEpochStart =
+        anchorEpochStartSlot.minusMinZero(anchorBlockSlot);
+    if (slotsBetweenBlockAndEpochStart.equals(UInt64.ZERO)) {
+      return;
+    }
+
+    final String msg =
+        String.format(
+            "The provided initial state is %s slots prior to the start of epoch %s. Please ensure that slots %s - %s (inclusive) are empty.",
+            slotsBetweenBlockAndEpochStart,
+            anchorEpoch,
+            anchorBlockSlot.plus(1),
+            anchorEpochStartSlot);
+    logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.YELLOW);
   }
 
   public void loadingGenesisFromEth1Chain() {
@@ -270,5 +308,11 @@ public class StatusLogger {
 
   public void validatorStatusChange(String oldStatus, String newStatus, String publicKey) {
     log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
+  }
+
+  private void logWithColorIfLevelGreaterThanInfo(
+      final Level level, final String msg, final ColorConsolePrinter.Color color) {
+    final boolean useColor = level.compareTo(Level.INFO) < 0;
+    log.log(level, useColor ? print(msg, color) : msg);
   }
 }
