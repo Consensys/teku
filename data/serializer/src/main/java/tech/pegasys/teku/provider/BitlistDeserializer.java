@@ -26,6 +26,6 @@ public class BitlistDeserializer extends JsonDeserializer<Bitlist> {
   public Bitlist deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
     int length = Constants.MAX_VALIDATORS_PER_COMMITTEE;
-    return Bitlist.fromBytes(data, length);
+    return Bitlist.fromSszBytes(data, length);
   }
 }

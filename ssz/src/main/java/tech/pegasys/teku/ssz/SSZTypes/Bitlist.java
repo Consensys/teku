@@ -120,7 +120,7 @@ public class Bitlist {
     return (size / 8) + 1;
   }
 
-  public static Bitlist fromBytes(Bytes bytes, long maxSize) {
+  public static Bitlist fromSszBytes(Bytes bytes, long maxSize) {
     int bitlistSize = sszGetLengthAndValidate(bytes);
     BitSet byteArray = new BitSet(bitlistSize);
 
