@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference.phase0;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +30,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
  * <p>The test case is disabled as the tests run via the generated classes in CI, but it still runs
  * without removing the @Disabled in IntelliJ.
  */
-// @Disabled
+@Disabled
 public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
 
   /**
