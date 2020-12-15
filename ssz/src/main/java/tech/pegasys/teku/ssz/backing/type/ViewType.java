@@ -13,14 +13,21 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.Optional;
+import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 /**
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
 public interface ViewType extends SSZType {
+
+  static Optional<ViewType> getType(Class<?> clazz) {
+    return Utils.getSszType(clazz);
+  }
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally
@@ -66,5 +73,9 @@ public interface ViewType extends SSZType {
    */
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
+  }
+
+  default ViewRead sszDeserialize(SszReader reader) {
+    return createFromBackingNode(sszDeserializeTree(reader));
   }
 }

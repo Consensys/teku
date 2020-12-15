@@ -77,8 +77,8 @@ public class TreeUtil {
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
-  public static TreeNode createTree(List<TreeNode> leafNodes) {
-    return createTree(leafNodes, treeDepth(leafNodes.size()));
+  public static TreeNode createTree(List<? extends TreeNode> children) {
+    return createTree(children, treeDepth(children.size()));
   }
 
   private static TreeNode createTree(TreeNode defaultNode, long defaultNodesCount, int depth) {
@@ -99,7 +99,7 @@ public class TreeUtil {
     }
   }
 
-  private static TreeNode createTree(List<TreeNode> leafNodes, int depth) {
+  public static TreeNode createTree(List<? extends TreeNode> leafNodes, int depth) {
     if (leafNodes.isEmpty()) {
       return ZERO_TREES[depth];
     } else if (depth == 0) {
@@ -109,10 +109,34 @@ public class TreeUtil {
       long index = 1L << (depth - 1);
       int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
 
-      List<TreeNode> leftSublist = leafNodes.subList(0, iIndex);
-      List<TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
-      return new BranchNodeImpl(
+      List<? extends TreeNode> leftSublist = leafNodes.subList(0, iIndex);
+      List<? extends TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
+      return BranchNode.create(
           createTree(leftSublist, depth - 1), createTree(rightSublist, depth - 1));
+    }
+  }
+
+  public static TreeNode createTree(
+      List<? extends TreeNode> leafNodes, TreeNode defaultNode, int depth) {
+    if (leafNodes.isEmpty()) {
+      if (depth > 0) {
+        TreeNode defaultChild = createTree(leafNodes, defaultNode, depth - 1);
+        return BranchNode.create(defaultChild, defaultChild);
+      } else {
+        return defaultNode;
+      }
+    } else if (depth == 0) {
+      checkArgument(leafNodes.size() == 1);
+      return leafNodes.get(0);
+    } else {
+      long index = 1L << (depth - 1);
+      int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
+
+      List<? extends TreeNode> leftSublist = leafNodes.subList(0, iIndex);
+      List<? extends TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
+      return BranchNode.create(
+          createTree(leftSublist, defaultNode, depth - 1),
+          createTree(rightSublist, defaultNode, depth - 1));
     }
   }
 
