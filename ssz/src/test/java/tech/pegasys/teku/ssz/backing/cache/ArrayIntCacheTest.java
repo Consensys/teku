@@ -15,12 +15,22 @@ package tech.pegasys.teku.ssz.backing.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 public class ArrayIntCacheTest {
+
+  private final List<Thread> startedThreads = new ArrayList<>();
+
+  @AfterEach
+  void clear() {
+    startedThreads.forEach(Thread::interrupt);
+    startedThreads.clear();
+  }
 
   @Test
   // The threading test is probabilistic and may have false positives
@@ -30,12 +40,13 @@ public class ArrayIntCacheTest {
     Thread t1 =
         new Thread(
             () -> {
-              while (true) {
+              while (!Thread.interrupted()) {
                 String val = cache.get(1024, idx -> "aaa");
                 assertThat(val).isEqualTo("aaa");
                 cache.invalidateWithNewValueInt(1024, "aaa");
               }
             });
+    startedThreads.add(t1);
     t1.start();
 
     List<Thread> threads =
@@ -44,7 +55,7 @@ public class ArrayIntCacheTest {
                 i ->
                     new Thread(
                         () -> {
-                          while (true) {
+                          while (!Thread.interrupted()) {
                             IntCache<String> cache1 = cache.transfer();
                             String val = cache1.get(1024, idx -> "aaa");
                             assertThat(val).isEqualTo("aaa");
@@ -57,6 +68,7 @@ public class ArrayIntCacheTest {
                         }))
             .peek(Thread::start)
             .collect(Collectors.toList());
+    startedThreads.addAll(threads);
 
     // wait a second for any threading issues
     t1.join(1000);
