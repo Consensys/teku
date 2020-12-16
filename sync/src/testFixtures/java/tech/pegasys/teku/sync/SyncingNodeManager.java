@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -90,7 +92,12 @@ public class SyncingNodeManager {
     chainUtil.initializeStorage();
 
     ForkChoice forkChoice =
-        new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            recentChainData,
+            new StateTransition());
     BlockImporter blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);

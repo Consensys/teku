@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -257,6 +258,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     return best_justified_checkpoint.orElseGet(store::getBestJustifiedCheckpoint);
+  }
+
+  @Override
+  public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
+    return store.getForkChoiceStrategy();
   }
 
   @Override

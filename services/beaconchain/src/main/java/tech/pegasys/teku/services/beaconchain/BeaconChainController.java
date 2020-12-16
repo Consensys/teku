@@ -41,6 +41,8 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
@@ -431,7 +433,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     forkChoiceExecutor = SingleThreadedForkChoiceExecutor.create();
-    forkChoice = new ForkChoice(forkChoiceExecutor, recentChainData, stateTransition);
+    forkChoice =
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            forkChoiceExecutor,
+            recentChainData,
+            stateTransition);
   }
 
   public void initMetrics() {

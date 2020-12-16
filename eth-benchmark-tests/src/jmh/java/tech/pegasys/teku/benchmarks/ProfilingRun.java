@@ -30,6 +30,8 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -87,7 +89,12 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState);
       ForkChoice forkChoice =
-          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+          new ForkChoice(
+              new ForkChoiceAttestationValidator(),
+              new ForkChoiceBlockTasks(),
+              new SyncForkChoiceExecutor(),
+              recentChainData,
+              new StateTransition());
       BlockImporter blockImporter =
           new BlockImporter(
               recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
@@ -161,7 +168,12 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState);
       initialState = null;
       ForkChoice forkChoice =
-          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+          new ForkChoice(
+              new ForkChoiceAttestationValidator(),
+              new ForkChoiceBlockTasks(),
+              new SyncForkChoiceExecutor(),
+              recentChainData,
+              new StateTransition());
       BlockImporter blockImporter =
           new BlockImporter(
               recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);

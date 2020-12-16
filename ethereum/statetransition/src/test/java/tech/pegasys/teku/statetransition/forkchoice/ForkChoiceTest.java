@@ -32,6 +32,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -67,7 +69,12 @@ class ForkChoiceTest {
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final ForkChoice forkChoice =
-      new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, stateTransition);
+      new ForkChoice(
+          new ForkChoiceAttestationValidator(),
+          new ForkChoiceBlockTasks(),
+          new SyncForkChoiceExecutor(),
+          recentChainData,
+          stateTransition);
 
   @BeforeEach
   public void setup() {

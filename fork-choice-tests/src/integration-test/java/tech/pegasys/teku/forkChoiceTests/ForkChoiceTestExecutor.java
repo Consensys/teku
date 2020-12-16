@@ -36,6 +36,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -162,7 +164,12 @@ public class ForkChoiceTestExecutor {
     storageClient.initializeFromGenesis(genesis);
 
     ForkChoice forkChoice =
-        new ForkChoice(SingleThreadedForkChoiceExecutor.create(), storageClient, st);
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            SingleThreadedForkChoiceExecutor.create(),
+            storageClient,
+            st);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

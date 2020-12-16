@@ -119,8 +119,7 @@ public class ProtoArray {
     indices.put(node.getBlockRoot(), nodeIndex);
     nodes.add(node);
 
-    node.getParentIndex()
-        .ifPresent(parentIndex -> maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
+    updateBestDescendantOfParent(node, nodeIndex);
   }
 
   /**
@@ -182,26 +181,7 @@ public class ProtoArray {
       this.finalizedEpoch = finalizedEpoch;
     }
 
-    // Iterate backwards through all indices in `this.nodes`.
-    for (int nodeIndex = getTotalTrackedNodeCount() - 1; nodeIndex >= 0; nodeIndex--) {
-      ProtoNode node = nodes.get(nodeIndex);
-
-      // There is no need to adjust the balances or manage parent of the zero hash since it
-      // is an alias to the genesis block. The weight applied to the genesis block is
-      // irrelevant as we _always_ choose it and it's impossible for it to have a parent.
-      if (node.getBlockRoot().equals(Bytes32.ZERO)) {
-        continue;
-      }
-
-      long nodeDelta = deltas.get(nodeIndex);
-      node.adjustWeight(nodeDelta);
-
-      if (node.getParentIndex().isPresent()) {
-        int parentIndex = node.getParentIndex().get();
-        deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
-        maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
-      }
-    }
+    applyDeltas(deltas);
   }
 
   public int getTotalTrackedNodeCount() {
@@ -437,5 +417,41 @@ public class ProtoArray {
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
     indices.remove(blockRoot);
+  }
+
+  private void applyDeltas(final List<Long> deltas) {
+    applyToNodes((node, nodeIndex) -> applyDelta(deltas, node, nodeIndex));
+    applyToNodes(this::updateBestDescendantOfParent);
+  }
+
+  private void updateBestDescendantOfParent(final ProtoNode node, final int nodeIndex) {
+    node.getParentIndex()
+        .ifPresent(parentIndex -> maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
+  }
+
+  private void applyDelta(final List<Long> deltas, final ProtoNode node, final int nodeIndex) {
+    long nodeDelta = deltas.get(nodeIndex);
+    node.adjustWeight(nodeDelta);
+
+    if (node.getParentIndex().isPresent()) {
+      int parentIndex = node.getParentIndex().get();
+      deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
+    }
+  }
+
+  private void applyToNodes(final NodeVisitor action) {
+    for (int nodeIndex = getTotalTrackedNodeCount() - 1; nodeIndex >= 0; nodeIndex--) {
+      final ProtoNode node = nodes.get(nodeIndex);
+
+      // No point processing the genesis block.
+      if (node.getBlockRoot().equals(Bytes32.ZERO)) {
+        continue;
+      }
+      action.onNode(node, nodeIndex);
+    }
+  }
+
+  private interface NodeVisitor {
+    void onNode(ProtoNode node, int nodeIndex);
   }
 }

@@ -39,6 +39,8 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -131,7 +133,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
-            : new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, stateTransition);
+            : new ForkChoice(
+                new ForkChoiceAttestationValidator(),
+                new ForkChoiceBlockTasks(),
+                new SyncForkChoiceExecutor(),
+                recentChainData,
+                stateTransition);
     beaconChainUtil =
         BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
