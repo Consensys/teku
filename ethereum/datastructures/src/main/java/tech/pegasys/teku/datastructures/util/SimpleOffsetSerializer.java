@@ -421,7 +421,7 @@ public class SimpleOffsetSerializer {
         reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
     int numBytesToRead = currentObjectEndByte - bytesPointer.intValue();
     bytesPointer.add(numBytesToRead);
-    return Bitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
+    return Bitlist.fromSszBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
   }
 
   private static void deserializeVariableElementList(

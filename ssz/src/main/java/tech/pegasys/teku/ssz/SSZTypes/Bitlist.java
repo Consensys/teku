@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bitlist {
 
@@ -120,7 +121,7 @@ public class Bitlist {
     return (size / 8) + 1;
   }
 
-  public static Bitlist fromBytes(Bytes bytes, long maxSize) {
+  public static Bitlist fromSszBytes(Bytes bytes, long maxSize) {
     int bitlistSize = sszGetLengthAndValidate(bytes);
     BitSet byteArray = new BitSet(bitlistSize);
 
@@ -154,8 +155,10 @@ public class Bitlist {
       int leadingBit = 1 << (length % 8);
       checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
       int lastByteWithLeadingBit = lastByte ^ leadingBit;
-      Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
-      return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithLeadingBit));
+      // workaround for Bytes bug. See BitlistViewTest.tuweniBytesIssue() test
+      MutableBytes resultBytes = bytes.mutableCopy();
+      resultBytes.set(bytes.size() - 1, (byte) lastByteWithLeadingBit);
+      return resultBytes;
     }
   }
 
