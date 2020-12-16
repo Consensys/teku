@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.cli.util.LoggingPathBuilder.SEP;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -44,14 +45,17 @@ public class LoggingPathBuilderTest {
   @Test
   public void shouldConstructPathGivenCustomDataBaseDirectory() {
     LoggingPathBuilder builder =
-        new LoggingPathBuilder().defaultBasename("t.log").dataPath("/test");
+        new LoggingPathBuilder().defaultBasename("t.log").dataPath(Path.of("/test"));
     assertThat(builder.build()).isEqualTo("/test/logs/t.log");
   }
 
   @Test
   public void shouldConstructPathGivenCustomFilename() {
     LoggingPathBuilder builder =
-        new LoggingPathBuilder().defaultBasename("t.log").dataPath("/t1").fromCommandLine("u.log");
+        new LoggingPathBuilder()
+            .defaultBasename("t.log")
+            .dataPath(Path.of("/t1"))
+            .fromCommandLine("u.log");
     assertThat(builder.build()).isEqualTo("/t1/logs/u.log");
   }
 
@@ -60,7 +64,7 @@ public class LoggingPathBuilderTest {
     LoggingPathBuilder builder =
         new LoggingPathBuilder()
             .defaultBasename("t.log")
-            .dataPath("/t1")
+            .dataPath(Path.of("/t1"))
             .fromCommandLine("/u1/u.log");
     assertThat(builder.build()).isEqualTo("/u1/u.log");
   }

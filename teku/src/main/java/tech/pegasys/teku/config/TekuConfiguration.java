@@ -15,6 +15,8 @@ package tech.pegasys.teku.config;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
@@ -29,6 +31,7 @@ public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final DataConfig dataConfig;
+  private final LoggingConfig loggingConfig;
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
 
@@ -38,13 +41,15 @@ public class TekuConfiguration {
       final ValidatorConfig validatorConfig,
       final DataConfig dataConfig,
       final P2PConfig p2pConfig,
-      final BeaconRestApiConfig beaconRestApiConfig) {
+      final BeaconRestApiConfig beaconRestApiConfig,
+      final LoggingConfig loggingConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.dataConfig = dataConfig;
+    this.loggingConfig = loggingConfig;
     this.beaconChainConfig =
         new BeaconChainConfiguration(
-            weakSubjectivityConfig, validatorConfig, p2pConfig, beaconRestApiConfig);
+            weakSubjectivityConfig, validatorConfig, p2pConfig, beaconRestApiConfig, loggingConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(globalConfiguration, validatorConfig, dataConfig);
   }
@@ -73,6 +78,10 @@ public class TekuConfiguration {
     return dataConfig;
   }
 
+  public LoggingConfig loggingConfig() {
+    return loggingConfig;
+  }
+
   public void validate() {
     globalConfiguration.validate();
   }
@@ -87,6 +96,7 @@ public class TekuConfiguration {
     private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
         BeaconRestApiConfig.builder();
+    private final LoggingConfig.LoggingConfigBuilder loggingConfigBuilder = LoggingConfig.builder();
 
     private Builder() {}
 
@@ -97,7 +107,8 @@ public class TekuConfiguration {
           validatorConfigBuilder.build(),
           dataConfigBuilder.build(),
           p2pConfigBuilder.build(),
-          restApiBuilder.build());
+          restApiBuilder.build(),
+          loggingConfigBuilder.build());
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
@@ -130,6 +141,11 @@ public class TekuConfiguration {
         final Consumer<BeaconRestApiConfig.BeaconRestApiConfigBuilder>
             beaconRestApiConfigConsumer) {
       beaconRestApiConfigConsumer.accept(restApiBuilder);
+      return this;
+    }
+
+    public Builder logging(final Consumer<LoggingConfigBuilder> loggingConfigBuilderConsumer) {
+      loggingConfigBuilderConsumer.accept(loggingConfigBuilder);
       return this;
     }
   }
