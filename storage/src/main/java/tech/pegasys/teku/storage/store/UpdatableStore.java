@@ -30,6 +30,7 @@ public interface UpdatableStore extends ReadOnlyStore {
 
   void startMetrics();
 
+  @Override
   ForkChoiceStrategy getForkChoiceStrategy();
 
   interface StoreTransaction extends MutableStore {

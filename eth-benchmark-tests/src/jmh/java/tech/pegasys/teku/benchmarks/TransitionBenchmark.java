@@ -33,6 +33,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -85,7 +87,12 @@ public abstract class TransitionBenchmark {
     localChain.initializeStorage();
 
     ForkChoice forkChoice =
-        new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            recentChainData,
+            new StateTransition());
     blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);

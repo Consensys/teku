@@ -14,8 +14,6 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
-import static tech.pegasys.teku.core.ForkChoiceUtil.validateAttestation;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
@@ -24,12 +22,15 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -45,14 +46,20 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final ForkChoiceAttestationValidator attestationValidator;
   private final ForkChoiceExecutor forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
+  private final ForkChoiceBlockTasks forkChoiceBlockTasks;
 
   public ForkChoice(
+      final ForkChoiceAttestationValidator attestationValidator,
+      final ForkChoiceBlockTasks forkChoiceBlockTasks,
       final ForkChoiceExecutor forkChoiceExecutor,
       final RecentChainData recentChainData,
       final StateTransition stateTransition) {
+    this.attestationValidator = attestationValidator;
+    this.forkChoiceBlockTasks = forkChoiceBlockTasks;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.stateTransition = stateTransition;
@@ -94,7 +101,7 @@ public class ForkChoice {
                         return SafeFuture.COMPLETE;
                       }
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                      final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                      final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
                               finalizedCheckpoint,
@@ -140,12 +147,11 @@ public class ForkChoice {
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              on_block(
+              forkChoiceBlockTasks.on_block(
                   transaction,
                   block,
                   blockSlotState.get(),
                   stateTransition,
-                  forkChoiceStrategy,
                   indexedAttestationProvider);
 
           if (!result.isSuccessful()) {
@@ -194,9 +200,8 @@ public class ForkChoice {
         .thenCompose(
             maybeTargetState -> {
               final UpdatableStore store = recentChainData.getStore();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               final AttestationProcessingResult validationResult =
-                  validateAttestation(store, attestation, maybeTargetState, forkChoiceStrategy);
+                  attestationValidator.validate(store, attestation, maybeTargetState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);
@@ -205,8 +210,8 @@ public class ForkChoice {
                       () -> {
                         final StoreTransaction transaction =
                             recentChainData.startStoreTransaction();
-                        forkChoiceStrategy.onAttestation(
-                            transaction, getIndexedAttestation(attestation));
+                        getForkChoiceStrategy()
+                            .onAttestation(transaction, getIndexedAttestation(attestation));
                         return transaction.commit();
                       })
                   .thenApply(__ -> validationResult);
