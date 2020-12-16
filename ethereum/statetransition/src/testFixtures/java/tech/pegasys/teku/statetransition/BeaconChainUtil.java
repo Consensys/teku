@@ -24,6 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -78,7 +80,12 @@ public class BeaconChainUtil {
     return create(
         storageClient,
         validatorKeys,
-        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            storageClient,
+            new StateTransition()),
         true);
   }
 
@@ -89,7 +96,12 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(
         validatorKeys,
         storageClient,
-        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            storageClient,
+            new StateTransition()),
         signDeposits);
   }
 

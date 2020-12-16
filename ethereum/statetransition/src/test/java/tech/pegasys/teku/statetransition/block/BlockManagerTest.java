@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -69,7 +71,12 @@ public class BlockManagerTest {
   private final BeaconChainUtil remoteChain =
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
   private final ForkChoice forkChoice =
-      new ForkChoice(new SyncForkChoiceExecutor(), localRecentChainData, new StateTransition());
+      new ForkChoice(
+          new ForkChoiceAttestationValidator(),
+          new ForkChoiceBlockTasks(),
+          new SyncForkChoiceExecutor(),
+          localRecentChainData,
+          new StateTransition());
 
   private final BlockImporter blockImporter =
       new BlockImporter(

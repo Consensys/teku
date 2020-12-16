@@ -11,17 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.datastructures.forkchoice;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ForkChoiceUtilWrapper {
+public interface ReadOnlyForkChoiceStrategy {
 
-  public Optional<Bytes32> get_ancestor(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return ForkChoiceUtil.get_ancestor(forkChoiceStrategy, root, slot);
-  }
+  Optional<UInt64> blockSlot(Bytes32 blockRoot);
+
+  Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
+
+  Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
+
+  Map<Bytes32, UInt64> getChainHeads();
+
+  boolean contains(Bytes32 blockRoot);
 }

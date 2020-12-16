@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -49,7 +50,7 @@ public class WeakSubjectivityValidatorTest {
 
   // Set up mocks
   private final WeakSubjectivityCalculator calculator = mock(WeakSubjectivityCalculator.class);
-  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+  private final ReadOnlyForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final WeakSubjectivityViolationPolicy policy =
       mock(WeakSubjectivityViolationPolicy.class);
   private final CheckpointState checkpointState = mock(CheckpointState.class);
