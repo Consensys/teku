@@ -44,10 +44,7 @@ public class BitlistViewTest {
   @Disabled("the Tuweni Bytes issue: https://github.com/apache/incubator-tuweni/issues/186")
   @Test
   public void tuweniBytesIssue() {
-    Bytes slicedBytes = Bytes.wrap(
-        Bytes.wrap(new byte[32]),
-        Bytes.wrap(new byte[6])
-    ).slice(0, 37);
+    Bytes slicedBytes = Bytes.wrap(Bytes.wrap(new byte[32]), Bytes.wrap(new byte[6])).slice(0, 37);
 
     Assertions.assertThatCode(slicedBytes::copy).doesNotThrowAnyException();
 
