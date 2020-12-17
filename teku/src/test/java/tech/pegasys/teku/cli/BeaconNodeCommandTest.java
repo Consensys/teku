@@ -45,10 +45,10 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.InteropConfig;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   final Eth1Address address =
@@ -213,9 +213,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--Xinterop-enabled");
-    assertThat(globalConfiguration.isInteropEnabled()).isTrue();
+    final InteropConfig config =
+        getTekuConfigurationFromArguments("--Xinterop-enabled").beaconChain().interopConfig();
+    assertThat(config.isInteropEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -366,11 +366,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         DEFAULT_METRICS_CATEGORIES.stream()
                             .map(Object::toString)
                             .collect(Collectors.toList()))
-                    .setInteropEnabled(false)
                     .setPeerRateLimit(500)
-                    .setPeerRequestLimit(50)
-                    .setInteropGenesisTime(0)
-                    .setInteropOwnedValidatorCount(0))
+                    .setPeerRequestLimit(50))
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
@@ -392,7 +389,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
-                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL));
+                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL))
+        .interop(b -> b.interopEnabled(false).interopGenesisTime(0).interopOwnedValidatorCount(0));
   }
 
   private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
@@ -445,19 +443,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .logFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
-                    .includeValidatorDutiesEnabled(true));
+                    .includeValidatorDutiesEnabled(true))
+        .interop(
+            b ->
+                b.interopGenesisTime(1)
+                    .interopOwnedValidatorStartIndex(0)
+                    .interopOwnedValidatorCount(64)
+                    .interopNumberOfValidators(64)
+                    .interopEnabled(true));
   }
 
   private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
-        .setInteropGenesisTime(1)
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
-        .setInteropOwnedValidatorStartIndex(0)
-        .setInteropOwnedValidatorCount(64)
-        .setInteropNumberOfValidators(64)
-        .setInteropEnabled(true)
         .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
         .setEth1LogsMaxBlockRange(10_000)

@@ -30,11 +30,6 @@ public class GlobalConfigurationBuilder {
   private Integer startupTimeoutSeconds;
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
-  private Integer interopGenesisTime;
-  private int interopOwnedValidatorStartIndex;
-  private int interopOwnedValidatorCount;
-  private int interopNumberOfValidators;
-  private boolean interopEnabled;
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
@@ -76,34 +71,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
     this.peerRequestLimit = peerRequestLimit;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
-    this.interopGenesisTime = interopGenesisTime;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropOwnedValidatorStartIndex(
-      final int interopOwnedValidatorStartIndex) {
-    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropOwnedValidatorCount(
-      final int interopOwnedValidatorCount) {
-    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropNumberOfValidators(
-      final int interopNumberOfValidators) {
-    this.interopNumberOfValidators = interopNumberOfValidators;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
-    this.interopEnabled = interopEnabled;
     return this;
   }
 
@@ -225,11 +192,6 @@ public class GlobalConfigurationBuilder {
         startupTimeoutSeconds,
         peerRateLimit,
         peerRequestLimit,
-        interopGenesisTime,
-        interopOwnedValidatorStartIndex,
-        interopOwnedValidatorCount,
-        interopNumberOfValidators,
-        interopEnabled,
         eth1DepositContractAddress,
         eth1Endpoint,
         eth1DepositContractDeployBlock,

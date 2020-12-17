@@ -30,7 +30,7 @@ public class BeaconNodeServiceController extends ServiceController {
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
-    if (!serviceConfig.getConfig().isInteropEnabled()
+    if (!tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         && serviceConfig.getConfig().isEth1Enabled()) {
       services.add(new PowchainService(serviceConfig));
     }

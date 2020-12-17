@@ -72,7 +72,6 @@ public class ValidatorNode implements Node {
             metricsSystem,
             globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
-    tekuConfig.validate();
     Constants.setConstants(globalConfig.getConstants());
 
     this.serviceController = new ValidatorNodeServiceController(tekuConfig, serviceConfig);
