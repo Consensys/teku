@@ -70,7 +70,7 @@ public class InteropConfig {
     private Integer interopGenesisTime;
     private int interopOwnedValidatorStartIndex;
     private int interopOwnedValidatorCount;
-    private int interopNumberOfValidators;
+    private int interopNumberOfValidators = 64;
     private boolean interopEnabled;
 
     private InteropConfigBuilder() {}
