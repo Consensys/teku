@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.service.serviceutils.layout;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 public interface DataDirLayout {
@@ -24,11 +22,7 @@ public interface DataDirLayout {
             dataConfig.getDataBasePath(),
             dataConfig.getBeaconDataPath(),
             dataConfig.getValidatorDataPath());
-    try {
-      layout.migrateIfNecessary();
-    } catch (final IOException e) {
-      throw new UncheckedIOException(e);
-    }
+
     return layout;
   }
 
