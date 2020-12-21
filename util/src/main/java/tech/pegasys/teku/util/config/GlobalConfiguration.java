@@ -16,7 +16,6 @@ package tech.pegasys.teku.util.config;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -44,18 +43,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean eth1DepositsFromStorageEnabled;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
-
-  // Logging
-  private final boolean logColorEnabled;
-  private final boolean logIncludeEventsEnabled;
-  private final boolean logIncludeValidatorDutiesEnabled;
-  private final LoggingDestination logDestination;
-  private final String logFile;
-  private final String logFileNamePattern;
-  private final boolean logWireCipher;
-  private final boolean logWirePlain;
-  private final boolean logWireMuxFrames;
-  private final boolean logWireGossip;
 
   // Output
   private final String transitionRecordDirectory;
@@ -97,16 +84,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
-      final boolean logColorEnabled,
-      final boolean logIncludeEventsEnabled,
-      final boolean logIncludeValidatorDutiesEnabled,
-      final LoggingDestination logDestination,
-      final String logFile,
-      final String logFileNamePattern,
-      final boolean logWireCipher,
-      final boolean logWirePlain,
-      final boolean logWireMuxFrames,
-      final boolean logWireGossip,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
@@ -134,16 +111,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
-    this.logColorEnabled = logColorEnabled;
-    this.logIncludeEventsEnabled = logIncludeEventsEnabled;
-    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
-    this.logDestination = logDestination;
-    this.logFile = logFile;
-    this.logFileNamePattern = logFileNamePattern;
-    this.logWireCipher = logWireCipher;
-    this.logWirePlain = logWirePlain;
-    this.logWireMuxFrames = logWireMuxFrames;
-    this.logWireGossip = logWireGossip;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
@@ -227,46 +194,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isEth1DepositsFromStorageEnabled() {
     return eth1DepositsFromStorageEnabled;
-  }
-
-  public boolean isLogColorEnabled() {
-    return logColorEnabled;
-  }
-
-  public boolean isLogIncludeEventsEnabled() {
-    return logIncludeEventsEnabled;
-  }
-
-  public boolean isLogIncludeValidatorDutiesEnabled() {
-    return logIncludeValidatorDutiesEnabled;
-  }
-
-  public LoggingDestination getLogDestination() {
-    return logDestination;
-  }
-
-  public String getLogFile() {
-    return logFile;
-  }
-
-  public String getLogFileNamePattern() {
-    return logFileNamePattern;
-  }
-
-  public boolean isLogWireCipher() {
-    return logWireCipher;
-  }
-
-  public boolean isLogWirePlain() {
-    return logWirePlain;
-  }
-
-  public boolean isLogWireMuxFrames() {
-    return logWireMuxFrames;
-  }
-
-  public boolean isLogWireGossip() {
-    return logWireGossip;
   }
 
   public String getTransitionRecordDirectory() {

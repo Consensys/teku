@@ -58,7 +58,6 @@ import tech.pegasys.teku.cli.subcommand.admin.InternalToolsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
-import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
@@ -329,12 +328,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-      builder.globalConfig(globalBuilder -> buildGlobalConfiguration(globalBuilder));
+      builder.globalConfig(this::buildGlobalConfiguration);
       weakSubjectivityOptions.configure(builder, networkOptions.getNetwork());
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
       p2POptions.configure(builder, networkOptions.getNetwork());
       beaconRestApiOptions.configure(builder, networkOptions.getNetwork());
+      loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -358,14 +358,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
-        .setLogColorEnabled(loggingOptions.isLogColorEnabled())
-        .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
-        .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
-        .setLogDestination(loggingOptions.getLogDestination())
-        .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
-        .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
-        .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
-        .setLogWireGossip(loggingOptions.isLogWireGossipEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())
@@ -378,21 +370,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs())
         .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled());
-
-    final String dataBasePath = dataOptions.getDataBasePath().toString();
-    builder.setLogFile(
-        new LoggingPathBuilder()
-            .defaultBasename(LOG_FILE)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(loggingOptions.getMaybeLogFile())
-            .build());
-
-    builder.setLogFileNamePattern(
-        new LoggingPathBuilder()
-            .defaultBasename(LOG_PATTERN)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(loggingOptions.getMaybeLogPattern())
-            .build());
   }
 
   @FunctionalInterface

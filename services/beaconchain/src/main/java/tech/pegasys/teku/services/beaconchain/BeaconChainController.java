@@ -63,6 +63,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
@@ -564,6 +565,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
       final PrivKey pk =
           KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes(keyValueStore).toArrayUnsafe());
+      final LoggingConfig loggingConfig = beaconConfig.loggingConfig();
       final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
@@ -581,10 +583,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               configOptions.getTargetSubnetSubscriberCount(),
               GossipConfig.DEFAULT_CONFIG,
               new WireLogsConfig(
-                  config.isLogWireCipher(),
-                  config.isLogWirePlain(),
-                  config.isLogWireMuxFrames(),
-                  config.isLogWireGossip()));
+                  loggingConfig.isLogWireCipher(),
+                  loggingConfig.isLogWirePlain(),
+                  loggingConfig.isLogWireMuxFrames(),
+                  loggingConfig.isLogWireGossip()));
 
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
