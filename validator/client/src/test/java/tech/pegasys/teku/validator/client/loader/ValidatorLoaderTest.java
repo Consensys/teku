@@ -47,7 +47,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -93,7 +93,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {
-    final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -102,7 +102,7 @@ class ValidatorLoaderTest {
             .build();
 
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators).hasSize(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
@@ -124,7 +124,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndNoSlashingProtection() throws Exception {
-    final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -133,7 +133,7 @@ class ValidatorLoaderTest {
             .build();
 
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators).hasSize(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
@@ -158,7 +158,7 @@ class ValidatorLoaderTest {
   void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -171,7 +171,7 @@ class ValidatorLoaderTest {
             .build();
 
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators).hasSize(2);
 
@@ -191,7 +191,7 @@ class ValidatorLoaderTest {
       @TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final GlobalConfiguration globalConfig = GlobalConfiguration.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -204,7 +204,7 @@ class ValidatorLoaderTest {
             .build();
 
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);
@@ -225,14 +225,14 @@ class ValidatorLoaderTest {
   @Test
   void initializeInteropValidatorsWhenInteropIsEnabled() {
     final int ownedValidatorCount = 10;
-    final GlobalConfiguration globalConfig =
-        GlobalConfiguration.builder()
-            .setInteropEnabled(true)
-            .setInteropOwnedValidatorCount(ownedValidatorCount)
+    final InteropConfig interopConfig =
+        InteropConfig.builder()
+            .interopEnabled(true)
+            .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators).hasSize(ownedValidatorCount);
   }
@@ -240,14 +240,14 @@ class ValidatorLoaderTest {
   @Test
   void doNotInitializeInteropValidatorsWhenInteropIsDisabled() {
     final int ownedValidatorCount = 10;
-    final GlobalConfiguration globalConfig =
-        GlobalConfiguration.builder()
-            .setInteropEnabled(false)
-            .setInteropOwnedValidatorCount(ownedValidatorCount)
+    final InteropConfig interopConfig =
+        InteropConfig.builder()
+            .interopEnabled(false)
+            .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config, globalConfig, () -> httpClient);
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators).isEmpty();
   }

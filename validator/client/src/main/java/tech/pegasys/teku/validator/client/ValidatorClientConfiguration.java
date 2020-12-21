@@ -13,22 +13,22 @@
 
 package tech.pegasys.teku.validator.client;
 
-import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorClientConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final ValidatorConfig validatorConfig;
-  private final DataConfig dataConfig;
+  private final InteropConfig interopConfig;
 
   public ValidatorClientConfiguration(
       final GlobalConfiguration globalConfiguration,
       final ValidatorConfig validatorConfig,
-      final DataConfig dataConfig) {
+      final InteropConfig interopConfig) {
     this.globalConfiguration = globalConfiguration;
     this.validatorConfig = validatorConfig;
-    this.dataConfig = dataConfig;
+    this.interopConfig = interopConfig;
   }
 
   public GlobalConfiguration getGlobalConfiguration() {
@@ -39,7 +39,7 @@ public class ValidatorClientConfiguration {
     return validatorConfig;
   }
 
-  public DataConfig getDataConfig() {
-    return dataConfig;
+  public InteropConfig getInteropConfig() {
+    return interopConfig;
   }
 }

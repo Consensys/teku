@@ -102,17 +102,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
+    interopOptions.configure(builder);
     return builder.build();
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
         .setNetwork(networkOptions.getNetwork())
-        .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
-        .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
-        .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
-        .setInteropEnabled(interopOptions.isInteropEnabled())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())

@@ -335,6 +335,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       p2POptions.configure(builder, networkOptions.getNetwork());
       beaconRestApiOptions.configure(builder, networkOptions.getNetwork());
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
+      interopOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -349,11 +350,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
         .setPeerRateLimit(networkOptions.getPeerRateLimit())
         .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
-        .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
-        .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
-        .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
-        .setInteropEnabled(interopOptions.isInteropEnabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())

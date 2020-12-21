@@ -124,6 +124,7 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.util.time.channels.TimeTickChannel;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -782,7 +783,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData.getBestBlockRoot().orElseThrow(),
             anchor.getState().getGenesis_time());
       }
-    } else if (config.isInteropEnabled()) {
+    } else if (beaconConfig.interopConfig().isInteropEnabled()) {
       setupInteropState();
     } else if (!config.isEth1Enabled()) {
       throw new InvalidConfigurationException(
@@ -791,6 +792,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void setupInteropState() {
+    final InteropConfig config = beaconConfig.interopConfig();
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
     final BeaconState genesisState =
