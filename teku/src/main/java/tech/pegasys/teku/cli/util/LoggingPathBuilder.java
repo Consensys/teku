@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.util;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.util.cli.VersionProvider;
@@ -29,8 +30,8 @@ public class LoggingPathBuilder {
     return this;
   }
 
-  public LoggingPathBuilder dataPath(final String dataPath) {
-    this.dataPath = Optional.of(dataPath);
+  public LoggingPathBuilder dataPath(final Path dataPath) {
+    this.dataPath = Optional.of(dataPath.toString());
     return this;
   }
 

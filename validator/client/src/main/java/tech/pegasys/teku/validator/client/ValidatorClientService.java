@@ -106,7 +106,7 @@ public class ValidatorClientService extends Service {
         ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
-            config.getValidatorConfig(), config.getGlobalConfiguration());
+            config.getValidatorConfig(), config.getInteropConfig());
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
