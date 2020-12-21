@@ -23,6 +23,8 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
+import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.InteropConfig.InteropConfigBuilder;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientConfiguration;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -39,6 +41,7 @@ public class TekuConfiguration {
       GlobalConfiguration globalConfiguration,
       WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
+      final InteropConfig interopConfig,
       final DataConfig dataConfig,
       final P2PConfig p2pConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
@@ -49,9 +52,14 @@ public class TekuConfiguration {
     this.loggingConfig = loggingConfig;
     this.beaconChainConfig =
         new BeaconChainConfiguration(
-            weakSubjectivityConfig, validatorConfig, p2pConfig, beaconRestApiConfig, loggingConfig);
+            weakSubjectivityConfig,
+            validatorConfig,
+            interopConfig,
+            p2pConfig,
+            beaconRestApiConfig,
+            loggingConfig);
     this.validatorClientConfig =
-        new ValidatorClientConfiguration(globalConfiguration, validatorConfig, dataConfig);
+        new ValidatorClientConfiguration(globalConfiguration, validatorConfig, interopConfig);
   }
 
   public static Builder builder() {
@@ -82,16 +90,13 @@ public class TekuConfiguration {
     return loggingConfig;
   }
 
-  public void validate() {
-    globalConfiguration.validate();
-  }
-
   public static class Builder {
     private final GlobalConfigurationBuilder globalConfigurationBuilder =
         new GlobalConfigurationBuilder();
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
+    private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
     private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
@@ -105,6 +110,7 @@ public class TekuConfiguration {
           globalConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),
+          interopConfigBuilder.build(),
           dataConfigBuilder.build(),
           p2pConfigBuilder.build(),
           restApiBuilder.build(),
@@ -124,6 +130,11 @@ public class TekuConfiguration {
 
     public Builder validator(final Consumer<ValidatorConfig.Builder> validatorConfigConsumer) {
       validatorConfigConsumer.accept(validatorConfigBuilder);
+      return this;
+    }
+
+    public Builder interop(final Consumer<InteropConfigBuilder> interopConfigBuilderConsumer) {
+      interopConfigBuilderConsumer.accept(interopConfigBuilder);
       return this;
     }
 

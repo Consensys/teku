@@ -39,7 +39,7 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
@@ -69,22 +69,22 @@ public class ValidatorLoader {
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(
-      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+      final ValidatorConfig config, final InteropConfig interopConfig) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
-    return initializeValidators(config, globalConfiguration, externalSignerHttpClientFactory);
+    return initializeValidators(config, interopConfig, externalSignerHttpClientFactory);
   }
 
   @VisibleForTesting
   Map<BLSPublicKey, Validator> initializeValidators(
       final ValidatorConfig config,
-      final GlobalConfiguration globalConfiguration,
+      final InteropConfig interopConfig,
       final Supplier<HttpClient> externalSignerHttpClientFactory) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
     final Map<BLSPublicKey, Validator> validators = new HashMap<>();
-    validators.putAll(createLocalSignerValidator(config, globalConfiguration));
+    validators.putAll(createLocalSignerValidator(config, interopConfig));
     validators.putAll(createExternalSignerValidator(config, externalSignerHttpClientFactory));
 
     STATUS_LOG.validatorsInitialised(
@@ -96,8 +96,8 @@ public class ValidatorLoader {
   }
 
   private Map<BLSPublicKey, Validator> createLocalSignerValidator(
-      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
-    return loadValidatorKeys(config, globalConfiguration).stream()
+      final ValidatorConfig config, final InteropConfig interopConfig) {
+    return loadValidatorKeys(config, interopConfig).stream()
         .map(
             blsKeyPair ->
                 new Validator(
@@ -166,10 +166,10 @@ public class ValidatorLoader {
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(
-      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+      final ValidatorConfig config, final InteropConfig interopConfig) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
-    if (globalConfiguration.isInteropEnabled()) {
-      keyProviders.add(new MockStartValidatorKeyProvider(globalConfiguration));
+    if (interopConfig.isInteropEnabled()) {
+      keyProviders.add(new MockStartValidatorKeyProvider(interopConfig));
     } else {
       // support loading keys both from encrypted keystores
       if (config.getValidatorKeystorePasswordFilePairs() != null) {

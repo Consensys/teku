@@ -30,13 +30,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Integer peerRateLimit;
   private final Integer peerRequestLimit;
 
-  // Interop
-  private final Integer interopGenesisTime;
-  private final int interopOwnedValidatorStartIndex;
-  private final int interopOwnedValidatorCount;
-  private final int interopNumberOfValidators;
-  private final boolean interopEnabled;
-
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
@@ -74,11 +67,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer startupTimeoutSeconds,
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
-      final Integer interopGenesisTime,
-      final int interopOwnedValidatorStartIndex,
-      final int interopOwnedValidatorCount,
-      final int interopNumberOfValidators,
-      final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final Optional<UInt64> eth1DepositContractDeployBlock,
@@ -101,11 +89,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.interopGenesisTime = interopGenesisTime;
-    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
-    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.interopNumberOfValidators = interopNumberOfValidators;
-    this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
@@ -146,30 +129,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getPeerRequestLimit() {
     return peerRequestLimit;
-  }
-
-  public Integer getInteropGenesisTime() {
-    if (interopGenesisTime == 0) {
-      return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
-    } else {
-      return interopGenesisTime;
-    }
-  }
-
-  public int getInteropOwnedValidatorStartIndex() {
-    return interopOwnedValidatorStartIndex;
-  }
-
-  public int getInteropOwnedValidatorCount() {
-    return interopOwnedValidatorCount;
-  }
-
-  public int getInteropNumberOfValidators() {
-    return interopNumberOfValidators;
-  }
-
-  public boolean isInteropEnabled() {
-    return interopEnabled;
   }
 
   public boolean isEth1Enabled() {
@@ -243,15 +202,5 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isBlockProcessingAtStartupDisabled() {
     return isBlockProcessingAtStartupDisabled;
-  }
-
-  public void validate() throws IllegalArgumentException {
-    final int interopNumberOfValidators = getInteropNumberOfValidators();
-    if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
-      throw new InvalidConfigurationException(
-          String.format(
-              "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
-              interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
-    }
   }
 }

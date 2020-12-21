@@ -35,6 +35,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
@@ -63,6 +64,7 @@ public class BeaconChainControllerTest {
     return new BeaconChainConfiguration(
         WeakSubjectivityConfig.builder().build(),
         ValidatorConfig.builder().build(),
+        InteropConfig.builder().build(),
         p2pConfig,
         restApiConfig,
         loggingConfig);
