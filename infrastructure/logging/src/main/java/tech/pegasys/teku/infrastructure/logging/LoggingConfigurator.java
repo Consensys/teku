@@ -70,13 +70,13 @@ public class LoggingConfigurator {
     Configurator.setAllLevels(filter, level);
   }
 
-  public static synchronized void update(final LoggingConfiguration configuration) {
+  public static synchronized void update(final LoggingConfig configuration) {
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
     INCLUDE_VALIDATOR_DUTIES = configuration.isIncludeValidatorDutiesEnabled();
-    FILE = configuration.getFile();
-    FILE_PATTERN = configuration.getFileNamePattern();
+    FILE = configuration.getLogFile();
+    FILE_PATTERN = configuration.getLogFileNamePattern();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggers((AbstractConfiguration) ctx.getConfiguration());
