@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
@@ -74,14 +76,14 @@ public class Eth2NetworkBuilder {
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
-  private List<RpcMethod> rpcMethods = new ArrayList<>();
-  private List<PeerHandler> peerHandlers = new ArrayList<>();
+  private final List<RpcMethod> rpcMethods = new ArrayList<>();
+  private final List<PeerHandler> peerHandlers = new ArrayList<>();
   private TimeProvider timeProvider;
   private AsyncRunner asyncRunner;
   private KeyValueStore<String, Bytes> keyValueStore;
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
-  private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+  private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
   private int peerRateLimit = Constants.MAX_BLOCKS_PER_MINUTE;
   private int peerRequestLimit = 50;
 
@@ -146,6 +148,8 @@ public class Eth2NetworkBuilder {
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     PreparedGossipMessageFactory defaultMessageFactory =
         (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
+    final GossipTopicFilter gossipTopicsFilter =
+        new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
     final LibP2PNetwork p2pNetwork =
         new LibP2PNetwork(
             asyncRunner,
@@ -154,7 +158,8 @@ public class Eth2NetworkBuilder {
             metricsSystem,
             rpcMethods,
             peerHandlers,
-            defaultMessageFactory);
+            defaultMessageFactory,
+            gossipTopicsFilter);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(
