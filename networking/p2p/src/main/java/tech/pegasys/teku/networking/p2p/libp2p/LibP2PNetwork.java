@@ -53,6 +53,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
@@ -89,7 +90,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers,
-      final PreparedGossipMessageFactory defaultMessageFactory) {
+      final PreparedGossipMessageFactory defaultMessageFactory,
+      final GossipTopicFilter gossipTopicFilter) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
@@ -104,6 +106,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             metricsSystem,
             config.getGossipConfig(),
             defaultMessageFactory,
+            gossipTopicFilter,
             config.getWireLogsConfig().isLogWireGossip());
 
     // Setup rpc methods

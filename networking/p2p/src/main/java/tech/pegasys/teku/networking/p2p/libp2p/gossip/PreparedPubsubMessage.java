@@ -17,6 +17,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.etc.types.WBytes;
+import io.libp2p.pubsub.AbstractPubsubMessage;
 import io.libp2p.pubsub.PubsubMessage;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
  * GossipRouter#getMessageFactory()} invocation can later be accessed when the gossip message is
  * handled: {@link MessageApi#getOriginalMessage()}
  */
-public class PreparedPubsubMessage implements PubsubMessage {
+public class PreparedPubsubMessage extends AbstractPubsubMessage {
 
   private final Message protobufMessage;
   private final PreparedGossipMessage preparedMessage;
