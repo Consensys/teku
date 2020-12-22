@@ -114,7 +114,8 @@ public class DiscoveryNetworkFactory {
                     Collections.emptyList(),
                     (__1, __2) -> {
                       throw new UnsupportedOperationException();
-                    }),
+                    },
+                    topic -> true),
                 new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
                 config);
         try {
