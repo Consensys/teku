@@ -10,13 +10,9 @@ idea {
 
 dependencies {
   implementation project(':bls')
-  implementation project(':ethereum:core')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:statetransition')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':eth-tests')
   implementation project(':infrastructure:async')
-  implementation project(':storage')
   implementation project(':util')
   implementation project(':data')
 
@@ -25,18 +21,16 @@ dependencies {
   implementation testFixtures(project(':ethereum:statetransition'))
   implementation testFixtures(project(':storage'))
 
-
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
+  jmh 'org.openjdk.jmh:jmh-core'
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
   jmh 'org.apache.tuweni:tuweni-ssz'
+  jmh project(':bls')
 }
 
 jmh {
-  include = '.*'
   resultFormat = 'CSV'
   duplicateClassesStrategy = 'warn'
 }
