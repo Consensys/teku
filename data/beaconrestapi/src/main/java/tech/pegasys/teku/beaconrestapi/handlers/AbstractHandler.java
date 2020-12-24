@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import java.io.ByteArrayInputStream;
 import java.util.Optional;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -93,10 +94,44 @@ public abstract class AbstractHandler implements Handler {
             }));
   }
 
+  protected <T> void handleOptionalSszResult(
+      final Context ctx,
+      SafeFuture<Optional<T>> future,
+      ResultSszProcessor<T> resultProcessor,
+      SszFilenameFromResult<T> resultFilename,
+      final int missingStatus) {
+    ctx.result(
+        future.thenApplyChecked(
+            result -> {
+              if (result.isPresent()) {
+                ctx.contentType("application/octet-stream");
+                ctx.header(
+                    "Content-Disposition",
+                    "filename=\"" + resultFilename.getFilename(result.get()) + "\"");
+                return resultProcessor.process(ctx, result.get()).orElse(null);
+              } else {
+                ctx.status(missingStatus);
+                ctx.result(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
+                return null;
+              }
+            }));
+  }
+
   @FunctionalInterface
   public interface ResultProcessor<T> {
     // Process result, returning an optional serialized response
     Optional<String> process(Context context, T result) throws Exception;
+  }
+
+  @FunctionalInterface
+  public interface ResultSszProcessor<T> {
+    // Process result, returning an optional Ssz byte stream response
+    Optional<ByteArrayInputStream> process(Context context, T result) throws Exception;
+  }
+
+  @FunctionalInterface
+  public interface SszFilenameFromResult<T> {
+    String getFilename(T result) throws Exception;
   }
 
   @FunctionalInterface
