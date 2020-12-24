@@ -277,6 +277,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     assertThat(response.body().string()).isEqualTo(body);
   }
 
+  protected Response getResponse(final String path, final String contentType) throws IOException {
+    final Request request =
+        new Request.Builder().url(getUrl(path)).header("Accept", contentType).build();
+    return client.newCall(request).execute();
+  }
+
   protected Response getResponse(final String path) throws IOException {
     return getResponseFromUrl(getUrl(path));
   }
