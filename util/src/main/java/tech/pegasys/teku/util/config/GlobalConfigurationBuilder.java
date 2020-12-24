@@ -16,7 +16,6 @@ package tech.pegasys.teku.util.config;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
@@ -31,26 +30,11 @@ public class GlobalConfigurationBuilder {
   private Integer startupTimeoutSeconds;
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
-  private Integer interopGenesisTime;
-  private int interopOwnedValidatorStartIndex;
-  private int interopOwnedValidatorCount;
-  private int interopNumberOfValidators;
-  private boolean interopEnabled;
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
   private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
-  private boolean logColorEnabled;
-  private boolean logIncludeEventsEnabled;
-  private boolean logIncludeValidatorDutiesEnabled;
-  private LoggingDestination logDestination;
-  private String logFile;
-  private String logFileNamePattern;
-  private boolean logWireCipher;
-  private boolean logWirePlain;
-  private boolean logWireMuxFrames;
-  private boolean logWireGossip;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
@@ -90,34 +74,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
-    this.interopGenesisTime = interopGenesisTime;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropOwnedValidatorStartIndex(
-      final int interopOwnedValidatorStartIndex) {
-    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropOwnedValidatorCount(
-      final int interopOwnedValidatorCount) {
-    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropNumberOfValidators(
-      final int interopNumberOfValidators) {
-    this.interopNumberOfValidators = interopNumberOfValidators;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
-    this.interopEnabled = interopEnabled;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setEth1DepositContractAddress(
       final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -143,58 +99,6 @@ public class GlobalConfigurationBuilder {
   public GlobalConfigurationBuilder setEth1DepositsFromStorageEnabled(
       final boolean eth1DepositsFromStorageEnabled) {
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogColorEnabled(final boolean logColorEnabled) {
-    this.logColorEnabled = logColorEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogIncludeEventsEnabled(
-      final boolean logIncludeEventsEnabled) {
-    this.logIncludeEventsEnabled = logIncludeEventsEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogIncludeValidatorDutiesEnabled(
-      final boolean logIncludeValidatorDutiesEnabled) {
-    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
-    this.logDestination = logDestination;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogFile(final String logFile) {
-    this.logFile = logFile;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogFileNamePattern(final String logFileNamePattern) {
-    this.logFileNamePattern = logFileNamePattern;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
-    this.logWireCipher = logWireCipher;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
-    this.logWirePlain = logWirePlain;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
-    this.logWireMuxFrames = logWireMuxFrames;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
-    this.logWireGossip = logWireGossip;
     return this;
   }
 
@@ -288,26 +192,11 @@ public class GlobalConfigurationBuilder {
         startupTimeoutSeconds,
         peerRateLimit,
         peerRequestLimit,
-        interopGenesisTime,
-        interopOwnedValidatorStartIndex,
-        interopOwnedValidatorCount,
-        interopNumberOfValidators,
-        interopEnabled,
         eth1DepositContractAddress,
         eth1Endpoint,
         eth1DepositContractDeployBlock,
         eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,
-        logColorEnabled,
-        logIncludeEventsEnabled,
-        logIncludeValidatorDutiesEnabled,
-        logDestination,
-        logFile,
-        logFileNamePattern,
-        logWireCipher,
-        logWirePlain,
-        logWireMuxFrames,
-        logWireGossip,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,

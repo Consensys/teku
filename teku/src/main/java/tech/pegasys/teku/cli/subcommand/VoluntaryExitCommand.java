@@ -227,7 +227,8 @@ public class VoluntaryExitCommand implements Runnable {
     try {
       blsPublicKeyValidatorMap =
           validatorLoader.initializeValidators(
-              config.validatorClient().getValidatorConfig(), config.global());
+              config.validatorClient().getValidatorConfig(),
+              config.validatorClient().getInteropConfig());
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);

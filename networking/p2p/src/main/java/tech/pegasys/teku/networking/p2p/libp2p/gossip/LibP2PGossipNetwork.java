@@ -22,12 +22,16 @@ import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
 import io.libp2p.pubsub.FastIdSeenCache;
+import io.libp2p.pubsub.MaxCountTopicSubscriptionFilter;
+import io.libp2p.pubsub.PubsubProtocol;
 import io.libp2p.pubsub.PubsubRouterMessageValidator;
 import io.libp2p.pubsub.SeenCache;
 import io.libp2p.pubsub.TTLSeenCache;
+import io.libp2p.pubsub.TopicSubscriptionFilter;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
+import io.libp2p.pubsub.gossip.GossipScoreParams;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
@@ -43,6 +47,7 @@ import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -72,10 +77,13 @@ public class LibP2PGossipNetwork implements GossipNetwork {
       MetricsSystem metricsSystem,
       GossipConfig gossipConfig,
       PreparedGossipMessageFactory defaultMessageFactory,
+      GossipTopicFilter gossipTopicFilter,
       boolean logWireGossip) {
 
     TopicHandlers topicHandlers = new TopicHandlers();
-    Gossip gossip = createGossip(gossipConfig, logWireGossip, defaultMessageFactory, topicHandlers);
+    Gossip gossip =
+        createGossip(
+            gossipConfig, logWireGossip, defaultMessageFactory, gossipTopicFilter, topicHandlers);
     PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
@@ -85,6 +93,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
       GossipConfig gossipConfig,
       boolean gossipLogsEnabled,
       PreparedGossipMessageFactory defaultMessageFactory,
+      GossipTopicFilter gossipTopicFilter,
       TopicHandlers topicHandlers) {
     GossipParams gossipParams =
         GossipParams.builder()
@@ -98,14 +107,31 @@ public class LibP2PGossipNetwork implements GossipNetwork {
             .heartbeatInterval(gossipConfig.getHeartbeatInterval())
             .floodPublish(true)
             .seenTTL(gossipConfig.getSeenTTL())
+            .maxPublishedMessages(1000)
+            .maxTopicsPerPublishedMessage(1)
+            .maxSubscriptions(200)
+            .maxGraftMessages(200)
+            .maxPruneMessages(200)
+            .maxPeersPerPruneMessage(1000)
+            .maxIHaveLength(5000)
+            .maxIWantMessageIds(5000)
             .build();
 
+    final TopicSubscriptionFilter subscriptionFilter =
+        new MaxCountTopicSubscriptionFilter(100, 200, gossipTopicFilter::isRelevantTopic);
     GossipRouter router =
-        new GossipRouter(gossipParams) {
+        new GossipRouter(
+            gossipParams,
+            new GossipScoreParams(),
+            PubsubProtocol.Gossip_V_1_1,
+            subscriptionFilter) {
 
           final SeenCache<Optional<ValidationResult>> seenCache =
               new TTLSeenCache<>(
-                  new FastIdSeenCache<>(msg -> msg.getProtobufMessage().getData()),
+                  new FastIdSeenCache<>(
+                      msg ->
+                          Bytes.wrap(
+                              Hash.sha2_256(msg.getProtobufMessage().getData().toByteArray()))),
                   gossipParams.getSeenTTL(),
                   getCurTimeMillis());
 

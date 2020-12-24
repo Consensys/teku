@@ -11,22 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.service.serviceutils.layout;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import java.nio.file.Path;
-
-public interface DataDirLayout {
-  static DataDirLayout createFrom(final DataConfig dataConfig) {
-    final SeparateServiceDataDirLayout layout =
-        new SeparateServiceDataDirLayout(
-            dataConfig.getDataBasePath(),
-            dataConfig.getBeaconDataPath(),
-            dataConfig.getValidatorDataPath());
-
-    return layout;
-  }
-
-  Path getBeaconDataDirectory();
-
-  Path getValidatorDataDirectory();
+@FunctionalInterface
+public interface GossipTopicFilter {
+  boolean isRelevantTopic(String topic);
 }

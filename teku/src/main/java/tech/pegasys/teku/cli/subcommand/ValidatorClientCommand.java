@@ -28,7 +28,6 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
-import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -102,44 +101,18 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
+    loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
+    interopOptions.configure(builder);
     return builder.build();
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
         .setNetwork(networkOptions.getNetwork())
-        .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
-        .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
-        .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
-        .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setLogColorEnabled(loggingOptions.isLogColorEnabled())
-        .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
-        .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
-        .setLogDestination(loggingOptions.getLogDestination())
-        .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
-        .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
-        .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
-        .setLogWireGossip(loggingOptions.isLogWireGossipEnabled())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
-
-    final String dataBasePath = dataOptions.getDataBasePath().toString();
-    builder.setLogFile(
-        new LoggingPathBuilder()
-            .defaultBasename(LOG_FILE)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(loggingOptions.getMaybeLogFile())
-            .build());
-
-    builder.setLogFileNamePattern(
-        new LoggingPathBuilder()
-            .defaultBasename(LOG_PATTERN)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(loggingOptions.getMaybeLogPattern())
-            .build());
   }
 }

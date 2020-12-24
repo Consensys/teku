@@ -19,15 +19,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.InteropConfig;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GlobalConfiguration config;
+  private final InteropConfig config;
 
-  public MockStartValidatorKeyProvider(final GlobalConfiguration config) {
+  public MockStartValidatorKeyProvider(final InteropConfig config) {
     this.config = config;
   }
 

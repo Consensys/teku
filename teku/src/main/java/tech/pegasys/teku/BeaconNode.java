@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -56,14 +55,7 @@ public class BeaconNode implements Node {
   public BeaconNode(final TekuConfiguration tekuConfig) {
     final GlobalConfiguration globalConfig = tekuConfig.global();
 
-    LoggingConfigurator.update(
-        new LoggingConfiguration(
-            globalConfig.isLogColorEnabled(),
-            globalConfig.isLogIncludeEventsEnabled(),
-            globalConfig.isLogIncludeValidatorDutiesEnabled(),
-            globalConfig.getLogDestination(),
-            globalConfig.getLogFile(),
-            globalConfig.getLogFileNamePattern()));
+    LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     this.metricsEndpoint = new MetricsEndpoint(globalConfig, vertx);
@@ -83,7 +75,6 @@ public class BeaconNode implements Node {
             metricsSystem,
             globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
-    tekuConfig.validate();
     Constants.setConstants(globalConfig.getConstants());
 
     final String transitionRecordDir = globalConfig.getTransitionRecordDirectory();

@@ -60,9 +60,12 @@ public class GetSszState implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
+      deprecated = true,
       summary = "Get SSZ State",
       tags = {TAG_TEKU},
-      description = "Download the state SSZ object for given state_id.",
+      description =
+          "Download the state SSZ object for given state_id.\n"
+              + "Deprecated - use `/eth/v1/debug/beacon/states/:state_id` instead.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class InteropOptions {
 
@@ -57,23 +58,14 @@ public class InteropOptions {
       arity = "0..1")
   private boolean interopEnabled = false;
 
-  public Integer getInteropGenesisTime() {
-    return interopGenesisTime;
-  }
-
-  public int getInteropOwnerValidatorStartIndex() {
-    return interopOwnerValidatorStartIndex;
-  }
-
-  public int getInteropOwnerValidatorCount() {
-    return interopOwnerValidatorCount;
-  }
-
-  public int getInteropNumberOfValidators() {
-    return interopNumberOfValidators;
-  }
-
-  public boolean isInteropEnabled() {
-    return interopEnabled;
+  public TekuConfiguration.Builder configure(final TekuConfiguration.Builder builder) {
+    return builder.interop(
+        interopBuilder ->
+            interopBuilder
+                .interopGenesisTime(interopGenesisTime)
+                .interopOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
+                .interopOwnedValidatorCount(interopOwnerValidatorCount)
+                .interopNumberOfValidators(interopNumberOfValidators)
+                .interopEnabled(interopEnabled));
   }
 }

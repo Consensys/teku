@@ -16,7 +16,6 @@ package tech.pegasys.teku.util.config;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -31,31 +30,12 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Integer peerRateLimit;
   private final Integer peerRequestLimit;
 
-  // Interop
-  private final Integer interopGenesisTime;
-  private final int interopOwnedValidatorStartIndex;
-  private final int interopOwnedValidatorCount;
-  private final int interopNumberOfValidators;
-  private final boolean interopEnabled;
-
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
   private final boolean eth1DepositsFromStorageEnabled;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
-
-  // Logging
-  private final boolean logColorEnabled;
-  private final boolean logIncludeEventsEnabled;
-  private final boolean logIncludeValidatorDutiesEnabled;
-  private final LoggingDestination logDestination;
-  private final String logFile;
-  private final String logFileNamePattern;
-  private final boolean logWireCipher;
-  private final boolean logWirePlain;
-  private final boolean logWireMuxFrames;
-  private final boolean logWireGossip;
 
   // Output
   private final String transitionRecordDirectory;
@@ -87,26 +67,11 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer startupTimeoutSeconds,
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
-      final Integer interopGenesisTime,
-      final int interopOwnedValidatorStartIndex,
-      final int interopOwnedValidatorCount,
-      final int interopNumberOfValidators,
-      final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
-      final boolean logColorEnabled,
-      final boolean logIncludeEventsEnabled,
-      final boolean logIncludeValidatorDutiesEnabled,
-      final LoggingDestination logDestination,
-      final String logFile,
-      final String logFileNamePattern,
-      final boolean logWireCipher,
-      final boolean logWirePlain,
-      final boolean logWireMuxFrames,
-      final boolean logWireGossip,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
@@ -124,26 +89,11 @@ public class GlobalConfiguration implements MetricsConfig {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.interopGenesisTime = interopGenesisTime;
-    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
-    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.interopNumberOfValidators = interopNumberOfValidators;
-    this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
-    this.logColorEnabled = logColorEnabled;
-    this.logIncludeEventsEnabled = logIncludeEventsEnabled;
-    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
-    this.logDestination = logDestination;
-    this.logFile = logFile;
-    this.logFileNamePattern = logFileNamePattern;
-    this.logWireCipher = logWireCipher;
-    this.logWirePlain = logWirePlain;
-    this.logWireMuxFrames = logWireMuxFrames;
-    this.logWireGossip = logWireGossip;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
@@ -181,30 +131,6 @@ public class GlobalConfiguration implements MetricsConfig {
     return peerRequestLimit;
   }
 
-  public Integer getInteropGenesisTime() {
-    if (interopGenesisTime == 0) {
-      return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
-    } else {
-      return interopGenesisTime;
-    }
-  }
-
-  public int getInteropOwnedValidatorStartIndex() {
-    return interopOwnedValidatorStartIndex;
-  }
-
-  public int getInteropOwnedValidatorCount() {
-    return interopOwnedValidatorCount;
-  }
-
-  public int getInteropNumberOfValidators() {
-    return interopNumberOfValidators;
-  }
-
-  public boolean isInteropEnabled() {
-    return interopEnabled;
-  }
-
   public boolean isEth1Enabled() {
     return !StringUtils.isEmpty(eth1Endpoint);
   }
@@ -227,46 +153,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isEth1DepositsFromStorageEnabled() {
     return eth1DepositsFromStorageEnabled;
-  }
-
-  public boolean isLogColorEnabled() {
-    return logColorEnabled;
-  }
-
-  public boolean isLogIncludeEventsEnabled() {
-    return logIncludeEventsEnabled;
-  }
-
-  public boolean isLogIncludeValidatorDutiesEnabled() {
-    return logIncludeValidatorDutiesEnabled;
-  }
-
-  public LoggingDestination getLogDestination() {
-    return logDestination;
-  }
-
-  public String getLogFile() {
-    return logFile;
-  }
-
-  public String getLogFileNamePattern() {
-    return logFileNamePattern;
-  }
-
-  public boolean isLogWireCipher() {
-    return logWireCipher;
-  }
-
-  public boolean isLogWirePlain() {
-    return logWirePlain;
-  }
-
-  public boolean isLogWireMuxFrames() {
-    return logWireMuxFrames;
-  }
-
-  public boolean isLogWireGossip() {
-    return logWireGossip;
   }
 
   public String getTransitionRecordDirectory() {
@@ -316,15 +202,5 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isBlockProcessingAtStartupDisabled() {
     return isBlockProcessingAtStartupDisabled;
-  }
-
-  public void validate() throws IllegalArgumentException {
-    final int interopNumberOfValidators = getInteropNumberOfValidators();
-    if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
-      throw new InvalidConfigurationException(
-          String.format(
-              "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
-              interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
-    }
   }
 }
