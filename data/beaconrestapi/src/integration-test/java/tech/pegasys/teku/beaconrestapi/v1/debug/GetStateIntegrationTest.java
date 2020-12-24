@@ -46,6 +46,15 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   }
 
   @Test
+  public void shouldGetStateAsJsonWithoutHeader() throws IOException {
+    final Response response = get("head");
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final GetStateResponse stateResponse =
+        jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
+    assertThat(stateResponse).isNotNull();
+  }
+
+  @Test
   public void shouldGetStateAsOctetStream() throws IOException {
     final Response response = get("head", HEADER_ACCEPT_OCTET);
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -62,5 +71,9 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
     return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString), contentType);
+  }
+
+  public Response get(final String stateIdIdString) throws IOException {
+    return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString));
   }
 }
