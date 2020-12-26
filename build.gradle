@@ -8,7 +8,7 @@ plugins {
   id 'io.spring.dependency-management' version '1.0.9.RELEASE'
   id 'net.ltgt.errorprone' version '1.2.1' apply false
   id 'net.researchgate.release' version '2.8.1'
-  id 'me.champeau.gradle.jmh' version '0.5.0' apply false
+  id 'me.champeau.gradle.jmh' version '0.5.2' apply false
   id 'de.undercouch.download' version '4.1.0'
   id 'org.ajoberstar.grgit' version '4.0.2'
 }
