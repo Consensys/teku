@@ -28,9 +28,9 @@ import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ListViewType<C extends ViewRead, E extends ViewType<C>> extends CollectionViewType<ListViewRead<C>, E> {
+public class ListViewType<C extends ViewRead> extends CollectionViewType<ListViewRead<C>> {
 
-  public ListViewType(VectorViewType<C, E> vectorType) {
+  public ListViewType(VectorViewType<C> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
