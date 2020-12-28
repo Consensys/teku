@@ -28,7 +28,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.util.config.Constants;
 
-@Fork(0)
+@Fork(3)
 @BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
 public class ShuffleBenchmark {
