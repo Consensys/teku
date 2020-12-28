@@ -24,6 +24,7 @@ import io.libp2p.core.dsl.Builder.Defaults;
 import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multistream.ProtocolBinding;
+import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
@@ -126,25 +127,24 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getMuxers().add(MplexStreamMuxer::new);
+              b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
               b.getNetwork().listen(listenAddr.toString());
 
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
 
-              List<ChannelHandler> beforeSecureLogHandler = new ArrayList<>();
               if (config.getWireLogsConfig().isLogWireCipher()) {
-                beforeSecureLogHandler.add(new LoggingHandler("wire.ciphered", LogLevel.DEBUG));
+                b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
               }
-              Firewall firewall = new Firewall(Duration.ofSeconds(30), beforeSecureLogHandler);
-              b.getDebug().getBeforeSecureHandler().setHandler(firewall);
+              Firewall firewall = new Firewall(Duration.ofSeconds(30));
+              b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
 
               if (config.getWireLogsConfig().isLogWirePlain()) {
-                b.getDebug().getAfterSecureHandler().setLogger(LogLevel.DEBUG, "wire.plain");
+                b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
               }
               if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().setLogger(LogLevel.DEBUG, "wire.mux");
+                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
               }
 
               b.getConnectionHandlers().add(peerManager);

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,7 +61,7 @@ public class RpcHandlerTest {
   @BeforeEach
   void init() {
     when(connection.muxerSession()).thenReturn(session);
-    when(session.createStream(any())).thenReturn(streamPromise);
+    when(session.createStream(anyList())).thenReturn(streamPromise);
     when(connection.closeFuture()).thenReturn(closeFuture);
 
     when(controller.getRpcStream()).thenReturn(rpcStream);

@@ -77,7 +77,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     return SafeFuture.notInterrupted(closeInterruptor)
         .thenApply(
             __ ->
-                connection.muxerSession().createStream(Multistream.create(this).toStreamHandler()))
+                connection.muxerSession().createStream(this))
         // waiting for a stream or interrupt
         .thenWaitFor(StreamPromise::getStream)
         .orInterrupt(closeInterruptor, timeoutInterruptor)

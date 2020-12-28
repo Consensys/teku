@@ -36,16 +36,13 @@ public class Firewall extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Duration writeTimeout;
-  private final List<ChannelHandler> additionalHandlers;
 
-  public Firewall(Duration writeTimeout, List<ChannelHandler> additionalHandlers) {
+  public Firewall(Duration writeTimeout) {
     this.writeTimeout = writeTimeout;
-    this.additionalHandlers = additionalHandlers;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
-    additionalHandlers.forEach(h -> ctx.pipeline().addLast(h));
     ctx.channel().config().setWriteBufferWaterMark(new WriteBufferWaterMark(100, 1024));
     ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeout.toMillis(), TimeUnit.MILLISECONDS));
     ctx.pipeline().addLast(new FirewallExceptionHandler());

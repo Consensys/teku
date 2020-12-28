@@ -27,7 +27,7 @@ public class FirewallTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void testFirewallNotPropagateTimeoutExceptionUpstream() throws Exception {
-    Firewall firewall = new Firewall(Duration.ofMillis(100), Collections.emptyList());
+    Firewall firewall = new Firewall(Duration.ofMillis(100));
     EmbeddedChannel channel =
         new EmbeddedChannel(
             firewall,
