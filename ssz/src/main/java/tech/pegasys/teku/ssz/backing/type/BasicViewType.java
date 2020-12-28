@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
  *
  * @param <C> Class of the basic view of this type
  */
-public abstract class BasicViewType<C extends ViewRead> implements ViewType {
+public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
 
   private final int bitsSize;
 

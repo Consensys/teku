@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface ViewType extends SSZType {
+public interface ViewType<V extends ViewRead> extends SSZType {
 
   static Optional<ViewType> getType(Class<?> clazz) {
     return Utils.getSszType(clazz);
@@ -42,7 +42,7 @@ public interface ViewType extends SSZType {
    * doesn't correspond this type that fact could only be detected later during access to View
    * members
    */
-  ViewRead createFromBackingNode(TreeNode node);
+  V createFromBackingNode(TreeNode node);
 
   /** Creates a default immutable View */
   default ViewRead getDefault() {
@@ -75,7 +75,7 @@ public interface ViewType extends SSZType {
     return newValue.getBackingNode();
   }
 
-  default ViewRead sszDeserialize(SszReader reader) {
+  default V sszDeserialize(SszReader reader) {
     return createFromBackingNode(sszDeserializeTree(reader));
   }
 }

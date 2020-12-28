@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -30,19 +31,19 @@ import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class VectorViewType<C> extends CollectionViewType {
+public class VectorViewType<C, E extends ViewType> extends CollectionViewType<VectorViewRead<C>, E> {
 
   private final boolean isListBacking;
 
-  public VectorViewType(ViewType elementType, long vectorLength) {
+  public VectorViewType(E elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking) {
+  VectorViewType(E elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
-  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
+  VectorViewType(E elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
     super(vectorLength, elementType, hints);
     this.isListBacking = isListBacking;
   }

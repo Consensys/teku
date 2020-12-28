@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
+public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType<C> {
 
   private final List<ViewType> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
@@ -63,7 +63,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   @Override
-  public ViewType getChildType(int index) {
+  public ViewType<?> getChildType(int index) {
     return childrenTypes.get(index);
   }
 
@@ -108,7 +108,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   public int getFixedPartSize() {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
     return size;
@@ -118,7 +118,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   public int getVariablePartSize(TreeNode node) {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
         size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
       }

@@ -15,10 +15,11 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
 import tech.pegasys.teku.ssz.backing.Utils;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /** Abstract type of {@link CompositeViewRead} views */
-public interface CompositeViewType extends ViewType {
+public interface CompositeViewType<V extends ViewRead> extends ViewType<V> {
 
   /**
    * Returns the maximum number of elements in views of this type. For views with fixed number of
@@ -33,7 +34,7 @@ public interface CompositeViewType extends ViewType {
    *
    * @throws IndexOutOfBoundsException if index >= getMaxLength
    */
-  ViewType getChildType(int index);
+  ViewType<?> getChildType(int index);
 
   /**
    * Return the number of elements that may be stored in a single tree node This value is 1 for all
