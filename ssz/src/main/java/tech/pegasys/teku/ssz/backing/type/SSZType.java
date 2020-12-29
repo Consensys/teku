@@ -17,6 +17,7 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
@@ -81,4 +82,6 @@ public interface SSZType {
   int sszSerialize(TreeNode node, Consumer<Bytes> writer);
 
   TreeNode sszDeserializeTree(SszReader reader);
+
+  SszLengthBounds getLengthBounds();
 }

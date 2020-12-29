@@ -18,7 +18,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface SimpleOffsetSerializable {
-  int getSSZFieldCount();
+  default int getSSZFieldCount() {
+    throw new RuntimeException();
+  }
 
   default List<Bytes> get_fixed_parts() {
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);

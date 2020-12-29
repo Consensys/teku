@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 /**
@@ -88,5 +89,10 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
   public TreeNode sszDeserializeTree(SszReader reader) {
     Bytes bytes = reader.read(getSSZBytesSize());
     return LeafNode.create(bytes);
+  }
+
+  @Override
+  public SszLengthBounds getLengthBounds() {
+    return new SszLengthBounds(getFixedPartSize());
   }
 }

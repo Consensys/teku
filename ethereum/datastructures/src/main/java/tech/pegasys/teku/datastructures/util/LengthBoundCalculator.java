@@ -23,6 +23,7 @@ import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.isVec
 import static tech.pegasys.teku.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import java.lang.reflect.Field;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -32,11 +33,19 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 
 public class LengthBoundCalculator {
 
   static <T> LengthBounds calculateLengthBounds(final Class<T> type) {
+    Optional<ViewType<?>> maybeViewType = ViewType.getType(type);
+    if (maybeViewType.isPresent()) {
+      SszLengthBounds lengthBounds = maybeViewType.get().getLengthBounds();
+      return new LengthBounds(lengthBounds.getMin(), lengthBounds.getMax());
+    }
+
     final ReflectionInformation reflectionInfo = getRequiredReflectionInfo(type);
     LengthBounds lengthBounds = LengthBounds.ZERO;
     int sszListCount = 0;
