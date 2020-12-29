@@ -53,7 +53,7 @@ public class FileBackedGraffitiProviderTest {
   }
 
   @Test
-  public void testFileDoesntExist() {
+  public void testDefaultGraffitiIsUsedIfFileReadFails() {
     var graffitiProvider =
         new FileBackedGraffitiProvider(
             Optional.of(graffiti), Optional.of(Path.of("src/test/resources/noGraffitiFound.txt")));

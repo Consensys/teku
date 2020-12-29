@@ -43,7 +43,7 @@ public class FileBackedGraffitiProvider implements GraffitiProvider {
 
   @Override
   public Optional<Bytes32> get() {
-    return graffitiFile.map(this::loadGraffitiFromFile).orElse(defaultGraffiti);
+    return graffitiFile.flatMap(this::loadGraffitiFromFile).or(() -> defaultGraffiti);
   }
 
   private Optional<Bytes32> loadGraffitiFromFile(final Path path) {

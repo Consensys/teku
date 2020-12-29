@@ -23,12 +23,7 @@ public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
     try {
       return Bytes32Parser.toBytes32(value);
     } catch (final IllegalArgumentException e) {
-      throw (new CommandLine.TypeConversionException(
-          "'"
-              + value
-              + "' converts to "
-              + value.length()
-              + " bytes. A maximum of 32 bytes can be used as graffiti."));
+      throw (new CommandLine.TypeConversionException(e.getMessage()));
     }
   }
 }

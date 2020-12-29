@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,9 @@ public class GraffitiParser {
       if (Files.size(graffitiFile) > 32) {
         throw new GraffitiLoaderException("GraffitiFile size too big, maximum size is 32 bytes");
       }
-      return Bytes32Parser.toBytes32(strip(Files.newInputStream(graffitiFile).readNBytes(32)));
+      try (final InputStream graffitiFileInputStream = Files.newInputStream(graffitiFile)) {
+        return Bytes32Parser.toBytes32(strip(graffitiFileInputStream.readNBytes(32)));
+      }
     } catch (final FileNotFoundException e) {
       throw new GraffitiLoaderException("GraffitiFile file not found: " + graffitiFile, e);
     } catch (final IOException e) {
