@@ -26,11 +26,12 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class CompositeListViewTest {
 
-  static ViewType<?> testType =
+  static ViewType<TestView> testType =
       new ViewType<>() {
 
         @Override
@@ -76,6 +77,11 @@ public class CompositeListViewTest {
         @Override
         public TreeNode sszDeserializeTree(SszReader reader) {
           return null;
+        }
+
+        @Override
+        public SszLengthBounds getLengthBounds() {
+          return SszLengthBounds.ZERO;
         }
       };
 
