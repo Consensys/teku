@@ -22,6 +22,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,7 +34,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttestationData
     extends Container5<AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint>
-    implements SimpleOffsetSerializable, Merkleizable {
+    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
