@@ -93,20 +93,6 @@ public class Validator extends Container8<Validator,
     super(TYPE);
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("pubkey", getPubkey())
-        .add("withdrawal_credentials", getWithdrawal_credentials())
-        .add("effective_balance", getEffective_balance())
-        .add("slashed", isSlashed())
-        .add("activation_eligibility_epoch", getActivation_eligibility_epoch())
-        .add("activation_epoch", getActivation_epoch())
-        .add("exit_epoch", getExit_epoch())
-        .add("withdrawable_epoch", getWithdrawable_epoch())
-        .toString();
-  }
-
   public static Validator create(
       Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
@@ -243,5 +229,19 @@ public class Validator extends Container8<Validator,
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("pubkey", getPubkey())
+        .add("withdrawal_credentials", getWithdrawal_credentials())
+        .add("effective_balance", getEffective_balance())
+        .add("slashed", isSlashed())
+        .add("activation_eligibility_epoch", getActivation_eligibility_epoch())
+        .add("activation_epoch", getActivation_epoch())
+        .add("exit_epoch", getExit_epoch())
+        .add("withdrawable_epoch", getWithdrawable_epoch())
+        .toString();
   }
 }

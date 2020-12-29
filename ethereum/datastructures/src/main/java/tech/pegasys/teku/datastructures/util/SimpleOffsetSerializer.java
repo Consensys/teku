@@ -106,7 +106,6 @@ public class SimpleOffsetSerializer {
             ProposerSlashing.class,
             SignedVoluntaryExit.class,
             VoluntaryExit.class,
-            BeaconStateImpl.class,
             Checkpoint.class,
             HistoricalBatch.class,
             PendingAttestation.class,
