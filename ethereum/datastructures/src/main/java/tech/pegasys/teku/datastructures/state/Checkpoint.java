@@ -41,7 +41,7 @@ public class Checkpoint extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<Checkpoint> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), Checkpoint::new);
 
   @SuppressWarnings("unused")

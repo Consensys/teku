@@ -29,16 +29,24 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType<C> {
+public abstract class ContainerViewType<C extends ContainerViewRead>
+    implements CompositeViewType<C> {
 
   private final List<ViewType<?>> childrenTypes;
-  private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
   private volatile TreeNode defaultTree;
 
-  public ContainerViewType(
-      List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+  protected ContainerViewType(List<ViewType<?>> childrenTypes) {
     this.childrenTypes = childrenTypes;
-    this.instanceCtor = instanceCtor;
+  }
+
+  public static <C extends ContainerViewRead> ContainerViewType<C> create(
+      List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+    return new ContainerViewType<C>(childrenTypes) {
+      @Override
+      public C createFromBackingNode(TreeNode node) {
+        return instanceCtor.apply(this, node);
+      }
+    };
   }
 
   @Override
@@ -68,9 +76,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   @Override
-  public C createFromBackingNode(TreeNode node) {
-    return instanceCtor.apply(this, node);
-  }
+  public abstract C createFromBackingNode(TreeNode node);
 
   @Override
   public long getMaxLength() {

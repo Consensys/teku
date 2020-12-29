@@ -45,7 +45,7 @@ public class PendingAttestation extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<PendingAttestation> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(
               new ListViewType<BitView>(
                   BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),

@@ -40,7 +40,7 @@ public class AttestationData extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<AttestationData> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.UINT64_TYPE,

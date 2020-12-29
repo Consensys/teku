@@ -56,7 +56,7 @@ public class ContainerViewTest {
 
     @SszTypeDescriptor
     ContainerViewType<SubContainerRead> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
             SubContainerReadImpl::new);
 
@@ -84,7 +84,7 @@ public class ContainerViewTest {
 
     @SszTypeDescriptor
     ContainerViewType<ContainerReadImpl> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(
                 BasicViewTypes.UINT64_TYPE,
                 BasicViewTypes.UINT64_TYPE,
@@ -153,7 +153,7 @@ public class ContainerViewTest {
 
     @SszTypeDescriptor
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
             ImmutableSubContainerImpl::new);
 
