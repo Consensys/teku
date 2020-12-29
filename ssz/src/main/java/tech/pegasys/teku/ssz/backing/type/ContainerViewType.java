@@ -31,12 +31,12 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType<C> {
 
-  private final List<ViewType> childrenTypes;
+  private final List<ViewType<?>> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
   private volatile TreeNode defaultTree;
 
   public ContainerViewType(
-      List<ViewType> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+      List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
     this.childrenTypes = childrenTypes;
     this.instanceCtor = instanceCtor;
   }
@@ -136,7 +136,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     int[] variableSizes = new int[getChildCount()];
     for (int i = 0; i < getChildCount(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         int size = childType.sszSerialize(childSubtree, writer);
         assert size == childType.getFixedPartSize();
@@ -148,7 +148,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       }
     }
     for (int i = 0; i < getMaxLength(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getGeneralizedIndex(i));
         int size = childType.sszSerialize(childSubtree, writer);
@@ -164,7 +164,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     List<Integer> variableChildrenOffsets = new ArrayList<>();
     int endOffset = reader.getAvailableBytes();
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
           TreeNode childNode = childType.sszDeserializeTree(sszReader);
@@ -201,7 +201,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
 
     List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         childrenSubtrees.add(fixedChildrenSubtrees.remove());
       } else {

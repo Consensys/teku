@@ -212,7 +212,7 @@ public class SimpleOffsetSerializer {
   public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     MutableInt bytePointer = new MutableInt(0);
     if (!isPrimitive(classInfo)) {
-      Optional<ViewType> maybeViewType = ViewType.getType(classInfo);
+      Optional<ViewType<?>> maybeViewType = ViewType.getType(classInfo);
       if (maybeViewType.isPresent()) {
         return (T) deserialize(bytes, maybeViewType.get());
       } else {
@@ -236,7 +236,7 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  private static ViewRead deserialize(Bytes bytes, ViewType sszViewType) {
+  private static ViewRead deserialize(Bytes bytes, ViewType<?> sszViewType) {
     try (SszReader sszReader = SszReader.fromBytes(bytes)) {
       return sszViewType.sszDeserialize(sszReader);
     }

@@ -220,7 +220,7 @@ public class ContainerViewTest {
     }
 
     public ContainerReadImpl(
-        CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
+        CompositeViewType<?> type, TreeNode backingNode, IntCache<ViewRead> cache) {
       super(type, backingNode, cache);
     }
 

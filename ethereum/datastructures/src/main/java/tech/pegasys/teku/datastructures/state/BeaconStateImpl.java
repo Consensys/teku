@@ -160,7 +160,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   }
 
   BeaconStateImpl(
-      CompositeViewType type,
+      CompositeViewType<?> type,
       TreeNode backingNode,
       IntCache<ViewRead> cache,
       TransitionCaches transitionCaches) {

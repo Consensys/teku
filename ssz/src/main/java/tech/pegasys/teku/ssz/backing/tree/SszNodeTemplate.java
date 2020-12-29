@@ -66,7 +66,7 @@ public class SszNodeTemplate {
     }
   }
 
-  public static SszNodeTemplate createFromType(ViewType viewType) {
+  public static SszNodeTemplate createFromType(ViewType<?> viewType) {
     checkArgument(viewType.isFixedSize(), "Only fixed size types supported");
 
     return createFromTree(viewType.getDefaultTree());

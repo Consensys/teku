@@ -30,14 +30,14 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Utils {
 
-  private static final Map<Class<?>, Supplier<Optional<ViewType>>> classToSszTypeMap =
+  private static final Map<Class<?>, Supplier<Optional<ViewType<?>>>> classToSszTypeMap =
       new ConcurrentHashMap<>();
 
-  public static Optional<ViewType> getSszType(Class<?> clazz) {
+  public static Optional<ViewType<?>> getSszType(Class<?> clazz) {
     return classToSszTypeMap.computeIfAbsent(clazz, Utils::createSszTypeFactory).get();
   }
 
-  private static Supplier<Optional<ViewType>> createSszTypeFactory(Class<?> clazz) {
+  private static Supplier<Optional<ViewType<?>>> createSszTypeFactory(Class<?> clazz) {
     Optional<Method> maybeMethod =
         getAllPredecessors(clazz).stream()
             .flatMap(c -> Arrays.stream(c.getDeclaredMethods()))
@@ -51,18 +51,18 @@ public class Utils {
             .filter(f -> f.isAnnotationPresent(SszTypeDescriptor.class))
             .findFirst();
 
-    Function<Method, Optional<ViewType>> methodFactory =
+    Function<Method, Optional<ViewType<?>>> methodFactory =
         method -> {
           try {
-            return Optional.of((ViewType) method.invoke(null));
+            return Optional.of((ViewType<?>) method.invoke(null));
           } catch (IllegalAccessException | InvocationTargetException e) {
             return Optional.empty();
           }
         };
-    Function<Field, Optional<ViewType>> fieldFactory =
+    Function<Field, Optional<ViewType<?>>> fieldFactory =
         field -> {
           try {
-            return Optional.of((ViewType) field.get(null));
+            return Optional.of((ViewType<?>) field.get(null));
           } catch (IllegalAccessException e) {
             return Optional.empty();
           }

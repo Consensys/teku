@@ -34,11 +34,11 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
-  public ListViewType(ViewType elementType, long maxLength) {
+  public ListViewType(ViewType<?> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }
 
-  public ListViewType(ViewType elementType, long maxLength, TypeHints hints) {
+  public ListViewType(ViewType<?> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
   }
 
@@ -73,7 +73,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   @Override
   public int getVariablePartSize(TreeNode node) {
     int length = getLength(node);
-    ViewType elementType = getElementType();
+    ViewType<?> elementType = getElementType();
     if (elementType.isFixedSize()) {
       if (elementType.getBitsSize() == 1) {
         // Bitlist is handled specially

@@ -110,7 +110,7 @@ public abstract class AbstractCompositeViewWrite<
   }
 
   @Override
-  public CompositeViewType getType() {
+  public CompositeViewType<?> getType() {
     return backingImmutableView.getType();
   }
 
@@ -161,7 +161,7 @@ public abstract class AbstractCompositeViewWrite<
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
       List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
-    CompositeViewType type = getType();
+    CompositeViewType<?> type = getType();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
       return newChildValues.stream()

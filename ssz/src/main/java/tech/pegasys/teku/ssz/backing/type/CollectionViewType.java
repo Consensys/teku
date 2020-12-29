@@ -37,13 +37,13 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public abstract class CollectionViewType<V extends ViewRead> implements CompositeViewType<V> {
 
   private final long maxLength;
-  private final ViewType elementType;
+  private final ViewType<?> elementType;
   private final TypeHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
-  protected CollectionViewType(long maxLength, ViewType elementType, TypeHints hints) {
+  protected CollectionViewType(long maxLength, ViewType<?> elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
@@ -64,12 +64,12 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     return maxLength;
   }
 
-  public ViewType getElementType() {
+  public ViewType<?> getElementType() {
     return elementType;
   }
 
   @Override
-  public ViewType getChildType(int index) {
+  public ViewType<?> getChildType(int index) {
     return getElementType();
   }
 
@@ -124,7 +124,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
 
   private int sszSerializeVariableVector(
       TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
-    ViewType elementType = getElementType();
+    ViewType<?> elementType = getElementType();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
@@ -270,7 +270,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CollectionViewType that = (CollectionViewType) o;
+    CollectionViewType<?> that = (CollectionViewType<?>) o;
     return maxLength == that.maxLength && elementType.equals(that.elementType);
   }
 

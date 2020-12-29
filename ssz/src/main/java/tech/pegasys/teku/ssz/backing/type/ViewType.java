@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
  */
 public interface ViewType<V extends ViewRead> extends SSZType {
 
-  static Optional<ViewType> getType(Class<?> clazz) {
+  static Optional<ViewType<?>> getType(Class<?> clazz) {
     return Utils.getSszType(clazz);
   }
 
