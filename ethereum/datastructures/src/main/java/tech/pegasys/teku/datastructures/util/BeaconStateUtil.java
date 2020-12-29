@@ -82,7 +82,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(BeaconStateUtil.class);
 
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
