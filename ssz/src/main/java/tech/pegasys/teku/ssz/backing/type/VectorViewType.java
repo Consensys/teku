@@ -27,8 +27,8 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
-import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
@@ -148,7 +148,7 @@ public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
   @Override
   public SszLengthBounds getLengthBounds() {
     SszLengthBounds elementLengthBounds = getElementType().getLengthBounds();
-    return new SszLengthBounds(elementLengthBounds.getMin() * getLength(),
-        elementLengthBounds.getMax() * getLength());
+    return new SszLengthBounds(
+        elementLengthBounds.getMin() * getLength(), elementLengthBounds.getMax() * getLength());
   }
 }
