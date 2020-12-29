@@ -126,7 +126,7 @@ dependencyManagement {
     dependency 'org.mockito:mockito-core:3.3.3'
     dependency 'org.mockito:mockito-junit-jupiter:3.3.3'
 
-    dependencySet(group: "org.openjdk.jmh", version: "1.25.2") {
+    dependencySet(group: "org.openjdk.jmh", version: "1.27") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
