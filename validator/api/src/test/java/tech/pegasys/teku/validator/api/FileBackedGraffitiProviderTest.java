@@ -57,6 +57,6 @@ public class FileBackedGraffitiProviderTest {
     var graffitiProvider =
         new FileBackedGraffitiProvider(
             Optional.of(graffiti), Optional.of(Path.of("src/test/resources/noGraffitiFound.txt")));
-    assertThat(graffitiProvider.get()).isEqualTo(Optional.empty());
+    assertThat(graffitiProvider.get()).isEqualTo(Optional.of(graffiti));
   }
 }
