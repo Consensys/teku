@@ -61,7 +61,6 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -109,7 +108,6 @@ public class SimpleOffsetSerializer {
             VoluntaryExit.class,
             BeaconStateImpl.class,
             Checkpoint.class,
-            Fork.class,
             HistoricalBatch.class,
             PendingAttestation.class,
             Validator.class,
@@ -269,6 +267,16 @@ public class SimpleOffsetSerializer {
   private static <T> T deserializeContainer(
       Class<T> classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
       throws InstantiationException, IllegalAccessException, InvocationTargetException {
+
+    Optional<ViewType<?>> maybeViewType = ViewType.getType(classInfo);
+    if (maybeViewType.isPresent()) {
+      ViewType<?> type = maybeViewType.get();
+      int size =
+          type.isFixedSize() ? type.getFixedPartSize() : bytesEndByte - bytesPointer.intValue();
+      Bytes bytes = reader.readFixedBytes(size);
+      bytesPointer.add(size);
+      return (T) deserialize(bytes, type);
+    }
     int currentObjectStartByte = bytesPointer.intValue();
     ReflectionInformation reflectionInformation = getRequiredReflectionInfo(classInfo);
     List<Integer> offsets = new ArrayList<>();
