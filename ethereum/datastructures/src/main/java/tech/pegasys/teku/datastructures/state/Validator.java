@@ -14,22 +14,17 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -38,59 +33,34 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Validator extends AbstractImmutableContainer
-    implements ContainerViewRead, SimpleOffsetSerializable, Merkleizable, SSZContainer {
+public class Validator extends Container8<Validator,
+    VectorViewRead<ByteView>, Bytes32View, UInt64View, BitView, UInt64View, UInt64View, UInt64View, UInt64View>
+    implements SimpleOffsetSerializable, Merkleizable {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 8;
+  public static class ValidatorType extends ContainerType8<Validator,
+      VectorViewRead<ByteView>, Bytes32View, UInt64View, BitView, UInt64View, UInt64View, UInt64View, UInt64View> {
+
+    public ValidatorType() {
+      super(new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.BIT_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE);
+    }
+
+    @Override
+    public Validator createFromBackingNode(TreeNode node) {
+      return new Validator(this, node);
+    }
+  }
 
   @SszTypeDescriptor
-  public static final ContainerViewType<Validator> TYPE =
-      ContainerViewType.create(
-          List.of(
-              new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
-              BasicViewTypes.BYTES32_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.BIT_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE),
-          Validator::new);
+  public static final ValidatorType TYPE = new ValidatorType();
 
-  // BLS public key
-  @SuppressWarnings("unused")
-  private final Bytes48 pubkey = null;
-
-  // Withdrawal credentials
-  @SuppressWarnings("unused")
-  private final Bytes32 withdrawal_credentials = null;
-
-  // Effective balance
-  @SuppressWarnings("unused")
-  private final UInt64 effective_balance = null;
-
-  // Was the validator slashed
-  @SuppressWarnings("unused")
-  private final boolean slashed = false;
-
-  // Epoch when became eligible for activation
-  @SuppressWarnings("unused")
-  private final UInt64 activation_eligibility_epoch = null;
-
-  // Epoch when validator activated
-  @SuppressWarnings("unused")
-  private final UInt64 activation_epoch = null;
-
-  // Epoch when validator exited
-  @SuppressWarnings("unused")
-  private final UInt64 exit_epoch = null;
-
-  // Epoch when validator withdrew
-  @SuppressWarnings("unused")
-  private final UInt64 withdrawable_epoch = null;
-
-  private Validator(ContainerViewType<Validator> type, TreeNode backingNode) {
+  private Validator(ValidatorType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -121,27 +91,6 @@ public class Validator extends AbstractImmutableContainer
 
   public Validator() {
     super(TYPE);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.add(getPubkey());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
-            SSZ.encodeUInt64(getEffective_balance().longValue()),
-            SSZ.encodeBoolean(isSlashed()),
-            SSZ.encodeUInt64(getActivation_eligibility_epoch().longValue()),
-            SSZ.encodeUInt64(getActivation_epoch().longValue()),
-            SSZ.encodeUInt64(getExit_epoch().longValue()),
-            SSZ.encodeUInt64(getWithdrawable_epoch().longValue())));
-    return fixedPartsList;
   }
 
   @Override
@@ -188,35 +137,35 @@ public class Validator extends AbstractImmutableContainer
    * if the {@link BeaconState} instance and validator index is available
    */
   public Bytes48 getPubkey() {
-    return Bytes48.wrap(ViewUtils.getAllBytes(getAny(0)));
+    return Bytes48.wrap(ViewUtils.getAllBytes(getField0()));
   }
 
   public Bytes32 getWithdrawal_credentials() {
-    return ((Bytes32View) get(1)).get();
+    return getField1().get();
   }
 
   public UInt64 getEffective_balance() {
-    return ((UInt64View) get(2)).get();
+    return getField2().get();
   }
 
   public boolean isSlashed() {
-    return ((BitView) get(3)).get();
+    return getField3().get();
   }
 
   public UInt64 getActivation_eligibility_epoch() {
-    return ((UInt64View) get(4)).get();
+    return getField4().get();
   }
 
   public UInt64 getActivation_epoch() {
-    return ((UInt64View) get(5)).get();
+    return getField5().get();
   }
 
   public UInt64 getExit_epoch() {
-    return ((UInt64View) get(6)).get();
+    return getField6().get();
   }
 
   public UInt64 getWithdrawable_epoch() {
-    return ((UInt64View) get(7)).get();
+    return getField7().get();
   }
 
   public Validator withEffective_balance(UInt64 effective_balance) {
