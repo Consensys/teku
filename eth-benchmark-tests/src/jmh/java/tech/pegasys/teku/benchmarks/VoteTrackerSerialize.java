@@ -19,29 +19,56 @@ import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.seria
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.storage.server.rocksdb.serialization.VotesTrackerSerializer;
 
-@Fork(5)
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
   private static Bytes votesSerialized = serialize(votes);
+  private static VotesTrackerSerializer serializer = new VotesTrackerSerializer();
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  public void VoteTrackerSerialization() {
-    serialize(votes);
+  @Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  public void genericSerialization() {
+    checkSize(serialize(votes));
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  public void VoteTrackerDeserialization() {
-    deserialize(votesSerialized, VoteTracker.class);
+  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  public void genericDeserialization() {
+    checkEpoch(deserialize(votesSerialized, VoteTracker.class));
+  }
+
+  @Benchmark
+  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  public void voteTrackerSerialization() {
+    checkSize(Bytes.wrap(serializer.serialize(votes)));
+  }
+
+  @Benchmark
+  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  public void voteTrackerDeserialization() {
+    checkEpoch(serializer.deserialize(votesSerialized.toArrayUnsafe()));
+  }
+
+  private boolean checkSize(final Bytes serialize) {
+    return serialize.size() == votesSerialized.size();
+  }
+
+  private boolean checkEpoch(final VoteTracker voteTracker) {
+    return votes.getNextEpoch().equals(voteTracker.getNextEpoch());
   }
 }
