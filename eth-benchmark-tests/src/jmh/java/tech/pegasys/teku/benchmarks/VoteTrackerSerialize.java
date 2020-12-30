@@ -24,13 +24,13 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.storage.server.rocksdb.serialization.VotesTrackerSerializer;
+import tech.pegasys.teku.storage.server.rocksdb.serialization.VoteTrackerSerializer;
 
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
   private static Bytes votesSerialized = serialize(votes);
-  private static VotesTrackerSerializer serializer = new VotesTrackerSerializer();
+  private static VoteTrackerSerializer serializer = new VoteTrackerSerializer();
 
   @Benchmark
   @Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)

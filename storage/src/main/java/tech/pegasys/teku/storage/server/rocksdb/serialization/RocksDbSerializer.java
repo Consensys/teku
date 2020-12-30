@@ -33,7 +33,7 @@ public interface RocksDbSerializer<T> {
       new SszSerializer<>(SignedBeaconBlock.class);
   RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
-  RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VotesTrackerSerializer();
+  RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
       new DepositsFromBlockEventSerializer();
   RocksDbSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =

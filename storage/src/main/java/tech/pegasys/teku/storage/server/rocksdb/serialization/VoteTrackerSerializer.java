@@ -19,7 +19,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class VotesTrackerSerializer implements RocksDbSerializer<VoteTracker> {
+public class VoteTrackerSerializer implements RocksDbSerializer<VoteTracker> {
   @Override
   public VoteTracker deserialize(final byte[] data) {
     return SSZ.decode(
