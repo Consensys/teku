@@ -357,7 +357,7 @@ class AttestationProductionDutyTest {
     return new Validator(
         dataStructureUtil.randomPublicKey(),
         signer,
-        new FileBackedGraffitiProvider(Optional.empty(), Optional.empty()));
+        new FileBackedGraffitiProvider());
   }
 
   public Attestation expectSignAttestation(

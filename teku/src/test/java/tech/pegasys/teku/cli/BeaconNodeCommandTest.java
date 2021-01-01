@@ -437,7 +437,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
                     .graffitiProvider(
-                        new FileBackedGraffitiProvider(Optional.empty(), Optional.empty())))
+                        new FileBackedGraffitiProvider()))
         .logging(
             b ->
                 b.colorEnabled(true)

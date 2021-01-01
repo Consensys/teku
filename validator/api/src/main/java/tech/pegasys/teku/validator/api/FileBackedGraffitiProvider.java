@@ -35,6 +35,10 @@ public class FileBackedGraffitiProvider implements GraffitiProvider {
   private final Optional<Bytes32> defaultGraffiti;
   private final Optional<Path> graffitiFile;
 
+  public FileBackedGraffitiProvider() {
+    this(Optional.empty(), Optional.empty());
+  }
+
   public FileBackedGraffitiProvider(
       final Optional<Bytes32> defaultGraffiti, final Optional<Path> graffitiFile) {
     this.defaultGraffiti = defaultGraffiti;

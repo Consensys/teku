@@ -26,7 +26,7 @@ public class FileBackedGraffitiProviderTest {
 
   @Test
   public void testBothEmpty() {
-    var graffitiProvider = new FileBackedGraffitiProvider(Optional.empty(), Optional.empty());
+    var graffitiProvider = new FileBackedGraffitiProvider();
     assertThat(graffitiProvider.get()).isNotPresent();
   }
 
