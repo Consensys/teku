@@ -54,8 +54,7 @@ class AttestationDutyLoaderTest {
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
   private final Signer signer = mock(Signer.class);
   private final Validator validator =
-      new Validator(
-          validatorKey, signer, new FileBackedGraffitiProvider());
+      new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 

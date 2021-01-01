@@ -56,15 +56,9 @@ class AggregationDutyTest {
   private final Signer signer1 = mock(Signer.class);
   private final Signer signer2 = mock(Signer.class);
   private final Validator validator1 =
-      new Validator(
-          dataStructureUtil.randomPublicKey(),
-          signer1,
-          new FileBackedGraffitiProvider());
+      new Validator(dataStructureUtil.randomPublicKey(), signer1, new FileBackedGraffitiProvider());
   private final Validator validator2 =
-      new Validator(
-          dataStructureUtil.randomPublicKey(),
-          signer2,
-          new FileBackedGraffitiProvider());
+      new Validator(dataStructureUtil.randomPublicKey(), signer2, new FileBackedGraffitiProvider());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AggregationDuty duty =

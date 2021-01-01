@@ -28,7 +28,7 @@ class GraffitiParserTest {
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/graffitiSample.txt")))
         .isEqualTo(Bytes32.rightPad(Bytes.wrap("123456789".getBytes(UTF_8))));
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/32NullBytes.txt")))
-            .isEqualTo(Bytes32.fromHexString("00".repeat(32)));
+        .isEqualTo(Bytes32.fromHexString("00".repeat(32)));
   }
 
   @Test
@@ -43,7 +43,7 @@ class GraffitiParserTest {
   @Test
   void testGraffitiParserLoadsEmptyFileSucessfully() throws Exception {
     assertThat(GraffitiParser.loadFromFile(Path.of("src/test/resources/emptyGraffitiSample.txt")))
-            .isEqualTo(Bytes32.ZERO);
+        .isEqualTo(Bytes32.ZERO);
   }
 
   @Test
