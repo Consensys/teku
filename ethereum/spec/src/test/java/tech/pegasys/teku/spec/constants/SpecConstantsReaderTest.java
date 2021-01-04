@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.constants;
+package tech.pegasys.teku.spec.constants;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -232,13 +232,12 @@ public class SpecConstantsReaderTest {
   }
 
   private static String getConfigPath(final String name) {
-    final String path = "tech/pegasys/teku/core/constants/";
+    final String path = "tech/pegasys/teku/spec/constants/";
     return path + name + ".yaml";
   }
 
   private InputStream getFileFromResourceAsStream(String fileName) {
-    InputStream inputStream =
-        SpecConstantsReader.class.getClassLoader().getResourceAsStream(fileName);
+    InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
     if (inputStream == null) {
       throw new IllegalArgumentException("File not found: " + fileName);
     }
