@@ -36,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -52,17 +53,24 @@ public class GetEvents implements Handler {
       final JsonProvider jsonProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
-    this(dataProvider.getChainDataProvider(), jsonProvider, eventChannels, asyncRunner);
+    this(
+        dataProvider.getChainDataProvider(),
+        jsonProvider,
+        dataProvider.getSyncDataProvider(),
+        eventChannels,
+        asyncRunner);
   }
 
   GetEvents(
       final ChainDataProvider provider,
       final JsonProvider jsonProvider,
+      final SyncDataProvider syncDataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     this.jsonProvider = jsonProvider;
     eventSubscriptionManager =
-        new EventSubscriptionManager(provider, jsonProvider, asyncRunner, eventChannels);
+        new EventSubscriptionManager(
+            provider, jsonProvider, syncDataProvider, asyncRunner, eventChannels);
   }
 
   @OpenApi(

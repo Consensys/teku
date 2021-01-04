@@ -39,6 +39,8 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -60,7 +62,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -70,13 +72,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
-  private static final GlobalConfiguration CONFIG =
-      GlobalConfiguration.builder()
-          .setRestApiPort(0)
-          .setRestApiEnabled(true)
-          .setRestApiDocsEnabled(true)
-          .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-          .setRestApiCorsAllowedOrigins(new ArrayList<>())
+  private static final BeaconRestApiConfig CONFIG =
+      BeaconRestApiConfig.builder()
+          .restApiPort(0)
+          .restApiEnabled(true)
+          .restApiDocsEnabled(true)
+          .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+          .restApiCorsAllowedOrigins(new ArrayList<>())
+          .eth1DepositContractAddress(
+              GlobalConfiguration.builder().build().getEth1DepositContractAddress())
           .build();
 
   protected static final UInt64 SIX = UInt64.valueOf(6);
@@ -87,7 +91,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   // Mocks
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
-  protected final ForwardSync syncService = mock(ForwardSync.class);
+  protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
@@ -129,12 +133,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
-            : new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, stateTransition);
+            : new ForkChoice(
+                new ForkChoiceAttestationValidator(),
+                new ForkChoiceBlockTasks(),
+                new SyncForkChoiceExecutor(),
+                recentChainData,
+                stateTransition);
     beaconChainUtil =
         BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
-  private void setupAndStartRestAPI(GlobalConfiguration config) {
+  private void setupAndStartRestAPI(BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
@@ -174,7 +183,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI();
   }
 
-  protected void startPreGenesisRestAPIWithConfig(GlobalConfiguration config) {
+  protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
     setupStorage(StateStorageMode.ARCHIVE, false);
     // Start API
     setupAndStartRestAPI(config);
@@ -266,6 +275,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void assertBodyEquals(final Response response, final String body) throws IOException {
     assertThat(response.body().string()).isEqualTo(body);
+  }
+
+  protected Response getResponse(final String path, final String contentType) throws IOException {
+    final Request request =
+        new Request.Builder().url(getUrl(path)).header("Accept", contentType).build();
+    return client.newCall(request).execute();
   }
 
   protected Response getResponse(final String path) throws IOException {

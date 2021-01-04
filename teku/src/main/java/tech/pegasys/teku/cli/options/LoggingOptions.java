@@ -15,8 +15,11 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import picocli.CommandLine;
+import tech.pegasys.teku.cli.util.LoggingPathBuilder;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
@@ -145,5 +148,40 @@ public class LoggingOptions {
 
   public boolean isLogWireGossipEnabled() {
     return logWireGossipEnabled;
+  }
+
+  public TekuConfiguration.Builder configure(
+      final TekuConfiguration.Builder builder,
+      final Path dataBasePath,
+      final String defaultLogFile,
+      final String defaultLogFileNamePattern) {
+
+    final String logFile =
+        new LoggingPathBuilder()
+            .defaultBasename(defaultLogFile)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(getMaybeLogFile())
+            .build();
+
+    final String logFileNamePattern =
+        new LoggingPathBuilder()
+            .defaultBasename(defaultLogFileNamePattern)
+            .dataPath(dataBasePath)
+            .maybeFromCommandLine(getMaybeLogPattern())
+            .build();
+
+    return builder.logging(
+        loggingBuilder ->
+            loggingBuilder
+                .colorEnabled(logColorEnabled)
+                .includeEventsEnabled(logIncludeEventsEnabled)
+                .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                .destination(logDestination)
+                .logFile(logFile)
+                .logFileNamePattern(logFileNamePattern)
+                .logWireCipher(logWireCipherEnabled)
+                .logWirePlain(logWirePlainEnabled)
+                .logWireMuxFrames(logWireMuxEnabled)
+                .logWireGossip(logWireGossipEnabled));
   }
 }

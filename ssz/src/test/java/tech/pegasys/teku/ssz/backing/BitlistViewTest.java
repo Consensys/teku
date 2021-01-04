@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
@@ -37,5 +39,20 @@ public class BitlistViewTest {
 
       Assertions.assertThat(bitlist1).isEqualTo(bitlist);
     }
+  }
+
+  @Disabled("the Tuweni Bytes issue: https://github.com/apache/incubator-tuweni/issues/186")
+  @Test
+  public void tuweniBytesIssue() {
+    Bytes slicedBytes = Bytes.wrap(Bytes.wrap(new byte[32]), Bytes.wrap(new byte[6])).slice(0, 37);
+
+    Assertions.assertThatCode(slicedBytes::copy).doesNotThrowAnyException();
+
+    Bytes wrappedBytes = Bytes.wrap(slicedBytes, Bytes.wrap(new byte[1]));
+
+    Assertions.assertThatCode(wrappedBytes::toArrayUnsafe).doesNotThrowAnyException();
+    Assertions.assertThatCode(wrappedBytes::toArray).doesNotThrowAnyException();
+    Assertions.assertThatCode(() -> Bytes.concatenate(slicedBytes, Bytes.wrap(new byte[1])))
+        .doesNotThrowAnyException();
   }
 }

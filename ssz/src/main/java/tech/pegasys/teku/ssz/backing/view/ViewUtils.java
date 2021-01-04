@@ -68,13 +68,7 @@ public class ViewUtils {
 
   /** Converts list of bits to {@link Bitlist} value */
   public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
-    Bitlist ret = new Bitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
-    for (int i = 0; i < bitlistView.size(); i++) {
-      if (bitlistView.get(i).get()) {
-        ret.setBit(i);
-      }
-    }
-    return ret;
+    return Bitlist.fromSszBytes(bitlistView.sszSerialize(), bitlistView.getType().getMaxLength());
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */

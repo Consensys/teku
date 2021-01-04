@@ -27,6 +27,7 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -118,8 +119,8 @@ public class BeaconBlocksByRangeMessageHandler
 
               final UInt64 headBlockSlot =
                   combinedChainDataClient
-                      .getBestBlock()
-                      .map(SignedBeaconBlock::getSlot)
+                      .getChainHead()
+                      .map(StateAndBlockSummary::getSlot)
                       .orElse(ZERO);
               final NavigableMap<UInt64, Bytes32> hotRoots;
               if (combinedChainDataClient.isFinalized(endSlot)) {

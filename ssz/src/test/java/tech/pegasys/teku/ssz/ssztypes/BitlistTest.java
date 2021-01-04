@@ -19,9 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 class BitlistTest {
@@ -121,7 +125,7 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
+    Bitlist newBitlist = Bitlist.fromSszBytes(bitlistSerialized, BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
@@ -151,20 +155,20 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
+    Bitlist newBitlist = Bitlist.fromSszBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void deserializationShouldRejectZeroLengthBytes() {
-    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> Bitlist.fromSszBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one byte");
   }
 
   @Test
   void deserializationShouldRejectDataWhenEndMarkerBitNotSet() {
-    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> Bitlist.fromSszBytes(Bytes.of(0), BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("marker bit");
   }
@@ -177,5 +181,58 @@ class BitlistTest {
 
   private static Bitlist createBitlist() {
     return create(1, 4, 5, 6, 11, 12, 17);
+  }
+
+  static Stream<Arguments> sszBitlistCases() {
+    return Stream.of(
+        Arguments.of(Bytes.of(0b1)),
+        Arguments.of(Bytes.of(0b11)),
+        Arguments.of(Bytes.of(0b10)),
+        Arguments.of(Bytes.of(0b101)),
+        Arguments.of(Bytes.of(0b110)),
+        Arguments.of(Bytes.of(0b111)),
+        Arguments.of(Bytes.of(0b100)),
+        Arguments.of(Bytes.of(0b1111)),
+        Arguments.of(Bytes.of(0b11111)),
+        Arguments.of(Bytes.of(0b111111)),
+        Arguments.of(Bytes.of(0b1111111)),
+        Arguments.of(Bytes.of(0b11111111)),
+        Arguments.of(Bytes.of(0b10111111)),
+        Arguments.of(Bytes.of(0b10111111, 0b1)),
+        Arguments.of(Bytes.of(0b00111111, 0b1)),
+        Arguments.of(Bytes.of(0b10111111, 0b11)),
+        Arguments.of(Bytes.of(0b10111111, 0b10)),
+        Arguments.of(Bytes.of(0b10111111, 0b1111111)),
+        Arguments.of(Bytes.of(0b10111111, 0b11111111)),
+        Arguments.of(Bytes.of(0b10111111, 0b11111111, 0b1)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("sszBitlistCases")
+  void testSszMethods(Bytes bitlistSsz) {
+    int length = Bitlist.sszGetLengthAndValidate(bitlistSsz);
+    Bytes truncBytes = Bitlist.sszTruncateLeadingBit(bitlistSsz, length);
+    Bytes bitlistSsz1 = Bitlist.sszAppendLeadingBit(truncBytes, length);
+    assertThat(bitlistSsz1).isEqualTo(bitlistSsz);
+
+    Bitlist bitlist = Bitlist.fromSszBytes(bitlistSsz, length);
+    Bytes bitlistSsz2 = bitlist.serialize();
+    assertThat(bitlistSsz2).isEqualTo(bitlistSsz);
+  }
+
+  static Stream<Arguments> sszInvalidBitlistCases() {
+    return Stream.of(
+        Arguments.of(Bytes.of(0b0)),
+        Arguments.of(Bytes.EMPTY),
+        Arguments.of(Bytes.of(0b10101010, 0b0)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("sszInvalidBitlistCases")
+  void testSszMethodsInvalid(Bytes bitlistSsz) {
+    assertThatThrownBy(() -> Bitlist.sszGetLengthAndValidate(bitlistSsz))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Bitlist.fromSszBytes(bitlistSsz, 1024))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

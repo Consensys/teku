@@ -16,6 +16,8 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
@@ -40,27 +42,24 @@ import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final EventChannels eventChannels;
-  private final ValidatorTimingChannel attestationTimingChannel;
-  private final ValidatorTimingChannel blockProductionTimingChannel;
-  private final ValidatorIndexProvider validatorIndexProvider;
-  private final ValidatorStatusLogger validatorStatusLogger;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
 
+  private ValidatorTimingChannel attestationTimingChannel;
+  private ValidatorTimingChannel blockProductionTimingChannel;
+  private ValidatorStatusLogger validatorStatusLogger;
+  private ValidatorIndexProvider validatorIndexProvider;
+
+  private SafeFuture<Void> initializationComplete = new SafeFuture<>();
+
   private ValidatorClientService(
-      final ValidatorStatusLogger validatorStatusLogger,
       final EventChannels eventChannels,
-      final ValidatorTimingChannel attestationTimingChannel,
-      final ValidatorTimingChannel blockProductionTimingChannel,
-      final ValidatorIndexProvider validatorIndexProvider,
       final BeaconNodeApi beaconNodeApi,
       final ForkProvider forkProvider) {
-    this.validatorStatusLogger = validatorStatusLogger;
     this.eventChannels = eventChannels;
-    this.attestationTimingChannel = attestationTimingChannel;
-    this.blockProductionTimingChannel = blockProductionTimingChannel;
-    this.validatorIndexProvider = validatorIndexProvider;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
   }
@@ -68,34 +67,52 @@ public class ValidatorClientService extends Service {
   public static ValidatorClientService create(
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
-    final MetricsSystem metricsSystem = services.getMetricsSystem();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
-    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
-    final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
-    final ValidatorLoader validatorLoader = ValidatorLoader.create(slashingProtector, asyncRunner);
-    final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(
-            config.getValidatorConfig(), config.getGlobalConfiguration());
-
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
             .map(endpoint -> RemoteBeaconNodeApi.create(services, asyncRunner, endpoint))
             .orElseGet(() -> InProcessBeaconNodeApi.create(services, asyncRunner));
-
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider =
         new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
-    final ValidatorIndexProvider validatorIndexProvider =
+
+    ValidatorClientService validatorClientService =
+        new ValidatorClientService(eventChannels, beaconNodeApi, forkProvider);
+
+    asyncRunner
+        .runAsync(
+            () ->
+                validatorClientService.initializeValidators(
+                    config, validatorApiChannel, asyncRunner, services))
+        .finish(err -> LOG.error("Unable to initialize validators", err));
+
+    return validatorClientService;
+  }
+
+  void initializeValidators(
+      ValidatorClientConfiguration config,
+      ValidatorApiChannel validatorApiChannel,
+      AsyncRunner asyncRunner,
+      ServiceConfig services) {
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
+    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
+    final SlashingProtector slashingProtector =
+        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
+    final Map<BLSPublicKey, Validator> validators =
+        validatorLoader.initializeValidators(
+            config.getValidatorConfig(), config.getInteropConfig());
+    this.validatorIndexProvider =
         new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
-    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
-        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader attestationDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,
@@ -114,30 +131,18 @@ public class ValidatorClientService extends Service {
                 () -> new ScheduledDuties(validatorDutyFactory),
                 validators,
                 validatorIndexProvider));
-    final AttestationDutyScheduler attestationDutyScheduler =
+    this.attestationTimingChannel =
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
-    final BlockDutyScheduler blockDutyScheduler =
-        new BlockDutyScheduler(metricsSystem, blockDutyLoader);
-
+    this.blockProductionTimingChannel = new BlockDutyScheduler(metricsSystem, blockDutyLoader);
     addValidatorCountMetric(metricsSystem, validators.size());
-
-    ValidatorStatusLogger validatorStatusLogger;
     if (validators.keySet().size() > 0) {
-      validatorStatusLogger =
+      this.validatorStatusLogger =
           new DefaultValidatorStatusLogger(
-              new ArrayList<>(validators.keySet()), validatorApiChannel);
+              new ArrayList<>(validators.keySet()), validatorApiChannel, asyncRunner);
     } else {
-      validatorStatusLogger = ValidatorStatusLogger.NOOP;
+      this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
     }
-
-    return new ValidatorClientService(
-        validatorStatusLogger,
-        eventChannels,
-        attestationDutyScheduler,
-        blockDutyScheduler,
-        validatorIndexProvider,
-        beaconNodeApi,
-        forkProvider);
+    initializationComplete.complete(null);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -155,17 +160,20 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    forkProvider.start().reportExceptions();
-    validatorIndexProvider.lookupValidators();
-    eventChannels.subscribe(
-        ValidatorTimingChannel.class,
-        new ValidatorTimingActions(
-            validatorStatusLogger,
-            validatorIndexProvider,
-            blockProductionTimingChannel,
-            attestationTimingChannel));
-    validatorStatusLogger.printInitialValidatorStatuses();
-    return beaconNodeApi.subscribeToEvents();
+    return initializationComplete.thenCompose(
+        (__) -> {
+          forkProvider.start().reportExceptions();
+          validatorIndexProvider.lookupValidators();
+          eventChannels.subscribe(
+              ValidatorTimingChannel.class,
+              new ValidatorTimingActions(
+                  validatorStatusLogger,
+                  validatorIndexProvider,
+                  blockProductionTimingChannel,
+                  attestationTimingChannel));
+          validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
+          return beaconNodeApi.subscribeToEvents();
+        });
   }
 
   @Override

@@ -24,6 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -31,6 +33,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -77,7 +80,12 @@ public class BeaconChainUtil {
     return create(
         storageClient,
         validatorKeys,
-        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            storageClient,
+            new StateTransition()),
         true);
   }
 
@@ -88,7 +96,12 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(
         validatorKeys,
         storageClient,
-        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            new SyncForkChoiceExecutor(),
+            storageClient,
+            new StateTransition()),
         signDeposits);
   }
 
@@ -191,7 +204,9 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final Optional<BeaconState> preState =
-        recentChainData.retrieveBlockState(block.getParentRoot()).join();
+        recentChainData
+            .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+            .join();
     final BlockImportResult importResult = forkChoice.onBlock(block, preState).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

@@ -352,6 +352,10 @@ public class CombinedChainDataClient {
     return recentChainData.getHeadBlock();
   }
 
+  public Optional<StateAndBlockSummary> getChainHead() {
+    return recentChainData.getChainHead();
+  }
+
   public boolean isStoreAvailable() {
     return recentChainData != null && recentChainData.getStore() != null;
   }

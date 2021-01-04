@@ -24,6 +24,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -33,7 +35,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -84,8 +85,11 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParentRoot()))
-        .thenCompose(preState -> forkChoice.onBlock(block, preState))
+        .thenCompose(
+            __ ->
+                recentChainData.retrieveStateAtSlot(
+                    new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
+        .thenCompose(blockSlotState -> forkChoice.onBlock(block, blockSlotState))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
@@ -201,7 +205,7 @@ public class BlockImporter {
     return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 
-  private ForkChoiceStrategy getForkChoiceStrategy() {
+  private ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData
         .getForkChoiceStrategy()
         .orElseThrow(

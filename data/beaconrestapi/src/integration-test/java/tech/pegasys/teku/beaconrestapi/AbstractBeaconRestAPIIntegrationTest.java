@@ -44,7 +44,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -53,12 +53,14 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 @SuppressWarnings("unchecked")
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-  static final GlobalConfiguration config =
-      GlobalConfiguration.builder()
-          .setRestApiPort(0)
-          .setRestApiEnabled(true)
-          .setRestApiDocsEnabled(false)
-          .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+  static final GlobalConfiguration config = GlobalConfiguration.builder().build();
+  static final BeaconRestApiConfig restApiConfig =
+      BeaconRestApiConfig.builder()
+          .restApiPort(0)
+          .restApiEnabled(true)
+          .restApiDocsEnabled(false)
+          .eth1DepositContractAddress(config.getEth1DepositContractAddress())
+          .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -67,7 +69,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
   protected StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected RecentChainData recentChainData = mock(RecentChainData.class);
-  protected final ForwardSync syncService = mock(ForwardSync.class);
+  protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
@@ -96,7 +98,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             voluntaryExitPool);
 
     beaconRestApi =
-        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
+        new BeaconRestApi(dataProvider, restApiConfig, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
     beaconRestApi.start();
     client = new OkHttpClient();
   }

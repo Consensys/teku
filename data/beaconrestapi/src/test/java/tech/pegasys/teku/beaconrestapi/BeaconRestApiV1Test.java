@@ -84,8 +84,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.forward.ForwardSync;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.sync.SyncService;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
@@ -94,7 +93,7 @@ public class BeaconRestApiV1Test {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
-  private final ForwardSync syncService = mock(ForwardSync.class);
+  private final SyncService syncService = mock(SyncService.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -104,8 +103,8 @@ public class BeaconRestApiV1Test {
 
   @BeforeEach
   public void setup() {
-    GlobalConfiguration config =
-        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
+    BeaconRestApiConfig beaconRestApiConfig =
+        BeaconRestApiConfig.builder().restApiDocsEnabled(false).restApiPort(THE_PORT).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
@@ -118,7 +117,7 @@ public class BeaconRestApiV1Test {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool),
-        config,
+        beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),
         app);

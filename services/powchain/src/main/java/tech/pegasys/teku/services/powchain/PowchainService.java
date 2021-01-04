@@ -74,7 +74,8 @@ public class PowchainService extends Service {
                     new Web3jEth1Provider(web3j, asyncRunner),
                     asyncRunner,
                     config.getTimeProvider()),
-                MAXIMUM_CONCURRENT_ETH1_REQUESTS));
+                MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+                config.getMetricsSystem()));
     final Eth1Provider eth1Provider =
         eth1Providers.size() == 1
             ? eth1Providers.get(0)

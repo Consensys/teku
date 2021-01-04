@@ -22,20 +22,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.ssz.backing.CompositeViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -83,7 +89,12 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState);
       ForkChoice forkChoice =
-          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+          new ForkChoice(
+              new ForkChoiceAttestationValidator(),
+              new ForkChoiceBlockTasks(),
+              new SyncForkChoiceExecutor(),
+              recentChainData,
+              new StateTransition());
       BlockImporter blockImporter =
           new BlockImporter(
               recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
@@ -157,7 +168,12 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState);
       initialState = null;
       ForkChoice forkChoice =
-          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+          new ForkChoice(
+              new ForkChoiceAttestationValidator(),
+              new ForkChoiceBlockTasks(),
+              new SyncForkChoiceExecutor(),
+              recentChainData,
+              new StateTransition());
       BlockImporter blockImporter =
           new BlockImporter(
               recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
@@ -199,16 +215,28 @@ public class ProfilingRun {
     }
   }
 
-  private static void traverseViewHierarchy(Object view, Consumer<ViewRead> visitor) {
-    if (view instanceof ViewRead) {
-      visitor.accept((ViewRead) view);
-      if (view instanceof CompositeViewRead) {
-        CompositeViewRead<?> cView = (CompositeViewRead<?>) view;
+  @Disabled
+  @Test
+  void runSszDeserialize() {
+    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    System.out.println("Generating state...");
+    BeaconState beaconState =
+        new DataStructureUtil(1).withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
+    System.out.println("Serializing...");
+    Bytes bytes = beaconState.sszSerialize();
 
-        for (int i = 0; i < cView.size(); i++) {
-          traverseViewHierarchy(cView.get(i), visitor);
+    System.out.println("Deserializing...");
+    while (true) {
+      long s = System.currentTimeMillis();
+      long sum = 0;
+      for (int i = 0; i < 1; i++) {
+        BeaconStateImpl state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+        blackHole.accept(state);
+        for (Validator validator : state.getValidators()) {
+          sum += validator.getEffective_balance().longValue();
         }
       }
+      System.out.println("Time: " + (System.currentTimeMillis() - s) + ", sum = " + sum);
     }
   }
 }

@@ -38,6 +38,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public interface BeaconState
@@ -115,6 +116,7 @@ public interface BeaconState
   Field CURRENT_JUSTIFIED_CHECKPOINT_FIELD = new Field(19, Checkpoint.TYPE);
   Field FINALIZED_CHECKPOINT_FIELD = new Field(20, Checkpoint.TYPE);
 
+  @SszTypeDescriptor
   static ContainerViewType<BeaconState> getSSZType() {
     return new ContainerViewType<>(
         SSZContainer.listFields(BeaconState.class).stream()

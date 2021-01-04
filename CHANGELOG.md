@@ -2,9 +2,33 @@
 
 ## Upcoming Breaking Changes
 
+- The default docker image will be updated to Java 15. Java 15 based images are available now for testing with the `-jdk15` suffix (e.g `consensys/teku:develop-jdk15`)
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
+## 20.12.1
+
+### Additions and Improvements
+- Add some performance optimizations to improve block inclusions rates and attestation accuracy.
+- Improve deserialization performance for large data structures, speeding up deserialization up to 1000x for large beacon states.
+- Build and publish docker images on OpenJDK 15 (which supports arm64) in addition to OpenJDK 14.
+  Java 15 based images are available now for testing with the `-jdk15` suffix (e.g `consensys/teku:develop-jdk15`)
+- Add periodic checks to make sure any configured external signer (`--validators-external-signer-url`) is reachable. 
+  If the external signing service cannot be reached, errors are logged each time teku fails to contact the external signer.
+- Limit the rate at which signature requests are sent to external signers at the start of each epoch.
+- Add options to configure keystore and truststore for TLS communication and authentication with external signer.
+- Add metrics to track validator participation (`previous_epoch_participation_weight`, `previous_epoch_total_weight`). 
+  This enables accurate tracking of network participation rate.
+- Add `sync_state` event type to events REST API endpoint.
+- Improve logging and validation around `--initial-state` arguments.
+
+### Bug Fixes
+- Fix an issue where teku could produce aggregate attestations when it should not.
+- Fix an issue with `--log-file-name-pattern` where teku would rotate log files to the default data directory even when a custom data directory was specified using `--data-path`.
+- Break up requests for validator information into batches to avoid sending requests that are too large.
+- Fix a bug in our peer selection logic so that we now select a subset of peers randomly in order to guard against
+  eclipse attacks.
+  
 ## 20.12.0
 
 ### Additions and Improvements

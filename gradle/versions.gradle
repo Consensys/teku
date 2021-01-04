@@ -38,7 +38,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.6.3-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.6.4-RELEASE'
     dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
@@ -126,8 +126,10 @@ dependencyManagement {
     dependency 'org.mockito:mockito-core:3.3.3'
     dependency 'org.mockito:mockito-junit-jupiter:3.3.3'
 
-    dependency 'org.openjdk.jmh:jmh-core:1.21'
-    dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
+    dependencySet(group: "org.openjdk.jmh", version: "1.27") {
+      entry 'jmh-core'
+      entry 'jmh-generator-annprocess'
+    }
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:6.11.4'

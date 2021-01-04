@@ -15,13 +15,13 @@ package tech.pegasys.teku.core;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtilWrapper {
 
   public Optional<Bytes32> get_ancestor(
-      ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
     return ForkChoiceUtil.get_ancestor(forkChoiceStrategy, root, slot);
   }
 }

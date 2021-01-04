@@ -13,22 +13,34 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainConfiguration {
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final ValidatorConfig validatorConfig;
+  private final InteropConfig interopConfig;
   private final P2PConfig p2pConfig;
+  private final BeaconRestApiConfig beaconRestApiConfig;
+  private final LoggingConfig loggingConfig;
 
   public BeaconChainConfiguration(
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
-      final P2PConfig p2pConfig) {
+      final InteropConfig interopConfig,
+      final P2PConfig p2pConfig,
+      final BeaconRestApiConfig beaconRestApiConfig,
+      final LoggingConfig loggingConfig) {
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
+    this.interopConfig = interopConfig;
     this.p2pConfig = p2pConfig;
+    this.beaconRestApiConfig = beaconRestApiConfig;
+    this.loggingConfig = loggingConfig;
   }
 
   public WeakSubjectivityConfig weakSubjectivity() {
@@ -39,7 +51,19 @@ public class BeaconChainConfiguration {
     return validatorConfig;
   }
 
+  public InteropConfig interopConfig() {
+    return interopConfig;
+  }
+
   public P2PConfig p2pConfig() {
     return p2pConfig;
+  }
+
+  public BeaconRestApiConfig beaconRestApiConfig() {
+    return beaconRestApiConfig;
+  }
+
+  public LoggingConfig loggingConfig() {
+    return loggingConfig;
   }
 }

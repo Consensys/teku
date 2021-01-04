@@ -109,6 +109,11 @@ class TestStoreImpl implements MutableStore {
     return best_justified_checkpoint;
   }
 
+  @Override
+  public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
   private SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
     return blocks.get(blockRoot);
   }

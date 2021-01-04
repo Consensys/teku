@@ -36,11 +36,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
+import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
@@ -161,7 +164,12 @@ public class ForkChoiceTestExecutor {
     storageClient.initializeFromGenesis(genesis);
 
     ForkChoice forkChoice =
-        new ForkChoice(SingleThreadedForkChoiceExecutor.create(), storageClient, st);
+        new ForkChoice(
+            new ForkChoiceAttestationValidator(),
+            new ForkChoiceBlockTasks(),
+            SingleThreadedForkChoiceExecutor.create(),
+            storageClient,
+            st);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -259,7 +267,12 @@ public class ForkChoiceTestExecutor {
       RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
-                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParentRoot()))
+                block,
+                recentChainData
+                    .getStore()
+                    .retrieveStateAtSlot(
+                        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+                    .join())
             .join();
     return blockImportResult.isSuccessful();
   }

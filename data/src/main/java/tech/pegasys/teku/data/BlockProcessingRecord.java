@@ -17,19 +17,12 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class BlockProcessingRecord {
-  private final BeaconState preState;
   private final SignedBeaconBlock block;
   private final BeaconState postState;
 
-  public BlockProcessingRecord(
-      final BeaconState preState, final SignedBeaconBlock block, final BeaconState postState) {
-    this.preState = preState;
+  public BlockProcessingRecord(final SignedBeaconBlock block, final BeaconState postState) {
     this.block = block;
     this.postState = postState;
-  }
-
-  public BeaconState getPreState() {
-    return preState;
   }
 
   public SignedBeaconBlock getBlock() {

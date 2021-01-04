@@ -20,47 +20,65 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
+  private static final long INITIAL_STATUS_CHECK_RETRY_PERIOD = 5; // seconds
 
   final List<BLSPublicKey> validatorPublicKeys;
   final ValidatorApiChannel validatorApiChannel;
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
+  final AsyncRunner asyncRunner;
+  final AtomicBoolean startupComplete = new AtomicBoolean(false);
 
   public DefaultValidatorStatusLogger(
-      List<BLSPublicKey> validatorPublicKeys, ValidatorApiChannel validatorApiChannel) {
+      List<BLSPublicKey> validatorPublicKeys,
+      ValidatorApiChannel validatorApiChannel,
+      AsyncRunner asyncRunner) {
     checkArgument(!validatorPublicKeys.isEmpty());
     this.validatorPublicKeys = validatorPublicKeys;
     this.validatorApiChannel = validatorApiChannel;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
-  public void printInitialValidatorStatuses() {
-    validatorApiChannel
+  public SafeFuture<Void> printInitialValidatorStatuses() {
+    return validatorApiChannel
         .getValidatorStatuses(validatorPublicKeys)
-        .thenAccept(
+        .thenCompose(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
-                STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
-                return;
+                return retryInitialValidatorStatusCheck();
               }
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
+              latestValidatorStatuses.set(validatorStatuses);
               if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {
                 printValidatorStatusSummary(validatorStatuses);
               }
+
+              startupComplete.set(true);
+              return SafeFuture.completedFuture(null);
             })
-        .reportExceptions();
+        .exceptionallyCompose((__) -> retryInitialValidatorStatusCheck());
+  }
+
+  private SafeFuture<Void> retryInitialValidatorStatusCheck() {
+    return asyncRunner.runAfterDelay(
+        this::printInitialValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD, TimeUnit.SECONDS);
   }
 
   private void printValidatorStatusesOneByOne(
@@ -70,7 +88,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           validatorStatus ->
-              STATUS_LOG.validatorStatus(validatorStatus.name(), publicKey.toAbbreviatedString()),
+              STATUS_LOG.validatorStatus(publicKey.toAbbreviatedString(), validatorStatus.name()),
           () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
     }
   }
@@ -102,6 +120,10 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   @Override
   public void checkValidatorStatusChanges() {
+    if (!startupComplete.get()) {
+      return;
+    }
+
     validatorApiChannel
         .getValidatorStatuses(validatorPublicKeys)
         .thenAccept(
