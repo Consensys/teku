@@ -19,6 +19,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstants {
+  private final String configName;
+
   // Non-configurable constants
   private final long genesisSlot = 0;
   private final long genesisEpoch = 0;
@@ -26,8 +28,6 @@ public class SpecConstants {
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
   private final int justificationBitsLength = 4;
-
-  private final String configName;
 
   // Misc
   private final UInt64 eth1FollowDistance;
