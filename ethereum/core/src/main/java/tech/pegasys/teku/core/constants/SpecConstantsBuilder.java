@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.constants;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -169,66 +170,92 @@ public class SpecConstantsBuilder {
   }
 
   private void validate() {
-    checkNotNull(configName);
-    checkNotNull(eth1FollowDistance);
-    checkNotNull(maxCommitteesPerSlot);
-    checkNotNull(targetCommitteeSize);
-    checkNotNull(maxValidatorsPerCommittee);
-    checkNotNull(minPerEpochChurnLimit);
-    checkNotNull(churnLimitQuotient);
-    checkNotNull(shuffleRoundCount);
-    checkNotNull(minGenesisActiveValidatorCount);
-    checkNotNull(minGenesisTime);
-    checkNotNull(hysteresisQuotient);
-    checkNotNull(hysteresisDownwardMultiplier);
-    checkNotNull(hysteresisUpwardMultiplier);
-    checkNotNull(proportionalSlashingMultiplier);
-    checkNotNull(minDepositAmount);
-    checkNotNull(maxEffectiveBalance);
-    checkNotNull(ejectionBalance);
-    checkNotNull(effectiveBalanceIncrement);
-    checkNotNull(genesisForkVersion);
-    checkNotNull(blsWithdrawalPrefix);
-    checkNotNull(genesisDelay);
-    checkNotNull(secondsPerSlot);
-    checkNotNull(minAttestationInclusionDelay);
-    checkNotNull(slotsPerEpoch);
-    checkNotNull(minSeedLookahead);
-    checkNotNull(maxSeedLookahead);
-    checkNotNull(minEpochsToInactivityPenalty);
-    checkNotNull(epochsPerEth1VotingPeriod);
-    checkNotNull(slotsPerHistoricalRoot);
-    checkNotNull(minValidatorWithdrawabilityDelay);
-    checkNotNull(shardCommitteePeriod);
-    checkNotNull(epochsPerHistoricalVector);
-    checkNotNull(epochsPerSlashingsVector);
-    checkNotNull(historicalRootsLimit);
-    checkNotNull(validatorRegistryLimit);
-    checkNotNull(baseRewardFactor);
-    checkNotNull(whistleblowerRewardQuotient);
-    checkNotNull(proposerRewardQuotient);
-    checkNotNull(inactivityPenaltyQuotient);
-    checkNotNull(minSlashingPenaltyQuotient);
-    checkNotNull(maxProposerSlashings);
-    checkNotNull(maxAttesterSlashings);
-    checkNotNull(maxAttestations);
-    checkNotNull(maxDeposits);
-    checkNotNull(maxVoluntaryExits);
-    checkNotNull(domainBeaconProposer);
-    checkNotNull(domainBeaconAttester);
-    checkNotNull(domainRandao);
-    checkNotNull(domainDeposit);
-    checkNotNull(domainVoluntaryExit);
-    checkNotNull(domainSelectionProof);
-    checkNotNull(domainAggregateAndProof);
-    checkNotNull(targetAggregatorsPerCommittee);
-    checkNotNull(secondsPerEth1Block);
-    checkNotNull(randomSubnetsPerValidator);
-    checkNotNull(epochsPerRandomSubnetSubscription);
-    checkNotNull(safeSlotsToUpdateJustified);
-    checkNotNull(depositChainId);
-    checkNotNull(depositNetworkId);
-    checkNotNull(depositContractAddress);
+    validateConstant(configName);
+    validateConstant(eth1FollowDistance);
+    validateConstant(maxCommitteesPerSlot);
+    validateConstant(targetCommitteeSize);
+    validateConstant(maxValidatorsPerCommittee);
+    validateConstant(minPerEpochChurnLimit);
+    validateConstant(churnLimitQuotient);
+    validateConstant(shuffleRoundCount);
+    validateConstant(minGenesisActiveValidatorCount);
+    validateConstant(minGenesisTime);
+    validateConstant(hysteresisQuotient);
+    validateConstant(hysteresisDownwardMultiplier);
+    validateConstant(hysteresisUpwardMultiplier);
+    validateConstant(proportionalSlashingMultiplier);
+    validateConstant(minDepositAmount);
+    validateConstant(maxEffectiveBalance);
+    validateConstant(ejectionBalance);
+    validateConstant(effectiveBalanceIncrement);
+    validateConstant(genesisForkVersion);
+    validateConstant(blsWithdrawalPrefix);
+    validateConstant(genesisDelay);
+    validateConstant(secondsPerSlot);
+    validateConstant(minAttestationInclusionDelay);
+    validateConstant(slotsPerEpoch);
+    validateConstant(minSeedLookahead);
+    validateConstant(maxSeedLookahead);
+    validateConstant(minEpochsToInactivityPenalty);
+    validateConstant(epochsPerEth1VotingPeriod);
+    validateConstant(slotsPerHistoricalRoot);
+    validateConstant(minValidatorWithdrawabilityDelay);
+    validateConstant(shardCommitteePeriod);
+    validateConstant(epochsPerHistoricalVector);
+    validateConstant(epochsPerSlashingsVector);
+    validateConstant(historicalRootsLimit);
+    validateConstant(validatorRegistryLimit);
+    validateConstant(baseRewardFactor);
+    validateConstant(whistleblowerRewardQuotient);
+    validateConstant(proposerRewardQuotient);
+    validateConstant(inactivityPenaltyQuotient);
+    validateConstant(minSlashingPenaltyQuotient);
+    validateConstant(maxProposerSlashings);
+    validateConstant(maxAttesterSlashings);
+    validateConstant(maxAttestations);
+    validateConstant(maxDeposits);
+    validateConstant(maxVoluntaryExits);
+    validateConstant(domainBeaconProposer);
+    validateConstant(domainBeaconAttester);
+    validateConstant(domainRandao);
+    validateConstant(domainDeposit);
+    validateConstant(domainVoluntaryExit);
+    validateConstant(domainSelectionProof);
+    validateConstant(domainAggregateAndProof);
+    validateConstant(targetAggregatorsPerCommittee);
+    validateConstant(secondsPerEth1Block);
+    validateConstant(randomSubnetsPerValidator);
+    validateConstant(epochsPerRandomSubnetSubscription);
+    validateConstant(safeSlotsToUpdateJustified);
+    validateConstant(depositChainId);
+    validateConstant(depositNetworkId);
+    validateConstant(depositContractAddress);
+  }
+
+  private void validateConstant(final String value) {
+    checkNotNull(value);
+  }
+
+  private void validateConstant(final Bytes value) {
+    checkNotNull(value);
+  }
+
+  private void validateConstant(final Bytes4 value) {
+    checkNotNull(value);
+  }
+
+  private void validateConstant(final UInt64 value) {
+    checkNotNull(value);
+  }
+
+  private void validateConstant(final Long value) {
+    checkNotNull(value);
+    checkArgument(value >= 0, "Long values must be positive");
+  }
+
+  private void validateConstant(final Integer value) {
+    checkNotNull(value);
+    checkArgument(value >= 0, "Integer values must be positive");
   }
 
   public SpecConstantsBuilder configName(final String configName) {
