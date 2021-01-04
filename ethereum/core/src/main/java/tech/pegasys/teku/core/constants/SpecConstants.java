@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.constants;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class BeaconChainConstants {
+public class SpecConstants {
   // Non-configurable constants
   private final long genesisSlot = 0;
   private final long genesisEpoch = 0;
@@ -25,6 +26,8 @@ public class BeaconChainConstants {
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
   private final int justificationBitsLength = 4;
+
+  private final String configName;
 
   // Misc
   private final UInt64 eth1FollowDistance;
@@ -107,7 +110,8 @@ public class BeaconChainConstants {
   private final int depositNetworkId;
   private final Bytes depositContractAddress;
 
-  BeaconChainConstants(
+  SpecConstants(
+      final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
       final int targetCommitteeSize,
@@ -167,6 +171,7 @@ public class BeaconChainConstants {
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
+    this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
     this.targetCommitteeSize = targetCommitteeSize;
@@ -228,8 +233,12 @@ public class BeaconChainConstants {
     this.depositContractAddress = depositContractAddress;
   }
 
-  public static BeaconChainConstantsBuilder builder() {
-    return new BeaconChainConstantsBuilder();
+  public static SpecConstantsBuilder builder() {
+    return new SpecConstantsBuilder();
+  }
+
+  public String getConfigName() {
+    return configName;
   }
 
   public long getGenesisSlot() {
@@ -490,5 +499,149 @@ public class BeaconChainConstants {
 
   public Bytes getDepositContractAddress() {
     return depositContractAddress;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final SpecConstants that = (SpecConstants) o;
+    return genesisSlot == that.genesisSlot
+        && genesisEpoch == that.genesisEpoch
+        && depositContractTreeDepth == that.depositContractTreeDepth
+        && justificationBitsLength == that.justificationBitsLength
+        && maxCommitteesPerSlot == that.maxCommitteesPerSlot
+        && targetCommitteeSize == that.targetCommitteeSize
+        && maxValidatorsPerCommittee == that.maxValidatorsPerCommittee
+        && minPerEpochChurnLimit == that.minPerEpochChurnLimit
+        && churnLimitQuotient == that.churnLimitQuotient
+        && shuffleRoundCount == that.shuffleRoundCount
+        && minGenesisActiveValidatorCount == that.minGenesisActiveValidatorCount
+        && proportionalSlashingMultiplier == that.proportionalSlashingMultiplier
+        && secondsPerSlot == that.secondsPerSlot
+        && minAttestationInclusionDelay == that.minAttestationInclusionDelay
+        && slotsPerEpoch == that.slotsPerEpoch
+        && minSeedLookahead == that.minSeedLookahead
+        && maxSeedLookahead == that.maxSeedLookahead
+        && epochsPerEth1VotingPeriod == that.epochsPerEth1VotingPeriod
+        && slotsPerHistoricalRoot == that.slotsPerHistoricalRoot
+        && minValidatorWithdrawabilityDelay == that.minValidatorWithdrawabilityDelay
+        && epochsPerHistoricalVector == that.epochsPerHistoricalVector
+        && epochsPerSlashingsVector == that.epochsPerSlashingsVector
+        && historicalRootsLimit == that.historicalRootsLimit
+        && validatorRegistryLimit == that.validatorRegistryLimit
+        && baseRewardFactor == that.baseRewardFactor
+        && whistleblowerRewardQuotient == that.whistleblowerRewardQuotient
+        && minSlashingPenaltyQuotient == that.minSlashingPenaltyQuotient
+        && maxProposerSlashings == that.maxProposerSlashings
+        && maxAttesterSlashings == that.maxAttesterSlashings
+        && maxAttestations == that.maxAttestations
+        && maxDeposits == that.maxDeposits
+        && maxVoluntaryExits == that.maxVoluntaryExits
+        && targetAggregatorsPerCommittee == that.targetAggregatorsPerCommittee
+        && randomSubnetsPerValidator == that.randomSubnetsPerValidator
+        && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
+        && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
+        && depositChainId == that.depositChainId
+        && depositNetworkId == that.depositNetworkId
+        && Objects.equals(farFutureEpoch, that.farFutureEpoch)
+        && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
+        && Objects.equals(configName, that.configName)
+        && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
+        && Objects.equals(minGenesisTime, that.minGenesisTime)
+        && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
+        && Objects.equals(hysteresisDownwardMultiplier, that.hysteresisDownwardMultiplier)
+        && Objects.equals(hysteresisUpwardMultiplier, that.hysteresisUpwardMultiplier)
+        && Objects.equals(minDepositAmount, that.minDepositAmount)
+        && Objects.equals(maxEffectiveBalance, that.maxEffectiveBalance)
+        && Objects.equals(ejectionBalance, that.ejectionBalance)
+        && Objects.equals(effectiveBalanceIncrement, that.effectiveBalanceIncrement)
+        && Objects.equals(genesisForkVersion, that.genesisForkVersion)
+        && Objects.equals(blsWithdrawalPrefix, that.blsWithdrawalPrefix)
+        && Objects.equals(genesisDelay, that.genesisDelay)
+        && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
+        && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
+        && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
+        && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
+        && Objects.equals(domainBeaconProposer, that.domainBeaconProposer)
+        && Objects.equals(domainBeaconAttester, that.domainBeaconAttester)
+        && Objects.equals(domainRandao, that.domainRandao)
+        && Objects.equals(domainDeposit, that.domainDeposit)
+        && Objects.equals(domainVoluntaryExit, that.domainVoluntaryExit)
+        && Objects.equals(domainSelectionProof, that.domainSelectionProof)
+        && Objects.equals(domainAggregateAndProof, that.domainAggregateAndProof)
+        && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
+        && Objects.equals(depositContractAddress, that.depositContractAddress);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        genesisSlot,
+        genesisEpoch,
+        farFutureEpoch,
+        baseRewardsPerEpoch,
+        depositContractTreeDepth,
+        justificationBitsLength,
+        configName,
+        eth1FollowDistance,
+        maxCommitteesPerSlot,
+        targetCommitteeSize,
+        maxValidatorsPerCommittee,
+        minPerEpochChurnLimit,
+        churnLimitQuotient,
+        shuffleRoundCount,
+        minGenesisActiveValidatorCount,
+        minGenesisTime,
+        hysteresisQuotient,
+        hysteresisDownwardMultiplier,
+        hysteresisUpwardMultiplier,
+        proportionalSlashingMultiplier,
+        minDepositAmount,
+        maxEffectiveBalance,
+        ejectionBalance,
+        effectiveBalanceIncrement,
+        genesisForkVersion,
+        blsWithdrawalPrefix,
+        genesisDelay,
+        secondsPerSlot,
+        minAttestationInclusionDelay,
+        slotsPerEpoch,
+        minSeedLookahead,
+        maxSeedLookahead,
+        minEpochsToInactivityPenalty,
+        epochsPerEth1VotingPeriod,
+        slotsPerHistoricalRoot,
+        minValidatorWithdrawabilityDelay,
+        shardCommitteePeriod,
+        epochsPerHistoricalVector,
+        epochsPerSlashingsVector,
+        historicalRootsLimit,
+        validatorRegistryLimit,
+        baseRewardFactor,
+        whistleblowerRewardQuotient,
+        proposerRewardQuotient,
+        inactivityPenaltyQuotient,
+        minSlashingPenaltyQuotient,
+        maxProposerSlashings,
+        maxAttesterSlashings,
+        maxAttestations,
+        maxDeposits,
+        maxVoluntaryExits,
+        domainBeaconProposer,
+        domainBeaconAttester,
+        domainRandao,
+        domainDeposit,
+        domainVoluntaryExit,
+        domainSelectionProof,
+        domainAggregateAndProof,
+        targetAggregatorsPerCommittee,
+        secondsPerEth1Block,
+        randomSubnetsPerValidator,
+        epochsPerRandomSubnetSubscription,
+        safeSlotsToUpdateJustified,
+        depositChainId,
+        depositNetworkId,
+        depositContractAddress);
   }
 }

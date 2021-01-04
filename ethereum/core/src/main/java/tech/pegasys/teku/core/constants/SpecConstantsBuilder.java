@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.constants;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,21 +19,23 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class BeaconChainConstantsBuilder {
+public class SpecConstantsBuilder {
+  private String configName = "Custom (unknown)";
+
   // Misc
   private UInt64 eth1FollowDistance = UInt64.valueOf(1024);
-  private int maxCommitteesPerSlot;
-  private int targetCommitteeSize;
-  private int maxValidatorsPerCommittee;
-  private int minPerEpochChurnLimit;
-  private int churnLimitQuotient;
-  private int shuffleRoundCount;
-  private int minGenesisActiveValidatorCount;
+  private Integer maxCommitteesPerSlot;
+  private Integer targetCommitteeSize;
+  private Integer maxValidatorsPerCommittee;
+  private Integer minPerEpochChurnLimit;
+  private Integer churnLimitQuotient;
+  private Integer shuffleRoundCount;
+  private Integer minGenesisActiveValidatorCount;
   private UInt64 minGenesisTime;
   private UInt64 hysteresisQuotient;
   private UInt64 hysteresisDownwardMultiplier;
   private UInt64 hysteresisUpwardMultiplier;
-  private int proportionalSlashingMultiplier;
+  private Integer proportionalSlashingMultiplier;
 
   // Gwei values
   private UInt64 minDepositAmount;
@@ -47,36 +49,36 @@ public class BeaconChainConstantsBuilder {
 
   // Time parameters
   private UInt64 genesisDelay;
-  private int secondsPerSlot = 12;
-  private int minAttestationInclusionDelay;
-  private int slotsPerEpoch;
-  private int minSeedLookahead;
-  private int maxSeedLookahead;
+  private Integer secondsPerSlot = 12;
+  private Integer minAttestationInclusionDelay;
+  private Integer slotsPerEpoch;
+  private Integer minSeedLookahead;
+  private Integer maxSeedLookahead;
   private UInt64 minEpochsToInactivityPenalty;
-  private int epochsPerEth1VotingPeriod;
-  private int slotsPerHistoricalRoot;
-  private int minValidatorWithdrawabilityDelay;
+  private Integer epochsPerEth1VotingPeriod;
+  private Integer slotsPerHistoricalRoot;
+  private Integer minValidatorWithdrawabilityDelay;
   private UInt64 shardCommitteePeriod;
 
   // State list lengths
-  private int epochsPerHistoricalVector;
-  private int epochsPerSlashingsVector;
-  private int historicalRootsLimit;
-  private long validatorRegistryLimit;
+  private Integer epochsPerHistoricalVector;
+  private Integer epochsPerSlashingsVector;
+  private Integer historicalRootsLimit;
+  private Long validatorRegistryLimit;
 
   // Reward and penalty quotients
-  private int baseRewardFactor;
-  private int whistleblowerRewardQuotient;
+  private Integer baseRewardFactor;
+  private Integer whistleblowerRewardQuotient;
   private UInt64 proposerRewardQuotient;
   private UInt64 inactivityPenaltyQuotient;
-  private int minSlashingPenaltyQuotient;
+  private Integer minSlashingPenaltyQuotient;
 
   // Max transactions per block
-  private int maxProposerSlashings;
-  private int maxAttesterSlashings;
-  private int maxAttestations;
-  private int maxDeposits;
-  private int maxVoluntaryExits = 16;
+  private Integer maxProposerSlashings;
+  private Integer maxAttesterSlashings;
+  private Integer maxAttestations;
+  private Integer maxDeposits;
+  private Integer maxVoluntaryExits = 16;
 
   // Signature domains
   private Bytes4 domainBeaconProposer = new Bytes4(Bytes.fromHexString("0x00000000"));
@@ -88,21 +90,23 @@ public class BeaconChainConstantsBuilder {
   private Bytes4 domainAggregateAndProof;
 
   // Validator
-  private int targetAggregatorsPerCommittee = 16;
+  private Integer targetAggregatorsPerCommittee = 16;
   private UInt64 secondsPerEth1Block = UInt64.valueOf(14L);
-  private int randomSubnetsPerValidator = 1;
-  private int epochsPerRandomSubnetSubscription = 256;
+  private Integer randomSubnetsPerValidator = 1;
+  private Integer epochsPerRandomSubnetSubscription = 256;
 
   // Fork Choice
-  private int safeSlotsToUpdateJustified = 8;
+  private Integer safeSlotsToUpdateJustified = 8;
 
   // Deposit Contract
-  private int depositChainId;
-  private int depositNetworkId;
+  private Integer depositChainId;
+  private Integer depositNetworkId;
   private Bytes depositContractAddress;
 
-  public BeaconChainConstants build() {
-    return new BeaconChainConstants(
+  public SpecConstants build() {
+    validate();
+    return new SpecConstants(
+        configName,
         eth1FollowDistance,
         maxCommitteesPerSlot,
         targetCommitteeSize,
@@ -164,373 +168,433 @@ public class BeaconChainConstantsBuilder {
         depositContractAddress);
   }
 
-  public BeaconChainConstantsBuilder eth1FollowDistance(final UInt64 eth1FollowDistance) {
+  private void validate() {
+    checkNotNull(configName);
+    checkNotNull(eth1FollowDistance);
+    checkNotNull(maxCommitteesPerSlot);
+    checkNotNull(targetCommitteeSize);
+    checkNotNull(maxValidatorsPerCommittee);
+    checkNotNull(minPerEpochChurnLimit);
+    checkNotNull(churnLimitQuotient);
+    checkNotNull(shuffleRoundCount);
+    checkNotNull(minGenesisActiveValidatorCount);
+    checkNotNull(minGenesisTime);
+    checkNotNull(hysteresisQuotient);
+    checkNotNull(hysteresisDownwardMultiplier);
+    checkNotNull(hysteresisUpwardMultiplier);
+    checkNotNull(proportionalSlashingMultiplier);
+    checkNotNull(minDepositAmount);
+    checkNotNull(maxEffectiveBalance);
+    checkNotNull(ejectionBalance);
+    checkNotNull(effectiveBalanceIncrement);
+    checkNotNull(genesisForkVersion);
+    checkNotNull(blsWithdrawalPrefix);
+    checkNotNull(genesisDelay);
+    checkNotNull(secondsPerSlot);
+    checkNotNull(minAttestationInclusionDelay);
+    checkNotNull(slotsPerEpoch);
+    checkNotNull(minSeedLookahead);
+    checkNotNull(maxSeedLookahead);
+    checkNotNull(minEpochsToInactivityPenalty);
+    checkNotNull(epochsPerEth1VotingPeriod);
+    checkNotNull(slotsPerHistoricalRoot);
+    checkNotNull(minValidatorWithdrawabilityDelay);
+    checkNotNull(shardCommitteePeriod);
+    checkNotNull(epochsPerHistoricalVector);
+    checkNotNull(epochsPerSlashingsVector);
+    checkNotNull(historicalRootsLimit);
+    checkNotNull(validatorRegistryLimit);
+    checkNotNull(baseRewardFactor);
+    checkNotNull(whistleblowerRewardQuotient);
+    checkNotNull(proposerRewardQuotient);
+    checkNotNull(inactivityPenaltyQuotient);
+    checkNotNull(minSlashingPenaltyQuotient);
+    checkNotNull(maxProposerSlashings);
+    checkNotNull(maxAttesterSlashings);
+    checkNotNull(maxAttestations);
+    checkNotNull(maxDeposits);
+    checkNotNull(maxVoluntaryExits);
+    checkNotNull(domainBeaconProposer);
+    checkNotNull(domainBeaconAttester);
+    checkNotNull(domainRandao);
+    checkNotNull(domainDeposit);
+    checkNotNull(domainVoluntaryExit);
+    checkNotNull(domainSelectionProof);
+    checkNotNull(domainAggregateAndProof);
+    checkNotNull(targetAggregatorsPerCommittee);
+    checkNotNull(secondsPerEth1Block);
+    checkNotNull(randomSubnetsPerValidator);
+    checkNotNull(epochsPerRandomSubnetSubscription);
+    checkNotNull(safeSlotsToUpdateJustified);
+    checkNotNull(depositChainId);
+    checkNotNull(depositNetworkId);
+    checkNotNull(depositContractAddress);
+  }
+
+  public SpecConstantsBuilder configName(final String configName) {
+    checkNotNull(configName);
+    this.configName = configName;
+    return this;
+  }
+
+  public SpecConstantsBuilder eth1FollowDistance(final UInt64 eth1FollowDistance) {
     checkNotNull(eth1FollowDistance);
     this.eth1FollowDistance = eth1FollowDistance;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxCommitteesPerSlot(final int maxCommitteesPerSlot) {
+  public SpecConstantsBuilder maxCommitteesPerSlot(final Integer maxCommitteesPerSlot) {
     checkNotNull(maxCommitteesPerSlot);
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
     return this;
   }
 
-  public BeaconChainConstantsBuilder targetCommitteeSize(final int targetCommitteeSize) {
+  public SpecConstantsBuilder targetCommitteeSize(final Integer targetCommitteeSize) {
     checkNotNull(targetCommitteeSize);
     this.targetCommitteeSize = targetCommitteeSize;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxValidatorsPerCommittee(
-      final int maxValidatorsPerCommittee) {
+  public SpecConstantsBuilder maxValidatorsPerCommittee(final Integer maxValidatorsPerCommittee) {
     checkNotNull(maxValidatorsPerCommittee);
     this.maxValidatorsPerCommittee = maxValidatorsPerCommittee;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minPerEpochChurnLimit(final int minPerEpochChurnLimit) {
+  public SpecConstantsBuilder minPerEpochChurnLimit(final Integer minPerEpochChurnLimit) {
     checkNotNull(minPerEpochChurnLimit);
     this.minPerEpochChurnLimit = minPerEpochChurnLimit;
     return this;
   }
 
-  public BeaconChainConstantsBuilder churnLimitQuotient(final int churnLimitQuotient) {
+  public SpecConstantsBuilder churnLimitQuotient(final Integer churnLimitQuotient) {
     checkNotNull(churnLimitQuotient);
     this.churnLimitQuotient = churnLimitQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder shuffleRoundCount(final int shuffleRoundCount) {
+  public SpecConstantsBuilder shuffleRoundCount(final Integer shuffleRoundCount) {
     checkNotNull(shuffleRoundCount);
     this.shuffleRoundCount = shuffleRoundCount;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minGenesisActiveValidatorCount(
-      final int minGenesisActiveValidatorCount) {
+  public SpecConstantsBuilder minGenesisActiveValidatorCount(
+      final Integer minGenesisActiveValidatorCount) {
     checkNotNull(minGenesisActiveValidatorCount);
     this.minGenesisActiveValidatorCount = minGenesisActiveValidatorCount;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minGenesisTime(final UInt64 minGenesisTime) {
+  public SpecConstantsBuilder minGenesisTime(final UInt64 minGenesisTime) {
     checkNotNull(minGenesisTime);
     this.minGenesisTime = minGenesisTime;
     return this;
   }
 
-  public BeaconChainConstantsBuilder hysteresisQuotient(final UInt64 hysteresisQuotient) {
+  public SpecConstantsBuilder hysteresisQuotient(final UInt64 hysteresisQuotient) {
     checkNotNull(hysteresisQuotient);
     this.hysteresisQuotient = hysteresisQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder hysteresisDownwardMultiplier(
+  public SpecConstantsBuilder hysteresisDownwardMultiplier(
       final UInt64 hysteresisDownwardMultiplier) {
     checkNotNull(hysteresisDownwardMultiplier);
     this.hysteresisDownwardMultiplier = hysteresisDownwardMultiplier;
     return this;
   }
 
-  public BeaconChainConstantsBuilder hysteresisUpwardMultiplier(
-      final UInt64 hysteresisUpwardMultiplier) {
+  public SpecConstantsBuilder hysteresisUpwardMultiplier(final UInt64 hysteresisUpwardMultiplier) {
     checkNotNull(hysteresisUpwardMultiplier);
     this.hysteresisUpwardMultiplier = hysteresisUpwardMultiplier;
     return this;
   }
 
-  public BeaconChainConstantsBuilder proportionalSlashingMultiplier(
-      final int proportionalSlashingMultiplier) {
+  public SpecConstantsBuilder proportionalSlashingMultiplier(
+      final Integer proportionalSlashingMultiplier) {
     checkNotNull(proportionalSlashingMultiplier);
     this.proportionalSlashingMultiplier = proportionalSlashingMultiplier;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minDepositAmount(final UInt64 minDepositAmount) {
+  public SpecConstantsBuilder minDepositAmount(final UInt64 minDepositAmount) {
     checkNotNull(minDepositAmount);
     this.minDepositAmount = minDepositAmount;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxEffectiveBalance(final UInt64 maxEffectiveBalance) {
+  public SpecConstantsBuilder maxEffectiveBalance(final UInt64 maxEffectiveBalance) {
     checkNotNull(maxEffectiveBalance);
     this.maxEffectiveBalance = maxEffectiveBalance;
     return this;
   }
 
-  public BeaconChainConstantsBuilder ejectionBalance(final UInt64 ejectionBalance) {
+  public SpecConstantsBuilder ejectionBalance(final UInt64 ejectionBalance) {
     checkNotNull(ejectionBalance);
     this.ejectionBalance = ejectionBalance;
     return this;
   }
 
-  public BeaconChainConstantsBuilder effectiveBalanceIncrement(
-      final UInt64 effectiveBalanceIncrement) {
+  public SpecConstantsBuilder effectiveBalanceIncrement(final UInt64 effectiveBalanceIncrement) {
     checkNotNull(effectiveBalanceIncrement);
     this.effectiveBalanceIncrement = effectiveBalanceIncrement;
     return this;
   }
 
-  public BeaconChainConstantsBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
+  public SpecConstantsBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     checkNotNull(genesisForkVersion);
     this.genesisForkVersion = genesisForkVersion;
     return this;
   }
 
-  public BeaconChainConstantsBuilder blsWithdrawalPrefix(final Bytes blsWithdrawalPrefix) {
+  public SpecConstantsBuilder blsWithdrawalPrefix(final Bytes blsWithdrawalPrefix) {
     checkNotNull(blsWithdrawalPrefix);
     this.blsWithdrawalPrefix = blsWithdrawalPrefix;
     return this;
   }
 
-  public BeaconChainConstantsBuilder genesisDelay(final UInt64 genesisDelay) {
+  public SpecConstantsBuilder genesisDelay(final UInt64 genesisDelay) {
     checkNotNull(genesisDelay);
     this.genesisDelay = genesisDelay;
     return this;
   }
 
-  public BeaconChainConstantsBuilder secondsPerSlot(final int secondsPerSlot) {
+  public SpecConstantsBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
     this.secondsPerSlot = secondsPerSlot;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minAttestationInclusionDelay(
-      final int minAttestationInclusionDelay) {
+  public SpecConstantsBuilder minAttestationInclusionDelay(
+      final Integer minAttestationInclusionDelay) {
     checkNotNull(minAttestationInclusionDelay);
     this.minAttestationInclusionDelay = minAttestationInclusionDelay;
     return this;
   }
 
-  public BeaconChainConstantsBuilder slotsPerEpoch(final int slotsPerEpoch) {
+  public SpecConstantsBuilder slotsPerEpoch(final Integer slotsPerEpoch) {
     checkNotNull(slotsPerEpoch);
     this.slotsPerEpoch = slotsPerEpoch;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minSeedLookahead(final int minSeedLookahead) {
+  public SpecConstantsBuilder minSeedLookahead(final Integer minSeedLookahead) {
     checkNotNull(minSeedLookahead);
     this.minSeedLookahead = minSeedLookahead;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxSeedLookahead(final int maxSeedLookahead) {
+  public SpecConstantsBuilder maxSeedLookahead(final Integer maxSeedLookahead) {
     checkNotNull(maxSeedLookahead);
     this.maxSeedLookahead = maxSeedLookahead;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minEpochsToInactivityPenalty(
+  public SpecConstantsBuilder minEpochsToInactivityPenalty(
       final UInt64 minEpochsToInactivityPenalty) {
     checkNotNull(minEpochsToInactivityPenalty);
     this.minEpochsToInactivityPenalty = minEpochsToInactivityPenalty;
     return this;
   }
 
-  public BeaconChainConstantsBuilder epochsPerEth1VotingPeriod(
-      final int epochsPerEth1VotingPeriod) {
+  public SpecConstantsBuilder epochsPerEth1VotingPeriod(final Integer epochsPerEth1VotingPeriod) {
     checkNotNull(epochsPerEth1VotingPeriod);
     this.epochsPerEth1VotingPeriod = epochsPerEth1VotingPeriod;
     return this;
   }
 
-  public BeaconChainConstantsBuilder slotsPerHistoricalRoot(final int slotsPerHistoricalRoot) {
+  public SpecConstantsBuilder slotsPerHistoricalRoot(final Integer slotsPerHistoricalRoot) {
     checkNotNull(slotsPerHistoricalRoot);
     this.slotsPerHistoricalRoot = slotsPerHistoricalRoot;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minValidatorWithdrawabilityDelay(
-      final int minValidatorWithdrawabilityDelay) {
+  public SpecConstantsBuilder minValidatorWithdrawabilityDelay(
+      final Integer minValidatorWithdrawabilityDelay) {
     checkNotNull(minValidatorWithdrawabilityDelay);
     this.minValidatorWithdrawabilityDelay = minValidatorWithdrawabilityDelay;
     return this;
   }
 
-  public BeaconChainConstantsBuilder shardCommitteePeriod(final UInt64 shardCommitteePeriod) {
+  public SpecConstantsBuilder shardCommitteePeriod(final UInt64 shardCommitteePeriod) {
     checkNotNull(shardCommitteePeriod);
     this.shardCommitteePeriod = shardCommitteePeriod;
     return this;
   }
 
-  public BeaconChainConstantsBuilder epochsPerHistoricalVector(
-      final int epochsPerHistoricalVector) {
+  public SpecConstantsBuilder epochsPerHistoricalVector(final Integer epochsPerHistoricalVector) {
     checkNotNull(epochsPerHistoricalVector);
     this.epochsPerHistoricalVector = epochsPerHistoricalVector;
     return this;
   }
 
-  public BeaconChainConstantsBuilder epochsPerSlashingsVector(final int epochsPerSlashingsVector) {
+  public SpecConstantsBuilder epochsPerSlashingsVector(final Integer epochsPerSlashingsVector) {
     checkNotNull(epochsPerSlashingsVector);
     this.epochsPerSlashingsVector = epochsPerSlashingsVector;
     return this;
   }
 
-  public BeaconChainConstantsBuilder historicalRootsLimit(final int historicalRootsLimit) {
+  public SpecConstantsBuilder historicalRootsLimit(final Integer historicalRootsLimit) {
     checkNotNull(historicalRootsLimit);
     this.historicalRootsLimit = historicalRootsLimit;
     return this;
   }
 
-  public BeaconChainConstantsBuilder validatorRegistryLimit(final long validatorRegistryLimit) {
+  public SpecConstantsBuilder validatorRegistryLimit(final Long validatorRegistryLimit) {
     checkNotNull(validatorRegistryLimit);
     this.validatorRegistryLimit = validatorRegistryLimit;
     return this;
   }
 
-  public BeaconChainConstantsBuilder baseRewardFactor(final int baseRewardFactor) {
+  public SpecConstantsBuilder baseRewardFactor(final Integer baseRewardFactor) {
     checkNotNull(baseRewardFactor);
     this.baseRewardFactor = baseRewardFactor;
     return this;
   }
 
-  public BeaconChainConstantsBuilder whistleblowerRewardQuotient(
-      final int whistleblowerRewardQuotient) {
+  public SpecConstantsBuilder whistleblowerRewardQuotient(
+      final Integer whistleblowerRewardQuotient) {
     checkNotNull(whistleblowerRewardQuotient);
     this.whistleblowerRewardQuotient = whistleblowerRewardQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder proposerRewardQuotient(final UInt64 proposerRewardQuotient) {
+  public SpecConstantsBuilder proposerRewardQuotient(final UInt64 proposerRewardQuotient) {
     checkNotNull(proposerRewardQuotient);
     this.proposerRewardQuotient = proposerRewardQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder inactivityPenaltyQuotient(
-      final UInt64 inactivityPenaltyQuotient) {
+  public SpecConstantsBuilder inactivityPenaltyQuotient(final UInt64 inactivityPenaltyQuotient) {
     checkNotNull(inactivityPenaltyQuotient);
     this.inactivityPenaltyQuotient = inactivityPenaltyQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder minSlashingPenaltyQuotient(
-      final int minSlashingPenaltyQuotient) {
+  public SpecConstantsBuilder minSlashingPenaltyQuotient(final Integer minSlashingPenaltyQuotient) {
     checkNotNull(minSlashingPenaltyQuotient);
     this.minSlashingPenaltyQuotient = minSlashingPenaltyQuotient;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxProposerSlashings(final int maxProposerSlashings) {
+  public SpecConstantsBuilder maxProposerSlashings(final Integer maxProposerSlashings) {
     checkNotNull(maxProposerSlashings);
     this.maxProposerSlashings = maxProposerSlashings;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxAttesterSlashings(final int maxAttesterSlashings) {
+  public SpecConstantsBuilder maxAttesterSlashings(final Integer maxAttesterSlashings) {
     checkNotNull(maxAttesterSlashings);
     this.maxAttesterSlashings = maxAttesterSlashings;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxAttestations(final int maxAttestations) {
+  public SpecConstantsBuilder maxAttestations(final Integer maxAttestations) {
     checkNotNull(maxAttestations);
     this.maxAttestations = maxAttestations;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxDeposits(final int maxDeposits) {
+  public SpecConstantsBuilder maxDeposits(final Integer maxDeposits) {
     checkNotNull(maxDeposits);
     this.maxDeposits = maxDeposits;
     return this;
   }
 
-  public BeaconChainConstantsBuilder maxVoluntaryExits(final int maxVoluntaryExits) {
+  public SpecConstantsBuilder maxVoluntaryExits(final Integer maxVoluntaryExits) {
     checkNotNull(maxVoluntaryExits);
     this.maxVoluntaryExits = maxVoluntaryExits;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainBeaconProposer(final Bytes4 domainBeaconProposer) {
+  public SpecConstantsBuilder domainBeaconProposer(final Bytes4 domainBeaconProposer) {
     checkNotNull(domainBeaconProposer);
     this.domainBeaconProposer = domainBeaconProposer;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainBeaconAttester(final Bytes4 domainBeaconAttester) {
+  public SpecConstantsBuilder domainBeaconAttester(final Bytes4 domainBeaconAttester) {
     checkNotNull(domainBeaconAttester);
     this.domainBeaconAttester = domainBeaconAttester;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainRandao(final Bytes4 domainRandao) {
+  public SpecConstantsBuilder domainRandao(final Bytes4 domainRandao) {
     checkNotNull(domainRandao);
     this.domainRandao = domainRandao;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainDeposit(final Bytes4 domainDeposit) {
+  public SpecConstantsBuilder domainDeposit(final Bytes4 domainDeposit) {
     checkNotNull(domainDeposit);
     this.domainDeposit = domainDeposit;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainVoluntaryExit(final Bytes4 domainVoluntaryExit) {
+  public SpecConstantsBuilder domainVoluntaryExit(final Bytes4 domainVoluntaryExit) {
     checkNotNull(domainVoluntaryExit);
     this.domainVoluntaryExit = domainVoluntaryExit;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainSelectionProof(final Bytes4 domainSelectionProof) {
+  public SpecConstantsBuilder domainSelectionProof(final Bytes4 domainSelectionProof) {
     checkNotNull(domainSelectionProof);
     this.domainSelectionProof = domainSelectionProof;
     return this;
   }
 
-  public BeaconChainConstantsBuilder domainAggregateAndProof(final Bytes4 domainAggregateAndProof) {
+  public SpecConstantsBuilder domainAggregateAndProof(final Bytes4 domainAggregateAndProof) {
     checkNotNull(domainAggregateAndProof);
     this.domainAggregateAndProof = domainAggregateAndProof;
     return this;
   }
 
-  public BeaconChainConstantsBuilder targetAggregatorsPerCommittee(
-      final int targetAggregatorsPerCommittee) {
+  public SpecConstantsBuilder targetAggregatorsPerCommittee(
+      final Integer targetAggregatorsPerCommittee) {
     checkNotNull(targetAggregatorsPerCommittee);
     this.targetAggregatorsPerCommittee = targetAggregatorsPerCommittee;
     return this;
   }
 
-  public BeaconChainConstantsBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
+  public SpecConstantsBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
     return this;
   }
 
-  public BeaconChainConstantsBuilder randomSubnetsPerValidator(
-      final int randomSubnetsPerValidator) {
+  public SpecConstantsBuilder randomSubnetsPerValidator(final Integer randomSubnetsPerValidator) {
     checkNotNull(randomSubnetsPerValidator);
     this.randomSubnetsPerValidator = randomSubnetsPerValidator;
     return this;
   }
 
-  public BeaconChainConstantsBuilder epochsPerRandomSubnetSubscription(
-      final int epochsPerRandomSubnetSubscription) {
+  public SpecConstantsBuilder epochsPerRandomSubnetSubscription(
+      final Integer epochsPerRandomSubnetSubscription) {
     checkNotNull(epochsPerRandomSubnetSubscription);
     this.epochsPerRandomSubnetSubscription = epochsPerRandomSubnetSubscription;
     return this;
   }
 
-  public BeaconChainConstantsBuilder safeSlotsToUpdateJustified(
-      final int safeSlotsToUpdateJustified) {
+  public SpecConstantsBuilder safeSlotsToUpdateJustified(final Integer safeSlotsToUpdateJustified) {
     checkNotNull(safeSlotsToUpdateJustified);
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     return this;
   }
 
-  public BeaconChainConstantsBuilder depositChainId(final int depositChainId) {
+  public SpecConstantsBuilder depositChainId(final Integer depositChainId) {
     checkNotNull(depositChainId);
     this.depositChainId = depositChainId;
     return this;
   }
 
-  public BeaconChainConstantsBuilder depositNetworkId(final int depositNetworkId) {
+  public SpecConstantsBuilder depositNetworkId(final Integer depositNetworkId) {
     checkNotNull(depositNetworkId);
     this.depositNetworkId = depositNetworkId;
     return this;
   }
 
-  public BeaconChainConstantsBuilder depositContractAddress(final Bytes depositContractAddress) {
+  public SpecConstantsBuilder depositContractAddress(final Bytes depositContractAddress) {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
     return this;
