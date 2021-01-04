@@ -32,11 +32,11 @@ class GraffitiParserTest {
   }
 
   @Test
-  void testGraffitiParserWithMoreThan32BytesInTheFile() throws Exception {
+  void testGraffitiParserWithMoreThanMaximumAllowableBytesInTheFile() throws Exception {
     assertThatThrownBy(
             () ->
                 GraffitiParser.loadFromFile(
-                    Path.of("src/test/resources/graffitiSample33Bytes.txt")))
+                    Path.of("src/test/resources/graffitiSample41Bytes.txt")))
         .isInstanceOf(GraffitiLoaderException.class);
   }
 
@@ -51,5 +51,10 @@ class GraffitiParserTest {
     assertThat(
             GraffitiParser.loadFromFile(Path.of("src/test/resources/graffitiSampleWithSpaces.txt")))
         .isEqualTo(Bytes32.rightPad(Bytes.wrap("T E K U".getBytes(UTF_8))));
+  }
+
+  @Test
+  void testStrip() throws Exception {
+    assertThat(GraffitiParser.strip(" \n  123  \n\n  ".getBytes(UTF_8))).isEqualTo("123");
   }
 }
