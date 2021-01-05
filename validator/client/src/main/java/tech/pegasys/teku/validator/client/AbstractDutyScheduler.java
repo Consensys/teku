@@ -29,7 +29,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
-  protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
@@ -38,14 +38,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     this.lookAheadEpochs = lookAheadEpochs;
   }
 
-  protected DutyQueue requestDutiesForEpoch(final UInt64 epochNumber) {
-    return new DutyQueue(epochDutiesScheduler.loadDutiesForEpoch(epochNumber));
-  }
-
-  protected void notifyDutyQueue(final BiConsumer<DutyQueue, UInt64> action, final UInt64 slot) {
-    final DutyQueue dutyQueue = dutiesByEpoch.get(compute_epoch_at_slot(slot));
-    if (dutyQueue != null) {
-      action.accept(dutyQueue, slot);
+  protected void notifyDutyQueue(final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
+    final EpochDuties epochDuties = dutiesByEpoch.get(compute_epoch_at_slot(slot));
+    if (epochDuties != null) {
+      action.accept(epochDuties, slot);
     }
   }
 
@@ -54,7 +50,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     final UInt64 currentEpoch = compute_epoch_at_slot(slot);
     this.currentEpoch = Optional.of(currentEpoch);
     removePriorEpochs(currentEpoch);
-    recalculateDuties(currentEpoch);
+    calculateDuties(currentEpoch);
   }
 
   @Override
@@ -67,32 +63,35 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     LOG.debug(
         "Chain reorganisation detected. Invalidating validator duties after epoch {}",
         lastUnaffectedEpoch);
-    removeEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
-    recalculateDuties(compute_epoch_at_slot(newSlot));
+    invalidateEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
+    calculateDuties(compute_epoch_at_slot(newSlot));
   }
 
   @Override
   public void onPossibleMissedEvents() {
     // We may have missed a re-org notification so we need to recalculate all duties.
-    removeEpochs(dutiesByEpoch);
-    currentEpoch.ifPresent(this::recalculateDuties);
+    invalidateEpochs(dutiesByEpoch);
   }
 
-  protected void recalculateDuties(final UInt64 epochNumber) {
-    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
+  private void calculateDuties(final UInt64 epochNumber) {
+    dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
     for (int i = 1; i <= lookAheadEpochs; i++) {
-      dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::requestDutiesForEpoch);
+      dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);
     }
   }
 
-  protected void removePriorEpochs(final UInt64 epochNumber) {
-    final NavigableMap<UInt64, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber, false);
-    removeEpochs(toRemove);
+  private EpochDuties createEpochDuties(final UInt64 epochNumber) {
+    return EpochDuties.calculateDuties(epochDutiesScheduler, epochNumber);
   }
 
-  protected void removeEpochs(final NavigableMap<UInt64, DutyQueue> toRemove) {
-    toRemove.values().forEach(DutyQueue::cancel);
+  private void removePriorEpochs(final UInt64 epochNumber) {
+    final NavigableMap<UInt64, EpochDuties> toRemove = dutiesByEpoch.headMap(epochNumber, false);
+    toRemove.values().forEach(EpochDuties::cancel);
     toRemove.clear();
+  }
+
+  private void invalidateEpochs(final NavigableMap<UInt64, EpochDuties> toInvalidate) {
+    toInvalidate.values().forEach(EpochDuties::recalculate);
   }
 
   protected Optional<UInt64> getCurrentEpoch() {
@@ -105,10 +104,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
     final UInt64 signingEpoch = compute_epoch_at_slot(slot);
     final UInt64 epoch = currentEpoch.get();
-    if (signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1))) {
-      return false;
-    }
-    return true;
+    return !signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1));
   }
 
   @Override

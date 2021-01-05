@@ -32,7 +32,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
-        () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
+        () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
   }
 
   @Override
@@ -55,7 +55,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     }
 
     lastAttestationCreationSlot = slot;
-    notifyDutyQueue(DutyQueue::onAttestationCreationDue, slot);
+    notifyDutyQueue(EpochDuties::onAttestationCreationDue, slot);
   }
 
   @Override
@@ -68,6 +68,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
+    notifyDutyQueue(EpochDuties::onAttestationAggregationDue, slot);
   }
 }
