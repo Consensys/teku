@@ -92,7 +92,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
     // p2p-enabled default is "true" which require p2p-private-key-file to be non-null
-    final String[] args = {"--data-path", dataPath.toString(), "--p2p-enabled", "false"};
+    final String[] args = {
+      "--data-path",
+      dataPath.toString(),
+      "--p2p-enabled",
+      "false",
+      "--eth1-endpoint",
+      "http://localhost:8545"
+    };
 
     beaconNodeCommand.parse(args);
 
@@ -186,7 +193,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
             startAction);
 
-    beaconNodeCommand.parse(new String[] {});
+    beaconNodeCommand.parse(new String[] {"--eth1-endpoint", "http://localhost:8545"});
 
     assertTekuConfiguration(expectedDefaultConfigurationBuilder().build());
   }

@@ -87,7 +87,9 @@ public class GlobalConfigurationBuilder {
   }
 
   public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
-    this.eth1Endpoints = Collections.singletonList(eth1Endpoint);
+    if (eth1Endpoint != null) {
+      this.eth1Endpoints = Collections.singletonList(eth1Endpoint);
+    }
     return this;
   }
 
