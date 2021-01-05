@@ -53,7 +53,8 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
               ZERO,
               ZERO,
               FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH));
+              FAR_FUTURE_EPOCH),
+          ONE);
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
