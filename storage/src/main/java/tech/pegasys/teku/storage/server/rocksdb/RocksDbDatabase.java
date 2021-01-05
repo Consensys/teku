@@ -303,8 +303,7 @@ public class RocksDbDatabase implements Database {
     List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
 
     // TODO: This domain is dependent on the fork version. Thus when we support forks, we're going
-    // to have to
-    // change the way we retrieve the domain here.
+    // to have to change the way we retrieve the domain here.
     Bytes32 domain = get_domain(finalizedState, DOMAIN_BEACON_PROPOSER);
 
     blocks.forEach(
