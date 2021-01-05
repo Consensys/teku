@@ -11,19 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.converter;
+package tech.pegasys.teku.validator.api;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import picocli.CommandLine;
-import tech.pegasys.teku.validator.api.Bytes32Parser;
 
-public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
-  @Override
-  public Bytes32 convert(final String value) {
-    try {
-      return Bytes32Parser.toBytes32(value);
-    } catch (final IllegalArgumentException e) {
-      throw (new CommandLine.TypeConversionException(e.getMessage()));
-    }
-  }
+@FunctionalInterface
+public interface GraffitiProvider {
+  Optional<Bytes32> get();
 }
