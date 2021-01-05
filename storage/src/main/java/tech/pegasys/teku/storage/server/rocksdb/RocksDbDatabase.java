@@ -276,13 +276,13 @@ public class RocksDbDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    // Check block signatures are correct for blocks except for the genesis block
+    // Check block signatures are valid for blocks except the genesis block
     Collection<SignedBeaconBlock> nonGenesisBlocks =
         blocks.stream()
             .filter(block -> !block.getSlot().equals(UInt64.ZERO))
             .collect(Collectors.toList());
     checkArgument(
-        batchVerifyHistoricalBlockSignature(nonGenesisBlocks), "Block signatures are invalid");
+        batchVerifyHistoricalBlockSignatures(nonGenesisBlocks), "Block signatures are invalid");
 
     try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
       sorted.forEach(updater::addFinalizedBlock);
@@ -290,7 +290,7 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  boolean batchVerifyHistoricalBlockSignature(final Collection<SignedBeaconBlock> blocks) {
+  boolean batchVerifyHistoricalBlockSignatures(final Collection<SignedBeaconBlock> blocks) {
     BeaconState finalizedState =
         this.hotDao
             .getLatestFinalizedState()
