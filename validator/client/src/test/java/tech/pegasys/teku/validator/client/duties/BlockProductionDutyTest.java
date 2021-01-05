@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -52,7 +53,10 @@ class BlockProductionDutyTest {
   private final Signer signer = mock(Signer.class);
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final Validator validator =
-      new Validator(dataStructureUtil.randomPublicKey(), signer, Optional.of(graffiti));
+      new Validator(
+          dataStructureUtil.randomPublicKey(),
+          signer,
+          new FileBackedGraffitiProvider(Optional.of(graffiti), Optional.empty()));
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 

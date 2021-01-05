@@ -48,6 +48,7 @@ import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
@@ -434,7 +435,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
                     .validatorExternalSignerConcurrentRequestLimit(32)
                     .validatorKeystoreLockingEnabled(true)
-                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL))
+                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
+                    .graffitiProvider(new FileBackedGraffitiProvider()))
         .logging(
             b ->
                 b.colorEnabled(true)
