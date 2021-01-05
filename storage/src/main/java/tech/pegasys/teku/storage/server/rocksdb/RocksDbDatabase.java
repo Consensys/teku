@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -37,9 +41,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
@@ -52,6 +61,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -266,10 +276,52 @@ public class RocksDbDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
+    // Check block signatures are correct for blocks except for the genesis block
+    Collection<SignedBeaconBlock> nonGenesisBlocks =
+        blocks.stream()
+            .filter(block -> !block.getSlot().equals(UInt64.ZERO))
+            .collect(Collectors.toList());
+    checkArgument(
+        batchVerifyHistoricalBlockSignature(nonGenesisBlocks), "Block signatures are invalid");
+
     try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
       sorted.forEach(updater::addFinalizedBlock);
       updater.commit();
     }
+  }
+
+  boolean batchVerifyHistoricalBlockSignature(final Collection<SignedBeaconBlock> blocks) {
+    BeaconState finalizedState =
+        this.hotDao
+            .getLatestFinalizedState()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Finalized state is required to sync finalized historical blocks"));
+    List<BLSSignature> signatures = new ArrayList<>();
+    List<Bytes> signingRoots = new ArrayList<>();
+    List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
+
+    // TODO: This domain is dependent on the fork version. Thus when we support forks, we're going
+    // to have to
+    // change the way we retrieve the domain here.
+    Bytes32 domain = get_domain(finalizedState, DOMAIN_BEACON_PROPOSER);
+
+    blocks.forEach(
+        signedBlock -> {
+          BeaconBlock block = signedBlock.getMessage();
+          signatures.add(signedBlock.getSignature());
+          signingRoots.add(compute_signing_root(block, domain));
+          BLSPublicKey proposerPublicKey =
+              ValidatorsUtil.getValidatorPubKey(finalizedState, block.getProposerIndex())
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Proposer has to be in the state since state is more recent than the block proposed"));
+          proposerPublicKeys.add(List.of(proposerPublicKey));
+        });
+
+    return BLS.batchVerify(proposerPublicKeys, signingRoots, signatures);
   }
 
   @Override
