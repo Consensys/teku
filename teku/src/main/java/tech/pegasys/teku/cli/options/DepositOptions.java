@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.List;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.config.Eth1Address;
 
@@ -27,11 +28,11 @@ public class DepositOptions {
   private Eth1Address eth1DepositContractAddress = null; // Depends on network configuration
 
   @Option(
-      names = {"--eth1-endpoint"},
+      names = {"--eth1-endpoint", "--eth1-endpoints"},
       paramLabel = "<NETWORK>",
-      description = "URL for Eth1 node.",
-      arity = "1")
-  private String eth1Endpoint = null;
+      description = "URL for Eth1 nodes.",
+      arity = "1..*")
+  private List<String> eth1Endpoints = null;
 
   @Option(
       hidden = true,
@@ -56,8 +57,8 @@ public class DepositOptions {
     return eth1DepositContractAddress;
   }
 
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
+  public List<String> getEth1Endpoints() {
+    return eth1Endpoints;
   }
 
   public int getEth1LogsMaxBlockRange() {

@@ -20,4 +20,6 @@ public interface Eth1ProviderSelector {
   Eth1Provider bestCandidate();
 
   void updateBestCandidate();
+
+  int candidateCount();
 }

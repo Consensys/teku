@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
@@ -57,33 +58,29 @@ public class PowchainService extends Service {
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
   private final Eth1ChainIdValidator chainIdValidator;
-  private final Web3j web3j;
+  private final List<Web3j> web3js;
 
   public PowchainService(final ServiceConfig config) {
     GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    this.web3j = createWeb3j(tekuConfig);
+    this.web3js = createWeb3js(tekuConfig);
 
-    // TODO init list with multiple endpoints from CLI options
-    final List<Eth1Provider> eth1Providers =
-        Arrays.asList(
-            new ThrottlingEth1Provider(
-                new ErrorTrackingEth1Provider(
-                    new Web3jEth1Provider(web3j, asyncRunner),
-                    asyncRunner,
-                    config.getTimeProvider()),
-                MAXIMUM_CONCURRENT_ETH1_REQUESTS,
-                config.getMetricsSystem()));
     final Eth1Provider eth1Provider =
-        eth1Providers.size() == 1
-            ? eth1Providers.get(0)
-            : new FallbackAwareEth1Provider(new PriorityEth1ProviderSelector(eth1Providers));
+        new ThrottlingEth1Provider(
+            new ErrorTrackingEth1Provider(
+                createEth1Provider(asyncRunner, this.web3js),
+                asyncRunner,
+                config.getTimeProvider()),
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS,
+            config.getMetricsSystem());
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
-            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
+            eth1Provider,
+            this.web3js.get(0),
+            config.getConfig().getEth1DepositContractAddress().toHexString());
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
@@ -131,9 +128,26 @@ public class PowchainService extends Service {
     chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
   }
 
-  private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
-    final HttpService web3jService =
-        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+  private Eth1Provider createEth1Provider(final AsyncRunner asyncRunner, final List<Web3j> web3js) {
+    if (web3js.size() == 1) {
+      return new Web3jEth1Provider(web3js.get(0), asyncRunner);
+    } else {
+      return new FallbackAwareEth1Provider(
+          new PriorityEth1ProviderSelector(
+              web3js.stream()
+                  .map(web3j -> new Web3jEth1Provider(web3j, asyncRunner))
+                  .collect(Collectors.toList())));
+    }
+  }
+
+  private List<Web3j> createWeb3js(final GlobalConfiguration tekuConfig) {
+    return tekuConfig.getEth1Endpoints().stream()
+        .map(this::createWeb3j)
+        .collect(Collectors.toList());
+  }
+
+  private Web3j createWeb3j(final String endpoint) {
+    final HttpService web3jService = new HttpService(endpoint, createOkHttpClient());
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
     return Web3j.build(web3jService);
   }
@@ -161,10 +175,16 @@ public class PowchainService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOfFailFast(
-        SafeFuture.fromRunnable(headTracker::stop),
-        SafeFuture.fromRunnable(eth1DepositManager::stop),
-        SafeFuture.fromRunnable(chainIdValidator::stop),
-        SafeFuture.fromRunnable(web3j::shutdown));
+    final List<SafeFuture<Void>> stopServices =
+        Arrays.asList(
+            SafeFuture.fromRunnable(headTracker::stop),
+            SafeFuture.fromRunnable(eth1DepositManager::stop),
+            SafeFuture.fromRunnable(chainIdValidator::stop));
+    final List<SafeFuture<Void>> shutdownWeb3js =
+        web3js.stream()
+            .map(web3j -> SafeFuture.fromRunnable(web3j::shutdown))
+            .collect(Collectors.toList());
+    stopServices.addAll(shutdownWeb3js);
+    return SafeFuture.allOfFailFast(stopServices.toArray(new SafeFuture<?>[0]));
   }
 }

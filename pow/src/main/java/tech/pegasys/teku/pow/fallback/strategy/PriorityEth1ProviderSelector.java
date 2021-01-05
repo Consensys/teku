@@ -43,4 +43,9 @@ public class PriorityEth1ProviderSelector implements Eth1ProviderSelector {
     bestCandidateIndex.set(nextIndex);
     bestCandidate.set(candidates.get(bestCandidateIndex.get()));
   }
+
+  @Override
+  public int candidateCount() {
+    return candidates.size();
+  }
 }

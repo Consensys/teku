@@ -15,7 +15,6 @@ package tech.pegasys.teku.util.config;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -32,7 +31,7 @@ public class GlobalConfiguration implements MetricsConfig {
 
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
-  private final String eth1Endpoint;
+  private final List<String> eth1Endpoints;
   private final boolean eth1DepositsFromStorageEnabled;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
@@ -68,7 +67,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
       final Eth1Address eth1DepositContractAddress,
-      final String eth1Endpoint,
+      final List<String> eth1Endpoints,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
@@ -90,7 +89,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
-    this.eth1Endpoint = eth1Endpoint;
+    this.eth1Endpoints = eth1Endpoints;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
@@ -132,7 +131,7 @@ public class GlobalConfiguration implements MetricsConfig {
   }
 
   public boolean isEth1Enabled() {
-    return !StringUtils.isEmpty(eth1Endpoint);
+    return eth1Endpoints != null && !eth1Endpoints.isEmpty();
   }
 
   public Eth1Address getEth1DepositContractAddress() {
@@ -147,8 +146,8 @@ public class GlobalConfiguration implements MetricsConfig {
     return eth1LogsMaxBlockRange;
   }
 
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
+  public List<String> getEth1Endpoints() {
+    return eth1Endpoints;
   }
 
   public boolean isEth1DepositsFromStorageEnabled() {

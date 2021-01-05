@@ -85,13 +85,25 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
-    final SafeFuture<T> result = task.apply(eth1ProviderSelector.bestCandidate());
-    return result.catchAndRethrow(
-        throwable -> {
-          LOG.warn(
-              "Error caught while calling Eth1Provider, switching provider for next calls",
-              throwable);
-          eth1ProviderSelector.updateBestCandidate();
-        });
+    return run(task, eth1ProviderSelector.candidateCount());
+  }
+
+  private <T> SafeFuture<T> run(
+      final Function<Eth1Provider, SafeFuture<T>> task, final int maxRetries) {
+    return SafeFuture.of(
+        () ->
+            task.apply(eth1ProviderSelector.bestCandidate())
+                .exceptionallyCompose(
+                    err -> {
+                      LOG.warn(
+                          "Error caught while calling Eth1Provider, switching provider for next calls",
+                          err);
+                      eth1ProviderSelector.updateBestCandidate();
+                      if (maxRetries > 0) {
+                        return run(task, maxRetries - 1);
+                      } else {
+                        return SafeFuture.failedFuture(err);
+                      }
+                    }));
   }
 }

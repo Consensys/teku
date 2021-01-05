@@ -37,27 +37,26 @@ public class PriorityEth1ProviderSelectorTest {
     final Eth1ProviderSelector providerSelector = new PriorityEth1ProviderSelector(providers);
     final FallbackAwareEth1Provider fallbackAwareEth1Provider =
         new FallbackAwareEth1Provider(providerSelector);
-    // check that first provider is the best candidate after initialization
-    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
-    // node1 is still ready, no update needed
+    // node 1 ready
     when(node1.getLatestEth1Block()).thenReturn(readyProvider());
     fallbackAwareEth1Provider.getLatestEth1Block();
-    // check that node1 is still the best candidate
+    // node 1 must be the best candidate
     assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
-    // node1 is now down
+
+    // node 1 down and node 2 ready
     when(node1.getLatestEth1Block()).thenReturn(koProvider());
-    // and node2 is ready
     when(node2.getLatestEth1Block()).thenReturn(readyProvider());
-    // then node2 should be the best candidate
     fallbackAwareEth1Provider.getLatestEth1Block();
+    // node 2 must be the best candidate
     assertThat(providerSelector.bestCandidate()).isEqualTo(node2);
-    // node2 is now down
+
+    // node 2 down, node 3 down and node 1 ready
     when(node2.getLatestEth1Block()).thenReturn(koProvider());
-    // and node3 is ready
-    when(node3.getLatestEth1Block()).thenReturn(readyProvider());
-    // then node3 should be the best candidate
+    when(node3.getLatestEth1Block()).thenReturn(koProvider());
+    when(node1.getLatestEth1Block()).thenReturn(readyProvider());
     fallbackAwareEth1Provider.getLatestEth1Block();
-    assertThat(providerSelector.bestCandidate()).isEqualTo(node3);
+    // node 1 must be the best candidate again
+    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
   }
 
   private static SafeFuture<EthBlock.Block> readyProvider() {

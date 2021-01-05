@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -31,7 +32,7 @@ public class GlobalConfigurationBuilder {
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
   private Eth1Address eth1DepositContractAddress;
-  private String eth1Endpoint;
+  private List<String> eth1Endpoints;
   private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
   private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
@@ -80,8 +81,13 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
+  public GlobalConfigurationBuilder setEth1Endpoints(final List<String> eth1Endpoints) {
+    this.eth1Endpoints = eth1Endpoints;
+    return this;
+  }
+
   public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
-    this.eth1Endpoint = eth1Endpoint;
+    this.eth1Endpoints = Collections.singletonList(eth1Endpoint);
     return this;
   }
 
@@ -176,11 +182,11 @@ public class GlobalConfigurationBuilder {
           getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
       eth1DepositContractAddress =
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
-      eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+      eth1Endpoints = getOrOptionalDefault(eth1Endpoints, network::getEth1Endpoints);
       eth1DepositContractDeployBlock = network.getEth1DepositContractDeployBlock();
     }
 
-    if (eth1DepositContractAddress == null && eth1Endpoint != null) {
+    if (eth1DepositContractAddress == null && eth1Endpoints != null) {
       throw new InvalidConfigurationException(
           "eth1-deposit-contract-address is required if eth1-endpoint is specified.");
     }
@@ -193,7 +199,7 @@ public class GlobalConfigurationBuilder {
         peerRateLimit,
         peerRequestLimit,
         eth1DepositContractAddress,
-        eth1Endpoint,
+        eth1Endpoints,
         eth1DepositContractDeployBlock,
         eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,

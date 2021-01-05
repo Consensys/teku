@@ -30,7 +30,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(config.isEth1Enabled()).isTrue();
     assertThat(config.getEth1DepositContractAddress()).isEqualTo(address);
-    assertThat(config.getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
+    assertThat(config.getEth1Endpoints()).containsExactly("http://example.com:1234/path/");
     assertThat(config.isEth1DepositsFromStorageEnabled()).isFalse();
   }
 
@@ -72,5 +72,24 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(str).doesNotContain("Default");
+  }
+
+  @Test
+  public void multiple_eth1Endpoints_areSupported() {
+    final String[] args = {
+      "--network",
+      "minimal",
+      "--eth1-deposit-contract-address",
+      "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
+      "--eth1-endpoints",
+      "http://example.com:1234/path/",
+      "http://example-2.com:1234/path/",
+      "http://example-3.com:1234/path/"
+    };
+    assertThat(getGlobalConfigurationFromArguments(args).getEth1Endpoints())
+        .containsExactlyInAnyOrder(
+            "http://example.com:1234/path/",
+            "http://example-2.com:1234/path/",
+            "http://example-3.com:1234/path/");
   }
 }

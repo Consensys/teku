@@ -53,8 +53,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
     assertThat(config.getEth1DepositContractAddress())
         .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
-    assertThat(config.getEth1Endpoint())
-        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
+    assertThat(config.getEth1Endpoints())
+        .isEqualTo(networkDefinition.getEth1Endpoints().orElse(null));
   }
 
   @Test

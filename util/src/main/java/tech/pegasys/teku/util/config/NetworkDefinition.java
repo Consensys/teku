@@ -133,7 +133,7 @@ public class NetworkDefinition {
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
-  private final Optional<String> eth1Endpoint;
+  private final Optional<List<String>> eth1Endpoints;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   private NetworkDefinition(
@@ -143,7 +143,7 @@ public class NetworkDefinition {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<String> eth1Endpoint,
+      final Optional<List<String>> eth1Endpoints,
       final Optional<UInt64> eth1DepositContractDeployBlock) {
     this.constants = constants;
     this.initialState = initialState;
@@ -151,7 +151,7 @@ public class NetworkDefinition {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
-    this.eth1Endpoint = eth1Endpoint;
+    this.eth1Endpoints = eth1Endpoints;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
   }
 
@@ -191,8 +191,8 @@ public class NetworkDefinition {
     return eth1DepositContractDeployBlock;
   }
 
-  public Optional<String> getEth1Endpoint() {
-    return eth1Endpoint;
+  public Optional<List<String>> getEth1Endpoints() {
+    return eth1Endpoints;
   }
 
   @Override
@@ -207,7 +207,7 @@ public class NetworkDefinition {
     private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
-    private Optional<String> eth1Endpoint = Optional.empty();
+    private Optional<List<String>> eth1Endpoints = Optional.empty();
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
 
     public Builder constants(final String constants) {
@@ -246,8 +246,8 @@ public class NetworkDefinition {
       return this;
     }
 
-    public Builder eth1Endpoint(final String eth1Endpoint) {
-      this.eth1Endpoint = Optional.of(eth1Endpoint);
+    public Builder eth1Endpoints(final List<String> eth1Endpoints) {
+      this.eth1Endpoints = Optional.of(eth1Endpoints);
       return this;
     }
 
@@ -266,7 +266,7 @@ public class NetworkDefinition {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1Endpoint,
+          eth1Endpoints,
           eth1DepositContractDeployBlock);
     }
   }
