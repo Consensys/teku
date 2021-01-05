@@ -25,6 +25,7 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -277,12 +278,11 @@ public class RocksDbDatabase implements Database {
     }
 
     // Check block signatures are valid for blocks except the genesis block
-    Collection<SignedBeaconBlock> nonGenesisBlocks =
-        blocks.stream()
-            .filter(block -> !block.getSlot().equals(UInt64.ZERO))
-            .collect(Collectors.toList());
+    boolean isGenesisBlockIncluded = Iterables.getLast(sorted).getSlot().equals(UInt64.ZERO);
     checkArgument(
-        batchVerifyHistoricalBlockSignatures(nonGenesisBlocks), "Block signatures are invalid");
+        batchVerifyHistoricalBlockSignatures(
+            isGenesisBlockIncluded ? sorted.subList(0, sorted.size() - 1) : sorted),
+        "Block signatures are invalid");
 
     try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
       sorted.forEach(updater::addFinalizedBlock);
