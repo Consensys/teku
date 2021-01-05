@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
@@ -27,11 +28,12 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
+  // from config file ("T E K U") UTF8 -> bytes32 -> as hex string
+  private final Bytes32 graffiti =
+      Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
+
   @Test
   public void shouldReadFromConfigurationFile() throws MalformedURLException {
-    // from config file ("T E K U") UTF8 -> bytes32 -> as hex string
-    final Bytes32 graffiti =
-        Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
     final BLSPublicKey publicKey =
         BLSPublicKey.fromBytesCompressed(
             Bytes48.fromHexString(
@@ -49,7 +51,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);
     assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
     assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(Duration.ofMillis(1234));
-    assertThat(config.getGraffiti()).isEqualTo(graffiti);
+    assertThat(config.getGraffitiProvider().get()).isEqualTo(Optional.of(graffiti));
   }
 
   @Test
@@ -65,7 +67,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   public void graffiti_shouldBeEmptyByDefault() {
     final ValidatorConfig config =
         getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
-    assertThat(config.getGraffiti()).isNull();
+    assertThat(config.getGraffitiProvider().get()).isEmpty();
   }
 
   @Test
@@ -83,5 +85,15 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldLoadGraffitiFromFile() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromFile("validatorOptionsWithGraffitiFile_config.yaml")
+            .validatorClient()
+            .getValidatorConfig();
+
+    assertThat(config.getGraffitiProvider().get()).isEqualTo(Optional.of(graffiti));
   }
 }

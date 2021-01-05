@@ -44,8 +44,8 @@ public abstract class AbstractDutySchedulerTest {
   final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   final Signer validator1Signer = mock(Signer.class);
   final Signer validator2Signer = mock(Signer.class);
-  final Validator validator1 = new Validator(VALIDATOR1_KEY, validator1Signer, Optional.empty());
-  final Validator validator2 = new Validator(VALIDATOR2_KEY, validator2Signer, Optional.empty());
+  final Validator validator1 = new Validator(VALIDATOR1_KEY, validator1Signer, Optional::empty);
+  final Validator validator2 = new Validator(VALIDATOR2_KEY, validator2Signer, Optional::empty);
 
   final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);

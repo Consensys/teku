@@ -17,17 +17,18 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.validator.api.GraffitiProvider;
 
 public class Validator {
   private final BLSPublicKey publicKey;
   private final Signer signer;
-  private final Optional<Bytes32> graffiti;
+  private final GraffitiProvider graffitiProvider;
 
   public Validator(
-      final BLSPublicKey publicKey, final Signer signer, final Optional<Bytes32> graffiti) {
+      final BLSPublicKey publicKey, final Signer signer, final GraffitiProvider graffitiProvider) {
     this.publicKey = publicKey;
     this.signer = signer;
-    this.graffiti = graffiti;
+    this.graffitiProvider = graffitiProvider;
   }
 
   public BLSPublicKey getPublicKey() {
@@ -39,7 +40,7 @@ public class Validator {
   }
 
   public Optional<Bytes32> getGraffiti() {
-    return graffiti;
+    return graffitiProvider.get();
   }
 
   @Override
