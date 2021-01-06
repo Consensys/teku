@@ -21,6 +21,7 @@ import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -32,6 +33,7 @@ class EpochDuties {
   private final DutyLoader dutyLoader;
   private final UInt64 epoch;
   private SafeFuture<Optional<ScheduledDuties>> duties = new SafeFuture<>();
+  private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
 
   private EpochDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
@@ -81,6 +83,14 @@ class EpochDuties {
   }
 
   private void processPendingActions(final Optional<ScheduledDuties> scheduledDuties) {
+    if (pendingHeadUpdate.isPresent()
+        && scheduledDuties.isPresent()
+        && requiresRecalculation(scheduledDuties.get(), pendingHeadUpdate.get())) {
+      pendingHeadUpdate = Optional.empty();
+      recalculate();
+      return;
+    }
+    pendingHeadUpdate = Optional.empty();
     scheduledDuties.ifPresent(duties -> pendingActions.forEach(action -> action.accept(duties)));
     pendingActions.clear();
   }
@@ -94,5 +104,21 @@ class EpochDuties {
       return Optional.empty();
     }
     return duties.join();
+  }
+
+  public synchronized void onHeadUpdate(final Bytes32 newHeadDependentRoot) {
+    getCurrentDuties()
+        .ifPresentOrElse(
+            duties -> {
+              if (requiresRecalculation(duties, newHeadDependentRoot)) {
+                recalculate();
+              }
+            },
+            () -> pendingHeadUpdate = Optional.of(newHeadDependentRoot));
+  }
+
+  private boolean requiresRecalculation(
+      final ScheduledDuties duties, final Bytes32 newHeadDependentRoot) {
+    return !duties.getDependentRoot().equals(newHeadDependentRoot);
   }
 }

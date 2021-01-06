@@ -21,11 +21,13 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final boolean useDependentRoots = false;
   private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
@@ -55,7 +57,40 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 headBlockRoot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot) {
+    if (!useDependentRoots) {
+      return;
+    }
+    final UInt64 headEpoch = compute_epoch_at_slot(slot);
+    dutiesByEpoch
+        .tailMap(headEpoch, true)
+        .forEach(
+            (dutyEpoch, duties) ->
+                duties.onHeadUpdate(
+                    getExpectedTargetRoot(
+                        headBlockRoot,
+                        previousDutyDependentRoot,
+                        currentDutyDependentRoot,
+                        headEpoch,
+                        dutyEpoch)));
+  }
+
+  protected abstract Bytes32 getExpectedTargetRoot(
+      Bytes32 headBlockRoot,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      UInt64 headEpoch,
+      UInt64 dutyEpoch);
+
+  @Override
   public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {
+    if (useDependentRoots) {
+      return;
+    }
     final UInt64 changedEpoch = compute_epoch_at_slot(commonAncestorSlot);
     // Because duties for an epoch can be calculated from the very start of that epoch, the epoch
     // containing the common ancestor is not affected by the reorg.
@@ -70,7 +105,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onPossibleMissedEvents() {
-    // We may have missed a re-org notification so we need to recalculate all duties.
+    // We may have missed a re-org or head notification so we need to recalculate all duties.
     invalidateEpochs(dutiesByEpoch);
   }
 

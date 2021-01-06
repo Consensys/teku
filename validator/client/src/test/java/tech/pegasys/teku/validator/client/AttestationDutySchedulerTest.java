@@ -32,6 +32,7 @@ import static tech.pegasys.teku.validator.client.AttestationDutyScheduler.LOOKAH
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -635,5 +636,47 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     // Perform the duties
     dutyScheduler.onAttestationAggregationDue(attestationSlot);
     verify(aggregationDuty).performDuty();
+  }
+
+  @Test
+  void shouldUsePreviousDependentRootWhenDutyFromCurrentEpoch() {
+    final Bytes32 previousDutyDependentRoot = Bytes32.fromHexString("0x1111");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            Bytes32.fromHexString("0x3333"),
+            previousDutyDependentRoot,
+            Bytes32.fromHexString("0x2222"),
+            ONE,
+            ONE);
+
+    assertThat(result).isEqualTo(previousDutyDependentRoot);
+  }
+
+  @Test
+  void shouldUseCurrentDependentRootWhenDutyIsFromNextEpoch() {
+    final Bytes32 currentDutyDependentRoot = Bytes32.fromHexString("0x2222");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            Bytes32.fromHexString("0x3333"),
+            Bytes32.fromHexString("0x1111"),
+            currentDutyDependentRoot,
+            ZERO,
+            ONE);
+
+    assertThat(result).isEqualTo(currentDutyDependentRoot);
+  }
+
+  @Test
+  void shouldUseHeadRootWhenDutyIsFromBeyondNextEpoch() {
+    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            headBlockRoot,
+            Bytes32.fromHexString("0x1111"),
+            Bytes32.fromHexString("0x2222"),
+            ZERO,
+            UInt64.valueOf(2));
+
+    assertThat(result).isEqualTo(headBlockRoot);
   }
 }

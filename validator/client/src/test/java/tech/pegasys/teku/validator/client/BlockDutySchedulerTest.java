@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,6 +32,7 @@ import static tech.pegasys.teku.validator.client.BlockDutyScheduler.LOOKAHEAD_EP
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -239,5 +241,47 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutySchedulerWithMockDuties.onSlot(ZERO); // epoch 0
     dutySchedulerWithMockDuties.onBlockProductionDue(slot);
     verify(scheduledDuties).produceBlock(slot);
+  }
+
+  @Test
+  void shouldUseCurrentDependentRootWhenDutyFromCurrentEpoch() {
+    final Bytes32 currentDutyDependentRoot = Bytes32.fromHexString("0x2222");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            Bytes32.fromHexString("0x3333"),
+            Bytes32.fromHexString("0x1111"),
+            currentDutyDependentRoot,
+            ONE,
+            ONE);
+
+    assertThat(result).isEqualTo(currentDutyDependentRoot);
+  }
+
+  @Test
+  void shouldUseHeadRootWhenDutyIsFromNextEpoch() {
+    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            headBlockRoot,
+            Bytes32.fromHexString("0x1111"),
+            Bytes32.fromHexString("0x2222"),
+            ZERO,
+            ONE);
+
+    assertThat(result).isEqualTo(headBlockRoot);
+  }
+
+  @Test
+  void shouldUseHeadRootWhenDutyIsFromBeyondNextEpoch() {
+    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
+    final Bytes32 result =
+        dutyScheduler.getExpectedTargetRoot(
+            headBlockRoot,
+            Bytes32.fromHexString("0x1111"),
+            Bytes32.fromHexString("0x2222"),
+            ZERO,
+            UInt64.valueOf(2));
+
+    assertThat(result).isEqualTo(headBlockRoot);
   }
 }

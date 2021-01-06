@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,5 +46,15 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
     }
 
     notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
+  }
+
+  @Override
+  protected Bytes32 getExpectedTargetRoot(
+      final Bytes32 headBlockRoot,
+      final Bytes32 previousTargetRoot,
+      final Bytes32 currentTargetRoot,
+      final UInt64 headEpoch,
+      final UInt64 dutyEpoch) {
+    return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
   }
 }

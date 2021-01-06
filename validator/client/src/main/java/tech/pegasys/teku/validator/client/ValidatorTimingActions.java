@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -43,6 +44,18 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     if (slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ONE)) {
       statusLogger.checkValidatorStatusChanges();
     }
+  }
+
+  @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 headBlockRoot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot) {
+    blockDuties.onHeadUpdate(
+        slot, headBlockRoot, previousDutyDependentRoot, currentDutyDependentRoot);
+    attestationDuties.onHeadUpdate(
+        slot, headBlockRoot, previousDutyDependentRoot, currentDutyDependentRoot);
   }
 
   @Override

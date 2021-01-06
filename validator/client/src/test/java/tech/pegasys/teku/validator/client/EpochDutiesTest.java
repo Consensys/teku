@@ -19,11 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -178,5 +180,45 @@ class EpochDutiesTest {
 
     // Should have discarded this one even though no replacement was available.
     verifyNoInteractions(scheduledDuties);
+  }
+
+  @Test
+  void shouldRecalculateDutiesIfNewDependentRootDoesNotMatch() {
+    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+
+    duties.onHeadUpdate(Bytes32.fromHexString("0x1234"));
+
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
+  }
+
+  @Test
+  void shouldNotRecalculateDutiesIfNewDependentRootMatches() {
+    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+
+    duties.onHeadUpdate(Bytes32.ZERO);
+
+    verifyNoMoreInteractions(dutyLoader);
+  }
+
+  @Test
+  void shouldRecalculateDutiesIfNonMatchingHeadUpdateReceivedWhileLoadingDuties() {
+    duties.onHeadUpdate(Bytes32.fromHexString("0x1234"));
+
+    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
+  }
+
+  @Test
+  void shouldNotRecalculateDutiesIfMatchingHeadUpdateReceivedWhileLoadingDuties() {
+    duties.onHeadUpdate(Bytes32.ZERO);
+
+    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+
+    verify(dutyLoader, times(1)).loadDutiesForEpoch(EPOCH);
   }
 }
