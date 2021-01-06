@@ -358,7 +358,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
     final Eth2NetworkConfiguration.Builder networkConfig =
         Eth2NetworkConfiguration.builder("mainnet");
-    networkConfig.eth1DepositContractAddress(Optional.empty());
 
     return expectedConfigurationBuilder()
         .globalConfig(
@@ -377,10 +376,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
-        .restApi(
-            b ->
-                b.eth1DepositContractAddress(
-                    networkConfig.eth1DepositContractAddress().orElse(null)))
+        .restApi(b -> b.eth1DepositContractAddress(networkConfig.eth1DepositContractAddress()))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
@@ -435,7 +431,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiEnabled(false)
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-                    .restApiCorsAllowedOrigins(new ArrayList<>()))
+                    .restApiCorsAllowedOrigins(new ArrayList<>())
+                    .eth1DepositContractAddress(Optional.of(address)))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))

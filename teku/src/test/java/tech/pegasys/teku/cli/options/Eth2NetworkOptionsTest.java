@@ -56,7 +56,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.eth2NetworkConfiguration().getStartupTimeoutSeconds())
         .isEqualTo(eth2NetworkConfig.getStartupTimeoutSeconds());
     assertThat(tekuConfig.eth2NetworkConfiguration().getEth1DepositContractAddress())
-        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress().orElse(null));
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
   }
 
   @Test

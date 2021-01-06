@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
@@ -24,7 +27,7 @@ public class BeaconRestApiConfig {
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
-  private final Eth1Address eth1DepositContractAddress;
+  private final Optional<Eth1Address> eth1DepositContractAddress;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -33,7 +36,7 @@ public class BeaconRestApiConfig {
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
-      final Eth1Address eth1DepositContractAddress) {
+      final Optional<Eth1Address> eth1DepositContractAddress) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -67,7 +70,7 @@ public class BeaconRestApiConfig {
     return restApiCorsAllowedOrigins;
   }
 
-  public Eth1Address getEth1DepositContractAddress() {
+  public Optional<Eth1Address> getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
@@ -83,7 +86,7 @@ public class BeaconRestApiConfig {
     private String restApiInterface;
     private List<String> restApiHostAllowlist;
     private List<String> restApiCorsAllowedOrigins;
-    private Eth1Address eth1DepositContractAddress;
+    private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -121,6 +124,14 @@ public class BeaconRestApiConfig {
 
     public BeaconRestApiConfigBuilder eth1DepositContractAddress(
         final Eth1Address eth1DepositContractAddress) {
+      checkNotNull(eth1DepositContractAddress);
+      this.eth1DepositContractAddress = Optional.of(eth1DepositContractAddress);
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder eth1DepositContractAddress(
+        final Optional<Eth1Address> eth1DepositContractAddress) {
+      checkNotNull(eth1DepositContractAddress);
       this.eth1DepositContractAddress = eth1DepositContractAddress;
       return this;
     }

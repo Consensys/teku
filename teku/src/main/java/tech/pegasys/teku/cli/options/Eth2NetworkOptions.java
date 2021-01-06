@@ -25,7 +25,8 @@ public class Eth2NetworkOptions {
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
-      arity = "1")
+      arity = "1",
+      defaultValue = "mainnet")
   private Eth2NetworkConfiguration.Builder network = Eth2NetworkConfiguration.builder("mainnet");
 
   @Option(

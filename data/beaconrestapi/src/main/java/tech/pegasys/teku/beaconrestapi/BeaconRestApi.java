@@ -128,10 +128,8 @@ public class BeaconRestApi {
   }
 
   private void addV1ConfigHandlers(
-      final DataProvider dataProvider, final Eth1Address depositAddress) {
-    app.get(
-        GetDepositContract.ROUTE,
-        new GetDepositContract(Optional.ofNullable(depositAddress), jsonProvider));
+      final DataProvider dataProvider, final Optional<Eth1Address> depositAddress) {
+    app.get(GetDepositContract.ROUTE, new GetDepositContract(depositAddress, jsonProvider));
     app.get(GetForkSchedule.ROUTE, new GetForkSchedule(dataProvider, jsonProvider));
     app.get(GetSpec.ROUTE, new GetSpec(jsonProvider));
   }
