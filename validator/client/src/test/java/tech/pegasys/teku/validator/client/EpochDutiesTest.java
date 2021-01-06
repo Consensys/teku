@@ -33,12 +33,11 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 class EpochDutiesTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(10);
-  //  private final SafeFuture<ScheduledDuties> scheduledDutiesFuture = new SafeFuture<>();
+  private final SafeFuture<ScheduledDuties> scheduledDutiesFuture = new SafeFuture<>();
   private final DutyLoader dutyLoader = mock(DutyLoader.class);
   private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
 
   private EpochDuties duties;
-  private final SafeFuture<ScheduledDuties> scheduledDutiesFuture = new SafeFuture<>();
 
   @BeforeEach
   void setUp() {
