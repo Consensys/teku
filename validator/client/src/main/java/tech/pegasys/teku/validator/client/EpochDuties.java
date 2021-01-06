@@ -25,22 +25,23 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class DutyQueue {
+class EpochDuties {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SafeFuture<ScheduledDuties> futureDuties;
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
-  private Optional<ScheduledDuties> duties = Optional.empty();
+  private final DutyLoader dutyLoader;
+  private final UInt64 epoch;
+  private SafeFuture<ScheduledDuties> duties = new SafeFuture<>();
 
-  DutyQueue(final SafeFuture<ScheduledDuties> futureDuties) {
-    this.futureDuties = futureDuties;
-    futureDuties.finish(
-        this::onDutiesLoaded,
-        error -> {
-          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
-            LOG.error("Failed to load duties", error);
-          }
-        });
+  private EpochDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
+    this.dutyLoader = dutyLoader;
+    this.epoch = epoch;
+  }
+
+  public static EpochDuties calculateDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
+    final EpochDuties duties = new EpochDuties(dutyLoader, epoch);
+    duties.recalculate();
+    return duties;
   }
 
   public void onBlockProductionDue(final UInt64 slot) {
@@ -56,21 +57,42 @@ class DutyQueue {
   }
 
   public int countDuties() {
-    return duties.map(ScheduledDuties::countDuties).orElse(0);
+    return getCurrentDuties().map(ScheduledDuties::countDuties).orElse(0);
+  }
+
+  public synchronized void recalculate() {
+    duties.cancel(false);
+    // We need to ensure the duties future is completed before .
+    duties = dutyLoader.loadDutiesForEpoch(epoch);
+    duties.finish(
+        this::processPendingActions,
+        error -> {
+          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
+            LOG.error("Failed to load duties", error);
+          } else {
+            LOG.trace("Loading duties cancelled", error);
+          }
+        });
   }
 
   public synchronized void cancel() {
-    futureDuties.cancel(false);
+    duties.cancel(false);
     pendingActions.clear();
   }
 
-  private synchronized void onDutiesLoaded(final ScheduledDuties scheduledDuties) {
-    duties = Optional.of(scheduledDuties);
+  private synchronized void processPendingActions(final ScheduledDuties scheduledDuties) {
     pendingActions.forEach(action -> action.accept(scheduledDuties));
     pendingActions.clear();
   }
 
   private synchronized void execute(final Consumer<ScheduledDuties> action) {
-    this.duties.ifPresentOrElse(action, () -> pendingActions.add(action));
+    getCurrentDuties().ifPresentOrElse(action, () -> pendingActions.add(action));
+  }
+
+  private synchronized Optional<ScheduledDuties> getCurrentDuties() {
+    if (!duties.isCompletedNormally()) {
+      return Optional.empty();
+    }
+    return Optional.of(duties.join());
   }
 }

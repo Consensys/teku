@@ -31,7 +31,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         TekuMetricCategory.VALIDATOR,
         "scheduled_block_duties_current",
         "Current number of pending block duties that have been scheduled",
-        () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
+        () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
   }
 
   @Override
@@ -44,6 +44,6 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
+    notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
   }
 }
