@@ -91,6 +91,7 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
@@ -278,7 +279,8 @@ public class RocksDbDatabase implements Database {
     }
 
     // Check block signatures are valid for blocks except the genesis block
-    boolean isGenesisBlockIncluded = Iterables.getLast(sorted).getSlot().equals(UInt64.ZERO);
+    boolean isGenesisBlockIncluded =
+        Iterables.getLast(sorted).getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT));
     checkArgument(
         batchVerifyHistoricalBlockSignatures(
             isGenesisBlockIncluded ? sorted.subList(0, sorted.size() - 1) : sorted),
