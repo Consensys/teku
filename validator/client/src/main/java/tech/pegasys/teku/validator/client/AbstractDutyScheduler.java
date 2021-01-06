@@ -27,7 +27,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private final boolean useDependentRoots = false;
+  private final boolean useDependentRoots;
   private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
@@ -35,9 +35,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
-      final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
+      final DutyLoader epochDutiesScheduler, final int lookAheadEpochs, final boolean useDependentRoots) {
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
+    this.useDependentRoots = useDependentRoots;
   }
 
   protected void notifyEpochDuties(

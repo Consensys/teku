@@ -53,7 +53,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                   validatorApiChannel,
                   dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                  validatorIndexProvider)));
+                  validatorIndexProvider)),
+          false);
   final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
   final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
   final ValidatorTimingChannel dutySchedulerWithMockDuties =
@@ -65,7 +66,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                   validatorApiChannel,
                   dependentRoot -> scheduledDuties,
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                  validatorIndexProvider)));
+                  validatorIndexProvider)),
+          false);
 
   @Test
   public void shouldFetchDutiesForCurrentEpoch() {

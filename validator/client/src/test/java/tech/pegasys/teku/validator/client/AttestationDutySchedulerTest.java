@@ -65,7 +65,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                   dependentRoot -> scheduledDuties,
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider,
-                  beaconCommitteeSubscriptions)));
+                  beaconCommitteeSubscriptions)),
+          false);
 
   private final AttestationDutyScheduler dutyScheduler =
       new AttestationDutyScheduler(
@@ -78,7 +79,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                   dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider,
-                  beaconCommitteeSubscriptions)));
+                  beaconCommitteeSubscriptions)),
+          false);
 
   @BeforeEach
   public void init() {

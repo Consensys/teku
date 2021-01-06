@@ -131,9 +131,11 @@ public class ValidatorClientService extends Service {
                 dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider));
+    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     this.attestationTimingChannel =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
-    this.blockProductionTimingChannel = new BlockDutyScheduler(metricsSystem, blockDutyLoader);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, useDependentRoots);
+    this.blockProductionTimingChannel =
+        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots);
     addValidatorCountMetric(metricsSystem, validators.size());
     if (validators.keySet().size() > 0) {
       this.validatorStatusLogger =
