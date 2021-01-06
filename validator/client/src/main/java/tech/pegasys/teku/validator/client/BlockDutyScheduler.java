@@ -44,6 +44,6 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyDutyQueue(EpochDuties::onBlockProductionDue, slot);
+    notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
   }
 }

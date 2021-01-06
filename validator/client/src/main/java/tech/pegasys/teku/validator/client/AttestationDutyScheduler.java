@@ -55,7 +55,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     }
 
     lastAttestationCreationSlot = slot;
-    notifyDutyQueue(EpochDuties::onAttestationCreationDue, slot);
+    notifyEpochDuties(EpochDuties::onAttestationCreationDue, slot);
   }
 
   @Override
@@ -68,6 +68,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyDutyQueue(EpochDuties::onAttestationAggregationDue, slot);
+    notifyEpochDuties(EpochDuties::onAttestationAggregationDue, slot);
   }
 }

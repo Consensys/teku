@@ -38,7 +38,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     this.lookAheadEpochs = lookAheadEpochs;
   }
 
-  protected void notifyDutyQueue(final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
+  protected void notifyEpochDuties(
+      final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
     final EpochDuties epochDuties = dutiesByEpoch.get(compute_epoch_at_slot(slot));
     if (epochDuties != null) {
       action.accept(epochDuties, slot);
