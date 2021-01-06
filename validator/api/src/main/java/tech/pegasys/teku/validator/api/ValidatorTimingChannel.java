@@ -22,9 +22,7 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
 
   void onHeadUpdate(
       UInt64 slot,
-      Bytes32 headBlockRoot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot);
+      Bytes32 previousDutyDependentRoot, Bytes32 currentDutyDependentRoot, Bytes32 headBlockRoot);
 
   void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
 

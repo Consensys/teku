@@ -49,13 +49,13 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   @Override
   public void onHeadUpdate(
       final UInt64 slot,
-      final Bytes32 headBlockRoot,
       final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot) {
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {
     blockDuties.onHeadUpdate(
-        slot, headBlockRoot, previousDutyDependentRoot, currentDutyDependentRoot);
+        slot, previousDutyDependentRoot, currentDutyDependentRoot, headBlockRoot);
     attestationDuties.onHeadUpdate(
-        slot, headBlockRoot, previousDutyDependentRoot, currentDutyDependentRoot);
+        slot, previousDutyDependentRoot, currentDutyDependentRoot, headBlockRoot);
   }
 
   @Override

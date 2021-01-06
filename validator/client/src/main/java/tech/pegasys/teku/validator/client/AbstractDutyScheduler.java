@@ -60,9 +60,9 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   @Override
   public void onHeadUpdate(
       final UInt64 slot,
-      final Bytes32 headBlockRoot,
       final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot) {
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {
     if (!useDependentRoots) {
       return;
     }
