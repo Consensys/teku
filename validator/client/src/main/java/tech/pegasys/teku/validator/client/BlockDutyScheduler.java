@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,12 +53,17 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
-  protected Bytes32 getExpectedTargetRoot(
+  protected Bytes32 getExpectedDependentRoot(
       final Bytes32 headBlockRoot,
       final Bytes32 previousTargetRoot,
       final Bytes32 currentTargetRoot,
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
+    checkArgument(
+        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+        dutyEpoch,
+        headEpoch);
     return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
   }
 }

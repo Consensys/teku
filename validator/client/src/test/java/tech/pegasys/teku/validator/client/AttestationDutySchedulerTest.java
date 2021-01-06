@@ -754,7 +754,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     createDutySchedulerWithRealDuties(true);
     final Bytes32 previousDutyDependentRoot = Bytes32.fromHexString("0x1111");
     final Bytes32 result =
-        dutyScheduler.getExpectedTargetRoot(
+        dutyScheduler.getExpectedDependentRoot(
             Bytes32.fromHexString("0x3333"),
             previousDutyDependentRoot,
             Bytes32.fromHexString("0x2222"),
@@ -769,7 +769,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     createDutySchedulerWithRealDuties(true);
     final Bytes32 currentDutyDependentRoot = Bytes32.fromHexString("0x2222");
     final Bytes32 result =
-        dutyScheduler.getExpectedTargetRoot(
+        dutyScheduler.getExpectedDependentRoot(
             Bytes32.fromHexString("0x3333"),
             Bytes32.fromHexString("0x1111"),
             currentDutyDependentRoot,
@@ -784,7 +784,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     createDutySchedulerWithRealDuties(true);
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x3333");
     final Bytes32 result =
-        dutyScheduler.getExpectedTargetRoot(
+        dutyScheduler.getExpectedDependentRoot(
             headBlockRoot,
             Bytes32.fromHexString("0x1111"),
             Bytes32.fromHexString("0x2222"),

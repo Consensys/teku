@@ -74,7 +74,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
         .forEach(
             (dutyEpoch, duties) ->
                 duties.onHeadUpdate(
-                    getExpectedTargetRoot(
+                    getExpectedDependentRoot(
                         headBlockRoot,
                         previousDutyDependentRoot,
                         currentDutyDependentRoot,
@@ -82,7 +82,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
                         dutyEpoch)));
   }
 
-  protected abstract Bytes32 getExpectedTargetRoot(
+  protected abstract Bytes32 getExpectedDependentRoot(
       Bytes32 headBlockRoot,
       Bytes32 previousDutyDependentRoot,
       Bytes32 currentDutyDependentRoot,
