@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import com.google.common.base.Throwables;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,14 +36,14 @@ public class RetryingDutyLoader implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
-    final SafeFuture<ScheduledDuties> duties = new SafeFuture<>();
+  public SafeFuture<Optional<ScheduledDuties>> loadDutiesForEpoch(final UInt64 epoch) {
+    final SafeFuture<Optional<ScheduledDuties>> duties = new SafeFuture<>();
     requestDuties(epoch, duties).propagateTo(duties);
     return duties;
   }
 
-  private SafeFuture<ScheduledDuties> requestDuties(
-      final UInt64 epoch, final SafeFuture<ScheduledDuties> cancellable) {
+  private SafeFuture<Optional<ScheduledDuties>> requestDuties(
+      final UInt64 epoch, final SafeFuture<Optional<ScheduledDuties>> cancellable) {
     LOG.trace("Request duties for epoch {}", epoch);
     return delegate
         .loadDutiesForEpoch(epoch)

@@ -31,7 +31,7 @@ class EpochDuties {
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private final DutyLoader dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<ScheduledDuties> duties = new SafeFuture<>();
+  private SafeFuture<Optional<ScheduledDuties>> duties = new SafeFuture<>();
 
   private EpochDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
@@ -80,8 +80,8 @@ class EpochDuties {
     pendingActions.clear();
   }
 
-  private synchronized void processPendingActions(final ScheduledDuties scheduledDuties) {
-    pendingActions.forEach(action -> action.accept(scheduledDuties));
+  private void processPendingActions(final Optional<ScheduledDuties> scheduledDuties) {
+    scheduledDuties.ifPresent(duties -> pendingActions.forEach(action -> action.accept(duties)));
     pendingActions.clear();
   }
 
@@ -93,6 +93,6 @@ class EpochDuties {
     if (!duties.isCompletedNormally()) {
       return Optional.empty();
     }
-    return Optional.of(duties.join());
+    return duties.join();
   }
 }

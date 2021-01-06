@@ -42,19 +42,25 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
+  public SafeFuture<Optional<ScheduledDuties>> loadDutiesForEpoch(final UInt64 epoch) {
     LOG.trace("Requesting attestation duties for epoch {}", epoch);
-    // TODO: Handle having no validators here.
     return validatorIndexProvider
         .getValidatorIndices(validators.keySet())
-        .thenCompose(validatorIndices -> requestDuties(epoch, validatorIndices))
-        .thenApply(
-            maybeDuties ->
-                maybeDuties.orElseThrow(
-                    () ->
-                        new NodeDataUnavailableException(
-                            "Duties could not be calculated because chain data was not yet available")))
-        .thenCompose(this::scheduleAllDuties);
+        .thenCompose(
+            validatorIndices -> {
+              if (validatorIndices.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return requestDuties(epoch, validatorIndices)
+                  .thenApply(
+                      maybeDuties ->
+                          maybeDuties.orElseThrow(
+                              () ->
+                                  new NodeDataUnavailableException(
+                                      "Duties could not be calculated because chain data was not yet available")))
+                  .thenCompose(this::scheduleAllDuties)
+                  .thenApply(Optional::of);
+            });
   }
 
   protected abstract SafeFuture<Optional<D>> requestDuties(

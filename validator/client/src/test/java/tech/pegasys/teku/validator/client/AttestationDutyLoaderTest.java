@@ -101,7 +101,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions)
@@ -138,7 +138,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions)
@@ -154,7 +154,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions).sendRequests();
