@@ -61,7 +61,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
               new AttestationDutyLoader(
                   validatorApiChannel,
                   forkProvider,
-                  () -> scheduledDuties,
+                  dependentRoot -> scheduledDuties,
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider,
                   beaconCommitteeSubscriptions)));
@@ -74,7 +74,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
               new AttestationDutyLoader(
                   validatorApiChannel,
                   forkProvider,
-                  () -> new ScheduledDuties(dutyFactory),
+                  dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider,
                   beaconCommitteeSubscriptions)));

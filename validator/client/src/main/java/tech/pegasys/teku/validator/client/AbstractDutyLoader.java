@@ -14,12 +14,12 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,12 +28,12 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 public abstract class AbstractDutyLoader<D> implements DutyLoader {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Supplier<ScheduledDuties> scheduledDutiesFactory;
+  protected final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory;
   protected final Map<BLSPublicKey, Validator> validators;
   private final ValidatorIndexProvider validatorIndexProvider;
 
   protected AbstractDutyLoader(
-      final Supplier<ScheduledDuties> scheduledDutiesFactory,
+      final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
       final Map<BLSPublicKey, Validator> validators,
       final ValidatorIndexProvider validatorIndexProvider) {
     this.scheduledDutiesFactory = scheduledDutiesFactory;
@@ -44,7 +44,7 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   @Override
   public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
     LOG.trace("Requesting attestation duties for epoch {}", epoch);
-    final ScheduledDuties scheduledDuties = scheduledDutiesFactory.get();
+    // TODO: Handle having no validators here.
     return validatorIndexProvider
         .getValidatorIndices(validators.keySet())
         .thenCompose(validatorIndices -> requestDuties(epoch, validatorIndices))
@@ -54,21 +54,11 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
                     () ->
                         new NodeDataUnavailableException(
                             "Duties could not be calculated because chain data was not yet available")))
-        .thenCompose(duties -> scheduleAllDuties(scheduledDuties, duties))
-        .thenApply(__ -> scheduledDuties);
+        .thenCompose(this::scheduleAllDuties);
   }
 
-  protected abstract SafeFuture<Optional<List<D>>> requestDuties(
+  protected abstract SafeFuture<Optional<D>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
-  protected SafeFuture<Void> scheduleAllDuties(
-      final ScheduledDuties scheduledDuties, final List<D> duties) {
-    return SafeFuture.allOf(
-        duties.stream()
-            .map(duty -> scheduleDuties(scheduledDuties, duty))
-            .toArray(SafeFuture[]::new));
-  }
-
-  protected abstract SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties scheduledDuties, final D duty);
+  protected abstract SafeFuture<ScheduledDuties> scheduleAllDuties(final D duties);
 }

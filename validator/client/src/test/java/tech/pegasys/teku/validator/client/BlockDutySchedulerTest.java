@@ -49,7 +49,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
               asyncRunner,
               new BlockProductionDutyLoader(
                   validatorApiChannel,
-                  () -> new ScheduledDuties(dutyFactory),
+                  dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider)));
   final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
@@ -61,7 +61,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
               asyncRunner,
               new BlockProductionDutyLoader(
                   validatorApiChannel,
-                  () -> scheduledDuties,
+                  dependentRoot -> scheduledDuties,
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider)));
 

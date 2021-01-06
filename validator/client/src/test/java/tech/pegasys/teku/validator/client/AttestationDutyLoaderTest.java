@@ -62,7 +62,7 @@ class AttestationDutyLoaderTest {
       new AttestationDutyLoader(
           validatorApiChannel,
           forkProvider,
-          () -> scheduledDuties,
+          dependentRoot -> scheduledDuties,
           validators,
           validatorIndexProvider,
           beaconCommitteeSubscriptions);

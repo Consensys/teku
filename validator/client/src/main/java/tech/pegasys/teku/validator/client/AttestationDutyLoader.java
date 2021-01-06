@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -35,7 +34,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuty> {
+public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
@@ -45,7 +44,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuty> {
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
-      final Supplier<ScheduledDuties> scheduledDutiesFactory,
+      final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
       final Map<BLSPublicKey, Validator> validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions) {
@@ -56,25 +55,26 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuty> {
   }
 
   @Override
-  protected SafeFuture<Optional<List<AttesterDuty>>> requestDuties(
+  protected SafeFuture<Optional<AttesterDuties>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     if (validatorIndices.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(emptyList()));
+      return SafeFuture.completedFuture(Optional.empty());
     }
-    return validatorApiChannel
-        .getAttestationDuties(epoch, validatorIndices)
-        .thenApply(result -> result.map(AttesterDuties::getDuties));
+    return validatorApiChannel.getAttestationDuties(epoch, validatorIndices);
   }
 
   @Override
-  protected SafeFuture<Void> scheduleAllDuties(
-      final ScheduledDuties scheduledDuties, final List<AttesterDuty> duties) {
-    return super.scheduleAllDuties(scheduledDuties, duties)
+  protected SafeFuture<ScheduledDuties> scheduleAllDuties(final AttesterDuties duties) {
+    final ScheduledDuties scheduledDuties = scheduledDutiesFactory.apply(duties.getDependentRoot());
+    return SafeFuture.allOf(
+            duties.getDuties().stream()
+                .map(duty -> scheduleDuties(scheduledDuties, duty))
+                .toArray(SafeFuture[]::new))
+        .thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 
-  @Override
-  protected SafeFuture<Void> scheduleDuties(
+  private SafeFuture<Void> scheduleDuties(
       final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
     final Validator validator = validators.get(duty.getPublicKey());
     final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());

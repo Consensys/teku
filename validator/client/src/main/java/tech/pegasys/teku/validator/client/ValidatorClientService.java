@@ -53,7 +53,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
-  private SafeFuture<Void> initializationComplete = new SafeFuture<>();
+  private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private ValidatorClientService(
       final EventChannels eventChannels,
@@ -119,7 +119,7 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions));
@@ -128,7 +128,7 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider));
     this.attestationTimingChannel =
