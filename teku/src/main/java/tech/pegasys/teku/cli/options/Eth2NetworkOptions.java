@@ -87,9 +87,9 @@ public class Eth2NetworkOptions {
 
     builder
         .eth2NetworkConfig(eth2Config)
+        .storageConfiguration(b -> b.eth1DepositContract(eth2Config.eth1DepositContractAddress()))
         .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.discoveryBootnodes()))
-        .restApi(
-            b -> eth2Config.eth1DepositContractAddress().ifPresent(b::eth1DepositContractAddress))
+        .restApi(b -> b.eth1DepositContractAddress(eth2Config.eth1DepositContractAddress()))
         .weakSubjectivity(
             b -> eth2Config.initialState().ifPresent(b::weakSubjectivityStateResource));
   }

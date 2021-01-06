@@ -45,17 +45,24 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
     final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
-    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
-        .isEqualTo(eth2NetworkConfig.getDiscoveryBootnodes());
-    assertThat(tekuConfig.eth2NetworkConfiguration().getConstants())
-        .isEqualTo(eth2NetworkConfig.getConstants());
+
+    // eth2Config
+    assertThat(tekuConfig.eth2NetworkConfiguration()).isEqualTo(eth2NetworkConfig);
+
+    // Storage config
+    assertThat(tekuConfig.storageConfiguration().getEth1DepositContract())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
+
+    // WS config
     assertThat(tekuConfig.weakSubjectivity().getWeakSubjectivityStateResource())
         .isEqualTo(eth2NetworkConfig.getInitialState());
-    assertThat(tekuConfig.eth2NetworkConfiguration().getStartupTargetPeerCount())
-        .isEqualTo(eth2NetworkConfig.getStartupTargetPeerCount());
-    assertThat(tekuConfig.eth2NetworkConfiguration().getStartupTimeoutSeconds())
-        .isEqualTo(eth2NetworkConfig.getStartupTimeoutSeconds());
-    assertThat(tekuConfig.eth2NetworkConfiguration().getEth1DepositContractAddress())
+
+    // p2p config
+    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
+        .isEqualTo(eth2NetworkConfig.getDiscoveryBootnodes());
+
+    // Rest api
+    assertThat(tekuConfig.beaconChain().beaconRestApiConfig().getEth1DepositContractAddress())
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
   }
 

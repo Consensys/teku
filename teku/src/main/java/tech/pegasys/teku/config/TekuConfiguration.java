@@ -22,6 +22,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
+import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final Eth2NetworkConfiguration eth2NetworkConfiguration;
+  private final StorageConfiguration storageConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final DataConfig dataConfig;
   private final LoggingConfig loggingConfig;
@@ -42,6 +44,7 @@ public class TekuConfiguration {
   private TekuConfiguration(
       GlobalConfiguration globalConfiguration,
       Eth2NetworkConfiguration eth2NetworkConfiguration,
+      StorageConfiguration storageConfiguration,
       WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
       final InteropConfig interopConfig,
@@ -51,6 +54,7 @@ public class TekuConfiguration {
       final LoggingConfig loggingConfig) {
     this.globalConfiguration = globalConfiguration;
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
+    this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.dataConfig = dataConfig;
     this.loggingConfig = loggingConfig;
@@ -76,6 +80,10 @@ public class TekuConfiguration {
 
   public Eth2NetworkConfiguration eth2NetworkConfiguration() {
     return eth2NetworkConfiguration;
+  }
+
+  public StorageConfiguration storageConfiguration() {
+    return storageConfiguration;
   }
 
   public WeakSubjectivityConfig weakSubjectivity() {
@@ -106,6 +114,8 @@ public class TekuConfiguration {
             new SettableBuilder<>(
                 Eth2NetworkConfiguration.builder(Eth2NetworkConfiguration.MAINNET),
                 Eth2NetworkConfiguration.Builder::build);
+    private final StorageConfiguration.Builder storageConfigurationBuilder =
+        StorageConfiguration.builder();
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
@@ -121,6 +131,7 @@ public class TekuConfiguration {
     public TekuConfiguration build() {
       final GlobalConfiguration globalConfig = globalConfigurationBuilder.build();
       final Eth2NetworkConfiguration eth2NetworkConfig = eth2NetworkConfigurationBuilder.build();
+      final StorageConfiguration storageConfig = storageConfigurationBuilder.build();
       final WeakSubjectivityConfig wsConfig = weakSubjectivityBuilder.build();
       final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
       final InteropConfig interopConfig = interopConfigBuilder.build();
@@ -139,6 +150,7 @@ public class TekuConfiguration {
       return new TekuConfiguration(
           globalConfig,
           eth2NetworkConfig,
+          storageConfig,
           wsConfig,
           validatorConfig,
           interopConfig,
@@ -160,6 +172,11 @@ public class TekuConfiguration {
 
     public Builder eth2NetworkConfig(final Eth2NetworkConfiguration.Builder eth2Builder) {
       eth2NetworkConfigurationBuilder.reset(eth2Builder);
+      return this;
+    }
+
+    public Builder storageConfiguration(final Consumer<StorageConfiguration.Builder> consumer) {
+      consumer.accept(storageConfigurationBuilder);
       return this;
     }
 

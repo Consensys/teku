@@ -16,9 +16,7 @@ package tech.pegasys.teku.services.chainstorage;
 import static tech.pegasys.teku.util.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -33,16 +31,16 @@ import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service {
-  private final Optional<Eth1Address> eth1DepositContract;
+  private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private volatile ProtoArrayStorage protoArrayStorage;
   private final ServiceConfig serviceConfig;
   private volatile Database database;
 
   public StorageService(
-      final ServiceConfig serviceConfig, final Eth2NetworkConfiguration eth2NetworkConfiguration) {
+      final ServiceConfig serviceConfig, final StorageConfiguration storageConfiguration) {
     this.serviceConfig = serviceConfig;
-    this.eth1DepositContract = eth2NetworkConfiguration.getEth1DepositContractAddress();
+    this.config = storageConfiguration;
   }
 
   @Override
@@ -57,7 +55,7 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().getDataStorageMode(),
                   serviceConfig.getConfig().getDataStorageCreateDbVersion(),
                   serviceConfig.getConfig().getDataStorageFrequency(),
-                  eth1DepositContract);
+                  config.getEth1DepositContract());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);

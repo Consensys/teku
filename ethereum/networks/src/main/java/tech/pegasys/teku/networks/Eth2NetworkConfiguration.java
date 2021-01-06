@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -212,6 +213,32 @@ public class Eth2NetworkConfiguration {
   @Override
   public String toString() {
     return constants;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final Eth2NetworkConfiguration that = (Eth2NetworkConfiguration) o;
+    return startupTargetPeerCount == that.startupTargetPeerCount
+        && startupTimeoutSeconds == that.startupTimeoutSeconds
+        && Objects.equals(constants, that.constants)
+        && Objects.equals(initialState, that.initialState)
+        && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
+        && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
+        && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        constants,
+        initialState,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
+        discoveryBootnodes,
+        eth1DepositContractAddress,
+        eth1DepositContractDeployBlock);
   }
 
   public static class Builder {
