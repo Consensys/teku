@@ -33,7 +33,7 @@ import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service {
-  private final Eth1Address eth1DepositContract;
+  private final Optional<Eth1Address> eth1DepositContract;
   private volatile ChainStorage chainStorage;
   private volatile ProtoArrayStorage protoArrayStorage;
   private final ServiceConfig serviceConfig;
@@ -42,13 +42,7 @@ public class StorageService extends Service {
   public StorageService(
       final ServiceConfig serviceConfig, final Eth2NetworkConfiguration eth2NetworkConfiguration) {
     this.serviceConfig = serviceConfig;
-    this.eth1DepositContract =
-        eth2NetworkConfiguration
-            .getEth1DepositContractAddress()
-            .orElseThrow(
-                () -> {
-                  throw new IllegalStateException("Missing required eth1 deposit contract");
-                });
+    this.eth1DepositContract = eth2NetworkConfiguration.getEth1DepositContractAddress();
   }
 
   @Override

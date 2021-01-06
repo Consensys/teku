@@ -236,10 +236,7 @@ public class DebugDbCommand implements Runnable {
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            eth2NetworkOptions
-                .getNetworkConfiguration()
-                .getEth1DepositContractAddress()
-                .orElse(null));
+            eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress());
     return databaseFactory.createDatabase();
   }
 
