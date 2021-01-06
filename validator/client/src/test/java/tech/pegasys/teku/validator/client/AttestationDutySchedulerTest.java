@@ -231,8 +231,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     dutyScheduler.onHeadUpdate(
         currentSlot,
-        dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()
-    );
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
 
     verify(validatorApiChannel, times(2)).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
     verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
@@ -262,8 +263,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     dutyScheduler.onHeadUpdate(
         currentSlot,
-        previousDutyDependentRoot, dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()
-    );
+        previousDutyDependentRoot,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
 
     verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
@@ -292,8 +294,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     dutyScheduler.onHeadUpdate(
         currentSlot,
-        previousDutyDependentRoot, currentDutyDependentRoot, dataStructureUtil.randomBytes32()
-    );
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        dataStructureUtil.randomBytes32());
 
     verifyNoMoreInteractions(validatorApiChannel);
   }

@@ -35,7 +35,9 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
-      final DutyLoader epochDutiesScheduler, final int lookAheadEpochs, final boolean useDependentRoots) {
+      final DutyLoader epochDutiesScheduler,
+      final int lookAheadEpochs,
+      final boolean useDependentRoots) {
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
     this.useDependentRoots = useDependentRoots;
