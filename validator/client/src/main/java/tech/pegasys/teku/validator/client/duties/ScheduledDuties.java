@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -31,9 +32,15 @@ public class ScheduledDuties {
   private final NavigableMap<UInt64, AggregationDuty> aggregationDuties = new TreeMap<>();
 
   private final ValidatorDutyFactory dutyFactory;
+  private final Bytes32 dependentRoot;
 
-  public ScheduledDuties(final ValidatorDutyFactory dutyFactory) {
+  public ScheduledDuties(final ValidatorDutyFactory dutyFactory, final Bytes32 dependentRoot) {
     this.dutyFactory = dutyFactory;
+    this.dependentRoot = dependentRoot;
+  }
+
+  public Bytes32 getDependentRoot() {
+    return dependentRoot;
   }
 
   public synchronized void scheduleBlockProduction(final UInt64 slot, final Validator validator) {

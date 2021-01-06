@@ -46,6 +46,7 @@ public class ValidatorConfig {
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
   private final int validatorExternalSignerConcurrentRequestLimit;
+  private final boolean useDependentRoots;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -63,7 +64,8 @@ public class ValidatorConfig {
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
-      final int validatorExternalSignerConcurrentRequestLimit) {
+      final int validatorExternalSignerConcurrentRequestLimit,
+      final boolean useDependentRoots) {
     this.validatorKeys = validatorKeys;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -83,6 +85,7 @@ public class ValidatorConfig {
         validatorExternalSignerSlashingProtectionEnabled;
     this.validatorExternalSignerConcurrentRequestLimit =
         validatorExternalSignerConcurrentRequestLimit;
+    this.useDependentRoots = useDependentRoots;
   }
 
   public static Builder builder() {
@@ -158,6 +161,10 @@ public class ValidatorConfig {
     return processor.getFilePairs();
   }
 
+  public boolean useDependentRoots() {
+    return useDependentRoots;
+  }
+
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
@@ -176,6 +183,7 @@ public class ValidatorConfig {
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
+    private boolean useDependentRoots = false;
 
     private Builder() {}
 
@@ -269,6 +277,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder useDependentRoots(final boolean useDependentRoots) {
+      this.useDependentRoots = useDependentRoots;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateKeyStoreFilesAndPasswordFilesConfig();
       validateExternalSignerUrlAndPublicKeys();
@@ -291,7 +304,8 @@ public class ValidatorConfig {
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
-          validatorExternalSignerConcurrentRequestLimit);
+          validatorExternalSignerConcurrentRequestLimit,
+          useDependentRoots);
     }
 
     private void validateKeyStoreFilesAndPasswordFilesConfig() {

@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,8 +28,10 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
-      final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS);
+      final MetricsSystem metricsSystem,
+      final DutyLoader epochDutiesScheduler,
+      final boolean useDependentRoots) {
+    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -69,5 +74,26 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     }
 
     notifyEpochDuties(EpochDuties::onAttestationAggregationDue, slot);
+  }
+
+  @Override
+  protected Bytes32 getExpectedDependentRoot(
+      final Bytes32 headBlockRoot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final UInt64 headEpoch,
+      final UInt64 dutyEpoch) {
+    checkArgument(
+        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+        dutyEpoch,
+        headEpoch);
+    if (headEpoch.equals(dutyEpoch)) {
+      return previousDutyDependentRoot;
+    } else if (headEpoch.plus(1).equals(dutyEpoch)) {
+      return currentDutyDependentRoot;
+    } else {
+      return headBlockRoot;
+    }
   }
 }

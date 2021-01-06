@@ -53,7 +53,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
-  private SafeFuture<Void> initializationComplete = new SafeFuture<>();
+  private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private ValidatorClientService(
       final EventChannels eventChannels,
@@ -119,7 +119,7 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions));
@@ -128,12 +128,14 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider));
+    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     this.attestationTimingChannel =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
-    this.blockProductionTimingChannel = new BlockDutyScheduler(metricsSystem, blockDutyLoader);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, useDependentRoots);
+    this.blockProductionTimingChannel =
+        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots);
     addValidatorCountMetric(metricsSystem, validators.size());
     if (validators.keySet().size() > 0) {
       this.validatorStatusLogger =
