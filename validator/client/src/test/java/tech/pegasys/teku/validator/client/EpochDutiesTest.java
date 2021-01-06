@@ -144,12 +144,12 @@ class EpochDutiesTest {
 
   @Test
   void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
-
     final ScheduledDuties newDuties = mock(ScheduledDuties.class);
     final SafeFuture<ScheduledDuties> recalculatedDuties = new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
+    assertThat(scheduledDutiesFuture).isCancelled();
     verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
 
     duties.onBlockProductionDue(ZERO);
