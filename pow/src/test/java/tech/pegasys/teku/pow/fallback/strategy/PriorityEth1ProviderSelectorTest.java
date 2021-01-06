@@ -15,10 +15,13 @@ package tech.pegasys.teku.pow.fallback.strategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -29,34 +32,32 @@ import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
 public class PriorityEth1ProviderSelectorTest {
 
   @Test
-  void assertThatSelectionWorks() {
+  void assertThatSelectionWorks() throws ExecutionException, InterruptedException {
     final Eth1Provider node1 = mock(Eth1Provider.class);
     final Eth1Provider node2 = mock(Eth1Provider.class);
     final Eth1Provider node3 = mock(Eth1Provider.class);
     final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
-    final Eth1ProviderSelector providerSelector = new PriorityEth1ProviderSelector(providers);
+    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
     final FallbackAwareEth1Provider fallbackAwareEth1Provider =
         new FallbackAwareEth1Provider(providerSelector);
     // node 1 ready
     when(node1.getLatestEth1Block()).thenReturn(readyProvider());
     fallbackAwareEth1Provider.getLatestEth1Block();
-    // node 1 must be the best candidate
-    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
 
-    // node 1 down and node 2 ready
-    when(node1.getLatestEth1Block()).thenReturn(koProvider());
+    // node 1 failing and node 2 ready
+    when(node1.getLatestEth1Block()).thenReturn(failingProvider());
     when(node2.getLatestEth1Block()).thenReturn(readyProvider());
-    fallbackAwareEth1Provider.getLatestEth1Block();
-    // node 2 must be the best candidate
-    assertThat(providerSelector.bestCandidate()).isEqualTo(node2);
+    final SafeFuture<EthBlock.Block> latestEth1Block =
+        fallbackAwareEth1Provider.getLatestEth1Block();
+    assertThat(latestEth1Block.get()).isNotNull();
 
-    // node 2 down, node 3 down and node 1 ready
-    when(node2.getLatestEth1Block()).thenReturn(koProvider());
-    when(node3.getLatestEth1Block()).thenReturn(koProvider());
-    when(node1.getLatestEth1Block()).thenReturn(readyProvider());
-    fallbackAwareEth1Provider.getLatestEth1Block();
-    // node 1 must be the best candidate again
-    assertThat(providerSelector.bestCandidate()).isEqualTo(node1);
+    // node 1 failing and node 2 is failing
+    when(node1.getLatestEth1Block()).thenReturn(failingProvider());
+    when(node2.getLatestEth1Block()).thenReturn(failingProvider());
+    assertThat(fallbackAwareEth1Provider.getLatestEth1Block()).isCompletedExceptionally();
+
+    verify(node1, times(3)).getLatestEth1Block();
+    verify(node2, times(2)).getLatestEth1Block();
   }
 
   private static SafeFuture<EthBlock.Block> readyProvider() {
@@ -65,7 +66,7 @@ public class PriorityEth1ProviderSelectorTest {
     return blockSafeFuture;
   }
 
-  private static SafeFuture<EthBlock.Block> koProvider() {
+  private static SafeFuture<EthBlock.Block> failingProvider() {
     final SafeFuture<EthBlock.Block> blockSafeFuture = new SafeFuture<>();
     blockSafeFuture.completeExceptionally(new RuntimeException("cannot get block"));
     return blockSafeFuture;

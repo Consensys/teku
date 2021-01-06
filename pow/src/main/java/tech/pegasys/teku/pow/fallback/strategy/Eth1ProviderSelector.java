@@ -13,13 +13,20 @@
 
 package tech.pegasys.teku.pow.fallback.strategy;
 
+import com.google.common.base.Preconditions;
+import java.util.List;
 import tech.pegasys.teku.pow.Eth1Provider;
 
-public interface Eth1ProviderSelector {
+public class Eth1ProviderSelector {
 
-  Eth1Provider bestCandidate();
+  final List<Eth1Provider> candidates;
 
-  void updateBestCandidate();
+  public Eth1ProviderSelector(final List<Eth1Provider> candidates) {
+    Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
+    this.candidates = candidates;
+  }
 
-  int candidateCount();
+  public List<Eth1Provider> getProviders() {
+    return candidates;
+  }
 }

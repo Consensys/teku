@@ -15,6 +15,7 @@ package tech.pegasys.teku.pow.fallback;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -85,22 +86,21 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
-    return run(task, eth1ProviderSelector.candidateCount());
+    return run(task, eth1ProviderSelector.getProviders().iterator());
   }
 
   private <T> SafeFuture<T> run(
-      final Function<Eth1Provider, SafeFuture<T>> task, final int maxRetries) {
+      final Function<Eth1Provider, SafeFuture<T>> task, final Iterator<Eth1Provider> providers) {
     return SafeFuture.of(
         () ->
-            task.apply(eth1ProviderSelector.bestCandidate())
+            task.apply(providers.next())
                 .exceptionallyCompose(
                     err -> {
                       LOG.warn(
                           "Error caught while calling Eth1Provider, switching provider for next calls",
                           err);
-                      eth1ProviderSelector.updateBestCandidate();
-                      if (maxRetries > 0) {
-                        return run(task, maxRetries - 1);
+                      if (providers.hasNext()) {
+                        return run(task, providers);
                       } else {
                         return SafeFuture.failedFuture(err);
                       }

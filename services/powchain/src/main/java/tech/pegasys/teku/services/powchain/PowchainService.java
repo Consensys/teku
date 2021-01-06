@@ -44,7 +44,7 @@ import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.fallback.FallbackAwareEth1Provider;
-import tech.pegasys.teku.pow.fallback.strategy.PriorityEth1ProviderSelector;
+import tech.pegasys.teku.pow.fallback.strategy.Eth1ProviderSelector;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -133,7 +133,7 @@ public class PowchainService extends Service {
       return new Web3jEth1Provider(web3js.get(0), asyncRunner);
     } else {
       return new FallbackAwareEth1Provider(
-          new PriorityEth1ProviderSelector(
+          new Eth1ProviderSelector(
               web3js.stream()
                   .map(web3j -> new Web3jEth1Provider(web3j, asyncRunner))
                   .collect(Collectors.toList())));
