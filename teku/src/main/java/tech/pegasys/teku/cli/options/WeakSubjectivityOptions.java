@@ -14,13 +14,13 @@
 package tech.pegasys.teku.cli.options;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class WeakSubjectivityOptions {
 
@@ -49,13 +49,17 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private UInt64 suppressWSPeriodChecksUntilEpoch = null;
 
-  public TekuConfiguration.Builder configure(
-      TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
+  public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
+
+    // Pull network info
+    final AtomicReference<Optional<String>> initialState = new AtomicReference<>(Optional.empty());
+    builder.eth2NetworkConfig(b -> initialState.set(b.initialState()));
+
     return builder.weakSubjectivity(
         wsBuilder -> {
           final Optional<String> initialStateResource =
               Optional.ofNullable(weakSubjectivityState)
-                  .or(networkDefinition::getInitialState)
+                  .or(initialState::get)
                   .filter(StringUtils::isNotBlank);
           initialStateResource.ifPresent(wsBuilder::weakSubjectivityStateResource);
 

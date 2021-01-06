@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class P2POptions {
 
@@ -163,8 +162,12 @@ public class P2POptions {
         : minimumRandomlySelectedPeerCount;
   }
 
-  public void configure(
-      final TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
+  public void configure(final TekuConfiguration.Builder builder) {
+
+    // Pull network info
+    final List<String> networkBootnodes = new ArrayList<>();
+    builder.eth2NetworkConfig(b -> networkBootnodes.addAll(b.discoveryBootnodes()));
+
     builder.p2p(
         p2pBuilder ->
             p2pBuilder
@@ -173,9 +176,7 @@ public class P2POptions {
                 .p2pPort(p2pPort)
                 .p2pDiscoveryEnabled(p2pDiscoveryEnabled)
                 .p2pDiscoveryBootnodes(
-                    p2pDiscoveryBootnodes == null
-                        ? networkDefinition.getDiscoveryBootnodes()
-                        : p2pDiscoveryBootnodes)
+                    p2pDiscoveryBootnodes == null ? networkBootnodes : p2pDiscoveryBootnodes)
                 .p2pAdvertisedIp(Optional.ofNullable(p2pAdvertisedIp))
                 .p2pAdvertisedPort(
                     p2pAdvertisedPort == null

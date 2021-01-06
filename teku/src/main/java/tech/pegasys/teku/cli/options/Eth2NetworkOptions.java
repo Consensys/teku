@@ -14,18 +14,27 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.cli.converter.NetworkDefinitionConverter;
-import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.cli.converter.Eth2NetworkConverter;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
-public class NetworkOptions {
+public class Eth2NetworkOptions {
 
   @Option(
-      converter = NetworkDefinitionConverter.class,
+      converter = Eth2NetworkConverter.class,
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
-  private NetworkDefinition network = NetworkDefinition.fromCliArg("mainnet");
+  private Eth2NetworkConfiguration.Builder network = Eth2NetworkConfiguration.builder("mainnet");
+
+  @Option(
+      names = {"--eth1-deposit-contract-address"},
+      paramLabel = "<ADDRESS>",
+      description =
+          "Contract address for the deposit contract. Only required when creating a custom network.",
+      arity = "1")
+  private String eth1DepositContractAddress = null; // Depends on network configuration
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -60,16 +69,8 @@ public class NetworkOptions {
       hidden = true)
   private Integer peerRequestLimit = 50;
 
-  public NetworkDefinition getNetwork() {
-    return network;
-  }
-
-  public Integer getStartupTargetPeerCount() {
-    return startupTargetPeerCount;
-  }
-
-  public Integer getStartupTimeoutSeconds() {
-    return startupTimeoutSeconds;
+  public Eth2NetworkConfiguration getNetworkConfiguration() {
+    return getNetworkBuilder().build();
   }
 
   public Integer getPeerRateLimit() {
@@ -78,5 +79,22 @@ public class NetworkOptions {
 
   public Integer getPeerRequestLimit() {
     return peerRequestLimit;
+  }
+
+  public void configure(final TekuConfiguration.Builder builder) {
+    builder.eth2NetworkConfig(getNetworkBuilder());
+  }
+
+  private Eth2NetworkConfiguration.Builder getNetworkBuilder() {
+    if (startupTargetPeerCount != null) {
+      network.startupTargetPeerCount(startupTargetPeerCount);
+    }
+    if (startupTimeoutSeconds != null) {
+      network.startupTimeoutSeconds(startupTimeoutSeconds);
+    }
+    if (eth1DepositContractAddress != null) {
+      network.eth1DepositContractAddress(eth1DepositContractAddress);
+    }
+    return network;
   }
 }

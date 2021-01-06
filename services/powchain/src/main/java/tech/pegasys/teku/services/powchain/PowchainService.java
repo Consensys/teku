@@ -24,9 +24,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -55,7 +57,8 @@ public class PowchainService extends Service {
   private final Eth1ChainIdValidator chainIdValidator;
   private final Web3j web3j;
 
-  public PowchainService(final ServiceConfig config) {
+  public PowchainService(
+      final ServiceConfig config, final Eth2NetworkConfiguration eth2NetworkConfig) {
     GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
@@ -69,9 +72,15 @@ public class PowchainService extends Service {
             MAXIMUM_CONCURRENT_ETH1_REQUESTS,
             config.getMetricsSystem());
 
+    final Eth1Address depositContract =
+        eth2NetworkConfig
+            .getEth1DepositContractAddress()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Deposit contract must be configured to run PowchainService"));
     DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(
-            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
+        DepositContractAccessor.create(eth1Provider, web3j, depositContract.toHexString());
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
@@ -105,7 +114,7 @@ public class PowchainService extends Service {
             headTracker);
 
     final Optional<UInt64> eth1DepositContractDeployBlock =
-        tekuConfig.getEth1DepositContractDeployBlock();
+        eth2NetworkConfig.getEth1DepositContractDeployBlock();
     eth1DepositManager =
         new Eth1DepositManager(
             eth1Provider,

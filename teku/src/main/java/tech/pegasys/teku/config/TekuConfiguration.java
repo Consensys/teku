@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
+  private final Eth2NetworkConfiguration eth2NetworkConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final DataConfig dataConfig;
   private final LoggingConfig loggingConfig;
@@ -39,6 +41,7 @@ public class TekuConfiguration {
 
   private TekuConfiguration(
       GlobalConfiguration globalConfiguration,
+      Eth2NetworkConfiguration eth2NetworkConfiguration,
       WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
       final InteropConfig interopConfig,
@@ -47,6 +50,7 @@ public class TekuConfiguration {
       final BeaconRestApiConfig beaconRestApiConfig,
       final LoggingConfig loggingConfig) {
     this.globalConfiguration = globalConfiguration;
+    this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.dataConfig = dataConfig;
     this.loggingConfig = loggingConfig;
@@ -68,6 +72,10 @@ public class TekuConfiguration {
 
   public GlobalConfiguration global() {
     return globalConfiguration;
+  }
+
+  public Eth2NetworkConfiguration eth2NetworkConfiguration() {
+    return eth2NetworkConfiguration;
   }
 
   public WeakSubjectivityConfig weakSubjectivity() {
@@ -93,6 +101,11 @@ public class TekuConfiguration {
   public static class Builder {
     private final GlobalConfigurationBuilder globalConfigurationBuilder =
         new GlobalConfigurationBuilder();
+    private final SettableBuilder<Eth2NetworkConfiguration.Builder, Eth2NetworkConfiguration>
+        eth2NetworkConfigurationBuilder =
+            new SettableBuilder<>(
+                Eth2NetworkConfiguration.builder(Eth2NetworkConfiguration.MAINNET),
+                Eth2NetworkConfiguration.Builder::build);
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
@@ -106,19 +119,47 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
+      final GlobalConfiguration globalConfig = globalConfigurationBuilder.build();
+      final Eth2NetworkConfiguration eth2NetworkConfig = eth2NetworkConfigurationBuilder.build();
+      final WeakSubjectivityConfig wsConfig = weakSubjectivityBuilder.build();
+      final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
+      final InteropConfig interopConfig = interopConfigBuilder.build();
+      final DataConfig dataConfig = dataConfigBuilder.build();
+      final P2PConfig p2pConfig = p2pConfigBuilder.build();
+      final BeaconRestApiConfig restApiConfig = restApiBuilder.build();
+      final LoggingConfig loggingConfig = loggingConfigBuilder.build();
+
+      // Validate consistency between config objects
+      if (globalConfig.getEth1Endpoint() != null
+          && eth2NetworkConfig.getEth1DepositContractAddress().isEmpty()) {
+        throw new IllegalArgumentException(
+            "Eth1 deposit contract address is required if an eth1 endpoint is specified.");
+      }
+
       return new TekuConfiguration(
-          globalConfigurationBuilder.build(),
-          weakSubjectivityBuilder.build(),
-          validatorConfigBuilder.build(),
-          interopConfigBuilder.build(),
-          dataConfigBuilder.build(),
-          p2pConfigBuilder.build(),
-          restApiBuilder.build(),
-          loggingConfigBuilder.build());
+          globalConfig,
+          eth2NetworkConfig,
+          wsConfig,
+          validatorConfig,
+          interopConfig,
+          dataConfig,
+          p2pConfig,
+          restApiConfig,
+          loggingConfig);
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
       globalConfigConsumer.accept(globalConfigurationBuilder);
+      return this;
+    }
+
+    public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
+      eth2NetworkConfigurationBuilder.configure(consumer);
+      return this;
+    }
+
+    public Builder eth2NetworkConfig(final Eth2NetworkConfiguration.Builder eth2Builder) {
+      eth2NetworkConfigurationBuilder.reset(eth2Builder);
       return this;
     }
 

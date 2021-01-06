@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
@@ -22,8 +23,11 @@ public class BeaconChainService extends Service {
   private final BeaconChainController controller;
 
   public BeaconChainService(
-      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
-    this.controller = new BeaconChainController(serviceConfig, beaconConfig);
+      final ServiceConfig serviceConfig,
+      final BeaconChainConfiguration beaconConfig,
+      final Eth2NetworkConfiguration eth2NetworkConfiguration) {
+    this.controller =
+        new BeaconChainController(serviceConfig, beaconConfig, eth2NetworkConfiguration);
   }
 
   @Override

@@ -32,6 +32,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -45,7 +46,6 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 /** @deprecated - use {@link AbstractDataBackedRestAPIIntegrationTest} */
@@ -53,13 +53,12 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 @SuppressWarnings("unchecked")
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-  static final GlobalConfiguration config = GlobalConfiguration.builder().build();
   static final BeaconRestApiConfig restApiConfig =
       BeaconRestApiConfig.builder()
           .restApiPort(0)
           .restApiEnabled(true)
           .restApiDocsEnabled(false)
-          .eth1DepositContractAddress(config.getEth1DepositContractAddress())
+          .eth1DepositContractAddress(Eth1Address.ZERO)
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 

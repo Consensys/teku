@@ -80,6 +80,7 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -146,6 +147,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
   private final BeaconChainConfiguration beaconConfig;
+  private final Eth2NetworkConfiguration eth2NetworkConfiguration;
   private final GlobalConfiguration config;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
@@ -195,8 +197,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private BlockManager blockManager;
 
   public BeaconChainController(
-      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
+      final ServiceConfig serviceConfig,
+      final BeaconChainConfiguration beaconConfig,
+      final Eth2NetworkConfiguration eth2NetworkConfiguration) {
     this.beaconConfig = beaconConfig;
+    this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.config = serviceConfig.getConfig();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
@@ -754,8 +759,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             blockImporter,
             pendingBlocks,
-            config.getStartupTargetPeerCount(),
-            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
+            eth2NetworkConfiguration.getStartupTargetPeerCount(),
+            Duration.ofSeconds(eth2NetworkConfiguration.getStartupTimeoutSeconds()));
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }

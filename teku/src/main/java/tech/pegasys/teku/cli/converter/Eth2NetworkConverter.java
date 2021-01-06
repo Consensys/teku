@@ -16,14 +16,15 @@ package tech.pegasys.teku.cli.converter;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import picocli.CommandLine;
-import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
-public class NetworkDefinitionConverter implements CommandLine.ITypeConverter<NetworkDefinition> {
+public class Eth2NetworkConverter
+    implements CommandLine.ITypeConverter<Eth2NetworkConfiguration.Builder> {
   @Override
-  public NetworkDefinition convert(final String networkString) {
+  public Eth2NetworkConfiguration.Builder convert(final String networkString) {
     try {
       checkNotNull(networkString);
-      return NetworkDefinition.fromCliArg(networkString);
+      return Eth2NetworkConfiguration.builder(networkString);
     } catch (Throwable e) {
       throw new CommandLine.TypeConversionException("Invalid network definition");
     }

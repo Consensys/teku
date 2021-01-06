@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -25,23 +24,15 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadDepositOptionsFromConfigurationFile() {
     final GlobalConfiguration config = getGlobalConfigurationFromFile("depositOptions_config.yaml");
-    final Eth1Address address =
-        Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
 
     assertThat(config.isEth1Enabled()).isTrue();
-    assertThat(config.getEth1DepositContractAddress()).isEqualTo(address);
     assertThat(config.getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
     assertThat(config.isEth1DepositsFromStorageEnabled()).isFalse();
   }
 
   @Test
   public void shouldReportEth1EnabledIfEndpointSpecified() {
-    final String[] args = {
-      "--eth1-endpoint",
-      "http://example.com:1234/path/",
-      "--eth1-deposit-contract-address",
-      "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
-    };
+    final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
     final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
     assertThat(globalConfiguration.isEth1Enabled()).isTrue();
   }

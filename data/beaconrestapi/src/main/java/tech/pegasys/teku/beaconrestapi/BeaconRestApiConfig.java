@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import java.util.List;
-import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
   // Beacon REST API

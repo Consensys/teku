@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services;
 
+import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
@@ -26,13 +27,26 @@ public class BeaconNodeServiceController extends ServiceController {
   public BeaconNodeServiceController(
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
-    services.add(new StorageService(serviceConfig));
-    services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
+    services.add(new StorageService(serviceConfig, tekuConfig.eth2NetworkConfiguration()));
+    services.add(beaconChainService(tekuConfig, serviceConfig));
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
-    if (!tekuConfig.beaconChain().interopConfig().isInteropEnabled()
-        && serviceConfig.getConfig().isEth1Enabled()) {
-      services.add(new PowchainService(serviceConfig));
+    powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
+  }
+
+  private BeaconChainService beaconChainService(
+      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+    return new BeaconChainService(
+        serviceConfig, tekuConfig.beaconChain(), tekuConfig.eth2NetworkConfiguration());
+  }
+
+  private Optional<PowchainService> powchainService(
+      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+    if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
+        || !serviceConfig.getConfig().isEth1Enabled()) {
+      return Optional.empty();
     }
+
+    return Optional.of(new PowchainService(serviceConfig, tekuConfig.eth2NetworkConfiguration()));
   }
 }
