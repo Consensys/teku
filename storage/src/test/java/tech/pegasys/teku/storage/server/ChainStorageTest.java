@@ -25,7 +25,9 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -72,6 +74,46 @@ public class ChainStorageTest {
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     testOnFinalizedBlocks(storageSystemSupplier, true, true);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void onFinalizedBlocks_shouldNotAcceptBlocksWithInvalidSignatures(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    setup(storageSystemSupplier);
+
+    // Build small chain
+    chainBuilder.generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * 3);
+    // Retrieve anchor data
+    final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.getBlockAndState(anchorCheckpoint.getRoot()).orElseThrow();
+
+    // Initialize from intermediate anchor point
+    final AnchorPoint anchorPoint =
+        AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
+
+    // Now generate missing historical blocks
+    final List<SignedBeaconBlock> missingHistoricalBlocks =
+        chainBuilder
+            .streamBlocksAndStates(0, firstMissingBlockSlot)
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    // Invalidate the signature of one the blocks
+    final int lastBlockIndex = missingHistoricalBlocks.size() - 1;
+    final BeaconBlock lastBlock = missingHistoricalBlocks.get(lastBlockIndex).getMessage();
+    missingHistoricalBlocks.set(
+        lastBlockIndex, new SignedBeaconBlock(lastBlock, BLSSignature.empty()));
+
+    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(missingHistoricalBlocks);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Block signatures are invalid");
   }
 
   public void testOnFinalizedBlocks(
