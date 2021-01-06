@@ -31,7 +31,7 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
   private final GetStateValidatorBalances handler =
       new GetStateValidatorBalances(chainDataProvider, jsonProvider);
   private final ValidatorBalanceResponse validatorBalanceResponse =
-      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
+      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"), ONE);
 
   @Test
   public void shouldGetValidatorBalancesFromState() throws Exception {

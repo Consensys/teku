@@ -56,12 +56,18 @@ public class ValidatorResponse {
       @JsonProperty("index") final UInt64 index,
       @JsonProperty("balance") final UInt64 balance,
       @JsonProperty("status") final ValidatorStatus status,
-      @JsonProperty("validator") final Validator validator) {
+      @JsonProperty("validator") final Validator validator,
+      @JsonProperty("epoch") final UInt64 epoch) {
     this.index = index;
     this.balance = balance;
     this.status = status;
     this.validator = validator;
+    this.epoch = epoch;
   }
+
+  @JsonProperty("epoch")
+  @Schema(type = "string", example = EXAMPLE_UINT64, description = "Referred epoch.")
+  public final UInt64 epoch;
 
   public static Optional<ValidatorResponse> fromState(
       final BeaconState state, final Integer index) {
@@ -76,7 +82,8 @@ public class ValidatorResponse {
             UInt64.valueOf(index),
             state.getBalances().get(index),
             getValidatorStatus(current_epoch, validatorInternal),
-            new Validator(validatorInternal)));
+            new Validator(validatorInternal),
+            current_epoch));
   }
 
   public static ValidatorStatus getValidatorStatus(
@@ -129,7 +136,8 @@ public class ValidatorResponse {
     return Objects.equals(index, that.index)
         && Objects.equals(balance, that.balance)
         && status == that.status
-        && Objects.equals(validator, that.validator);
+        && Objects.equals(validator, that.validator)
+        && Objects.equals(epoch, that.epoch);
   }
 
   @JsonIgnore
@@ -149,7 +157,7 @@ public class ValidatorResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(index, balance, status, validator);
+    return Objects.hash(index, balance, status, validator, epoch);
   }
 
   @Override
@@ -159,6 +167,7 @@ public class ValidatorResponse {
         .add("balance", balance)
         .add("status", status)
         .add("validator", validator)
+        .add("epoch", epoch)
         .toString();
   }
 }

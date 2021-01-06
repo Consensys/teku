@@ -78,7 +78,8 @@ public class SchemaObjectsTestFixture {
             UInt64.ZERO,
             UInt64.ZERO,
             Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH));
+            Constants.FAR_FUTURE_EPOCH),
+        dataStructureUtil.randomUInt64());
   }
 
   public BeaconBlock beaconBlock() {
