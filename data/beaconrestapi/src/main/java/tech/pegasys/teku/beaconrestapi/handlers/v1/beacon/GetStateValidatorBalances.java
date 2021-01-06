@@ -39,7 +39,6 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
@@ -80,7 +79,7 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetStateRootResponse.class)),
+            content = @OpenApiContent(from = GetStateValidatorBalancesResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
