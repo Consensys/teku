@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
@@ -50,18 +49,11 @@ public class WeakSubjectivityOptions {
   private UInt64 suppressWSPeriodChecksUntilEpoch = null;
 
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
-
-    // Pull network info
-    final AtomicReference<Optional<String>> initialState = new AtomicReference<>(Optional.empty());
-    builder.eth2NetworkConfig(b -> initialState.set(b.initialState()));
-
     return builder.weakSubjectivity(
         wsBuilder -> {
-          final Optional<String> initialStateResource =
-              Optional.ofNullable(weakSubjectivityState)
-                  .or(initialState::get)
-                  .filter(StringUtils::isNotBlank);
-          initialStateResource.ifPresent(wsBuilder::weakSubjectivityStateResource);
+          Optional.ofNullable(weakSubjectivityState)
+              .filter(StringUtils::isNotBlank)
+              .ifPresent(wsBuilder::weakSubjectivityStateResource);
 
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);

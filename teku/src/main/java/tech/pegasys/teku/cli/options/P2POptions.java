@@ -163,32 +163,30 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-
-    // Pull network info
-    final List<String> networkBootnodes = new ArrayList<>();
-    builder.eth2NetworkConfig(b -> networkBootnodes.addAll(b.discoveryBootnodes()));
-
     builder.p2p(
-        p2pBuilder ->
-            p2pBuilder
-                .p2pEnabled(p2pEnabled)
-                .p2pInterface(p2pInterface)
-                .p2pPort(p2pPort)
-                .p2pDiscoveryEnabled(p2pDiscoveryEnabled)
-                .p2pDiscoveryBootnodes(
-                    p2pDiscoveryBootnodes == null ? networkBootnodes : p2pDiscoveryBootnodes)
-                .p2pAdvertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-                .p2pAdvertisedPort(
-                    p2pAdvertisedPort == null
-                        ? OptionalInt.empty()
-                        : OptionalInt.of(p2pAdvertisedPort))
-                .p2pPrivateKeyFile(p2pPrivateKeyFile)
-                .p2pPeerLowerBound(getP2pLowerBound())
-                .p2pPeerUpperBound(getP2pUpperBound())
-                .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                .minimumRandomlySelectedPeerCount(getMinimumRandomlySelectedPeerCount())
-                .p2pStaticPeers(p2pStaticPeers)
-                .multiPeerSyncEnabled(multiPeerSyncEnabled)
-                .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled));
+        p2pBuilder -> {
+          if (p2pDiscoveryBootnodes != null) {
+            p2pBuilder.p2pDiscoveryBootnodes(p2pDiscoveryBootnodes);
+          }
+
+          p2pBuilder
+              .p2pEnabled(p2pEnabled)
+              .p2pInterface(p2pInterface)
+              .p2pPort(p2pPort)
+              .p2pDiscoveryEnabled(p2pDiscoveryEnabled)
+              .p2pAdvertisedIp(Optional.ofNullable(p2pAdvertisedIp))
+              .p2pAdvertisedPort(
+                  p2pAdvertisedPort == null
+                      ? OptionalInt.empty()
+                      : OptionalInt.of(p2pAdvertisedPort))
+              .p2pPrivateKeyFile(p2pPrivateKeyFile)
+              .p2pPeerLowerBound(getP2pLowerBound())
+              .p2pPeerUpperBound(getP2pUpperBound())
+              .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+              .minimumRandomlySelectedPeerCount(getMinimumRandomlySelectedPeerCount())
+              .p2pStaticPeers(p2pStaticPeers)
+              .multiPeerSyncEnabled(multiPeerSyncEnabled)
+              .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled);
+        });
   }
 }

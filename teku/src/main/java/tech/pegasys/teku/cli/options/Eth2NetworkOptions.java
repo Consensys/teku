@@ -70,7 +70,7 @@ public class Eth2NetworkOptions {
   private Integer peerRequestLimit = 50;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
-    return getNetworkBuilder().build();
+    return getEth2NetworkConfig().build();
   }
 
   public Integer getPeerRateLimit() {
@@ -82,10 +82,18 @@ public class Eth2NetworkOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder.eth2NetworkConfig(getNetworkBuilder());
+    final Eth2NetworkConfiguration.Builder eth2Config = getEth2NetworkConfig();
+
+    builder
+        .eth2NetworkConfig(eth2Config)
+        .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.discoveryBootnodes()))
+        .restApi(
+            b -> eth2Config.eth1DepositContractAddress().ifPresent(b::eth1DepositContractAddress))
+        .weakSubjectivity(
+            b -> eth2Config.initialState().ifPresent(b::weakSubjectivityStateResource));
   }
 
-  private Eth2NetworkConfiguration.Builder getNetworkBuilder() {
+  private Eth2NetworkConfiguration.Builder getEth2NetworkConfig() {
     if (startupTargetPeerCount != null) {
       network.startupTargetPeerCount(startupTargetPeerCount);
     }

@@ -327,8 +327,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
       builder.globalConfig(this::buildGlobalConfiguration);
-      // Build eth2NetworkOptions first as values configured here are relied on by later configure()
-      // calls
+      // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);

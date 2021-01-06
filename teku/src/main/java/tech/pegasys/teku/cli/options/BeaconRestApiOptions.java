@@ -16,11 +16,8 @@ package tech.pegasys.teku.cli.options;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiOptions {
 
@@ -97,12 +94,6 @@ public class BeaconRestApiOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-
-    // Extract eth2 network info
-    final AtomicReference<Optional<Eth1Address>> eth1Address =
-        new AtomicReference<>(Optional.empty());
-    builder.eth2NetworkConfig(b -> eth1Address.set(b.eth1DepositContractAddress()));
-
     builder.restApi(
         restApiBuilder ->
             restApiBuilder
@@ -111,7 +102,6 @@ public class BeaconRestApiOptions {
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
                 .restApiHostAllowlist(restApiHostAllowlist)
-                .eth1DepositContractAddress(eth1Address.get().orElse(null))
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins));
   }
 }
