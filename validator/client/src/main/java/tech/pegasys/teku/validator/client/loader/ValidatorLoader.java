@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -104,7 +103,7 @@ public class ValidatorLoader {
                     blsKeyPair.getPublicKey(),
                     createSlashingProtectedSigner(
                         blsKeyPair.getPublicKey(), new LocalSigner(blsKeyPair, asyncRunner)),
-                    Optional.ofNullable(config.getGraffiti())))
+                    config.getGraffitiProvider()))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
@@ -137,7 +136,7 @@ public class ValidatorLoader {
                   config.isValidatorExternalSignerSlashingProtectionEnabled()
                       ? createSlashingProtectedSigner(publicKey, externalSigner)
                       : externalSigner;
-              return new Validator(publicKey, signer, Optional.ofNullable(config.getGraffiti()));
+              return new Validator(publicKey, signer, config.getGraffitiProvider());
             })
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }

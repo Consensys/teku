@@ -41,6 +41,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -55,9 +56,9 @@ class AggregationDutyTest {
   private final Signer signer1 = mock(Signer.class);
   private final Signer signer2 = mock(Signer.class);
   private final Validator validator1 =
-      new Validator(dataStructureUtil.randomPublicKey(), signer1, Optional.empty());
+      new Validator(dataStructureUtil.randomPublicKey(), signer1, new FileBackedGraffitiProvider());
   private final Validator validator2 =
-      new Validator(dataStructureUtil.randomPublicKey(), signer2, Optional.empty());
+      new Validator(dataStructureUtil.randomPublicKey(), signer2, new FileBackedGraffitiProvider());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AggregationDuty duty =
