@@ -275,6 +275,10 @@ public class Eth2NetworkConfiguration {
       return eth1DepositContractAddress;
     }
 
+    public Optional<UInt64> eth1DepositContractDeployBlock() {
+      return eth1DepositContractDeployBlock;
+    }
+
     // Setters
     public Builder constants(final String constants) {
       this.constants = constants;

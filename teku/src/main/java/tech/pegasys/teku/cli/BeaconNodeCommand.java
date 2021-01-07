@@ -329,6 +329,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       builder.globalConfig(this::buildGlobalConfiguration);
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
+      depositOptions.configure(builder);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
@@ -338,7 +339,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       interopOptions.configure(builder);
 
       return builder.build();
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
   }
@@ -347,7 +348,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
     builder
         .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
         .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
-        .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())

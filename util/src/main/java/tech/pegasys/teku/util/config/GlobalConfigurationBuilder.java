@@ -24,7 +24,6 @@ public class GlobalConfigurationBuilder {
 
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
-  private String eth1Endpoint;
   private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
   private String transitionRecordDirectory;
@@ -46,11 +45,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
     this.peerRequestLimit = peerRequestLimit;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
-    this.eth1Endpoint = eth1Endpoint;
     return this;
   }
 
@@ -130,7 +124,6 @@ public class GlobalConfigurationBuilder {
     return new GlobalConfiguration(
         peerRateLimit,
         peerRequestLimit,
-        eth1Endpoint,
         eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,
         transitionRecordDirectory,

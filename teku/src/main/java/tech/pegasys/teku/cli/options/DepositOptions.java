@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.Optional;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class DepositOptions {
 
@@ -43,15 +45,15 @@ public class DepositOptions {
       arity = "1")
   private int eth1LogsMaxBlockRange = 10_000;
 
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
-  }
-
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
   }
 
   public boolean isEth1DepositsFromStorageEnabled() {
     return eth1DepositsFromStorageEnabled;
+  }
+
+  public void configure(final TekuConfiguration.Builder builder) {
+    builder.powchain(b -> b.eth1Endpoint(Optional.ofNullable(eth1Endpoint)));
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.util.config;
 
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 /** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
@@ -25,7 +24,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Integer peerRequestLimit;
 
   // Deposit
-  private final String eth1Endpoint;
   private final boolean eth1DepositsFromStorageEnabled;
   private final int eth1LogsMaxBlockRange;
 
@@ -55,7 +53,6 @@ public class GlobalConfiguration implements MetricsConfig {
   GlobalConfiguration(
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
-      final String eth1Endpoint,
       final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
       final String transitionRecordDirectory,
@@ -71,7 +68,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean isBlockProcessingAtStartupDisabled) {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.eth1Endpoint = eth1Endpoint;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.transitionRecordDirectory = transitionRecordDirectory;
@@ -95,16 +91,8 @@ public class GlobalConfiguration implements MetricsConfig {
     return peerRequestLimit;
   }
 
-  public boolean isEth1Enabled() {
-    return !StringUtils.isEmpty(eth1Endpoint);
-  }
-
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
   }
 
   public boolean isEth1DepositsFromStorageEnabled() {

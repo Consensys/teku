@@ -23,6 +23,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -40,13 +41,15 @@ public class TekuConfiguration {
   private final LoggingConfig loggingConfig;
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
+  private final PowchainConfiguration powchainConfiguration;
 
   private TekuConfiguration(
-      GlobalConfiguration globalConfiguration,
-      Eth2NetworkConfiguration eth2NetworkConfiguration,
-      StorageConfiguration storageConfiguration,
-      WeakSubjectivityConfig weakSubjectivityConfig,
+      final GlobalConfiguration globalConfiguration,
+      final Eth2NetworkConfiguration eth2NetworkConfiguration,
+      final StorageConfiguration storageConfiguration,
+      final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
+      final PowchainConfiguration powchainConfiguration,
       final InteropConfig interopConfig,
       final DataConfig dataConfig,
       final P2PConfig p2pConfig,
@@ -56,15 +59,18 @@ public class TekuConfiguration {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
+    this.powchainConfiguration = powchainConfiguration;
     this.dataConfig = dataConfig;
     this.loggingConfig = loggingConfig;
     this.beaconChainConfig =
         new BeaconChainConfiguration(
+            eth2NetworkConfiguration,
             weakSubjectivityConfig,
             validatorConfig,
             interopConfig,
             p2pConfig,
             beaconRestApiConfig,
+            powchainConfiguration,
             loggingConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(globalConfiguration, validatorConfig, interopConfig);
@@ -98,6 +104,10 @@ public class TekuConfiguration {
     return validatorClientConfig;
   }
 
+  public PowchainConfiguration powchain() {
+    return powchainConfiguration;
+  }
+
   public DataConfig dataConfig() {
     return dataConfig;
   }
@@ -119,6 +129,8 @@ public class TekuConfiguration {
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
+    private final PowchainConfiguration.Builder powchainConfigBuilder =
+        PowchainConfiguration.builder();
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
     private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
@@ -129,35 +141,18 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
-      final GlobalConfiguration globalConfig = globalConfigurationBuilder.build();
-      final Eth2NetworkConfiguration eth2NetworkConfig = eth2NetworkConfigurationBuilder.build();
-      final StorageConfiguration storageConfig = storageConfigurationBuilder.build();
-      final WeakSubjectivityConfig wsConfig = weakSubjectivityBuilder.build();
-      final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
-      final InteropConfig interopConfig = interopConfigBuilder.build();
-      final DataConfig dataConfig = dataConfigBuilder.build();
-      final P2PConfig p2pConfig = p2pConfigBuilder.build();
-      final BeaconRestApiConfig restApiConfig = restApiBuilder.build();
-      final LoggingConfig loggingConfig = loggingConfigBuilder.build();
-
-      // Validate consistency between config objects
-      if (globalConfig.getEth1Endpoint() != null
-          && eth2NetworkConfig.getEth1DepositContractAddress().isEmpty()) {
-        throw new IllegalArgumentException(
-            "Eth1 deposit contract address is required if an eth1 endpoint is specified.");
-      }
-
       return new TekuConfiguration(
-          globalConfig,
-          eth2NetworkConfig,
-          storageConfig,
-          wsConfig,
-          validatorConfig,
-          interopConfig,
-          dataConfig,
-          p2pConfig,
-          restApiConfig,
-          loggingConfig);
+          globalConfigurationBuilder.build(),
+          eth2NetworkConfigurationBuilder.build(),
+          storageConfigurationBuilder.build(),
+          weakSubjectivityBuilder.build(),
+          validatorConfigBuilder.build(),
+          powchainConfigBuilder.build(),
+          interopConfigBuilder.build(),
+          dataConfigBuilder.build(),
+          p2pConfigBuilder.build(),
+          restApiBuilder.build(),
+          loggingConfigBuilder.build());
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
@@ -188,6 +183,11 @@ public class TekuConfiguration {
 
     public Builder validator(final Consumer<ValidatorConfig.Builder> validatorConfigConsumer) {
       validatorConfigConsumer.accept(validatorConfigBuilder);
+      return this;
+    }
+
+    public Builder powchain(final Consumer<PowchainConfiguration.Builder> consumer) {
+      consumer.accept(powchainConfigBuilder);
       return this;
     }
 

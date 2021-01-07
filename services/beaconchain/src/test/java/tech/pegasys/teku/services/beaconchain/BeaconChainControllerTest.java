@@ -33,6 +33,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -65,18 +66,20 @@ public class BeaconChainControllerTest {
 
   private BeaconChainConfiguration beaconChainConfiguration() {
     return new BeaconChainConfiguration(
+        eth2Config,
         WeakSubjectivityConfig.builder().build(),
         ValidatorConfig.builder().build(),
         InteropConfig.builder().build(),
         p2pConfig,
         restApiConfig,
+        PowchainConfiguration.builder().build(),
         loggingConfig);
   }
 
   @Test
   void getP2pPrivateKeyBytes_generatedKeyTest() throws IOException {
     BeaconChainController controller =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration(), eth2Config);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
     MemKeyValueStore<String, Bytes> store = new MemKeyValueStore<>();
 
@@ -103,7 +106,7 @@ public class BeaconChainControllerTest {
 
     p2pConfig = P2PConfig.builder().p2pPrivateKeyFile(customPKFile.toString()).build();
     BeaconChainController controller1 =
-        new BeaconChainController(serviceConfig, beaconChainConfiguration(), eth2Config);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
     Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
     assertThat(customPK).isEqualTo(generatedPK);
   }

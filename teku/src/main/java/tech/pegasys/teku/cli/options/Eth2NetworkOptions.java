@@ -87,6 +87,11 @@ public class Eth2NetworkOptions {
 
     builder
         .eth2NetworkConfig(eth2Config)
+        .powchain(
+            b -> {
+              eth2Config.eth1DepositContractAddress().ifPresent(b::depositContract);
+              b.depositContractDeployBlock(eth2Config.eth1DepositContractDeployBlock());
+            })
         .storageConfiguration(b -> b.eth1DepositContract(eth2Config.eth1DepositContractAddress()))
         .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.discoveryBootnodes()))
         .restApi(b -> b.eth1DepositContractAddress(eth2Config.eth1DepositContractAddress()))

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.powchain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
@@ -24,11 +25,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -57,41 +56,37 @@ public class PowchainService extends Service {
   private final Eth1ChainIdValidator chainIdValidator;
   private final Web3j web3j;
 
-  public PowchainService(
-      final ServiceConfig config, final Eth2NetworkConfiguration eth2NetworkConfig) {
-    GlobalConfiguration tekuConfig = config.getConfig();
+  public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
+    checkArgument(powConfig.isEnabled());
+    GlobalConfiguration tekuConfig = serviceConfig.getConfig();
 
-    AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
+    AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
-    this.web3j = createWeb3j(tekuConfig);
+    this.web3j = createWeb3j(powConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
-                new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
+                new Web3jEth1Provider(web3j, asyncRunner),
+                asyncRunner,
+                serviceConfig.getTimeProvider()),
             MAXIMUM_CONCURRENT_ETH1_REQUESTS,
-            config.getMetricsSystem());
+            serviceConfig.getMetricsSystem());
 
-    final Eth1Address depositContract =
-        eth2NetworkConfig
-            .getEth1DepositContractAddress()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Deposit contract must be configured to run PowchainService"));
+    final String depositContract = powConfig.getDepositContract().toHexString();
     DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(eth1Provider, web3j, depositContract.toHexString());
+        DepositContractAccessor.create(eth1Provider, web3j, depositContract);
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
-            config.getEventChannels().getPublisher(Eth1EventsChannel.class));
+            serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class));
     final Eth1DepositStorageChannel eth1DepositStorageChannel =
-        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
+        serviceConfig.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
             eth1EventsPublisher,
             eth1Provider,
-            config.getTimeProvider(),
+            serviceConfig.getTimeProvider(),
             calculateEth1DataCacheDurationPriorToCurrentTime());
 
     final DepositFetcher depositFetcher =
@@ -114,7 +109,7 @@ public class PowchainService extends Service {
             headTracker);
 
     final Optional<UInt64> eth1DepositContractDeployBlock =
-        eth2NetworkConfig.getEth1DepositContractDeployBlock();
+        powConfig.getDepositContractDeployBlock();
     eth1DepositManager =
         new Eth1DepositManager(
             eth1Provider,
@@ -128,9 +123,9 @@ public class PowchainService extends Service {
     chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
   }
 
-  private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
+  private Web3j createWeb3j(final PowchainConfiguration config) {
     final HttpService web3jService =
-        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+        new HttpService(config.getEth1Endpoint(), createOkHttpClient());
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
     return Web3j.build(web3jService);
   }

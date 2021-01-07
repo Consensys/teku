@@ -28,25 +28,19 @@ public class BeaconNodeServiceController extends ServiceController {
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(serviceConfig, tekuConfig.storageConfiguration()));
-    services.add(beaconChainService(tekuConfig, serviceConfig));
+    services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
     powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
   }
 
-  private BeaconChainService beaconChainService(
-      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
-    return new BeaconChainService(
-        serviceConfig, tekuConfig.beaconChain(), tekuConfig.eth2NetworkConfiguration());
-  }
-
   private Optional<PowchainService> powchainService(
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
-        || !serviceConfig.getConfig().isEth1Enabled()) {
+        || !tekuConfig.powchain().isEnabled()) {
       return Optional.empty();
     }
 
-    return Optional.of(new PowchainService(serviceConfig, tekuConfig.eth2NetworkConfiguration()));
+    return Optional.of(new PowchainService(serviceConfig, tekuConfig.powchain()));
   }
 }

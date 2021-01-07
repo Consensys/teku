@@ -64,6 +64,12 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     // Rest api
     assertThat(tekuConfig.beaconChain().beaconRestApiConfig().getEth1DepositContractAddress())
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
+
+    // Powchain
+    assertThat(tekuConfig.powchain().getDepositContract())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress().orElse(null));
+    assertThat(tekuConfig.powchain().getDepositContractDeployBlock())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractDeployBlock());
   }
 
   @Test

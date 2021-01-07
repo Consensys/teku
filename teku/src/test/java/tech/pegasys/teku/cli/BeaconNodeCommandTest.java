@@ -362,14 +362,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     return expectedConfigurationBuilder()
         .globalConfig(
             b ->
-                b.setEth1Endpoint(null)
-                    .setMetricsCategories(
+                b.setMetricsCategories(
                         DEFAULT_METRICS_CATEGORIES.stream()
                             .map(Object::toString)
                             .collect(Collectors.toList()))
                     .setPeerRateLimit(500)
                     .setPeerRequestLimit(50))
         .eth2NetworkConfig(networkConfig)
+        .powchain(
+            b -> {
+              networkConfig.eth1DepositContractAddress().ifPresent(b::depositContract);
+              b.eth1Endpoint(Optional.empty())
+                  .depositContractDeployBlock(networkConfig.eth1DepositContractDeployBlock());
+            })
+        .storageConfiguration(
+            b -> b.eth1DepositContract(networkConfig.eth1DepositContractAddress()))
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
@@ -409,6 +416,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     return TekuConfiguration.builder()
         .globalConfig(this::buildExpectedGlobalConfiguration)
         .eth2NetworkConfig(eth2Config)
+        .powchain(b -> b.eth1Endpoint("http://localhost:8545").depositContract(address))
+        .storageConfiguration(b -> b.eth1DepositContract(Optional.of(address)))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
@@ -462,7 +471,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     builder
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
-        .setEth1Endpoint("http://localhost:8545")
         .setEth1LogsMaxBlockRange(10_000)
         .setEth1DepositsFromStorageEnabled(true)
         .setMetricsEnabled(false)
