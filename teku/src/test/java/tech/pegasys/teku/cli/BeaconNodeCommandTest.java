@@ -356,8 +356,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
-    final Eth2NetworkConfiguration.Builder networkConfig =
-        Eth2NetworkConfiguration.builder("mainnet");
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder("mainnet").build();
 
     return expectedConfigurationBuilder()
         .globalConfig(
@@ -368,27 +368,27 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                             .collect(Collectors.toList()))
                     .setPeerRateLimit(500)
                     .setPeerRequestLimit(50))
-        .eth2NetworkConfig(networkConfig)
+        .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
         .powchain(
             b -> {
-              networkConfig.eth1DepositContractAddress().ifPresent(b::depositContract);
+              networkConfig.getEth1DepositContractAddress().ifPresent(b::depositContract);
               b.eth1Endpoint(Optional.empty())
-                  .depositContractDeployBlock(networkConfig.eth1DepositContractDeployBlock());
+                  .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
-            b -> b.eth1DepositContract(networkConfig.eth1DepositContractAddress()))
+            b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
                     .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
-        .restApi(b -> b.eth1DepositContractAddress(networkConfig.eth1DepositContractAddress()))
+        .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
                     .p2pDiscoveryEnabled(true)
-                    .p2pDiscoveryBootnodes(networkConfig.discoveryBootnodes())
+                    .p2pDiscoveryBootnodes(networkConfig.getDiscoveryBootnodes())
                     .p2pInterface("0.0.0.0")
                     .p2pPort(9000)
                     .p2pPrivateKeyFile(null))
@@ -410,12 +410,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
-    final Eth2NetworkConfiguration.Builder eth2Config =
-        Eth2NetworkConfiguration.builder("minimal")
-            .eth1DepositContractAddress(Optional.of(address));
     return TekuConfiguration.builder()
         .globalConfig(this::buildExpectedGlobalConfiguration)
-        .eth2NetworkConfig(eth2Config)
+        .eth2NetworkConfig(
+            b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(Optional.of(address)))
         .powchain(b -> b.eth1Endpoint("http://localhost:8545").depositContract(address))
         .storageConfiguration(b -> b.eth1DepositContract(Optional.of(address)))
         .data(b -> b.dataBasePath(dataPath))

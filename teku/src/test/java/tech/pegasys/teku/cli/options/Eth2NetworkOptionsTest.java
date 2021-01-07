@@ -38,7 +38,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla", "pyrmont"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder(networkName).build();
@@ -47,7 +47,9 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
 
     // eth2Config
-    assertThat(tekuConfig.eth2NetworkConfiguration()).isEqualTo(eth2NetworkConfig);
+    assertThat(tekuConfig.eth2NetworkConfiguration())
+        .usingRecursiveComparison()
+        .isEqualTo(eth2NetworkConfig);
 
     // Storage config
     assertThat(tekuConfig.storageConfiguration().getEth1DepositContract())

@@ -119,11 +119,8 @@ public class TekuConfiguration {
   public static class Builder {
     private final GlobalConfigurationBuilder globalConfigurationBuilder =
         new GlobalConfigurationBuilder();
-    private final SettableBuilder<Eth2NetworkConfiguration.Builder, Eth2NetworkConfiguration>
-        eth2NetworkConfigurationBuilder =
-            new SettableBuilder<>(
-                Eth2NetworkConfiguration.builder(Eth2NetworkConfiguration.MAINNET),
-                Eth2NetworkConfiguration.Builder::build);
+    private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
+        Eth2NetworkConfiguration.builder();
     private final StorageConfiguration.Builder storageConfigurationBuilder =
         StorageConfiguration.builder();
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
@@ -161,12 +158,7 @@ public class TekuConfiguration {
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
-      eth2NetworkConfigurationBuilder.configure(consumer);
-      return this;
-    }
-
-    public Builder eth2NetworkConfig(final Eth2NetworkConfiguration.Builder eth2Builder) {
-      eth2NetworkConfigurationBuilder.reset(eth2Builder);
+      consumer.accept(eth2NetworkConfigurationBuilder);
       return this;
     }
 

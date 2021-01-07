@@ -14,20 +14,17 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.cli.converter.Eth2NetworkConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2NetworkOptions {
 
   @Option(
-      converter = Eth2NetworkConverter.class,
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
-      arity = "1",
-      defaultValue = "mainnet")
-  private Eth2NetworkConfiguration.Builder network = Eth2NetworkConfiguration.builder("mainnet");
+      arity = "1")
+  private String network = "mainnet";
 
   @Option(
       names = {"--eth1-deposit-contract-address"},
@@ -71,7 +68,7 @@ public class Eth2NetworkOptions {
   private Integer peerRequestLimit = 50;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
-    return getEth2NetworkConfig().build();
+    return createEth2NetworkConfig();
   }
 
   public Integer getPeerRateLimit() {
@@ -83,32 +80,40 @@ public class Eth2NetworkOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    final Eth2NetworkConfiguration.Builder eth2Config = getEth2NetworkConfig();
+    // Create a config instance so we can inspect the values in the other builders
+    final Eth2NetworkConfiguration eth2Config = createEth2NetworkConfig();
 
     builder
-        .eth2NetworkConfig(eth2Config)
+        .eth2NetworkConfig(this::configureEth2Network)
         .powchain(
             b -> {
-              eth2Config.eth1DepositContractAddress().ifPresent(b::depositContract);
-              b.depositContractDeployBlock(eth2Config.eth1DepositContractDeployBlock());
+              eth2Config.getEth1DepositContractAddress().ifPresent(b::depositContract);
+              b.depositContractDeployBlock(eth2Config.getEth1DepositContractDeployBlock());
             })
-        .storageConfiguration(b -> b.eth1DepositContract(eth2Config.eth1DepositContractAddress()))
-        .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.discoveryBootnodes()))
-        .restApi(b -> b.eth1DepositContractAddress(eth2Config.eth1DepositContractAddress()))
+        .storageConfiguration(
+            b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
+        .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.getDiscoveryBootnodes()))
+        .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()))
         .weakSubjectivity(
-            b -> eth2Config.initialState().ifPresent(b::weakSubjectivityStateResource));
+            b -> eth2Config.getInitialState().ifPresent(b::weakSubjectivityStateResource));
   }
 
-  private Eth2NetworkConfiguration.Builder getEth2NetworkConfig() {
+  private Eth2NetworkConfiguration createEth2NetworkConfig() {
+    Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
+    configureEth2Network(builder);
+    return builder.build();
+  }
+
+  private void configureEth2Network(Eth2NetworkConfiguration.Builder builder) {
+    builder.applyNetworkDefaults(network);
     if (startupTargetPeerCount != null) {
-      network.startupTargetPeerCount(startupTargetPeerCount);
+      builder.startupTargetPeerCount(startupTargetPeerCount);
     }
     if (startupTimeoutSeconds != null) {
-      network.startupTimeoutSeconds(startupTimeoutSeconds);
+      builder.startupTimeoutSeconds(startupTimeoutSeconds);
     }
     if (eth1DepositContractAddress != null) {
-      network.eth1DepositContractAddress(eth1DepositContractAddress);
+      builder.eth1DepositContractAddress(eth1DepositContractAddress);
     }
-    return network;
   }
 }
