@@ -14,7 +14,7 @@
 package tech.pegasys.teku.api.response.v1.beacon;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,9 +61,7 @@ public class ValidatorBalanceResponse {
     }
     return Optional.of(
         new ValidatorBalanceResponse(
-            UInt64.valueOf(index),
-            state.getBalances().get(index),
-            compute_epoch_at_slot(state.getSlot())));
+            UInt64.valueOf(index), state.getBalances().get(index), get_current_epoch(state)));
   }
 
   @Override
