@@ -120,7 +120,7 @@ public class TekuConfiguration {
     private final GlobalConfigurationBuilder globalConfigurationBuilder =
         new GlobalConfigurationBuilder();
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
-        Eth2NetworkConfiguration.builder();
+        Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
     private final StorageConfiguration.Builder storageConfigurationBuilder =
         StorageConfiguration.builder();
     private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =

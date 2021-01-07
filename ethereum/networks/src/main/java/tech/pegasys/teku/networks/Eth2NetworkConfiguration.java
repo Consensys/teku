@@ -182,7 +182,7 @@ public class Eth2NetworkConfiguration {
         case PYRMONT:
           return applyPyrmontNetworkDefaults();
         default:
-          return constants(normalizedNetwork);
+          return reset().constants(normalizedNetwork);
       }
     }
 
