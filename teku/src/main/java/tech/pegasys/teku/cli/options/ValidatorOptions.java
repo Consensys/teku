@@ -77,6 +77,16 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean validatorExternalSignerSlashingProtectionEnabled = true;
 
+  @Option(
+      names = {"--Xvalidators-dependent-root-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: false",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean useDependentRoots = false;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -95,7 +105,8 @@ public class ValidatorOptions {
                     validatorExternalSignerSlashingProtectionEnabled)
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
-                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile))));
+                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .useDependentRoots(useDependentRoots));
     validatorKeysOptions.configure(builder);
   }
 }
