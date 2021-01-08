@@ -19,12 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.Eth1Address;
 
 public class DatabaseNetworkTest {
   DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -34,11 +35,12 @@ public class DatabaseNetworkTest {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
-    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
+    final Optional<Eth1Address> eth1Address = Optional.of(dataStructureUtil.randomEth1Address());
     assertThat(DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isEqualTo(
             new DatabaseNetwork(
-                fork.toHexString().toLowerCase(), eth1Address.toHexString().toLowerCase()));
+                fork.toHexString().toLowerCase(),
+                eth1Address.orElseThrow().toHexString().toLowerCase()));
     assertThat(networkFile).exists();
   }
 
@@ -47,7 +49,7 @@ public class DatabaseNetworkTest {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
-    final Eth1Address eth1Address = null;
+    final Optional<Eth1Address> eth1Address = Optional.empty();
     assertThat(DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isEqualTo(new DatabaseNetwork(fork.toHexString().toLowerCase(), ""));
     assertThat(networkFile).exists();
@@ -58,7 +60,7 @@ public class DatabaseNetworkTest {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
-    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
+    final Optional<Eth1Address> eth1Address = Optional.of(dataStructureUtil.randomEth1Address());
     DatabaseNetwork.init(
         networkFile, dataStructureUtil.randomFork().getCurrent_version(), eth1Address);
 
@@ -72,8 +74,8 @@ public class DatabaseNetworkTest {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
-    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
-    DatabaseNetwork.init(networkFile, fork, dataStructureUtil.randomEth1Address());
+    final Optional<Eth1Address> eth1Address = Optional.of(dataStructureUtil.randomEth1Address());
+    DatabaseNetwork.init(networkFile, fork, Optional.of(dataStructureUtil.randomEth1Address()));
 
     assertThatThrownBy(() -> DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isInstanceOf(DatabaseStorageException.class)
@@ -85,7 +87,7 @@ public class DatabaseNetworkTest {
     final File networkFile = new File(tempDir, "network.yml");
     assertThat(networkFile).doesNotExist();
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrent_version();
-    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
+    final Optional<Eth1Address> eth1Address = Optional.of(dataStructureUtil.randomEth1Address());
     DatabaseNetwork.init(networkFile, fork, eth1Address);
 
     assertDoesNotThrow(() -> DatabaseNetwork.init(networkFile, fork, eth1Address));

@@ -25,12 +25,12 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
-import tech.pegasys.teku.util.config.Eth1Address;
 
 public class DepositTransactionSender {
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.

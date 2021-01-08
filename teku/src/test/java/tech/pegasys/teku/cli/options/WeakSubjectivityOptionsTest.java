@@ -23,7 +23,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
@@ -96,20 +96,22 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void initialState_shouldDefaultToNetworkValue() {
     final String network = "medalla";
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
-    assertThat(networkDefinition.getInitialState()).isPresent();
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(network).build();
+    assertThat(networkConfig.getInitialState()).isPresent();
 
     final TekuConfiguration config = getTekuConfigurationFromArguments("--network", network);
     assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource())
-        .isEqualTo(networkDefinition.getInitialState());
+        .isEqualTo(networkConfig.getInitialState());
   }
 
   @Test
   public void initialState_shouldOverrideNetworkValue() {
     final String state = "state.ssz";
     final String network = "medalla";
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
-    assertThat(networkDefinition.getInitialState()).isPresent();
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(network).build();
+    assertThat(networkConfig.getInitialState()).isPresent();
 
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--initial-state", state, "--network", network);
@@ -119,7 +121,7 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void weakSubjectivityState_shouldDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    final Optional<String> defaultState = config.global().getNetworkDefinition().getInitialState();
+    final Optional<String> defaultState = config.eth2NetworkConfiguration().getInitialState();
     assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource())
         .isEqualTo(defaultState);
   }

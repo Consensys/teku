@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class BeaconRestApiOptions {
 
@@ -94,8 +93,7 @@ public class BeaconRestApiOptions {
     return restApiCorsAllowedOrigins;
   }
 
-  public void configure(
-      final TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
         restApiBuilder ->
             restApiBuilder
@@ -104,8 +102,6 @@ public class BeaconRestApiOptions {
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
                 .restApiHostAllowlist(restApiHostAllowlist)
-                .eth1DepositContractAddress(
-                    networkDefinition.getEth1DepositContractAddress().orElse(null))
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins));
   }
 }

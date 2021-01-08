@@ -52,7 +52,6 @@ import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -271,31 +270,6 @@ public class BeaconStateUtil {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
     return sum.max(EFFECTIVE_BALANCE_INCREMENT);
-  }
-
-  /**
-   * Return the combined effective balance of the active validators.
-   *
-   * @param state - Current BeaconState
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
-   */
-  public static UInt64 get_total_active_balance(BeaconState state) {
-    return get_total_active_balance_with_root(state).getLeft();
-  }
-
-  public static Pair<UInt64, UInt64> get_total_active_balance_with_root(BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(
-            get_current_epoch(state),
-            epoch -> {
-              UInt64 total_balance =
-                  get_total_balance(state, get_active_validator_indices(state, epoch));
-              UInt64 squareroot = integer_squareroot(total_balance);
-              return Pair.of(total_balance, squareroot);
-            });
   }
 
   /**
@@ -633,6 +607,7 @@ public class BeaconStateUtil {
   }
 
   public static int get_beacon_proposer_index(BeaconState state, UInt64 requestedSlot) {
+    validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconProposerIndex()
         .get(
@@ -647,6 +622,19 @@ public class BeaconStateUtil {
               List<Integer> indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
+  }
+
+  private static void validateStateCanCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
+    UInt64 epoch = compute_epoch_at_slot(requestedSlot);
+    final UInt64 stateEpoch = get_current_epoch(state);
+    checkArgument(
+        epoch.equals(stateEpoch),
+        "Cannot calculate proposer index for a slot outside the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
+        requestedSlot,
+        epoch,
+        state.getSlot(),
+        stateEpoch);
   }
 
   /**

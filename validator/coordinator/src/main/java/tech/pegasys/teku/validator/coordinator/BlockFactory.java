@@ -123,7 +123,7 @@ public class BlockFactory {
     return blockCreator
         .createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(blockPreState, newSlot),
+            get_beacon_proposer_index(blockSlotState, newSlot),
             randaoReveal,
             blockSlotState,
             parentRoot,
