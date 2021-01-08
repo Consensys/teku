@@ -77,7 +77,7 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_afterMatchingAssignment() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(3);
     final Attestation attestation2 =
         new Attestation(
             dataStructureUtil.randomBitlist(),
@@ -104,7 +104,7 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_noMatchingAssignment() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(2);
     final int subnetId = computeSubnetId(attestation);
     // Subscribed to different subnet
     attestationGossipManager.subscribeToSubnetId(subnetId + 1);
@@ -117,8 +117,8 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_afterDismissal() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(1);
+    final Attestation attestation2 = dataStructureUtil.randomAttestation(1);
     // Setup committee assignment
     final int subnetId = computeSubnetId(attestation2);
     final int dismissedSubnetId = computeSubnetId(attestation);
@@ -142,7 +142,7 @@ public class AttestationGossipManagerTest {
 
   @Test
   void onNewAttestation_incrementSuccessCount() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(3);
     when(gossipNetwork.gossip(any(), any())).thenReturn(SafeFuture.completedFuture(null));
 
     // Attestation for dismissed assignment should be ignored
