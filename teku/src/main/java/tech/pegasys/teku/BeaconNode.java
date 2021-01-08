@@ -75,7 +75,7 @@ public class BeaconNode implements Node {
             metricsSystem,
             globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
-    Constants.setConstants(globalConfig.getConstants());
+    Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
 
     final String transitionRecordDir = globalConfig.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {

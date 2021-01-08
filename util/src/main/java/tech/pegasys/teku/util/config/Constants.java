@@ -144,8 +144,6 @@ public class Constants {
   public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
-  public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
-  public static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final int ATTESTATION_RETENTION_EPOCHS = 2;
   public static final int OPERATION_POOL_SIZE = 1000;
 
