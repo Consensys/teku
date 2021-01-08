@@ -31,13 +31,16 @@ import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service {
+  private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private volatile ProtoArrayStorage protoArrayStorage;
   private final ServiceConfig serviceConfig;
   private volatile Database database;
 
-  public StorageService(final ServiceConfig serviceConfig) {
+  public StorageService(
+      final ServiceConfig serviceConfig, final StorageConfiguration storageConfiguration) {
     this.serviceConfig = serviceConfig;
+    this.config = storageConfiguration;
   }
 
   @Override
@@ -52,7 +55,7 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().getDataStorageMode(),
                   serviceConfig.getConfig().getDataStorageCreateDbVersion(),
                   serviceConfig.getConfig().getDataStorageFrequency(),
-                  serviceConfig.getConfig().getEth1DepositContractAddress());
+                  config.getEth1DepositContract());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);

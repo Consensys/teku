@@ -33,10 +33,10 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class DepositOptions {
 
@@ -95,12 +95,13 @@ public class DepositOptions {
   }
 
   public DepositSender createDepositSender(final boolean verboseOutputEnabled) {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
-    Constants.setConstants(networkDefinition.getConstants());
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(network).build();
+    Constants.setConstants(networkConfig.getConstants());
     return new DepositSender(
         eth1NodeUrl,
         getEth1Credentials(),
-        getContractAddress(networkDefinition),
+        getContractAddress(networkConfig),
         verboseOutputEnabled,
         getAmount(),
         shutdownFunction,
@@ -111,9 +112,9 @@ public class DepositOptions {
     return Optional.ofNullable(this.amount).orElse(MAX_EFFECTIVE_BALANCE);
   }
 
-  private Eth1Address getContractAddress(final NetworkDefinition networkDefinition) {
+  private Eth1Address getContractAddress(final Eth2NetworkConfiguration networkConfig) {
     return Optional.ofNullable(this.contractAddress)
-        .or(networkDefinition::getEth1DepositContractAddress)
+        .or(networkConfig::getEth1DepositContractAddress)
         .orElseThrow(
             () ->
                 new ParameterException(

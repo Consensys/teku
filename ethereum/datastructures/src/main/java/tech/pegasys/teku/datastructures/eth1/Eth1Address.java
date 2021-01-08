@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
+package tech.pegasys.teku.datastructures.eth1;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -23,6 +23,9 @@ public class Eth1Address {
   private static final int SIZE = 20;
 
   private final Bytes bytes;
+
+  public static Eth1Address ZERO =
+      Eth1Address.fromHexString("0x0000000000000000000000000000000000000000");
 
   public Eth1Address(Bytes bytes) {
     checkArgument(

@@ -25,15 +25,15 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactoryTest {
 
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
-  private final Eth1Address eth1Address =
-      Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+  private final Optional<Eth1Address> eth1Address =
+      Optional.of(Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC"));
   @TempDir Path dataDir;
 
   @Test
