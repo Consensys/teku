@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.util.config;
 
+import com.google.common.collect.ImmutableList;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,9 +26,8 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Constants {
 
-  static final String[] NETWORK_DEFINITIONS = {
-    "mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont", "less-swift"
-  };
+  public static final ImmutableList<String> NETWORK_DEFINITIONS =
+      ImmutableList.of("mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont", "less-swift");
 
   public static String CONFIG_NAME;
 
@@ -167,8 +165,6 @@ public class Constants {
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
   public static final long GENESIS_DATA_RETRY_DELAY_SECONDS = 10; // in sec
 
-  public static final Map<String, Object> CONFIG_ITEM_MAP = new HashMap<>();
-
   static {
     setConstants("minimal");
   }
@@ -181,9 +177,9 @@ public class Constants {
     }
   }
 
-  private static InputStream createInputStream(final String source) throws IOException {
+  public static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS)
+            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS.toArray(String[]::new))
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

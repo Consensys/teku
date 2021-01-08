@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.spec.constants;
 
+import java.util.Map;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstants {
+  private final Map<String, Object> rawConstants;
   private final String configName;
 
   // Non-configurable constants
@@ -111,6 +113,7 @@ public class SpecConstants {
   private final Bytes depositContractAddress;
 
   SpecConstants(
+      final Map<String, Object> rawConstants,
       final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
@@ -171,6 +174,7 @@ public class SpecConstants {
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
+    this.rawConstants = rawConstants;
     this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -235,6 +239,10 @@ public class SpecConstants {
 
   public static SpecConstantsBuilder builder() {
     return new SpecConstantsBuilder();
+  }
+
+  public Map<String, Object> getRawConstants() {
+    return rawConstants;
   }
 
   public String getConfigName() {

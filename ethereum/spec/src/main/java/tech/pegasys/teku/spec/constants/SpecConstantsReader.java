@@ -25,6 +25,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -50,14 +52,12 @@ public class SpecConstantsReader {
           .build();
 
   public SpecConstants read(final InputStream source) throws IOException {
-    return builder(source).build();
-  }
-
-  private SpecConstantsBuilder builder(final InputStream source) throws IOException {
     final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
-    final Map<String, Object> unprocessedConstants = readValues(source);
+    final Map<String, Object> rawValues = readValues(source);
+    final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
 
-    streamSetters()
+    constantsBuilder.rawConstants(rawValues);
+    streamConstantSetters()
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase.convert(setter.getName());
@@ -71,7 +71,7 @@ public class SpecConstantsReader {
       throw new IllegalArgumentException("Detected unknown constants: " + unknownKeys);
     }
 
-    return constantsBuilder;
+    return constantsBuilder.build();
   }
 
   @SuppressWarnings("unchecked")
@@ -93,11 +93,15 @@ public class SpecConstantsReader {
     }
   }
 
-  private Stream<Method> streamSetters() {
+  private Stream<Method> streamConstantSetters() {
+    // Ignore any setters that aren't for individual constants
+    final List<String> nonConstantSetters = List.of("rawConstants");
+
     return Arrays.stream(SpecConstantsBuilder.class.getMethods())
         .filter(m -> Modifier.isPublic(m.getModifiers()))
         .filter(m -> m.getReturnType() == SpecConstantsBuilder.class)
-        .filter(m -> m.getParameterTypes().length == 1);
+        .filter(m -> m.getParameterTypes().length == 1)
+        .filter(m -> nonConstantSetters.stream().noneMatch(s -> s.equals(m.getName())));
   }
 
   private void invokeSetter(

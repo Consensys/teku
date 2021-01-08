@@ -29,16 +29,20 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class GetSpec implements Handler {
   public static final String ROUTE = "/eth/v1/config/spec";
   private final JsonProvider jsonProvider;
+  private final SpecProvider specProvider;
 
-  public GetSpec(final JsonProvider jsonProvider) {
+  public GetSpec(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+    this.specProvider = dataProvider.getSpecProvider();
     this.jsonProvider = jsonProvider;
   }
 
@@ -57,10 +61,15 @@ public class GetSpec implements Handler {
     try {
 
       final Map<String, String> configAttributes = new HashMap<>();
-      Constants.CONFIG_ITEM_MAP.forEach(
-          (k, v) -> {
-            configAttributes.put(k, "" + v);
-          });
+      specProvider
+          // Display genesis spec, for now
+          .get(UInt64.ZERO)
+          .getConstants()
+          .getRawConstants()
+          .forEach(
+              (k, v) -> {
+                configAttributes.put(k, "" + v);
+              });
       ctx.result(jsonProvider.objectToJSON(new GetSpecResponse(configAttributes)));
     } catch (JsonProcessingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));

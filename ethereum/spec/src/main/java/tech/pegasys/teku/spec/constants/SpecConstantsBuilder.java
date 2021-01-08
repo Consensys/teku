@@ -16,11 +16,14 @@ package tech.pegasys.teku.spec.constants;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstantsBuilder {
+  private final Map<String, Object> rawConstants = new HashMap<>();
   private String configName = "Custom (unknown)";
 
   // Misc
@@ -107,6 +110,7 @@ public class SpecConstantsBuilder {
   public SpecConstants build() {
     validate();
     return new SpecConstants(
+        rawConstants,
         configName,
         eth1FollowDistance,
         maxCommitteesPerSlot,
@@ -170,6 +174,7 @@ public class SpecConstantsBuilder {
   }
 
   private void validate() {
+    checkArgument(rawConstants.size() > 0, "Raw constants must be provided");
     validateConstant(configName);
     validateConstant(eth1FollowDistance);
     validateConstant(maxCommitteesPerSlot);
@@ -256,6 +261,12 @@ public class SpecConstantsBuilder {
   private void validateConstant(final Integer value) {
     checkNotNull(value);
     checkArgument(value >= 0, "Integer values must be positive");
+  }
+
+  public SpecConstantsBuilder rawConstants(final Map<String, Object> rawConstants) {
+    checkNotNull(rawConstants);
+    this.rawConstants.putAll(rawConstants);
+    return this;
   }
 
   public SpecConstantsBuilder configName(final String configName) {
