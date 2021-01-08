@@ -37,10 +37,10 @@ import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
+import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
@@ -64,7 +64,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -141,7 +140,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private File configFile;
 
   @Mixin(name = "Network")
-  private NetworkOptions networkOptions;
+  private Eth2NetworkOptions eth2NetworkOptions;
 
   @Mixin(name = "P2P")
   private P2POptions p2POptions;
@@ -196,7 +195,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private CommandLine registerConverters(final CommandLine commandLine) {
     return commandLine
         .registerConverter(MetricCategory.class, metricCategoryConverter)
-        .registerConverter(Eth1Address.class, Eth1Address::fromHexString)
         .registerConverter(UInt64.class, UInt64::valueOf);
   }
 
@@ -329,29 +327,27 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
       builder.globalConfig(this::buildGlobalConfiguration);
-      weakSubjectivityOptions.configure(builder, networkOptions.getNetwork());
+      // Eth2NetworkOptions configures network defaults across builders, so configure this first
+      eth2NetworkOptions.configure(builder);
+      depositOptions.configure(builder);
+      weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
       dataOptions.configure(builder);
-      p2POptions.configure(builder, networkOptions.getNetwork());
-      beaconRestApiOptions.configure(builder, networkOptions.getNetwork());
+      p2POptions.configure(builder);
+      beaconRestApiOptions.configure(builder);
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
 
       return builder.build();
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     builder
-        .setNetwork(networkOptions.getNetwork())
-        .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
-        .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
-        .setPeerRateLimit(networkOptions.getPeerRateLimit())
-        .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
-        .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
-        .setEth1Endpoint(depositOptions.getEth1Endpoint())
+        .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
+        .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())

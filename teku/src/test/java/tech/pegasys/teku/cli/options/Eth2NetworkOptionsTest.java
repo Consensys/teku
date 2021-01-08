@@ -15,46 +15,79 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
-public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
+public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromFile("networkOptions_config.yaml");
-    assertThat(globalConfiguration.getConstants()).isEqualTo(networkDefinition.getConstants());
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+        Eth2NetworkConfiguration.builder("pyrmont").build();
+    final TekuConfiguration config = getTekuConfigurationFromFile("networkOptions_config.yaml");
+    assertThat(config.eth2NetworkConfiguration().getConstants())
+        .isEqualTo(eth2NetworkConfig.getConstants());
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla", "pyrmont"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+        Eth2NetworkConfiguration.builder(networkName).build();
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
     final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
-    final GlobalConfiguration config = tekuConfig.global();
-    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
-        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
-    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
+
+    // eth2Config
+    assertThat(tekuConfig.eth2NetworkConfiguration())
+        .usingRecursiveComparison()
+        .isEqualTo(eth2NetworkConfig);
+
+    // Storage config
+    assertThat(tekuConfig.storageConfiguration().getEth1DepositContract())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
+
+    // WS config
     assertThat(tekuConfig.weakSubjectivity().getWeakSubjectivityStateResource())
-        .isEqualTo(networkDefinition.getInitialState());
-    assertThat(config.getStartupTargetPeerCount())
-        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
-    assertThat(config.getStartupTimeoutSeconds())
-        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
-    assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
-    assertThat(config.getEth1Endpoint())
-        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
+        .isEqualTo(eth2NetworkConfig.getInitialState());
+
+    // p2p config
+    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
+        .isEqualTo(eth2NetworkConfig.getDiscoveryBootnodes());
+
+    // Rest api
+    assertThat(tekuConfig.beaconChain().beaconRestApiConfig().getEth1DepositContractAddress())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
+
+    // Powchain
+    assertThat(tekuConfig.powchain().getDepositContract())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress().orElse(null));
+    assertThat(tekuConfig.powchain().getDepositContractDeployBlock())
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractDeployBlock());
+  }
+
+  @Test
+  public void overrideDepositContract() {
+    beaconNodeCommand.parse(
+        new String[] {
+          "--network",
+          "mainnet",
+          "--eth1-deposit-contract-address",
+          "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+        });
+
+    final Optional<Eth1Address> configuredDepositContract =
+        getResultingTekuConfiguration().eth2NetworkConfiguration().getEth1DepositContractAddress();
+    assertThat(configuredDepositContract)
+        .contains(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"));
   }
 
   @Test
@@ -70,8 +103,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     String url = "https://some.site/with/config.yaml";
     beaconNodeCommand.parse(new String[] {"--network", url});
 
-    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
-    assertThat(globalConfiguration.getConstants()).isEqualTo(url);
+    final TekuConfiguration config = getResultingTekuConfiguration();
+    assertThat(config.eth2NetworkConfiguration().getConstants()).isEqualTo(url);
   }
 
   @Test

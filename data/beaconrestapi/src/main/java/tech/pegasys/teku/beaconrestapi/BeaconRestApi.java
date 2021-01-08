@@ -78,13 +78,13 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndPro
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
@@ -128,10 +128,8 @@ public class BeaconRestApi {
   }
 
   private void addV1ConfigHandlers(
-      final DataProvider dataProvider, final Eth1Address depositAddress) {
-    app.get(
-        GetDepositContract.ROUTE,
-        new GetDepositContract(Optional.ofNullable(depositAddress), jsonProvider));
+      final DataProvider dataProvider, final Optional<Eth1Address> depositAddress) {
+    app.get(GetDepositContract.ROUTE, new GetDepositContract(depositAddress, jsonProvider));
     app.get(GetForkSchedule.ROUTE, new GetForkSchedule(dataProvider, jsonProvider));
     app.get(GetSpec.ROUTE, new GetSpec(jsonProvider));
   }

@@ -72,7 +72,7 @@ public class ValidatorNode implements Node {
             metricsSystem,
             globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
-    Constants.setConstants(globalConfig.getConstants());
+    Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
 
     this.serviceController = new ValidatorNodeServiceController(tekuConfig, serviceConfig);
     STATUS_LOG.validatorDataPathSet(serviceConfig.getDataDirLayout().getValidatorDataDirectory());

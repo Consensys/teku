@@ -31,7 +31,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.NetworkOptions;
+import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -119,7 +119,7 @@ public class TransitionCommand implements Runnable {
 
   private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(params.networkOptions.getNetwork().getConstants());
+    Constants.setConstants(params.eth2NetworkOptions.getNetworkConfiguration().getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
@@ -195,7 +195,7 @@ public class TransitionCommand implements Runnable {
         description = "Pre (Input) path. If none is specified, input is read from STDIN")
     private String pre;
 
-    @Mixin private NetworkOptions networkOptions;
+    @Mixin private Eth2NetworkOptions eth2NetworkOptions;
 
     @Override
     public String toString() {

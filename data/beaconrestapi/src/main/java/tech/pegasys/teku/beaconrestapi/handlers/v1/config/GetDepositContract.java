@@ -26,9 +26,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.Eth1Address;
 
 public class GetDepositContract implements Handler {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
