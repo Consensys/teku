@@ -39,7 +39,10 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
     this.beaconChainEventAdapter = beaconChainEventAdapter;
   }
 
-  public static BeaconNodeApi create(final ServiceConfig services, final AsyncRunner asyncRunner) {
+  public static BeaconNodeApi create(
+      final ServiceConfig services,
+      final AsyncRunner asyncRunner,
+      final boolean useIndependentAttestationTiming) {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
@@ -52,7 +55,8 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
             new GenesisDataProvider(asyncRunner, validatorApiChannel),
             new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
             services.getTimeProvider(),
-            validatorTimingChannel);
+            validatorTimingChannel,
+            useIndependentAttestationTiming);
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new IndependentTimerEventChannelEventAdapter(
             eventChannels, timeBasedEventAdapter, validatorTimingChannel);
