@@ -235,6 +235,11 @@ public final class DataStructureUtil {
     return new Attestation(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
+  public Attestation randomAttestation(final long slot) {
+    return new Attestation(
+        randomBitlist(), randomAttestationData(UInt64.valueOf(slot)), randomSignature());
+  }
+
   public AggregateAndProof randomAggregateAndProof() {
     return new AggregateAndProof(randomUInt64(), randomAttestation(), randomSignature());
   }
