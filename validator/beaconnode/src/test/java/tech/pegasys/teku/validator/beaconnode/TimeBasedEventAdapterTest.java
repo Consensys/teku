@@ -99,7 +99,7 @@ class TimeBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Aggregation should not fire at the start of the slot
+    // Attestation should not fire at the start of the slot
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
