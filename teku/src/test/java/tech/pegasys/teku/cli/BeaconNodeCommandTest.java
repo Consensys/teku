@@ -480,8 +480,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
-        .setHotStatePersistenceFrequencyInEpochs(2)
-        .setIsBlockProcessingAtStartupDisabled(true);
+        .setHotStatePersistenceFrequencyInEpochs(2);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
