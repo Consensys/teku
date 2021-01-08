@@ -14,9 +14,6 @@
 package tech.pegasys.teku.util.config;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
@@ -25,14 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @Deprecated
 public class GlobalConfigurationBuilder {
 
-  private String constants;
-  private Integer startupTargetPeerCount;
-  private Integer startupTimeoutSeconds;
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
-  private Eth1Address eth1DepositContractAddress;
-  private String eth1Endpoint;
-  private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
   private int eth1LogsMaxBlockRange;
   private boolean eth1DepositsFromStorageEnabled;
   private String transitionRecordDirectory;
@@ -45,23 +36,6 @@ public class GlobalConfigurationBuilder {
   private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
   private long dataStorageFrequency;
-  private NetworkDefinition network;
-
-  public GlobalConfigurationBuilder setConstants(final String constants) {
-    this.constants = constants;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setStartupTargetPeerCount(
-      final Integer startupTargetPeerCount) {
-    this.startupTargetPeerCount = startupTargetPeerCount;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
-    this.startupTimeoutSeconds = startupTimeoutSeconds;
-    return this;
-  }
 
   public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
     this.peerRateLimit = peerRateLimit;
@@ -70,23 +44,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
     this.peerRequestLimit = peerRequestLimit;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1DepositContractAddress(
-      final Eth1Address eth1DepositContractAddress) {
-    this.eth1DepositContractAddress = eth1DepositContractAddress;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
-    this.eth1Endpoint = eth1Endpoint;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1DepositContractDeployBlock(
-      final Optional<UInt64> eth1DepositContractDeployBlock) {
-    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     return this;
   }
 
@@ -155,39 +112,11 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
-    this.network = network;
-    return this;
-  }
-
   public GlobalConfiguration build() {
-    if (network != null) {
-      constants = getOrDefault(constants, network::getConstants);
-      startupTargetPeerCount =
-          getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
-      startupTimeoutSeconds =
-          getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
-      eth1DepositContractAddress =
-          getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
-      eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
-      eth1DepositContractDeployBlock = network.getEth1DepositContractDeployBlock();
-    }
-
-    if (eth1DepositContractAddress == null && eth1Endpoint != null) {
-      throw new InvalidConfigurationException(
-          "eth1-deposit-contract-address is required if eth1-endpoint is specified.");
-    }
 
     return new GlobalConfiguration(
-        network,
-        constants,
-        startupTargetPeerCount,
-        startupTimeoutSeconds,
         peerRateLimit,
         peerRequestLimit,
-        eth1DepositContractAddress,
-        eth1Endpoint,
-        eth1DepositContractDeployBlock,
         eth1LogsMaxBlockRange,
         eth1DepositsFromStorageEnabled,
         transitionRecordDirectory,
@@ -200,14 +129,5 @@ public class GlobalConfigurationBuilder {
         dataStorageFrequency,
         dataStorageCreateDbVersion,
         hotStatePersistenceFrequencyInEpochs);
-  }
-
-  private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
-    return getOrOptionalDefault(explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
-  }
-
-  private <T> T getOrOptionalDefault(
-      final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
-    return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }
 }

@@ -517,7 +517,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
       return;
-    } else if (!config.isEth1Enabled()) {
+    } else if (!beaconConfig.powchainConfig().isEnabled()) {
       // We're pre-genesis but no eth1 endpoint is set
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
@@ -753,8 +753,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             blockImporter,
             pendingBlocks,
-            config.getStartupTargetPeerCount(),
-            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
+            beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
+            Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()));
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }
@@ -784,7 +784,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       }
     } else if (beaconConfig.interopConfig().isInteropEnabled()) {
       setupInteropState();
-    } else if (!config.isEth1Enabled()) {
+    } else if (!beaconConfig.powchainConfig().isEnabled()) {
       throw new InvalidConfigurationException(
           "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
     }

@@ -14,27 +14,17 @@
 package tech.pegasys.teku.util.config;
 
 import java.util.List;
-import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
 @Deprecated
 public class GlobalConfiguration implements MetricsConfig {
   // Network
-  private final NetworkDefinition networkDefinition;
-  private final String constants;
-  private final Integer startupTargetPeerCount;
-  private final Integer startupTimeoutSeconds;
   private final Integer peerRateLimit;
   private final Integer peerRequestLimit;
 
   // Deposit
-  private final Eth1Address eth1DepositContractAddress;
-  private final String eth1Endpoint;
   private final boolean eth1DepositsFromStorageEnabled;
-  private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
 
   // Output
@@ -60,15 +50,8 @@ public class GlobalConfiguration implements MetricsConfig {
   }
 
   GlobalConfiguration(
-      final NetworkDefinition networkDefinition,
-      final String constants,
-      final Integer startupTargetPeerCount,
-      final Integer startupTimeoutSeconds,
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
-      final Eth1Address eth1DepositContractAddress,
-      final String eth1Endpoint,
-      final Optional<UInt64> eth1DepositContractDeployBlock,
       final int eth1LogsMaxBlockRange,
       final boolean eth1DepositsFromStorageEnabled,
       final String transitionRecordDirectory,
@@ -81,15 +64,8 @@ public class GlobalConfiguration implements MetricsConfig {
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
       final int hotStatePersistenceFrequencyInEpochs) {
-    this.networkDefinition = networkDefinition;
-    this.constants = constants;
-    this.startupTargetPeerCount = startupTargetPeerCount;
-    this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.eth1DepositContractAddress = eth1DepositContractAddress;
-    this.eth1Endpoint = eth1Endpoint;
-    this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.transitionRecordDirectory = transitionRecordDirectory;
@@ -104,22 +80,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
-  public NetworkDefinition getNetworkDefinition() {
-    return networkDefinition;
-  }
-
-  public String getConstants() {
-    return constants;
-  }
-
-  public int getStartupTargetPeerCount() {
-    return startupTargetPeerCount;
-  }
-
-  public int getStartupTimeoutSeconds() {
-    return startupTimeoutSeconds;
-  }
-
   public int getPeerRateLimit() {
     return peerRateLimit;
   }
@@ -128,24 +88,8 @@ public class GlobalConfiguration implements MetricsConfig {
     return peerRequestLimit;
   }
 
-  public boolean isEth1Enabled() {
-    return !StringUtils.isEmpty(eth1Endpoint);
-  }
-
-  public Eth1Address getEth1DepositContractAddress() {
-    return eth1DepositContractAddress;
-  }
-
-  public Optional<UInt64> getEth1DepositContractDeployBlock() {
-    return eth1DepositContractDeployBlock;
-  }
-
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
   }
 
   public boolean isEth1DepositsFromStorageEnabled() {

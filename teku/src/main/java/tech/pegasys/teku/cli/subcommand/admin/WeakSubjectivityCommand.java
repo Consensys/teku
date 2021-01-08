@@ -20,7 +20,7 @@ import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.NetworkOptions;
+import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -61,9 +61,9 @@ public class WeakSubjectivityCommand implements Runnable {
   public int clearWeakSubjectivityState(
       @CommandLine.Mixin final BeaconNodeDataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
-      @CommandLine.Mixin final NetworkOptions networkOptions)
+      @CommandLine.Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
-    try (final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+    try (final Database db = createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       // Pull value before updating
       final WeakSubjectivityState original = db.getWeakSubjectivityState();
       if (original.isEmpty()) {
@@ -92,9 +92,9 @@ public class WeakSubjectivityCommand implements Runnable {
   public int displayWeakSubjectivityState(
       @CommandLine.Mixin final BeaconNodeDataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
-      @CommandLine.Mixin final NetworkOptions networkOptions)
+      @CommandLine.Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
-    try (final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+    try (final Database db = createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       final WeakSubjectivityState wsState = db.getWeakSubjectivityState();
       SUB_COMMAND_LOG.display("Stored weak subjectivity state: " + stateToString(wsState));
       return 0;
@@ -104,13 +104,13 @@ public class WeakSubjectivityCommand implements Runnable {
   private Database createDatabase(
       final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
-      final NetworkOptions networkOptions) {
+      final Eth2NetworkOptions eth2NetworkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            networkOptions.getNetwork().getEth1DepositContractAddress().orElse(null));
+            eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress());
     return databaseFactory.createDatabase();
   }
 
