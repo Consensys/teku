@@ -97,7 +97,7 @@ public class ValidatorsUtil {
     final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
     checkArgument(
         epoch.isLessThanOrEqualTo(stateEpoch.plus(MAX_SEED_LOOKAHEAD)),
-        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested %s from state in epoch %s",
+        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
         epoch,
         stateEpoch);
     return BeaconStateCache.getTransitionCaches(state)
