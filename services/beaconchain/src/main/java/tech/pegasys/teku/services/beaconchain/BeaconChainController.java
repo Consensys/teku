@@ -267,7 +267,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final StoreConfig storeConfig =
         StoreConfig.builder()
             .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
-            .disableBlockProcessingAtStartup(config.isBlockProcessingAtStartupDisabled())
             .build();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));

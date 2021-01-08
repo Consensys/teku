@@ -364,8 +364,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
         .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
-            storeOptions.getHotStatePersistenceFrequencyInEpochs())
-        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled());
+            storeOptions.getHotStatePersistenceFrequencyInEpochs());
   }
 
   @FunctionalInterface

@@ -54,7 +54,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
-  private final boolean isBlockProcessingAtStartupDisabled;
 
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
@@ -81,8 +80,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
-      final int hotStatePersistenceFrequencyInEpochs,
-      final boolean isBlockProcessingAtStartupDisabled) {
+      final int hotStatePersistenceFrequencyInEpochs) {
     this.networkDefinition = networkDefinition;
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -104,7 +102,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-    this.isBlockProcessingAtStartupDisabled = isBlockProcessingAtStartupDisabled;
   }
 
   public NetworkDefinition getNetworkDefinition() {
@@ -198,9 +195,5 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
-  }
-
-  public boolean isBlockProcessingAtStartupDisabled() {
-    return isBlockProcessingAtStartupDisabled;
   }
 }

@@ -44,7 +44,6 @@ public class GlobalConfigurationBuilder {
   private StateStorageMode dataStorageMode;
   private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
-  private boolean isBlockProcessingAtStartupDisabled;
   private long dataStorageFrequency;
   private NetworkDefinition network;
 
@@ -156,12 +155,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setIsBlockProcessingAtStartupDisabled(
-      final boolean isDisabled) {
-    this.isBlockProcessingAtStartupDisabled = isDisabled;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -206,8 +199,7 @@ public class GlobalConfigurationBuilder {
         dataStorageMode,
         dataStorageFrequency,
         dataStorageCreateDbVersion,
-        hotStatePersistenceFrequencyInEpochs,
-        isBlockProcessingAtStartupDisabled);
+        hotStatePersistenceFrequencyInEpochs);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
