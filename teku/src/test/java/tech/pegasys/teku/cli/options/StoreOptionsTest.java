@@ -59,37 +59,4 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(output).isNotEmpty();
     assertThat(output).contains("Invalid value");
   }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_true() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup", "true",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_false() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup", "false",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_implicit() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_default() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
-  }
 }

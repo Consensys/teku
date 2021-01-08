@@ -44,7 +44,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
-  private final boolean isBlockProcessingAtStartupDisabled;
 
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
@@ -64,8 +63,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
-      final int hotStatePersistenceFrequencyInEpochs,
-      final boolean isBlockProcessingAtStartupDisabled) {
+      final int hotStatePersistenceFrequencyInEpochs) {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
@@ -80,7 +78,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-    this.isBlockProcessingAtStartupDisabled = isBlockProcessingAtStartupDisabled;
   }
 
   public int getPeerRateLimit() {
@@ -142,9 +139,5 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
-  }
-
-  public boolean isBlockProcessingAtStartupDisabled() {
-    return isBlockProcessingAtStartupDisabled;
   }
 }

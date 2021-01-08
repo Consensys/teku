@@ -35,7 +35,6 @@ public class GlobalConfigurationBuilder {
   private StateStorageMode dataStorageMode;
   private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
-  private boolean isBlockProcessingAtStartupDisabled;
   private long dataStorageFrequency;
 
   public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
@@ -113,12 +112,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setIsBlockProcessingAtStartupDisabled(
-      final boolean isDisabled) {
-    this.isBlockProcessingAtStartupDisabled = isDisabled;
-    return this;
-  }
-
   public GlobalConfiguration build() {
 
     return new GlobalConfiguration(
@@ -135,7 +128,6 @@ public class GlobalConfigurationBuilder {
         dataStorageMode,
         dataStorageFrequency,
         dataStorageCreateDbVersion,
-        hotStatePersistenceFrequencyInEpochs,
-        isBlockProcessingAtStartupDisabled);
+        hotStatePersistenceFrequencyInEpochs);
   }
 }
