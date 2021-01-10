@@ -388,7 +388,6 @@ public class TekuNode extends Node {
       configMap.put("rest-api-enabled", true);
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
-      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");

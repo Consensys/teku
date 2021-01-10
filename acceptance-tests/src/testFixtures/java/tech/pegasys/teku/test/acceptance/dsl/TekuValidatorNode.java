@@ -109,7 +109,6 @@ public class TekuValidatorNode extends Node {
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-enabled", true);
-      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
       configMap.put("data-path", DATA_PATH);
       configMap.put("log-destination", "console");
       configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
