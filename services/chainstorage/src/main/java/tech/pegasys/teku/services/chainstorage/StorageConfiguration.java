@@ -13,16 +13,27 @@
 
 package tech.pegasys.teku.services.chainstorage;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class StorageConfiguration {
   private final Optional<Eth1Address> eth1DepositContract;
 
-  private StorageConfiguration(final Optional<Eth1Address> eth1DepositContract) {
+  private final StateStorageMode dataStorageMode;
+  private final long dataStorageFrequency;
+  private final DatabaseVersion dataStorageCreateDbVersion;
+
+  private StorageConfiguration(
+      final Optional<Eth1Address> eth1DepositContract,
+      final StateStorageMode dataStorageMode,
+      final long dataStorageFrequency,
+      final DatabaseVersion dataStorageCreateDbVersion) {
     this.eth1DepositContract = eth1DepositContract;
+    this.dataStorageMode = dataStorageMode;
+    this.dataStorageFrequency = dataStorageFrequency;
+    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
   }
 
   public static Builder builder() {
@@ -33,19 +44,50 @@ public class StorageConfiguration {
     return eth1DepositContract;
   }
 
-  public static class Builder {
-    private Optional<Eth1Address> eth1DepositContract = Optional.empty();
+  public StateStorageMode getDataStorageMode() {
+    return dataStorageMode;
+  }
+
+  public long getDataStorageFrequency() {
+    return dataStorageFrequency;
+  }
+
+  public DatabaseVersion getDataStorageCreateDbVersion() {
+    return dataStorageCreateDbVersion;
+  }
+
+  public static final class Builder {
+
+    private Optional<Eth1Address> eth1DepositContract;
+    private StateStorageMode dataStorageMode;
+    private long dataStorageFrequency;
+    private DatabaseVersion dataStorageCreateDbVersion;
 
     private Builder() {}
 
-    public StorageConfiguration build() {
-      return new StorageConfiguration(eth1DepositContract);
-    }
-
-    public Builder eth1DepositContract(final Optional<Eth1Address> eth1DepositContract) {
-      checkNotNull(eth1DepositContract);
+    public Builder eth1DepositContract(Optional<Eth1Address> eth1DepositContract) {
       this.eth1DepositContract = eth1DepositContract;
       return this;
+    }
+
+    public Builder dataStorageMode(StateStorageMode dataStorageMode) {
+      this.dataStorageMode = dataStorageMode;
+      return this;
+    }
+
+    public Builder dataStorageFrequency(long dataStorageFrequency) {
+      this.dataStorageFrequency = dataStorageFrequency;
+      return this;
+    }
+
+    public Builder dataStorageCreateDbVersion(DatabaseVersion dataStorageCreateDbVersion) {
+      this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+      return this;
+    }
+
+    public StorageConfiguration build() {
+      return new StorageConfiguration(
+          eth1DepositContract, dataStorageMode, dataStorageFrequency, dataStorageCreateDbVersion);
     }
   }
 }

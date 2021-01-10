@@ -66,7 +66,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         dataPath,
         Optional.empty(),
         dataStorageMode,
-        DatabaseVersion.DEFAULT_VERSION.getValue(),
+        DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
         depositContractAddress);
   }
@@ -75,7 +75,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final String createDatabaseVersion,
+      final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Optional<Eth1Address> eth1Address) {
     this(
@@ -93,7 +93,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Path dataPath,
       final Optional<Path> maybeArchiveDataPath,
       final StateStorageMode dataStorageMode,
-      final String createDatabaseVersion,
+      final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Optional<Eth1Address> eth1Address) {
     this.metricsSystem = metricsSystem;
@@ -106,8 +106,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
 
-    this.createDatabaseVersion =
-        DatabaseVersion.fromString(createDatabaseVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
+    this.createDatabaseVersion = createDatabaseVersion;
   }
 
   @Override

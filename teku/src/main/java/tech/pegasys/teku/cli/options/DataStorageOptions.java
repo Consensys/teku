@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -46,11 +47,15 @@ public class DataStorageOptions {
     return dataStorageMode;
   }
 
-  public long getDataStorageFrequency() {
-    return dataStorageFrequency;
+  public void configure(final TekuConfiguration.Builder builder) {
+    builder.storageConfiguration(
+        b ->
+            b.dataStorageMode(dataStorageMode)
+                .dataStorageFrequency(dataStorageFrequency)
+                .dataStorageCreateDbVersion(parseDatabaseVersion()));
   }
 
-  public String getCreateDbVersion() {
-    return createDbVersion;
+  private DatabaseVersion parseDatabaseVersion() {
+    return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
   }
 }
