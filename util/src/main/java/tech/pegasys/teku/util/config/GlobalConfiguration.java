@@ -24,7 +24,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Integer peerRequestLimit;
 
   // Deposit
-  private final boolean eth1DepositsFromStorageEnabled;
   private final int eth1LogsMaxBlockRange;
 
   // Output
@@ -53,7 +52,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
       final int eth1LogsMaxBlockRange,
-      final boolean eth1DepositsFromStorageEnabled,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
@@ -67,7 +65,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
@@ -90,10 +87,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  public boolean isEth1DepositsFromStorageEnabled() {
-    return eth1DepositsFromStorageEnabled;
   }
 
   public String getTransitionRecordDirectory() {

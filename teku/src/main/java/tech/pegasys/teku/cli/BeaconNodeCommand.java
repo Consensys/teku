@@ -349,7 +349,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
         .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
-        .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())

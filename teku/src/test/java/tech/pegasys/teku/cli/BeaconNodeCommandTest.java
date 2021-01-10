@@ -470,7 +470,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
         .setEth1LogsMaxBlockRange(10_000)
-        .setEth1DepositsFromStorageEnabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")

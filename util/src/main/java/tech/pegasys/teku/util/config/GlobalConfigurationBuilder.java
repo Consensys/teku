@@ -25,7 +25,6 @@ public class GlobalConfigurationBuilder {
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
   private int eth1LogsMaxBlockRange;
-  private boolean eth1DepositsFromStorageEnabled;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
@@ -49,12 +48,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setEth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1DepositsFromStorageEnabled(
-      final boolean eth1DepositsFromStorageEnabled) {
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     return this;
   }
 
@@ -118,7 +111,6 @@ public class GlobalConfigurationBuilder {
         peerRateLimit,
         peerRequestLimit,
         eth1LogsMaxBlockRange,
-        eth1DepositsFromStorageEnabled,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,
