@@ -59,6 +59,7 @@ public class DepositOptions {
 
   @Option(
       names = {"--eth1-deposit-contract-address"},
+      converter = Eth1AddressConverter.class,
       paramLabel = "<ADDRESS>",
       description = "Address of the deposit contract")
   private Eth1Address contractAddress;
@@ -167,6 +168,17 @@ public class DepositOptions {
       } catch (final NumberFormatException e) {
         throw new TypeConversionException(
             "Invalid format: must be a numeric value but was " + value);
+      }
+    }
+  }
+
+  private static class Eth1AddressConverter implements CommandLine.ITypeConverter<Eth1Address> {
+    @Override
+    public Eth1Address convert(final String value) throws Exception {
+      try {
+        return Eth1Address.fromHexString(value);
+      } catch (Exception e) {
+        throw new TypeConversionException("Invalid format: " + e.getMessage());
       }
     }
   }
