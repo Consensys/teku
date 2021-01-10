@@ -27,17 +27,6 @@ public class DepositOptions {
   private String eth1Endpoint = null;
 
   @Option(
-      hidden = true,
-      names = {"--Xeth1-deposits-from-storage-enabled"},
-      defaultValue = "true",
-      paramLabel = "<BOOLEAN>",
-      fallbackValue = "true",
-      description =
-          "On startup, use Eth1 deposits from storage before loading from the remote endpoint.",
-      arity = "0..1")
-  private boolean eth1DepositsFromStorageEnabled = true;
-
-  @Option(
       names = {"--eth1-deposit-contract-max-request-size"},
       paramLabel = "<INTEGER>",
       description =
@@ -47,10 +36,6 @@ public class DepositOptions {
 
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  public boolean isEth1DepositsFromStorageEnabled() {
-    return eth1DepositsFromStorageEnabled;
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
