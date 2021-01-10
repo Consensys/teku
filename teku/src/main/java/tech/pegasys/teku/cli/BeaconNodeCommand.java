@@ -337,6 +337,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       beaconRestApiOptions.configure(builder);
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
+      dataStorageOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException | NullPointerException e) {
@@ -355,9 +356,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataStorageMode(dataStorageOptions.getDataStorageMode())
-        .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
-        .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs());
   }

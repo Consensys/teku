@@ -21,7 +21,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final Path TEST_PATH = Path.of("/tmp/teku");
@@ -30,25 +31,25 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataPath_shouldReadFromConfigurationFile() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromFile("dataOptions_config.yaml");
-    final GlobalConfiguration globalConfiguration = tekuConfiguration.global();
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(tekuConfiguration.dataConfig().getDataBasePath()).isEqualTo(TEST_PATH);
-    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
-    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
-    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(128L);
+    assertThat(config.getDataStorageMode()).isEqualTo(ARCHIVE);
+    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.V4);
+    assertThat(config.getDataStorageFrequency()).isEqualTo(128L);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--data-storage-mode", "prune");
-    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-mode", "prune").storageConfiguration();
+    assertThat(config.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--data-storage-mode", "archive");
-    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-mode", "archive").storageConfiguration();
+    assertThat(config.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
@@ -60,27 +61,29 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataStorageFrequency_shouldDefault() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(2048L);
+    final StorageConfiguration config = getTekuConfigurationFromArguments().storageConfiguration();
+    assertThat(config.getDataStorageFrequency()).isEqualTo(2048L);
   }
 
   @Test
   public void dataStorageFrequency_shouldAcceptNonDefaultValues() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
-    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(1024000L);
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000")
+            .storageConfiguration();
+    assertThat(config.getDataStorageFrequency()).isEqualTo(1024000L);
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
+    final StorageConfiguration config = getTekuConfigurationFromArguments().storageConfiguration();
+    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.V5);
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldAcceptNonDefaultValues() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--Xdata-storage-create-db-version", "3.0");
-    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
+    final StorageConfiguration config =
+        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "noop")
+            .storageConfiguration();
+    assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.NOOP);
   }
 }
