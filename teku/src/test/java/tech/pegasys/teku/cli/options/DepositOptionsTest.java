@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -28,7 +27,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(config.powchain().isEnabled()).isTrue();
     assertThat(config.powchain().getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
-    assertThat(config.global().isEth1DepositsFromStorageEnabled()).isFalse();
   }
 
   @Test
@@ -49,13 +47,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
-  }
-
-  @Test
-  public void shouldDisableLoadFromStorageByDefault() {
-    final GlobalConfiguration globalConfigurationFromArguments =
-        getGlobalConfigurationFromArguments();
-    assertThat(globalConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
   }
 
   @Test
