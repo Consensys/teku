@@ -66,7 +66,12 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV4Database() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "4", 1L, eth1Address);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            DatabaseVersion.V4,
+            1L,
+            eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V4);
@@ -81,7 +86,12 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV5Database() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "5", 1L, eth1Address);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            DatabaseVersion.V5,
+            1L,
+            eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V5);
@@ -99,7 +109,12 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV6DatabaseSingle() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "6", 1L, eth1Address);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            DatabaseVersion.V6,
+            1L,
+            eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V6);
@@ -121,7 +136,7 @@ public class VersionedDatabaseFactoryTest {
             mainDataDir,
             Optional.of(coldDataDir),
             DATA_STORAGE_MODE,
-            "6",
+            DatabaseVersion.V6,
             1L,
             eth1Address);
 
@@ -169,7 +184,12 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "4", 1L, eth1Address);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            DatabaseVersion.V4,
+            1L,
+            eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
 
@@ -178,7 +198,12 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "5", 1L, eth1Address);
+            new StubMetricsSystem(),
+            dataDir,
+            DATA_STORAGE_MODE,
+            DatabaseVersion.V5,
+            1L,
+            eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
   }
 
@@ -190,7 +215,7 @@ public class VersionedDatabaseFactoryTest {
             dataDir,
             Optional.empty(),
             DATA_STORAGE_MODE,
-            "6",
+            DatabaseVersion.V6,
             1L,
             eth1Address);
     try (Database db = dbFactorySingle.createDatabase()) {}
@@ -201,7 +226,7 @@ public class VersionedDatabaseFactoryTest {
             dataDir,
             Optional.of(dataDir.resolve("cold")),
             DATA_STORAGE_MODE,
-            "6",
+            DatabaseVersion.V6,
             1L,
             eth1Address);
 
@@ -220,7 +245,7 @@ public class VersionedDatabaseFactoryTest {
             dataDir,
             Optional.of(dataDir.resolve("cold")),
             DATA_STORAGE_MODE,
-            "6",
+            DatabaseVersion.V6,
             1L,
             eth1Address);
     try (Database db = dbFactorySeparate.createDatabase()) {}
@@ -231,7 +256,7 @@ public class VersionedDatabaseFactoryTest {
             dataDir,
             Optional.empty(),
             DATA_STORAGE_MODE,
-            "6",
+            DatabaseVersion.V6,
             1L,
             eth1Address);
 
