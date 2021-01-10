@@ -41,7 +41,6 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -156,9 +155,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Logging")
   private LoggingOptions loggingOptions;
-
-  @Mixin(name = "Output")
-  private OutputOptions outputOptions;
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -350,7 +346,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
-        .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
