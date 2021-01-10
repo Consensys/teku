@@ -1,3 +1,2 @@
 # eth1
-Xeth1-deposits-from-storage-enabled: False
 eth1-endpoint: "http://example.com:1234/path/"
