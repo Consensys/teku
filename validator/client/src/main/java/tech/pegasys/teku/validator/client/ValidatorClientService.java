@@ -44,6 +44,7 @@ import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 public class ValidatorClientService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
+  private SafeFuture<Void> initializeValidatorsFuture = new SafeFuture<>();
   private final EventChannels eventChannels;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
@@ -87,14 +88,17 @@ public class ValidatorClientService extends Service {
     ValidatorClientService validatorClientService =
         new ValidatorClientService(eventChannels, beaconNodeApi, forkProvider);
 
-    asyncRunner
-        .runAsync(
+    SafeFuture<Void> future =
+        asyncRunner.runAsync(
             () ->
                 validatorClientService.initializeValidators(
-                    config, validatorApiChannel, asyncRunner, services))
-        .finish(err -> LOG.error("Unable to initialize validators", err));
-
+                    config, validatorApiChannel, asyncRunner, services));
+    validatorClientService.setInitializeValidatorsFuture(future);
     return validatorClientService;
+  }
+
+  private void setInitializeValidatorsFuture(SafeFuture<Void> initializeValidatorsFuture) {
+    initializeValidatorsFuture.propagateTo(this.initializeValidatorsFuture);
   }
 
   void initializeValidators(
@@ -166,20 +170,29 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return initializationComplete.thenCompose(
-        (__) -> {
-          forkProvider.start().reportExceptions();
-          validatorIndexProvider.lookupValidators();
-          eventChannels.subscribe(
-              ValidatorTimingChannel.class,
-              new ValidatorTimingActions(
-                  validatorStatusLogger,
-                  validatorIndexProvider,
-                  blockProductionTimingChannel,
-                  attestationTimingChannel));
-          validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
-          return beaconNodeApi.subscribeToEvents();
-        });
+    return initializeValidatorsFuture
+        .thenCompose(
+            (__) ->
+                initializationComplete.thenCompose(
+                    (___) -> {
+                      forkProvider.start().reportExceptions();
+                      validatorIndexProvider.lookupValidators();
+                      eventChannels.subscribe(
+                          ValidatorTimingChannel.class,
+                          new ValidatorTimingActions(
+                              validatorStatusLogger,
+                              validatorIndexProvider,
+                              blockProductionTimingChannel,
+                              attestationTimingChannel));
+                      validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
+                      return beaconNodeApi.subscribeToEvents();
+                    }))
+        .exceptionallyCompose(
+            err -> {
+              LOG.debug("Validators failed to load", err);
+              initializeValidatorsFuture.propagateTo(initializationComplete);
+              return SafeFuture.failedFuture(err);
+            });
   }
 
   @Override
