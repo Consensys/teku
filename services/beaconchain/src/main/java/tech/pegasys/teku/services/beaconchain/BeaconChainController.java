@@ -270,6 +270,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final StoreConfig storeConfig =
         StoreConfig.builder()
             .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
+            // We don't need to update head for empty slots when using dependent roots
+            .updateHeadForEmptySlots(!beaconConfig.validatorConfig().useDependentRoots())
             .build();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
