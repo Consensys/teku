@@ -301,11 +301,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   private boolean hasReorgedFrom(
-      final Bytes32 originalHeadRoot, final UInt64 originalForkChoiceSlot) {
-    // Get the block root in effect at the old fork choice slot on the current chain. If this is a
-    // different fork to the previous chain the root at originalForkChoiceSlot will be different
-    // from originalHeadRoot. If it's an extension of the same chain it will match.
-    return getBlockRootBySlot(originalForkChoiceSlot)
+      final Bytes32 originalHeadRoot, final UInt64 originalChainTipSlot) {
+    // Get the block root in effect at the old chain tip on the current chain. Depending on
+    // updateHeadForEmptySlots that chain "tip" may be the fork choice slot (when true) or the
+    // latest block (when false). If this is a different fork to the previous chain the root at
+    // originalChainTipSlot will be different from originalHeadRoot. If it's an extension of the
+    // same chain it will match.
+    return getBlockRootBySlot(originalChainTipSlot)
         .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalHeadRoot))
         .orElse(true);
   }
