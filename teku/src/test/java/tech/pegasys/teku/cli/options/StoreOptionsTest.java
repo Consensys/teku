@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -26,13 +26,15 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xhot-state-persistence-frequency", "99",
     };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    final StoreConfig globalConfiguration =
+        getTekuConfigurationFromArguments(args).beaconChain().storeConfig();
     assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(99);
   }
 
   @Test
   public void hotStatePersistenceFrequency_shouldSetDefaultValue() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
+    final StoreConfig globalConfiguration =
+        getTekuConfigurationFromArguments().beaconChain().storeConfig();
     assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(2);
   }
 

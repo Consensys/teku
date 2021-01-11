@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -30,6 +31,7 @@ public class BeaconChainConfiguration {
   private final P2PConfig p2pConfig;
   private final BeaconRestApiConfig beaconRestApiConfig;
   private final LoggingConfig loggingConfig;
+  private final StoreConfig storeConfig;
   private final PowchainConfiguration powchainConfiguration;
 
   public BeaconChainConfiguration(
@@ -40,7 +42,8 @@ public class BeaconChainConfiguration {
       final P2PConfig p2pConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
-      final LoggingConfig loggingConfig) {
+      final LoggingConfig loggingConfig,
+      final StoreConfig storeConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
@@ -49,6 +52,7 @@ public class BeaconChainConfiguration {
     this.beaconRestApiConfig = beaconRestApiConfig;
     this.powchainConfiguration = powchainConfiguration;
     this.loggingConfig = loggingConfig;
+    this.storeConfig = storeConfig;
   }
 
   public Eth2NetworkConfiguration eth2NetworkConfig() {
@@ -81,5 +85,9 @@ public class BeaconChainConfiguration {
 
   public LoggingConfig loggingConfig() {
     return loggingConfig;
+  }
+
+  public StoreConfig storeConfig() {
+    return storeConfig;
   }
 }

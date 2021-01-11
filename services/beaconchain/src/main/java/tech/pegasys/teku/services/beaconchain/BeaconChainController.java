@@ -120,7 +120,6 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -147,7 +146,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
   private final BeaconChainConfiguration beaconConfig;
-  private final GlobalConfiguration config;
   private final SpecProvider specProvider;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
@@ -199,7 +197,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
-    this.config = serviceConfig.getConfig();
     this.specProvider = SpecProvider.create(beaconConfig.eth2NetworkConfig().getSpecConfig());
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
@@ -267,12 +264,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    final StoreConfig storeConfig =
-        StoreConfig.builder()
-            .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
-            // We don't need to update head for empty slots when using dependent roots
-            .updateHeadForEmptySlots(!beaconConfig.validatorConfig().useDependentRoots())
-            .build();
+    final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
@@ -641,8 +633,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
               .keyValueStore(keyValueStore)
-              .peerRateLimit(config.getPeerRateLimit())
-              .peerRequestLimit(config.getPeerRequestLimit())
+              .peerRateLimit(configOptions.getPeerRateLimit())
+              .peerRequestLimit(configOptions.getPeerRequestLimit())
               .build();
     }
   }

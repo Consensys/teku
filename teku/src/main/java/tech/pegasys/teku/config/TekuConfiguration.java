@@ -26,8 +26,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.InteropConfig.InteropConfigBuilder;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.validator.client.ValidatorClientConfiguration;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class TekuConfiguration {
-  private final GlobalConfiguration globalConfiguration;
   private final Eth2NetworkConfiguration eth2NetworkConfiguration;
   private final StorageConfiguration storageConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
@@ -47,7 +45,6 @@ public class TekuConfiguration {
   private final PowchainConfiguration powchainConfiguration;
 
   private TekuConfiguration(
-      final GlobalConfiguration globalConfiguration,
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
       final StorageConfiguration storageConfiguration,
       final WeakSubjectivityConfig weakSubjectivityConfig,
@@ -58,8 +55,8 @@ public class TekuConfiguration {
       final P2PConfig p2pConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final LoggingConfig loggingConfig,
-      final MetricsConfig metricsConfig) {
-    this.globalConfiguration = globalConfiguration;
+      final MetricsConfig metricsConfig,
+      final StoreConfig storeConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -76,17 +73,13 @@ public class TekuConfiguration {
             p2pConfig,
             beaconRestApiConfig,
             powchainConfiguration,
-            loggingConfig);
-    this.validatorClientConfig =
-        new ValidatorClientConfiguration(globalConfiguration, validatorConfig, interopConfig);
+            loggingConfig,
+            storeConfig);
+    this.validatorClientConfig = new ValidatorClientConfiguration(validatorConfig, interopConfig);
   }
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public GlobalConfiguration global() {
-    return globalConfiguration;
   }
 
   public Eth2NetworkConfiguration eth2NetworkConfiguration() {
@@ -126,8 +119,6 @@ public class TekuConfiguration {
   }
 
   public static class Builder {
-    private final GlobalConfigurationBuilder globalConfigurationBuilder =
-        new GlobalConfigurationBuilder();
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
         Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
     private final StorageConfiguration.Builder storageConfigurationBuilder =
@@ -144,12 +135,12 @@ public class TekuConfiguration {
         BeaconRestApiConfig.builder();
     private final LoggingConfig.LoggingConfigBuilder loggingConfigBuilder = LoggingConfig.builder();
     private final MetricsConfig.MetricsConfigBuilder metricsConfigBuilder = MetricsConfig.builder();
+    private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
 
     private Builder() {}
 
     public TekuConfiguration build() {
       return new TekuConfiguration(
-          globalConfigurationBuilder.build(),
           eth2NetworkConfigurationBuilder.build(),
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
@@ -160,12 +151,8 @@ public class TekuConfiguration {
           p2pConfigBuilder.build(),
           restApiBuilder.build(),
           loggingConfigBuilder.build(),
-          metricsConfigBuilder.build());
-    }
-
-    public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
-      globalConfigConsumer.accept(globalConfigurationBuilder);
-      return this;
+          metricsConfigBuilder.build(),
+          storeConfigBuilder.build());
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -223,6 +210,11 @@ public class TekuConfiguration {
 
     public Builder metrics(final Consumer<MetricsConfigBuilder> metricsConfigBuilderConsumer) {
       metricsConfigBuilderConsumer.accept(metricsConfigBuilder);
+      return this;
+    }
+
+    public Builder store(final Consumer<StoreConfig.Builder> storeConfigBuilderConsumer) {
+      storeConfigBuilderConsumer.accept(storeConfigBuilder);
       return this;
     }
   }

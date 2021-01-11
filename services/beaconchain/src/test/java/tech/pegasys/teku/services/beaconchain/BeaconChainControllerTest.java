@@ -35,7 +35,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -55,7 +55,6 @@ public class BeaconChainControllerTest {
 
   @BeforeEach
   public void setup() {
-    when(serviceConfig.getConfig()).thenReturn(GlobalConfiguration.builder().build());
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     when(serviceConfig.getDataDirLayout())
@@ -73,7 +72,8 @@ public class BeaconChainControllerTest {
         p2pConfig,
         restApiConfig,
         PowchainConfiguration.builder().build(),
-        loggingConfig);
+        loggingConfig,
+        StoreConfig.builder().build());
   }
 
   @Test

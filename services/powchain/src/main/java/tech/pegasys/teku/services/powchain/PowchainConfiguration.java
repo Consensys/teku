@@ -23,14 +23,17 @@ public class PowchainConfiguration {
   private final String eth1Endpoint;
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
+  private final int eth1LogsMaxBlockRange;
 
   private PowchainConfiguration(
       final String eth1Endpoint,
       final Eth1Address depositContract,
-      final Optional<UInt64> depositContractDeployBlock) {
+      final Optional<UInt64> depositContractDeployBlock,
+      final int eth1LogsMaxBlockRange) {
     this.eth1Endpoint = eth1Endpoint;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
+    this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
   }
 
   public static Builder builder() {
@@ -53,17 +56,25 @@ public class PowchainConfiguration {
     return depositContractDeployBlock;
   }
 
+  public int getEth1LogsMaxBlockRange() {
+    return eth1LogsMaxBlockRange;
+  }
+
   public static class Builder {
     private Optional<String> eth1Endpoint = Optional.empty();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
+    private int eth1LogsMaxBlockRange;
 
     private Builder() {}
 
     public PowchainConfiguration build() {
       validate();
       return new PowchainConfiguration(
-          eth1Endpoint.orElse(null), depositContract, depositContractDeployBlock);
+          eth1Endpoint.orElse(null),
+          depositContract,
+          depositContractDeployBlock,
+          eth1LogsMaxBlockRange);
     }
 
     private void validate() {
@@ -100,6 +111,11 @@ public class PowchainConfiguration {
     public Builder depositContractDeployBlock(final Optional<UInt64> depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       this.depositContractDeployBlock = depositContractDeployBlock;
+      return this;
+    }
+
+    public Builder eth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
+      this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
       return this;
     }
   }

@@ -45,7 +45,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class PowchainService extends Service {
 
@@ -58,7 +57,6 @@ public class PowchainService extends Service {
 
   public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
     checkArgument(powConfig.isEnabled());
-    GlobalConfiguration tekuConfig = serviceConfig.getConfig();
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
@@ -96,7 +94,7 @@ public class PowchainService extends Service {
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
             asyncRunner,
-            tekuConfig.getEth1LogsMaxBlockRange());
+            powConfig.getEth1LogsMaxBlockRange());
 
     headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
     final DepositProcessingController depositProcessingController =

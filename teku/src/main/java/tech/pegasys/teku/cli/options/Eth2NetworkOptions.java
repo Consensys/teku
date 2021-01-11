@@ -71,14 +71,6 @@ public class Eth2NetworkOptions {
     return createEth2NetworkConfig();
   }
 
-  public Integer getPeerRateLimit() {
-    return peerRateLimit;
-  }
-
-  public Integer getPeerRequestLimit() {
-    return peerRequestLimit;
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
     // Create a config instance so we can inspect the values in the other builders
     final Eth2NetworkConfiguration eth2Config = createEth2NetworkConfig();
@@ -92,7 +84,11 @@ public class Eth2NetworkOptions {
             })
         .storageConfiguration(
             b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
-        .p2p(b -> b.p2pDiscoveryBootnodes(eth2Config.getDiscoveryBootnodes()))
+        .p2p(
+            b ->
+                b.p2pDiscoveryBootnodes(eth2Config.getDiscoveryBootnodes())
+                    .peerRateLimit(peerRateLimit)
+                    .peerRequestLimit(peerRequestLimit))
         .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()))
         .weakSubjectivity(
             b -> eth2Config.getInitialState().ifPresent(b::weakSubjectivityStateResource));
