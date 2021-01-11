@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -86,6 +87,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   public void setup() {
     dataProvider =
         new DataProvider(
+            StubSpecProvider.create(),
             recentChainData,
             combinedChainDataClient,
             eth2Network,
