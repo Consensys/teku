@@ -334,6 +334,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
+      metricsOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException | NullPointerException e) {
@@ -346,11 +347,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
         .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
-        .setMetricsEnabled(metricsOptions.isMetricsEnabled())
-        .setMetricsPort(metricsOptions.getMetricsPort())
-        .setMetricsInterface(metricsOptions.getMetricsInterface())
-        .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs());
   }
