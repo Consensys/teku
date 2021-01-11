@@ -25,17 +25,13 @@ public class GlobalConfigurationBuilder {
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
   private int eth1LogsMaxBlockRange;
-  private boolean eth1DepositsFromStorageEnabled;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
   private String metricsInterface;
   private List<String> metricsCategories;
   private List<String> metricsHostAllowlist;
-  private StateStorageMode dataStorageMode;
-  private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
-  private long dataStorageFrequency;
 
   public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
     this.peerRateLimit = peerRateLimit;
@@ -49,12 +45,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setEth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setEth1DepositsFromStorageEnabled(
-      final boolean eth1DepositsFromStorageEnabled) {
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     return this;
   }
 
@@ -90,22 +80,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
-    this.dataStorageMode = dataStorageMode;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
-    this.dataStorageFrequency = dataStorageFrequency;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setDataStorageCreateDbVersion(
-      final String dataStorageCreateDbVersion) {
-    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
       final int hotStatePersistenceFrequencyInEpochs) {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
@@ -118,16 +92,12 @@ public class GlobalConfigurationBuilder {
         peerRateLimit,
         peerRequestLimit,
         eth1LogsMaxBlockRange,
-        eth1DepositsFromStorageEnabled,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,
         metricsInterface,
         metricsCategories,
         metricsHostAllowlist,
-        dataStorageMode,
-        dataStorageFrequency,
-        dataStorageCreateDbVersion,
         hotStatePersistenceFrequencyInEpochs);
   }
 }

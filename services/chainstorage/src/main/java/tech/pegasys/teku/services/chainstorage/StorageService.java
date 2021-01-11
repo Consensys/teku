@@ -52,18 +52,16 @@ public class StorageService extends Service {
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                   Optional.empty(),
-                  serviceConfig.getConfig().getDataStorageMode(),
-                  serviceConfig.getConfig().getDataStorageCreateDbVersion(),
-                  serviceConfig.getConfig().getDataStorageFrequency(),
+                  config.getDataStorageMode(),
+                  config.getDataStorageCreateDbVersion(),
+                  config.getDataStorageFrequency(),
                   config.getEth1DepositContract());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
           final DepositStorage depositStorage =
               DepositStorage.create(
-                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
-                  database,
-                  serviceConfig.getConfig().isEth1DepositsFromStorageEnabled());
+                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
           protoArrayStorage = new ProtoArrayStorage(database);
 
           serviceConfig

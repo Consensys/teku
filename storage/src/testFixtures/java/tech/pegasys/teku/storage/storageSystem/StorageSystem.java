@@ -133,8 +133,8 @@ public class StorageSystem implements AutoCloseable {
     return chainUpdater;
   }
 
-  public DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled) {
-    return DepositStorage.create(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
+  public DepositStorage createDepositStorage() {
+    return DepositStorage.create(eth1EventsChannel, database);
   }
 
   public ProtoArrayStorage createProtoArrayStorage() {

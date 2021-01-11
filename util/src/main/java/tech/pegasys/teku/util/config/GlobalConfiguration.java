@@ -24,7 +24,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final Integer peerRequestLimit;
 
   // Deposit
-  private final boolean eth1DepositsFromStorageEnabled;
   private final int eth1LogsMaxBlockRange;
 
   // Output
@@ -37,11 +36,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final List<String> metricsCategories;
   private final List<String> metricsHostAllowlist;
 
-  // Database
-  private final StateStorageMode dataStorageMode;
-  private final long dataStorageFrequency;
-  private final String dataStorageCreateDbVersion;
-
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
 
@@ -53,30 +47,22 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
       final int eth1LogsMaxBlockRange,
-      final boolean eth1DepositsFromStorageEnabled,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
       final String metricsInterface,
       final List<String> metricsCategories,
       final List<String> metricsHostAllowlist,
-      final StateStorageMode dataStorageMode,
-      final long dataStorageFrequency,
-      final String dataStorageCreateDbVersion,
       final int hotStatePersistenceFrequencyInEpochs) {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
-    this.dataStorageMode = dataStorageMode;
-    this.dataStorageFrequency = dataStorageFrequency;
-    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
@@ -90,10 +76,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  public boolean isEth1DepositsFromStorageEnabled() {
-    return eth1DepositsFromStorageEnabled;
   }
 
   public String getTransitionRecordDirectory() {
@@ -123,18 +105,6 @@ public class GlobalConfiguration implements MetricsConfig {
   @Override
   public List<String> getMetricsHostAllowlist() {
     return metricsHostAllowlist;
-  }
-
-  public StateStorageMode getDataStorageMode() {
-    return dataStorageMode;
-  }
-
-  public long getDataStorageFrequency() {
-    return dataStorageFrequency;
-  }
-
-  public String getDataStorageCreateDbVersion() {
-    return dataStorageCreateDbVersion;
   }
 
   public int getHotStatePersistenceFrequencyInEpochs() {
