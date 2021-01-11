@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -96,6 +97,18 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     final P2PConfig config = getResultingTekuConfiguration().beaconChain().p2pConfig();
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
+  }
+
+  @Test
+  public void usingNetworkFromUrl() {
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/cli/options/constants.yaml");
+    System.out.println(url);
+    beaconNodeCommand.parse(new String[] {"--network", url.toString()});
+
+    final TekuConfiguration config = getResultingTekuConfiguration();
+    assertThat(config.eth2NetworkConfiguration().getConstants().toLowerCase())
+        .isEqualToIgnoringWhitespace(url.toString().toLowerCase());
   }
 
   @Test
