@@ -22,6 +22,9 @@ import java.util.Locale;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class Eth2NetworkConfiguration {
   public static final String MAINNET = "mainnet";
@@ -33,6 +36,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
+  private final SpecConfiguration specConfig;
   private final String constants;
   private final Optional<String> initialState;
   private final int startupTargetPeerCount;
@@ -42,6 +46,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   private Eth2NetworkConfiguration(
+      final SpecConfiguration specConfig,
       final String constants,
       final Optional<String> initialState,
       final int startupTargetPeerCount,
@@ -49,6 +54,7 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock) {
+    this.specConfig = specConfig;
     this.constants = constants;
     this.initialState = initialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -66,6 +72,15 @@ public class Eth2NetworkConfiguration {
     return new Builder();
   }
 
+  public SpecConfiguration getSpecConfig() {
+    return specConfig;
+  }
+
+  /**
+   * @deprecated Constants should be accessed via {@link Spec}
+   * @return The constants resource name or url
+   */
+  @Deprecated
   public String getConstants() {
     return constants;
   }
@@ -110,7 +125,13 @@ public class Eth2NetworkConfiguration {
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
+
+      final SpecConstants specConstants = ConstantsLoader.loadConstants(constants);
+      final SpecConfiguration specConfig =
+          SpecConfiguration.builder().constants(specConstants).build();
+
       return new Eth2NetworkConfiguration(
+          specConfig,
           constants,
           initialState,
           startupTargetPeerCount,

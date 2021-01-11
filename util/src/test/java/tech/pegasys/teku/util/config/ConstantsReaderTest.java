@@ -93,7 +93,7 @@ class ConstantsReaderTest {
   }
 
   static Stream<Arguments> knownNetworks() {
-    return Stream.of(Constants.NETWORK_DEFINITIONS).map(Arguments::of);
+    return Constants.NETWORK_DEFINITIONS.stream().map(Arguments::of);
   }
 
   private void resetAllFields() throws Exception {

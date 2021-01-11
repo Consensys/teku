@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -92,7 +93,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
+    beaconNodeCommand.parse(new String[] {"--network", "pyrmont", "--p2p-discovery-bootnodes"});
 
     final P2PConfig config = getResultingTekuConfiguration().beaconChain().p2pConfig();
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
@@ -100,11 +101,14 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void usingNetworkFromUrl() {
-    String url = "https://some.site/with/config.yaml";
-    beaconNodeCommand.parse(new String[] {"--network", url});
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/cli/options/constants.yaml");
+    System.out.println(url);
+    beaconNodeCommand.parse(new String[] {"--network", url.toString()});
 
     final TekuConfiguration config = getResultingTekuConfiguration();
-    assertThat(config.eth2NetworkConfiguration().getConstants()).isEqualTo(url);
+    assertThat(config.eth2NetworkConfiguration().getConstants().toLowerCase())
+        .isEqualToIgnoringWhitespace(url.toString().toLowerCase());
   }
 
   @Test

@@ -1,9 +1,12 @@
 dependencies {
+    api project(':ethereum:spec')
+
     implementation project(':bls')
     implementation project(':data')
     implementation project(':data:serializer')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
     implementation project(':networking:eth2')

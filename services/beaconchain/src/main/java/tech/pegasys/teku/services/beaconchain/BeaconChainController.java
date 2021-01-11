@@ -84,6 +84,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -147,6 +148,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private final BeaconChainConfiguration beaconConfig;
   private final GlobalConfiguration config;
+  private final SpecProvider specProvider;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final AsyncRunner beaconAsyncRunner;
@@ -198,6 +200,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
     this.config = serviceConfig.getConfig();
+    this.specProvider = SpecProvider.create(beaconConfig.eth2NetworkConfig().getSpecConfig());
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -698,6 +701,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initRestAPI()");
     DataProvider dataProvider =
         new DataProvider(
+            specProvider,
             recentChainData,
             combinedChainDataClient,
             p2pNetwork,

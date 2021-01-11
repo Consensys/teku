@@ -53,6 +53,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -146,6 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
+            StubSpecProvider.create(),
             recentChainData,
             combinedChainDataClient,
             eth2Network,

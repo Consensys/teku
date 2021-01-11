@@ -15,19 +15,15 @@ package tech.pegasys.teku.core.results;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public class SuccessfulBlockImportResult implements BlockImportResult {
 
   private final SignedBeaconBlock block;
-  private final Optional<BlockProcessingRecord> record;
   private boolean blockOnCanonicalChain = false;
 
-  public SuccessfulBlockImportResult(
-      final SignedBeaconBlock block, final Optional<BlockProcessingRecord> record) {
+  public SuccessfulBlockImportResult(final SignedBeaconBlock block) {
     this.block = block;
-    this.record = record;
   }
 
   @Override
@@ -43,11 +39,6 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
   @Override
   public boolean isSuccessful() {
     return true;
-  }
-
-  @Override
-  public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
-    return record;
   }
 
   @Override
