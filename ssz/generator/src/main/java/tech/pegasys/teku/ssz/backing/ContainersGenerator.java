@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,20 +31,32 @@ public class ContainersGenerator {
   private final String containerTypeTemplateFile = "ContainerTypeTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
 
-  public ContainersGenerator(Path modulePath) {
-    templateSrcPath = modulePath.resolve("src/test/java");
-    targetSrcPath = modulePath.resolve("src/main/java");
+  public ContainersGenerator(Path templateSourcePath, Path destinationSourcePath) {
+    templateSrcPath = templateSourcePath;
+    targetSrcPath = destinationSourcePath;
   }
 
-  public static void main(String[] args) throws IOException {
-    final String path;
-    if (args.length == 0) {
-      path = new File(".", "ssz").getCanonicalFile().getAbsolutePath();
+  public static void main(String[] args) {
+    final Path templateSourcePath;
+    final Path targetSourcePath;
+    if (args.length < 1) {
+      templateSourcePath = Paths.get(".", "ssz", "generator", "src", "main", "java");
     } else {
-      path = args[0];
+      templateSourcePath = Path.of(args[0]);
     }
-    System.out.println("Generating in module path: " + path);
-    new ContainersGenerator(Path.of(path)).generateAll();
+
+    if (args.length < 2) {
+      targetSourcePath = Paths.get(".", "ssz", "src", "main", "java");
+    } else {
+      targetSourcePath = Path.of(args[1]);
+    }
+
+    System.out.println(
+        "Generating ContainerView classes from templates in: "
+            + templateSourcePath.toAbsolutePath()
+            + ", to source dir: "
+            + targetSourcePath.toAbsolutePath());
+    new ContainersGenerator(templateSourcePath, targetSourcePath).generateAll();
     System.out.println("Done.");
   }
 
