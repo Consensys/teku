@@ -31,16 +31,19 @@ public class StoreConfig {
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
+  private final boolean updateHeadForEmptySlots;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
-      final int hotStatePersistenceFrequencyInEpochs) {
+      final int hotStatePersistenceFrequencyInEpochs,
+      final boolean updateHeadForEmptySlots) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+    this.updateHeadForEmptySlots = updateHeadForEmptySlots;
   }
 
   public static Builder builder() {
@@ -67,29 +70,34 @@ public class StoreConfig {
     return hotStatePersistenceFrequencyInEpochs;
   }
 
+  public boolean updateHeadForEmptySlots() {
+    return updateHeadForEmptySlots;
+  }
+
   @Override
   public boolean equals(final Object o) {
-    if (o == this) {
+    if (this == o) {
       return true;
     }
-    if (!(o instanceof StoreConfig)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     final StoreConfig that = (StoreConfig) o;
-    return getStateCacheSize() == that.getStateCacheSize()
-        && getBlockCacheSize() == that.getBlockCacheSize()
-        && getCheckpointStateCacheSize() == that.getCheckpointStateCacheSize()
-        && getHotStatePersistenceFrequencyInEpochs()
-            == that.getHotStatePersistenceFrequencyInEpochs();
+    return stateCacheSize == that.stateCacheSize
+        && blockCacheSize == that.blockCacheSize
+        && checkpointStateCacheSize == that.checkpointStateCacheSize
+        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
+        && updateHeadForEmptySlots == that.updateHeadForEmptySlots;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        getStateCacheSize(),
-        getBlockCacheSize(),
-        getCheckpointStateCacheSize(),
-        getHotStatePersistenceFrequencyInEpochs());
+        stateCacheSize,
+        blockCacheSize,
+        checkpointStateCacheSize,
+        hotStatePersistenceFrequencyInEpochs,
+        updateHeadForEmptySlots);
   }
 
   public static class Builder {
@@ -98,6 +106,7 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
+    private boolean updateHeadForEmptySlots = true;
 
     private Builder() {}
 
@@ -106,7 +115,8 @@ public class StoreConfig {
           stateCacheSize,
           blockCacheSize,
           checkpointStateCacheSize,
-          hotStatePersistenceFrequencyInEpochs);
+          hotStatePersistenceFrequencyInEpochs,
+          updateHeadForEmptySlots);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -130,6 +140,11 @@ public class StoreConfig {
     public Builder hotStatePersistenceFrequencyInEpochs(
         final int hotStatePersistenceFrequencyInEpochs) {
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+      return this;
+    }
+
+    public Builder updateHeadForEmptySlots(final boolean updateHeadForEmptySlots) {
+      this.updateHeadForEmptySlots = updateHeadForEmptySlots;
       return this;
     }
 
