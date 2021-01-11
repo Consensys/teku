@@ -42,8 +42,6 @@ import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final EventChannels eventChannels;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
