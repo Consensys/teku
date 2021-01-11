@@ -69,6 +69,14 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void metricsCategories_shouldNotBeCaseSensitive() {
+    final MetricsConfig config =
+        getTekuConfigurationFromArguments("--metrics-categories", "LibP2P,network,EventBUS,PROCESS")
+            .metricsConfig();
+    assertThat(config.getMetricsCategories()).isEqualTo(Set.of(LIBP2P, NETWORK, EVENTBUS, PROCESS));
+  }
+
+  @Test
   public void metricsEnabled_shouldNotRequireAValue() {
     final MetricsConfig config =
         getTekuConfigurationFromArguments("--metrics-enabled").metricsConfig();
