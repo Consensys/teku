@@ -14,7 +14,6 @@
 package tech.pegasys.teku.core.results;
 
 import java.util.Optional;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public interface BlockImportResult {
@@ -36,12 +35,12 @@ public interface BlockImportResult {
     return new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.of(cause));
   }
 
-  static BlockImportResult successful(final BlockProcessingRecord record) {
-    return new SuccessfulBlockImportResult(record.getBlock(), Optional.of(record));
+  static BlockImportResult successful(final SignedBeaconBlock block) {
+    return new SuccessfulBlockImportResult(block);
   }
 
   static BlockImportResult knownBlock(final SignedBeaconBlock block) {
-    return new SuccessfulBlockImportResult(block, Optional.empty());
+    return new SuccessfulBlockImportResult(block);
   }
 
   enum FailureReason {
@@ -54,14 +53,6 @@ public interface BlockImportResult {
   }
 
   boolean isSuccessful();
-
-  /**
-   * @return If unsuccessful, returns an empty result. If successful, the {@code
-   *     BlockProcessingRecord} will be available if such a record was produced during import. In
-   *     the case where we attempt to import a known block, no {@code BlockProcessingRecord} will be
-   *     produced.
-   */
-  Optional<BlockProcessingRecord> getBlockProcessingRecord();
 
   /** @return If successful, returns a {@code SignedBeaconBlock}, otherwise returns null. */
   SignedBeaconBlock getBlock();

@@ -22,7 +22,6 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -101,7 +100,6 @@ public class BlockImporter {
               }
               LOG.trace("Successfully imported block {}", () -> formatBlock(block));
 
-              final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
 
               // Notify operation pools to remove operations only
@@ -109,8 +107,6 @@ public class BlockImporter {
               if (result.isBlockOnCanonicalChain()) {
                 notifyBlockOperationSubscribers(block);
               }
-
-              record.ifPresent(eventBus::post);
 
               return result;
             })

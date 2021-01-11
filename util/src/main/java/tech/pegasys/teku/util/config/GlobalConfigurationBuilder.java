@@ -25,7 +25,6 @@ public class GlobalConfigurationBuilder {
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
   private int eth1LogsMaxBlockRange;
-  private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
   private String metricsInterface;
@@ -45,12 +44,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setEth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setTransitionRecordDirectory(
-      final String transitionRecordDirectory) {
-    this.transitionRecordDirectory = transitionRecordDirectory;
     return this;
   }
 
@@ -92,7 +85,6 @@ public class GlobalConfigurationBuilder {
         peerRateLimit,
         peerRequestLimit,
         eth1LogsMaxBlockRange,
-        transitionRecordDirectory,
         metricsEnabled,
         metricsPort,
         metricsInterface,
