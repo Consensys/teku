@@ -30,10 +30,7 @@ public class GlobalConfigurationBuilder {
   private String metricsInterface;
   private List<String> metricsCategories;
   private List<String> metricsHostAllowlist;
-  private StateStorageMode dataStorageMode;
-  private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
-  private long dataStorageFrequency;
 
   public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
     this.peerRateLimit = peerRateLimit;
@@ -76,22 +73,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
-    this.dataStorageMode = dataStorageMode;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
-    this.dataStorageFrequency = dataStorageFrequency;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setDataStorageCreateDbVersion(
-      final String dataStorageCreateDbVersion) {
-    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
       final int hotStatePersistenceFrequencyInEpochs) {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
@@ -109,9 +90,6 @@ public class GlobalConfigurationBuilder {
         metricsInterface,
         metricsCategories,
         metricsHostAllowlist,
-        dataStorageMode,
-        dataStorageFrequency,
-        dataStorageCreateDbVersion,
         hotStatePersistenceFrequencyInEpochs);
   }
 }

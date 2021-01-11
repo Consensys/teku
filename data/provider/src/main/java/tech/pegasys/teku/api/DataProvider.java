@@ -17,6 +17,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DataProvider {
+  private final SpecProvider specProvider;
   private final NetworkDataProvider networkDataProvider;
   private final ChainDataProvider chainDataProvider;
   private final SyncDataProvider syncDataProvider;
@@ -32,6 +34,7 @@ public class DataProvider {
   private final NodeDataProvider nodeDataProvider;
 
   public DataProvider(
+      final SpecProvider specProvider,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final Eth2Network p2pNetwork,
@@ -41,6 +44,7 @@ public class DataProvider {
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
+    this.specProvider = specProvider;
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     nodeDataProvider =
         new NodeDataProvider(
@@ -49,6 +53,10 @@ public class DataProvider {
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
         new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
+  }
+
+  public SpecProvider getSpecProvider() {
+    return specProvider;
   }
 
   public NetworkDataProvider getNetworkDataProvider() {

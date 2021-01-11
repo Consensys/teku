@@ -33,11 +33,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final List<String> metricsCategories;
   private final List<String> metricsHostAllowlist;
 
-  // Database
-  private final StateStorageMode dataStorageMode;
-  private final long dataStorageFrequency;
-  private final String dataStorageCreateDbVersion;
-
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
 
@@ -54,9 +49,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final String metricsInterface,
       final List<String> metricsCategories,
       final List<String> metricsHostAllowlist,
-      final StateStorageMode dataStorageMode,
-      final long dataStorageFrequency,
-      final String dataStorageCreateDbVersion,
       final int hotStatePersistenceFrequencyInEpochs) {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -66,9 +58,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
-    this.dataStorageMode = dataStorageMode;
-    this.dataStorageFrequency = dataStorageFrequency;
-    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
@@ -107,18 +96,6 @@ public class GlobalConfiguration implements MetricsConfig {
   @Override
   public List<String> getMetricsHostAllowlist() {
     return metricsHostAllowlist;
-  }
-
-  public StateStorageMode getDataStorageMode() {
-    return dataStorageMode;
-  }
-
-  public long getDataStorageFrequency() {
-    return dataStorageFrequency;
-  }
-
-  public String getDataStorageCreateDbVersion() {
-    return dataStorageCreateDbVersion;
   }
 
   public int getHotStatePersistenceFrequencyInEpochs() {
