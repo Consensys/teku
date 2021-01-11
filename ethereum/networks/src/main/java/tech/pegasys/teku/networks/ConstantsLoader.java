@@ -33,7 +33,7 @@ public class ConstantsLoader {
   }
 
   private static InputStream createInputStream(final String source) throws IOException {
-    // TODO - move Constants resources from util to this module
+    // TODO(#3394) - move Constants resources from util to this module
     return ResourceLoader.classpathUrlOrFile(
             Constants.class,
             name -> name + ".yaml",

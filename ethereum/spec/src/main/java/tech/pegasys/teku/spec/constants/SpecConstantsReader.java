@@ -26,9 +26,9 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -95,13 +95,13 @@ public class SpecConstantsReader {
 
   private Stream<Method> streamConstantSetters() {
     // Ignore any setters that aren't for individual constants
-    final List<String> nonConstantSetters = List.of("rawConstants");
+    final Set<String> nonConstantSetters = Set.of("rawConstants");
 
     return Arrays.stream(SpecConstantsBuilder.class.getMethods())
         .filter(m -> Modifier.isPublic(m.getModifiers()))
         .filter(m -> m.getReturnType() == SpecConstantsBuilder.class)
         .filter(m -> m.getParameterTypes().length == 1)
-        .filter(m -> nonConstantSetters.stream().noneMatch(s -> s.equals(m.getName())));
+        .filter(m -> !nonConstantSetters.contains(m.getName()));
   }
 
   private void invokeSetter(
