@@ -66,8 +66,8 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void getChannelReturnsEmptyIfNotSubscribedToSubnet() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(6);
+    final Attestation attestation2 = dataStructureUtil.randomAttestation(5);
     int subnetId = computeSubnetId(attestation);
     assertThat(computeSubnetId(attestation2)).isNotEqualTo(subnetId); // Sanity check
     subnetSubscriptions.subscribeToSubnetId(subnetId);
@@ -79,7 +79,7 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void getChannelReturnsTheChannelFromSubnet() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(4);
     int subnetId = computeSubnetId(attestation);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
     assertThatSafeFuture(subnetSubscriptions.getChannel(attestation))
@@ -88,8 +88,8 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void shouldSubscribeToCommitteesOnDifferentSubnets() {
-    final Attestation attestation1 = dataStructureUtil.randomAttestation();
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    final Attestation attestation1 = dataStructureUtil.randomAttestation(3);
+    final Attestation attestation2 = dataStructureUtil.randomAttestation(2);
     int subnetId1 = computeSubnetId(attestation1);
     int subnetId2 = computeSubnetId(attestation2);
     assertThat(subnetId1).isNotEqualTo(subnetId2); // Sanity check
@@ -119,7 +119,7 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void shouldUnsubscribeFromOnlyCommitteeOnSubnet() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation = dataStructureUtil.randomAttestation(5);
     final int subnetId = computeSubnetId(attestation);
     TopicChannel topicChannel = mock(TopicChannel.class);
     when(gossipNetwork.subscribe(contains("beacon_attestation_" + subnetId), any()))

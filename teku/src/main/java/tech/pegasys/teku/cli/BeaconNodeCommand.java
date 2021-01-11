@@ -337,6 +337,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       beaconRestApiOptions.configure(builder);
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
+      dataStorageOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException | NullPointerException e) {
@@ -349,19 +350,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
         .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
         .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
-        .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataStorageMode(dataStorageOptions.getDataStorageMode())
-        .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
-        .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
-            storeOptions.getHotStatePersistenceFrequencyInEpochs())
-        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled());
+            storeOptions.getHotStatePersistenceFrequencyInEpochs());
   }
 
   @FunctionalInterface

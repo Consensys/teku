@@ -66,7 +66,7 @@ public class DepositStorageTest {
     eventsChannel = storageSystem.eth1EventsChannel();
 
     storageSystem.chainUpdater().initializeGenesis();
-    depositStorage = storageSystem.createDepositStorage(true);
+    depositStorage = storageSystem.createDepositStorage();
   }
 
   @AfterEach
@@ -117,25 +117,6 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedDepositIndex())
         .hasValue(postGenesisDeposits.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldNotLoadFromStorageIfDisabled(
-      final String storageType,
-      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
-      throws ExecutionException, InterruptedException {
-    setup(storageSystemSupplier);
-    depositStorage = DepositStorage.create(eventsChannel, database, false);
-
-    database.addMinGenesisTimeBlock(genesis_100);
-    database.addDepositsFromBlockEvent(block_101);
-    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
-    assertThat(future).isCompleted();
-
-    assertThat(eventsChannel.getOrderedList()).isEmpty();
-    assertThat(future.get().getFirstUnprocessedBlockNumber()).isEqualTo(BigInteger.ZERO);
-    assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
   @ParameterizedTest(name = "{0}")

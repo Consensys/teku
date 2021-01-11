@@ -415,7 +415,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .eth2NetworkConfig(
             b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(Optional.of(address)))
         .powchain(b -> b.eth1Endpoint("http://localhost:8545").depositContract(address))
-        .storageConfiguration(b -> b.eth1DepositContract(Optional.of(address)))
+        .storageConfiguration(
+            b ->
+                b.eth1DepositContract(Optional.of(address))
+                    .dataStorageMode(PRUNE)
+                    .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
+                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
@@ -470,18 +475,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
         .setEth1LogsMaxBlockRange(10_000)
-        .setEth1DepositsFromStorageEnabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
-        .setDataStorageMode(PRUNE)
-        .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
-        .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
-        .setHotStatePersistenceFrequencyInEpochs(2)
-        .setIsBlockProcessingAtStartupDisabled(true);
+        .setHotStatePersistenceFrequencyInEpochs(2);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

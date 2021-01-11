@@ -34,17 +34,20 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private final RepeatingTaskScheduler taskScheduler;
   private final TimeProvider timeProvider;
   private final ValidatorTimingChannel validatorTimingChannel;
+  private final boolean useIndependentAttestationTiming;
   private UInt64 genesisTime;
 
   public TimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
-      final ValidatorTimingChannel validatorTimingChannel) {
+      final ValidatorTimingChannel validatorTimingChannel,
+      final boolean useIndependentAttestationTiming) {
     this.genesisDataProvider = genesisDataProvider;
     this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
     this.validatorTimingChannel = validatorTimingChannel;
+    this.useIndependentAttestationTiming = useIndependentAttestationTiming;
   }
 
   void start(final UInt64 genesisTime) {
@@ -53,6 +56,12 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     final UInt64 nextSlotStartTime = getSlotStartTime(currentSlot.plus(1), genesisTime);
     taskScheduler.scheduleRepeatingEvent(
         nextSlotStartTime, UInt64.valueOf(SECONDS_PER_SLOT), this::onStartSlot);
+    if (useIndependentAttestationTiming) {
+      taskScheduler.scheduleRepeatingEvent(
+          nextSlotStartTime.plus(oneThirdSlotSeconds),
+          UInt64.valueOf(SECONDS_PER_SLOT),
+          this::onAttestationCreationDue);
+    }
     taskScheduler.scheduleRepeatingEvent(
         nextSlotStartTime.plus(twoThirdSlotSeconds),
         UInt64.valueOf(SECONDS_PER_SLOT),
@@ -68,6 +77,15 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     }
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
+  }
+
+  private void onAttestationCreationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
+    final UInt64 slot = getCurrentSlot(scheduledTime, genesisTime);
+    if (isTooLate(scheduledTime, actualTime)) {
+      LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
+      return;
+    }
+    validatorTimingChannel.onAttestationCreationDue(slot);
   }
 
   private void onAggregationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
