@@ -27,7 +27,6 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -110,8 +109,7 @@ public class ForkChoiceBlockTasks {
       }
     }
 
-    final BlockProcessingRecord record = new BlockProcessingRecord(signed_block, state);
-    return BlockImportResult.successful(record);
+    return BlockImportResult.successful(signed_block);
   }
 
   private static boolean isFinalizedAncestorOfJustified(ReadOnlyStore store) {

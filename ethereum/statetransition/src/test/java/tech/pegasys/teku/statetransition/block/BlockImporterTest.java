@@ -285,7 +285,6 @@ public class BlockImporterTest {
     assertThat(result.isSuccessful()).isTrue();
     assertThat(result.getFailureReason()).isNull();
     assertThat(result.getFailureCause()).isEmpty();
-    assertThat(result.getBlockProcessingRecord()).isNotNull();
   }
 
   @Test
