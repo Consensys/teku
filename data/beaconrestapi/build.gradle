@@ -30,6 +30,7 @@ dependencies {
     testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':infrastructure:async'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
