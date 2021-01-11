@@ -19,12 +19,10 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
-import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -76,13 +74,6 @@ public class BeaconNode implements Node {
             globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
-
-    final String transitionRecordDir = globalConfig.getTransitionRecordDirectory();
-    if (transitionRecordDir != null) {
-      SSZTransitionRecorder sszTransitionRecorder =
-          new SSZTransitionRecorder(Path.of(transitionRecordDir));
-      eventBus.register(sszTransitionRecorder);
-    }
 
     this.serviceController = new BeaconNodeServiceController(tekuConfig, serviceConfig);
     STATUS_LOG.beaconDataPathSet(serviceConfig.getDataDirLayout().getBeaconDataDirectory());

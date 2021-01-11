@@ -28,7 +28,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -161,6 +160,6 @@ class BatchImporterTest {
     ignoreFuture(verify(blockImporter).importBlock(block));
     verifyNoMoreInteractions(blockImporter);
 
-    importResult1.complete(BlockImportResult.successful(new BlockProcessingRecord(block, null)));
+    importResult1.complete(BlockImportResult.successful(block));
   }
 }
