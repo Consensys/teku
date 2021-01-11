@@ -56,7 +56,7 @@ public class BeaconNode implements Node {
     LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    this.metricsEndpoint = new MetricsEndpoint(globalConfig, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();

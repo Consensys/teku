@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.util.List;
-
 /**
  * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
  *     builder.
@@ -25,11 +23,6 @@ public class GlobalConfigurationBuilder {
   private Integer peerRateLimit;
   private Integer peerRequestLimit;
   private int eth1LogsMaxBlockRange;
-  private boolean metricsEnabled;
-  private int metricsPort;
-  private String metricsInterface;
-  private List<String> metricsCategories;
-  private List<String> metricsHostAllowlist;
   private int hotStatePersistenceFrequencyInEpochs;
 
   public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
@@ -47,32 +40,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setMetricsEnabled(final boolean metricsEnabled) {
-    this.metricsEnabled = metricsEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setMetricsPort(final int metricsPort) {
-    this.metricsPort = metricsPort;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setMetricsInterface(final String metricsInterface) {
-    this.metricsInterface = metricsInterface;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setMetricsCategories(final List<String> metricsCategories) {
-    this.metricsCategories = metricsCategories;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setMetricsHostAllowlist(
-      final List<String> metricsHostAllowlist) {
-    this.metricsHostAllowlist = metricsHostAllowlist;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
       final int hotStatePersistenceFrequencyInEpochs) {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
@@ -85,11 +52,6 @@ public class GlobalConfigurationBuilder {
         peerRateLimit,
         peerRequestLimit,
         eth1LogsMaxBlockRange,
-        metricsEnabled,
-        metricsPort,
-        metricsInterface,
-        metricsCategories,
-        metricsHostAllowlist,
         hotStatePersistenceFrequencyInEpochs);
   }
 }

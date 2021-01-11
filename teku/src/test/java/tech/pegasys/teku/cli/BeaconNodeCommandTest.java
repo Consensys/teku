@@ -15,12 +15,18 @@ package tech.pegasys.teku.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.BOTH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -29,13 +35,12 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.stream.Collectors;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -360,14 +365,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         Eth2NetworkConfiguration.builder("mainnet").build();
 
     return expectedConfigurationBuilder()
-        .globalConfig(
-            b ->
-                b.setMetricsCategories(
-                        DEFAULT_METRICS_CATEGORIES.stream()
-                            .map(Object::toString)
-                            .collect(Collectors.toList()))
-                    .setPeerRateLimit(500)
-                    .setPeerRequestLimit(50))
+        .globalConfig(b -> b.setPeerRateLimit(500).setPeerRequestLimit(50))
         .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
         .powchain(
             b -> {
@@ -383,6 +381,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
+        .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(
             b ->
@@ -461,6 +460,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
                     .includeValidatorDutiesEnabled(true))
+        .metrics(
+            b ->
+                b.metricsEnabled(false)
+                    .metricsPort(8008)
+                    .metricsInterface("127.0.0.1")
+                    .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
+                    .metricsHostAllowlist(List.of("127.0.0.1", "localhost")))
         .interop(
             b ->
                 b.interopGenesisTime(1)
@@ -475,12 +481,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setPeerRateLimit(500)
         .setPeerRequestLimit(50)
         .setEth1LogsMaxBlockRange(10_000)
-        .setMetricsEnabled(false)
-        .setMetricsPort(8008)
-        .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(
-            Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
-        .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
         .setHotStatePersistenceFrequencyInEpochs(2);
   }
 
