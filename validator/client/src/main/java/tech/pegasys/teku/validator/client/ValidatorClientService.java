@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
