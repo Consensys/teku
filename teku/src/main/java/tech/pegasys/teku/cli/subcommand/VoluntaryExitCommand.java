@@ -50,7 +50,6 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -259,8 +258,8 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private TekuConfiguration tekuConfiguration() {
-    final TekuConfiguration.Builder builder = TekuConfiguration.builder();
-    builder.globalConfig(this::buildGlobalConfiguration);
+    final TekuConfiguration.Builder builder =
+        TekuConfiguration.builder().metrics(b -> b.metricsEnabled(false));
     validatorKeysOptions.configure(builder);
 
     validatorClientOptions.configure(builder);
@@ -279,9 +278,5 @@ public class VoluntaryExitCommand implements Runnable {
             .getBeaconNodeApiEndpoint()
             .orElse(URI.create("http://127.0.0.1:5051"))
             .toString());
-  }
-
-  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder.setMetricsEnabled(false);
   }
 }

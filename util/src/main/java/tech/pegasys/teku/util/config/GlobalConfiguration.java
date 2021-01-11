@@ -13,25 +13,15 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.util.List;
-import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
-
 /** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
 @Deprecated
-public class GlobalConfiguration implements MetricsConfig {
+public class GlobalConfiguration {
   // Network
   private final Integer peerRateLimit;
   private final Integer peerRequestLimit;
 
   // Deposit
   private final int eth1LogsMaxBlockRange;
-
-  // Metrics
-  private final boolean metricsEnabled;
-  private final int metricsPort;
-  private final String metricsInterface;
-  private final List<String> metricsCategories;
-  private final List<String> metricsHostAllowlist;
 
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
@@ -44,20 +34,10 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer peerRateLimit,
       final Integer peerRequestLimit,
       final int eth1LogsMaxBlockRange,
-      final boolean metricsEnabled,
-      final int metricsPort,
-      final String metricsInterface,
-      final List<String> metricsCategories,
-      final List<String> metricsHostAllowlist,
       final int hotStatePersistenceFrequencyInEpochs) {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
-    this.metricsEnabled = metricsEnabled;
-    this.metricsPort = metricsPort;
-    this.metricsInterface = metricsInterface;
-    this.metricsCategories = metricsCategories;
-    this.metricsHostAllowlist = metricsHostAllowlist;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
@@ -71,31 +51,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public int getEth1LogsMaxBlockRange() {
     return eth1LogsMaxBlockRange;
-  }
-
-  @Override
-  public boolean isMetricsEnabled() {
-    return metricsEnabled;
-  }
-
-  @Override
-  public int getMetricsPort() {
-    return metricsPort;
-  }
-
-  @Override
-  public String getMetricsInterface() {
-    return metricsInterface;
-  }
-
-  @Override
-  public List<String> getMetricsCategories() {
-    return metricsCategories;
-  }
-
-  @Override
-  public List<String> getMetricsHostAllowlist() {
-    return metricsHostAllowlist;
   }
 
   public int getHotStatePersistenceFrequencyInEpochs() {
