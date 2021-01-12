@@ -13,9 +13,10 @@
 ## 21.1.0
 
 ### Additions and Improvements
-- Added support for loading graffiti from a file to allow it to be changed without restarting.
+- Added support for loading graffiti from a file to allow it to be changed without restarting. Thanks to [EdwardPrentice](https://github.com/EdwardPrentice)
 - Supported retrieving states as SSZ on the standard REST API `/eth/v1/debug/beacon/states/:state_id` when the `Accept: application/octet-stream` header is specified in the request.
 - Improved performance when verifying aggregate signatures.
+- Added verification of block signatures when downloading historic blocks after a snapshot sync.
 
 ### Bug Fixes
 - Fixed issue which could lead to the incorrect proposer index being calculated after a long period without network connectivity.
