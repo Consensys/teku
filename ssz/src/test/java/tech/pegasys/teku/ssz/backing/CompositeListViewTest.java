@@ -30,8 +30,8 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class CompositeListViewTest {
 
-  static ViewType testType =
-      new ViewType() {
+  static ViewType<?> testType =
+      new ViewType<>() {
 
         @Override
         public TreeNode getDefaultTree() {
@@ -93,7 +93,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewType getType() {
+    public ViewType<?> getType() {
       return testType;
     }
 

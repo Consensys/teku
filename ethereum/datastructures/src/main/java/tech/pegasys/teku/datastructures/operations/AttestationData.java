@@ -23,31 +23,42 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttestationData extends AbstractImmutableContainer
+public class AttestationData
+    extends Container5<AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint>
     implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  @SszTypeDescriptor
-  public static final ContainerViewType<AttestationData> TYPE =
-      new ContainerViewType<>(
-          List.of(
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.BYTES32_TYPE,
-              Checkpoint.TYPE,
-              Checkpoint.TYPE),
-          AttestationData::new);
+  static class AttestationDataType
+      extends ContainerType5<
+          AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
+
+    public AttestationDataType() {
+      super(
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          Checkpoint.TYPE,
+          Checkpoint.TYPE);
+    }
+
+    @Override
+    public AttestationData createFromBackingNode(TreeNode node) {
+      return new AttestationData(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final AttestationDataType TYPE = new AttestationDataType();
 
   @SuppressWarnings("unused")
   private final UInt64 slot = null;
@@ -66,7 +77,7 @@ public class AttestationData extends AbstractImmutableContainer
   @SuppressWarnings("unused")
   private final Checkpoint target = null;
 
-  private AttestationData(ContainerViewType<AttestationData> type, TreeNode backingNode) {
+  private AttestationData(AttestationDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -120,25 +131,24 @@ public class AttestationData extends AbstractImmutableContainer
     return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot());
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getSlot() {
-    return ((UInt64View) get(0)).get();
+    return getField0().get();
   }
 
   public UInt64 getIndex() {
-    return ((UInt64View) get(1)).get();
+    return getField1().get();
   }
 
   public Bytes32 getBeacon_block_root() {
-    return ((Bytes32View) get(2)).get();
+    return getField2().get();
   }
 
   public Checkpoint getSource() {
-    return ((Checkpoint) get(3));
+    return getField3();
   }
 
   public Checkpoint getTarget() {
-    return ((Checkpoint) get(4));
+    return getField4();
   }
 
   @Override

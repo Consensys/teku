@@ -26,12 +26,12 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 public class VectorViewReadImpl<ElementReadType extends ViewRead>
     extends AbstractCompositeViewRead<ElementReadType> implements VectorViewRead<ElementReadType> {
 
-  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode) {
+  public VectorViewReadImpl(CompositeViewType<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public VectorViewReadImpl(
-      CompositeViewType type, TreeNode backingNode, IntCache<ElementReadType> cache) {
+      CompositeViewType<?> type, TreeNode backingNode, IntCache<ElementReadType> cache) {
     super(type, backingNode, cache);
   }
 
@@ -39,7 +39,7 @@ public class VectorViewReadImpl<ElementReadType extends ViewRead>
   @Override
   protected ElementReadType getImpl(int index) {
     VectorViewType<ElementReadType> type = getType();
-    ViewType elementType = type.getElementType();
+    ViewType<?> elementType = type.getElementType();
     TreeNode node =
         getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
     return (ElementReadType)

@@ -48,7 +48,7 @@ public class Fork extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<Fork> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(
               BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE),
           Fork::new);

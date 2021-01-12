@@ -36,7 +36,7 @@ public class TestContainers {
 
     @SszTypeDescriptor
     public static final ContainerViewType<TestSubContainer> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
             TestSubContainer::new);
 
@@ -61,7 +61,7 @@ public class TestContainers {
 
     @SszTypeDescriptor
     public static final ContainerViewType<TestContainer> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(TestSubContainer.TYPE, BasicViewTypes.UINT64_TYPE), TestContainer::new);
 
     private TestContainer(ContainerViewType<TestContainer> type, TreeNode backingNode) {
@@ -85,7 +85,7 @@ public class TestContainers {
 
     @SszTypeDescriptor
     public static final ContainerViewType<TestSmallContainer> TYPE =
-        new ContainerViewType<>(List.of(BasicViewTypes.BIT_TYPE), TestSmallContainer::new);
+        ContainerViewType.create(List.of(BasicViewTypes.BIT_TYPE), TestSmallContainer::new);
 
     private TestSmallContainer(ContainerViewType<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -100,7 +100,7 @@ public class TestContainers {
 
     @SszTypeDescriptor
     public static final ContainerViewType<TestByteVectorContainer> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(
                 BasicViewTypes.UINT64_TYPE,
                 new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 64),
@@ -130,7 +130,7 @@ public class TestContainers {
 
     @SszTypeDescriptor
     public static final ContainerViewType<TestDoubleSuperContainer> TYPE =
-        new ContainerViewType<>(
+        ContainerViewType.create(
             List.of(
                 BasicViewTypes.UINT64_TYPE,
                 TestByteVectorContainer.TYPE,

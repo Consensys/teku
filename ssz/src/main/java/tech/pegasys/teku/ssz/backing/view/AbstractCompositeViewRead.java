@@ -38,11 +38,11 @@ public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
 
   private IntCache<ChildType> childrenViewCache;
   private final int sizeCache;
-  private final CompositeViewType type;
+  private final CompositeViewType<?> type;
   private final TreeNode backingNode;
 
   /** Creates an instance from a type and a backing node */
-  protected AbstractCompositeViewRead(CompositeViewType type, TreeNode backingNode) {
+  protected AbstractCompositeViewRead(CompositeViewType<?> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
     this.sizeCache = sizeImpl();
@@ -56,7 +56,7 @@ public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
    * backing nodes. The cache should correspond to the supplied backing tree.
    */
   protected AbstractCompositeViewRead(
-      CompositeViewType type, TreeNode backingNode, IntCache<ChildType> cache) {
+      CompositeViewType<?> type, TreeNode backingNode, IntCache<ChildType> cache) {
     this.type = type;
     this.backingNode = backingNode;
     this.sizeCache = sizeImpl();
@@ -91,7 +91,7 @@ public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
   protected abstract ChildType getImpl(int index);
 
   @Override
-  public CompositeViewType getType() {
+  public CompositeViewType<?> getType() {
     return type;
   }
 

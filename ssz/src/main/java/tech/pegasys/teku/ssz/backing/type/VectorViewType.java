@@ -30,19 +30,20 @@ import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class VectorViewType<C> extends CollectionViewType {
+public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
 
   private final boolean isListBacking;
 
-  public VectorViewType(ViewType elementType, long vectorLength) {
+  public VectorViewType(ViewType<?> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking) {
+  VectorViewType(ViewType<?> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
-  VectorViewType(ViewType elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
+  VectorViewType(
+      ViewType<?> elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
     super(vectorLength, elementType, hints);
     this.isListBacking = isListBacking;
   }
