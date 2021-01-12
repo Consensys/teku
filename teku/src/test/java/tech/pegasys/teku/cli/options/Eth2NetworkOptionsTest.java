@@ -25,7 +25,6 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -113,15 +112,15 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void setPeerRateLimit() {
-    final GlobalConfiguration config =
-        getGlobalConfigurationFromArguments("--Xpeer-rate-limit", "10");
+    final P2PConfig config =
+        getTekuConfigurationFromArguments("--Xpeer-rate-limit", "10").beaconChain().p2pConfig();
     assertThat(config.getPeerRateLimit()).isEqualTo(10);
   }
 
   @Test
   public void setPeerRequestLimit() {
-    final GlobalConfiguration config =
-        getGlobalConfigurationFromArguments("--Xpeer-request-limit", "10");
+    final P2PConfig config =
+        getTekuConfigurationFromArguments("--Xpeer-request-limit", "10").beaconChain().p2pConfig();
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
   }
 

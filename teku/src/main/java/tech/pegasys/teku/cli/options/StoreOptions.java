@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class StoreOptions {
   @Option(
@@ -25,7 +26,8 @@ public class StoreOptions {
       arity = "1")
   private int hotStatePersistenceFrequencyInEpochs = 2;
 
-  public int getHotStatePersistenceFrequencyInEpochs() {
-    return hotStatePersistenceFrequencyInEpochs;
+  public void configure(final TekuConfiguration.Builder builder) {
+    builder.store(
+        b -> b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs));
   }
 }
