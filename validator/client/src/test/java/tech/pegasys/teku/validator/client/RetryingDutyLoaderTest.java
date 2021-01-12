@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -31,65 +32,67 @@ class RetryingDutyLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final DutyLoader delegate = mock(DutyLoader.class);
   private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
 
   private final RetryingDutyLoader dutyLoader = new RetryingDutyLoader(asyncRunner, delegate);
 
   @Test
   public void shouldReturnDutiesWhenLoadedSuccessfully() {
-    when(delegate.loadDutiesForEpoch(ONE)).thenReturn(SafeFuture.completedFuture(scheduledDuties));
+    when(delegate.loadDutiesForEpoch(ONE))
+        .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    assertThat(dutyLoader.loadDutiesForEpoch(ONE)).isCompletedWithValue(scheduledDuties);
+    assertThat(dutyLoader.loadDutiesForEpoch(ONE)).isCompletedWithValue(scheduledDutiesOptional);
   }
 
   @Test
   public void shouldRetryWhenRequestForDutiesFailsBecauseNodeIsSyncing() {
     when(delegate.loadDutiesForEpoch(ONE))
         .thenReturn(NodeSyncingException.failedFuture())
-        .thenReturn(SafeFuture.completedFuture(scheduledDuties));
+        .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     asyncRunner.executeQueuedActions();
-    assertThat(result).isCompletedWithValue(scheduledDuties);
+    assertThat(result).isCompletedWithValue(scheduledDutiesOptional);
   }
 
   @Test
   public void shouldRetryWhenRequestForDutiesFailsBecauseNodeDataIsUnavailable() {
     when(delegate.loadDutiesForEpoch(ONE))
         .thenReturn(SafeFuture.failedFuture(new NodeDataUnavailableException("Sorry")))
-        .thenReturn(SafeFuture.completedFuture(scheduledDuties));
+        .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     asyncRunner.executeQueuedActions();
-    assertThat(result).isCompletedWithValue(scheduledDuties);
+    assertThat(result).isCompletedWithValue(scheduledDutiesOptional);
   }
 
   @Test
   public void shouldRetryWhenUnexpectedErrorOccurs() {
     when(delegate.loadDutiesForEpoch(ONE))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("No way")))
-        .thenReturn(SafeFuture.completedFuture(scheduledDuties));
+        .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     asyncRunner.executeQueuedActions();
-    assertThat(result).isCompletedWithValue(scheduledDuties);
+    assertThat(result).isCompletedWithValue(scheduledDutiesOptional);
   }
 
   @Test
   public void shouldStopRetryingWhenFutureIsCancelled() {
     final RuntimeException error = new RuntimeException("No way");
-    final SafeFuture<ScheduledDuties> delegateResponse = new SafeFuture<>();
+    final SafeFuture<Optional<ScheduledDuties>> delegateResponse = new SafeFuture<>();
     when(delegate.loadDutiesForEpoch(ONE)).thenReturn(delegateResponse);
 
-    final SafeFuture<ScheduledDuties> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     verify(delegate).loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
 

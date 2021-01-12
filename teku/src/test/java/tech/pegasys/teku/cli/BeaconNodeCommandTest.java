@@ -15,12 +15,18 @@ package tech.pegasys.teku.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
+import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.BOTH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -29,25 +35,24 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.stream.Collectors;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
@@ -126,12 +131,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
-            .build();
+        expectedConfigurationBuilder().p2p(b -> b.p2pInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -355,37 +355,37 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder("mainnet").build();
+
     return expectedConfigurationBuilder()
-        .globalConfig(
-            b ->
-                b.setNetwork(networkDefinition)
-                    .setEth1DepositContractAddress(null)
-                    .setEth1Endpoint(null)
-                    .setMetricsCategories(
-                        DEFAULT_METRICS_CATEGORIES.stream()
-                            .map(Object::toString)
-                            .collect(Collectors.toList()))
-                    .setPeerRateLimit(500)
-                    .setPeerRequestLimit(50))
+        .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
+        .powchain(
+            b -> {
+              networkConfig.getEth1DepositContractAddress().ifPresent(b::depositContract);
+              b.eth1Endpoint(Optional.empty())
+                  .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
+            })
+        .storageConfiguration(
+            b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
                     .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
-        .restApi(
-            b ->
-                b.eth1DepositContractAddress(
-                    networkDefinition.getEth1DepositContractAddress().orElse(null)))
+        .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
+        .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
                     .p2pDiscoveryEnabled(true)
-                    .p2pDiscoveryBootnodes(networkDefinition.getDiscoveryBootnodes())
+                    .p2pDiscoveryBootnodes(networkConfig.getDiscoveryBootnodes())
                     .p2pInterface("0.0.0.0")
                     .p2pPort(9000)
-                    .p2pPrivateKeyFile(null))
+                    .p2pPrivateKeyFile(null)
+                    .peerRateLimit(500)
+                    .peerRequestLimit(50))
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
@@ -405,7 +405,20 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
-        .globalConfig(this::buildExpectedGlobalConfiguration)
+        .eth2NetworkConfig(
+            b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(Optional.of(address)))
+        .powchain(
+            b ->
+                b.eth1Endpoint("http://localhost:8545")
+                    .depositContract(address)
+                    .eth1LogsMaxBlockRange(10_000))
+        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
+        .storageConfiguration(
+            b ->
+                b.eth1DepositContract(Optional.of(address))
+                    .dataStorageMode(PRUNE)
+                    .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
+                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
@@ -420,7 +433,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pPeerUpperBound(74)
                     .targetSubnetSubscriberCount(2)
                     .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
-                    .p2pStaticPeers(Collections.emptyList()))
+                    .p2pStaticPeers(Collections.emptyList())
+                    .peerRateLimit(500)
+                    .peerRequestLimit(50))
         .restApi(
             b ->
                 b.restApiPort(5051)
@@ -428,13 +443,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiEnabled(false)
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-                    .restApiCorsAllowedOrigins(new ArrayList<>()))
+                    .restApiCorsAllowedOrigins(new ArrayList<>())
+                    .eth1DepositContractAddress(Optional.of(address)))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
                     .validatorExternalSignerConcurrentRequestLimit(32)
                     .validatorKeystoreLockingEnabled(true)
-                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL))
+                    .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
+                    .graffitiProvider(new FileBackedGraffitiProvider()))
         .logging(
             b ->
                 b.colorEnabled(true)
@@ -444,6 +461,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
                     .includeValidatorDutiesEnabled(true))
+        .metrics(
+            b ->
+                b.metricsEnabled(false)
+                    .metricsPort(8008)
+                    .metricsInterface("127.0.0.1")
+                    .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
+                    .metricsHostAllowlist(List.of("127.0.0.1", "localhost")))
         .interop(
             b ->
                 b.interopGenesisTime(1)
@@ -451,28 +475,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .interopOwnedValidatorCount(64)
                     .interopNumberOfValidators(64)
                     .interopEnabled(true));
-  }
-
-  private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setNetwork(NetworkDefinition.fromCliArg("minimal"))
-        .setPeerRateLimit(500)
-        .setPeerRequestLimit(50)
-        .setEth1DepositContractAddress(address)
-        .setEth1Endpoint("http://localhost:8545")
-        .setEth1LogsMaxBlockRange(10_000)
-        .setEth1DepositsFromStorageEnabled(true)
-        .setMetricsEnabled(false)
-        .setMetricsPort(8008)
-        .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(
-            Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
-        .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
-        .setDataStorageMode(PRUNE)
-        .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
-        .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
-        .setHotStatePersistenceFrequencyInEpochs(2)
-        .setIsBlockProcessingAtStartupDisabled(true);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

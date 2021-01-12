@@ -37,23 +37,16 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private final Eth1EventsChannel eth1EventsChannel;
   private volatile Optional<BigInteger> lastReplayedBlock = Optional.empty();
   private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
-  private final boolean eth1DepositsFromStorageEnabled;
 
-  private DepositStorage(
-      final Eth1EventsChannel eth1EventsChannel,
-      final Database database,
-      final boolean eth1DepositsFromStorageEnabled) {
+  private DepositStorage(final Eth1EventsChannel eth1EventsChannel, final Database database) {
     this.eth1EventsChannel = eth1EventsChannel;
     this.database = database;
     this.replayResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
   }
 
   public static DepositStorage create(
-      final Eth1EventsChannel eth1EventsChannel,
-      final Database database,
-      final boolean eth1DepositsFromStorageEnabled) {
-    return new DepositStorage(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
+      final Eth1EventsChannel eth1EventsChannel, final Database database) {
+    return new DepositStorage(eth1EventsChannel, database);
   }
 
   @Override
@@ -62,11 +55,6 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   }
 
   private ReplayDepositsResult replayDeposits() {
-    if (!eth1DepositsFromStorageEnabled) {
-      lastReplayedBlock = Optional.of(NEGATIVE_ONE);
-      return ReplayDepositsResult.empty();
-    }
-
     final DepositSequencer depositSequencer =
         new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {

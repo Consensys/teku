@@ -27,18 +27,19 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
@@ -58,17 +59,17 @@ class BeaconRestApiTest {
 
   @BeforeEach
   public void setup() {
-    GlobalConfiguration config = GlobalConfiguration.builder().build();
     BeaconRestApiConfig beaconRestApiConfig =
         BeaconRestApiConfig.builder()
             .restApiDocsEnabled(false)
             .restApiPort(THE_PORT)
-            .eth1DepositContractAddress(config.getEth1DepositContractAddress())
+            .eth1DepositContractAddress(Eth1Address.ZERO)
             .build();
 
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
+            StubSpecProvider.create(),
             storageClient,
             combinedChainDataClient,
             null,

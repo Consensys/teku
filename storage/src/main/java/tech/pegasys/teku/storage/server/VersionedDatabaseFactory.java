@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
 import tech.pegasys.teku.storage.server.network.DatabaseNetwork;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactory implements DatabaseFactory {
@@ -54,19 +54,19 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
-  private final Eth1Address eth1Address;
+  private final Optional<Eth1Address> eth1Address;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final Eth1Address depositContractAddress) {
+      final Optional<Eth1Address> depositContractAddress) {
     this(
         metricsSystem,
         dataPath,
         Optional.empty(),
         dataStorageMode,
-        DatabaseVersion.DEFAULT_VERSION.getValue(),
+        DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
         depositContractAddress);
   }
@@ -75,9 +75,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final String createDatabaseVersion,
+      final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Eth1Address eth1Address) {
+      final Optional<Eth1Address> eth1Address) {
     this(
         metricsSystem,
         dataPath,
@@ -93,9 +93,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Path dataPath,
       final Optional<Path> maybeArchiveDataPath,
       final StateStorageMode dataStorageMode,
-      final String createDatabaseVersion,
+      final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Eth1Address eth1Address) {
+      final Optional<Eth1Address> eth1Address) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -106,8 +106,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
 
-    this.createDatabaseVersion =
-        DatabaseVersion.fromString(createDatabaseVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
+    this.createDatabaseVersion = createDatabaseVersion;
   }
 
   @Override

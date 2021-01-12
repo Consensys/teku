@@ -16,7 +16,6 @@ package tech.pegasys.teku.core.results;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public class FailedBlockImportResult implements BlockImportResult {
@@ -33,11 +32,6 @@ public class FailedBlockImportResult implements BlockImportResult {
   @Override
   public boolean isSuccessful() {
     return false;
-  }
-
-  @Override
-  public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
-    return Optional.empty();
   }
 
   @Override

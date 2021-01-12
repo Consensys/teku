@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositSenderService
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeyGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
-import tech.pegasys.teku.util.config.Eth1Address;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();

@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -353,7 +354,8 @@ class AttestationProductionDutyTest {
 
   public Validator createValidator() {
     final Signer signer = mock(Signer.class);
-    return new Validator(dataStructureUtil.randomPublicKey(), signer, Optional.empty());
+    return new Validator(
+        dataStructureUtil.randomPublicKey(), signer, new FileBackedGraffitiProvider());
   }
 
   public Attestation expectSignAttestation(

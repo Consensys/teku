@@ -1,4 +1,2 @@
 # eth1
-Xeth1-deposits-from-storage-enabled: False
-eth1-deposit-contract-address: "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
 eth1-endpoint: "http://example.com:1234/path/"

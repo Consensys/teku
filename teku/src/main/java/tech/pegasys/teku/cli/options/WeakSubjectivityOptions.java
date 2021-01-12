@@ -20,7 +20,6 @@ import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.NetworkDefinition;
 
 public class WeakSubjectivityOptions {
 
@@ -49,15 +48,12 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private UInt64 suppressWSPeriodChecksUntilEpoch = null;
 
-  public TekuConfiguration.Builder configure(
-      TekuConfiguration.Builder builder, final NetworkDefinition networkDefinition) {
+  public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
-          final Optional<String> initialStateResource =
-              Optional.ofNullable(weakSubjectivityState)
-                  .or(networkDefinition::getInitialState)
-                  .filter(StringUtils::isNotBlank);
-          initialStateResource.ifPresent(wsBuilder::weakSubjectivityStateResource);
+          Optional.ofNullable(weakSubjectivityState)
+              .filter(StringUtils::isNotBlank)
+              .ifPresent(wsBuilder::weakSubjectivityStateResource);
 
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);

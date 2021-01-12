@@ -84,6 +84,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -119,7 +120,6 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -146,7 +146,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
   private final BeaconChainConfiguration beaconConfig;
-  private final GlobalConfiguration config;
+  private final SpecProvider specProvider;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final AsyncRunner beaconAsyncRunner;
@@ -197,7 +197,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
-    this.config = serviceConfig.getConfig();
+    this.specProvider = SpecProvider.create(beaconConfig.eth2NetworkConfig().getSpecConfig());
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -264,11 +264,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    final StoreConfig storeConfig =
-        StoreConfig.builder()
-            .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
-            .disableBlockProcessingAtStartup(config.isBlockProcessingAtStartupDisabled())
-            .build();
+    final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
 
@@ -518,7 +514,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
       return;
-    } else if (!config.isEth1Enabled()) {
+    } else if (!beaconConfig.powchainConfig().isEnabled()) {
       // We're pre-genesis but no eth1 endpoint is set
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
@@ -637,8 +633,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
               .keyValueStore(keyValueStore)
-              .peerRateLimit(config.getPeerRateLimit())
-              .peerRequestLimit(config.getPeerRequestLimit())
+              .peerRateLimit(configOptions.getPeerRateLimit())
+              .peerRequestLimit(configOptions.getPeerRequestLimit())
               .build();
     }
   }
@@ -697,6 +693,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initRestAPI()");
     DataProvider dataProvider =
         new DataProvider(
+            specProvider,
             recentChainData,
             combinedChainDataClient,
             p2pNetwork,
@@ -754,8 +751,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             blockImporter,
             pendingBlocks,
-            config.getStartupTargetPeerCount(),
-            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
+            beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
+            Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()));
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }
@@ -785,7 +782,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       }
     } else if (beaconConfig.interopConfig().isInteropEnabled()) {
       setupInteropState();
-    } else if (!config.isEth1Enabled()) {
+    } else if (!beaconConfig.powchainConfig().isEnabled()) {
       throw new InvalidConfigurationException(
           "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
     }
