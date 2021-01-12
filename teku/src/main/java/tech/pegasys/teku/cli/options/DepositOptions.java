@@ -39,6 +39,9 @@ public class DepositOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder.powchain(b -> b.eth1Endpoint(Optional.ofNullable(eth1Endpoint)));
+    builder.powchain(
+        b ->
+            b.eth1Endpoint(Optional.ofNullable(eth1Endpoint))
+                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
   }
 }

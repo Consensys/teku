@@ -68,9 +68,10 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-file-name-pattern"},
       paramLabel = "<REGEX>",
+      // Note: PicoCLI uses String.format to format the description so %% is needed for a single %
       description =
           "Pattern for the filename to apply to rolled over log files. If not set "
-              + "will default to <data-path>/logs/teku_%d{yyyy-MM-dd}.log",
+              + "will default to <data-path>/logs/teku_%%d{yyyy-MM-dd}.log",
       arity = "1")
   private String logFileNamePattern;
 

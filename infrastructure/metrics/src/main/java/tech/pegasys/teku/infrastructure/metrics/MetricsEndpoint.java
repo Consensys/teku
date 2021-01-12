@@ -13,35 +13,18 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import static java.util.stream.Collectors.toSet;
-
-import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.metrics.prometheus.MetricsConfiguration;
 import org.hyperledger.besu.metrics.prometheus.MetricsService;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class MetricsEndpoint {
 
   private final Optional<MetricsService> metricsService;
   private final MetricsSystem metricsSystem;
-  private static final Map<String, MetricCategory> SUPPORTED_CATEGORIES;
-
-  static {
-    final ImmutableMap.Builder<String, MetricCategory> builder = ImmutableMap.builder();
-    addCategories(builder, StandardMetricCategory.class);
-    addCategories(builder, TekuMetricCategory.class);
-    SUPPORTED_CATEGORIES = builder.build();
-  }
 
   public MetricsEndpoint(final MetricsConfig config, final Vertx vertx) {
     final MetricsConfiguration metricsConfig = createMetricsConfiguration(config);
@@ -72,20 +55,8 @@ public class MetricsEndpoint {
         .enabled(config.isMetricsEnabled())
         .port(config.getMetricsPort())
         .host(config.getMetricsInterface())
-        .metricCategories(getEnabledMetricCategories(config))
-        .hostsWhitelist(config.getMetricsHostAllowlist())
+        .metricCategories(config.getMetricsCategories())
+        .hostsAllowlist(config.getMetricsHostAllowlist())
         .build();
-  }
-
-  private Set<MetricCategory> getEnabledMetricCategories(final MetricsConfig config) {
-    return config.getMetricsCategories().stream()
-        .map(SUPPORTED_CATEGORIES::get)
-        .filter(Objects::nonNull)
-        .collect(toSet());
-  }
-
-  private static <T extends Enum<T> & MetricCategory> void addCategories(
-      ImmutableMap.Builder<String, MetricCategory> builder, Class<T> categoryEnum) {
-    EnumSet.allOf(categoryEnum).forEach(category -> builder.put(category.name(), category));
   }
 }

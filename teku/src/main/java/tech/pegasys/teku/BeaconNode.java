@@ -36,7 +36,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconNode implements Node {
 
@@ -51,12 +50,10 @@ public class BeaconNode implements Node {
   private final MetricsEndpoint metricsEndpoint;
 
   public BeaconNode(final TekuConfiguration tekuConfig) {
-    final GlobalConfiguration globalConfig = tekuConfig.global();
-
     LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    this.metricsEndpoint = new MetricsEndpoint(globalConfig, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
@@ -71,7 +68,6 @@ public class BeaconNode implements Node {
             eventBus,
             eventChannels,
             metricsSystem,
-            globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
 

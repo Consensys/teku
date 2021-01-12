@@ -30,7 +30,6 @@ import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 @Command(
@@ -97,22 +96,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
-    builder.globalConfig(this::buildGlobalConfiguration);
     eth2NetworkOptions.configure(builder);
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
     interopOptions.configure(builder);
+    metricsOptions.configure(builder);
     return builder.build();
-  }
-
-  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setMetricsEnabled(metricsOptions.isMetricsEnabled())
-        .setMetricsPort(metricsOptions.getMetricsPort())
-        .setMetricsInterface(metricsOptions.getMetricsInterface())
-        .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
   }
 }

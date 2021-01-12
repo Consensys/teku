@@ -96,17 +96,20 @@ public class ValidatorOptions {
       }
     }
 
-    builder.validator(
-        config ->
-            config
-                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .validatorExternalSignerSlashingProtectionEnabled(
-                    validatorExternalSignerSlashingProtectionEnabled)
-                .graffitiProvider(
-                    new FileBackedGraffitiProvider(
-                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .useDependentRoots(useDependentRoots));
+    builder
+        .validator(
+            config ->
+                config
+                    .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                    .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                    .validatorExternalSignerSlashingProtectionEnabled(
+                        validatorExternalSignerSlashingProtectionEnabled)
+                    .graffitiProvider(
+                        new FileBackedGraffitiProvider(
+                            Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                    .useDependentRoots(useDependentRoots))
+        // We don't need to update head for empty slots when using dependent roots
+        .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);
   }
 }

@@ -63,7 +63,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 @SuppressWarnings("unused")
@@ -322,7 +321,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-      builder.globalConfig(this::buildGlobalConfiguration);
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
       depositOptions.configure(builder);
@@ -334,25 +332,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
+      metricsOptions.configure(builder);
+      storeOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
-  }
-
-  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setPeerRateLimit(eth2NetworkOptions.getPeerRateLimit())
-        .setPeerRequestLimit(eth2NetworkOptions.getPeerRequestLimit())
-        .setEth1LogsMaxBlockRange(depositOptions.getEth1LogsMaxBlockRange())
-        .setMetricsEnabled(metricsOptions.isMetricsEnabled())
-        .setMetricsPort(metricsOptions.getMetricsPort())
-        .setMetricsInterface(metricsOptions.getMetricsInterface())
-        .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setHotStatePersistenceFrequencyInEpochs(
-            storeOptions.getHotStatePersistenceFrequencyInEpochs());
   }
 
   @FunctionalInterface
