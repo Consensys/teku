@@ -38,7 +38,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
     private static <C extends ViewRead>
         ContainerViewType<ListContainerRead<C>> vectorTypeToContainerType(
             VectorViewType<C> vectorType) {
-      return new ContainerViewType<>(
+      return ContainerViewType.create(
           Arrays.asList(vectorType, BasicViewTypes.UINT64_TYPE), ListContainerRead::new);
     }
 

@@ -38,7 +38,7 @@ public class Eth1Data extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<Eth1Data> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(
               BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
           Eth1Data::new);

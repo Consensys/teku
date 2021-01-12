@@ -34,13 +34,13 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
   }
 
   public ContainerViewReadImpl(
-      CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
+      CompositeViewType<?> type, TreeNode backingNode, IntCache<ViewRead> cache) {
     super(type, backingNode, cache);
   }
 
   @Override
   protected ViewRead getImpl(int index) {
-    CompositeViewType type = getType();
+    CompositeViewType<?> type = getType();
     TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
     return type.getChildType(index).createFromBackingNode(node);
   }

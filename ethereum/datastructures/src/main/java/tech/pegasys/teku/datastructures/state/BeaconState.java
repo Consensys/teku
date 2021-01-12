@@ -118,7 +118,7 @@ public interface BeaconState
 
   @SszTypeDescriptor
   static ContainerViewType<BeaconState> getSSZType() {
-    return new ContainerViewType<>(
+    return ContainerViewType.create(
         SSZContainer.listFields(BeaconState.class).stream()
             .map(f -> f.getViewType().get())
             .collect(Collectors.toList()),

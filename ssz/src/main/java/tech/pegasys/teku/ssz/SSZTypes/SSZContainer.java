@@ -25,13 +25,13 @@ public interface SSZContainer {
 
   class Field {
     private final int index;
-    private final Supplier<ViewType> viewType;
+    private final Supplier<ViewType<?>> viewType;
 
-    public Field(int index, ViewType viewType) {
+    public Field(int index, ViewType<?> viewType) {
       this(index, () -> viewType);
     }
 
-    public Field(int index, Supplier<ViewType> viewType) {
+    public Field(int index, Supplier<ViewType<?>> viewType) {
       this.index = index;
       this.viewType = viewType;
     }
@@ -40,7 +40,7 @@ public interface SSZContainer {
       return index;
     }
 
-    public Supplier<ViewType> getViewType() {
+    public Supplier<ViewType<?>> getViewType() {
       return viewType;
     }
   }

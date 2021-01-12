@@ -42,15 +42,13 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
 
-  @SuppressWarnings("unchecked")
   <TElement extends ViewRead> List<ListViewRead<TElement>> createListVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0) {
     List<ListViewRead<TElement>> ret = new ArrayList<>();
     ret.add(list0);
     if (!(list0 instanceof ViewWrite)) {
       ret.add(type.createFromBackingNode(list0.getBackingNode()));
-      ret.add(
-          (ListViewRead<TElement>) type.sszDeserialize(SszReader.fromBytes(list0.sszSerialize())));
+      ret.add(type.sszDeserialize(SszReader.fromBytes(list0.sszSerialize())));
     }
     return ret;
   }
@@ -127,7 +125,7 @@ public class ListViewHintsTest {
 
   static Stream<Arguments> listTypesTestParameters() {
     Random random = new Random(1);
-    ViewType listElementType1 = TestContainer.TYPE;
+    ViewType<?> listElementType1 = TestContainer.TYPE;
     Supplier<TestContainer> elementSupplier1 =
         () -> {
           Bytes32 bytes32 = Bytes32.random();
@@ -136,15 +134,15 @@ public class ListViewHintsTest {
           return new TestContainer(subContainer, UInt64.fromLongBits(random.nextLong()));
         };
 
-    ViewType listElementType2 = TestSmallContainer.TYPE;
+    ViewType<?> listElementType2 = TestSmallContainer.TYPE;
     Supplier<TestSmallContainer> elementSupplier2 =
         () -> new TestSmallContainer(random.nextBoolean());
 
-    ViewType listElementType3 = TestByteVectorContainer.TYPE;
+    ViewType<?> listElementType3 = TestByteVectorContainer.TYPE;
     Supplier<TestByteVectorContainer> elementSupplier3 =
         () -> TestByteVectorContainer.random(random);
 
-    ViewType listElementType4 = TestDoubleSuperContainer.TYPE;
+    ViewType<?> listElementType4 = TestDoubleSuperContainer.TYPE;
     Supplier<TestDoubleSuperContainer> elementSupplier4 =
         () ->
             new TestDoubleSuperContainer(
@@ -198,7 +196,7 @@ public class ListViewHintsTest {
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
   <TElement extends ViewRead> void testIdenticalTypes(
-      ViewType listElementType, long maxListSize, Supplier<TElement> listElementsFactory) {
+      ViewType<?> listElementType, long maxListSize, Supplier<TElement> listElementsFactory) {
 
     List<ListViewType<TElement>> types =
         generateTypesWithHints(new ListViewType<>(listElementType, maxListSize));

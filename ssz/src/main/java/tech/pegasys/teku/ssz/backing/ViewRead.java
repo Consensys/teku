@@ -32,7 +32,7 @@ public interface ViewRead {
   ViewWrite createWritableCopy();
 
   /** Gets the type of this structure */
-  ViewType getType();
+  ViewType<? extends ViewRead> getType();
 
   /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();
