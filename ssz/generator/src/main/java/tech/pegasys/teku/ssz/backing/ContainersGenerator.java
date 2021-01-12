@@ -36,6 +36,9 @@ public class ContainersGenerator {
     targetSrcPath = destinationSourcePath;
   }
 
+  /**
+   * Available generation from Gradle with {@code :ssz:generator:generateAndFormatContainers} task
+   */
   public static void main(String[] args) {
     final Path templateSourcePath;
     final Path targetSourcePath;
@@ -129,6 +132,7 @@ public class ContainersGenerator {
     try {
       String src = Files.readString(templateSrc);
       String res = replacePlaceholders(src, varToVal);
+      Files.createDirectories(destSrc.getParent());
       Files.writeString(destSrc, res);
     } catch (IOException e) {
       throw new RuntimeException(e);

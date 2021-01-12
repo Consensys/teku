@@ -17,4 +17,6 @@ task generateAndFormatContainers {
     dependsOn generateContainers, ':ssz:spotlessApply'
 }
 
-
+tasks.withType(Test) {
+    systemProperty 'ssz.project.source.path', project.parent.projectDir
+}
