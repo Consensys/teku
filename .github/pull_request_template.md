@@ -11,4 +11,6 @@
 
 - [ ] I thought about documentation and added the `documentation` label to this PR if updates are required.
 
+## Changelog
+
 - [ ] I thought about adding a changelog entry, and added one if I deemed necessary.
