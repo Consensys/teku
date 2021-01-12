@@ -105,26 +105,16 @@ public class BlstSignature implements Signature {
   private static void blstPrepareVerifyAggregated(
       BlstPublicKey pubKey, Bytes message, pairing ctx, BlstSignature blstSignature) {
 
-    p2 g2Hash = HashToCurve.hashToG2(message);
-    p2_affine p2Affine = new p2_affine();
-
-    try {
-      blst.p2_to_affine(p2Affine, g2Hash);
-
-      BLST_ERROR ret =
-          blst.pairing_aggregate_pk_in_g1(
-              ctx,
-              pubKey.ecPoint,
-              blstSignature == null ? null : blstSignature.ec2Point,
-              1,
-              message.toArrayUnsafe(),
-              HashToCurve.ETH2_DST.toArrayUnsafe(),
-              null);
-      if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
-    } finally {
-      g2Hash.delete();
-      p2Affine.delete();
-    }
+    BLST_ERROR ret =
+        blst.pairing_aggregate_pk_in_g1(
+            ctx,
+            pubKey.ecPoint,
+            blstSignature == null ? null : blstSignature.ec2Point,
+            1,
+            message.toArrayUnsafe(),
+            HashToCurve.ETH2_DST.toArrayUnsafe(),
+            null);
+    if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
   }
 
   private static boolean blstCompleteVerifyAggregated(pairing ctx) {
