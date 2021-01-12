@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class ServiceConfig {
 
@@ -29,7 +28,6 @@ public class ServiceConfig {
   private final EventBus eventBus;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final GlobalConfiguration config;
   private final DataDirLayout dataDirLayout;
 
   public ServiceConfig(
@@ -38,14 +36,12 @@ public class ServiceConfig {
       final EventBus eventBus,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
-      final GlobalConfiguration config,
       final DataDirLayout dataDirLayout) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
     this.metricsSystem = metricsSystem;
-    this.config = config;
     this.dataDirLayout = dataDirLayout;
   }
 
@@ -59,11 +55,6 @@ public class ServiceConfig {
 
   public EventChannels getEventChannels() {
     return eventChannels;
-  }
-
-  @Deprecated
-  public GlobalConfiguration getConfig() {
-    return this.config;
   }
 
   public MetricsSystem getMetricsSystem() {

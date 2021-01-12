@@ -51,7 +51,6 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -132,12 +131,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
-            .build();
+        expectedConfigurationBuilder().p2p(b -> b.p2pInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -365,7 +359,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         Eth2NetworkConfiguration.builder("mainnet").build();
 
     return expectedConfigurationBuilder()
-        .globalConfig(b -> b.setPeerRateLimit(500).setPeerRequestLimit(50))
         .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
         .powchain(
             b -> {
@@ -390,7 +383,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pDiscoveryBootnodes(networkConfig.getDiscoveryBootnodes())
                     .p2pInterface("0.0.0.0")
                     .p2pPort(9000)
-                    .p2pPrivateKeyFile(null))
+                    .p2pPrivateKeyFile(null)
+                    .peerRateLimit(500)
+                    .peerRequestLimit(50))
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
@@ -410,10 +405,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
-        .globalConfig(this::buildExpectedGlobalConfiguration)
         .eth2NetworkConfig(
             b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(Optional.of(address)))
-        .powchain(b -> b.eth1Endpoint("http://localhost:8545").depositContract(address))
+        .powchain(
+            b ->
+                b.eth1Endpoint("http://localhost:8545")
+                    .depositContract(address)
+                    .eth1LogsMaxBlockRange(10_000))
+        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->
                 b.eth1DepositContract(Optional.of(address))
@@ -434,7 +433,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .p2pPeerUpperBound(74)
                     .targetSubnetSubscriberCount(2)
                     .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
-                    .p2pStaticPeers(Collections.emptyList()))
+                    .p2pStaticPeers(Collections.emptyList())
+                    .peerRateLimit(500)
+                    .peerRequestLimit(50))
         .restApi(
             b ->
                 b.restApiPort(5051)
@@ -474,14 +475,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .interopOwnedValidatorCount(64)
                     .interopNumberOfValidators(64)
                     .interopEnabled(true));
-  }
-
-  private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setPeerRateLimit(500)
-        .setPeerRequestLimit(50)
-        .setEth1LogsMaxBlockRange(10_000)
-        .setHotStatePersistenceFrequencyInEpochs(2);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
