@@ -57,7 +57,7 @@ public class VectorViewWriteImpl<
   protected TreeUpdates packChanges(
       List<Map.Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
     VectorViewType<ElementReadType> type = getType();
-    ViewType elementType = type.getElementType();
+    ViewType<?> elementType = type.getElementType();
     int elementsPerChunk = type.getElementsPerChunk();
 
     return newChildValues.stream()

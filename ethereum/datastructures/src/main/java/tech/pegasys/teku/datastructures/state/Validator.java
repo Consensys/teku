@@ -46,7 +46,7 @@ public class Validator extends AbstractImmutableContainer
 
   @SszTypeDescriptor
   public static final ContainerViewType<Validator> TYPE =
-      new ContainerViewType<>(
+      ContainerViewType.create(
           List.of(
               new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
               BasicViewTypes.BYTES32_TYPE,

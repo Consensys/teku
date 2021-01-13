@@ -24,25 +24,25 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Checkpoint extends AbstractImmutableContainer
+public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
   @SszTypeDescriptor
-  public static final ContainerViewType<Checkpoint> TYPE =
-      new ContainerViewType<>(
-          List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), Checkpoint::new);
+  public static final ContainerType2<Checkpoint, UInt64View, Bytes32View> TYPE =
+      ContainerType2.create(
+          BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE, Checkpoint::new);
 
   @SuppressWarnings("unused")
   private final UInt64 epoch = null;
@@ -50,7 +50,8 @@ public class Checkpoint extends AbstractImmutableContainer
   @SuppressWarnings("unused")
   private final Bytes32 root = null;
 
-  public Checkpoint(ContainerViewType<Checkpoint> type, TreeNode backingNode) {
+  private Checkpoint(
+      ContainerType2<Checkpoint, UInt64View, Bytes32View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -92,11 +93,11 @@ public class Checkpoint extends AbstractImmutableContainer
 
   /** ****************** * GETTERS & SETTERS * * ******************* */
   public UInt64 getEpoch() {
-    return ((UInt64View) get(0)).get();
+    return getField0().get();
   }
 
   public Bytes32 getRoot() {
-    return ((Bytes32View) get(1)).get();
+    return getField1().get();
   }
 
   public UInt64 getEpochStartSlot() {

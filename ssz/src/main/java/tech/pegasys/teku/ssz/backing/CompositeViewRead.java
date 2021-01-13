@@ -35,5 +35,5 @@ public interface CompositeViewRead<ChildType> extends ViewRead {
   ChildType get(int index);
 
   @Override
-  CompositeViewType getType();
+  CompositeViewType<?> getType();
 }

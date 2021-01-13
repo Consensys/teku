@@ -29,16 +29,24 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
+public abstract class ContainerViewType<C extends ContainerViewRead>
+    implements CompositeViewType<C> {
 
-  private final List<ViewType> childrenTypes;
-  private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
+  private final List<ViewType<?>> childrenTypes;
   private volatile TreeNode defaultTree;
 
-  public ContainerViewType(
-      List<ViewType> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+  protected ContainerViewType(List<ViewType<?>> childrenTypes) {
     this.childrenTypes = childrenTypes;
-    this.instanceCtor = instanceCtor;
+  }
+
+  public static <C extends ContainerViewRead> ContainerViewType<C> create(
+      List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+    return new ContainerViewType<C>(childrenTypes) {
+      @Override
+      public C createFromBackingNode(TreeNode node) {
+        return instanceCtor.apply(this, node);
+      }
+    };
   }
 
   @Override
@@ -63,14 +71,12 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   }
 
   @Override
-  public ViewType getChildType(int index) {
+  public ViewType<?> getChildType(int index) {
     return childrenTypes.get(index);
   }
 
   @Override
-  public C createFromBackingNode(TreeNode node) {
-    return instanceCtor.apply(this, node);
-  }
+  public abstract C createFromBackingNode(TreeNode node);
 
   @Override
   public long getMaxLength() {
@@ -108,7 +114,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   public int getFixedPartSize() {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
     return size;
@@ -118,7 +124,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   public int getVariablePartSize(TreeNode node) {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
         size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
       }
@@ -136,7 +142,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     int[] variableSizes = new int[getChildCount()];
     for (int i = 0; i < getChildCount(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         int size = childType.sszSerialize(childSubtree, writer);
         assert size == childType.getFixedPartSize();
@@ -148,7 +154,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
       }
     }
     for (int i = 0; i < getMaxLength(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getGeneralizedIndex(i));
         int size = childType.sszSerialize(childSubtree, writer);
@@ -164,7 +170,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     List<Integer> variableChildrenOffsets = new ArrayList<>();
     int endOffset = reader.getAvailableBytes();
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
           TreeNode childNode = childType.sszDeserializeTree(sszReader);
@@ -201,7 +207,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
 
     List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
     for (int i = 0; i < getChildCount(); i++) {
-      ViewType childType = getChildType(i);
+      ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         childrenSubtrees.add(fixedChildrenSubtrees.remove());
       } else {
