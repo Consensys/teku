@@ -27,10 +27,10 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 public class ForkManifest {
   private final List<Fork> forkSchedule;
 
-  public ForkManifest(SpecConstants constants) {
+  public ForkManifest(SpecConstants genesisConstants) {
     forkSchedule = new ArrayList<>();
-    final Bytes4 genesisForkVersion = constants.getGenesisForkVersion();
-    final UInt64 genesisEpoch = UInt64.valueOf(constants.getGenesisEpoch());
+    final Bytes4 genesisForkVersion = genesisConstants.getGenesisForkVersion();
+    final UInt64 genesisEpoch = UInt64.valueOf(genesisConstants.getGenesisEpoch());
     forkSchedule.add(new Fork(genesisForkVersion, genesisForkVersion, genesisEpoch));
   }
 
