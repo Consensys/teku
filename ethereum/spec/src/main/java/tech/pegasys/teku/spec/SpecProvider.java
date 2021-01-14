@@ -21,6 +21,11 @@ public class SpecProvider {
   private final Spec genesisSpec;
   private final ForkManifest forkManifest;
 
+  private SpecProvider(final Spec genesisSpec, final ForkManifest forkManifest) {
+    this.genesisSpec = genesisSpec;
+    this.forkManifest = forkManifest;
+  }
+
   private SpecProvider(final Spec genesisSpec) {
     this.genesisSpec = genesisSpec;
     this.forkManifest = ForkManifest.create(this.genesisSpec.getConstants());
@@ -29,6 +34,12 @@ public class SpecProvider {
   public static SpecProvider create(final SpecConfiguration config) {
     final Spec initialSpec = new Spec(config.constants());
     return new SpecProvider(initialSpec);
+  }
+
+  public static SpecProvider create(
+      final SpecConfiguration config, final ForkManifest forkManifest) {
+    final Spec initialSpec = new Spec(config.constants());
+    return new SpecProvider(initialSpec, forkManifest);
   }
 
   public Spec get(final UInt64 epoch) {
