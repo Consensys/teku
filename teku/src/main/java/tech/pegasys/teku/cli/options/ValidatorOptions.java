@@ -41,7 +41,7 @@ public class ValidatorOptions {
       names = {"--validators-graffiti-file"},
       paramLabel = "<GRAFFITI FILE>",
       description =
-          "File to load graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.  If file reading fails during block creation, teku will fall back to any value supplied via --graffiti.",
+          "File to load graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.  If file reading fails during block creation, teku will fall back to any value supplied via --validators-graffiti.",
       arity = "1")
   private Path graffitiFile;
 
