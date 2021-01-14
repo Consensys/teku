@@ -24,6 +24,8 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
 
+  testImplementation project(':ethereum:networks')
+
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
