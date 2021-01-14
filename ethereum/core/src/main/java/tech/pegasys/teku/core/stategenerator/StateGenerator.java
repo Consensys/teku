@@ -82,7 +82,7 @@ public class StateGenerator {
 
   public SafeFuture<StateAndBlockSummary> regenerateStateForBlock(final Bytes32 blockRoot) {
     final int blockCount = blockTree.size() - 1;
-    LOG.info("Regenerate state for block {} by replaying {} blocks", blockRoot, blockCount);
+    LOG.debug("Regenerate state for block {} by replaying {} blocks", blockRoot, blockCount);
     final long startTime = System.currentTimeMillis();
 
     return chainStateGenerator

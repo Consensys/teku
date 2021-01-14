@@ -16,12 +16,11 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
-import tech.pegasys.teku.util.config.Constants;
 
 public class StoreConfig {
   public static int MAX_CACHE_SIZE = 10_000;
 
-  public static final int DEFAULT_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
+  public static final int DEFAULT_STATE_CACHE_SIZE = 32 * 5;
   // Max block size is about 20x smaller than the minimum state size
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
