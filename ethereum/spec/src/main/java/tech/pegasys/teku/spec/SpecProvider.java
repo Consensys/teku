@@ -18,10 +18,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SpecProvider {
   // Eventually we will have multiple versioned specs, where each version is active for a specific
   // range of epochs
-  private final Spec initialSpec;
+  private final Spec genesisSpec;
+  private final ForkManifest forkManifest;
 
-  private SpecProvider(final Spec initialSpec) {
-    this.initialSpec = initialSpec;
+  private SpecProvider(final Spec genesisSpec) {
+    this.genesisSpec = genesisSpec;
+    this.forkManifest = ForkManifest.create(this.genesisSpec.getConstants());
   }
 
   public static SpecProvider create(final SpecConfiguration config) {
@@ -30,6 +32,10 @@ public class SpecProvider {
   }
 
   public Spec get(final UInt64 epoch) {
-    return initialSpec;
+    return genesisSpec;
+  }
+
+  public ForkManifest getForkManifest() {
+    return forkManifest;
   }
 }
