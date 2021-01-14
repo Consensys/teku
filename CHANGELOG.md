@@ -14,6 +14,7 @@
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
+- Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
 
 ## 21.1.0
 
