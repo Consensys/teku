@@ -10,6 +10,12 @@
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
+## Next Release
+
+### Bug Fixes
+- Restored the state cache size to 160 to improve performance during sync.
+- Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
+
 ## 21.1.0
 
 ### Additions and Improvements

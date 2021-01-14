@@ -14,10 +14,11 @@
 package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,23 +47,42 @@ class ForkManifestTest {
   }
 
   @Test
-  void shouldNotAllowAppendingEarlierFork() {
-    assertThrows(
-        IllegalArgumentException.class, () -> ForkManifest.create(List.of(thirdFork, secondFork)));
+  void shouldStartAtEpochZero() {
+    assertThatThrownBy(() -> ForkManifest.create(List.of(secondFork)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("start at epoch 0");
+  }
+
+  @Test
+  void shouldContainAtLeastGenesisFork() {
+    assertThatThrownBy(() -> ForkManifest.create(Collections.emptyList()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Fork schedule must contain a genesis fork");
+  }
+
+  @Test
+  void shouldStartWithMatchingCurrentAndPreviousVersions() {
+    final Fork fork = new Fork(genesisForkVersion, secondForkVersion, UInt64.ZERO);
+    assertThatThrownBy(() -> ForkManifest.create(List.of(fork)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("previous and current version must match");
   }
 
   @Test
   void shouldNotAllowPreviousVersionMismatch() {
     final Fork fork = new Fork(secondForkVersion, thirdForkVersion, UInt64.valueOf(1000L));
-    assertThrows(
-        IllegalArgumentException.class, () -> ForkManifest.create(List.of(genesisFork, fork)));
+
+    assertThatThrownBy(() -> ForkManifest.create(List.of(genesisFork, fork)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("must match the previous fork");
   }
 
   @Test
   void shouldNotAllowCurrentAndPreviousVersionToBeTheSame() {
     final Fork fork = new Fork(genesisForkVersion, genesisForkVersion, UInt64.valueOf(1000L));
-    assertThrows(
-        IllegalArgumentException.class, () -> ForkManifest.create(List.of(genesisFork, fork)));
+    assertThatThrownBy(() -> ForkManifest.create(List.of(genesisFork, fork)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Previous and current version of non genesis forks must differ");
   }
 
   @Test
