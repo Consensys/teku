@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -41,14 +42,27 @@ class ForkManifestTest {
   public void setup() {
     when(constants.getGenesisForkVersion()).thenReturn(genesisForkVersion);
     when(constants.getGenesisEpoch()).thenReturn(0L);
-    forkManifest = new ForkManifest(constants);
-    forkManifest.addFork(secondFork);
-    forkManifest.addFork(thirdFork);
+    forkManifest = ForkManifest.create(List.of(genesisFork, secondFork, thirdFork));
   }
 
   @Test
   void shouldNotAllowAppendingEarlierFork() {
-    assertThrows(IllegalArgumentException.class, () -> forkManifest.addFork(secondFork));
+    assertThrows(
+        IllegalArgumentException.class, () -> ForkManifest.create(List.of(thirdFork, secondFork)));
+  }
+
+  @Test
+  void shouldNotAllowPreviousVersionMismatch() {
+    final Fork fork = new Fork(secondForkVersion, thirdForkVersion, UInt64.valueOf(1000L));
+    assertThrows(
+        IllegalArgumentException.class, () -> ForkManifest.create(List.of(genesisFork, fork)));
+  }
+
+  @Test
+  void shouldNotAllowCurrentAndPreviousVersionToBeTheSame() {
+    final Fork fork = new Fork(genesisForkVersion, genesisForkVersion, UInt64.valueOf(1000L));
+    assertThrows(
+        IllegalArgumentException.class, () -> ForkManifest.create(List.of(genesisFork, fork)));
   }
 
   @Test

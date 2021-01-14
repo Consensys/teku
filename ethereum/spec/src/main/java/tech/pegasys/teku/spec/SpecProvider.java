@@ -23,7 +23,7 @@ public class SpecProvider {
 
   private SpecProvider(final Spec genesisSpec) {
     this.genesisSpec = genesisSpec;
-    this.forkManifest = new ForkManifest(this.genesisSpec.getConstants());
+    this.forkManifest = ForkManifest.create(this.genesisSpec.getConstants());
   }
 
   public static SpecProvider create(final SpecConfiguration config) {

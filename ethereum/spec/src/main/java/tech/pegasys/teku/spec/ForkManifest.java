@@ -15,44 +15,55 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class ForkManifest {
-  private final List<Fork> forkSchedule;
+  private final NavigableMap<UInt64, Fork> forkSchedule;
 
-  public ForkManifest(SpecConstants genesisConstants) {
-    forkSchedule = new ArrayList<>();
-    final Bytes4 genesisForkVersion = genesisConstants.getGenesisForkVersion();
-    final UInt64 genesisEpoch = UInt64.valueOf(genesisConstants.getGenesisEpoch());
-    forkSchedule.add(new Fork(genesisForkVersion, genesisForkVersion, genesisEpoch));
+  private ForkManifest(final NavigableMap<UInt64, Fork> forkSchedule) {
+    this.forkSchedule = forkSchedule;
   }
 
-  @VisibleForTesting
-  void addFork(final Fork fork) {
-    final Fork lastFork = forkSchedule.get(forkSchedule.size() - 1);
-    checkArgument(fork.getEpoch().isGreaterThan(lastFork.getEpoch()));
-    forkSchedule.add(fork);
+  public static ForkManifest create(final SpecConstants genesisConstants) {
+    final NavigableMap<UInt64, Fork> schedule = new TreeMap<>();
+    final Bytes4 genesisForkVersion = genesisConstants.getGenesisForkVersion();
+    final UInt64 genesisEpoch = UInt64.valueOf(genesisConstants.getGenesisEpoch());
+    schedule.put(genesisEpoch, new Fork(genesisForkVersion, genesisForkVersion, genesisEpoch));
+    return new ForkManifest(schedule);
+  }
+
+  public static ForkManifest create(final List<Fork> forkList) {
+    final NavigableMap<UInt64, Fork> schedule = new TreeMap<>();
+    forkList.stream()
+        .forEach(
+            fork -> {
+              if (!schedule.isEmpty()) {
+                final Fork lastFork = schedule.lastEntry().getValue();
+                checkArgument(lastFork.getEpoch().isLessThan(fork.getEpoch()));
+                checkArgument(lastFork.getCurrent_version().equals(fork.getPrevious_version()));
+                checkArgument(!fork.getPrevious_version().equals(fork.getCurrent_version()));
+              }
+              schedule.put(fork.getEpoch(), fork);
+            });
+    return new ForkManifest(schedule);
   }
 
   public Fork get(final UInt64 epoch) {
-    return forkSchedule.stream()
-        .filter(fork -> fork.getEpoch().isLessThanOrEqualTo(epoch))
-        .max(Comparator.comparing(Fork::getEpoch))
-        .orElse(getGenesisFork());
+    return forkSchedule.floorEntry(epoch).getValue();
   }
 
   public Fork getGenesisFork() {
-    return forkSchedule.get(0);
+    return forkSchedule.firstEntry().getValue();
   }
 
   public List<Fork> getForkSchedule() {
-    return forkSchedule;
+    return new ArrayList<>(forkSchedule.values());
   }
 }
