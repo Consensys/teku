@@ -23,25 +23,23 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetForkSchedule implements Handler {
   public static final String ROUTE = "/eth/v1/config/fork_schedule";
-  private final ChainDataProvider chainDataProvider;
+  private final ConfigProvider configProvider;
   private final JsonProvider jsonProvider;
 
   public GetForkSchedule(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getChainDataProvider(), jsonProvider);
+    this(dataProvider.getConfigProvider(), jsonProvider);
   }
 
-  public GetForkSchedule(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  GetForkSchedule(final ConfigProvider configProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
-    this.chainDataProvider = chainDataProvider;
+    this.configProvider = configProvider;
   }
 
   @OpenApi(
@@ -57,9 +55,7 @@ public class GetForkSchedule implements Handler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-    ctx.result(
-        jsonProvider.objectToJSON(
-            new GetForkScheduleResponse(chainDataProvider.getForkSchedule())));
+  public void handle(final Context ctx) throws Exception {
+    ctx.result(jsonProvider.objectToJSON(configProvider.getForkSchedule()));
   }
 }
