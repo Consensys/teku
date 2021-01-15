@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.forward.multipeer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -52,7 +53,7 @@ class SyncStallDetectorTest {
 
   @BeforeEach
   void setUp() {
-    detector.start();
+    assertThat(detector.start()).isDone();
     when(syncController.isSyncActive()).thenReturn(true);
     when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ONE);
   }
