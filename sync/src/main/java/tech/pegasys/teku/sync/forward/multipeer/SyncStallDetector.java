@@ -36,8 +36,10 @@ public class SyncStallDetector extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   static final int STALL_CHECK_INTERVAL_SECONDS = 15;
-  static final int MAX_SECONDS_BETWEEN_IMPORTS = 60;
-  static final int MAX_SECONDS_BETWEEN_IMPORT_PROGRESS = 60;
+  // Time periods are fairly long because sync stalls should be rare and we might be rate limited
+  // if we have to request blocks from a small number of peers.
+  static final int MAX_SECONDS_BETWEEN_IMPORTS = 180;
+  static final int MAX_SECONDS_BETWEEN_IMPORT_PROGRESS = 180;
 
   private final EventThread eventThread;
   private final AsyncRunner asyncRunner;
