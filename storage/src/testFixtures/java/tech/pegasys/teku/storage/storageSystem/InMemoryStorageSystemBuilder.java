@@ -18,8 +18,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
@@ -36,7 +38,11 @@ public class InMemoryStorageSystemBuilder {
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
-  private SpecProvider specProvider = StubSpecProvider.create();
+
+  private final SpecConstants networkConstants = ConstantsLoader.loadConstants("minimal");
+  private final SpecConfiguration networkConfig =
+      SpecConfiguration.builder().constants(networkConstants).build();
+  private SpecProvider specProvider = SpecProvider.create(networkConfig);
 
   // Internal variables
   MockRocksDbInstance unifiedDb;

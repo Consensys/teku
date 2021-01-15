@@ -37,6 +37,8 @@ dependencies {
   testImplementation testFixtures(project(':pow'))
   testImplementation testFixtures(project(':storage'))
 
+
+  testFixturesApi project(':ethereum:networks')
   testFixturesApi project(':util')
   testFixturesApi project(':storage')
   testFixturesApi project(':storage:api')
