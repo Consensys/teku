@@ -68,7 +68,7 @@ public class ValidatorKeysOptions {
   @CommandLine.Option(
       names = {"--validators-external-signer-public-keys"},
       paramLabel = "<STRINGS>",
-      description = "The list of external signer public keys",
+      description = "The list of external signer public keys, or a URL to load the keys from",
       split = ",",
       arity = "0..*")
   private List<String> validatorExternalSignerPublicKeys = new ArrayList<>();
