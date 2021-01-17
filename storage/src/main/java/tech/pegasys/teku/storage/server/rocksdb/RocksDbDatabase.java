@@ -209,7 +209,7 @@ public class RocksDbDatabase implements Database {
       final RocksDbProtoArrayDao protoArrayDao,
       final StateStorageMode stateStorageMode,
       final SpecProvider specProvider) {
-    checkArgument(specProvider != null);
+    checkNotNull(specProvider);
     this.metricsSystem = metricsSystem;
     this.finalizedDao = finalizedDao;
     this.eth1Dao = eth1Dao;
