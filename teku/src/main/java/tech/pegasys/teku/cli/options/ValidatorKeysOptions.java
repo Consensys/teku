@@ -13,21 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -168,51 +160,5 @@ public class ValidatorKeysOptions {
       return null;
     }
     return Path.of(option);
-  }
-
-  static class PublicKeyLoader {
-    final ObjectMapper objectMapper;
-
-    public PublicKeyLoader() {
-      this(new ObjectMapper());
-    }
-
-    public PublicKeyLoader(final ObjectMapper objectMapper) {
-      this.objectMapper = objectMapper;
-    }
-
-    public List<BLSPublicKey> getPublicKeys(final List<String> publicKeys) {
-      if (publicKeys == null || publicKeys.isEmpty()) {
-        return Collections.emptyList();
-      }
-
-      try {
-        final Set<BLSPublicKey> blsPublicKeySet =
-            publicKeys.stream()
-                .filter(key -> !key.contains(":"))
-                .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
-                .collect(Collectors.toSet());
-        blsPublicKeySet.addAll(
-            publicKeys.stream()
-                .filter(key -> key.contains(":"))
-                .flatMap(this::readKeysFromUrl)
-                .collect(Collectors.toList()));
-
-        return List.copyOf(blsPublicKeySet);
-      } catch (IllegalArgumentException e) {
-        throw new InvalidConfigurationException(
-            "Invalid configuration. Signer public key is invalid", e);
-      }
-    }
-
-    private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
-      try {
-        final String[] keys = objectMapper.readValue(new URL(url), String[].class);
-        return Arrays.asList(keys).stream()
-            .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
-      } catch (IOException ex) {
-        throw new IllegalArgumentException("Failed to load public keys from URL", ex);
-      }
-    }
   }
 }

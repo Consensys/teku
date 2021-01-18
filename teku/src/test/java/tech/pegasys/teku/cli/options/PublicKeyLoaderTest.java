@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
-public class ValidatorKeysOptionsTest {
+public class PublicKeyLoaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final String firstKeyStr =
       dataStructureUtil.randomPublicKey().toBytesCompressed().toHexString();
@@ -39,8 +39,7 @@ public class ValidatorKeysOptionsTest {
       BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(secondKeyStr));
 
   private final ObjectMapper mapper = mock(ObjectMapper.class);
-  private final ValidatorKeysOptions.PublicKeyLoader loader =
-      new ValidatorKeysOptions.PublicKeyLoader(mapper);
+  private final PublicKeyLoader loader = new PublicKeyLoader(mapper);
 
   @Test
   void shouldGetListOfLocallySpecifiedPubKeys() {
