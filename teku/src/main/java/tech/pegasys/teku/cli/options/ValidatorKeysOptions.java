@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -207,7 +208,8 @@ public class ValidatorKeysOptions {
 
     private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
       try {
-        return objectMapper.readValue(url, PublicKeyRemoteList.class).keys.stream()
+        final String[] keys = objectMapper.readValue(new URL(url), String[].class);
+        return Arrays.asList(keys).stream()
             .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
       } catch (IOException ex) {
         throw new IllegalArgumentException("Failed to load public keys from URL", ex);
