@@ -14,15 +14,14 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
@@ -48,6 +47,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -62,6 +62,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -69,6 +70,7 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -107,12 +109,15 @@ public class RocksDbDatabase implements Database {
   final RocksDbEth1Dao eth1Dao;
   private final RocksDbProtoArrayDao protoArrayDao;
 
+  private final SpecProvider specProvider;
+
   public static Database createV4(
       final MetricsSystem metricsSystem,
       final RocksDbConfiguration hotConfiguration,
       final RocksDbConfiguration finalizedConfiguration,
       final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     final RocksDbAccessor hotDb =
         RocksDbInstanceFactory.create(
             metricsSystem, STORAGE_HOT_DB, hotConfiguration, V4SchemaHot.INSTANCE.getAllColumns());
@@ -122,7 +127,8 @@ public class RocksDbDatabase implements Database {
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
             V4SchemaFinalized.INSTANCE.getAllColumns());
-    return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency);
+    return createV4(
+        metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, specProvider);
   }
 
   public static Database createV6(
@@ -132,7 +138,8 @@ public class RocksDbDatabase implements Database {
       final SchemaHot schemaHot,
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     final RocksDbAccessor hotDb;
     final RocksDbAccessor finalizedDb;
 
@@ -161,7 +168,8 @@ public class RocksDbDatabase implements Database {
         schemaHot,
         schemaFinalized,
         stateStorageMode,
-        stateStorageFrequency);
+        stateStorageFrequency,
+        specProvider);
   }
 
   static Database createV4(
@@ -169,11 +177,13 @@ public class RocksDbDatabase implements Database {
       final RocksDbAccessor hotDb,
       final RocksDbAccessor finalizedDb,
       final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.INSTANCE);
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(finalizedDb, V4SchemaFinalized.INSTANCE, stateStorageFrequency);
-    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
+    return new RocksDbDatabase(
+        metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode, specProvider);
   }
 
   static Database createV6(
@@ -183,11 +193,13 @@ public class RocksDbDatabase implements Database {
       final SchemaHot schemaHot,
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, schemaHot);
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(finalizedDb, schemaFinalized, stateStorageFrequency);
-    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
+    return new RocksDbDatabase(
+        metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode, specProvider);
   }
 
   private RocksDbDatabase(
@@ -196,13 +208,16 @@ public class RocksDbDatabase implements Database {
       final RocksDbFinalizedDao finalizedDao,
       final RocksDbEth1Dao eth1Dao,
       final RocksDbProtoArrayDao protoArrayDao,
-      final StateStorageMode stateStorageMode) {
+      final StateStorageMode stateStorageMode,
+      final SpecProvider specProvider) {
+    checkNotNull(specProvider);
     this.metricsSystem = metricsSystem;
     this.finalizedDao = finalizedDao;
     this.eth1Dao = eth1Dao;
     this.protoArrayDao = protoArrayDao;
     this.stateStorageMode = stateStorageMode;
     this.hotDao = hotDao;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -304,13 +319,16 @@ public class RocksDbDatabase implements Database {
     List<Bytes> signingRoots = new ArrayList<>();
     List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
 
-    // TODO: This domain is dependent on the fork version. Thus when we support forks, we're going
-    // to have to change the way we retrieve the domain here.
-    Bytes32 domain = get_domain(finalizedState, DOMAIN_BEACON_PROPOSER);
+    final Bytes32 genesisValidatorsRoot = finalizedState.getForkInfo().getGenesisValidatorsRoot();
 
     blocks.forEach(
         signedBlock -> {
-          BeaconBlock block = signedBlock.getMessage();
+          final BeaconBlock block = signedBlock.getMessage();
+          final UInt64 epoch = compute_epoch_at_slot(block.getSlot());
+          final Fork fork = specProvider.fork(epoch);
+          final Bytes32 domain =
+              get_domain(
+                  specProvider.domainBeaconProposer(epoch), epoch, fork, genesisValidatorsRoot);
           signatures.add(signedBlock.getSignature());
           signingRoots.add(compute_signing_root(block, domain));
           BLSPublicKey proposerPublicKey =
@@ -397,7 +415,7 @@ public class RocksDbDatabase implements Database {
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
     final long clockTime = timeSupplier.get();
-    final UInt64 slotTime = genesisTime.plus(finalizedState.getSlot().times(SECONDS_PER_SLOT));
+    final UInt64 slotTime = ForkChoiceUtil.getSlotStartTime(finalizedState.getSlot(), genesisTime);
     final UInt64 time = slotTime.max(clockTime);
 
     return Optional.of(
@@ -593,7 +611,8 @@ public class RocksDbDatabase implements Database {
           .ifPresent(
               checkpoint -> {
                 updater.setFinalizedCheckpoint(checkpoint);
-                UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(SLOTS_PER_EPOCH);
+                final int slotsPerEpoch = specProvider.slotsPerEpoch(checkpoint.getEpoch());
+                final UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(slotsPerEpoch);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
                 updater.deleteHotState(checkpoint.getRoot());
               });

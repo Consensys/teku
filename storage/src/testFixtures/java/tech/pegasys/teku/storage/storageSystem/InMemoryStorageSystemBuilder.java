@@ -18,6 +18,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
@@ -34,6 +38,11 @@ public class InMemoryStorageSystemBuilder {
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
+
+  private final SpecConstants networkConstants = ConstantsLoader.loadConstants("minimal");
+  private final SpecConfiguration networkConfig =
+      SpecConfiguration.builder().constants(networkConstants).build();
+  private SpecProvider specProvider = SpecProvider.create(networkConfig);
 
   // Internal variables
   MockRocksDbInstance unifiedDb;
@@ -73,6 +82,11 @@ public class InMemoryStorageSystemBuilder {
     return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig);
   }
 
+  public InMemoryStorageSystemBuilder specProvider(final SpecProvider specProvider) {
+    this.specProvider = specProvider;
+    return this;
+  }
+
   private InMemoryStorageSystemBuilder copy() {
     final InMemoryStorageSystemBuilder copy =
         create()
@@ -84,6 +98,7 @@ public class InMemoryStorageSystemBuilder {
     copy.unifiedDb = unifiedDb;
     copy.hotDb = hotDb;
     copy.coldDb = coldDb;
+    copy.specProvider = specProvider;
 
     return copy;
   }
@@ -137,7 +152,7 @@ public class InMemoryStorageSystemBuilder {
       coldDb = hotDb;
     }
     return InMemoryRocksDbDatabaseFactory.createV6(
-        hotDb, coldDb, storageMode, stateStorageFrequency);
+        hotDb, coldDb, storageMode, stateStorageFrequency, specProvider);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -158,7 +173,7 @@ public class InMemoryStorageSystemBuilder {
               V4SchemaFinalized.INSTANCE.getAllVariables());
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
-        hotDb, coldDb, storageMode, stateStorageFrequency);
+        hotDb, coldDb, storageMode, stateStorageFrequency, specProvider);
   }
 
   private void reopenDatabases() {

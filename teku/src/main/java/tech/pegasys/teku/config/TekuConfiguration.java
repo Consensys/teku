@@ -26,6 +26,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.InteropConfig.InteropConfigBuilder;
@@ -74,7 +75,8 @@ public class TekuConfiguration {
             beaconRestApiConfig,
             powchainConfiguration,
             loggingConfig,
-            storeConfig);
+            storeConfig,
+            storageConfiguration.getSpecProvider());
     this.validatorClientConfig = new ValidatorClientConfiguration(validatorConfig, interopConfig);
   }
 
@@ -140,8 +142,13 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
+      final Eth2NetworkConfiguration eth2NetworkConfiguration =
+          eth2NetworkConfigurationBuilder.build();
+      final SpecProvider specProvider =
+          SpecProvider.create(eth2NetworkConfiguration.getSpecConfig());
+      storageConfigurationBuilder.specProvider(specProvider);
       return new TekuConfiguration(
-          eth2NetworkConfigurationBuilder.build(),
+          eth2NetworkConfiguration,
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),
