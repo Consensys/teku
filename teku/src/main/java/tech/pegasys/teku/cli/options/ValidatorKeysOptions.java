@@ -19,10 +19,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -63,7 +60,7 @@ public class ValidatorKeysOptions {
   @CommandLine.Option(
       names = {"--validators-external-signer-public-keys"},
       paramLabel = "<STRINGS>",
-      description = "The list of external signer public keys",
+      description = "The list of external signer public keys, or a URL to load the keys from",
       split = ",",
       arity = "0..*")
   private List<String> validatorExternalSignerPublicKeys = new ArrayList<>();
@@ -142,17 +139,8 @@ public class ValidatorKeysOptions {
   }
 
   private List<BLSPublicKey> parseExternalSignerPublicKeys() {
-    if (validatorExternalSignerPublicKeys == null) {
-      return Collections.emptyList();
-    }
-    try {
-      return validatorExternalSignerPublicKeys.stream()
-          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
-          .collect(Collectors.toList());
-    } catch (IllegalArgumentException e) {
-      throw new InvalidConfigurationException(
-          "Invalid configuration. Signer public key is invalid", e);
-    }
+    PublicKeyLoader loader = new PublicKeyLoader();
+    return loader.getPublicKeys(validatorExternalSignerPublicKeys);
   }
 
   private URL parseValidatorExternalSignerUrl() {
