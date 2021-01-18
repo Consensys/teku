@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
@@ -26,16 +27,18 @@ public class InMemoryRocksDbDatabaseFactory {
       MockRocksDbInstance hotDb,
       MockRocksDbInstance coldDb,
       final StateStorageMode storageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     return RocksDbDatabase.createV4(
-        new StubMetricsSystem(), hotDb, coldDb, storageMode, stateStorageFrequency);
+        new StubMetricsSystem(), hotDb, coldDb, storageMode, stateStorageFrequency, specProvider);
   }
 
   public static Database createV6(
       MockRocksDbInstance hotDb,
       MockRocksDbInstance coldDb,
       final StateStorageMode storageMode,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
     return RocksDbDatabase.createV6(
         new StubMetricsSystem(),
         hotDb,
@@ -43,6 +46,7 @@ public class InMemoryRocksDbDatabaseFactory {
         V4SchemaHot.INSTANCE,
         V6SchemaFinalized.INSTANCE,
         storageMode,
-        stateStorageFrequency);
+        stateStorageFrequency,
+        specProvider);
   }
 }

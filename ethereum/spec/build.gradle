@@ -1,9 +1,12 @@
 dependencies {
     implementation project(':ssz')
+    implementation project(':ethereum:datastructures')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-bytes'
 
+    testFixturesImplementation project(':ethereum:datastructures')
+    testFixturesImplementation project(':infrastructure:unsigned')
 }

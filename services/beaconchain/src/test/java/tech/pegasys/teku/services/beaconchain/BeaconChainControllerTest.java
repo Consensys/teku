@@ -34,6 +34,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -73,7 +74,8 @@ public class BeaconChainControllerTest {
         restApiConfig,
         PowchainConfiguration.builder().build(),
         loggingConfig,
-        StoreConfig.builder().build());
+        StoreConfig.builder().build(),
+        SpecProvider.create(eth2Config.getSpecConfig()));
   }
 
   @Test

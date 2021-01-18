@@ -70,7 +70,7 @@ public class BatchDataRequester {
     UInt64 nextBatchStart = getNextSlotToRequest(commonAncestorSlot);
     final UInt64 targetSlot = targetChain.getChainHead().getSlot();
     for (long i = pendingBatchesCount;
-        i < maxPendingBatches && nextBatchStart.isLessThan(targetSlot);
+        i < maxPendingBatches && nextBatchStart.isLessThanOrEqualTo(targetSlot);
         i++) {
       final UInt64 remainingSlots = targetSlot.minus(nextBatchStart).plus(1);
       final UInt64 count = remainingSlots.min(batchSize);

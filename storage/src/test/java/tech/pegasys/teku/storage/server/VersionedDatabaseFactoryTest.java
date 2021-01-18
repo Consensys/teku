@@ -27,20 +27,27 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactoryTest {
-
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
+  private final SpecConstants networkConstants = ConstantsLoader.loadConstants("minimal");
+  private final SpecConfiguration networkConfig =
+      SpecConfiguration.builder().constants(networkConstants).build();
   private final Optional<Eth1Address> eth1Address =
       Optional.of(Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC"));
+  private final SpecProvider specProvider = SpecProvider.create(networkConfig);
   @TempDir Path dataDir;
 
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, specProvider);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -55,7 +62,7 @@ public class VersionedDatabaseFactoryTest {
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, specProvider);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -71,7 +78,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V4,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V4);
@@ -91,7 +99,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V5,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V5);
@@ -114,7 +123,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V6);
@@ -138,7 +148,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
 
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -161,7 +172,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, specProvider);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -173,7 +184,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, specProvider);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -189,7 +200,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V4,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
 
@@ -203,7 +215,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V5,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
   }
 
@@ -217,7 +230,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     try (Database db = dbFactorySingle.createDatabase()) {}
 
     final DatabaseFactory dbFactorySeparate =
@@ -228,7 +242,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
 
     assertThatThrownBy(
             () -> {
@@ -247,7 +262,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
     try (Database db = dbFactorySeparate.createDatabase()) {}
 
     final DatabaseFactory dbFactorySingle =
@@ -258,7 +274,8 @@ public class VersionedDatabaseFactoryTest {
             DATA_STORAGE_MODE,
             DatabaseVersion.V6,
             1L,
-            eth1Address);
+            eth1Address,
+            specProvider);
 
     assertThatThrownBy(
             () -> {

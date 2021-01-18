@@ -3,8 +3,30 @@
 ## Upcoming Breaking Changes
 
 - The default docker image will be updated to Java 15. Java 15 based images are available now for testing with the `-jdk15` suffix (e.g `consensys/teku:develop-jdk15`)
+- Teku currently publishes a `head` event on the REST API 4 seconds into a slot even if a block has not been received. In a future release this will be changed so `head` event is only published when a new
+  chain head block is imported. The `--Xvalidators-dependent-root-enabled` option can be used to switch to the new behaviour now for testing. 
+  Note: this should be applied to both the beacon node and validator client if running separately.
+- The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
+
+## Next Release
+
+### Bug Fixes
+- Restored the state cache size to 160 to improve performance during sync.
+- Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
+
+## 21.1.0
+
+### Additions and Improvements
+- Added support for loading graffiti from a file to allow it to be changed without restarting. Thanks to [EdwardPrentice](https://github.com/EdwardPrentice)
+- Supported retrieving states as SSZ on the standard REST API `/eth/v1/debug/beacon/states/:state_id` when the `Accept: application/octet-stream` header is specified in the request.
+- Improved performance when verifying aggregate signatures.
+- Added verification of block signatures when downloading historic blocks after a snapshot sync.
+
+### Bug Fixes
+- Fixed issue which could lead to the incorrect proposer index being calculated after a long period without network connectivity.
+- Fixed issue where Teku did not exit at startup when validator keys were loaded.
 
 ## 20.12.1
 

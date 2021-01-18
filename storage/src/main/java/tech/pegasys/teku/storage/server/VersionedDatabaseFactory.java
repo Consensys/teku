@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
 import tech.pegasys.teku.storage.server.network.DatabaseNetwork;
@@ -55,12 +56,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
   private final Optional<Eth1Address> eth1Address;
+  private final SpecProvider specProvider;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final Optional<Eth1Address> depositContractAddress) {
+      final Optional<Eth1Address> depositContractAddress,
+      final SpecProvider specProvider) {
     this(
         metricsSystem,
         dataPath,
@@ -68,7 +71,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
-        depositContractAddress);
+        depositContractAddress,
+        specProvider);
   }
 
   public VersionedDatabaseFactory(
@@ -77,7 +81,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address) {
+      final Optional<Eth1Address> eth1Address,
+      final SpecProvider specProvider) {
     this(
         metricsSystem,
         dataPath,
@@ -85,7 +90,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         dataStorageMode,
         createDatabaseVersion,
         stateStorageFrequency,
-        eth1Address);
+        eth1Address,
+        specProvider);
   }
 
   public VersionedDatabaseFactory(
@@ -95,7 +101,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address) {
+      final Optional<Eth1Address> eth1Address,
+      final SpecProvider specProvider) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -105,6 +112,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
+    this.specProvider = specProvider;
 
     this.createDatabaseVersion = createDatabaseVersion;
   }
@@ -177,7 +185,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
           RocksDbConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
           stateStorageMode,
-          stateStorageFrequency);
+          stateStorageFrequency,
+          specProvider);
     } catch (final IOException e) {
       throw new DatabaseStorageException("Failed to read configuration file", e);
     }
@@ -198,7 +207,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
-          stateStorageFrequency);
+          stateStorageFrequency,
+          specProvider);
     } catch (final IOException e) {
       throw new DatabaseStorageException("Failed to read metadata", e);
     }
@@ -246,7 +256,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           V4SchemaHot.INSTANCE,
           V6SchemaFinalized.INSTANCE,
           stateStorageMode,
-          stateStorageFrequency);
+          stateStorageFrequency,
+          specProvider);
     } catch (final IOException e) {
       throw new DatabaseStorageException("Failed to read metadata", e);
     }
