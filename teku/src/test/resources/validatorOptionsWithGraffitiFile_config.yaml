@@ -1,0 +1,9 @@
+validators-key-files: ["a.key", "b.key"]
+validators-key-password-files: ["a.password", "b.password"]
+validator-keys: "a.key:a.password,b.json:b.txt"
+validators-external-signer-public-keys: ["0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"]
+validators-external-signer-url: "https://signer.url/"
+validators-external-signer-timeout: 1234
+validators-graffiti: "U K E T" # the test shouldn't return this value
+validators-graffiti-file: "src/test/resources/graffitiFile.txt"
+validators-performance-tracking-enabled: "true"

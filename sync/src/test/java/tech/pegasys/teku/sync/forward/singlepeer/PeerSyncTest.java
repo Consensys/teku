@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -75,11 +74,9 @@ public class PeerSyncTest extends AbstractSyncTest {
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
     // By default set up block import to succeed
-    final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
     final SafeFuture<BlockImportResult> result =
-        SafeFuture.completedFuture(BlockImportResult.successful(processingRecord));
-    when(processingRecord.getBlock()).thenReturn(block);
+        SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
     when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
   }

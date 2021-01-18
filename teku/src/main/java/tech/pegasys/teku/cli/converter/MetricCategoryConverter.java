@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.cli.converter;
 
-import com.google.common.annotations.VisibleForTesting;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
@@ -26,7 +28,8 @@ public class MetricCategoryConverter implements CommandLine.ITypeConverter<Metri
 
   @Override
   public MetricCategory convert(final String value) {
-    final MetricCategory category = metricCategories.get(value);
+    checkNotNull(value, "Value to convert must not be null");
+    final MetricCategory category = metricCategories.get(value.toUpperCase(Locale.ROOT));
     if (category == null) {
       throw new IllegalArgumentException("Unknown category: " + value);
     }
@@ -35,15 +38,7 @@ public class MetricCategoryConverter implements CommandLine.ITypeConverter<Metri
 
   public <T extends Enum<T> & MetricCategory> void addCategories(final Class<T> categoryEnum) {
     EnumSet.allOf(categoryEnum)
-        .forEach(category -> metricCategories.put(category.name(), category));
-  }
-
-  public void addRegistryCategory(final MetricCategory metricCategory) {
-    metricCategories.put(metricCategory.getName().toUpperCase(), metricCategory);
-  }
-
-  @VisibleForTesting
-  Map<String, MetricCategory> getMetricCategories() {
-    return metricCategories;
+        .forEach(
+            category -> metricCategories.put(category.name().toUpperCase(Locale.ROOT), category));
   }
 }

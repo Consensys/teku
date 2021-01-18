@@ -21,16 +21,15 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
-import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 @Command(
@@ -57,7 +56,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private ValidatorClientOptions validatorClientOptions;
 
   @Mixin(name = "Network")
-  private NetworkOptions networkOptions;
+  private Eth2NetworkOptions eth2NetworkOptions;
 
   @Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
@@ -97,22 +96,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
-    builder.globalConfig(this::buildGlobalConfiguration);
+    eth2NetworkOptions.configure(builder);
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
     interopOptions.configure(builder);
+    metricsOptions.configure(builder);
     return builder.build();
-  }
-
-  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
-    builder
-        .setNetwork(networkOptions.getNetwork())
-        .setMetricsEnabled(metricsOptions.isMetricsEnabled())
-        .setMetricsPort(metricsOptions.getMetricsPort())
-        .setMetricsInterface(metricsOptions.getMetricsInterface())
-        .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
   }
 }

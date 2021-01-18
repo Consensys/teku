@@ -81,6 +81,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
   private final Counter reorgCounter;
+  private final boolean updateHeadForEmptySlots;
 
   private volatile UpdatableStore store;
   private volatile Optional<ChainHead> chainHead = Optional.empty();
@@ -107,6 +108,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storageUpdateChannel = storageUpdateChannel;
     this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    this.updateHeadForEmptySlots = storeConfig.updateHeadForEmptySlots();
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -232,7 +234,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
                                     currentSlot, root))))
-        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
+        .thenAccept(newChainHead -> updateChainHead(originalChainHead, newChainHead))
         .reportExceptions();
   }
 
@@ -245,14 +247,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
         return;
       }
-      if (originalHead.isPresent() && originalHead.get().equals(newChainHead)) {
-        LOG.trace("Skippping head update because new head is same as previous head");
+      if (originalHead.isPresent() && isNewHeadSameAsOld(originalHead.get(), newChainHead)) {
+        LOG.trace("Skipping head update because new head is same as previous head");
         return;
       }
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext;
       if (originalHead
-          .map(head -> hasReorgedFrom(head.getRoot(), head.getForkChoiceSlot()))
+          .map(head -> hasReorgedFrom(head.getRoot(), getChainHeadSlot(head)))
           .orElse(false)) {
 
         final ChainHead previousChainHead = originalHead.get();
@@ -286,12 +288,26 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.complete(null);
   }
 
+  private UInt64 getChainHeadSlot(final ChainHead head) {
+    return updateHeadForEmptySlots ? head.getForkChoiceSlot() : head.getSlot();
+  }
+
+  private boolean isNewHeadSameAsOld(final ChainHead originalHead, final ChainHead newChainHead) {
+    if (updateHeadForEmptySlots) {
+      return originalHead.equals(newChainHead);
+    } else {
+      return originalHead.getRoot().equals(newChainHead.getRoot());
+    }
+  }
+
   private boolean hasReorgedFrom(
-      final Bytes32 originalHeadRoot, final UInt64 originalForkChoiceSlot) {
-    // Get the block root in effect at the old fork choice slot on the current chain. If this is a
-    // different fork to the previous chain the root at originalForkChoiceSlot will be different
-    // from originalHeadRoot. If it's an extension of the same chain it will match.
-    return getBlockRootBySlot(originalForkChoiceSlot)
+      final Bytes32 originalHeadRoot, final UInt64 originalChainTipSlot) {
+    // Get the block root in effect at the old chain tip on the current chain. Depending on
+    // updateHeadForEmptySlots that chain "tip" may be the fork choice slot (when true) or the
+    // latest block (when false). If this is a different fork to the previous chain the root at
+    // originalChainTipSlot will be different from originalHeadRoot. If it's an extension of the
+    // same chain it will match.
+    return getBlockRootBySlot(originalChainTipSlot)
         .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalHeadRoot))
         .orElse(true);
   }

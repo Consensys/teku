@@ -35,6 +35,8 @@ public class P2PConfig {
   private final List<String> p2pStaticPeers;
   private final boolean multiPeerSyncEnabled;
   private final boolean subscribeAllSubnetsEnabled;
+  private final int peerRateLimit;
+  private final int peerRequestLimit;
 
   private P2PConfig(
       final boolean p2pEnabled,
@@ -51,7 +53,9 @@ public class P2PConfig {
       final int minimumRandomlySelectedPeerCount,
       final List<String> p2pStaticPeers,
       final boolean multiPeerSyncEnabled,
-      final boolean subscribeAllSubnetsEnabled) {
+      final boolean subscribeAllSubnetsEnabled,
+      final int peerRateLimit,
+      final int peerRequestLimit) {
     this.p2pEnabled = p2pEnabled;
     this.p2pInterface = p2pInterface;
     this.p2pPort = p2pPort;
@@ -67,6 +71,8 @@ public class P2PConfig {
     this.p2pStaticPeers = p2pStaticPeers;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+    this.peerRateLimit = peerRateLimit;
+    this.peerRequestLimit = peerRequestLimit;
   }
 
   public static P2PConfigBuilder builder() {
@@ -133,6 +139,14 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
+  public int getPeerRateLimit() {
+    return peerRateLimit;
+  }
+
+  public int getPeerRequestLimit() {
+    return peerRequestLimit;
+  }
+
   public static final class P2PConfigBuilder {
 
     private boolean p2pEnabled;
@@ -150,6 +164,8 @@ public class P2PConfig {
     private List<String> p2pStaticPeers = new ArrayList<>();
     private boolean multiPeerSyncEnabled;
     private boolean subscribeAllSubnetsEnabled;
+    private int peerRateLimit;
+    private int peerRequestLimit;
 
     private P2PConfigBuilder() {}
 
@@ -228,6 +244,16 @@ public class P2PConfig {
       return this;
     }
 
+    public P2PConfigBuilder peerRateLimit(final int peerRateLimit) {
+      this.peerRateLimit = peerRateLimit;
+      return this;
+    }
+
+    public P2PConfigBuilder peerRequestLimit(final int peerRequestLimit) {
+      this.peerRequestLimit = peerRequestLimit;
+      return this;
+    }
+
     public P2PConfig build() {
       return new P2PConfig(
           p2pEnabled,
@@ -244,7 +270,9 @@ public class P2PConfig {
           minimumRandomlySelectedPeerCount,
           p2pStaticPeers,
           multiPeerSyncEnabled,
-          subscribeAllSubnetsEnabled);
+          subscribeAllSubnetsEnabled,
+          peerRateLimit,
+          peerRequestLimit);
     }
   }
 }

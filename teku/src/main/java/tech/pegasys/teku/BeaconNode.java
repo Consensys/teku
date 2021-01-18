@@ -19,12 +19,10 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
-import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -38,7 +36,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconNode implements Node {
 
@@ -53,12 +50,10 @@ public class BeaconNode implements Node {
   private final MetricsEndpoint metricsEndpoint;
 
   public BeaconNode(final TekuConfiguration tekuConfig) {
-    final GlobalConfiguration globalConfig = tekuConfig.global();
-
     LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    this.metricsEndpoint = new MetricsEndpoint(globalConfig, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
@@ -73,16 +68,8 @@ public class BeaconNode implements Node {
             eventBus,
             eventChannels,
             metricsSystem,
-            globalConfig,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
-    Constants.setConstants(globalConfig.getConstants());
-
-    final String transitionRecordDir = globalConfig.getTransitionRecordDirectory();
-    if (transitionRecordDir != null) {
-      SSZTransitionRecorder sszTransitionRecorder =
-          new SSZTransitionRecorder(Path.of(transitionRecordDir));
-      eventBus.register(sszTransitionRecorder);
-    }
+    Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
 
     this.serviceController = new BeaconNodeServiceController(tekuConfig, serviceConfig);
     STATUS_LOG.beaconDataPathSet(serviceConfig.getDataDirLayout().getBeaconDataDirectory());

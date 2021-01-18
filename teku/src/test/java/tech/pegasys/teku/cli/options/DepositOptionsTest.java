@@ -17,47 +17,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadDepositOptionsFromConfigurationFile() {
-    final GlobalConfiguration config = getGlobalConfigurationFromFile("depositOptions_config.yaml");
-    final Eth1Address address =
-        Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
+    final TekuConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
 
-    assertThat(config.isEth1Enabled()).isTrue();
-    assertThat(config.getEth1DepositContractAddress()).isEqualTo(address);
-    assertThat(config.getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
-    assertThat(config.isEth1DepositsFromStorageEnabled()).isFalse();
+    assertThat(config.powchain().isEnabled()).isTrue();
+    assertThat(config.powchain().getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
   }
 
   @Test
   public void shouldReportEth1EnabledIfEndpointSpecified() {
-    final String[] args = {
-      "--eth1-endpoint",
-      "http://example.com:1234/path/",
-      "--eth1-deposit-contract-address",
-      "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isEth1Enabled()).isTrue();
+    final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isEnabled()).isTrue();
   }
 
   @Test
   public void shouldReportEth1DisabledIfEndpointNotSpecified() {
-    final GlobalConfiguration globalConfigurationFromArguments =
-        getGlobalConfigurationFromArguments();
-    assertThat(globalConfigurationFromArguments.isEth1Enabled()).isFalse();
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.powchain().isEnabled()).isFalse();
   }
 
   @Test
-  public void shouldDisableLoadFromStorageByDefault() {
-    final GlobalConfiguration globalConfigurationFromArguments =
-        getGlobalConfigurationFromArguments();
-    assertThat(globalConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
+  public void shouldReportEth1DisabledIfEndpointIsEmpty() {
+    final String[] args = {"--eth1-endpoint", "   "};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isEnabled()).isFalse();
   }
 
   @Test
@@ -68,7 +57,8 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
     final String str = getCommandLineOutput();
-    assertThat(str).contains("eth1-deposit");
+    assertThat(str)
+        .contains("Eth1 deposit contract address is required if an eth1 endpoint is specified");
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(str).doesNotContain("Default");

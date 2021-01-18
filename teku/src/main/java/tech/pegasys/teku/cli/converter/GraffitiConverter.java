@@ -13,25 +13,17 @@
 
 package tech.pegasys.teku.cli.converter;
 
-import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
+import tech.pegasys.teku.validator.api.Bytes32Parser;
 
 public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
   @Override
   public Bytes32 convert(final String value) {
-    byte[] input = value.getBytes(StandardCharsets.UTF_8);
-    if (input.length > 32) {
-      throw (new CommandLine.TypeConversionException(
-          "'"
-              + value
-              + "' converts to "
-              + input.length
-              + " bytes. A maximum of 32 bytes can be used as graffiti."));
+    try {
+      return Bytes32Parser.toBytes32(value);
+    } catch (final IllegalArgumentException e) {
+      throw (new CommandLine.TypeConversionException(e.getMessage()));
     }
-
-    byte[] bytes = new byte[32];
-    System.arraycopy(input, 0, bytes, 0, input.length);
-    return Bytes32.wrap(bytes);
   }
 }

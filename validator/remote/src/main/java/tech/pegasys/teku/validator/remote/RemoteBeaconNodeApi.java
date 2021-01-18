@@ -46,12 +46,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   public static BeaconNodeApi create(
       final ServiceConfig serviceConfig,
       final AsyncRunner asyncRunner,
-      final URI beaconNodeApiEndpoint) {
+      final URI beaconNodeApiEndpoint,
+      final boolean useIndependentAttestationTiming) {
 
     final OkHttpClient okHttpClient =
         new OkHttpClient.Builder()
             // We should get at least one event per slot so give the read timeout 2 slots to be safe
-            .readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS)
+            .readTimeout(Constants.SECONDS_PER_SLOT * 2L, TimeUnit.SECONDS)
             .build();
     final HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
     final OkHttpValidatorRestApiClient apiClient =
@@ -72,7 +73,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 new GenesisDataProvider(asyncRunner, validatorApiChannel),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),
-                validatorTimingChannel),
+                validatorTimingChannel,
+                useIndependentAttestationTiming),
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);

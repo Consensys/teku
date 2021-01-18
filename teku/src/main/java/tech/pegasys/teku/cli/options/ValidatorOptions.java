@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 
 public class ValidatorOptions {
 
@@ -30,9 +33,17 @@ public class ValidatorOptions {
       converter = GraffitiConverter.class,
       paramLabel = "<GRAFFITI STRING>",
       description =
-          "Graffiti to include during block creation (gets converted to bytes and padded to Bytes32).",
+          "Graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.",
       arity = "1")
   private Bytes32 graffiti;
+
+  @Option(
+      names = {"--validators-graffiti-file"},
+      paramLabel = "<GRAFFITI FILE>",
+      description =
+          "File to load graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.  If file reading fails during block creation, teku will fall back to any value supplied via --graffiti.",
+      arity = "1")
+  private Path graffitiFile;
 
   @Option(
       names = {"--validators-performance-tracking-enabled"},
@@ -66,6 +77,16 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean validatorExternalSignerSlashingProtectionEnabled = true;
 
+  @Option(
+      names = {"--Xvalidators-dependent-root-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: false",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean useDependentRoots = false;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -75,14 +96,20 @@ public class ValidatorOptions {
       }
     }
 
-    builder.validator(
-        config ->
-            config
-                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .validatorExternalSignerSlashingProtectionEnabled(
-                    validatorExternalSignerSlashingProtectionEnabled)
-                .graffiti(graffiti));
+    builder
+        .validator(
+            config ->
+                config
+                    .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                    .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                    .validatorExternalSignerSlashingProtectionEnabled(
+                        validatorExternalSignerSlashingProtectionEnabled)
+                    .graffitiProvider(
+                        new FileBackedGraffitiProvider(
+                            Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                    .useDependentRoots(useDependentRoots))
+        // We don't need to update head for empty slots when using dependent roots
+        .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);
   }
 }

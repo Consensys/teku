@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
@@ -42,8 +40,6 @@ import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final EventChannels eventChannels;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
@@ -53,7 +49,7 @@ public class ValidatorClientService extends Service {
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
-  private SafeFuture<Void> initializationComplete = new SafeFuture<>();
+  private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private ValidatorClientService(
       final EventChannels eventChannels,
@@ -68,12 +64,16 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services, final ValidatorClientConfiguration config) {
     final EventChannels eventChannels = services.getEventChannels();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
+    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .map(endpoint -> RemoteBeaconNodeApi.create(services, asyncRunner, endpoint))
-            .orElseGet(() -> InProcessBeaconNodeApi.create(services, asyncRunner));
+            .map(
+                endpoint ->
+                    RemoteBeaconNodeApi.create(services, asyncRunner, endpoint, useDependentRoots))
+            .orElseGet(
+                () -> InProcessBeaconNodeApi.create(services, asyncRunner, useDependentRoots));
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
@@ -88,8 +88,7 @@ public class ValidatorClientService extends Service {
             () ->
                 validatorClientService.initializeValidators(
                     config, validatorApiChannel, asyncRunner, services))
-        .finish(err -> LOG.error("Unable to initialize validators", err));
-
+        .propagateTo(validatorClientService.initializationComplete);
     return validatorClientService;
   }
 
@@ -119,7 +118,7 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions));
@@ -128,12 +127,14 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                () -> new ScheduledDuties(validatorDutyFactory),
+                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider));
+    final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     this.attestationTimingChannel =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
-    this.blockProductionTimingChannel = new BlockDutyScheduler(metricsSystem, blockDutyLoader);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, useDependentRoots);
+    this.blockProductionTimingChannel =
+        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots);
     addValidatorCountMetric(metricsSystem, validators.size());
     if (validators.keySet().size() > 0) {
       this.validatorStatusLogger =
@@ -142,7 +143,6 @@ public class ValidatorClientService extends Service {
     } else {
       this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
     }
-    initializationComplete.complete(null);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {

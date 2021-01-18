@@ -27,7 +27,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.NetworkOptions;
+import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -80,12 +80,12 @@ public class DebugDbCommand implements Runnable {
   public int getDeposits(
       @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
-      @Mixin final NetworkOptions networkOptions)
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
-        final Database database = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
-      final DepositStorage depositStorage =
-          DepositStorage.create(eth1EventsChannel, database, true);
+        final Database database =
+            createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
+      final DepositStorage depositStorage = DepositStorage.create(eth1EventsChannel, database);
       depositStorage.replayDepositEvents().join();
     }
     return 0;
@@ -106,7 +106,7 @@ public class DebugDbCommand implements Runnable {
   public int getFinalizedState(
       @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
-      @Mixin final NetworkOptions networkOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               required = true,
               names = {"--output", "-o"},
@@ -119,9 +119,9 @@ public class DebugDbCommand implements Runnable {
                   "The slot to retrieve the state for. If unavailable the closest available state will be returned")
           final long slot)
       throws Exception {
-    setConstants(networkOptions);
+    setConstants(eth2NetworkOptions);
     try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       return writeState(
           outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
@@ -142,7 +142,7 @@ public class DebugDbCommand implements Runnable {
   public int getLatestFinalizedState(
       @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
-      @Mixin final NetworkOptions networkOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               required = true,
               names = {"--output", "-o"},
@@ -153,12 +153,12 @@ public class DebugDbCommand implements Runnable {
               description = "File to write the block matching the latest finalized state to")
           final Path blockOutputFile)
       throws Exception {
-    setConstants(networkOptions);
+    setConstants(eth2NetworkOptions);
     final AsyncRunner asyncRunner =
         ScheduledExecutorAsyncRunner.create(
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
@@ -197,15 +197,15 @@ public class DebugDbCommand implements Runnable {
   public int getForkChoiceSnapshot(
       @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
-      @Mixin final NetworkOptions networkOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               names = {"--output", "-o"},
               description = "File to write output to")
           final Path outputFile)
       throws Exception {
-    setConstants(networkOptions);
+    setConstants(eth2NetworkOptions);
     try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       final Optional<ProtoArraySnapshot> snapshot = database.getProtoArraySnapshot();
       if (snapshot.isEmpty()) {
         System.err.println("No fork choice snapshot available.");
@@ -222,20 +222,20 @@ public class DebugDbCommand implements Runnable {
     }
   }
 
-  private void setConstants(@Mixin final NetworkOptions networkOptions) {
-    Constants.setConstants(networkOptions.getNetwork().getConstants());
+  private void setConstants(@Mixin final Eth2NetworkOptions eth2NetworkOptions) {
+    Constants.setConstants(eth2NetworkOptions.getNetworkConfiguration().getConstants());
   }
 
   private Database createDatabase(
       final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
-      final NetworkOptions networkOptions) {
+      final Eth2NetworkOptions eth2NetworkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
-            networkOptions.getNetwork().getEth1DepositContractAddress().orElse(null));
+            eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress());
     return databaseFactory.createDatabase();
   }
 

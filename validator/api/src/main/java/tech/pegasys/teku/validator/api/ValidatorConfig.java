@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.KeyStoreFilesLocator;
@@ -42,11 +41,12 @@ public class ValidatorConfig {
   private final Path validatorExternalSignerKeystorePasswordFile;
   private final Path validatorExternalSignerTruststore;
   private final Path validatorExternalSignerTruststorePasswordFile;
-  private final Bytes32 graffiti;
+  private final GraffitiProvider graffitiProvider;
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
   private final int validatorExternalSignerConcurrentRequestLimit;
+  private final boolean useDependentRoots;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -60,11 +60,12 @@ public class ValidatorConfig {
       final Path validatorExternalSignerTruststore,
       final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<URI> beaconNodeApiEndpoint,
-      final Bytes32 graffiti,
+      final GraffitiProvider graffitiProvider,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
-      final int validatorExternalSignerConcurrentRequestLimit) {
+      final int validatorExternalSignerConcurrentRequestLimit,
+      final boolean useDependentRoots) {
     this.validatorKeys = validatorKeys;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -76,7 +77,7 @@ public class ValidatorConfig {
     this.validatorExternalSignerTruststore = validatorExternalSignerTruststore;
     this.validatorExternalSignerTruststorePasswordFile =
         validatorExternalSignerTruststorePasswordFile;
-    this.graffiti = graffiti;
+    this.graffitiProvider = graffitiProvider;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
@@ -84,6 +85,7 @@ public class ValidatorConfig {
         validatorExternalSignerSlashingProtectionEnabled;
     this.validatorExternalSignerConcurrentRequestLimit =
         validatorExternalSignerConcurrentRequestLimit;
+    this.useDependentRoots = useDependentRoots;
   }
 
   public static Builder builder() {
@@ -139,8 +141,8 @@ public class ValidatorConfig {
     return beaconNodeApiEndpoint;
   }
 
-  public Bytes32 getGraffiti() {
-    return graffiti;
+  public GraffitiProvider getGraffitiProvider() {
+    return graffitiProvider;
   }
 
   public List<String> getValidatorKeys() {
@@ -159,6 +161,10 @@ public class ValidatorConfig {
     return processor.getFilePairs();
   }
 
+  public boolean useDependentRoots() {
+    return useDependentRoots;
+  }
+
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
@@ -172,11 +178,12 @@ public class ValidatorConfig {
     private Path validatorExternalSignerKeystorePasswordFile;
     private Path validatorExternalSignerTruststore;
     private Path validatorExternalSignerTruststorePasswordFile;
-    private Bytes32 graffiti;
+    private GraffitiProvider graffitiProvider;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
+    private boolean useDependentRoots = false;
 
     private Builder() {}
 
@@ -254,8 +261,8 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder graffiti(Bytes32 graffiti) {
-      this.graffiti = graffiti;
+    public Builder graffitiProvider(GraffitiProvider graffitiProvider) {
+      this.graffitiProvider = graffitiProvider;
       return this;
     }
 
@@ -267,6 +274,11 @@ public class ValidatorConfig {
 
     public Builder validatorKeystoreLockingEnabled(boolean validatorKeystoreLockingEnabled) {
       this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
+      return this;
+    }
+
+    public Builder useDependentRoots(final boolean useDependentRoots) {
+      this.useDependentRoots = useDependentRoots;
       return this;
     }
 
@@ -288,11 +300,12 @@ public class ValidatorConfig {
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoint,
-          graffiti,
+          graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
-          validatorExternalSignerConcurrentRequestLimit);
+          validatorExternalSignerConcurrentRequestLimit,
+          useDependentRoots);
     }
 
     private void validateKeyStoreFilesAndPasswordFilesConfig() {

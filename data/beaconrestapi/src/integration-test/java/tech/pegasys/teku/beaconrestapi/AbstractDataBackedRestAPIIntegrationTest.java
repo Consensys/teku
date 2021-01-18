@@ -44,6 +44,7 @@ import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -63,7 +65,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -79,8 +80,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .restApiDocsEnabled(true)
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .restApiCorsAllowedOrigins(new ArrayList<>())
-          .eth1DepositContractAddress(
-              GlobalConfiguration.builder().build().getEth1DepositContractAddress())
+          .eth1DepositContractAddress(Eth1Address.ZERO)
           .build();
 
   protected static final UInt64 SIX = UInt64.valueOf(6);
@@ -147,6 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
+            StubSpecProvider.create(),
             recentChainData,
             combinedChainDataClient,
             eth2Network,

@@ -18,10 +18,10 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricsOptions {
@@ -70,23 +70,13 @@ public class MetricsOptions {
       arity = "0..*")
   private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
-  public boolean isMetricsEnabled() {
-    return metricsEnabled;
-  }
-
-  public int getMetricsPort() {
-    return metricsPort;
-  }
-
-  public String getMetricsInterface() {
-    return metricsInterface;
-  }
-
-  public List<String> getMetricsCategories() {
-    return metricsCategories.stream().map(Object::toString).collect(Collectors.toList());
-  }
-
-  public List<String> getMetricsHostAllowlist() {
-    return metricsHostAllowlist;
+  public void configure(TekuConfiguration.Builder builder) {
+    builder.metrics(
+        b ->
+            b.metricsEnabled(metricsEnabled)
+                .metricsPort(metricsPort)
+                .metricsInterface(metricsInterface)
+                .metricsCategories(metricsCategories)
+                .metricsHostAllowlist(metricsHostAllowlist));
   }
 }

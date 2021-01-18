@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -26,13 +26,15 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xhot-state-persistence-frequency", "99",
     };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    final StoreConfig globalConfiguration =
+        getTekuConfigurationFromArguments(args).beaconChain().storeConfig();
     assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(99);
   }
 
   @Test
   public void hotStatePersistenceFrequency_shouldSetDefaultValue() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
+    final StoreConfig globalConfiguration =
+        getTekuConfigurationFromArguments().beaconChain().storeConfig();
     assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(2);
   }
 
@@ -58,38 +60,5 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(output).isNotEmpty();
     assertThat(output).contains("Invalid value");
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_true() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup", "true",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_false() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup", "false",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_implicit() {
-    final String[] args = {
-      "--Xdisable-block-processing-at-startup",
-    };
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
-  }
-
-  @Test
-  public void disableBlockProcessingAtStartup_default() {
-    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
   }
 }

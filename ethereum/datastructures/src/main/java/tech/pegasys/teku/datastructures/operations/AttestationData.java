@@ -131,7 +131,6 @@ public class AttestationData
     return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot());
   }
 
-  /** ****************** * GETTERS & SETTERS * * ******************* */
   public UInt64 getSlot() {
     return getField0().get();
   }

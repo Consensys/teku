@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -91,6 +94,12 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
+    final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
+    checkArgument(
+        epoch.isLessThanOrEqualTo(stateEpoch.plus(MAX_SEED_LOOKAHEAD)),
+        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
+        epoch,
+        stateEpoch);
     return BeaconStateCache.getTransitionCaches(state)
         .getActiveValidators()
         .get(

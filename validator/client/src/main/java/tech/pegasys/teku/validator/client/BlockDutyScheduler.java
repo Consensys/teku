@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,14 +27,16 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   static final int LOOKAHEAD_EPOCHS = 0;
 
   public BlockDutyScheduler(
-      final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS);
+      final MetricsSystem metricsSystem,
+      final DutyLoader epochDutiesScheduler,
+      final boolean useDependentRoots) {
+    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_block_duties_current",
         "Current number of pending block duties that have been scheduled",
-        () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
+        () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
   }
 
   @Override
@@ -44,6 +49,21 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
+    notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
+  }
+
+  @Override
+  protected Bytes32 getExpectedDependentRoot(
+      final Bytes32 headBlockRoot,
+      final Bytes32 previousTargetRoot,
+      final Bytes32 currentTargetRoot,
+      final UInt64 headEpoch,
+      final UInt64 dutyEpoch) {
+    checkArgument(
+        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+        dutyEpoch,
+        headEpoch);
+    return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
   }
 }

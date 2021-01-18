@@ -13,16 +13,94 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public interface MetricsConfig {
-  boolean isMetricsEnabled();
+public class MetricsConfig {
 
-  int getMetricsPort();
+  private final boolean metricsEnabled;
+  private final int metricsPort;
+  private final String metricsInterface;
+  private final Set<MetricCategory> metricsCategories;
+  private final List<String> metricsHostAllowlist;
 
-  String getMetricsInterface();
+  private MetricsConfig(
+      final boolean metricsEnabled,
+      final int metricsPort,
+      final String metricsInterface,
+      final Set<MetricCategory> metricsCategories,
+      final List<String> metricsHostAllowlist) {
+    this.metricsEnabled = metricsEnabled;
+    this.metricsPort = metricsPort;
+    this.metricsInterface = metricsInterface;
+    this.metricsCategories = metricsCategories;
+    this.metricsHostAllowlist = metricsHostAllowlist;
+  }
 
-  List<String> getMetricsCategories();
+  public static MetricsConfigBuilder builder() {
+    return new MetricsConfigBuilder();
+  }
 
-  List<String> getMetricsHostAllowlist();
+  public boolean isMetricsEnabled() {
+    return metricsEnabled;
+  }
+
+  public int getMetricsPort() {
+    return metricsPort;
+  }
+
+  public String getMetricsInterface() {
+    return metricsInterface;
+  }
+
+  public Set<MetricCategory> getMetricsCategories() {
+    return metricsCategories;
+  }
+
+  public List<String> getMetricsHostAllowlist() {
+    return metricsHostAllowlist;
+  }
+
+  public static final class MetricsConfigBuilder {
+
+    private boolean metricsEnabled;
+    private int metricsPort;
+    private String metricsInterface;
+    private Set<MetricCategory> metricsCategories = new HashSet<>();
+    private List<String> metricsHostAllowlist;
+
+    private MetricsConfigBuilder() {}
+
+    public MetricsConfigBuilder metricsEnabled(boolean metricsEnabled) {
+      this.metricsEnabled = metricsEnabled;
+      return this;
+    }
+
+    public MetricsConfigBuilder metricsPort(int metricsPort) {
+      this.metricsPort = metricsPort;
+      return this;
+    }
+
+    public MetricsConfigBuilder metricsInterface(String metricsInterface) {
+      this.metricsInterface = metricsInterface;
+      return this;
+    }
+
+    public MetricsConfigBuilder metricsCategories(Set<MetricCategory> metricsCategories) {
+      this.metricsCategories = metricsCategories;
+      return this;
+    }
+
+    public MetricsConfigBuilder metricsHostAllowlist(List<String> metricsHostAllowlist) {
+      this.metricsHostAllowlist = metricsHostAllowlist;
+      return this;
+    }
+
+    public MetricsConfig build() {
+      return new MetricsConfig(
+          metricsEnabled, metricsPort, metricsInterface, metricsCategories, metricsHostAllowlist);
+    }
+  }
 }

@@ -19,7 +19,6 @@ import com.google.common.eventbus.EventBus;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,7 +53,6 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
 
-  List<BeaconState> statesList = new ArrayList<>();
   public static Consumer<Object> blackHole = o -> {};
 
   @Disabled
@@ -159,7 +157,6 @@ public class ProfilingRun {
 
     BeaconState initialState =
         InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
-    statesList.add(initialState);
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
@@ -194,7 +191,6 @@ public class ProfilingRun {
                   + result);
 
           if (--counter == 0) {
-            statesList.add(result.getBlockProcessingRecord().get().getPostState());
 
             // recreate View validator caches for older state
             //            traverseViewHierarchy(statesList.get(statesList.size() - 2), v ->
