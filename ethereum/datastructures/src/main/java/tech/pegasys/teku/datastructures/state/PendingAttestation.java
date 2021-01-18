@@ -32,16 +32,18 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class PendingAttestation extends
-    Container4<PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
+public class PendingAttestation
+    extends Container4<
+        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable {
 
-  static class PendingAttestationType extends
-      ContainerType4<PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
+  static class PendingAttestationType
+      extends ContainerType4<
+          PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
 
     public PendingAttestationType() {
-      super(new ListViewType<>(
-              BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+      super(
+          new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
           AttestationData.TYPE,
           BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.UINT64_TYPE);
@@ -85,9 +87,6 @@ public class PendingAttestation extends
     return new PendingAttestation(this);
   }
 
-  /**
-   * ****************** * GETTERS & SETTERS * * *******************
-   */
   public Bitlist getAggregation_bits() {
     return ViewUtils.getBitlist(getField0());
   }

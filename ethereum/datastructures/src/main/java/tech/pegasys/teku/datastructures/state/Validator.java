@@ -33,15 +33,34 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Validator extends Container8<Validator,
-    VectorViewRead<ByteView>, Bytes32View, UInt64View, BitView, UInt64View, UInt64View, UInt64View, UInt64View>
+public class Validator
+    extends Container8<
+        Validator,
+        VectorViewRead<ByteView>,
+        Bytes32View,
+        UInt64View,
+        BitView,
+        UInt64View,
+        UInt64View,
+        UInt64View,
+        UInt64View>
     implements SimpleOffsetSerializable, Merkleizable {
 
-  public static class ValidatorType extends ContainerType8<Validator,
-      VectorViewRead<ByteView>, Bytes32View, UInt64View, BitView, UInt64View, UInt64View, UInt64View, UInt64View> {
+  public static class ValidatorType
+      extends ContainerType8<
+          Validator,
+          VectorViewRead<ByteView>,
+          Bytes32View,
+          UInt64View,
+          BitView,
+          UInt64View,
+          UInt64View,
+          UInt64View,
+          UInt64View> {
 
     public ValidatorType() {
-      super(new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
+      super(
+          new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
           BasicViewTypes.BYTES32_TYPE,
           BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.BIT_TYPE,
@@ -57,8 +76,7 @@ public class Validator extends Container8<Validator,
     }
   }
 
-  @SszTypeDescriptor
-  public static final ValidatorType TYPE = new ValidatorType();
+  @SszTypeDescriptor public static final ValidatorType TYPE = new ValidatorType();
 
   private Validator(ValidatorType type, TreeNode backingNode) {
     super(type, backingNode);
