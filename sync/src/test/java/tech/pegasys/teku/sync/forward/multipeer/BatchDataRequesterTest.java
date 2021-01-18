@@ -131,6 +131,21 @@ class BatchDataRequesterTest {
     assertThatBatch(batches.get(1)).hasRange(490, targetChain.getChainHead().getSlot().longValue());
   }
 
+  @Test
+  void shouldScheduleAdditionalBatchWhenThereIsOnlyOneBlockRemainingToFetch() {
+    final UInt64 firstBatchStart = targetChain.getChainHead().getSlot().minus(BATCH_SIZE);
+    final Batch batch = batchFactory.createBatch(targetChain, firstBatchStart, BATCH_SIZE);
+    batchChain.add(batch);
+
+    fillQueue(ZERO);
+
+    final List<Batch> batches = batchChain.stream().collect(toList());
+    assertThat(batches).hasSize(2);
+    final long targetSlot = targetChain.getChainHead().getSlot().longValue();
+    assertThatBatch(batches.get(0)).hasRange(firstBatchStart.intValue(), targetSlot - 1);
+    assertThatBatch(batches.get(1)).hasRange(targetSlot, targetSlot);
+  }
+
   private void fillQueue(final UInt64 commonAncestorSlot) {
     eventThread.execute(
         () ->
