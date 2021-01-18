@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.chainstorage;
 
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -24,16 +25,19 @@ public class StorageConfiguration {
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
+  private final SpecProvider specProvider;
 
   private StorageConfiguration(
       final Optional<Eth1Address> eth1DepositContract,
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
-      final DatabaseVersion dataStorageCreateDbVersion) {
+      final DatabaseVersion dataStorageCreateDbVersion,
+      final SpecProvider specProvider) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+    this.specProvider = specProvider;
   }
 
   public static Builder builder() {
@@ -56,12 +60,17 @@ public class StorageConfiguration {
     return dataStorageCreateDbVersion;
   }
 
+  public SpecProvider getSpecProvider() {
+    return specProvider;
+  }
+
   public static final class Builder {
 
     private Optional<Eth1Address> eth1DepositContract;
     private StateStorageMode dataStorageMode;
     private long dataStorageFrequency;
     private DatabaseVersion dataStorageCreateDbVersion;
+    private SpecProvider specProvider;
 
     private Builder() {}
 
@@ -85,9 +94,18 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder specProvider(SpecProvider specProvider) {
+      this.specProvider = specProvider;
+      return this;
+    }
+
     public StorageConfiguration build() {
       return new StorageConfiguration(
-          eth1DepositContract, dataStorageMode, dataStorageFrequency, dataStorageCreateDbVersion);
+          eth1DepositContract,
+          dataStorageMode,
+          dataStorageFrequency,
+          dataStorageCreateDbVersion,
+          specProvider);
     }
   }
 }

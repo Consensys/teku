@@ -55,7 +55,8 @@ public class StorageService extends Service {
                   config.getDataStorageMode(),
                   config.getDataStorageCreateDbVersion(),
                   config.getDataStorageFrequency(),
-                  config.getEth1DepositContract());
+                  config.getEth1DepositContract(),
+                  config.getSpecProvider());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
