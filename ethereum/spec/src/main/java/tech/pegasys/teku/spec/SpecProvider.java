@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec;
 
+import com.google.common.base.Preconditions;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecProvider {
   // Eventually we will have multiple versioned specs, where each version is active for a specific
@@ -21,14 +24,26 @@ public class SpecProvider {
   private final Spec genesisSpec;
   private final ForkManifest forkManifest;
 
-  private SpecProvider(final Spec genesisSpec) {
+  private SpecProvider(final Spec genesisSpec, final ForkManifest forkManifest) {
+    Preconditions.checkArgument(forkManifest != null);
+    Preconditions.checkArgument(genesisSpec != null);
     this.genesisSpec = genesisSpec;
-    this.forkManifest = ForkManifest.create(this.genesisSpec.getConstants());
+    this.forkManifest = forkManifest;
+  }
+
+  private SpecProvider(final Spec genesisSpec) {
+    this(genesisSpec, ForkManifest.create(genesisSpec.getConstants()));
   }
 
   public static SpecProvider create(final SpecConfiguration config) {
     final Spec initialSpec = new Spec(config.constants());
     return new SpecProvider(initialSpec);
+  }
+
+  public static SpecProvider create(
+      final SpecConfiguration config, final ForkManifest forkManifest) {
+    final Spec initialSpec = new Spec(config.constants());
+    return new SpecProvider(initialSpec, forkManifest);
   }
 
   public Spec get(final UInt64 epoch) {
@@ -37,5 +52,21 @@ public class SpecProvider {
 
   public ForkManifest getForkManifest() {
     return forkManifest;
+  }
+
+  public int slotsPerEpoch(final UInt64 epoch) {
+    return get(epoch).getConstants().getSlotsPerEpoch();
+  }
+
+  public int secondsPerSlot(final UInt64 epoch) {
+    return get(epoch).getConstants().getSecondsPerSlot();
+  }
+
+  public Bytes4 domainBeaconProposer(final UInt64 epoch) {
+    return get(epoch).getConstants().getDomainBeaconProposer();
+  }
+
+  public Fork fork(final UInt64 epoch) {
+    return forkManifest.get(epoch);
   }
 }
