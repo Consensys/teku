@@ -109,8 +109,8 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   public void fetchAncestors(final SignedBeaconBlock block, final SlotAndBlockRoot targetChain) {
-    if (pendingBlocksPool.contains(block.getParentRoot())) {
-      // We've already got this block
+    if (pendingBlocksPool.contains(block.getRoot())) {
+      // Already got this block, no need to do anything
       return;
     }
     // TODO: If the block is too far from current chain head, or too far from the target chain head,
@@ -122,6 +122,10 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
     if (recentChainData.containsBlock(block.getParentRoot())) {
       pendingBlocksPool.remove(block);
       blockSubscribers.deliver(BlockSubscriber::onBlock, block);
+      return;
+    }
+    if (pendingBlocksPool.contains(block.getParentRoot())) {
+      // We've already got this block's parent, no need to request it
       return;
     }
     requestBlockParent(block, targetChain);

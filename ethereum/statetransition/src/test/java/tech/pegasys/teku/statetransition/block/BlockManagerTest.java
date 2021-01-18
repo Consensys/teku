@@ -15,10 +15,6 @@ package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
@@ -32,10 +28,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
 import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -78,6 +72,8 @@ public class BlockManagerTest {
           localRecentChainData,
           new StateTransition());
 
+  private final List<SignedBeaconBlock> unknownParentBlocks = new ArrayList<>();
+
   private final BlockImporter blockImporter =
       new BlockImporter(
           localRecentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
@@ -97,6 +93,7 @@ public class BlockManagerTest {
   public void setup() {
     localChain.initializeStorage();
     remoteChain.initializeStorage();
+    blockManager.subscribeToPendingBlocks(unknownParentBlocks::add);
     assertThat(blockManager.start()).isCompleted();
   }
 
@@ -112,7 +109,7 @@ public class BlockManagerTest {
     incrementSlot();
 
     blockManager.importBlock(nextBlock).join();
-    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(unknownParentBlocks.size()).isEqualTo(0);
   }
 
   @Test
@@ -126,49 +123,9 @@ public class BlockManagerTest {
     incrementSlot();
     incrementSlot();
     blockManager.importBlock(nextNextBlock).join();
-    assertThat(pendingBlocks.size()).isEqualTo(1);
+    assertThat(unknownParentBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
-  }
-
-  @Test
-  public void onGossipedBlock_retryIfParentWasUnknownButIsNowAvailable() throws Exception {
-    final BlockImporter blockImporter = mock(BlockImporter.class);
-    final RecentChainData localRecentChainData = mock(RecentChainData.class);
-    final BlockManager blockManager =
-        new BlockManager(
-            localEventBus,
-            localRecentChainData,
-            blockImporter,
-            pendingBlocks,
-            futureBlocks,
-            mock(BlockValidator.class));
-    assertThat(blockManager.start()).isCompleted();
-
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
-    final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
-    // Create 2 blocks
-    remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
-
-    final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock))
-        .thenReturn(blockImportResult)
-        .thenReturn(new SafeFuture<>());
-
-    incrementSlot();
-    incrementSlot();
-    blockManager.importBlock(nextNextBlock);
-    ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
-
-    // Before nextNextBlock imports, it's parent becomes available
-    when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
-
-    // So when the block import completes, it should be retried
-    blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
-    ignoreFuture(verify(blockImporter, times(2)).importBlock(nextNextBlock));
-
-    assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
+    assertThat(unknownParentBlocks.contains(nextNextBlock)).isTrue();
   }
 
   @Test
@@ -177,7 +134,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     blockManager.importBlock(nextBlock).join();
-    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(unknownParentBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
   }
@@ -192,9 +149,9 @@ public class BlockManagerTest {
 
     incrementSlot();
     blockManager.importBlock(nextNextBlock).join();
-    assertThat(pendingBlocks.size()).isEqualTo(1);
+    assertThat(unknownParentBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
+    assertThat(unknownParentBlocks.contains(nextNextBlock)).isTrue();
   }
 
   @Test
@@ -204,7 +161,7 @@ public class BlockManagerTest {
     incrementSlot();
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
-    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(unknownParentBlocks.size()).isEqualTo(0);
   }
 
   @Test
@@ -213,7 +170,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
-    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(unknownParentBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
   }
@@ -227,9 +184,11 @@ public class BlockManagerTest {
       final UInt64 nextSlot = incrementSlot();
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
+    // Add any blocks with unknown parents to the pending pool (normally managed by block fetcher)
+    blockManager.subscribeToPendingBlocks(pendingBlocks::add);
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
+    blocks.subList(1, blockCount).forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
@@ -253,8 +212,11 @@ public class BlockManagerTest {
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
 
+    // Add any blocks with unknown parents to the pending pool (normally managed by block fetcher)
+    blockManager.subscribeToPendingBlocks(pendingBlocks::add);
+
     // Gossip all blocks except the first
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
@@ -262,7 +224,7 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -282,9 +244,11 @@ public class BlockManagerTest {
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
 
+    // Add any blocks with unknown parents to the pending pool (normally managed by block fetcher)
+    blockManager.subscribeToPendingBlocks(pendingBlocks::add);
+
     // Gossip all blocks except the first two
-    invalidBlockDescendants.subList(1, invalidChainDepth).stream()
-        .forEach(blockManager::importBlock);
+    invalidBlockDescendants.subList(1, invalidChainDepth).forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip invalid block, which should fail to import and be marked invalid
@@ -297,7 +261,7 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
+    invalidBlockDescendants.forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -313,8 +277,11 @@ public class BlockManagerTest {
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
+    // Add any blocks with unknown parents to the pending pool (normally managed by block fetcher)
+    blockManager.subscribeToPendingBlocks(pendingBlocks::add);
+
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
+    blocks.subList(1, blockCount).forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import

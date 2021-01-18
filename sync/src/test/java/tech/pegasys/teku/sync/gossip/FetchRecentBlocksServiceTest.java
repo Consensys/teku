@@ -111,6 +111,17 @@ public class FetchRecentBlocksServiceTest {
   }
 
   @Test
+  void immediatelyProcessBlockWhereParentBecomesAvailable() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    // Block is available by the time we get to processing it
+    when(recentChainData.containsBlock(block.getParentRoot())).thenReturn(true);
+    recentBlockFetcher.fetchAncestors(block);
+
+    assertThat(importedBlocks).containsExactly(block);
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
   public void handleDuplicateRequiredBlocks() {
     final SignedBeaconBlock childBlock1 = dataStructureUtil.randomSignedBeaconBlock(5);
     final SignedBeaconBlock childBlock2 =
