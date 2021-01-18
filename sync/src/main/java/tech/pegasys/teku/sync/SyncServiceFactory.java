@@ -118,7 +118,7 @@ public class SyncServiceFactory {
 
     final ForwardSyncService forwardSyncService = createForwardSyncService();
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
+        FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks, recentChainData);
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);

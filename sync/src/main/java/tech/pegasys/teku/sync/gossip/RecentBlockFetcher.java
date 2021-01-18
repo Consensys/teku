@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.sync.gossip;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.BlockSubscriber;
 
 public interface RecentBlockFetcher {
+  void fetchAncestors(final SignedBeaconBlock block);
 
-  long subscribeBlockFetched(BlockSubscriber subscriber);
+  void subscribeBlockFetched(BlockSubscriber subscriber);
 
-  void requestRecentBlock(Bytes32 blockRoot);
-
-  void cancelRecentBlockRequest(Bytes32 blockRoot);
+  void notifyBlockReceived(SignedBeaconBlock block);
 }

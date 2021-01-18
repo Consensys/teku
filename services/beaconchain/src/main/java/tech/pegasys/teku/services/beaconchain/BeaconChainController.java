@@ -228,7 +228,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     .importBlock(block)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (root) -> syncService.getRecentBlockFetcher().cancelRecentBlockRequest(root));
+        (root) -> syncService.getRecentBlockFetcher().notifyBlockReceived(root));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
@@ -754,6 +754,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
             Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()));
 
+    blockManager.subscribeToPendingBlocks(syncService.getRecentBlockFetcher()::fetchAncestors);
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
   }
 

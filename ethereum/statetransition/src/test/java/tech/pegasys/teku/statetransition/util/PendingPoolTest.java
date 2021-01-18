@@ -34,14 +34,15 @@ public class PendingPoolTest {
   private final PendingPool<SignedBeaconBlock> pendingPool =
       PendingPool.createForBlocks(historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
-  private List<Bytes32> requiredRootEvents = new ArrayList<>();
-  private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
+  private final List<Bytes32> requiredRootEvents = new ArrayList<>();
+  private final List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
 
   @BeforeEach
   public void setup() {
     // Set up slot
-    pendingPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
-    pendingPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
+    pendingPool.subscribePendingItemAdded(item -> requiredRootEvents.add(item.getParentRoot()));
+    pendingPool.subscribePendingItemDropped(
+        item -> requiredRootDroppedEvents.add(item.getParentRoot()));
     setSlot(currentSlot);
   }
 

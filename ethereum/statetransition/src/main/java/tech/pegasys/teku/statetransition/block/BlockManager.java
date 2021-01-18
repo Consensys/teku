@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.datastructures.blocks.PendingBlockListener;
 import tech.pegasys.teku.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,6 +53,8 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
+      Subscribers.create(true);
+  private final Subscribers<PendingBlockListener> pendingBlockSubscribers =
       Subscribers.create(true);
 
   BlockManager(
@@ -124,7 +127,11 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   }
 
   private void notifyReceivedBlockSubscribers(SignedBeaconBlock signedBeaconBlock) {
-    receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock.getRoot()));
+    receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock));
+  }
+
+  public void subscribeToPendingBlocks(final PendingBlockListener listener) {
+    pendingBlockSubscribers.subscribe(listener);
   }
 
   @Subscribe
@@ -156,16 +163,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
               } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
-                // Add to the pending pool so it is triggered once the parent is imported
-                pendingBlocks.add(block);
-                // Check if the parent was imported while we were trying to import this block and if
-                // so, remove from the pendingPool again and process now We must add the block to
-                // the pending pool before this check happens to avoid race conditions between
-                // performing the check and the parent importing.
-                if (recentChainData.containsBlock(block.getParentRoot())) {
-                  pendingBlocks.remove(block);
-                  importBlockIgnoringResult(block);
-                }
+                pendingBlockSubscribers.deliver(PendingBlockListener::accept, block);
               } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
                 futureBlocks.add(block);
               } else {

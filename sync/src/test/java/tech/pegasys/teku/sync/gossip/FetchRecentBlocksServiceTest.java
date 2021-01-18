@@ -28,11 +28,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFactory;
@@ -40,12 +42,13 @@ import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFact
 public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private Eth2Network eth2Network = mock(Eth2Network.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   @SuppressWarnings("unchecked")
-  private PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+  private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
 
-  private FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+  private final FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final int maxConcurrentRequests = 2;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -63,19 +66,24 @@ public class FetchRecentBlocksServiceTest {
             asyncRunner,
             eth2Network,
             pendingBlocksPool,
+            recentChainData,
             fetchBlockTaskFactory,
             maxConcurrentRequests);
 
-    lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
+    lenient()
+        .when(fetchBlockTaskFactory.create(any(), any(), any()))
+        .thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(1);
+    final SlotAndBlockRoot targetChain = invocationOnMock.getArgument(1);
+    Bytes32 blockRoot = invocationOnMock.getArgument(2);
     final FetchBlockTask task = mock(FetchBlockTask.class);
 
     lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
     lenient().when(task.getNumberOfRetries()).thenReturn(0);
+    lenient().when(task.getTargetChain()).thenReturn(targetChain);
     final SafeFuture<FetchBlockResult> future = new SafeFuture<>();
     lenient().when(task.run()).thenReturn(future);
     taskFutures.add(future);
@@ -87,14 +95,15 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void fetchSingleBlockSuccessfully() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock childBlock = dataStructureUtil.randomSignedBeaconBlock(5);
+    recentBlockFetcher.fetchAncestors(childBlock);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    when(recentChainData.containsBlock(block.getParentRoot())).thenReturn(true);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
@@ -103,15 +112,18 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void handleDuplicateRequiredBlocks() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock childBlock1 = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBeaconBlock childBlock2 =
+        dataStructureUtil.randomSignedBeaconBlock(7, childBlock1.getParentRoot());
+    recentBlockFetcher.fetchAncestors(childBlock1);
+    recentBlockFetcher.fetchAncestors(childBlock2);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    when(recentChainData.containsBlock(block.getParentRoot())).thenReturn(true);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
@@ -120,9 +132,9 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void ignoreKnownBlock() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    when(pendingBlocksPool.contains(root)).thenReturn(true);
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(pendingBlocksPool.contains(block.getParentRoot())).thenReturn(true);
+    recentBlockFetcher.fetchAncestors(block);
 
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlocks).isEmpty();
@@ -130,9 +142,9 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void cancelBlockRequest() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
-    recentBlockFetcher.cancelRecentBlockRequest(root);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    recentBlockFetcher.fetchAncestors(block);
+    recentBlockFetcher.cancelRecentBlockRequest(block.getParentRoot());
 
     verify(tasks.get(0)).cancel();
     // Manually cancel future
@@ -145,8 +157,8 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void fetchSingleBlockWithRetry() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    recentBlockFetcher.fetchAncestors(block);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -167,8 +179,8 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void cancelTaskWhileWaitingToRetry() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    recentBlockFetcher.fetchAncestors(block);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -182,7 +194,7 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 0, 0);
 
     // Cancel task
-    recentBlockFetcher.cancelRecentBlockRequest(root);
+    recentBlockFetcher.cancelRecentBlockRequest(block.getParentRoot());
     verify(tasks.get(0)).cancel();
     when(tasks.get(0).run())
         .thenReturn(SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED)));
@@ -194,8 +206,8 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void handlesPeersUnavailable() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    recentBlockFetcher.fetchAncestors(block);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -218,8 +230,8 @@ public class FetchRecentBlocksServiceTest {
   public void queueFetchTaskWhenConcurrencyLimitReached() {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
-      final Bytes32 root = dataStructureUtil.randomBytes32();
-      recentBlockFetcher.requestRecentBlock(root);
+      final SignedBeaconBlock childBlock = dataStructureUtil.randomSignedBeaconBlock(5);
+      recentBlockFetcher.fetchAncestors(childBlock);
     }
 
     assertTaskCounts(taskCount, taskCount - 1, 1);
@@ -227,6 +239,7 @@ public class FetchRecentBlocksServiceTest {
     // Complete first task
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    when(recentChainData.containsBlock(block.getParentRoot())).thenReturn(true);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     // After first task completes, remaining pending count should become active

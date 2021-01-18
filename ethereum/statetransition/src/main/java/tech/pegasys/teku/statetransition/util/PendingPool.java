@@ -50,10 +50,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
-  private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
+  private final Subscribers<RequiredItemSubscriber<T>> pendingItemAddedSubscribers =
       Subscribers.create(true);
-  private final Subscribers<RequiredBlockRootDroppedSubscriber>
-      requiredBlockRootDroppedSubscribers = Subscribers.create(true);
+  private final Subscribers<RequiredItemDroppedSubscriber<T>> pendingItemDroppedSubscribers =
+      Subscribers.create(true);
 
   private final Map<Bytes32, T> pendingItems = new HashMap<>();
   private final NavigableSet<SlotAndRoot> orderedPendingItems =
@@ -142,8 +142,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
                     requiredRoot,
                     (key) -> {
                       final Set<Bytes32> dependants = new HashSet<>();
-                      requiredBlockRootSubscribers.forEach(
-                          c -> c.onRequiredBlockRoot(requiredRoot));
+                      pendingItemAddedSubscribers.forEach(c -> c.onRequiredItem(item));
                       return dependants;
                     })
                 .add(itemRoot));
@@ -173,8 +172,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           }
           childSet.remove(itemSlotAndRoot.getRoot());
           if (pendingItemsByRequiredBlockRoot.remove(requiredRoot, Collections.emptySet())) {
-            requiredBlockRootDroppedSubscribers.forEach(
-                s -> s.onRequiredBlockRootDropped(requiredRoot));
+            pendingItemDroppedSubscribers.forEach(s -> s.onRequiredItemDropped(item));
           }
         });
   }
@@ -258,21 +256,12 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         .collect(Collectors.toList());
   }
 
-  public long subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
-    return requiredBlockRootSubscribers.subscribe(subscriber);
+  public void subscribePendingItemAdded(final RequiredItemSubscriber<T> subscriber) {
+    pendingItemAddedSubscribers.subscribe(subscriber);
   }
 
-  public boolean unsubscribeRequiredBlockRoot(final long subscriberId) {
-    return requiredBlockRootSubscribers.unsubscribe(subscriberId);
-  }
-
-  public long subscribeRequiredBlockRootDropped(
-      final RequiredBlockRootDroppedSubscriber subscriber) {
-    return requiredBlockRootDroppedSubscribers.subscribe(subscriber);
-  }
-
-  public boolean unsubscribeRequiredBlockRootDropped(final long subscriberId) {
-    return requiredBlockRootDroppedSubscribers.unsubscribe(subscriberId);
+  public void subscribePendingItemDropped(final RequiredItemDroppedSubscriber<T> subscriber) {
+    pendingItemDroppedSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -342,12 +331,12 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return new SlotAndRoot(slot, root);
   }
 
-  public interface RequiredBlockRootSubscriber {
-    void onRequiredBlockRoot(final Bytes32 blockRoot);
+  public interface RequiredItemSubscriber<T> {
+    void onRequiredItem(final T blockRoot);
   }
 
-  public interface RequiredBlockRootDroppedSubscriber {
-    void onRequiredBlockRootDropped(final Bytes32 blockRoot);
+  public interface RequiredItemDroppedSubscriber<T> {
+    void onRequiredItemDropped(final T blockRoot);
   }
 
   private static class SlotAndRoot {

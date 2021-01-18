@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -37,14 +38,19 @@ class FetchBlockTask {
       Comparator.comparing(p -> Math.random());
 
   private final P2PNetwork<Eth2Peer> eth2Network;
+  private final SlotAndBlockRoot targetChain;
   private final Bytes32 blockRoot;
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private final AtomicInteger numberOfRuns = new AtomicInteger(0);
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
+  FetchBlockTask(
+      final P2PNetwork<Eth2Peer> eth2Network,
+      final SlotAndBlockRoot targetChain,
+      final Bytes32 blockRoot) {
     this.eth2Network = eth2Network;
+    this.targetChain = targetChain;
     this.blockRoot = blockRoot;
   }
 
@@ -53,8 +59,14 @@ class FetchBlockTask {
   }
 
   public static FetchBlockTask create(
-      final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
-    return new FetchBlockTask(eth2Network, blockRoot);
+      final P2PNetwork<Eth2Peer> eth2Network,
+      final SlotAndBlockRoot targetChain,
+      final Bytes32 blockRoot) {
+    return new FetchBlockTask(eth2Network, targetChain, blockRoot);
+  }
+
+  public SlotAndBlockRoot getTargetChain() {
+    return targetChain;
   }
 
   public Bytes32 getBlockRoot() {

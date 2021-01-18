@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 
@@ -43,6 +45,7 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   private static final RetryDelayFunction RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
+  private final RecentChainData recentChainData;
   private final int maxConcurrentRequests;
   private final P2PNetwork<Eth2Peer> eth2Network;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
@@ -59,9 +62,11 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final RecentChainData recentChainData,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
       final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
+    this.recentChainData = recentChainData;
     this.maxConcurrentRequests = maxConcurrentRequests;
     this.eth2Network = eth2Network;
     this.pendingBlocksPool = pendingBlocksPool;
@@ -71,11 +76,13 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
-      final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
+      final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final RecentChainData recentChainData) {
     return new FetchRecentBlocksService(
         asyncRunner,
         eth2Network,
         pendingBlocksPool,
+        recentChainData,
         FetchBlockTask::create,
         MAX_CONCURRENT_REQUESTS);
   }
@@ -92,26 +99,43 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   @Override
-  public long subscribeBlockFetched(final BlockSubscriber subscriber) {
-    return blockSubscribers.subscribe(subscriber);
-  }
-
-  public void unsubscribeBlockFetched(final int subscriberId) {
-    blockSubscribers.unsubscribe(subscriberId);
-  }
-
-  private void setupSubscribers() {
-    this.pendingBlocksPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
-    this.pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+  public void subscribeBlockFetched(final BlockSubscriber subscriber) {
+    blockSubscribers.subscribe(subscriber);
   }
 
   @Override
-  public void requestRecentBlock(final Bytes32 blockRoot) {
-    if (pendingBlocksPool.contains(blockRoot)) {
+  public void fetchAncestors(final SignedBeaconBlock block) {
+    fetchAncestors(block, new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+  }
+
+  public void fetchAncestors(final SignedBeaconBlock block, final SlotAndBlockRoot targetChain) {
+    if (pendingBlocksPool.contains(block.getParentRoot())) {
       // We've already got this block
       return;
     }
-    final FetchBlockTask task = fetchBlockTaskFactory.create(eth2Network, blockRoot);
+    // TODO: If the block is too far from current chain head, or too far from the target chain head,
+    //  ask the batch sync to sync the fork
+    pendingBlocksPool.add(block);
+    // Check if the parent was imported on another thread and if so, remove from the pendingPool
+    // again and process now. We must add the block to the pending pool before this check happens to
+    // avoid race conditions between performing the check and the parent importing.
+    if (recentChainData.containsBlock(block.getParentRoot())) {
+      pendingBlocksPool.remove(block);
+      blockSubscribers.deliver(BlockSubscriber::onBlock, block);
+      return;
+    }
+    requestBlockParent(block, targetChain);
+  }
+
+  private void setupSubscribers() {
+    this.pendingBlocksPool.subscribePendingItemDropped(this::notifyBlockReceived);
+  }
+
+  private void requestBlockParent(
+      final SignedBeaconBlock block, final SlotAndBlockRoot targetChain) {
+    final Bytes32 blockRoot = block.getParentRoot();
+
+    final FetchBlockTask task = fetchBlockTaskFactory.create(eth2Network, targetChain, blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task
       task.cancel();
@@ -122,6 +146,10 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   @Override
+  public void notifyBlockReceived(final SignedBeaconBlock block) {
+    cancelRecentBlockRequest(block.getParentRoot());
+  }
+
   public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     final FetchBlockTask task = allTasks.get(blockRoot);
     if (task != null) {
@@ -214,7 +242,8 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
 
   private void handleFetchedBlock(FetchBlockTask task, final SignedBeaconBlock block) {
     LOG.trace("Successfully fetched block: {}", block);
-    blockSubscribers.forEach(s -> s.onBlock(block));
+    // Follow the chain. fetchAncestors will handle notifications if the new block is importable
+    fetchAncestors(block, task.getTargetChain());
     // After retrieved block has been processed, stop tracking it
     removeTask(task);
   }
@@ -235,7 +264,8 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   interface FetchBlockTaskFactory {
-    FetchBlockTask create(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot);
+    FetchBlockTask create(
+        P2PNetwork<Eth2Peer> eth2Network, SlotAndBlockRoot targetChain, Bytes32 blockRoot);
   }
 
   public interface BlockSubscriber {

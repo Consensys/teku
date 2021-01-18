@@ -13,6 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-public interface ReceivedBlockListener {
+public interface PendingBlockListener {
   void accept(SignedBeaconBlock blockRoot);
 }
