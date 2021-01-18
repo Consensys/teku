@@ -215,10 +215,5 @@ public class ValidatorKeysOptions {
         throw new IllegalArgumentException("Failed to load public keys from URL", ex);
       }
     }
-
-    static class PublicKeyRemoteList {
-      @JsonProperty("keys")
-      public List<String> keys;
-    }
   }
 }
