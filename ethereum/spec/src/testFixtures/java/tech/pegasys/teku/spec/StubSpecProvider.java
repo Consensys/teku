@@ -14,14 +14,21 @@
 package tech.pegasys.teku.spec;
 
 import java.io.IOException;
+import java.util.List;
+import tech.pegasys.teku.datastructures.state.Fork;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.constants.SpecConstantsReader;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class StubSpecProvider {
 
   public static SpecProvider create() {
+    final Bytes4 genesisFork = Bytes4.fromHexString("0x00000000");
     final SpecConfiguration config = SpecConfiguration.builder().constants(loadConstants()).build();
-    return SpecProvider.create(config);
+    final ForkManifest forkManifest =
+        ForkManifest.create(List.of(new Fork(genesisFork, genesisFork, UInt64.ZERO)));
+    return SpecProvider.create(config, forkManifest);
   }
 
   private static SpecConstants loadConstants() {

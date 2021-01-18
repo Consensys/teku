@@ -197,7 +197,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
-    this.specProvider = SpecProvider.create(beaconConfig.eth2NetworkConfig().getSpecConfig());
+    this.specProvider = beaconConfig.getSpecProvider();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");

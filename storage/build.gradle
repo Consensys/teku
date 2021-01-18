@@ -2,6 +2,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:io')
@@ -23,9 +24,12 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
 
+  testImplementation project(':ethereum:networks')
+
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':protoarray'))
@@ -33,6 +37,8 @@ dependencies {
   testImplementation testFixtures(project(':pow'))
   testImplementation testFixtures(project(':storage'))
 
+
+  testFixturesApi project(':ethereum:networks')
   testFixturesApi project(':util')
   testFixturesApi project(':storage')
   testFixturesApi project(':storage:api')
@@ -41,6 +47,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation testFixtures(project(':protoarray'))
