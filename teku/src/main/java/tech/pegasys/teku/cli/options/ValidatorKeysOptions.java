@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import java.io.IOException;
