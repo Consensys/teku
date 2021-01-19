@@ -32,10 +32,7 @@ class BitvectorTest {
   private static int testBitvectorLength = 4;
 
   private static Bitvector createBitvector() {
-    Bitvector bitvector = new Bitvector(testBitvectorLength);
-    bitvector.setBit(0);
-    bitvector.setBit(3);
-    return bitvector;
+    return new Bitvector(testBitvectorLength, 0, 3);
   }
 
   @Test
@@ -47,10 +44,7 @@ class BitvectorTest {
 
   @Test
   void setTest() {
-    Bitvector bitvector = new Bitvector(10);
-    bitvector.setBit(1);
-    bitvector.setBit(3);
-    bitvector.setBit(8);
+    Bitvector bitvector = new Bitvector(10, 1, 3, 8);
 
     Assertions.assertEquals(bitvector.getBit(0), false);
     Assertions.assertEquals(bitvector.getBit(1), true);

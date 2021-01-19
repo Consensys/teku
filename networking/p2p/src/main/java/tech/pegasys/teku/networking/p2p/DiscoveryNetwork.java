@@ -149,7 +149,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
-        new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
+        new Bitvector(ATTESTATION_SUBNET_COUNT, subnetIds).serialize());
   }
 
   public void setPreGenesisForkInfo() {
