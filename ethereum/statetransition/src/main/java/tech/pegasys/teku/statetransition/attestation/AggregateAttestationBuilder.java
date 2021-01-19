@@ -51,9 +51,10 @@ class AggregateAttestationBuilder {
   public void aggregate(final ValidateableAttestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
-      currentAggregateBits = attestation.getAttestation().getAggregation_bits().copy();
+      currentAggregateBits = attestation.getAttestation().getAggregation_bits();
     } else {
-      currentAggregateBits.setAllBits(attestation.getAttestation().getAggregation_bits());
+      currentAggregateBits =
+          currentAggregateBits.or(attestation.getAttestation().getAggregation_bits());
     }
   }
 

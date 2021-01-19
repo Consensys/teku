@@ -211,9 +211,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, Bitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        Bitlist bitlistToInsert =
-            slotToBitlists.computeIfAbsent(slot, __ -> attestation.getAggregation_bits().copy());
-        bitlistToInsert.setAllBits(attestation.getAggregation_bits());
+        slotToBitlists.compute(
+            attestation.getData().getIndex(),
+            (__, existingBitlist) ->
+                Bitlist.nullableOr(existingBitlist, attestation.getAggregation_bits()));
       }
     }
 

@@ -249,17 +249,18 @@ public class BeaconChainMetrics implements SlotEventsChannel {
           if (isCorrectAttestation(attestation, correctTargetRoot)) {
             correctValidatorsAggregationBitsBySlotAndCommittee
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-                .computeIfAbsent(
+                .compute(
                     attestation.getData().getIndex(),
-                    __ -> attestation.getAggregation_bits().copy())
-                .setAllBits(attestation.getAggregation_bits());
+                    (__, existingBitlist) ->
+                        Bitlist.nullableOr(existingBitlist, attestation.getAggregation_bits()));
           }
 
           liveValidatorsAggregationBitsBySlotAndCommittee
               .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-              .computeIfAbsent(
-                  attestation.getData().getIndex(), __ -> attestation.getAggregation_bits().copy())
-              .setAllBits(attestation.getAggregation_bits());
+              .compute(
+                  attestation.getData().getIndex(),
+                  (__, existingBitlist) ->
+                      Bitlist.nullableOr(existingBitlist, attestation.getAggregation_bits()));
         });
 
     final int numberOfCorrectValidators =

@@ -51,9 +51,7 @@ public class AttestationUtil {
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
-    Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
-    aggregationBits.setBit(indexIntoCommittee);
-    return aggregationBits;
+    return new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE, indexIntoCommittee);
   }
 
   /**
@@ -189,22 +187,6 @@ public class AttestationUtil {
       return AttestationProcessingResult.invalid("Signature is invalid");
     }
     return AttestationProcessingResult.SUCCESSFUL;
-  }
-
-  // Set bits of the newAttestation on the oldBitlist
-  // return true if any new bit was set
-  public static boolean setBitsForNewAttestation(Bitlist oldBitlist, Attestation newAttesation) {
-    Bitlist newBitlist = newAttesation.getAggregation_bits();
-    if (oldBitlist.getCurrentSize() != newBitlist.getCurrentSize())
-      throw new UnsupportedOperationException("Attestation bitlist size's don't match");
-    boolean representsNewAttester = false;
-    for (int i = 0; i < oldBitlist.getCurrentSize(); i++) {
-      if (newBitlist.getBit(i) && !oldBitlist.getBit(i)) {
-        oldBitlist.setBit(i);
-        representsNewAttester = true;
-      }
-    }
-    return representsNewAttester;
   }
 
   public static boolean representsNewAttester(
