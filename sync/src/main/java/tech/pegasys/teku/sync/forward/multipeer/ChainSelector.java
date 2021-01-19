@@ -44,15 +44,36 @@ public class ChainSelector {
    * Select the best chain to sync to out of the supplied available chains. If empty is returned,
    * the node is considered in sync.
    *
-   * @param syncInProgress whether or not an existing sync is already in progress.
+   * @param currentSyncTarget the current target chain being synced, or empty if no sync is active
    * @return the sync target or empty if no sync is required
    */
-  public Optional<TargetChain> selectTargetChain(final boolean syncInProgress) {
+  public Optional<TargetChain> selectTargetChain(final Optional<TargetChain> currentSyncTarget) {
     final UInt64 minimumSlot =
-        getMinimumSlotForSuitableTargetChain(recentChainData, syncInProgress);
+        getMinimumSlotForSuitableTargetChain(recentChainData, currentSyncTarget.isPresent());
     return availableChains
         .streamChains()
         .filter(chain -> chain.getChainHead().getSlot().isGreaterThan(minimumSlot))
+        .filter(chain -> !recentChainData.containsBlock(chain.getChainHead().getBlockRoot()))
+        .filter(
+            chain ->
+                currentSyncTarget.isEmpty() || isWorthSwitching(chain, currentSyncTarget.get()))
         .findFirst();
+  }
+
+  /**
+   * Avoids thrashing between different chains with the same number of peers based on which one had
+   * the latest block. Sticks with the current sync target unless it is either not available from
+   * our pool (possibly switching from finalized to non-finalized or back) or the new chain has more
+   * peers (making it more likely to be the canonical chain).
+   *
+   * @param candidateChain the chain being considered as an option to switch to
+   * @param currentTargetChain the current sync target
+   * @return true if the candidate chain is worth the potential cost of switching to
+   */
+  private boolean isWorthSwitching(
+      final TargetChain candidateChain, final TargetChain currentTargetChain) {
+    return candidateChain.equals(currentTargetChain)
+        || !availableChains.containsChain(currentTargetChain)
+        || candidateChain.getPeerCount() > currentTargetChain.getPeerCount();
   }
 }
