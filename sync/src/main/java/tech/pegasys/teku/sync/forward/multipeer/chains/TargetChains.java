@@ -45,6 +45,10 @@ public class TargetChains {
     lastPeerTarget.remove(peer);
   }
 
+  public boolean containsChain(final TargetChain chain) {
+    return chains.containsKey(chain.getChainHead());
+  }
+
   public Stream<TargetChain> streamChains() {
     return chains.values().stream().sorted(CHAIN_COMPARATOR);
   }
