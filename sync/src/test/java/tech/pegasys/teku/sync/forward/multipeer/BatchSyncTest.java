@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -58,6 +59,7 @@ class BatchSyncTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
 
   private final SyncSource syncSource = mock(SyncSource.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
@@ -72,7 +74,13 @@ class BatchSyncTest {
 
   private final BatchSync sync =
       BatchSync.create(
-          eventThread, recentChainData, batchImporter, batches, BATCH_SIZE, commonAncestor);
+          eventThread,
+          recentChainData,
+          batchImporter,
+          batches,
+          BATCH_SIZE,
+          commonAncestor,
+          timeProvider);
 
   @BeforeEach
   void setUp() {
@@ -771,6 +779,38 @@ class BatchSyncTest {
     for (int i = 0; i <= initialBatchCount; i++) {
       assertBatchNotActive(batches.get(i));
     }
+  }
+
+  @Test
+  void shouldRecordTimeWhenFirstSyncStarts() {
+    timeProvider.advanceTimeBySeconds(100);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    eventThread.execute(
+        () ->
+            assertThat(sync.getLastImportTimerStartPointSeconds())
+                .isEqualTo(timeProvider.getTimeInSeconds()));
+  }
+
+  @Test
+  void shouldRecordTimeWhenBatchBeginsImporting() {
+    final SignedBlockAndState block5 = chainBuilder.generateBlockAtSlot(5);
+    final SignedBlockAndState block26 = chainBuilder.generateBlockAtSlot(26);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    timeProvider.advanceTimeBySeconds(100);
+
+    // Trigger import of first batch
+    final Batch batch1 = batches.get(0);
+    batches.receiveBlocks(batch1, block5.getBlock());
+    batches.receiveBlocks(batches.get(1), block26.getBlock());
+    assertBatchImported(batch1);
+
+    eventThread.execute(
+        () -> {
+          assertThat(sync.getImportingBatch()).contains(batches.getEventThreadOnlyBatch(batch1));
+          assertThat(sync.getLastImportTimerStartPointSeconds())
+              .isEqualTo(timeProvider.getTimeInSeconds());
+        });
   }
 
   private void assertBatchNotActive(final Batch batch) {
