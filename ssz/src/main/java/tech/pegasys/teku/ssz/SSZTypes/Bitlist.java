@@ -137,7 +137,7 @@ public class Bitlist {
     }
     BitSet newData = (BitSet) this.data.clone();
     newData.or(other.data);
-    return new Bitlist(newData.size(), newData, maxSize);
+    return new Bitlist(size, newData, maxSize);
   }
 
   public boolean getBit(int i) {
