@@ -47,6 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -274,6 +275,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldSetNatMethod() {
+    final String[] args = {"--nat-method", "upnp"};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().natConfiguration().getNatMethod())
+        .isEqualTo(NatMethod.UPNP);
+  }
+
+  @Test
   public void shouldSetLogFileToDefaultDataDirectory() {
     final String[] args = {};
     beaconNodeCommand.parse(args);
@@ -474,7 +483,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .interopOwnedValidatorStartIndex(0)
                     .interopOwnedValidatorCount(64)
                     .interopNumberOfValidators(64)
-                    .interopEnabled(true));
+                    .interopEnabled(true))
+        .natConfig(b -> b.natMethod(NatMethod.NONE));
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
