@@ -34,6 +34,9 @@ class ChainSelectorTest {
 
   private final TargetChains targetChains = new TargetChains();
 
+  private final TargetChain targetChain =
+      new TargetChain(dataStructureUtil.randomSlotAndBlockRoot());
+
   @BeforeEach
   void setUp() {
     when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.valueOf(50));
@@ -82,14 +85,72 @@ class ChainSelectorTest {
   @Test
   void shouldNotAddToleranceWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot().plus(1));
-    assertThat(new ChainSelector(recentChainData, targetChains).selectTargetChain(true))
+    assertThat(
+            new ChainSelector(recentChainData, targetChains)
+                .selectTargetChain(Optional.of(targetChain)))
         .isPresent();
   }
 
   @Test
   void shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot());
-    assertThat(new ChainSelector(recentChainData, targetChains).selectTargetChain(true)).isEmpty();
+    assertThat(
+            new ChainSelector(recentChainData, targetChains)
+                .selectTargetChain(Optional.of(targetChain)))
+        .isEmpty();
+  }
+
+  @Test
+  void shouldSwitchToChainWithMorePeersWhenAlreadySyncing() {
+    final ChainSelector chainSelector = new ChainSelector(recentChainData, targetChains);
+    final UInt64 remoteHeadSlot = recentChainData.getHeadSlot().plus(SLOTS_PER_EPOCH + 1);
+    final SlotAndBlockRoot chainHead1 = addPeerAtSlot(remoteHeadSlot);
+    final SlotAndBlockRoot chainHead2 = addPeerAtSlot(remoteHeadSlot.plus(5));
+    addPeerToChain(chainHead1);
+    addPeerToChain(chainHead1);
+
+    // Then chain 2 comes along with a later head block but only the same number of peers
+    addPeerToChain(chainHead2);
+    addPeerToChain(chainHead2);
+
+    final TargetChain targetChain1 = getTargetChain(chainHead1);
+    // We're already syncing chain1 and should continue that even though chain2 now has a later head
+    // to avoid thrashing between chains as the status is updated
+    assertThat(chainSelector.selectTargetChain(Optional.of(targetChain1)))
+        .isPresent()
+        .map(TargetChain::getChainHead)
+        .contains(chainHead1);
+
+    // But once chain 2 has more peers, we should switch to it
+    addPeerToChain(chainHead2);
+    assertThat(chainSelector.selectTargetChain(Optional.of(targetChain1)))
+        .isPresent()
+        .map(TargetChain::getChainHead)
+        .contains(chainHead2);
+  }
+
+  @Test
+  void shouldNotSyncToChainBeyondCurrentHeadWhenHeadBlockAlreadyImported() {
+    // Covers the case where we have fully sync'd a chain but attestation weight means that we
+    // consider a chain with a lower head block canonical. The fork may then pass the checks that
+    // it's head is far enough past our head block, but should still be excluded as a sync target
+    // because we already have it
+    final UInt64 remoteHeadSlot = recentChainData.getHeadSlot().plus(SLOTS_PER_EPOCH + 1);
+    final SlotAndBlockRoot chainHead1 = addPeerAtSlot(remoteHeadSlot);
+    when(recentChainData.containsBlock(chainHead1.getBlockRoot())).thenReturn(true);
+
+    addPeerToChain(chainHead1);
+    addPeerToChain(chainHead1);
+
+    assertThat(selectSyncTarget()).isEmpty();
+  }
+
+  private TargetChain getTargetChain(final SlotAndBlockRoot chainHead1) {
+    return targetChains
+        .streamChains()
+        .filter(chain -> chain.getChainHead().equals(chainHead1))
+        .findFirst()
+        .orElseThrow();
   }
 
   private SlotAndBlockRoot addPeerAtSlot(final UInt64 slot) {
@@ -104,6 +165,6 @@ class ChainSelectorTest {
   }
 
   private Optional<TargetChain> selectSyncTarget() {
-    return new ChainSelector(recentChainData, targetChains).selectTargetChain(false);
+    return new ChainSelector(recentChainData, targetChains).selectTargetChain(Optional.empty());
   }
 }

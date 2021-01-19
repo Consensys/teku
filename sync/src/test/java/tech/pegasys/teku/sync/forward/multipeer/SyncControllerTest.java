@@ -14,7 +14,7 @@
 package tech.pegasys.teku.sync.forward.multipeer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -110,7 +110,8 @@ class SyncControllerTest {
     ignoreFuture(startFinalizedSync());
     verify(sync).syncToChain(targetChain);
 
-    when(finalizedChainSelector.selectTargetChain(true)).thenReturn(Optional.of(newTargetChain));
+    when(finalizedChainSelector.selectTargetChain(Optional.of(targetChain)))
+        .thenReturn(Optional.of(newTargetChain));
     when(sync.syncToChain(newTargetChain)).thenReturn(new SafeFuture<>());
     onTargetChainsUpdated();
 
@@ -128,7 +129,8 @@ class SyncControllerTest {
 
     assertThat(syncController.isSyncActive()).isTrue();
 
-    when(finalizedChainSelector.selectTargetChain(true)).thenReturn(Optional.empty());
+    when(finalizedChainSelector.selectTargetChain(Optional.of(targetChain)))
+        .thenReturn(Optional.empty());
     onTargetChainsUpdated();
 
     assertThat(syncController.isSyncActive()).isTrue();
@@ -162,7 +164,8 @@ class SyncControllerTest {
 
     // Sync switches to a better chain
     final TargetChain newTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
-    when(finalizedChainSelector.selectTargetChain(true)).thenReturn(Optional.of(newTargetChain));
+    when(finalizedChainSelector.selectTargetChain(Optional.of(targetChain)))
+        .thenReturn(Optional.of(newTargetChain));
     when(sync.syncToChain(newTargetChain))
         .thenAnswer(
             invocation -> {
@@ -183,7 +186,7 @@ class SyncControllerTest {
     final SafeFuture<SyncResult> finalizedSync = startFinalizedSync();
 
     final TargetChain nonfinalTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
-    when(nonfinalizedChainSelector.selectTargetChain(anyBoolean()))
+    when(nonfinalizedChainSelector.selectTargetChain(any()))
         .thenReturn(Optional.of(nonfinalTargetChain));
     when(sync.syncToChain(nonfinalTargetChain)).thenReturn(new SafeFuture<>());
 
@@ -200,8 +203,9 @@ class SyncControllerTest {
 
   @Test
   void shouldStartNonFinalizedSyncWhenNoSuitableFinalizedTargetChainAvailable() {
-    when(finalizedChainSelector.selectTargetChain(false)).thenReturn(Optional.empty());
-    when(nonfinalizedChainSelector.selectTargetChain(false)).thenReturn(Optional.of(targetChain));
+    when(finalizedChainSelector.selectTargetChain(Optional.empty())).thenReturn(Optional.empty());
+    when(nonfinalizedChainSelector.selectTargetChain(Optional.empty()))
+        .thenReturn(Optional.of(targetChain));
 
     when(sync.syncToChain(targetChain)).thenReturn(new SafeFuture<>());
 
@@ -225,8 +229,7 @@ class SyncControllerTest {
 
   private SafeFuture<SyncResult> startFinalizedSync() {
     final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
-    when(finalizedChainSelector.selectTargetChain(anyBoolean()))
-        .thenReturn(Optional.of(targetChain));
+    when(finalizedChainSelector.selectTargetChain(any())).thenReturn(Optional.of(targetChain));
     when(sync.syncToChain(targetChain)).thenReturn(syncResult);
     onTargetChainsUpdated();
     return syncResult;
