@@ -31,10 +31,50 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Attestation extends
+    Container3<Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public static class AttestationType
+      extends ContainerType3<
+      Attestation,
+      ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+
+    public AttestationType() {
+      super(
+          new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+          AttestationData.TYPE,
+          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+    }
+
+    @Override
+    public Attestation createFromBackingNode(TreeNode node) {
+      return new Attestation(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final AttestationType TYPE = new AttestationType();
+
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -43,20 +83,24 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   private AttestationData data;
   private BLSSignature signature;
 
+  public Attestation(
+      ContainerType3<Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    this.aggregation_bits = aggregation_bits;
-    this.data = data;
-    this.signature = signature;
+    super(TYPE, ViewUtils.createBitlistView(aggregation_bits), data,
+        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
   public Attestation(Attestation attestation) {
-    this.aggregation_bits = attestation.getAggregation_bits().copy();
-    this.data = attestation.getData();
-    this.signature = attestation.getAggregate_signature();
+    this(attestation.getAggregation_bits().copy(), attestation.getData(),
+        attestation.getAggregate_signature());
   }
 
   public Attestation() {
-    this.aggregation_bits = createEmptyAggregationBits();
+    super(TYPE);
   }
 
   public static Bitlist createEmptyAggregationBits() {
@@ -65,39 +109,39 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing() {
-    return data.getEarliestSlotForForkChoice();
+    return getData().getEarliestSlotForForkChoice();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
-    return Sets.newHashSet(data.getTarget().getRoot(), data.getBeacon_block_root());
+    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeacon_block_root());
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
+    return SSZ_FIELD_COUNT + getData().getSSZFieldCount() + getSignature().getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(data.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
+    fixedPartsList.addAll(getData().get_fixed_parts());
+    fixedPartsList.addAll(getSignature().get_fixed_parts());
     return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(List.of(aggregation_bits.serialize()));
-    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(getAggregation_bits().serialize()));
+    variablePartsList.addAll(Collections.nCopies(getData().getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(getSignature().getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bits, data, signature);
+    return Objects.hash(getAggregation_bits(), getData(), getSignature());
   }
 
   @Override
@@ -123,17 +167,17 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("aggregation_bits", aggregation_bits)
-        .add("data", data)
-        .add("signature", signature)
+        .add("aggregation_bits", getAggregation_bits())
+        .add("data", getData())
+        .add("signature", getSignature())
         .toString();
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bitlist getAggregation_bits() {
-    return aggregation_bits;
+    return ViewUtils.getBitlist(getField0());
   }
 
+  // TODO
   public void setAggregation_bits(Bitlist aggregation_bits) {
     this.aggregation_bits = aggregation_bits;
   }
@@ -147,7 +191,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public BLSSignature getAggregate_signature() {
-    return signature;
+    return getSignature();
   }
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
@@ -158,9 +202,9 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
-            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root_bitlist(getAggregation_bits()),
+            getData().hash_tree_root(),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC, SimpleOffsetSerializer.serialize(signature))));
+                SSZTypes.VECTOR_OF_BASIC, SimpleOffsetSerializer.serialize(getSignature()))));
   }
 }

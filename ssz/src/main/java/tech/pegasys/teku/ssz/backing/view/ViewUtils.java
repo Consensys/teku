@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import com.google.common.collect.Streams;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
@@ -21,6 +25,7 @@ import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
@@ -29,6 +34,28 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 
 /** Handy view tool methods */
 public class ViewUtils {
+
+  public static <C, V extends ViewRead> ListViewRead<V> toListView(ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {
+    return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+  }
+
+  public static <V extends ViewRead> ListViewRead<V> toListView(ListViewType<V> type, Iterable<V> list) {
+    ListViewWrite<V> ret = type.getDefault().createWritableCopy();
+    list.forEach(ret::append);
+    return ret.commitChanges();
+  }
+
+  public static <V extends ViewRead> VectorViewRead<V> toVectorView(VectorViewType<V> type, Iterable<V> list) {
+    VectorViewWrite<V> ret = type.getDefault().createWritableCopy();
+    int idx = 0;
+    for (V v : list) {
+      if (idx >= type.getLength()) {
+        throw new IllegalArgumentException("List size exceeds vector size");
+      }
+      ret.set(idx, v);
+    }
+    return ret.commitChanges();
+  }
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
