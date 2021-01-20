@@ -28,21 +28,59 @@ import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.config.Constants;
 
-public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class AggregateAndProof extends
+    Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>>
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+
+  public static class AggregateAndProofType
+      extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
+
+    public AggregateAndProofType() {
+      super(
+          BasicViewTypes.UINT64_TYPE,
+          Attestation.TYPE,
+          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+    }
+
+    @Override
+    public AggregateAndProof createFromBackingNode(TreeNode node) {
+      return new AggregateAndProof(this, node);
+    }
+  }
+
+  public static final AggregateAndProofType TYPE = new AggregateAndProofType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private final UInt64 index;
-  private final Attestation aggregate;
-  private final BLSSignature selection_proof;
+  private UInt64 index;
+  private Attestation aggregate;
+  private BLSSignature selection_proof;
+
+  public AggregateAndProof(
+      ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
-    this.index = index;
-    this.selection_proof = selection_proof;
-    this.aggregate = aggregate;
+    super(TYPE, new UInt64View(index), aggregate,
+        ViewUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
   }
 
   @Override
@@ -69,31 +107,6 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(index, selection_proof, aggregate);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof AggregateAndProof)) {
-      return false;
-    }
-
-    AggregateAndProof other = (AggregateAndProof) obj;
-    return Objects.equals(this.index, other.index)
-        && Objects.equals(this.selection_proof, other.selection_proof)
-        && Objects.equals(this.aggregate, other.aggregate);
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("index", index)
@@ -104,23 +117,19 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getIndex() {
-    return index;
-  }
-
-  public BLSSignature getSelection_proof() {
-    return selection_proof;
+    return getField0().get();
   }
 
   public Attestation getAggregate() {
-    return aggregate;
+    return getField1();
+  }
+
+  public BLSSignature getSelection_proof() {
+    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        List.of(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
-            aggregate.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toSSZBytes())));
+    return hashTreeRoot();
   }
 }

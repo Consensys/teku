@@ -19,41 +19,71 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class DepositMessage implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class DepositMessage extends
+    Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> implements
+    SimpleOffsetSerializable, SSZContainer, Merkleizable {
+
+  @SszTypeDescriptor
+  public static final ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> TYPE =
+      ContainerType3.create(
+          new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
+          BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE,
+          DepositMessage::new);
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 2;
 
-  private final BLSPublicKey pubkey;
-  private final Bytes32 withdrawal_credentials;
-  private final UInt64 amount;
+  private BLSPublicKey pubkey;
+  private Bytes32 withdrawal_credentials;
+  private UInt64 amount;
+
+  private DepositMessage(
+      ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public DepositMessage(
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
-    this.pubkey = pubkey;
-    this.withdrawal_credentials = withdrawal_credentials;
-    this.amount = amount;
+    super(TYPE, ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        new Bytes32View(withdrawal_credentials), new UInt64View(amount));
   }
 
   public BLSPublicKey getPubkey() {
-    return pubkey;
+    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
   }
 
   public Bytes32 getWithdrawal_credentials() {
-    return withdrawal_credentials;
+    return getField1().get();
   }
 
   public UInt64 getAmount() {
-    return amount;
+    return getField2().get();
   }
 
   @Override
@@ -73,30 +103,7 @@ public class DepositMessage implements SimpleOffsetSerializable, SSZContainer, M
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DepositMessage that = (DepositMessage) o;
-    return Objects.equals(pubkey, that.pubkey)
-        && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
-        && Objects.equals(amount, that.amount);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(pubkey, withdrawal_credentials, amount);
-  }
-
-  @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toSSZBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue()))));
+    return hashTreeRoot();
   }
 }

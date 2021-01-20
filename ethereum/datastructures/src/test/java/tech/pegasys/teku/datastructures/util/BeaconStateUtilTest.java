@@ -463,7 +463,7 @@ class BeaconStateUtilTest {
   void getCurrentDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
   }
 
   @Test
@@ -485,7 +485,7 @@ class BeaconStateUtilTest {
   void getPreviousDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
   }
 
   @Test

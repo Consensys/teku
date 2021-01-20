@@ -14,42 +14,65 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Suppliers;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
-import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public final class BeaconBlock
+public final class BeaconBlock extends
+    Container5<BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody>
     implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+
+  public static class BeaconBlockType
+      extends ContainerType5<BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody> {
+
+    public BeaconBlockType() {
+      super(
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BeaconBlockBody.TYPE);
+    }
+
+    @Override
+    public BeaconBlock createFromBackingNode(TreeNode node) {
+      return new BeaconBlock(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final BeaconBlockType TYPE = new BeaconBlockType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
 
   // Header
-  private final UInt64 slot;
-  private final UInt64 proposer_index;
-  private final Bytes32 parent_root;
-  private final Bytes32 state_root;
+  private UInt64 slot;
+  private UInt64 proposer_index;
+  private Bytes32 parent_root;
+  private Bytes32 state_root;
 
   // Body
-  private final BeaconBlockBody body;
+  private BeaconBlockBody body;
 
-  @Label("sos-ignore")
-  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
+  private BeaconBlock(BeaconBlockType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public BeaconBlock(
       UInt64 slot,
@@ -57,117 +80,73 @@ public final class BeaconBlock
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body) {
-    this.slot = slot;
-    this.proposer_index = proposer_index;
-    this.parent_root = parent_root;
-    this.state_root = state_root;
-    this.body = body;
-  }
-
-  public BeaconBlock(BeaconBlock block, Bytes32 stateRoot) {
-    this.slot = block.getSlot();
-    this.proposer_index = block.getProposerIndex();
-    this.parent_root = block.getParentRoot();
-    this.body = block.getBody();
-    this.state_root = stateRoot;
+    super(TYPE, new UInt64View(slot), new UInt64View(proposer_index), new Bytes32View(parent_root),
+        new Bytes32View(state_root), body);
   }
 
   public BeaconBlock() {
-    this.slot = UInt64.ZERO;
-    this.proposer_index = UInt64.ZERO;
-    this.parent_root = Bytes32.ZERO;
-    this.state_root = Bytes32.ZERO;
-    this.body = new BeaconBlockBody();
-  }
-
-  public BeaconBlock(Bytes32 state_root) {
-    this.slot = UInt64.ZERO;
-    this.proposer_index = UInt64.ZERO;
-    this.parent_root = Bytes32.ZERO;
-    this.state_root = state_root;
-    this.body = new BeaconBlockBody();
+    super(TYPE);
   }
 
   public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
-    return new BeaconBlock(genesisState.hash_tree_root());
+    return new BeaconBlock(UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, genesisState.hashTreeRoot(),
+        new BeaconBlockBody());
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + body.getSSZFieldCount();
+    return SSZ_FIELD_COUNT + getBody().getSSZFieldCount();
+  }
+
+  public BeaconBlock withStateRoot(Bytes32 stateRoot) {
+    return new BeaconBlock(getSlot(), getProposerIndex(), getParentRoot(),
+        stateRoot, getBody());
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encodeUInt64(slot.longValue()),
-        SSZ.encodeUInt64(proposer_index.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
-        SSZ.encode(writer -> writer.writeFixedBytes(state_root)),
+        SSZ.encodeUInt64(getSlot().longValue()),
+        SSZ.encodeUInt64(getProposerIndex().longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(getParentRoot())),
+        SSZ.encode(writer -> writer.writeFixedBytes(getStateRoot())),
         Bytes.EMPTY);
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     return List.of(
-        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(slot, proposer_index, parent_root, state_root, body);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconBlock)) {
-      return false;
-    }
-
-    BeaconBlock other = (BeaconBlock) obj;
-    return Objects.equals(this.getSlot(), other.getSlot())
-        && Objects.equals(this.getProposerIndex(), other.getProposerIndex())
-        && Objects.equals(this.getParentRoot(), other.getParentRoot())
-        && Objects.equals(this.getStateRoot(), other.getStateRoot())
-        && Objects.equals(this.getBody(), other.getBody());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconBlockBody getBody() {
-    return body;
-  }
-
-  @Override
-  public Bytes32 getBodyRoot() {
-    return body.hash_tree_root();
-  }
-
-  @Override
-  public Bytes32 getStateRoot() {
-    return state_root;
-  }
-
-  @Override
-  public Bytes32 getParentRoot() {
-    return parent_root;
+        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(
+            getBody()));
   }
 
   @Override
   public UInt64 getSlot() {
-    return slot;
+    return getField0().get();
   }
 
   @Override
   public UInt64 getProposerIndex() {
-    return proposer_index;
+    return getField1().get();
+  }
+
+  @Override
+  public Bytes32 getParentRoot() {
+    return getField2().get();
+  }
+
+  @Override
+  public Bytes32 getStateRoot() {
+    return getField3().get();
+  }
+
+  public BeaconBlockBody getBody() {
+    return getField4();
+  }
+
+  @Override
+  public Bytes32 getBodyRoot() {
+    return getBody().hash_tree_root();
   }
 
   @Override
@@ -177,7 +156,7 @@ public final class BeaconBlock
 
   @Override
   public Bytes32 hash_tree_root() {
-    return hashTreeRoot.get();
+    return hashTreeRoot();
   }
 
   @Override
@@ -185,26 +164,15 @@ public final class BeaconBlock
     return Optional.of(this);
   }
 
-  public Bytes32 calculateRoot() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
-            body.hash_tree_root()));
-  }
-
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("root", hash_tree_root())
-        .add("slot", slot)
-        .add("proposer_index", proposer_index)
-        .add("parent_root", parent_root)
-        .add("state_root", state_root)
-        .add("body", body.hash_tree_root())
+        .add("slot", getSlot())
+        .add("proposer_index", getProposerIndex())
+        .add("parent_root", getParentRoot())
+        .add("state_root", getStateRoot())
+        .add("body", getBody().hash_tree_root())
         .toString();
   }
 }
