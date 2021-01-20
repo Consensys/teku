@@ -124,7 +124,7 @@ class PeerSubnetSubscriptionsTest {
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
   }
 
-  private Bitvector createBitvector(final Integer... subnets) {
-    return new Bitvector(List.of(subnets), ATTESTATION_SUBNET_COUNT);
+  private Bitvector createBitvector(final int... subnets) {
+    return new Bitvector(ATTESTATION_SUBNET_COUNT, subnets);
   }
 }

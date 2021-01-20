@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
@@ -131,14 +130,7 @@ class BitlistTest {
 
   @Test
   void serializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
-    bitlist.setBit(0);
-    bitlist.setBit(3);
-    bitlist.setBit(4);
-    bitlist.setBit(5);
-    bitlist.setBit(6);
-    bitlist.setBit(7);
-    bitlist.setBit(8);
+    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
 
     Bytes bitlistSerialized = bitlist.serialize();
     Assertions.assertEquals(Bytes.fromHexString("0xf903"), bitlistSerialized);
@@ -146,14 +138,7 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
-    bitlist.setBit(0);
-    bitlist.setBit(3);
-    bitlist.setBit(4);
-    bitlist.setBit(5);
-    bitlist.setBit(6);
-    bitlist.setBit(7);
-    bitlist.setBit(8);
+    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
 
     Bitlist newBitlist = Bitlist.fromSszBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
@@ -174,9 +159,7 @@ class BitlistTest {
   }
 
   private static Bitlist create(int... bits) {
-    Bitlist bitlist = new Bitlist(18, BITLIST_MAX_SIZE);
-    IntStream.of(bits).forEach(bitlist::setBit);
-    return bitlist;
+    return new Bitlist(18, BITLIST_MAX_SIZE, bits);
   }
 
   private static Bitlist createBitlist() {

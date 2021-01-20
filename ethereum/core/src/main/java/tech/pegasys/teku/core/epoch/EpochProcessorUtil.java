@@ -92,7 +92,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits.setBit(1);
+        justificationBits = justificationBits.withBit(1);
       }
 
       if (totalBalances
@@ -102,7 +102,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits.setBit(0);
+        justificationBits = justificationBits.withBit(0);
       }
 
       state.setJustification_bits(justificationBits);

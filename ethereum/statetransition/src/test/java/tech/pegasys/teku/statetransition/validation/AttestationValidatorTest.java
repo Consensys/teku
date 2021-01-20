@@ -130,9 +130,9 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     final Bitlist validAggregationBits = attestation.getAggregation_bits();
-    final Bitlist invalidAggregationBits =
-        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
-    invalidAggregationBits.setAllBits(validAggregationBits);
+    Bitlist invalidAggregationBits =
+        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize())
+            .or(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());

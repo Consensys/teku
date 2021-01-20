@@ -137,11 +137,7 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldConvertPersistentSubnetsList() {
-    Bitvector persistentSubnets = new Bitvector(ATTESTATION_SUBNET_COUNT);
-    persistentSubnets.setBit(1);
-    persistentSubnets.setBit(8);
-    persistentSubnets.setBit(14);
-    persistentSubnets.setBit(32);
+    Bitvector persistentSubnets = new Bitvector(ATTESTATION_SUBNET_COUNT, 1, 8, 14, 32);
     Bytes encodedPersistentSubnets = persistentSubnets.serialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
@@ -156,9 +152,7 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldUseEmptySubnetListWhenFieldValueIsInvalid() {
-    Bitvector persistentSubnets = new Bitvector(4); // Incorrect length
-    persistentSubnets.setBit(1);
-    persistentSubnets.setBit(2);
+    Bitvector persistentSubnets = new Bitvector(4, 1, 2); // Incorrect length
     Bytes encodedPersistentSubnets = persistentSubnets.serialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(

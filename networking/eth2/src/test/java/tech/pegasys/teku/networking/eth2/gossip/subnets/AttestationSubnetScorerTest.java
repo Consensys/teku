@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.entry;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
@@ -134,8 +133,6 @@ class AttestationSubnetScorerTest {
   }
 
   private Bitvector candidateWithSubnets(final int... subnetIds) {
-    final Bitvector persistentSubnets = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
-    IntStream.of(subnetIds).forEach(persistentSubnets::setBit);
-    return persistentSubnets;
+    return new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, subnetIds);
   }
 }

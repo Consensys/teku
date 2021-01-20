@@ -126,6 +126,10 @@ public class NetworkConfig {
     return resolveAnyLocalAddress(advertisedIp.orElse(networkInterface));
   }
 
+  public boolean hasUserExplicitlySetAdvertisedIp() {
+    return advertisedIp.isPresent();
+  }
+
   public int getListenPort() {
     return listenPort;
   }

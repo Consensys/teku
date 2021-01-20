@@ -31,7 +31,7 @@ public class MetadataMessagesFactory implements ValueObserver<Iterable<Integer>>
     currentMessage =
         new MetadataMessage(
             UInt64.valueOf(seqNumberGenerator.incrementAndGet()),
-            new Bitvector(subnetIds, Constants.ATTESTATION_SUBNET_COUNT));
+            new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, subnetIds));
   }
 
   public MetadataMessage createMetadataMessage() {

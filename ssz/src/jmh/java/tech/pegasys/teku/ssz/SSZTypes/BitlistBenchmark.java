@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
@@ -42,8 +41,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void setAllBits(Blackhole bh) {
-    final Bitlist target = createBitlist();
-    target.setAllBits(MANY_BITS_SET);
+    final Bitlist target = createBitlist().or(MANY_BITS_SET);
     bh.consume(target);
   }
 
@@ -62,8 +60,6 @@ public class BitlistBenchmark {
   }
 
   private static Bitlist createBitlist(final int... setBits) {
-    final Bitlist bitlist = new Bitlist(BITLIST_SIZE, BITLIST_SIZE);
-    IntStream.of(setBits).forEach(bitlist::setBit);
-    return bitlist;
+    return new Bitlist(BITLIST_SIZE, BITLIST_SIZE, setBits);
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -26,13 +27,10 @@ public class BitlistViewTest {
   @Test
   public void basicTest() {
     for (int size : new int[] {100, 255, 256, 300, 1000, 1023}) {
-      Bitlist bitlist = new Bitlist(size, size);
-      for (int i = 0; i < size; i++) {
-        if (i % 2 == 0) {
-          bitlist.setBit(i);
-        }
-      }
-      bitlist.setBit(0);
+      int[] bitIndexes =
+          IntStream.concat(IntStream.range(0, size).filter(i -> i % 2 == 0), IntStream.of(0))
+              .toArray();
+      Bitlist bitlist = new Bitlist(size, size, bitIndexes);
 
       ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
       Bitlist bitlist1 = ViewUtils.getBitlist(bitlistView);
