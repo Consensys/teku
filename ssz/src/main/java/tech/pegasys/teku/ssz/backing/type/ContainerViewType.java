@@ -127,7 +127,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     for (int i = 0; i < getChildCount(); i++) {
       ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
-        size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
+        size += childType.getSszSize(node.get(getGeneralizedIndex(i)));
       }
     }
     return size;
