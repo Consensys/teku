@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.networking.p2p.network;
 
-import static com.google.common.net.InetAddresses.isInetAddress;
-
 import io.libp2p.core.crypto.PrivKey;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.PortAvailability;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+
+import static com.google.common.net.InetAddresses.isInetAddress;
 
 public class NetworkConfig {
   private static final Logger LOG = LogManager.getLogger();
@@ -126,8 +127,8 @@ public class NetworkConfig {
     return resolveAnyLocalAddress(advertisedIp.orElse(networkInterface));
   }
 
-  public boolean hasUserExplicitlySetAdvertisedIpOrPort() {
-    return advertisedIp.isPresent() || advertisedPort.isPresent();
+  public boolean hasUserExplicitlySetAdvertisedIp() {
+    return advertisedIp.isPresent();
   }
 
   public int getListenPort() {
