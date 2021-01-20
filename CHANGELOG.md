@@ -15,6 +15,7 @@
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
 - Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
+- Fixed validator client timeout when reading from the event stream to avoid unnecessary reconnections.
 
 ### Additions and Improvements
 - `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
