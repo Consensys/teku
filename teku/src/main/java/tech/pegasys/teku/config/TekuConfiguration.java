@@ -47,6 +47,7 @@ public class TekuConfiguration {
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
+      final SpecProvider specProvider,
       final StorageConfiguration storageConfiguration,
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
@@ -76,8 +77,9 @@ public class TekuConfiguration {
             powchainConfiguration,
             loggingConfig,
             storeConfig,
-            storageConfiguration.getSpecProvider());
-    this.validatorClientConfig = new ValidatorClientConfiguration(validatorConfig, interopConfig);
+            specProvider);
+    this.validatorClientConfig =
+        new ValidatorClientConfiguration(validatorConfig, interopConfig, specProvider);
   }
 
   public static Builder builder() {
@@ -149,6 +151,7 @@ public class TekuConfiguration {
       storageConfigurationBuilder.specProvider(specProvider);
       return new TekuConfiguration(
           eth2NetworkConfiguration,
+          specProvider,
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),

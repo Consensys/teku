@@ -13,17 +13,22 @@
 
 package tech.pegasys.teku.validator.client;
 
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorClientConfiguration {
   private final ValidatorConfig validatorConfig;
   private final InteropConfig interopConfig;
+  private final SpecProvider specProvider;
 
   public ValidatorClientConfiguration(
-      final ValidatorConfig validatorConfig, final InteropConfig interopConfig) {
+      final ValidatorConfig validatorConfig,
+      final InteropConfig interopConfig,
+      final SpecProvider specProvider) {
     this.validatorConfig = validatorConfig;
     this.interopConfig = interopConfig;
+    this.specProvider = specProvider;
   }
 
   public ValidatorConfig getValidatorConfig() {
@@ -32,5 +37,9 @@ public class ValidatorClientConfiguration {
 
   public InteropConfig getInteropConfig() {
     return interopConfig;
+  }
+
+  public SpecProvider getSpecProvider() {
+    return specProvider;
   }
 }
