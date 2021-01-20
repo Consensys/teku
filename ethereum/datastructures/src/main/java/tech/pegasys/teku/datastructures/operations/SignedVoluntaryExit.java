@@ -21,27 +21,53 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedVoluntaryExit implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
-  private final VoluntaryExit message;
-  private final BLSSignature signature;
+public class SignedVoluntaryExit extends
+    Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+
+  @SszTypeDescriptor
+  public static final ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> TYPE =
+      ContainerType2.create(
+          VoluntaryExit.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+          SignedVoluntaryExit::new);
+
+
+  private VoluntaryExit message;
+  private BLSSignature signature;
+
+  public SignedVoluntaryExit(
+      ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    this.message = message;
-    this.signature = signature;
+    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
   public VoluntaryExit getMessage() {
-    return message;
+    return getField0();
   }
 
   public BLSSignature getSignature() {
-    return signature;
+    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
   }
 
   @Override
@@ -59,27 +85,7 @@ public class SignedVoluntaryExit implements SimpleOffsetSerializable, SSZContain
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedVoluntaryExit that = (SignedVoluntaryExit) o;
-    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, signature);
+    return hashTreeRoot();
   }
 
   @Override

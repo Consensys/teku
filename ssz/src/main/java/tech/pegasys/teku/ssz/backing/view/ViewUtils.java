@@ -46,6 +46,11 @@ public class ViewUtils {
     return ret.commitChanges();
   }
 
+  public static <C, V extends ViewRead> VectorViewRead<V> toVectorView(VectorViewType<V> type,
+      Iterable<C> list, Function<C, V> converter) {
+    return toVectorView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+  }
+
   public static <V extends ViewRead> VectorViewRead<V> toVectorView(VectorViewType<V> type, Iterable<V> list) {
     VectorViewWrite<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
