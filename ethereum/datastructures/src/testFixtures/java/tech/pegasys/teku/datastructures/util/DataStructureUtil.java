@@ -20,10 +20,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -159,27 +159,15 @@ public final class DataStructureUtil {
   }
 
   public Bitlist randomBitlist(int n) {
-    Bitlist bitlist = new Bitlist(n, n);
     Random random = new Random(nextSeed());
-
-    for (int i = 0; i < n; i++) {
-      if (random.nextBoolean()) {
-        bitlist.setBit(i);
-      }
-    }
-    return bitlist;
+    int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
+    return new Bitlist(n, n, bits);
   }
 
   public Bitvector randomBitvector(int n) {
-    BitSet bitSet = new BitSet(n);
     Random random = new Random(nextSeed());
-
-    for (int i = 0; i < n; i++) {
-      if (random.nextBoolean()) {
-        bitSet.set(i);
-      }
-    }
-    return new Bitvector(bitSet, n);
+    int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
+    return new Bitvector(n, bits);
   }
 
   public BLSPublicKey randomPublicKey() {

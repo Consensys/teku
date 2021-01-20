@@ -72,7 +72,9 @@ public class SyncController {
   public void onTargetChainsUpdated() {
     eventThread.checkOnEventThread();
     final boolean currentlySyncing = isSyncActive();
-    final Optional<InProgressSync> newSync = selectNewSyncTarget(currentlySyncing);
+    final Optional<InProgressSync> newSync =
+        selectNewSyncTarget(
+            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getTargetChain));
     if (newSync.isEmpty() && currentlySyncing) {
       return;
     }
@@ -82,16 +84,17 @@ public class SyncController {
     currentSync = newSync;
   }
 
-  private Optional<InProgressSync> selectNewSyncTarget(final boolean currentlySyncing) {
+  private Optional<InProgressSync> selectNewSyncTarget(
+      final Optional<TargetChain> currentSyncTarget) {
     final Optional<TargetChain> bestFinalizedChain =
-        finalizedTargetChainSelector.selectTargetChain(currentlySyncing);
+        finalizedTargetChainSelector.selectTargetChain(currentSyncTarget);
     // We may not have run fork choice to update our chain head, so check if the best finalized
     // chain is the one we just finished syncing and move on to non-finalized if it is.
     if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
       return bestFinalizedChain.map(chain -> startSync(chain, true));
     } else if (!isSyncingFinalizedChain()) {
       final Optional<TargetChain> targetChain =
-          nonfinalizedTargetChainSelector.selectTargetChain(currentlySyncing);
+          nonfinalizedTargetChainSelector.selectTargetChain(currentSyncTarget);
       return targetChain.map(chain -> startSync(chain, false));
     }
     return Optional.empty();
@@ -120,7 +123,7 @@ public class SyncController {
         currentSync.map(Objects::toString).orElse("<unknown>"),
         result);
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
-    currentSync = selectNewSyncTarget(true);
+    currentSync = selectNewSyncTarget(currentSync.map(InProgressSync::getTargetChain));
     if (!isSyncActive()) {
       currentSync = Optional.empty();
       notifySubscribers(false);
@@ -187,6 +190,10 @@ public class SyncController {
 
     public boolean isActive() {
       return !result.isDone();
+    }
+
+    public TargetChain getTargetChain() {
+      return targetChain;
     }
 
     public SyncingStatus asSyncingStatus() {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -85,6 +86,15 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldDisplayReasonableErrorMessageIfKeysUrlInvalid() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--validators-external-signer-public-keys=http://local.missing/"))
+        .hasMessageContaining("Failed to load public keys from URL http://local.missing/");
   }
 
   @Test

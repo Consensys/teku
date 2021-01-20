@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.ssztypes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
@@ -31,10 +32,7 @@ class BitvectorTest {
   private static int testBitvectorLength = 4;
 
   private static Bitvector createBitvector() {
-    Bitvector bitvector = new Bitvector(testBitvectorLength);
-    bitvector.setBit(0);
-    bitvector.setBit(3);
-    return bitvector;
+    return new Bitvector(testBitvectorLength, 0, 3);
   }
 
   @Test
@@ -46,10 +44,7 @@ class BitvectorTest {
 
   @Test
   void setTest() {
-    Bitvector bitvector = new Bitvector(10);
-    bitvector.setBit(1);
-    bitvector.setBit(3);
-    bitvector.setBit(8);
+    Bitvector bitvector = new Bitvector(10, 1, 3, 8);
 
     Assertions.assertEquals(bitvector.getBit(0), false);
     Assertions.assertEquals(bitvector.getBit(1), true);
@@ -97,10 +92,7 @@ class BitvectorTest {
 
   @Test
   void bitlistHashTest() {
-    Bitlist bitlist = new Bitlist(2048, 2048);
-    for (int i = 0; i < 44; i++) {
-      bitlist.setBit(i);
-    }
+    Bitlist bitlist = new Bitlist(2048, 2048, IntStream.range(0, 44).toArray());
     Bytes32 hashOld =
         Bytes32.fromHexString("0x447ac4def72d4aa09ded8e1130cbe013511d4881c3393903ada630f034e985d7");
 

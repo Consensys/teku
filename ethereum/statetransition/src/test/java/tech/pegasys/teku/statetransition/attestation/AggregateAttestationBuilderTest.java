@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -76,10 +75,8 @@ class AggregateAttestationBuilderTest {
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
 
-    final Bitlist expectedAggregationBits = new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
-    expectedAggregationBits.setBit(1);
-    expectedAggregationBits.setBit(2);
-    expectedAggregationBits.setBit(3);
+    final Bitlist expectedAggregationBits =
+        new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE, 1, 2, 3);
 
     final BLSSignature expectedSignature =
         BLS.aggregate(
@@ -100,8 +97,8 @@ class AggregateAttestationBuilderTest {
   }
 
   private ValidateableAttestation createAttestation(final int... validators) {
-    final Bitlist aggregationBits = new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE);
-    IntStream.of(validators).forEach(aggregationBits::setBit);
+    final Bitlist aggregationBits =
+        new Bitlist(BITLIST_SIZE, MAX_VALIDATORS_PER_COMMITTEE, validators);
     return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }

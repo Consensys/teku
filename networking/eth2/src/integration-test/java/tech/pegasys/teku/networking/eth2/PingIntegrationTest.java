@@ -89,8 +89,7 @@ public class PingIntegrationTest {
     UInt64 ping1_2 = peer1.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping1_2).isGreaterThan(ping1_1);
 
-    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
-    expectedBitvector1.setBits(0, 1, 8);
+    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 0, 1, 8);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
     waitFor(() -> assertThat(peer2.getRemoteAttestationSubnets()).isNotEmpty());
@@ -100,8 +99,7 @@ public class PingIntegrationTest {
     UInt64 ping2_2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping2_2).isEqualTo(ping2_1);
 
-    Bitvector expectedBitvector2 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
-    expectedBitvector2.setBits(2, 4);
+    Bitvector expectedBitvector2 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 2, 4);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector2));
   }
@@ -111,8 +109,7 @@ public class PingIntegrationTest {
     setUp(Duration.ofMillis(100));
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
-    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
-    expectedBitvector1.setBits(0, 1, 8);
+    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 0, 1, 8);
 
     // detecting that ping was automatically sent via updated att subnets of the remote peer
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));

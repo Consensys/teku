@@ -94,11 +94,6 @@ public class Attestation extends
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
-  public Attestation(Attestation attestation) {
-    this(attestation.getAggregation_bits().copy(), attestation.getData(),
-        attestation.getAggregate_signature());
-  }
-
   public Attestation() {
     super(TYPE);
   }
@@ -177,25 +172,12 @@ public class Attestation extends
     return ViewUtils.getBitlist(getField0());
   }
 
-  // TODO
-  public void setAggregation_bits(Bitlist aggregation_bits) {
-    this.aggregation_bits = aggregation_bits;
-  }
-
   public AttestationData getData() {
     return data;
   }
 
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
   public BLSSignature getAggregate_signature() {
     return getSignature();
-  }
-
-  public void setAggregate_signature(BLSSignature aggregate_signature) {
-    this.signature = aggregate_signature;
   }
 
   @Override

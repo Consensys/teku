@@ -23,12 +23,12 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(
       final Attestation firstAttestation, final Attestation... attestations) {
-    final Bitlist aggregateBits = firstAttestation.getAggregation_bits().copy();
+    Bitlist aggregateBits = firstAttestation.getAggregation_bits();
     final List<BLSSignature> signatures = new ArrayList<>();
     signatures.add(firstAttestation.getAggregate_signature());
 
     for (Attestation attestation : attestations) {
-      aggregateBits.setAllBits(attestation.getAggregation_bits());
+      aggregateBits = aggregateBits.or(attestation.getAggregation_bits());
       signatures.add(attestation.getAggregate_signature());
     }
     return new Attestation(aggregateBits, firstAttestation.getData(), BLS.aggregate(signatures));
