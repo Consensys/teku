@@ -39,7 +39,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   private static final VectorViewType<Bytes32View> PROOF_TYPE =
-      new VectorViewType<>(BasicViewTypes.BYTE_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
+      new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
   private static final SSZVector<Bytes32> EMPTY_PROOF =
       SSZVector.createMutable(PROOF_TYPE.getLength(), Bytes32.ZERO);
 
