@@ -55,12 +55,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     signature = null;
   }
 
-  public IndexedAttestation(IndexedAttestation indexedAttestation) {
-    this.attesting_indices = SSZList.createMutable(indexedAttestation.getAttesting_indices());
-    this.data = indexedAttestation.getData();
-    this.signature = indexedAttestation.getSignature();
-  }
-
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();

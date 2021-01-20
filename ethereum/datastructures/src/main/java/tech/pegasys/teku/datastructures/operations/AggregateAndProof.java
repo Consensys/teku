@@ -45,12 +45,6 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
     this.aggregate = aggregate;
   }
 
-  public AggregateAndProof() {
-    this.index = UInt64.ZERO;
-    this.selection_proof = BLSSignature.empty();
-    this.aggregate = new Attestation();
-  }
-
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT + selection_proof.getSSZFieldCount() + aggregate.getSSZFieldCount();

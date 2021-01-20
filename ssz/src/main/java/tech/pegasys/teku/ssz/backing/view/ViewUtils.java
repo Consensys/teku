@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
@@ -85,12 +86,8 @@ public class ViewUtils {
 
   /** Converts vector of bits to {@link Bitvector} value */
   public static Bitvector getBitvector(VectorViewRead<BitView> vectorView) {
-    Bitvector ret = new Bitvector(vectorView.size());
-    for (int i = 0; i < vectorView.size(); i++) {
-      if (vectorView.get(i).get()) {
-        ret.setBit(i);
-      }
-    }
-    return ret;
+    int[] bitIndexes =
+        IntStream.range(0, vectorView.size()).filter(i -> vectorView.get(i).get()).toArray();
+    return new Bitvector(vectorView.size(), bitIndexes);
   }
 }
