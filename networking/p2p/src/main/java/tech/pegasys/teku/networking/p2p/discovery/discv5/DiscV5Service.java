@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.DiscoverySystem;
@@ -31,12 +36,6 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.storage.store.KeyValueStore;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";

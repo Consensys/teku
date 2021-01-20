@@ -11,6 +11,7 @@
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
 ## Next Release
+- Use advertised IP via (--p2p-advertised-ip) regardless of the IP returned by the discv5 PONG responses. This is particularly useful when using setups like docker and having some peers within the docker network but wanting discovery to work external to that network.
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
