@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -50,10 +49,6 @@ public class Attestation
     extends Container3<
         Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
 
   public static class AttestationType
       extends ContainerType3<
@@ -137,31 +132,6 @@ public class Attestation
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(getAggregation_bits(), getData(), getSignature());
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Attestation)) {
-      return false;
-    }
-
-    Attestation other = (Attestation) obj;
-    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("aggregation_bits", getAggregation_bits())
@@ -175,11 +145,15 @@ public class Attestation
   }
 
   public AttestationData getData() {
-    return data;
+    return getField1();
   }
 
   public BLSSignature getAggregate_signature() {
     return getSignature();
+  }
+
+  public BLSSignature getSignature() {
+    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
   }
 
   @Override
