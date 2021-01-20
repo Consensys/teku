@@ -27,6 +27,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
+import org.ethereum.beacon.discovery.storage.NewAddressHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -56,6 +57,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final List<String> bootnodes = p2pConfig.getBootnodes();
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
+    final NewAddressHandler maybeUpdateNodeRecordHandler =
+        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp());
     discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -67,9 +70,20 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     .address(advertisedAddress, advertisedPort)
                     .seq(seqNo)
                     .build())
+            .newAddressHandler(maybeUpdateNodeRecordHandler)
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
     this.kvStore = kvStore;
+  }
+
+  private NewAddressHandler maybeUpdateNodeRecord(boolean userExplicitlySetAdvertisedIpOrPort) {
+    return (oldRecord, proposedNewRecord) -> {
+      if (userExplicitlySetAdvertisedIpOrPort) {
+        return Optional.of(oldRecord);
+      } else {
+        return Optional.of(proposedNewRecord);
+      }
+    };
   }
 
   private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
