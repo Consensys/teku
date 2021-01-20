@@ -76,8 +76,7 @@ public class SyncController {
     eventThread.checkOnEventThread();
     final boolean currentlySyncing = isSyncActive();
     final Optional<InProgressSync> newSync =
-        selectNewSyncTarget(
-            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getTargetChain));
+        selectNewSyncTarget(currentSync.filter(InProgressSync::isActive));
     if (newSync.isEmpty() && currentlySyncing) {
       return;
     }
@@ -88,23 +87,32 @@ public class SyncController {
   }
 
   private Optional<InProgressSync> selectNewSyncTarget(
-      final Optional<TargetChain> currentSyncTarget) {
+      final Optional<InProgressSync> currentSyncTarget) {
     final Optional<TargetChain> bestFinalizedChain =
-        finalizedTargetChainSelector.selectTargetChain(currentSyncTarget);
+        finalizedTargetChainSelector.selectTargetChain(
+            currentSyncTarget
+                .filter(inProgressSync -> !inProgressSync.isSpeculative())
+                .map(InProgressSync::getTargetChain));
     // We may not have run fork choice to update our chain head, so check if the best finalized
     // chain is the one we just finished syncing and move on to non-finalized if it is.
     if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
       return bestFinalizedChain.map(chain -> startSync(chain, true, false));
     } else if (!isSyncingFinalizedChain()) {
       final Optional<TargetChain> targetChain =
-          nonfinalizedTargetChainSelector.selectTargetChain(currentSyncTarget);
+          nonfinalizedTargetChainSelector.selectTargetChain(
+              currentSyncTarget
+                  .filter(inProgressSync -> !inProgressSync.isSpeculative())
+                  .map(InProgressSync::getTargetChain));
       final Optional<InProgressSync> newSync =
           targetChain.map(chain -> startSync(chain, false, false));
       if (newSync.isPresent()) {
         return newSync;
       }
       return speculativeTargetChainSelector
-          .selectTargetChain(currentSyncTarget)
+          .selectTargetChain(
+              currentSyncTarget
+                  .filter(InProgressSync::isSpeculative)
+                  .map(InProgressSync::getTargetChain))
           .map(chain -> startSync(chain, false, true));
     }
     return Optional.empty();
@@ -133,7 +141,7 @@ public class SyncController {
         currentSync.map(Objects::toString).orElse("<unknown>"),
         result);
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
-    currentSync = selectNewSyncTarget(currentSync.map(InProgressSync::getTargetChain));
+    currentSync = selectNewSyncTarget(currentSync);
     if (!isSyncActive()) {
       currentSync = Optional.empty();
       notifySubscribers(false);
