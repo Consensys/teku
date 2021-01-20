@@ -41,6 +41,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AggregateAndProof extends
@@ -63,6 +64,7 @@ public class AggregateAndProof extends
     }
   }
 
+  @SszTypeDescriptor
   public static final AggregateAndProofType TYPE = new AggregateAndProofType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
