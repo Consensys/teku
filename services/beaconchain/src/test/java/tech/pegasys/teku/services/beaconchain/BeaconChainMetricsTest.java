@@ -507,8 +507,7 @@ class BeaconChainMetricsTest {
   }
 
   private Bitlist bitlistOf(final int... indices) {
-    final Bitlist bitlist = new Bitlist(10, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    bitlist.setBits(indices);
+    final Bitlist bitlist = new Bitlist(10, Constants.MAX_VALIDATORS_PER_COMMITTEE, indices);
     return bitlist;
   }
 

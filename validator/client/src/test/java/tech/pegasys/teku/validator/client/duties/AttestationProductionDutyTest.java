@@ -381,8 +381,8 @@ class AttestationProductionDutyTest {
       final int committeePosition,
       final int commiteeSize,
       final BLSSignature signature) {
-    final Bitlist expectedAggregationBits = new Bitlist(commiteeSize, MAX_VALIDATORS_PER_COMMITTEE);
-    expectedAggregationBits.setBit(committeePosition);
+    final Bitlist expectedAggregationBits =
+        new Bitlist(commiteeSize, MAX_VALIDATORS_PER_COMMITTEE, committeePosition);
     return new Attestation(expectedAggregationBits, attestationData, signature);
   }
 

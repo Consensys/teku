@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkElementIndex;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Objects;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -25,49 +26,60 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class Bitvector {
 
+  public static Bitvector fromBytes(Bytes bytes, int size) {
+    checkArgument(
+        bytes.size() == sszSerializationLength(size),
+        "Incorrect data size (%s) for Bitvector of size %s",
+        bytes.size(),
+        size);
+    BitSet bitset = new BitSet(size);
+
+    for (int i = size - 1; i >= 0; i--) {
+      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
+        bitset.set(i);
+      }
+    }
+
+    return new Bitvector(bitset, size);
+  }
+
+  public static int sszSerializationLength(final int size) {
+    return (size + 7) / 8;
+  }
+
   private final BitSet data;
   private final int size;
+
+  private Bitvector(BitSet bitSet, int size) {
+    this.data = bitSet;
+    this.size = size;
+  }
 
   public Bitvector(int size) {
     this.data = new BitSet(size);
     this.size = size;
   }
 
-  public Bitvector(BitSet bitSet, int size) {
-    this.data = bitSet;
-    this.size = size;
-  }
-
-  public Bitvector(Bitvector bitvector) {
-    this.data = (BitSet) bitvector.data.clone();
-    this.size = bitvector.size;
-  }
-
-  public Bitvector(Iterable<Integer> indicesToSet, int size) {
+  public Bitvector(int size, Iterable<Integer> indicesToSet) {
     this(size);
     for (int i : indicesToSet) {
-      setBit(i);
+      data.set(i);
     }
+  }
+
+  public Bitvector(int size, int... indicesToSet) {
+    this(size, Arrays.stream(indicesToSet).boxed().collect(toList()));
   }
 
   public List<Integer> getSetBitIndexes() {
     return data.stream().boxed().collect(toList());
   }
 
-  public void setBit(int i) {
+  public Bitvector withBit(int i) {
     checkElementIndex(i, size);
-    data.set(i);
-  }
-
-  public void setBits(int... indexes) {
-    for (int i : indexes) {
-      setBit(i);
-    }
-  }
-
-  public void clearBit(int i) {
-    checkElementIndex(i, size);
-    data.clear(i);
+    BitSet newSet = (BitSet) data.clone();
+    newSet.set(i);
+    return new Bitvector(newSet, size);
   }
 
   public int getBitCount() {
@@ -94,40 +106,15 @@ public class Bitvector {
     return Bytes.wrap(array);
   }
 
-  public static Bitvector fromBytes(Bytes bytes, int size) {
-    checkArgument(
-        bytes.size() == sszSerializationLength(size),
-        "Incorrect data size (%s) for Bitvector of size %s",
-        bytes.size(),
-        size);
-    BitSet bitset = new BitSet(size);
-
-    for (int i = size - 1; i >= 0; i--) {
-      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        bitset.set(i);
-      }
-    }
-
-    return new Bitvector(bitset, size);
-  }
-
-  public static int sszSerializationLength(final int size) {
-    return (size + 7) / 8;
-  }
-
   public Bitvector rightShift(int i) {
     int length = this.getSize();
-    Bitvector newBitvector = new Bitvector(getSize());
+    BitSet newData = new BitSet(getSize());
     for (int j = 0; j < length - i; j++) {
       if (this.getBit(j)) {
-        newBitvector.setBit(j + i);
+        newData.set(j + i);
       }
     }
-    return newBitvector;
-  }
-
-  public Bitvector copy() {
-    return new Bitvector(this);
+    return new Bitvector(newData, getSize());
   }
 
   @Override

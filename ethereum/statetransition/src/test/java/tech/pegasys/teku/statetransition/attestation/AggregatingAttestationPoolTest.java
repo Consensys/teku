@@ -23,7 +23,6 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOC
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -352,8 +351,7 @@ class AggregatingAttestationPoolTest {
 
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
-    final Bitlist bitlist = new Bitlist(20, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    IntStream.of(validators).forEach(bitlist::setBit);
+    final Bitlist bitlist = new Bitlist(20, Constants.MAX_VALIDATORS_PER_COMMITTEE, validators);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
     ValidateableAttestation validateableAttestation = ValidateableAttestation.from(attestation);

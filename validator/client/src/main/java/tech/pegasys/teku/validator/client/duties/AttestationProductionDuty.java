@@ -162,8 +162,10 @@ public class AttestationProductionDuty implements Duty {
       final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
     final Bitlist aggregationBits =
-        new Bitlist(validator.getCommitteeSize(), MAX_VALIDATORS_PER_COMMITTEE);
-    aggregationBits.setBit(validator.getCommitteePosition());
+        new Bitlist(
+            validator.getCommitteeSize(),
+            MAX_VALIDATORS_PER_COMMITTEE,
+            validator.getCommitteePosition());
     return new Attestation(aggregationBits, attestationData, signature);
   }
 

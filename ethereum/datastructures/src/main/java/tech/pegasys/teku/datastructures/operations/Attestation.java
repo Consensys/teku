@@ -49,12 +49,6 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.signature = signature;
   }
 
-  public Attestation(Attestation attestation) {
-    this.aggregation_bits = attestation.getAggregation_bits().copy();
-    this.data = attestation.getData();
-    this.signature = attestation.getAggregate_signature();
-  }
-
   public Attestation() {
     this.aggregation_bits = createEmptyAggregationBits();
   }
@@ -134,24 +128,12 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     return aggregation_bits;
   }
 
-  public void setAggregation_bits(Bitlist aggregation_bits) {
-    this.aggregation_bits = aggregation_bits;
-  }
-
   public AttestationData getData() {
     return data;
   }
 
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
   public BLSSignature getAggregate_signature() {
     return signature;
-  }
-
-  public void setAggregate_signature(BLSSignature aggregate_signature) {
-    this.signature = aggregate_signature;
   }
 
   @Override
