@@ -38,6 +38,7 @@ public class SyncController {
   private final RecentChainData recentChainData;
   private final ChainSelector finalizedTargetChainSelector;
   private final ChainSelector nonfinalizedTargetChainSelector;
+  private final ChainSelector speculativeTargetChainSelector;
   private final Sync sync;
 
   /**
@@ -55,12 +56,14 @@ public class SyncController {
       final RecentChainData recentChainData,
       final ChainSelector finalizedTargetChainSelector,
       final ChainSelector nonfinalizedTargetChainSelector,
+      final ChainSelector speculativeTargetChainSelector,
       final Sync sync) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.finalizedTargetChainSelector = finalizedTargetChainSelector;
     this.nonfinalizedTargetChainSelector = nonfinalizedTargetChainSelector;
+    this.speculativeTargetChainSelector = speculativeTargetChainSelector;
     this.sync = sync;
   }
 
@@ -78,10 +81,10 @@ public class SyncController {
     if (newSync.isEmpty() && currentlySyncing) {
       return;
     }
-    if (!currentlySyncing && newSync.isPresent()) {
+    currentSync = newSync;
+    if (!currentlySyncing && isSyncActive()) {
       notifySubscribers(true);
     }
-    currentSync = newSync;
   }
 
   private Optional<InProgressSync> selectNewSyncTarget(
@@ -91,11 +94,18 @@ public class SyncController {
     // We may not have run fork choice to update our chain head, so check if the best finalized
     // chain is the one we just finished syncing and move on to non-finalized if it is.
     if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
-      return bestFinalizedChain.map(chain -> startSync(chain, true));
+      return bestFinalizedChain.map(chain -> startSync(chain, true, false));
     } else if (!isSyncingFinalizedChain()) {
       final Optional<TargetChain> targetChain =
           nonfinalizedTargetChainSelector.selectTargetChain(currentSyncTarget);
-      return targetChain.map(chain -> startSync(chain, false));
+      final Optional<InProgressSync> newSync =
+          targetChain.map(chain -> startSync(chain, false, false));
+      if (newSync.isPresent()) {
+        return newSync;
+      }
+      return speculativeTargetChainSelector
+          .selectTargetChain(currentSyncTarget)
+          .map(chain -> startSync(chain, false, true));
     }
     return Optional.empty();
   }
@@ -131,7 +141,12 @@ public class SyncController {
   }
 
   public boolean isSyncActive() {
-    return currentSync.map(InProgressSync::isActive).orElse(false);
+    return isSyncActive(currentSync);
+  }
+
+  public boolean isSyncActive(final Optional<InProgressSync> sync) {
+    return sync.map(inProgressSync -> inProgressSync.isActive() && !inProgressSync.isSpeculative())
+        .orElse(false);
   }
 
   public SyncingStatus getSyncStatus() {
@@ -154,7 +169,8 @@ public class SyncController {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
   }
 
-  private InProgressSync startSync(final TargetChain chain, final boolean isFinalized) {
+  private InProgressSync startSync(
+      final TargetChain chain, final boolean isFinalized, final boolean isSpeculative) {
     eventThread.checkOnEventThread();
     if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
       return currentSync.get();
@@ -168,28 +184,35 @@ public class SyncController {
           onSyncComplete(SyncResult.FAILED);
         },
         eventThread);
-    return new InProgressSync(startSlot, chain, isFinalized, syncResult);
+    return new InProgressSync(startSlot, chain, isFinalized, isSpeculative, syncResult);
   }
 
   private class InProgressSync {
     private final UInt64 startSlot;
     private final TargetChain targetChain;
     private final boolean isFinalizedChain;
+    private final boolean isSpeculative;
     private final SafeFuture<SyncResult> result;
 
     private InProgressSync(
         final UInt64 startSlot,
         final TargetChain targetChain,
         final boolean isFinalizedChain,
+        final boolean isSpeculative,
         final SafeFuture<SyncResult> result) {
       this.startSlot = startSlot;
       this.targetChain = targetChain;
       this.isFinalizedChain = isFinalizedChain;
+      this.isSpeculative = isSpeculative;
       this.result = result;
     }
 
     public boolean isActive() {
       return !result.isDone();
+    }
+
+    public boolean isSpeculative() {
+      return isSpeculative;
     }
 
     public TargetChain getTargetChain() {
@@ -211,8 +234,10 @@ public class SyncController {
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("startSlot", startSlot)
-          .add("targetChain", targetChain.getChainHead())
+          .add("targetChain", targetChain)
           .add("isFinalizedChain", isFinalizedChain)
+          .add("isSpeculative", isSpeculative)
+          .add("result", result)
           .toString();
     }
   }

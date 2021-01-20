@@ -44,6 +44,7 @@ class SyncControllerTest {
   private final ChainSelector finalizedChainSelector = mock(ChainSelector.class);
   private final Sync sync = mock(Sync.class);
   private final ChainSelector nonfinalizedChainSelector = mock(ChainSelector.class);
+  private final ChainSelector forkChainSelector = mock(ChainSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
 
@@ -56,6 +57,7 @@ class SyncControllerTest {
           recentChainData,
           finalizedChainSelector,
           nonfinalizedChainSelector,
+          forkChainSelector,
           sync);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 

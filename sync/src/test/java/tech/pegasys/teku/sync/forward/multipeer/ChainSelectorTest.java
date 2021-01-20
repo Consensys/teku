@@ -11,31 +11,41 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.forward.multipeer.chains;
+package tech.pegasys.teku.sync.forward.multipeer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.sync.forward.multipeer.ChainSelector.MIN_PENDING_BLOCKS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.forward.multipeer.ChainSelector;
+import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
+import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChains;
 
 class ChainSelectorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
+  @SuppressWarnings("unchecked")
+  private final PendingPool<SignedBeaconBlock> pendingBlocks = mock(PendingPool.class);
+
   private final TargetChains targetChains = new TargetChains();
 
   private final TargetChain targetChain =
       new TargetChain(dataStructureUtil.randomSlotAndBlockRoot());
+
+  private final ChainSelector forkChainSelector =
+      ChainSelector.createForForkChains(recentChainData, targetChains, pendingBlocks);
 
   @BeforeEach
   void setUp() {
@@ -86,7 +96,7 @@ class ChainSelectorTest {
   void shouldNotAddToleranceWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot().plus(1));
     assertThat(
-            new ChainSelector(recentChainData, targetChains)
+            ChainSelector.createForCanonicalChains(recentChainData, targetChains)
                 .selectTargetChain(Optional.of(targetChain)))
         .isPresent();
   }
@@ -95,14 +105,15 @@ class ChainSelectorTest {
   void shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot());
     assertThat(
-            new ChainSelector(recentChainData, targetChains)
+            ChainSelector.createForCanonicalChains(recentChainData, targetChains)
                 .selectTargetChain(Optional.of(targetChain)))
         .isEmpty();
   }
 
   @Test
   void shouldSwitchToChainWithMorePeersWhenAlreadySyncing() {
-    final ChainSelector chainSelector = new ChainSelector(recentChainData, targetChains);
+    final ChainSelector chainSelector =
+        ChainSelector.createForCanonicalChains(recentChainData, targetChains);
     final UInt64 remoteHeadSlot = recentChainData.getHeadSlot().plus(SLOTS_PER_EPOCH + 1);
     final SlotAndBlockRoot chainHead1 = addPeerAtSlot(remoteHeadSlot);
     final SlotAndBlockRoot chainHead2 = addPeerAtSlot(remoteHeadSlot.plus(5));
@@ -145,6 +156,47 @@ class ChainSelectorTest {
     assertThat(selectSyncTarget()).isEmpty();
   }
 
+  @Test
+  void forkSelector_shouldNotSelectTargetChainWhenHeadAlreadyImported() {
+    final SlotAndBlockRoot headBlock = addPeerAtSlot(recentChainData.getHeadSlot().plus(200));
+    when(recentChainData.containsBlock(headBlock.getBlockRoot())).thenReturn(true);
+
+    assertThat(forkChainSelector.selectTargetChain(Optional.empty())).isEmpty();
+  }
+
+  @Test
+  void forkSelector_shouldSelectTargetChainWhenEnoughBlocksWaitingInPendingPool() {
+    final SlotAndBlockRoot chainHead =
+        addPendingBlocks(recentChainData.getHeadSlot(), MIN_PENDING_BLOCKS);
+    addPeerToChain(chainHead);
+
+    assertThat(forkChainSelector.selectTargetChain(Optional.empty()))
+        .isPresent()
+        .map(TargetChain::getChainHead)
+        .contains(chainHead);
+  }
+
+  @Test
+  void forkSelector_shouldNotSelectTargetWhenNotEnoughBlocksArePending() {
+    final SlotAndBlockRoot chainHead =
+        addPendingBlocks(recentChainData.getHeadSlot(), MIN_PENDING_BLOCKS - 1);
+    addPeerToChain(chainHead);
+
+    assertThat(forkChainSelector.selectTargetChain(Optional.empty())).isEmpty();
+  }
+
+  private SlotAndBlockRoot addPendingBlocks(
+      final UInt64 headBlockSlot, final int numberOfPendingBlocks) {
+    // +1 because the block count is inclusive of the earliest and head blocks
+    final long earliestBlockSlot = headBlockSlot.longValue() - numberOfPendingBlocks + 1;
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(earliestBlockSlot - 1);
+    for (long slot = earliestBlockSlot; slot <= headBlockSlot.longValue(); slot++) {
+      block = dataStructureUtil.randomSignedBeaconBlock(slot, block.getRoot());
+      when(pendingBlocks.get(block.getRoot())).thenReturn(Optional.of(block));
+    }
+    return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
+  }
+
   private TargetChain getTargetChain(final SlotAndBlockRoot chainHead1) {
     return targetChains
         .streamChains()
@@ -165,6 +217,7 @@ class ChainSelectorTest {
   }
 
   private Optional<TargetChain> selectSyncTarget() {
-    return new ChainSelector(recentChainData, targetChains).selectTargetChain(Optional.empty());
+    return ChainSelector.createForCanonicalChains(recentChainData, targetChains)
+        .selectTargetChain(Optional.empty());
   }
 }

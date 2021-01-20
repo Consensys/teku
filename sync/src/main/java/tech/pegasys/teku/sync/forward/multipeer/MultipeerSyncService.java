@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.OrderedAsyncRunner;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSyncService;
@@ -62,6 +64,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter) {
     LOG.info("Using multipeer sync");
@@ -83,8 +86,10 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            new ChainSelector(recentChainData, finalizedTargetChains),
-            new ChainSelector(recentChainData, nonfinalizedTargetChains),
+            ChainSelector.createForCanonicalChains(recentChainData, finalizedTargetChains),
+            ChainSelector.createForCanonicalChains(recentChainData, nonfinalizedTargetChains),
+            ChainSelector.createForForkChains(
+                recentChainData, nonfinalizedTargetChains, pendingBlocks),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
