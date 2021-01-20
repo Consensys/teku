@@ -89,10 +89,9 @@ class DepositTest {
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
     assertEquals(
-        vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
+        Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+        Deposit.TYPE.getDefault().getProof().size());
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {
