@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
+
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
@@ -20,8 +22,9 @@ import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -47,13 +50,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final ServiceConfig serviceConfig,
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
+      final SpecProvider specProvider,
       final boolean useIndependentAttestationTiming) {
 
+    final int readTimeoutInSeconds =
+        getReadTimeoutInSeconds(specProvider, useIndependentAttestationTiming);
     final OkHttpClient okHttpClient =
-        new OkHttpClient.Builder()
-            // We should get at least one event per slot so give the read timeout 2 slots to be safe
-            .readTimeout(Constants.SECONDS_PER_SLOT * 2L, TimeUnit.SECONDS)
-            .build();
+        new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS).build();
     final HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
@@ -78,6 +81,15 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
+  }
+
+  private static int getReadTimeoutInSeconds(
+      final SpecProvider specProvider, final boolean useIndependentAttestationTiming) {
+    // We should get at least one event per slot so give the read timeout 2 slots to be safe
+    // but when using independent timing we only get head events on each new block so they may be
+    // much rarer
+    final int readTimeoutInSlots = useIndependentAttestationTiming ? 5 : 2;
+    return readTimeoutInSlots * specProvider.secondsPerSlot(UInt64.valueOf(GENESIS_EPOCH));
   }
 
   @Override
