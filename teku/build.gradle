@@ -17,6 +17,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
+  implementation project(':networking:nat')
   implementation project(':protoarray')
   implementation project(':pow')
   implementation project(':services:beaconchain')

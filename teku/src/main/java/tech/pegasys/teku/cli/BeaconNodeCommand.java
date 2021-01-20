@@ -41,6 +41,7 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
+import tech.pegasys.teku.cli.options.NatOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -172,6 +173,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions;
+
+  @Mixin(name = "NAT")
+  private NatOptions natOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -333,6 +337,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
       metricsOptions.configure(builder);
+      natOptions.configure(builder);
       storeOptions.configure(builder);
 
       return builder.build();
