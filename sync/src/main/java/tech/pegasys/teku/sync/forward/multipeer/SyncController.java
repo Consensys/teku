@@ -86,23 +86,20 @@ public class SyncController {
     }
   }
 
-  private Optional<InProgressSync> selectNewSyncTarget(
-      final Optional<InProgressSync> currentSyncTarget) {
+  private Optional<InProgressSync> selectNewSyncTarget(final Optional<InProgressSync> currentSync) {
+    final Optional<TargetChain> nonSpeculativeCurrentSyncTarget =
+        currentSync
+            .filter(inProgressSync -> !inProgressSync.isSpeculative())
+            .map(InProgressSync::getTargetChain);
     final Optional<TargetChain> bestFinalizedChain =
-        finalizedTargetChainSelector.selectTargetChain(
-            currentSyncTarget
-                .filter(inProgressSync -> !inProgressSync.isSpeculative())
-                .map(InProgressSync::getTargetChain));
+        finalizedTargetChainSelector.selectTargetChain(nonSpeculativeCurrentSyncTarget);
     // We may not have run fork choice to update our chain head, so check if the best finalized
     // chain is the one we just finished syncing and move on to non-finalized if it is.
     if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
       return bestFinalizedChain.map(chain -> startSync(chain, true, false));
     } else if (!isSyncingFinalizedChain()) {
       final Optional<TargetChain> targetChain =
-          nonfinalizedTargetChainSelector.selectTargetChain(
-              currentSyncTarget
-                  .filter(inProgressSync -> !inProgressSync.isSpeculative())
-                  .map(InProgressSync::getTargetChain));
+          nonfinalizedTargetChainSelector.selectTargetChain(nonSpeculativeCurrentSyncTarget);
       final Optional<InProgressSync> newSync =
           targetChain.map(chain -> startSync(chain, false, false));
       if (newSync.isPresent()) {
@@ -110,9 +107,7 @@ public class SyncController {
       }
       return speculativeTargetChainSelector
           .selectTargetChain(
-              currentSyncTarget
-                  .filter(InProgressSync::isSpeculative)
-                  .map(InProgressSync::getTargetChain))
+              currentSync.filter(InProgressSync::isSpeculative).map(InProgressSync::getTargetChain))
           .map(chain -> startSync(chain, false, true));
     }
     return Optional.empty();
@@ -181,8 +176,15 @@ public class SyncController {
       final TargetChain chain, final boolean isFinalized, final boolean isSpeculative) {
     eventThread.checkOnEventThread();
     if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
+      LOG.trace("Not starting new sync because it has the same target as current sync");
       return currentSync.get();
     }
+    LOG.debug(
+        "Starting new sync to {} with {} peers finalized: {}, speculative: {}",
+        chain.getChainHead(),
+        chain.getPeerCount(),
+        isFinalized,
+        isSpeculative);
     final UInt64 startSlot = recentChainData.getHeadSlot();
     final SafeFuture<SyncResult> syncResult = sync.syncToChain(chain);
     syncResult.finishAsync(
