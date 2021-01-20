@@ -27,6 +27,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
+import org.ethereum.beacon.discovery.storage.NewAddressHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
-  private boolean userExplicitlySetAdvertisedIpOrPort;
 
   public static DiscoveryService create(
       NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
@@ -49,7 +49,6 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private final KeyValueStore<String, Bytes> kvStore;
 
   private DiscV5Service(NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
-    userExplicitlySetAdvertisedIpOrPort = p2pConfig.hasUserExplicitlySetAdvertisedIpOrPort();
     final Bytes privateKey = Bytes.wrap(p2pConfig.getPrivateKey().raw());
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
@@ -58,6 +57,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final List<String> bootnodes = p2pConfig.getBootnodes();
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
+    final NewAddressHandler maybeUpdateNodeRecordHandler =
+        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIpOrPort());
     discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -69,19 +70,20 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     .address(advertisedAddress, advertisedPort)
                     .seq(seqNo)
                     .build())
-            .newAddressHandler(this::maybeUpdateNodeRecord)
+            .newAddressHandler(maybeUpdateNodeRecordHandler)
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
     this.kvStore = kvStore;
   }
 
-  private Optional<NodeRecord> maybeUpdateNodeRecord(
-      NodeRecord oldRecord, NodeRecord proposedNewRecord) {
-    if (userExplicitlySetAdvertisedIpOrPort) {
-      return Optional.of(oldRecord);
-    } else {
-      return Optional.of(proposedNewRecord);
-    }
+  private NewAddressHandler maybeUpdateNodeRecord(boolean userExplicitlySetAdvertisedIpOrPort) {
+    return (oldRecord, proposedNewRecord) -> {
+      if (userExplicitlySetAdvertisedIpOrPort) {
+        return Optional.of(oldRecord);
+      } else {
+        return Optional.of(proposedNewRecord);
+      }
+    };
   }
 
   private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
