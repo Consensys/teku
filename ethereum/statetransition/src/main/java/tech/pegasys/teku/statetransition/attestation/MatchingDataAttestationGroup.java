@@ -47,7 +47,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
   private final AttestationData attestationData;
   private final Bytes32 committeeShufflingSeed;
-  private final Bitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
+  private Bitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
 
   public MatchingDataAttestationGroup(
       final AttestationData attestationData, final Bytes32 committeeShufflingSeed) {
@@ -123,7 +123,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    seenAggregationBits.setAllBits(attestation.getAggregation_bits());
+    seenAggregationBits = seenAggregationBits.or(attestation.getAggregation_bits());
 
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();

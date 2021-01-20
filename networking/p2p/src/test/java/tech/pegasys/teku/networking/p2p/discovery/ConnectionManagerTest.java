@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
-import com.google.common.primitives.Ints;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -423,6 +422,6 @@ class ConnectionManagerTest {
         peerId,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
-        new Bitvector(Ints.asList(subnetIds), ATTESTATION_SUBNET_COUNT));
+        new Bitvector(ATTESTATION_SUBNET_COUNT, subnetIds));
   }
 }

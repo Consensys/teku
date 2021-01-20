@@ -71,7 +71,12 @@ public class ValidatorClientService extends Service {
             .getBeaconNodeApiEndpoint()
             .map(
                 endpoint ->
-                    RemoteBeaconNodeApi.create(services, asyncRunner, endpoint, useDependentRoots))
+                    RemoteBeaconNodeApi.create(
+                        services,
+                        asyncRunner,
+                        endpoint,
+                        config.getSpecProvider(),
+                        useDependentRoots))
             .orElseGet(
                 () -> InProcessBeaconNodeApi.create(services, asyncRunner, useDependentRoots));
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
