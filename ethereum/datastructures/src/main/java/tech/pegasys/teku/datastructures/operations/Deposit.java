@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
@@ -41,18 +38,14 @@ import tech.pegasys.teku.util.config.Constants;
 public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-
-  private static final VectorViewType<Bytes32View> PROOF_TYPE = new VectorViewType<>(
-      BasicViewTypes.BYTE_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-  private static final SSZVector<Bytes32> EMPTY_PROOF = SSZVector
-      .createMutable(PROOF_TYPE.getLength(), Bytes32.ZERO);
+  private static final VectorViewType<Bytes32View> PROOF_TYPE =
+      new VectorViewType<>(BasicViewTypes.BYTE_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
+  private static final SSZVector<Bytes32> EMPTY_PROOF =
+      SSZVector.createMutable(PROOF_TYPE.getLength(), Bytes32.ZERO);
 
   @SszTypeDescriptor
   public static final ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> TYPE =
-      ContainerType2.create(
-          PROOF_TYPE,
-          DepositData.TYPE,
-          Deposit::new);
+      ContainerType2.create(PROOF_TYPE, DepositData.TYPE, Deposit::new);
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -94,10 +87,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   public SSZVector<Bytes32> getProof() {
     return new SSZBackingVector<>(
-        Bytes32.class,
-        getField0(),
-        Bytes32View::new,
-        AbstractBasicView::get);
+        Bytes32.class, getField0(), Bytes32View::new, AbstractBasicView::get);
   }
 
   public DepositData getData() {

@@ -418,9 +418,14 @@ class BeaconStateUtilTest {
     ArrayList<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
     DepositWithIndex deposit = deposits.get(1);
     DepositData depositData = deposit.getData();
-    DepositWithIndex invalidSigDeposit = new DepositWithIndex(
-        new DepositData(depositData.getPubkey(), depositData.getWithdrawal_credentials(),
-            depositData.getAmount(), BLSSignature.empty()), deposit.getIndex());
+    DepositWithIndex invalidSigDeposit =
+        new DepositWithIndex(
+            new DepositData(
+                depositData.getPubkey(),
+                depositData.getWithdrawal_credentials(),
+                depositData.getAmount(),
+                BLSSignature.empty()),
+            deposit.getIndex());
     deposits.set(1, invalidSigDeposit);
 
     BeaconState state = initialize_beacon_state_from_eth1(Bytes32.ZERO, UInt64.ZERO, deposits);

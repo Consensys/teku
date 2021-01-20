@@ -38,7 +38,7 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
   //  private final ContainerViewType<TView> containerType = getType();
   private final TView aContainer = createContainer();
   private final Bytes aContainerSsz = SimpleOffsetSerializer.serialize(aContainer);
-//  private final TreeNode aContainerTree = aContainer.getBackingNode();
+  //  private final TreeNode aContainerTree = aContainer.getBackingNode();
 
   // Workaround for IDEA JMH plugin: it doesn't like abstract 'State' benchmarks
   protected TView createContainer() {
@@ -49,9 +49,9 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
     throw new UnsupportedOperationException("To override");
   }
 
-//  protected ContainerViewType<TView> getType() {
-//    throw new UnsupportedOperationException("To override");
-//  }
+  //  protected ContainerViewType<TView> getType() {
+  //    throw new UnsupportedOperationException("To override");
+  //  }
 
   protected void iterateData(TView container, Blackhole bh) {
     throw new UnsupportedOperationException("To override");
@@ -73,16 +73,16 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
     iterateData(container, bh);
   }
 
-//  @Benchmark
-//  public void benchCreateFromTree(Blackhole bh) {
-//    bh.consume(containerType.createFromBackingNode(aContainerTree));
-//  }
-//
-//  @Benchmark
-//  public void benchCreateFromTreeAndIterate(Blackhole bh) {
-//    TView container = containerType.createFromBackingNode(aContainerTree);
-//    iterateData(container);
-//  }
+  //  @Benchmark
+  //  public void benchCreateFromTree(Blackhole bh) {
+  //    bh.consume(containerType.createFromBackingNode(aContainerTree));
+  //  }
+  //
+  //  @Benchmark
+  //  public void benchCreateFromTreeAndIterate(Blackhole bh) {
+  //    TView container = containerType.createFromBackingNode(aContainerTree);
+  //    iterateData(container);
+  //  }
 
   @Benchmark
   public void benchSerialize(Blackhole bh) {
@@ -101,15 +101,16 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
   }
 
   public void customRun(int runs, int runLength) {
-    Blackhole blackhole = new Blackhole(
-        "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
+    Blackhole blackhole =
+        new Blackhole(
+            "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
     Map<String, Consumer<Blackhole>> benches = new LinkedHashMap<>();
     benches.put("benchCreate", this::benchCreate);
     benches.put("benchIterate", this::benchIterate);
     benches.put("benchCreateAndIterate", this::benchCreateAndIterate);
-//        this::benchCreateFromTree,
-//        this::benchCreateFromTreeAndIterate,
+    //        this::benchCreateFromTree,
+    //        this::benchCreateFromTreeAndIterate,
     benches.put("benchSerialize", this::benchSerialize);
     benches.put("benchDeserialize", this::benchDeserialize);
     benches.put("benchDeserializeAndIterate", this::benchDeserializeAndIterate);

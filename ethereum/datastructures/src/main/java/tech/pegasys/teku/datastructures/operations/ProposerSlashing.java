@@ -19,23 +19,18 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class ProposerSlashing extends
-    Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
+public class ProposerSlashing
+    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -45,10 +40,11 @@ public class ProposerSlashing extends
   private SignedBeaconBlockHeader header_2;
 
   @SszTypeDescriptor
-  public static final ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> TYPE = ContainerType2
-      .create(
-          SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE,
-          ProposerSlashing::new);
+  public static final ContainerType2<
+          ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
+      TYPE =
+          ContainerType2.create(
+              SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE, ProposerSlashing::new);
 
   public ProposerSlashing(
       ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> type,

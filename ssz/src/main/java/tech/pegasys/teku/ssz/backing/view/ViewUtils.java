@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import com.google.common.collect.Streams;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,22 +35,25 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 /** Handy view tool methods */
 public class ViewUtils {
 
-  public static <C, V extends ViewRead> ListViewRead<V> toListView(ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {
+  public static <C, V extends ViewRead> ListViewRead<V> toListView(
+      ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends ViewRead> ListViewRead<V> toListView(ListViewType<V> type, Iterable<V> list) {
+  public static <V extends ViewRead> ListViewRead<V> toListView(
+      ListViewType<V> type, Iterable<V> list) {
     ListViewWrite<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
 
-  public static <C, V extends ViewRead> VectorViewRead<V> toVectorView(VectorViewType<V> type,
-      Iterable<C> list, Function<C, V> converter) {
+  public static <C, V extends ViewRead> VectorViewRead<V> toVectorView(
+      VectorViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toVectorView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends ViewRead> VectorViewRead<V> toVectorView(VectorViewType<V> type, Iterable<V> list) {
+  public static <V extends ViewRead> VectorViewRead<V> toVectorView(
+      VectorViewType<V> type, Iterable<V> list) {
     VectorViewWrite<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
     for (V v : list) {

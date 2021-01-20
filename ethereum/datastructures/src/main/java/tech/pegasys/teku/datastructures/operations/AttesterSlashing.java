@@ -25,46 +25,43 @@ import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttesterSlashing extends
-    Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
+public class AttesterSlashing
+    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
   @SszTypeDescriptor
-  public static final ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> TYPE = ContainerType2
-      .create(
-          IndexedAttestation.TYPE, IndexedAttestation.TYPE,
-          AttesterSlashing::new);
+  public static final ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
+      TYPE =
+          ContainerType2.create(
+              IndexedAttestation.TYPE, IndexedAttestation.TYPE, AttesterSlashing::new);
 
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;
 
   @Label("sos-ignore")
-  private final Supplier<Set<UInt64>> intersectingIndices = Suppliers.memoize(
-      () ->
-          Sets.intersection(
-              new TreeSet<>(
-                  getAttestation_1().getAttesting_indices().asList()), // TreeSet as must be sorted
-              new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
+  private final Supplier<Set<UInt64>> intersectingIndices =
+      Suppliers.memoize(
+          () ->
+              Sets.intersection(
+                  new TreeSet<>(
+                      getAttestation_1()
+                          .getAttesting_indices()
+                          .asList()), // TreeSet as must be sorted
+                  new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
 
   public AttesterSlashing(
       ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> type,

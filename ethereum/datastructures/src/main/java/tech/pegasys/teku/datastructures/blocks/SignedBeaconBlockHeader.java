@@ -35,18 +35,21 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedBeaconBlockHeader extends
-    Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>>
+public class SignedBeaconBlockHeader
+    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   private BeaconBlockHeader message;
   private BLSSignature signature;
 
   @SszTypeDescriptor
-  public static final ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> TYPE = ContainerType2
-      .create(
-          BeaconBlockHeader.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-          SignedBeaconBlockHeader::new);
+  public static final ContainerType2<
+          SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>>
+      TYPE =
+          ContainerType2.create(
+              BeaconBlockHeader.TYPE,
+              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+              SignedBeaconBlockHeader::new);
 
   public SignedBeaconBlockHeader(
       ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> type,

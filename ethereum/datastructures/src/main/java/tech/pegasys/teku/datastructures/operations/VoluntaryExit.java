@@ -28,15 +28,13 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class VoluntaryExit extends
-    Container2<VoluntaryExit, UInt64View, UInt64View> implements Merkleizable,
-    SimpleOffsetSerializable, SSZContainer {
+public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<VoluntaryExit, UInt64View, UInt64View> TYPE = ContainerType2
-      .create(
-          BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE,
-          VoluntaryExit::new);
+  public static final ContainerType2<VoluntaryExit, UInt64View, UInt64View> TYPE =
+      ContainerType2.create(
+          BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, VoluntaryExit::new);
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -45,8 +43,7 @@ public class VoluntaryExit extends
   private UInt64 validator_index;
 
   public VoluntaryExit(
-      ContainerType2<VoluntaryExit, UInt64View, UInt64View> type,
-      TreeNode backingNode) {
+      ContainerType2<VoluntaryExit, UInt64View, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

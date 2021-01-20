@@ -45,8 +45,9 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class IndexedAttestation extends
-    Container3<IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>>
+public class IndexedAttestation
+    extends Container3<
+        IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -54,11 +55,10 @@ public class IndexedAttestation extends
 
   public static class IndexedAttestationType
       extends ContainerType3<
-      IndexedAttestation,
-      ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
+          IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
 
-    static final ListViewType<UInt64View> AttestingIndicesType = new ListViewType<>(
-        BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    static final ListViewType<UInt64View> AttestingIndicesType =
+        new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
 
     public IndexedAttestationType() {
       super(
@@ -73,8 +73,7 @@ public class IndexedAttestation extends
     }
   }
 
-  @SszTypeDescriptor
-  public static final IndexedAttestationType TYPE = new IndexedAttestationType();
+  @SszTypeDescriptor public static final IndexedAttestationType TYPE = new IndexedAttestationType();
 
   private SSZList<UInt64> attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
@@ -86,9 +85,12 @@ public class IndexedAttestation extends
 
   public IndexedAttestation(
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
-    super(TYPE, ViewUtils
-        .toListView(IndexedAttestationType.AttestingIndicesType, attesting_indices,
-            UInt64View::new), data, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(
+        TYPE,
+        ViewUtils.toListView(
+            IndexedAttestationType.AttestingIndicesType, attesting_indices, UInt64View::new),
+        data,
+        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
   @Override
@@ -145,11 +147,7 @@ public class IndexedAttestation extends
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public SSZList<UInt64> getAttesting_indices() {
-    return new SSZBackingList<>(
-        UInt64.class,
-        getField0(),
-        UInt64View::new,
-        AbstractBasicView::get);
+    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractBasicView::get);
   }
 
   public AttestationData getData() {

@@ -37,12 +37,18 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class DepositData extends
-    Container4<DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>>
+public class DepositData
+    extends Container4<
+        DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   public static class DepositDataType
-      extends ContainerType4<DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>> {
+      extends ContainerType4<
+          DepositData,
+          VectorViewRead<ByteView>,
+          Bytes32View,
+          UInt64View,
+          VectorViewRead<ByteView>> {
 
     public DepositDataType() {
       super(
@@ -58,8 +64,7 @@ public class DepositData extends
     }
   }
 
-  @SszTypeDescriptor
-  public static final DepositDataType TYPE = new DepositDataType();
+  @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 2;
@@ -70,15 +75,25 @@ public class DepositData extends
   private BLSSignature signature; // Signing over DepositMessage
 
   public DepositData(
-      ContainerType4<DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>> type,
+      ContainerType4<
+              DepositData,
+              VectorViewRead<ByteView>,
+              Bytes32View,
+              UInt64View,
+              VectorViewRead<ByteView>>
+          type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public DepositData(
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
-    super(TYPE, ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()), new Bytes32View(withdrawal_credentials),
-        new UInt64View(amount), ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(
+        TYPE,
+        ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        new Bytes32View(withdrawal_credentials),
+        new UInt64View(amount),
+        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
   public DepositData(final DepositMessage depositMessage, final BLSSignature signature) {

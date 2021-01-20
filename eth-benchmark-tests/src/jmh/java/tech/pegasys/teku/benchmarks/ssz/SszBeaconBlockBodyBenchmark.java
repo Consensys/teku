@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
@@ -15,24 +28,24 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
-public class SszBeaconBlockBodyBenchmark extends
-    SszAbstractContainerBenchmark<BeaconBlockBody> {
+public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {
 
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
   private static final BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
 
   @Override
   protected BeaconBlockBody createContainer() {
-    return new BeaconBlockBody(beaconBlockBody.getRandao_reveal(), beaconBlockBody.getEth1_data(),
-        beaconBlockBody.getGraffiti(), beaconBlockBody.getProposer_slashings(),
-        beaconBlockBody.getAttester_slashings(), beaconBlockBody.getAttestations(),
-        beaconBlockBody.getDeposits(), beaconBlockBody.getVoluntary_exits());
+    return new BeaconBlockBody(
+        beaconBlockBody.getRandao_reveal(),
+        beaconBlockBody.getEth1_data(),
+        beaconBlockBody.getGraffiti(),
+        beaconBlockBody.getProposer_slashings(),
+        beaconBlockBody.getAttester_slashings(),
+        beaconBlockBody.getAttestations(),
+        beaconBlockBody.getDeposits(),
+        beaconBlockBody.getVoluntary_exits());
   }
 
   @Override

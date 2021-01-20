@@ -47,40 +47,41 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A Beacon block body */
-public class BeaconBlockBody extends Container8<
-    BeaconBlockBody,
-    VectorViewRead<ByteView>,
-    Eth1Data,
-    Bytes32View,
-    ListViewRead<ProposerSlashing>,
-    ListViewRead<AttesterSlashing>,
-    ListViewRead<Attestation>,
-    ListViewRead<Deposit>,
-    ListViewRead<SignedVoluntaryExit>>
+public class BeaconBlockBody
+    extends Container8<
+        BeaconBlockBody,
+        VectorViewRead<ByteView>,
+        Eth1Data,
+        Bytes32View,
+        ListViewRead<ProposerSlashing>,
+        ListViewRead<AttesterSlashing>,
+        ListViewRead<Attestation>,
+        ListViewRead<Deposit>,
+        ListViewRead<SignedVoluntaryExit>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
-  private static final ListViewType<ProposerSlashing> PROPOSER_SLASHINGS_TYPE = new ListViewType<>(
-      ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS);
-  private static final ListViewType<AttesterSlashing> ATTESTER_SLASHINGS_TYPE = new ListViewType<>(
-      ProposerSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS);
-  private static final ListViewType<Attestation> ATTESTATIONS_TYPE = new ListViewType<>(ProposerSlashing.TYPE,
-      Constants.MAX_ATTESTATIONS);
-  private static final ListViewType<Deposit> DEPOSITS_TYPE = new ListViewType<>(ProposerSlashing.TYPE,
-      Constants.MAX_DEPOSITS);
-  private static final ListViewType<SignedVoluntaryExit> VOLUNTARY_EXITS_TYPE = new ListViewType<>(
-      ProposerSlashing.TYPE, Constants.MAX_VOLUNTARY_EXITS);
+  private static final ListViewType<ProposerSlashing> PROPOSER_SLASHINGS_TYPE =
+      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS);
+  private static final ListViewType<AttesterSlashing> ATTESTER_SLASHINGS_TYPE =
+      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS);
+  private static final ListViewType<Attestation> ATTESTATIONS_TYPE =
+      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_ATTESTATIONS);
+  private static final ListViewType<Deposit> DEPOSITS_TYPE =
+      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_DEPOSITS);
+  private static final ListViewType<SignedVoluntaryExit> VOLUNTARY_EXITS_TYPE =
+      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_VOLUNTARY_EXITS);
 
   public static class BeaconBlockBodyType
       extends ContainerType8<
-      BeaconBlockBody,
-      VectorViewRead<ByteView>,
-      Eth1Data,
-      Bytes32View,
-      ListViewRead<ProposerSlashing>,
-      ListViewRead<AttesterSlashing>,
-      ListViewRead<Attestation>,
-      ListViewRead<Deposit>,
-      ListViewRead<SignedVoluntaryExit>> {
+          BeaconBlockBody,
+          VectorViewRead<ByteView>,
+          Eth1Data,
+          Bytes32View,
+          ListViewRead<ProposerSlashing>,
+          ListViewRead<AttesterSlashing>,
+          ListViewRead<Attestation>,
+          ListViewRead<Deposit>,
+          ListViewRead<SignedVoluntaryExit>> {
 
     public BeaconBlockBodyType() {
       super(
@@ -100,8 +101,7 @@ public class BeaconBlockBody extends Container8<
     }
   }
 
-  @SszTypeDescriptor
-  public static final BeaconBlockBodyType TYPE = new BeaconBlockBodyType();
+  @SszTypeDescriptor public static final BeaconBlockBodyType TYPE = new BeaconBlockBodyType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 6;
@@ -109,14 +109,11 @@ public class BeaconBlockBody extends Container8<
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
   private Bytes32 graffiti;
-  private SSZList<ProposerSlashing>
-      proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
-  private SSZList<AttesterSlashing>
-      attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
+  private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
+  private SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
   private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
   private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
   private SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
-
 
   public BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -131,7 +128,8 @@ public class BeaconBlockBody extends Container8<
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
-    super(TYPE,
+    super(
+        TYPE,
         ViewUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
         eth1_data,
         new Bytes32View(graffiti),
@@ -191,42 +189,27 @@ public class BeaconBlockBody extends Container8<
 
   public SSZList<ProposerSlashing> getProposer_slashings() {
     return new SSZBackingList<>(
-        ProposerSlashing.class,
-        getField3(),
-        Function.identity(),
-        Function.identity());
+        ProposerSlashing.class, getField3(), Function.identity(), Function.identity());
   }
 
   public SSZList<AttesterSlashing> getAttester_slashings() {
     return new SSZBackingList<>(
-        AttesterSlashing.class,
-        getField4(),
-        Function.identity(),
-        Function.identity());
+        AttesterSlashing.class, getField4(), Function.identity(), Function.identity());
   }
 
   public SSZList<Attestation> getAttestations() {
     return new SSZBackingList<>(
-        Attestation.class,
-        getField5(),
-        Function.identity(),
-        Function.identity());
+        Attestation.class, getField5(), Function.identity(), Function.identity());
   }
 
   public SSZList<Deposit> getDeposits() {
     return new SSZBackingList<>(
-        Deposit.class,
-        getField6(),
-        Function.identity(),
-        Function.identity());
+        Deposit.class, getField6(), Function.identity(), Function.identity());
   }
 
   public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
     return new SSZBackingList<>(
-        SignedVoluntaryExit.class,
-        getField7(),
-        Function.identity(),
-        Function.identity());
+        SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
   }
 
   @Override

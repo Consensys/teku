@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
@@ -7,15 +20,13 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.util.config.Constants;
 
-public class SszPendingAttestationBenchmark extends
-    SszAbstractContainerBenchmark<PendingAttestation> {
+public class SszPendingAttestationBenchmark
+    extends SszAbstractContainerBenchmark<PendingAttestation> {
 
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
-  private static final PendingAttestation aPendingAttestation = dataStructureUtil
-      .randomPendingAttestation();
+  private static final PendingAttestation aPendingAttestation =
+      dataStructureUtil.randomPendingAttestation();
 
   private static final Bitlist aggregation_bits = aPendingAttestation.getAggregation_bits();
   private static final AttestationData attestationData = aPendingAttestation.getData();
@@ -24,16 +35,14 @@ public class SszPendingAttestationBenchmark extends
 
   @Override
   protected PendingAttestation createContainer() {
-    return new PendingAttestation(aggregation_bits,
-        attestationData, inclusion_delay,
-        proposer_index);
+    return new PendingAttestation(
+        aggregation_bits, attestationData, inclusion_delay, proposer_index);
   }
 
-//  @Override
-//  protected ContainerViewType<PendingAttestation> getType() {
-//    return PendingAttestation.TYPE;
-//  }
-
+  //  @Override
+  //  protected ContainerViewType<PendingAttestation> getType() {
+  //    return PendingAttestation.TYPE;
+  //  }
 
   @Override
   protected Class<PendingAttestation> getContainerClass() {

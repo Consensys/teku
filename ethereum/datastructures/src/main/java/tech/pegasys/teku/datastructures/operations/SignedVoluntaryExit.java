@@ -15,16 +15,10 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -38,16 +32,17 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedVoluntaryExit extends
-    Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
+public class SignedVoluntaryExit
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   @SszTypeDescriptor
-  public static final ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> TYPE =
-      ContainerType2.create(
-          VoluntaryExit.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-          SignedVoluntaryExit::new);
-
+  public static final ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
+      TYPE =
+          ContainerType2.create(
+              VoluntaryExit.TYPE,
+              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+              SignedVoluntaryExit::new);
 
   private VoluntaryExit message;
   private BLSSignature signature;

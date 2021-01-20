@@ -46,8 +46,9 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Attestation extends
-    Container3<Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
+public class Attestation
+    extends Container3<
+        Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   public BLSSignature getSignature() {
@@ -56,8 +57,7 @@ public class Attestation extends
 
   public static class AttestationType
       extends ContainerType3<
-      Attestation,
-      ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+          Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
     public AttestationType() {
       super(
@@ -72,9 +72,7 @@ public class Attestation extends
     }
   }
 
-  @SszTypeDescriptor
-  public static final AttestationType TYPE = new AttestationType();
-
+  @SszTypeDescriptor public static final AttestationType TYPE = new AttestationType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -84,13 +82,17 @@ public class Attestation extends
   private BLSSignature signature;
 
   public Attestation(
-      ContainerType3<Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> type,
+      ContainerType3<Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
+          type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    super(TYPE, ViewUtils.createBitlistView(aggregation_bits), data,
+    super(
+        TYPE,
+        ViewUtils.createBitlistView(aggregation_bits),
+        data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
   }
 
