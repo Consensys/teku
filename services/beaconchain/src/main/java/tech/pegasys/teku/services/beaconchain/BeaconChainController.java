@@ -701,6 +701,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
             attestationPool,
             blockManager,
+            attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool);
