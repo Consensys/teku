@@ -41,9 +41,7 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             Constants.JUSTIFICATION_BITS_LENGTH);
-    assertEquals(
-        vectorLengths,
-        SszTestUtils.getVectorLengths(BeaconState.getSSZType()));
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(BeaconState.getSSZType()));
   }
 
   @Test

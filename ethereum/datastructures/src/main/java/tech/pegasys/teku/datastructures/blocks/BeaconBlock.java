@@ -33,12 +33,14 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public final class BeaconBlock extends
-    Container5<BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody>
+public final class BeaconBlock
+    extends Container5<
+        BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody>
     implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   public static class BeaconBlockType
-      extends ContainerType5<BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody> {
+      extends ContainerType5<
+          BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody> {
 
     public BeaconBlockType() {
       super(
@@ -55,8 +57,7 @@ public final class BeaconBlock extends
     }
   }
 
-  @SszTypeDescriptor
-  public static final BeaconBlockType TYPE = new BeaconBlockType();
+  @SszTypeDescriptor public static final BeaconBlockType TYPE = new BeaconBlockType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
@@ -80,8 +81,13 @@ public final class BeaconBlock extends
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body) {
-    super(TYPE, new UInt64View(slot), new UInt64View(proposer_index), new Bytes32View(parent_root),
-        new Bytes32View(state_root), body);
+    super(
+        TYPE,
+        new UInt64View(slot),
+        new UInt64View(proposer_index),
+        new Bytes32View(parent_root),
+        new Bytes32View(state_root),
+        body);
   }
 
   public BeaconBlock() {
@@ -89,8 +95,8 @@ public final class BeaconBlock extends
   }
 
   public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
-    return new BeaconBlock(UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, genesisState.hashTreeRoot(),
-        new BeaconBlockBody());
+    return new BeaconBlock(
+        UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, genesisState.hashTreeRoot(), new BeaconBlockBody());
   }
 
   @Override
@@ -99,8 +105,7 @@ public final class BeaconBlock extends
   }
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
-    return new BeaconBlock(getSlot(), getProposerIndex(), getParentRoot(),
-        stateRoot, getBody());
+    return new BeaconBlock(getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
   }
 
   @Override
@@ -116,8 +121,11 @@ public final class BeaconBlock extends
   @Override
   public List<Bytes> get_variable_parts() {
     return List.of(
-        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(
-            getBody()));
+        Bytes.EMPTY,
+        Bytes.EMPTY,
+        Bytes.EMPTY,
+        Bytes.EMPTY,
+        SimpleOffsetSerializer.serialize(getBody()));
   }
 
   @Override

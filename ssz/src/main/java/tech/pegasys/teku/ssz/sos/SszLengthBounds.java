@@ -101,9 +101,12 @@ public class SszLengthBounds {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("min", fromBits(getMinBits()))
-        .add("max", fromBits(getMaxBits())).toString();
+    return MoreObjects.toStringHelper(this)
+        .add("min", fromBits(getMinBits()))
+        .add("max", fromBits(getMaxBits()))
+        .toString();
   }
+
   private static String fromBits(long bits) {
     long bytes = bits / 8;
     return "" + bytes + ((bits & 7) == 0 ? "" : "(+" + (bits - bytes * 8) + " bits)");

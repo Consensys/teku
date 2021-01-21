@@ -17,35 +17,28 @@ import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
-import tech.pegasys.teku.util.config.Constants;
 
-public class AggregateAndProof extends
-    Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>>
+public class AggregateAndProof
+    extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   public static class AggregateAndProofType
@@ -64,8 +57,7 @@ public class AggregateAndProof extends
     }
   }
 
-  @SszTypeDescriptor
-  public static final AggregateAndProofType TYPE = new AggregateAndProofType();
+  @SszTypeDescriptor public static final AggregateAndProofType TYPE = new AggregateAndProofType();
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -81,7 +73,10 @@ public class AggregateAndProof extends
   }
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
-    super(TYPE, new UInt64View(index), aggregate,
+    super(
+        TYPE,
+        new UInt64View(index),
+        aggregate,
         ViewUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
   }
 

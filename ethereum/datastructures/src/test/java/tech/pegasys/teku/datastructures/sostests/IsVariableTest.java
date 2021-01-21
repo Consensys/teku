@@ -73,7 +73,6 @@ public class IsVariableTest {
         Arguments.of(Validator.TYPE));
   }
 
-
   @ParameterizedTest
   @MethodSource("variableSizeTypes")
   void testTheTypeIsVariableSize(ViewType<?> type) {

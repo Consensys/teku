@@ -35,14 +35,17 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
+public class SignedBeaconBlock
+    extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
     implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> TYPE =
-      ContainerType2.create(
-          BeaconBlock.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-          SignedBeaconBlock::new);
+  public static final ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
+      TYPE =
+          ContainerType2.create(
+              BeaconBlock.TYPE,
+              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+              SignedBeaconBlock::new);
 
   private BeaconBlock message;
   private BLSSignature signature;

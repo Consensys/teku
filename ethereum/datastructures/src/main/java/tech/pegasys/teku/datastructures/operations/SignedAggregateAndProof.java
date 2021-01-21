@@ -16,14 +16,9 @@ package tech.pegasys.teku.datastructures.operations;
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -38,15 +33,18 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedAggregateAndProof extends
-    Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
+public class SignedAggregateAndProof
+    extends Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   @SszTypeDescriptor
-  public static final ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> TYPE = ContainerType2
-      .create(
-          AggregateAndProof.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-          SignedAggregateAndProof::new);
+  public static final ContainerType2<
+          SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
+      TYPE =
+          ContainerType2.create(
+              AggregateAndProof.TYPE,
+              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+              SignedAggregateAndProof::new);
 
   private AggregateAndProof message;
   private BLSSignature signature;

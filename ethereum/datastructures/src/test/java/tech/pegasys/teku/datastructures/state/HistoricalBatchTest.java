@@ -37,9 +37,7 @@ public class HistoricalBatchTest {
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(
-        vectorLengths,
-        SszTestUtils.getVectorLengths(HistoricalBatch.TYPE));
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.TYPE));
   }
 
   @Test

@@ -34,7 +34,8 @@ import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT extends ViewRead> implements CompositeViewType<ViewT> {
+public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT extends ViewRead>
+    implements CompositeViewType<ViewT> {
 
   private final long maxLength;
   private final ViewType<ElementViewT> elementType;
@@ -43,7 +44,8 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
-  protected CollectionViewType(long maxLength, ViewType<ElementViewT> elementType, TypeHints hints) {
+  protected CollectionViewType(
+      long maxLength, ViewType<ElementViewT> elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
