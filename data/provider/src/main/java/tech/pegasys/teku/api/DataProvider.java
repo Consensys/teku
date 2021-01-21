@@ -50,7 +50,11 @@ public class DataProvider {
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     nodeDataProvider =
         new NodeDataProvider(
-            attestationPool, attesterSlashingPool, proposerSlashingPool, voluntaryExitPool, blockManager);
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            blockManager);
     chainDataProvider = new ChainDataProvider(recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
