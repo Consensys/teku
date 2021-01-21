@@ -223,10 +223,13 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
   }
 
   @Override
-  public SszLengthBounds getLengthBounds() {
+  public SszLengthBounds getSszLengthBounds() {
     return IntStream.range(0, getChildCount())
         .mapToObj(this::getChildType)
-        .map(SSZType::getLengthBounds)
+        // dynamic sized children need 4-byte offset
+        .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
+        // elements are not packed in containers
+        .map(SszLengthBounds::ceilToBytes)
         .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
   }
 }

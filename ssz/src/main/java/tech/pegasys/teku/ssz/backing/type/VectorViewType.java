@@ -146,9 +146,7 @@ public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
   }
 
   @Override
-  public SszLengthBounds getLengthBounds() {
-    SszLengthBounds elementLengthBounds = getElementType().getLengthBounds();
-    return new SszLengthBounds(
-        elementLengthBounds.getMin() * getLength(), elementLengthBounds.getMax() * getLength());
+  public SszLengthBounds getSszLengthBounds() {
+    return getElementType().getSszLengthBounds().mul(getLength()).ceilToBytes();
   }
 }

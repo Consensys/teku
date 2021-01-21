@@ -33,12 +33,6 @@ import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.ssz.SSZReader;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
@@ -47,24 +41,8 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkData;
-import tech.pegasys.teku.datastructures.state.HistoricalBatch;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
@@ -242,8 +220,8 @@ public class SimpleOffsetSerializer {
   public static <T> Optional<LengthBounds> getLengthBounds(final Class<T> type) {
     Optional<ViewType<?>> maybeViewType = ViewType.getType(type);
     if (maybeViewType.isPresent()) {
-      SszLengthBounds lengthBounds = maybeViewType.get().getLengthBounds();
-      return Optional.of(new LengthBounds(lengthBounds.getMin(), lengthBounds.getMax()));
+      SszLengthBounds lengthBounds = maybeViewType.get().getSszLengthBounds();
+      return Optional.of(new LengthBounds(lengthBounds.getMinBytes(), lengthBounds.getMaxBytes()));
     } else {
       return Optional.ofNullable(classLengthBounds.get(type));
     }

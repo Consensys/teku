@@ -21,29 +21,65 @@ public class SszLengthBounds {
   private final long min;
   private final long max;
 
-  public SszLengthBounds(final long fixedSize) {
-    this(fixedSize, fixedSize);
+  public static SszLengthBounds ofBits(long fixedSize) {
+    return new SszLengthBounds(fixedSize, fixedSize);
   }
 
-  public SszLengthBounds(final long min, final long max) {
+  public static SszLengthBounds ofBits(long min, long max) {
+    return new SszLengthBounds(min, max);
+  }
+
+  public static SszLengthBounds ofBytes(long fixedSize) {
+    return new SszLengthBounds(fixedSize * 8, fixedSize * 8);
+  }
+
+  public static SszLengthBounds ofBytes(long min, long max) {
+    return new SszLengthBounds(min * 8, max * 8);
+  }
+
+  private SszLengthBounds(final long min, final long max) {
     this.min = min;
     this.max = max;
   }
 
-  public long getMin() {
+  public long getMinBits() {
     return min;
   }
 
-  public long getMax() {
+  public long getMaxBits() {
     return max;
   }
 
-  public boolean isWithinBounds(final long length) {
-    return length >= min && length <= max;
+  public long getMinBytes() {
+    return (min + 7) / 8;
+  }
+
+  public long getMaxBytes() {
+    return (max + 7) / 8;
+  }
+
+  public SszLengthBounds ceilToBytes() {
+    return SszLengthBounds.ofBytes(getMinBytes(), getMaxBytes());
   }
 
   public SszLengthBounds add(final SszLengthBounds other) {
     return new SszLengthBounds(this.min + other.min, this.max + other.max);
+  }
+
+  public SszLengthBounds addBytes(final int moreBytes) {
+    return addBits(moreBytes * 8);
+  }
+
+  public SszLengthBounds addBits(final int moreBits) {
+    return new SszLengthBounds(this.min + moreBits, this.max + moreBits);
+  }
+
+  public SszLengthBounds mul(final long factor) {
+    return new SszLengthBounds(this.min * factor, this.max * factor);
+  }
+
+  public boolean isWithinBounds(final long lengthBytes) {
+    return lengthBytes >= min && lengthBytes <= max;
   }
 
   @Override
@@ -55,12 +91,12 @@ public class SszLengthBounds {
       return false;
     }
     final SszLengthBounds that = (SszLengthBounds) o;
-    return getMin() == that.getMin() && getMax() == that.getMax();
+    return getMinBits() == that.getMinBits() && getMaxBits() == that.getMaxBits();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getMin(), getMax());
+    return Objects.hash(getMinBits(), getMaxBits());
   }
 
   @Override

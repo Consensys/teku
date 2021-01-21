@@ -83,5 +83,5 @@ public interface SSZType {
 
   TreeNode sszDeserializeTree(SszReader reader);
 
-  SszLengthBounds getLengthBounds();
+  SszLengthBounds getSszLengthBounds();
 }

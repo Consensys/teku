@@ -42,8 +42,8 @@ public class LengthBoundCalculator {
   static <T> LengthBounds calculateLengthBounds(final Class<T> type) {
     Optional<ViewType<?>> maybeViewType = ViewType.getType(type);
     if (maybeViewType.isPresent()) {
-      SszLengthBounds lengthBounds = maybeViewType.get().getLengthBounds();
-      return new LengthBounds(lengthBounds.getMin(), lengthBounds.getMax());
+      SszLengthBounds lengthBounds = maybeViewType.get().getSszLengthBounds();
+      return new LengthBounds(lengthBounds.getMinBytes(), lengthBounds.getMaxBytes());
     }
 
     final ReflectionInformation reflectionInfo = getRequiredReflectionInfo(type);

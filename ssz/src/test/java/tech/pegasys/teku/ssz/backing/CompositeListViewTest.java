@@ -80,7 +80,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public SszLengthBounds getLengthBounds() {
+        public SszLengthBounds getSszLengthBounds() {
           return SszLengthBounds.ZERO;
         }
       };

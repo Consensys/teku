@@ -92,7 +92,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
   }
 
   @Override
-  public SszLengthBounds getLengthBounds() {
-    return new SszLengthBounds(getFixedPartSize());
+  public SszLengthBounds getSszLengthBounds() {
+    return SszLengthBounds.ofBits(getBitsSize());
   }
 }

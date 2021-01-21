@@ -169,8 +169,11 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   }
 
   @Override
-  public SszLengthBounds getLengthBounds() {
-    SszLengthBounds elementLengthBounds = getElementType().getLengthBounds();
-    return new SszLengthBounds(0, elementLengthBounds.getMax() * getMaxLength());
+  public SszLengthBounds getSszLengthBounds() {
+    SszLengthBounds elementLengthBounds = getElementType().getSszLengthBounds();
+    SszLengthBounds maxLenBounds = SszLengthBounds
+        .ofBits(0, elementLengthBounds.mul(getMaxLength()).getMaxBits());
+    // adding 1 boundary bit for Bitlist
+    return maxLenBounds.addBits(getElementType().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
   }
 }
