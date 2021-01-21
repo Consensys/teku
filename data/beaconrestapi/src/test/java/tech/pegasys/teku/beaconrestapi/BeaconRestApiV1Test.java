@@ -82,6 +82,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -98,6 +99,7 @@ public class BeaconRestApiV1Test {
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final BlockManager blockManager = mock(BlockManager.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
@@ -116,6 +118,7 @@ public class BeaconRestApiV1Test {
             syncService,
             null,
             attestationPool,
+            blockManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool),

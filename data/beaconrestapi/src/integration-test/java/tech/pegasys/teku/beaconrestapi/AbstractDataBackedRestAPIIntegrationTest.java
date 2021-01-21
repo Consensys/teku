@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -96,6 +97,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
+  protected final BlockManager blockManager = mock(BlockManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
@@ -154,6 +156,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             syncService,
             validatorApiChannel,
             attestationPool,
+            blockManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool);
