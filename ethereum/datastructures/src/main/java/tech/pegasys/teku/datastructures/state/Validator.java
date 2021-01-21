@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
@@ -44,7 +45,7 @@ public class Validator
         UInt64View,
         UInt64View,
         UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable {
+    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   public static class ValidatorType
       extends ContainerType8<

@@ -19,6 +19,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
@@ -35,7 +36,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class PendingAttestation
     extends Container4<
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
-    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable {
+    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   static class PendingAttestationType
       extends ContainerType4<

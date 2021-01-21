@@ -83,27 +83,7 @@ public class SignedBeaconBlockHeader
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedBeaconBlockHeader that = (SignedBeaconBlockHeader) o;
-    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, signature);
-  }
-
-  @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
+    return hashTreeRoot();
   }
 }
