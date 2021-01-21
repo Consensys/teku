@@ -36,9 +36,7 @@ public class SyncController {
   private final EventThread eventThread;
   private final Executor subscriberExecutor;
   private final RecentChainData recentChainData;
-  private final ChainSelector finalizedTargetChainSelector;
-  private final ChainSelector nonfinalizedTargetChainSelector;
-  private final ChainSelector speculativeTargetChainSelector;
+  private final SyncTargetSelector syncTargetSelector;
   private final Sync sync;
 
   /**
@@ -54,16 +52,12 @@ public class SyncController {
       final EventThread eventThread,
       final Executor subscriberExecutor,
       final RecentChainData recentChainData,
-      final ChainSelector finalizedTargetChainSelector,
-      final ChainSelector nonfinalizedTargetChainSelector,
-      final ChainSelector speculativeTargetChainSelector,
+      final SyncTargetSelector syncTargetSelector,
       final Sync sync) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
-    this.finalizedTargetChainSelector = finalizedTargetChainSelector;
-    this.nonfinalizedTargetChainSelector = nonfinalizedTargetChainSelector;
-    this.speculativeTargetChainSelector = speculativeTargetChainSelector;
+    this.syncTargetSelector = syncTargetSelector;
     this.sync = sync;
   }
 
@@ -87,40 +81,11 @@ public class SyncController {
   }
 
   private Optional<InProgressSync> selectNewSyncTarget(final Optional<InProgressSync> currentSync) {
-    final Optional<TargetChain> nonSpeculativeCurrentSyncTarget =
-        currentSync
-            .filter(inProgressSync -> !inProgressSync.isSpeculative())
-            .map(InProgressSync::getTargetChain);
-    final Optional<TargetChain> bestFinalizedChain =
-        finalizedTargetChainSelector.selectTargetChain(nonSpeculativeCurrentSyncTarget);
-    // We may not have run fork choice to update our chain head, so check if the best finalized
-    // chain is the one we just finished syncing and move on to non-finalized if it is.
-    if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
-      return bestFinalizedChain.map(chain -> startSync(chain, true, false));
-    } else if (!isSyncingFinalizedChain()) {
-      final Optional<TargetChain> targetChain =
-          nonfinalizedTargetChainSelector.selectTargetChain(nonSpeculativeCurrentSyncTarget);
-      final Optional<InProgressSync> newSync =
-          targetChain.map(chain -> startSync(chain, false, false));
-      if (newSync.isPresent()) {
-        return newSync;
-      }
-      return speculativeTargetChainSelector
-          .selectTargetChain(
-              currentSync.filter(InProgressSync::isSpeculative).map(InProgressSync::getTargetChain))
-          .map(chain -> startSync(chain, false, true));
-    }
-    return Optional.empty();
-  }
-
-  private boolean isCompletedSync(final TargetChain targetChain) {
-    return currentSync
-        .map(sync -> !sync.isActive() && sync.hasSameTarget(targetChain))
-        .orElse(false);
-  }
-
-  private Boolean isSyncingFinalizedChain() {
-    return currentSync.map(current -> current.isActive() && current.isFinalizedChain).orElse(false);
+    return syncTargetSelector
+        .selectSyncTarget(
+            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getSyncTarget),
+            isSyncActive())
+        .map(this::startSync);
   }
 
   private void onSyncComplete(final SyncResult result) {
@@ -172,9 +137,9 @@ public class SyncController {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
   }
 
-  private InProgressSync startSync(
-      final TargetChain chain, final boolean isFinalized, final boolean isSpeculative) {
+  private InProgressSync startSync(final SyncTarget syncTarget) {
     eventThread.checkOnEventThread();
+    final TargetChain chain = syncTarget.getTargetChain();
     if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
       LOG.trace("Not starting new sync because it has the same target as current sync");
       return currentSync.get();
@@ -183,8 +148,8 @@ public class SyncController {
         "Starting new sync to {} with {} peers finalized: {}, speculative: {}",
         chain.getChainHead(),
         chain.getPeerCount(),
-        isFinalized,
-        isSpeculative);
+        syncTarget.isFinalizedSync(),
+        syncTarget.isSpeculativeSync());
     final UInt64 startSlot = recentChainData.getHeadSlot();
     final SafeFuture<SyncResult> syncResult = sync.syncToChain(chain);
     syncResult.finishAsync(
@@ -194,27 +159,23 @@ public class SyncController {
           onSyncComplete(SyncResult.FAILED);
         },
         eventThread);
-    return new InProgressSync(startSlot, chain, isFinalized, isSpeculative, syncResult);
+    return new InProgressSync(startSlot, syncTarget, syncResult);
   }
 
   private class InProgressSync {
     private final UInt64 startSlot;
-    private final TargetChain targetChain;
-    private final boolean isFinalizedChain;
-    private final boolean isSpeculative;
+    private final SyncTarget syncTarget;
     private final SafeFuture<SyncResult> result;
 
     private InProgressSync(
-        final UInt64 startSlot,
-        final TargetChain targetChain,
-        final boolean isFinalizedChain,
-        final boolean isSpeculative,
-        final SafeFuture<SyncResult> result) {
+        final UInt64 startSlot, final SyncTarget syncTarget, final SafeFuture<SyncResult> result) {
       this.startSlot = startSlot;
-      this.targetChain = targetChain;
-      this.isFinalizedChain = isFinalizedChain;
-      this.isSpeculative = isSpeculative;
+      this.syncTarget = syncTarget;
       this.result = result;
+    }
+
+    public SyncTarget getSyncTarget() {
+      return syncTarget;
     }
 
     public boolean isActive() {
@@ -222,31 +183,32 @@ public class SyncController {
     }
 
     public boolean isSpeculative() {
-      return isSpeculative;
+      return syncTarget.isSpeculativeSync();
     }
 
     public TargetChain getTargetChain() {
-      return targetChain;
+      return syncTarget.getTargetChain();
     }
 
     public SyncingStatus asSyncingStatus() {
-      return result.isDone()
+      return result.isDone() || isSpeculative()
           ? notSyncingStatus()
           : new SyncingStatus(
-              true, recentChainData.getHeadSlot(), startSlot, targetChain.getChainHead().getSlot());
+              true,
+              recentChainData.getHeadSlot(),
+              startSlot,
+              getTargetChain().getChainHead().getSlot());
     }
 
     public boolean hasSameTarget(final TargetChain chain) {
-      return targetChain.equals(chain);
+      return getTargetChain().equals(chain);
     }
 
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("startSlot", startSlot)
-          .add("targetChain", targetChain)
-          .add("isFinalizedChain", isFinalizedChain)
-          .add("isSpeculative", isSpeculative)
+          .add("syncTarget", syncTarget)
           .add("result", result)
           .toString();
     }

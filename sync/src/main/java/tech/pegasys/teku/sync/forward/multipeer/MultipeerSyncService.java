@@ -86,10 +86,12 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            ChainSelector.createForCanonicalChains(recentChainData, finalizedTargetChains),
-            ChainSelector.createForCanonicalChains(recentChainData, nonfinalizedTargetChains),
-            ChainSelector.createForForkChains(
-                recentChainData, nonfinalizedTargetChains, pendingBlocks),
+            new SyncTargetSelector(
+                recentChainData,
+                pendingBlocks,
+                finalizedTargetChains,
+                nonfinalizedTargetChains,
+                Constants.SLOTS_PER_EPOCH),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
