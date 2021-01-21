@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.sync;
 
+import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+
 import com.google.common.eventbus.EventBus;
+import java.util.List;
+import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
@@ -48,11 +52,6 @@ import tech.pegasys.teku.sync.forward.singlepeer.SyncManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-
-import java.util.List;
-import java.util.function.Consumer;
-
-import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -130,7 +129,8 @@ public class SyncingNodeManager {
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
-    blockManager.subscribeToReceivedBlocks((block) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
+    blockManager.subscribeToReceivedBlocks(
+        (block) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
 
     SyncManager syncManager =
         SyncManager.create(

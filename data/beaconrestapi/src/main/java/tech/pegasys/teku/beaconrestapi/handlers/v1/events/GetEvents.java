@@ -73,7 +73,12 @@ public class GetEvents implements Handler {
     this.jsonProvider = jsonProvider;
     eventSubscriptionManager =
         new EventSubscriptionManager(
-            nodeDataProvider, chainDataProvider, jsonProvider, syncDataProvider, asyncRunner, eventChannels);
+            nodeDataProvider,
+            chainDataProvider,
+            jsonProvider,
+            syncDataProvider,
+            asyncRunner,
+            eventChannels);
   }
 
   @OpenApi(
