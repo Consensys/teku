@@ -129,7 +129,8 @@ public class SyncingNodeManager {
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
-    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
+    blockManager.subscribeToReceivedBlocks(
+        (block) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
 
     SyncManager syncManager =
         SyncManager.create(
