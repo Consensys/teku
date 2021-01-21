@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,8 +36,6 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-import java.util.List;
-
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -53,7 +52,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
       Subscribers.create(true);
   private final Subscribers<ProcessedAttestationListener> allValidAttestationsSubscribers =
-          Subscribers.create(true);
+      Subscribers.create(true);
 
   private final AttestationValidator attestationValidator;
   private final AggregateAttestationValidator aggregateValidator;
@@ -153,12 +152,12 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     attestations.stream()
         .filter(ValidateableAttestation::isProducedLocally)
         .filter(a -> !a.isGossiped())
-        .forEach(a -> {
-          notifyAttestationsToSendSubscribers(a);
-          notifyAllValidAttestationsSubscribers(a);
-        });
+        .forEach(
+            a -> {
+              notifyAttestationsToSendSubscribers(a);
+              notifyAllValidAttestationsSubscribers(a);
+            });
   }
-
 
   @Subscribe
   @SuppressWarnings("unused")

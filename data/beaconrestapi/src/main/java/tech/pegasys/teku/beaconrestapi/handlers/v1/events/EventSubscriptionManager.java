@@ -13,8 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -39,14 +46,6 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -138,7 +137,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
   protected void onNewAttestation(final ValidateableAttestation attestation) {
     try {
-      final String newBlockJsonString = jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
+      final String newBlockJsonString =
+          jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
       notifySubscribersOfEvent(EventType.attestation, newBlockJsonString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
