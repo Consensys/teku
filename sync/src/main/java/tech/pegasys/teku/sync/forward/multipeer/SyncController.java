@@ -69,8 +69,7 @@ public class SyncController {
   public void onTargetChainsUpdated() {
     eventThread.checkOnEventThread();
     final boolean currentlySyncing = isSyncActive();
-    final Optional<InProgressSync> newSync =
-        selectNewSyncTarget(currentSync.filter(InProgressSync::isActive));
+    final Optional<InProgressSync> newSync = selectNewSyncTarget();
     if (newSync.isEmpty() && currentlySyncing) {
       return;
     }
@@ -80,7 +79,7 @@ public class SyncController {
     }
   }
 
-  private Optional<InProgressSync> selectNewSyncTarget(final Optional<InProgressSync> currentSync) {
+  private Optional<InProgressSync> selectNewSyncTarget() {
     return syncTargetSelector
         .selectSyncTarget(
             currentSync.filter(InProgressSync::isActive).map(InProgressSync::getSyncTarget),
@@ -101,7 +100,7 @@ public class SyncController {
         currentSync.map(Objects::toString).orElse("<unknown>"),
         result);
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
-    currentSync = selectNewSyncTarget(currentSync);
+    currentSync = selectNewSyncTarget();
     if (!isSyncActive()) {
       currentSync = Optional.empty();
       notifySubscribers(false);
