@@ -63,13 +63,13 @@ public class BeaconBlockBody
   private static final ListViewType<ProposerSlashing> PROPOSER_SLASHINGS_TYPE =
       new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS);
   private static final ListViewType<AttesterSlashing> ATTESTER_SLASHINGS_TYPE =
-      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS);
+      new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS);
   private static final ListViewType<Attestation> ATTESTATIONS_TYPE =
-      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_ATTESTATIONS);
+      new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS);
   private static final ListViewType<Deposit> DEPOSITS_TYPE =
-      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_DEPOSITS);
+      new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS);
   private static final ListViewType<SignedVoluntaryExit> VOLUNTARY_EXITS_TYPE =
-      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_VOLUNTARY_EXITS);
+      new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS);
 
   public static class BeaconBlockBodyType
       extends ContainerType8<

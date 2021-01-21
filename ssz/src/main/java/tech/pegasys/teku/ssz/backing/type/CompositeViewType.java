@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /** Abstract type of {@link CompositeViewRead} views */
-public interface CompositeViewType<V extends ViewRead> extends ViewType<V> {
+public interface CompositeViewType<ViewT extends ViewRead> extends ViewType<ViewT> {
 
   /**
    * Returns the maximum number of elements in views of this type. For views with fixed number of

@@ -29,17 +29,17 @@ import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ListViewType<C extends ViewRead> extends CollectionViewType<ListViewRead<C>> {
+public class ListViewType<ElementViewT extends ViewRead> extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
 
-  public ListViewType(VectorViewType<C> vectorType) {
+  public ListViewType(VectorViewType<ElementViewT> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
-  public ListViewType(ViewType<?> elementType, long maxLength) {
+  public ListViewType(ViewType<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }
 
-  public ListViewType(ViewType<?> elementType, long maxLength, TypeHints hints) {
+  public ListViewType(ViewType<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
   }
 
@@ -53,17 +53,17 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   }
 
   @Override
-  public ListViewRead<C> getDefault() {
-    return new ListViewReadImpl<C>(this, createDefaultTree());
+  public ListViewRead<ElementViewT> getDefault() {
+    return new ListViewReadImpl<ElementViewT>(this, createDefaultTree());
   }
 
   @Override
-  public ListViewRead<C> createFromBackingNode(TreeNode node) {
+  public ListViewRead<ElementViewT> createFromBackingNode(TreeNode node) {
     return new ListViewReadImpl<>(this, node);
   }
 
-  public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+  public VectorViewType<ElementViewT> getCompatibleVectorType() {
+    return new VectorViewType<ElementViewT>(getElementType(), getMaxLength(), true, getHints());
   }
 
   @Override

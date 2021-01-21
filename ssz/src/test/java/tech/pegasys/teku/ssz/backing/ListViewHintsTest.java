@@ -196,7 +196,7 @@ public class ListViewHintsTest {
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
   <TElement extends ViewRead> void testIdenticalTypes(
-      ViewType<?> listElementType, long maxListSize, Supplier<TElement> listElementsFactory) {
+      ViewType<TElement> listElementType, long maxListSize, Supplier<TElement> listElementsFactory) {
 
     List<ListViewType<TElement>> types =
         generateTypesWithHints(new ListViewType<>(listElementType, maxListSize));
