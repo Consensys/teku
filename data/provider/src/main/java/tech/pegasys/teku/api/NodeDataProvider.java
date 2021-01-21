@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
@@ -27,6 +24,10 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class NodeDataProvider {
 
