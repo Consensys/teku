@@ -77,6 +77,7 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -239,7 +240,13 @@ public class SimpleOffsetSerializer {
   }
 
   public static <T> Optional<LengthBounds> getLengthBounds(final Class<T> type) {
-    return Optional.ofNullable(classLengthBounds.get(type));
+    Optional<ViewType<?>> maybeViewType = ViewType.getType(type);
+    if (maybeViewType.isPresent()) {
+      SszLengthBounds lengthBounds = maybeViewType.get().getLengthBounds();
+      return Optional.of(new LengthBounds(lengthBounds.getMin(), lengthBounds.getMax()));
+    } else {
+      return Optional.ofNullable(classLengthBounds.get(type));
+    }
   }
 
   private static void assertAllDataRead(SSZReader reader) {
