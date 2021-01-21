@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -43,6 +44,7 @@ public class DataProvider {
       final ValidatorApiChannel validatorApiChannel,
       final AggregatingAttestationPool attestationPool,
       final BlockManager blockManager,
+      final AttestationManager attestationManager,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
@@ -54,7 +56,8 @@ public class DataProvider {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
-            blockManager);
+            blockManager,
+            attestationManager);
     chainDataProvider = new ChainDataProvider(recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =

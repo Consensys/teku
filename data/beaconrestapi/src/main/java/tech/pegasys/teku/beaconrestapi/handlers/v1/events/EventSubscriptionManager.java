@@ -33,8 +33,10 @@ import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -69,6 +71,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
+    nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -127,6 +130,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   previousDutyDependentRoot,
                   currentDutyDependentRoot));
       notifySubscribersOfEvent(EventType.head, headEventString);
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
+  }
+
+  protected void onNewAttestation(final ValidateableAttestation attestation) {
+    try {
+      final String newBlockJsonString =
+          jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
+      notifySubscribersOfEvent(EventType.attestation, newBlockJsonString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }
