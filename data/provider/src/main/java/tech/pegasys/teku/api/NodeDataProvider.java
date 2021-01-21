@@ -20,10 +20,14 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class NodeDataProvider {
@@ -35,6 +39,8 @@ public class NodeDataProvider {
       proposerSlashingPool;
   private final OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
       voluntaryExitPool;
+  private final BlockManager blockManager;
+  private final AttestationManager attestationManager;
 
   public NodeDataProvider(
       AggregatingAttestationPool attestationPool,
@@ -43,11 +49,15 @@ public class NodeDataProvider {
       OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
           proposerSlashingPool,
       OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
-          voluntaryExitPool) {
+          voluntaryExitPool,
+      BlockManager blockManager,
+      AttestationManager attestationManager) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
+    this.blockManager = blockManager;
+    this.attestationManager = attestationManager;
   }
 
   public List<Attestation> getAttestations(
@@ -86,5 +96,13 @@ public class NodeDataProvider {
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
     return proposerSlashingPool.add(slashing.asInternalProposerSlashing());
+  }
+
+  public void subscribeToReceivedBlocks(ReceivedBlockListener listener) {
+    blockManager.subscribeToReceivedBlocks(listener);
+  }
+
+  public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
+    attestationManager.subscribeToAllValidAttestations(listener);
   }
 }

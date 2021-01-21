@@ -37,11 +37,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -56,6 +60,7 @@ public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil();
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
+  protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
   // chain reorg fields
@@ -85,6 +90,9 @@ public class EventSubscriptionManagerTest {
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
+  private final SignedBeaconBlock sampleBlock =
+      new SignedBeaconBlock(data.randomSignedBeaconBlock(0));
+  private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -105,7 +113,12 @@ public class EventSubscriptionManagerTest {
     when(srvResponse.getOutputStream()).thenReturn(outputStream);
     manager =
         new EventSubscriptionManager(
-            chainDataProvider, jsonProvider, syncDataProvider, asyncRunner, channels);
+            nodeDataProvider,
+            chainDataProvider,
+            jsonProvider,
+            syncDataProvider,
+            asyncRunner,
+            channels);
     client1 = new SseClient(ctx);
   }
 
@@ -198,6 +211,38 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateBlock() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=block");
+    manager.registerClient(client1);
+
+    triggerBlockEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: block\n");
+    final SignedBeaconBlock event =
+        jsonProvider.jsonToObject(
+            eventString.substring(eventString.indexOf("{")), SignedBeaconBlock.class);
+
+    assertThat(event).isEqualTo(sampleBlock);
+  }
+
+  @Test
+  void shouldPropagateAttestation() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=attestation");
+    manager.registerClient(client1);
+
+    triggerAttestationEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: attestation\n");
+    final Attestation event =
+        jsonProvider.jsonToObject(
+            eventString.substring(eventString.indexOf("{")), Attestation.class);
+
+    assertThat(event).isEqualTo(sampleAttestation);
+  }
+
+  @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
@@ -224,12 +269,32 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldNotGetSyncStateChangeIfNotSubscribed() throws IOException {
+  void shouldNotGetBlockIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
 
-    triggerSyncStateEvent();
+    triggerBlockEvent();
     verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldNotGetAttestationIfNotSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerAttestationEvent();
+    verify(outputStream, never()).print(anyString());
+  }
+
+  private void triggerAttestationEvent() {
+    manager.onNewAttestation(
+        ValidateableAttestation.from(sampleAttestation.asInternalAttestation()));
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerBlockEvent() {
+    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock());
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerSyncStateEvent() {
