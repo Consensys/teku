@@ -171,8 +171,11 @@ public class ListViewType<ElementViewT extends ViewRead> extends CollectionViewT
   @Override
   public SszLengthBounds getSszLengthBounds() {
     SszLengthBounds elementLengthBounds = getElementType().getSszLengthBounds();
+    // if elements are of dynamic size the offset size should be added for every element
+    SszLengthBounds elementAndOffsetLengthBounds =
+        elementLengthBounds.addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
     SszLengthBounds maxLenBounds = SszLengthBounds
-        .ofBits(0, elementLengthBounds.mul(getMaxLength()).getMaxBits());
+        .ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
     // adding 1 boundary bit for Bitlist
     return maxLenBounds.addBits(getElementType().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
   }

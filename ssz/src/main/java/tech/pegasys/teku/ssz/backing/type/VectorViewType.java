@@ -32,7 +32,8 @@ import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class VectorViewType<ElementViewT extends ViewRead> extends CollectionViewType<ElementViewT, VectorViewRead<ElementViewT>> {
+public class VectorViewType<ElementViewT extends ViewRead> extends
+    CollectionViewType<ElementViewT, VectorViewRead<ElementViewT>> {
 
   private final boolean isListBacking;
 
@@ -45,7 +46,8 @@ public class VectorViewType<ElementViewT extends ViewRead> extends CollectionVie
   }
 
   VectorViewType(
-      ViewType<ElementViewT> elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
+      ViewType<ElementViewT> elementType, long vectorLength, boolean isListBacking,
+      TypeHints hints) {
     super(vectorLength, elementType, hints);
     this.isListBacking = isListBacking;
   }
@@ -148,6 +150,9 @@ public class VectorViewType<ElementViewT extends ViewRead> extends CollectionVie
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return getElementType().getSszLengthBounds().mul(getLength()).ceilToBytes();
+    return getElementType().getSszLengthBounds()
+        // if elements are of dynamic size the offset size should be added for every element
+        .addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
+        .mul(getLength()).ceilToBytes();
   }
 }
