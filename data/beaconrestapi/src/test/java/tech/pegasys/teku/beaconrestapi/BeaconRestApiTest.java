@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
@@ -36,11 +28,20 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
+
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
@@ -55,6 +56,7 @@ class BeaconRestApiTest {
   private static final Integer THE_PORT = 12345;
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final BlockManager blockManager = mock(BlockManager.class);
+  private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
@@ -79,6 +81,7 @@ class BeaconRestApiTest {
             null,
             attestationPool,
             blockManager,
+            attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool),

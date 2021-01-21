@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,6 +35,8 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import java.util.List;
+
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -51,6 +52,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
       Subscribers.create(true);
+  private final Subscribers<ProcessedAttestationListener> allValidAttestationsSubscribers =
+          Subscribers.create(true);
 
   private final AttestationValidator attestationValidator;
   private final AggregateAttestationValidator aggregateValidator;
@@ -90,9 +93,21 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregateValidator);
   }
 
+  public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
+    allValidAttestationsSubscribers.subscribe(listener);
+  }
+
+  private void notifyAllValidAttestationsSubscribers(ValidateableAttestation attestation) {
+    allValidAttestationsSubscribers.forEach(s -> s.accept(attestation));
+  }
+
   public void subscribeToAttestationsToSend(
       ProcessedAttestationListener attestationsToSendListener) {
     attestationsToSendSubscribers.subscribe(attestationsToSendListener);
+  }
+
+  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
+    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
   }
 
   public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
@@ -122,6 +137,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                         result.ifInvalid(
                             reason -> LOG.debug("Rejected received attestation: " + reason)),
                     err -> LOG.error("Failed to process received attestation.", err));
+            notifyAllValidAttestationsSubscribers(attestation);
           }
         });
   }
@@ -137,12 +153,12 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     attestations.stream()
         .filter(ValidateableAttestation::isProducedLocally)
         .filter(a -> !a.isGossiped())
-        .forEach(this::notifyAttestationsToSendSubscribers);
+        .forEach(a -> {
+          notifyAttestationsToSendSubscribers(a);
+          notifyAllValidAttestationsSubscribers(a);
+        });
   }
 
-  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
-    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
-  }
 
   @Subscribe
   @SuppressWarnings("unused")
@@ -221,6 +237,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     }
 
     notifyAttestationsToSendSubscribers(attestation);
+    notifyAllValidAttestationsSubscribers(attestation);
     attestation.markGossiped();
   }
 

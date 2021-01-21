@@ -13,15 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,8 +26,10 @@ import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -44,6 +39,14 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -69,6 +72,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
+    nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -127,6 +131,15 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                   previousDutyDependentRoot,
                   currentDutyDependentRoot));
       notifySubscribersOfEvent(EventType.head, headEventString);
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
+  }
+
+  protected void onNewAttestation(final ValidateableAttestation attestation) {
+    try {
+      final String newBlockJsonString = jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
+      notifySubscribersOfEvent(EventType.attestation, newBlockJsonString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }

@@ -13,26 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,7 +25,9 @@ import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -53,6 +37,25 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.util.config.Constants;
+
+import javax.servlet.AsyncContext;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -90,6 +93,8 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       new SignedBeaconBlock(data.randomSignedBeaconBlock(0));
+  private final Attestation sampleAttestation =
+          new Attestation(data.randomAttestation(0));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -224,6 +229,22 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateAttestation() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=attestation");
+    manager.registerClient(client1);
+
+    triggerAttestationEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: attestation\n");
+    final Attestation event =
+            jsonProvider.jsonToObject(
+                    eventString.substring(eventString.indexOf("{")), Attestation.class);
+
+    assertThat(event).isEqualTo(sampleAttestation);
+  }
+
+  @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
@@ -256,6 +277,20 @@ public class EventSubscriptionManagerTest {
 
     triggerBlockEvent();
     verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldNotGetAttestationIfNotSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerAttestationEvent();
+    verify(outputStream, never()).print(anyString());
+  }
+
+  private void triggerAttestationEvent() {
+    manager.onNewAttestation(ValidateableAttestation.from(sampleAttestation.asInternalAttestation()));
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerBlockEvent() {
