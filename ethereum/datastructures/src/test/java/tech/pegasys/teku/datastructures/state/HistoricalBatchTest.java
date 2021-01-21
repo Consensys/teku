@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -38,7 +39,7 @@ public class HistoricalBatchTest {
         List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
     assertEquals(
         vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).getVectorLengths());
+        SszTestUtils.getVectorLengths(HistoricalBatch.TYPE));
   }
 
   @Test

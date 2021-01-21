@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -89,9 +90,10 @@ class DepositTest {
 
   @Test
   void vectorLengthsTest() {
+    List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
     assertEquals(
-        Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
-        Deposit.TYPE.getDefault().getProof().size());
+        vectorLengths,
+        SszTestUtils.getVectorLengths(Deposit.TYPE));
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {

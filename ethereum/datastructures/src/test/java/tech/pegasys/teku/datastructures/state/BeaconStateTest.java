@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -38,10 +39,11 @@ class BeaconStateTest {
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            Constants.EPOCHS_PER_SLASHINGS_VECTOR);
+            Constants.EPOCHS_PER_SLASHINGS_VECTOR,
+            Constants.JUSTIFICATION_BITS_LENGTH);
     assertEquals(
         vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(BeaconStateImpl.class).getVectorLengths());
+        SszTestUtils.getVectorLengths(BeaconState.getSSZType()));
   }
 
   @Test

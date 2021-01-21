@@ -133,8 +133,12 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     return size;
   }
 
-  private int getChildCount() {
+  public int getChildCount() {
     return (int) getMaxLength();
+  }
+
+  public List<ViewType<?>> getChildTypes() {
+    return childrenTypes;
   }
 
   @Override
