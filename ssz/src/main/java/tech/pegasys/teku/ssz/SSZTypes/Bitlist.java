@@ -33,15 +33,8 @@ public class Bitlist {
 
   public static Bitlist fromSszBytes(Bytes bytes, long maxSize) {
     int bitlistSize = sszGetLengthAndValidate(bytes);
-    BitSet byteArray = new BitSet(bitlistSize);
-
-    for (int i = bitlistSize - 1; i >= 0; i--) {
-      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray.set(i);
-      }
-    }
-
-    return new Bitlist(bitlistSize, byteArray, maxSize);
+    BitSet bitSet = BitSet.valueOf(bytes.toArrayUnsafe()).get(0, bitlistSize);
+    return new Bitlist(bitlistSize, bitSet, maxSize);
   }
 
   public static Bytes sszTruncateLeadingBit(Bytes bytes, int length) {
