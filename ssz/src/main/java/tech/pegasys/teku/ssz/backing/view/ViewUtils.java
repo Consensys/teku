@@ -83,7 +83,7 @@ public class ViewUtils {
    */
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
     ListViewWrite<BitView> viewWrite =
-        new ListViewType<BitView>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
+        new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitlist.getCurrentSize(); i++) {
@@ -100,7 +100,7 @@ public class ViewUtils {
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
   public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
     VectorViewWrite<BitView> viewWrite =
-        new VectorViewType<BitView>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
+        new VectorViewType<>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
