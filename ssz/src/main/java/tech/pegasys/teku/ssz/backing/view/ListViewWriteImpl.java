@@ -35,11 +35,12 @@ public class ListViewWriteImpl<
   static class ListContainerWrite<
           ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
       extends ContainerViewWriteImpl {
-    private final VectorViewType<ElementReadType> vectorType;
+    private final ListViewType<ElementReadType> listType;
 
-    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView) {
+    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView,
+        ListViewType<ElementReadType> type) {
       super(backingImmutableView);
-      vectorType = backingImmutableView.getVectorType();
+      listType = type;
     }
 
     public int getSize() {
@@ -57,7 +58,7 @@ public class ListViewWriteImpl<
     @Override
     protected AbstractCompositeViewRead<ViewRead> createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ListContainerRead<ElementReadType>(vectorType, backingNode, viewCache);
+      return new ListContainerRead<>(listType, backingNode, viewCache);
     }
 
     @Override

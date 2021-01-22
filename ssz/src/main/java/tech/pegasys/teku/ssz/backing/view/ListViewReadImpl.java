@@ -33,31 +33,29 @@ import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
  */
 public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewRead<ElementType> {
 
-  static class ListContainerRead<ElementType extends ViewRead> extends ContainerViewReadImpl {
+  public static class ListContainerRead<ElementType extends ViewRead> extends ContainerViewReadImpl {
+    private final ListViewType<ElementType> type;
 
-    private static <C extends ViewRead>
-        ContainerViewType<ListContainerRead<C>> vectorTypeToContainerType(
-            VectorViewType<C> vectorType) {
-      return ContainerViewType.create(
-          Arrays.asList(vectorType, BasicViewTypes.UINT64_TYPE), ListContainerRead::new);
+    private ListContainerRead(ListViewType<ElementType> type) {
+      super(type.getCompatibleListContainerType());
+      this.type = type;
     }
 
-    public ListContainerRead(VectorViewType<ElementType> vectorType) {
-      super(vectorTypeToContainerType(vectorType));
-    }
-
-    ListContainerRead(
-        ContainerViewType<ListContainerRead<ElementType>> containerType, TreeNode backingNode) {
+    public ListContainerRead(ListViewType<ElementType> type,
+        ContainerViewType<?> containerType, TreeNode backingNode) {
       super(containerType, backingNode);
+      this.type = type;
     }
 
-    public ListContainerRead(VectorViewType<ElementType> vectorType, TreeNode backingNode) {
-      super(vectorTypeToContainerType(vectorType), backingNode);
+    public ListContainerRead(ListViewType<ElementType> type, TreeNode backingNode) {
+      super(type.getCompatibleListContainerType(), backingNode);
+      this.type = type;
     }
 
     public ListContainerRead(
-        VectorViewType<ElementType> vectorType, TreeNode backingNode, IntCache<ViewRead> cache) {
-      super(vectorTypeToContainerType(vectorType), backingNode, cache);
+        ListViewType<ElementType> type, TreeNode backingNode, IntCache<ViewRead> cache) {
+      super(type.getCompatibleListContainerType(), backingNode, cache);
+      this.type = type;
     }
 
     public int getSize() {
@@ -70,12 +68,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
 
     @Override
     public ListContainerWrite<ElementType, ?> createWritableCopy() {
-      return new ListContainerWrite<>(this);
-    }
-
-    @SuppressWarnings("unchecked")
-    VectorViewType<ElementType> getVectorType() {
-      return (VectorViewType<ElementType>) getType().getChildType(0);
+      return new ListContainerWrite<>(this, type);
     }
   }
 
@@ -85,13 +78,13 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
 
   public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;
-    this.container = new ListContainerRead<>(type.getCompatibleVectorType(), node);
+    this.container = new ListContainerRead<>(type, node);
     this.cachedSize = container.getSize();
   }
 
   public ListViewReadImpl(ListViewType<ElementType> type) {
     this.type = type;
-    this.container = new ListContainerRead<>(type.getCompatibleVectorType());
+    this.container = new ListContainerRead<>(type);
     this.cachedSize = container.getSize();
   }
 

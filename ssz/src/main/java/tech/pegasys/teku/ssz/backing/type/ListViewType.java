@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,12 +26,15 @@ import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
+import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewType<ElementViewT extends ViewRead>
     extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
+  private final VectorViewType<ElementViewT> compatibleVectorType;
+  private final ContainerViewType<?> containerViewType;
 
   public ListViewType(VectorViewType<ElementViewT> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
@@ -42,6 +46,12 @@ public class ListViewType<ElementViewT extends ViewRead>
 
   public ListViewType(ViewType<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
+    this.compatibleVectorType = new VectorViewType<>(getElementType(), getMaxLength(), true,
+        getHints());
+    this.containerViewType = ContainerViewType
+        .create(
+            Arrays.asList(getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
+            (type, node) -> new ListContainerRead(this, type, node));
   }
 
   @Override
@@ -63,8 +73,12 @@ public class ListViewType<ElementViewT extends ViewRead>
     return new ListViewReadImpl<>(this, node);
   }
 
-  public VectorViewType<ElementViewT> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+  private VectorViewType<ElementViewT> getCompatibleVectorType() {
+    return compatibleVectorType;
+  }
+
+  public ContainerViewType<?> getCompatibleListContainerType() {
+    return containerViewType;
   }
 
   @Override
