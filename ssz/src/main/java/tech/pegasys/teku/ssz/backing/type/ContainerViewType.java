@@ -34,10 +34,13 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     implements CompositeViewType<C> {
 
   private final List<ViewType<?>> childrenTypes;
-  private volatile TreeNode defaultTree;
+  private final TreeNode defaultTree;
+  private final long treeWidth;
 
   protected ContainerViewType(List<ViewType<?>> childrenTypes) {
     this.childrenTypes = childrenTypes;
+    this.defaultTree = createDefaultTree();
+    this.treeWidth = CompositeViewType.super.treeWidth();
   }
 
   public static <C extends ContainerViewRead> ContainerViewType<C> create(
@@ -57,10 +60,12 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   @Override
   public TreeNode getDefaultTree() {
-    if (defaultTree == null) {
-      this.defaultTree = createDefaultTree();
-    }
     return defaultTree;
+  }
+
+  @Override
+  public long treeWidth() {
+    return treeWidth;
   }
 
   private TreeNode createDefaultTree() {
