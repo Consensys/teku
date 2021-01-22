@@ -20,6 +20,8 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -32,6 +34,18 @@ import tech.pegasys.teku.util.config.Constants;
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  @BeforeAll
+  static void setConstants() {
+    Constants.setConstants("mainnet");
+    SimpleOffsetSerializer.setConstants();
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
+    SimpleOffsetSerializer.setConstants();
+  }
 
   @Test
   void vectorLengthsTest() {
