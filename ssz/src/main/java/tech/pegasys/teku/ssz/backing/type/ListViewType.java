@@ -55,7 +55,7 @@ public class ListViewType<ElementViewT extends ViewRead>
 
   @Override
   public ListViewRead<ElementViewT> getDefault() {
-    return new ListViewReadImpl<ElementViewT>(this, createDefaultTree());
+    return new ListViewReadImpl<>(this, createDefaultTree());
   }
 
   @Override
@@ -64,7 +64,7 @@ public class ListViewType<ElementViewT extends ViewRead>
   }
 
   public VectorViewType<ElementViewT> getCompatibleVectorType() {
-    return new VectorViewType<ElementViewT>(getElementType(), getMaxLength(), true, getHints());
+    return new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
   }
 
   @Override
