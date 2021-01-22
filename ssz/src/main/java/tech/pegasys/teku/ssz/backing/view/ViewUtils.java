@@ -31,6 +31,7 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.sos.SszReader;
 
 /** Handy view tool methods */
 public class ViewUtils {
@@ -68,22 +69,12 @@ public class ViewUtils {
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
     VectorViewType<ByteView> type = new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
-    // TODO optimize
-    VectorViewWrite<ByteView> ret = type.getDefault().createWritableCopy();
-    for (int i = 0; i < bytes.size(); i++) {
-      ret.set(i, new ByteView(bytes.get(i)));
-    }
-    return ret.commitChanges();
+    return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
   public static Bytes getAllBytes(VectorViewRead<ByteView> vector) {
-    // TODO optimize
-    MutableBytes bytes = MutableBytes.create((int) vector.getType().getMaxLength());
-    for (int i = 0; i < bytes.size(); i++) {
-      bytes.set(i, vector.get(i).get());
-    }
-    return bytes;
+    return vector.sszSerialize();
   }
 
   /**
