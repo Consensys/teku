@@ -49,7 +49,7 @@ public class AttesterSlashing
                           .asList()), // TreeSet as must be sorted
                   new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
 
-  public AttesterSlashing(
+  private AttesterSlashing(
       ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> type,
       TreeNode backingNode) {
     super(type, backingNode);

@@ -97,7 +97,9 @@ public class BeaconBlockBody
 
   @SszTypeDescriptor public static final BeaconBlockBodyType TYPE = new BeaconBlockBodyType();
 
-  public BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
+  private BLSSignature randaoRevealCache;
+
+  private BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -120,6 +122,7 @@ public class BeaconBlockBody
         ViewUtils.toListView(ATTESTATIONS_TYPE, attestations),
         ViewUtils.toListView(DEPOSITS_TYPE, deposits),
         ViewUtils.toListView(VOLUNTARY_EXITS_TYPE, voluntary_exits));
+    this.randaoRevealCache = randao_reveal;
   }
 
   public BeaconBlockBody() {
@@ -127,7 +130,10 @@ public class BeaconBlockBody
   }
 
   public BLSSignature getRandao_reveal() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField0()));
+    if (randaoRevealCache == null) {
+      randaoRevealCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField0()));
+    }
+    return randaoRevealCache;
   }
 
   public Eth1Data getEth1_data() {

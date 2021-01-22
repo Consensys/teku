@@ -43,7 +43,9 @@ public class SignedBeaconBlock
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedBeaconBlock::new);
 
-  public SignedBeaconBlock(
+  private BLSSignature signatureCache;
+
+  private SignedBeaconBlock(
       ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
     super(type, backingNode);
@@ -51,6 +53,7 @@ public class SignedBeaconBlock
 
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
     super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public BeaconBlock getMessage() {
@@ -58,7 +61,10 @@ public class SignedBeaconBlock
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override

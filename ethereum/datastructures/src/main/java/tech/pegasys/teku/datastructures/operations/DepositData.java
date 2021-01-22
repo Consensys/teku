@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -62,6 +63,9 @@ public class DepositData
 
   @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
 
+  private BLSSignature signatureCache;
+  private BLSPublicKey pubkeyCache;
+
   public DepositData(
       ContainerType4<
               DepositData,
@@ -82,6 +86,8 @@ public class DepositData
         new Bytes32View(withdrawal_credentials),
         new UInt64View(amount),
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.pubkeyCache = pubkey;
+    this.signatureCache = signature;
   }
 
   public DepositData(final DepositMessage depositMessage, final BLSSignature signature) {
@@ -97,7 +103,11 @@ public class DepositData
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+    if (pubkeyCache == null) {
+      pubkeyCache = BLSPublicKey
+          .fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+    }
+    return pubkeyCache;
   }
 
   public Bytes32 getWithdrawal_credentials() {
@@ -109,7 +119,10 @@ public class DepositData
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
+    }
+    return signatureCache;
   }
 
   @Override

@@ -34,7 +34,7 @@ public class ProposerSlashing
           ContainerType2.create(
               SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE, ProposerSlashing::new);
 
-  public ProposerSlashing(
+  private ProposerSlashing(
       ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> type,
       TreeNode backingNode) {
     super(type, backingNode);

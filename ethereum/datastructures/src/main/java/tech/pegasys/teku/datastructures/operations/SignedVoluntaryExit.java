@@ -41,7 +41,9 @@ public class SignedVoluntaryExit
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedVoluntaryExit::new);
 
-  public SignedVoluntaryExit(
+  private BLSSignature signatureCache;
+
+  private SignedVoluntaryExit(
       ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
     super(type, backingNode);
@@ -49,6 +51,7 @@ public class SignedVoluntaryExit
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
     super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public VoluntaryExit getMessage() {
@@ -56,7 +59,10 @@ public class SignedVoluntaryExit
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override

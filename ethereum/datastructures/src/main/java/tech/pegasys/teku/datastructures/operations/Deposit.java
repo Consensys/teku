@@ -43,7 +43,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
   public static final ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> TYPE =
       ContainerType2.create(PROOF_TYPE, DepositData.TYPE, Deposit::new);
 
-  public Deposit(
+  private Deposit(
       ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> type,
       TreeNode backingNode) {
     super(type, backingNode);

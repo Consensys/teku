@@ -63,7 +63,9 @@ public class IndexedAttestation
 
   @SszTypeDescriptor public static final IndexedAttestationType TYPE = new IndexedAttestationType();
 
-  public IndexedAttestation(IndexedAttestationType type, TreeNode backingNode) {
+  private BLSSignature signatureCache;
+
+  private IndexedAttestation(IndexedAttestationType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -75,6 +77,7 @@ public class IndexedAttestation
             IndexedAttestationType.AttestingIndicesType, attesting_indices, UInt64View::new),
         data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public SSZList<UInt64> getAttesting_indices() {
@@ -86,7 +89,10 @@ public class IndexedAttestation
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    }
+    return signatureCache;
   }
 
   @Override

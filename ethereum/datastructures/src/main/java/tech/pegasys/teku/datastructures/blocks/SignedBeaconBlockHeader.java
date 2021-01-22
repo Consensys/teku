@@ -41,7 +41,9 @@ public class SignedBeaconBlockHeader
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedBeaconBlockHeader::new);
 
-  public SignedBeaconBlockHeader(
+  private BLSSignature signatureCache;
+
+  private SignedBeaconBlockHeader(
       ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
     super(type, backingNode);

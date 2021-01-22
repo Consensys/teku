@@ -61,7 +61,10 @@ public class Attestation
 
   @SszTypeDescriptor public static final AttestationType TYPE = new AttestationType();
 
-  public Attestation(AttestationType type, TreeNode backingNode) {
+  private Bitlist aggregationBitsCache;
+  private BLSSignature signatureCache;
+
+  private Attestation(AttestationType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -71,6 +74,8 @@ public class Attestation
         ViewUtils.createBitlistView(aggregation_bits),
         data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    aggregationBitsCache = aggregation_bits;
+    signatureCache = signature;
   }
 
   public Attestation() {
@@ -91,7 +96,10 @@ public class Attestation
   }
 
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitlist(getField0());
+    if (aggregationBitsCache == null) {
+      aggregationBitsCache = ViewUtils.getBitlist(getField0());
+    }
+    return aggregationBitsCache;
   }
 
   public AttestationData getData() {
@@ -99,11 +107,10 @@ public class Attestation
   }
 
   public BLSSignature getAggregate_signature() {
-    return getSignature();
-  }
-
-  public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    }
+    return signatureCache;
   }
 
   @Override
@@ -116,7 +123,7 @@ public class Attestation
     return MoreObjects.toStringHelper(this)
         .add("aggregation_bits", getAggregation_bits())
         .add("data", getData())
-        .add("signature", getSignature())
+        .add("signature", getAggregate_signature())
         .toString();
   }
 }

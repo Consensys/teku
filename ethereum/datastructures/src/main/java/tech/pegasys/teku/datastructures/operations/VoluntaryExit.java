@@ -33,7 +33,7 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
       ContainerType2.create(
           BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, VoluntaryExit::new);
 
-  public VoluntaryExit(
+  private VoluntaryExit(
       ContainerType2<VoluntaryExit, UInt64View, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
