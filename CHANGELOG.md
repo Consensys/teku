@@ -12,6 +12,7 @@
 
 ## Next Release
 - Use advertised IP via (--p2p-advertised-ip) regardless of the IP returned by the discv5 PONG responses. This is particularly useful when using setups like docker and having some peers within the docker network but wanting discovery to work external to that network.
+- Implement missing API event streams: block, attestation, voluntary_exit. Now Teku fully supports event streams, on top of the Teku-specific sync-state event stream.
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.

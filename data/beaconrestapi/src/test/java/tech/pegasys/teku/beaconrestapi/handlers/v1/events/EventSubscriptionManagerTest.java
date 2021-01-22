@@ -13,8 +13,26 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import javax.servlet.AsyncContext;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,25 +57,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.util.config.Constants;
-
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -96,7 +95,8 @@ public class EventSubscriptionManagerTest {
   private final SignedBeaconBlock sampleBlock =
       new SignedBeaconBlock(data.randomSignedBeaconBlock(0));
   private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
-  private final SignedVoluntaryExit sampleVoluntaryExit = new SignedVoluntaryExit(data.randomSignedVoluntaryExit());
+  private final SignedVoluntaryExit sampleVoluntaryExit =
+      new SignedVoluntaryExit(data.randomSignedVoluntaryExit());
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -256,12 +256,11 @@ public class EventSubscriptionManagerTest {
     final String eventString = stringArgs.getValue();
     assertThat(eventString).contains("event: voluntary_exit\n");
     final SignedVoluntaryExit event =
-            jsonProvider.jsonToObject(
-                    eventString.substring(eventString.indexOf("{")), SignedVoluntaryExit.class);
+        jsonProvider.jsonToObject(
+            eventString.substring(eventString.indexOf("{")), SignedVoluntaryExit.class);
 
     assertThat(event).isEqualTo(sampleVoluntaryExit);
   }
-
 
   @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
@@ -317,7 +316,8 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerVoluntaryExitEvent() {
-    manager.onNewVoluntaryExit(sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
+    manager.onNewVoluntaryExit(
+        sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
     asyncRunner.executeQueuedActions();
   }
 

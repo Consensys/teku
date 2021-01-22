@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
@@ -26,10 +29,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class NodeDataProvider {
 
@@ -108,8 +107,9 @@ public class NodeDataProvider {
   }
 
   public void subscribeToNewVoluntaryExits(
-          OperationPool.OperationAddedSubscriber
-                  <tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit> listener) {
+      OperationPool.OperationAddedSubscriber<
+              tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+          listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 }
