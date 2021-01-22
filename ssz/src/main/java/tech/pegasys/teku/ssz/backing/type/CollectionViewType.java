@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static java.lang.Integer.min;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.ArrayList;
@@ -161,11 +163,16 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
       throw new SSZDeserializeException("Ssz length is not multiple of element length");
     }
     int elementsCount = sszSize / template.getSszLength();
-    List<SszSuperNode> sszNodes =
-        chunks(sszSize, (1 << supernodeDepth) * template.getSszLength())
-            .mapToObj(reader::read)
-            .map(bb -> new SszSuperNode(supernodeDepth, template, bb))
-            .collect(Collectors.toList());
+    int chunkSize = (1 << supernodeDepth) * template.getSszLength();
+    int bytesRemain = sszSize;
+    List<SszSuperNode> sszNodes = new ArrayList<>(bytesRemain / chunkSize + 1);
+    while (bytesRemain > 0) {
+      int toRead = min(bytesRemain, chunkSize);
+      bytesRemain -= toRead;
+      Bytes bytes = reader.read(toRead);
+      SszSuperNode node = new SszSuperNode(supernodeDepth, template, bytes);
+      sszNodes.add(node);
+    }
     TreeNode tree =
         TreeUtil.createTree(
             sszNodes,
@@ -180,11 +187,15 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
       checkSsz(
           bytesSize % getElementType().getFixedPartSize() == 0,
           "SSZ sequence length is not multiple of fixed element size");
-      List<LeafNode> childNodes =
-          chunks(bytesSize, LeafNode.MAX_BYTE_SIZE)
-              .mapToObj(reader::read)
-              .map(LeafNode::create)
-              .collect(Collectors.toList());
+      int bytesRemain = bytesSize;
+      List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
+      while (bytesRemain > 0) {
+        int toRead = min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
+        bytesRemain -= toRead;
+        Bytes bytes = reader.read(toRead);
+        LeafNode node = LeafNode.create(bytes);
+        childNodes.add(node);
+      }
 
       Optional<Byte> lastByte;
       if (childNodes.isEmpty()) {
@@ -252,12 +263,6 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     if (!condition) {
       throw new SSZDeserializeException(error);
     }
-  }
-
-  protected static IntStream chunks(int totalSize, int chunkSize) {
-    return IntStream.concat(
-        IntStream.generate(() -> chunkSize).limit(totalSize / chunkSize),
-        IntStream.of(totalSize % chunkSize).filter(i -> i > 0));
   }
 
   public TypeHints getHints() {
