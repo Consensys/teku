@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,13 +46,6 @@ public class DepositMessage
               BasicViewTypes.UINT64_TYPE,
               DepositMessage::new);
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  private static final int SSZ_FIELD_COUNT = 2;
-
-  private BLSPublicKey pubkey;
-  private Bytes32 withdrawal_credentials;
-  private UInt64 amount;
-
   private DepositMessage(
       ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> type,
       TreeNode backingNode) {
@@ -82,22 +71,6 @@ public class DepositMessage
 
   public UInt64 getAmount() {
     return getField2().get();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(pubkey.get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(withdrawal_credentials)),
-            SSZ.encodeUInt64(amount.longValue())));
-    return fixedPartsList;
   }
 
   @Override

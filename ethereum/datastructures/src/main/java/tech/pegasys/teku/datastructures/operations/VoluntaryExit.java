@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -36,12 +33,6 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
       ContainerType2.create(
           BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, VoluntaryExit::new);
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
-
-  private UInt64 epoch;
-  private UInt64 validator_index;
-
   public VoluntaryExit(
       ContainerType2<VoluntaryExit, UInt64View, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -49,17 +40,6 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
     super(TYPE, new UInt64View(epoch), new UInt64View(validator_index));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(epoch.longValue()), SSZ.encodeUInt64(validator_index.longValue()));
   }
 
   public UInt64 getEpoch() {

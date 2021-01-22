@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -46,12 +43,6 @@ public class HistoricalBatch
           HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
       TYPE = ContainerType2.create(LIST_VIEW_TYPE, LIST_VIEW_TYPE, HistoricalBatch::new);
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
-
-  private SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
-  private SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
-
   private HistoricalBatch(
       ContainerType2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
           type,
@@ -64,18 +55,6 @@ public class HistoricalBatch
         TYPE,
         ViewUtils.toVectorView(LIST_VIEW_TYPE, block_roots, Bytes32View::new),
         ViewUtils.toVectorView(LIST_VIEW_TYPE, state_roots, Bytes32View::new));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots.asList())),
-        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots.asList())));
   }
 
   public SSZVector<Bytes32> getBlockRoots() {

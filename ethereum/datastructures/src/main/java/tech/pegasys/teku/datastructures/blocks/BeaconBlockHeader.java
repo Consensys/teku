@@ -14,13 +14,8 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Suppliers;
 import java.util.List;
-import java.util.function.Supplier;
-import jdk.jfr.Label;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,9 +32,6 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class BeaconBlockHeader extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 4;
-
   @SszTypeDescriptor
   public static final ContainerViewType<BeaconBlockHeader> TYPE =
       ContainerViewType.create(
@@ -50,24 +42,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
               BasicViewTypes.BYTES32_TYPE,
               BasicViewTypes.BYTES32_TYPE),
           BeaconBlockHeader::new);
-
-  @SuppressWarnings("unused")
-  private final UInt64 slot = null;
-
-  @SuppressWarnings("unused")
-  private final UInt64 proposer_index = null;
-
-  @SuppressWarnings("unused")
-  private final Bytes32 parent_root = null;
-
-  @SuppressWarnings("unused")
-  private final Bytes32 state_root = null;
-
-  @SuppressWarnings("unused")
-  private final Bytes32 body_root = null;
-
-  @Label("sos-ignore")
-  private final Supplier<Bytes32> hashTreeRootSupplier = Suppliers.memoize(this::calculateRoot);
 
   private BeaconBlockHeader(ContainerViewType<BeaconBlockHeader> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -121,21 +95,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   }
 
   @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(getSlot().longValue()),
-        SSZ.encodeUInt64(getProposerIndex().longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(getParentRoot())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getStateRoot())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getBodyRoot())));
-  }
-
-  @Override
   public UInt64 getSlot() {
     return ((UInt64View) get(0)).get();
   }
@@ -167,10 +126,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
 
   @Override
   public Bytes32 hash_tree_root() {
-    return hashTreeRootSupplier.get();
-  }
-
-  public Bytes32 calculateRoot() {
     return hashTreeRoot();
   }
 

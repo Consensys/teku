@@ -14,14 +14,10 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
@@ -59,18 +55,6 @@ public final class BeaconBlock
 
   @SszTypeDescriptor public static final BeaconBlockType TYPE = new BeaconBlockType();
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 4;
-
-  // Header
-  private UInt64 slot;
-  private UInt64 proposer_index;
-  private Bytes32 parent_root;
-  private Bytes32 state_root;
-
-  // Body
-  private BeaconBlockBody body;
-
   private BeaconBlock(BeaconBlockType type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -99,33 +83,8 @@ public final class BeaconBlock
         UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, genesisState.hashTreeRoot(), new BeaconBlockBody());
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + getBody().getSSZFieldCount();
-  }
-
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
     return new BeaconBlock(getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(getSlot().longValue()),
-        SSZ.encodeUInt64(getProposerIndex().longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(getParentRoot())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getStateRoot())),
-        Bytes.EMPTY);
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(
-        Bytes.EMPTY,
-        Bytes.EMPTY,
-        Bytes.EMPTY,
-        Bytes.EMPTY,
-        SimpleOffsetSerializer.serialize(getBody()));
   }
 
   @Override

@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -34,9 +31,6 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class SignedBeaconBlockHeader
     extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
-
-  private BeaconBlockHeader message;
-  private BLSSignature signature;
 
   @SszTypeDescriptor
   public static final ContainerType2<
@@ -63,19 +57,6 @@ public class SignedBeaconBlockHeader
 
   public BLSSignature getSignature() {
     return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(message.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
   }
 
   @Override

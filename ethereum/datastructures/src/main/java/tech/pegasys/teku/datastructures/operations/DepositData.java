@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -66,14 +62,6 @@ public class DepositData
 
   @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  private static final int SSZ_FIELD_COUNT = 2;
-
-  private BLSPublicKey pubkey;
-  private Bytes32 withdrawal_credentials;
-  private UInt64 amount;
-  private BLSSignature signature; // Signing over DepositMessage
-
   public DepositData(
       ContainerType4<
               DepositData,
@@ -106,23 +94,6 @@ public class DepositData
 
   public DepositData() {
     super(TYPE);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return getPubkey().getSSZFieldCount() + SSZ_FIELD_COUNT + getSignature().getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(getPubkey().get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(getWithdrawal_credentials())),
-            SSZ.encodeUInt64(getAmount().longValue())));
-    fixedPartsList.addAll(getSignature().get_fixed_parts());
-    return fixedPartsList;
   }
 
   public BLSPublicKey getPubkey() {

@@ -14,9 +14,6 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -44,9 +41,6 @@ public class SignedVoluntaryExit
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedVoluntaryExit::new);
 
-  private VoluntaryExit message;
-  private BLSSignature signature;
-
   public SignedVoluntaryExit(
       ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
@@ -66,19 +60,6 @@ public class SignedVoluntaryExit
   }
 
   @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(message.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
@@ -86,8 +67,8 @@ public class SignedVoluntaryExit
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("signature", signature)
+        .add("message", getMessage())
+        .add("signature", getSignature())
         .toString();
   }
 }

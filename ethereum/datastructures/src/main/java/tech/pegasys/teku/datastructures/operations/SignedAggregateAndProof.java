@@ -14,13 +14,9 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -46,9 +42,6 @@ public class SignedAggregateAndProof
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedAggregateAndProof::new);
 
-  private AggregateAndProof message;
-  private BLSSignature signature;
-
   public SignedAggregateAndProof(
       ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
@@ -57,24 +50,6 @@ public class SignedAggregateAndProof
 
   public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
     super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    final List<Bytes> parts = new ArrayList<>();
-    parts.add(Bytes.EMPTY);
-    parts.addAll(signature.get_fixed_parts());
-    return parts;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(message), Bytes.EMPTY);
   }
 
   public AggregateAndProof getMessage() {
@@ -88,8 +63,8 @@ public class SignedAggregateAndProof
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("signature", signature)
+        .add("message", getMessage())
+        .add("signature", getSignature())
         .toString();
   }
 

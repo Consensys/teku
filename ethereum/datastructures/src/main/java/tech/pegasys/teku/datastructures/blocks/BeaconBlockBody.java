@@ -13,13 +13,8 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -27,7 +22,6 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -103,18 +97,6 @@ public class BeaconBlockBody
 
   @SszTypeDescriptor public static final BeaconBlockBodyType TYPE = new BeaconBlockBodyType();
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 6;
-
-  private BLSSignature randao_reveal;
-  private Eth1Data eth1_data;
-  private Bytes32 graffiti;
-  private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
-  private SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
-  private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
-  private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
-  private SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
-
   public BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -142,37 +124,6 @@ public class BeaconBlockBody
 
   public BeaconBlockBody() {
     super(TYPE);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(randao_reveal.get_fixed_parts());
-    fixedPartsList.addAll(eth1_data.get_fixed_parts());
-    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(graffiti))));
-    fixedPartsList.addAll(Collections.nCopies(5, Bytes.EMPTY));
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(List.of(Bytes.EMPTY));
-    variablePartsList.addAll(
-        List.of(
-            SimpleOffsetSerializer.serializeFixedCompositeList(proposer_slashings),
-            SimpleOffsetSerializer.serializeVariableCompositeList(attester_slashings),
-            SimpleOffsetSerializer.serializeVariableCompositeList(attestations),
-            SimpleOffsetSerializer.serializeFixedCompositeList(deposits),
-            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits)));
-    return variablePartsList;
   }
 
   public BLSSignature getRandao_reveal() {

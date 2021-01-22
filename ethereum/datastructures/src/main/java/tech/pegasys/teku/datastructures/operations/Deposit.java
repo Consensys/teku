@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -47,12 +43,6 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
   public static final ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> TYPE =
       ContainerType2.create(PROOF_TYPE, DepositData.TYPE, Deposit::new);
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
-
-  private SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
-  private DepositData data;
-
   public Deposit(
       ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> type,
       TreeNode backingNode) {
@@ -69,20 +59,6 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   public Deposit(DepositData data) {
     this(EMPTY_PROOF, data);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return getData().getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(getProof().asList()))));
-    fixedPartsList.addAll(getData().get_fixed_parts());
-    return fixedPartsList;
   }
 
   public SSZVector<Bytes32> getProof() {

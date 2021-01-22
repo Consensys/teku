@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.state;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -36,19 +35,10 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
-
   @SszTypeDescriptor
   public static final ContainerType2<Checkpoint, UInt64View, Bytes32View> TYPE =
       ContainerType2.create(
           BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE, Checkpoint::new);
-
-  @SuppressWarnings("unused")
-  private final UInt64 epoch = null;
-
-  @SuppressWarnings("unused")
-  private final Bytes32 root = null;
 
   private Checkpoint(
       ContainerType2<Checkpoint, UInt64View, Bytes32View> type, TreeNode backingNode) {
@@ -61,18 +51,6 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
 
   public Checkpoint() {
     super(TYPE);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(getEpoch().longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(getRoot())));
   }
 
   public Bytes toBytes() {
@@ -91,7 +69,6 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
         .toString();
   }
 
-  /** ****************** * GETTERS & SETTERS * * ******************* */
   public UInt64 getEpoch() {
     return getField0().get();
   }

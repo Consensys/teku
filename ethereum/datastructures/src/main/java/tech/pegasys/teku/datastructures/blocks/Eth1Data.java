@@ -15,9 +15,7 @@ package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -33,24 +31,12 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class Eth1Data extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  private static final int SSZ_FIELD_COUNT = 3;
-
   @SszTypeDescriptor
   public static final ContainerViewType<Eth1Data> TYPE =
       ContainerViewType.create(
           List.of(
               BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
           Eth1Data::new);
-
-  @SuppressWarnings("unused")
-  private final Bytes32 deposit_root = null;
-
-  @SuppressWarnings("unused")
-  private final UInt64 deposit_count = null;
-
-  @SuppressWarnings("unused")
-  private final Bytes32 block_hash = null;
 
   private Eth1Data(ContainerViewType<Eth1Data> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -68,25 +54,8 @@ public class Eth1Data extends AbstractImmutableContainer
     super(TYPE);
   }
 
-  public Eth1Data(Eth1Data eth1Data) {
-    super(TYPE, eth1Data.getBackingNode());
-  }
-
   public Eth1Data withBlockHash(final Bytes32 blockHash) {
     return new Eth1Data(getDeposit_root(), getDeposit_count(), blockHash);
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(getDeposit_root())),
-        SSZ.encodeUInt64(getDeposit_count().longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(getBlock_hash())));
   }
 
   /** @return the deposit_root */

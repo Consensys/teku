@@ -14,14 +14,10 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -47,9 +43,6 @@ public class SignedBeaconBlock
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedBeaconBlock::new);
 
-  private BeaconBlock message;
-  private BLSSignature signature;
-
   public SignedBeaconBlock(
       ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
@@ -66,24 +59,6 @@ public class SignedBeaconBlock
 
   public BLSSignature getSignature() {
     return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return getMessage().getSSZFieldCount() + getSignature().getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    final List<Bytes> parts = new ArrayList<>();
-    parts.add(Bytes.EMPTY);
-    parts.addAll(getSignature().get_fixed_parts());
-    return parts;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(getMessage()), Bytes.EMPTY);
   }
 
   @Override

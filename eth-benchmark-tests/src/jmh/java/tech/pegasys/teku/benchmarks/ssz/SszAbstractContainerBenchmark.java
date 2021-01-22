@@ -15,7 +15,6 @@ package tech.pegasys.teku.benchmarks.ssz;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
@@ -115,7 +114,7 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
     benches.put("benchDeserialize", this::benchDeserialize);
     benches.put("benchDeserializeAndIterate", this::benchDeserializeAndIterate);
 
-    for (Entry<String, Consumer<Blackhole>> entry : benches.entrySet()) {
+    for (Map.Entry<String, Consumer<Blackhole>> entry : benches.entrySet()) {
 
       Consumer<Blackhole> bench = entry.getValue();
       System.out.print("Bench #" + entry.getKey() + ": ");
