@@ -60,17 +60,14 @@ class Eth2GossipScoringConfigurator {
         .opportunisticGraftThreshold(scoringConfig.getOpportunisticGraftThreshold())
         .peerScoring(
             p ->
+                // TODO - Look into app-specific scoring (.appSpecificScore(), .appSpecificWeight())
                 p.decayInterval(scoringConfig.getSlotDuration())
                     .decayToZero(scoringConfig.getDecayToZero())
                     .retainScore(scoringConfig.getTargetScoreRetention())
-                    // TODO - apply app-specific score
-                    //                    .appSpecificScore()
-                    //                    .appSpecificWeight(1.0)
                     .ipColocationFactorWeight(-0.5 * maxPositiveScore)
                     .ipColocationFactorThreshold(3)
                     .behaviourPenaltyWeight(behaviorPenaltyWeight)
-                    // TODO - expose behaviourPenaltyThreshold
-                    //                    .behaviourPenaltyThreshold(behaviorPenaltyThreshold)
+                    .behaviourPenaltyThreshold(behaviorPenaltyThreshold)
                     .behaviourPenaltyDecay(scoringConfig.getTargetScoreDecayFactor())
                     .topicScoreCap(0.5 * maxPositiveScore));
 
