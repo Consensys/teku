@@ -197,6 +197,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return Optional.ofNullable(pendingItems.get(itemRoot));
   }
 
+  public synchronized Set<Bytes32> getAllRequiredBlockRoots() {
+    System.out.println(pendingItemsByRequiredBlockRoot.keySet());
+    return pendingItemsByRequiredBlockRoot.keySet().stream()
+        // Filter out items we already have but can't import yet
+        .filter(root -> !pendingItems.containsKey(root))
+        .collect(Collectors.toSet());
+  }
+
   /**
    * Returns any items that are dependent on the given block root
    *
