@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -190,6 +191,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   public synchronized boolean contains(final Bytes32 itemRoot) {
     return pendingItems.containsKey(itemRoot);
+  }
+
+  public synchronized Optional<T> get(final Bytes32 itemRoot) {
+    return Optional.ofNullable(pendingItems.get(itemRoot));
   }
 
   /**

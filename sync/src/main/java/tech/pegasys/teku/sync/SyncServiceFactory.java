@@ -154,6 +154,7 @@ public class SyncServiceFactory {
               asyncRunner,
               timeProvider,
               recentChainData,
+              pendingBlocks,
               p2pNetwork,
               blockImporter);
     } else {
