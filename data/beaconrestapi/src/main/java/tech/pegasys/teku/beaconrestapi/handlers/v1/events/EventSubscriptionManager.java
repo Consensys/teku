@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
@@ -72,6 +74,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
+    nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -135,11 +138,23 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     }
   }
 
+  protected void onNewVoluntaryExit(
+      final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit exit,
+      final InternalValidationResult result) {
+    try {
+      final String newVoluntaryExitString =
+          jsonProvider.objectToJSON(new SignedVoluntaryExit(exit));
+      notifySubscribersOfEvent(EventType.voluntary_exit, newVoluntaryExitString);
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
+  }
+
   protected void onNewAttestation(final ValidateableAttestation attestation) {
     try {
-      final String newBlockJsonString =
+      final String newAttestationJsonString =
           jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
-      notifySubscribersOfEvent(EventType.attestation, newBlockJsonString);
+      notifySubscribersOfEvent(EventType.attestation, newAttestationJsonString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }

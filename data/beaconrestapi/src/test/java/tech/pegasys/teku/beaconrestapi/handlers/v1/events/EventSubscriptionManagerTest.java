@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.util.config.Constants;
@@ -93,6 +95,8 @@ public class EventSubscriptionManagerTest {
   private final SignedBeaconBlock sampleBlock =
       new SignedBeaconBlock(data.randomSignedBeaconBlock(0));
   private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
+  private final SignedVoluntaryExit sampleVoluntaryExit =
+      new SignedVoluntaryExit(data.randomSignedVoluntaryExit());
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -243,6 +247,22 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateVoluntaryExit() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=voluntary_exit");
+    manager.registerClient(client1);
+
+    triggerVoluntaryExitEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: voluntary_exit\n");
+    final SignedVoluntaryExit event =
+        jsonProvider.jsonToObject(
+            eventString.substring(eventString.indexOf("{")), SignedVoluntaryExit.class);
+
+    assertThat(event).isEqualTo(sampleVoluntaryExit);
+  }
+
+  @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
@@ -284,6 +304,21 @@ public class EventSubscriptionManagerTest {
 
     triggerAttestationEvent();
     verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldNotGetVoluntaryExitIfNotSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerVoluntaryExitEvent();
+    verify(outputStream, never()).print(anyString());
+  }
+
+  private void triggerVoluntaryExitEvent() {
+    manager.onNewVoluntaryExit(
+        sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerAttestationEvent() {

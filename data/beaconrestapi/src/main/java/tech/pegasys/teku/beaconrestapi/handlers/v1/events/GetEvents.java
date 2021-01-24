@@ -96,8 +96,7 @@ public class GetEvents implements Handler {
             required = true,
             description =
                 "Event types to subscribe to."
-                    + "Available values: [`head`, `finalized_checkpoint`, `chain_reorg`, block, attestation, voluntary_exit]\n\n"
-                    + "Events that are currently not reporting: [block, attestation, voluntary_exit]"),
+                    + "Available values: [`head`, `finalized_checkpoint`, `chain_reorg`, block, attestation, voluntary_exit]\n\n"),
       },
       responses = {
         @OpenApiResponse(

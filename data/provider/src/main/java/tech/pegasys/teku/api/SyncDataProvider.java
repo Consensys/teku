@@ -46,7 +46,7 @@ public class SyncDataProvider {
   private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus) {
     if (syncingStatus.isSyncing() && syncingStatus.getHighestSlot().isPresent()) {
       final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
-      return highestSlot.minus(syncingStatus.getCurrentSlot());
+      return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
     }
     return UInt64.ZERO;
   }

@@ -105,4 +105,11 @@ public class NodeDataProvider {
   public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
     attestationManager.subscribeToAllValidAttestations(listener);
   }
+
+  public void subscribeToNewVoluntaryExits(
+      OperationPool.OperationAddedSubscriber<
+              tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+          listener) {
+    voluntaryExitPool.subscribeOperationAdded(listener);
+  }
 }
