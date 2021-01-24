@@ -15,7 +15,8 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.teku.util.exceptions.ExceptionUtil.propagateExceptions;
+import static tech.pegasys.teku.util.exceptions.ExceptionUtil.exceptionHandlingConsumer;
+import static tech.pegasys.teku.util.exceptions.ExceptionUtil.exceptionHandlingRunnable;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
-import tech.pegasys.teku.util.exceptions.ExceptionUtil;
 
 /** Manages the sync process to reach a finalized chain. */
 public class BatchSync implements Sync {
@@ -118,7 +118,7 @@ public class BatchSync implements Sync {
   public SafeFuture<SyncResult> syncToChain(final TargetChain targetChain) {
     final SafeFuture<SyncResult> result = new SafeFuture<>();
     eventThread.execute(
-        ExceptionUtil.propagateExceptions(() -> switchSyncTarget(targetChain, result), result));
+        exceptionHandlingRunnable(() -> switchSyncTarget(targetChain, result), result));
     return result;
   }
 
@@ -417,7 +417,7 @@ public class BatchSync implements Sync {
       batchDataRequester.fillRetrievingQueue(
           targetChain,
           commonAncestorSlot.join(),
-          propagateExceptions(this::onBatchReceivedBlocks, syncResult));
+          exceptionHandlingConsumer(this::onBatchReceivedBlocks, syncResult));
     }
   }
 

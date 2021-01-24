@@ -29,7 +29,8 @@ public class ExceptionUtil {
         .findFirst();
   }
 
-  public static Runnable propagateExceptions(final Runnable runnable, final SafeFuture<?> target) {
+  public static Runnable exceptionHandlingRunnable(
+      final Runnable runnable, final SafeFuture<?> target) {
     return () -> {
       try {
         runnable.run();
@@ -39,7 +40,7 @@ public class ExceptionUtil {
     };
   }
 
-  public static <T> Consumer<T> propagateExceptions(
+  public static <T> Consumer<T> exceptionHandlingConsumer(
       final Consumer<T> consumer, final SafeFuture<?> target) {
     return value -> {
       try {
