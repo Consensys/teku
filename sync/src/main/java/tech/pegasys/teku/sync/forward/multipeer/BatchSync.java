@@ -125,15 +125,15 @@ public class BatchSync implements Sync {
     eventThread.checkOnEventThread();
     // If we're starting a sync after the previous has completed, track the import start time
     // If we're just switching targets, we should still be able to keep imports running
-    if (this.syncResult.isDone()) {
+    final boolean firstChain = this.syncResult.isDone();
+    if (firstChain) {
       this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
     }
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
-    final boolean firstChain = this.targetChain == null;
     this.targetChain = targetChain;
     if (firstChain) {
-      // Only set the common ancestor if we haven't previously sync'd a chain
+      // Only set the common ancestor if we aren't currently syncing a chain
       // Otherwise we'll optimistically assume the new chain extends the current one and only reset
       // the common ancestor if we later find out that's not the case
       this.commonAncestorSlot = getCommonAncestorSlot();

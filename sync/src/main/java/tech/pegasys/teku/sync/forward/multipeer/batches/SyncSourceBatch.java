@@ -219,7 +219,11 @@ public class SyncSourceBatch implements Batch {
     awaitingBlocks = false;
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof PeerDisconnectedException) {
-      LOG.debug("Failed to retrieve blocks because peer disconnected", error);
+      LOG.debug(
+          "Failed to retrieve blocks from {} to {}, because peer disconnected",
+          getFirstSlot(),
+          getLastSlot(),
+          error);
       markAsInvalid();
     } else if (rootCause instanceof BlocksByRangeResponseInvalidResponseException) {
       LOG.debug("Inconsistent blocks returned from blocks by range request", error);
@@ -272,14 +276,22 @@ public class SyncSourceBatch implements Batch {
         .add("firstSlot", firstSlot)
         .add("lastSlot", getLastSlot())
         .add("count", count)
+        .add("complete", complete)
         .add(
             "requiredParent",
             getFirstBlock()
                 .map(block -> LogFormatter.formatHashRoot(block.getParentRoot()))
                 .orElse("<unknown>"))
-        .add("firstBlock", getFirstBlock().map(this::formatBlock).orElse("<none>"))
+        .add("firstBlock", getFirstBlock().map(this::formatBlockAndParent).orElse("<none>"))
         .add("lastBlock", getLastBlock().map(this::formatBlock).orElse("<none>"))
         .toString();
+  }
+
+  private String formatBlockAndParent(final SignedBeaconBlock block1) {
+    return formatBlock(block1)
+        + " (parent: "
+        + LogFormatter.formatHashRoot(block1.getParentRoot())
+        + ")";
   }
 
   private String formatBlock(final SignedBeaconBlock block) {
