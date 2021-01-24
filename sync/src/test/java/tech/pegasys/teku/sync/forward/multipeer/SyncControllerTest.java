@@ -103,8 +103,7 @@ class SyncControllerTest {
     ignoreFuture(startFinalizedSync());
     verify(sync).syncToChain(targetChain);
 
-    when(syncTargetSelector.selectSyncTarget(
-            Optional.of(SyncTarget.finalizedTarget(targetChain))))
+    when(syncTargetSelector.selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain))))
         .thenReturn(Optional.of(SyncTarget.finalizedTarget(newTargetChain)));
     when(sync.syncToChain(newTargetChain)).thenReturn(new SafeFuture<>());
     onTargetChainsUpdated();
@@ -123,8 +122,7 @@ class SyncControllerTest {
 
     assertThat(syncController.isSyncActive()).isTrue();
 
-    when(syncTargetSelector.selectSyncTarget(
-            Optional.of(SyncTarget.finalizedTarget(targetChain))))
+    when(syncTargetSelector.selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain))))
         .thenReturn(Optional.empty());
     onTargetChainsUpdated();
 
@@ -159,8 +157,7 @@ class SyncControllerTest {
 
     // Sync switches to a better chain
     final TargetChain newTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
-    when(syncTargetSelector.selectSyncTarget(
-            Optional.of(SyncTarget.finalizedTarget(targetChain))))
+    when(syncTargetSelector.selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain))))
         .thenReturn(Optional.of(SyncTarget.finalizedTarget(targetChain)));
     when(sync.syncToChain(newTargetChain))
         .thenAnswer(
