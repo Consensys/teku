@@ -48,8 +48,9 @@ public class SyncTargetSelector {
     this.syncThresholdInSlots = syncThresholdInSlots;
   }
 
-  public Optional<SyncTarget> selectSyncTarget(
-      final Optional<SyncTarget> activeSyncTarget, final boolean inSyncMode) {
+  public Optional<SyncTarget> selectSyncTarget(final Optional<SyncTarget> activeSyncTarget) {
+    final boolean inSyncMode =
+        activeSyncTarget.map(target -> !target.isSpeculativeSync()).orElse(false);
     LOG.trace(
         "Considering sync targets. In sync mode: {}, Active target {}",
         inSyncMode,

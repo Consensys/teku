@@ -82,8 +82,7 @@ public class SyncController {
   private Optional<InProgressSync> selectNewSyncTarget() {
     return syncTargetSelector
         .selectSyncTarget(
-            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getSyncTarget),
-            isSyncActive())
+            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getSyncTarget))
         .map(this::startSync);
   }
 
@@ -108,11 +107,7 @@ public class SyncController {
   }
 
   public boolean isSyncActive() {
-    return isSyncActive(currentSync);
-  }
-
-  public boolean isSyncActive(final Optional<InProgressSync> sync) {
-    return sync.map(InProgressSync::isActivePrimarySync).orElse(false);
+    return currentSync.map(InProgressSync::isActivePrimarySync).orElse(false);
   }
 
   public SyncingStatus getSyncStatus() {

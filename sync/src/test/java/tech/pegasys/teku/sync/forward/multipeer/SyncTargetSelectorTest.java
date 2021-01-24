@@ -58,46 +58,50 @@ class SyncTargetSelectorTest {
 
   @Test
   void finalized_shouldHaveNoSyncTargetWhenNoChainsAvailable() {
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void finalized_shouldNotSelectFinalizedChainWhenHeadBlockAlreadyImported() {
     final SlotAndBlockRoot finalizedChainHead = addPeerWithFinalizedSlot(suitableSyncTargetSlot);
     when(recentChainData.containsBlock(finalizedChainHead.getBlockRoot())).thenReturn(true);
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void finalized_shouldSelectFinalizedChainWithSlotSufficientlyAboveLocalChainHead() {
     final SlotAndBlockRoot finalizedChainHead = addPeerWithFinalizedSlot(suitableSyncTargetSlot);
-    assertThat(selector.selectSyncTarget(Optional.empty(), false))
+    assertThat(selector.selectSyncTarget(Optional.empty()))
         .contains(finalizedTarget(finalizedChainHead));
   }
 
   @Test
   void finalized_shouldNotSelectFinalizedChainWhenSlotNotSufficientlyAboveLocalChainHead() {
     addPeerWithFinalizedSlot(suitableSyncTargetSlot.minus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), false)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void finalized_shouldNotSelectFinalizedChainWhenSlotEqualToLocalChainHead() {
     addPeerWithFinalizedSlot(recentChainData.getHeadSlot());
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void finalized_shouldNotSelectFinalizedChainWhenSlotBelowLocalChainHead() {
     addPeerWithFinalizedSlot(recentChainData.getHeadSlot().minus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void finalized_shouldSelectFinalizedChainWithinSyncThresholdIfAlreadySyncing() {
     final SlotAndBlockRoot chainHead =
         addPeerWithFinalizedSlot(recentChainData.getHeadSlot().plus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), true))
+    assertThat(
+            selector.selectSyncTarget(
+                Optional.of(
+                    SyncTarget.finalizedTarget(
+                        new TargetChain(dataStructureUtil.randomSlotAndBlockRoot())))))
         .contains(finalizedTarget(chainHead));
   }
 
@@ -107,7 +111,7 @@ class SyncTargetSelectorTest {
     addPeerWithFinalizedSlot(recentChainData.getHeadSlot().plus(SYNC_THRESHOLD + 1));
 
     final SyncTarget currentSyncTarget = finalizedTarget(currentChain);
-    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget), true))
+    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget)))
         .contains(currentSyncTarget);
   }
 
@@ -118,7 +122,7 @@ class SyncTargetSelectorTest {
     addPeerToFinalizedChain(betterChain);
 
     // Switch to better chain because it has more peers
-    assertThat(selector.selectSyncTarget(Optional.of(finalizedTarget(currentChain)), true))
+    assertThat(selector.selectSyncTarget(Optional.of(finalizedTarget(currentChain))))
         .contains(finalizedTarget(betterChain));
   }
 
@@ -130,7 +134,7 @@ class SyncTargetSelectorTest {
     final SlotAndBlockRoot finalizedChain = addPeerWithFinalizedSlot(suitableSyncTargetSlot);
 
     // Should switch to the finalized chain even though it has fewer peers
-    assertThat(selector.selectSyncTarget(Optional.of(nonfinalizedTarget(nonfinalizedChain)), true))
+    assertThat(selector.selectSyncTarget(Optional.of(nonfinalizedTarget(nonfinalizedChain))))
         .contains(finalizedTarget(finalizedChain));
   }
 
@@ -139,7 +143,7 @@ class SyncTargetSelectorTest {
     final SlotAndBlockRoot finalizedHead = addPeerWithFinalizedSlot(suitableSyncTargetSlot);
     addPeerWithNonfinalizedSlot(suitableSyncTargetSlot.plus(10));
 
-    assertThat(selector.selectSyncTarget(Optional.of(finalizedTarget(finalizedHead)), true))
+    assertThat(selector.selectSyncTarget(Optional.of(finalizedTarget(finalizedHead))))
         .contains(finalizedTarget(finalizedHead));
   }
 
@@ -149,33 +153,37 @@ class SyncTargetSelectorTest {
     addPeerWithFinalizedSlot(suitableSyncTargetSlot.minus(1));
 
     final SlotAndBlockRoot expectedChain = addPeerWithNonfinalizedSlot(suitableSyncTargetSlot);
-    assertThat(selector.selectSyncTarget(Optional.empty(), false))
+    assertThat(selector.selectSyncTarget(Optional.empty()))
         .contains(nonfinalizedTarget(expectedChain));
   }
 
   @Test
   void nonfinalized_shouldNotSelectNonfinalizedChainWhenSlotNotSufficientlyAboveLocalChainHead() {
     addPeerWithNonfinalizedSlot(suitableSyncTargetSlot.minus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), false)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void nonfinalized_shouldNotSelectNonfinalizedChainWhenSlotEqualToLocalChainHead() {
     addPeerWithNonfinalizedSlot(recentChainData.getHeadSlot());
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void nonfinalized_shouldNotSelectNonfinalizedChainWhenSlotBelowLocalChainHead() {
     addPeerWithNonfinalizedSlot(recentChainData.getHeadSlot().minus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), true)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   @Test
   void nonfinalized_shouldSelectNonfinalizedChainWithinSyncThresholdIfAlreadySyncing() {
     final SlotAndBlockRoot chainHead =
         addPeerWithNonfinalizedSlot(recentChainData.getHeadSlot().plus(1));
-    assertThat(selector.selectSyncTarget(Optional.empty(), true))
+    assertThat(
+            selector.selectSyncTarget(
+                Optional.of(
+                    SyncTarget.nonfinalizedTarget(
+                        new TargetChain(dataStructureUtil.randomSlotAndBlockRoot())))))
         .contains(nonfinalizedTarget(chainHead));
   }
 
@@ -185,7 +193,7 @@ class SyncTargetSelectorTest {
         addPeerWithNonfinalizedSlot(recentChainData.getHeadSlot());
     final SlotAndBlockRoot suitableChain = addPeerWithNonfinalizedSlot(suitableSyncTargetSlot);
 
-    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(speculativeChain)), false))
+    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(speculativeChain))))
         .contains(nonfinalizedTarget(suitableChain));
   }
 
@@ -196,7 +204,7 @@ class SyncTargetSelectorTest {
     addPeerWithNonfinalizedSlot(suitableSyncTargetSlot.minus(1));
 
     // Note: speculative syncs are done without triggering sync mode
-    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(speculativeChain)), false))
+    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(speculativeChain))))
         .isEmpty();
   }
 
@@ -206,7 +214,7 @@ class SyncTargetSelectorTest {
     addPeerWithNonfinalizedSlot(recentChainData.getHeadSlot().plus(SYNC_THRESHOLD + 1));
 
     final SyncTarget currentSyncTarget = nonfinalizedTarget(currentChain);
-    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget), true))
+    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget)))
         .contains(currentSyncTarget);
   }
 
@@ -217,7 +225,7 @@ class SyncTargetSelectorTest {
     addPeerToNonfinalizedChain(chain);
     when(recentChainData.containsBlock(chain.getBlockRoot())).thenReturn(true);
 
-    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(chain)), false)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.of(speculativeTarget(chain)))).isEmpty();
   }
 
   @Test
@@ -225,8 +233,7 @@ class SyncTargetSelectorTest {
     final SlotAndBlockRoot chainHead =
         addPendingBlocks(recentChainData.getHeadSlot(), MIN_PENDING_BLOCKS);
     addPeerToNonfinalizedChain(chainHead);
-    assertThat(selector.selectSyncTarget(Optional.empty(), false))
-        .contains(speculativeTarget(chainHead));
+    assertThat(selector.selectSyncTarget(Optional.empty())).contains(speculativeTarget(chainHead));
   }
 
   @Test
@@ -239,7 +246,7 @@ class SyncTargetSelectorTest {
     addPeerToNonfinalizedChain(alternateChain);
 
     final SyncTarget currentSyncTarget = speculativeTarget(currentChain);
-    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget), false))
+    assertThat(selector.selectSyncTarget(Optional.of(currentSyncTarget)))
         .contains(currentSyncTarget);
   }
 
@@ -249,7 +256,7 @@ class SyncTargetSelectorTest {
         addPendingBlocks(recentChainData.getHeadSlot(), MIN_PENDING_BLOCKS - 1);
     addPeerToNonfinalizedChain(chainHead);
 
-    assertThat(selector.selectSyncTarget(Optional.empty(), false)).isEmpty();
+    assertThat(selector.selectSyncTarget(Optional.empty())).isEmpty();
   }
 
   private SyncTarget finalizedTarget(final SlotAndBlockRoot chainHead) {
