@@ -112,8 +112,7 @@ public class SyncController {
   }
 
   public boolean isSyncActive(final Optional<InProgressSync> sync) {
-    return sync.map(inProgressSync -> inProgressSync.isActive() && !inProgressSync.isSpeculative())
-        .orElse(false);
+    return sync.map(InProgressSync::isActivePrimarySync).orElse(false);
   }
 
   public SyncingStatus getSyncStatus() {
@@ -179,6 +178,10 @@ public class SyncController {
 
     public boolean isActive() {
       return !result.isDone();
+    }
+
+    public boolean isActivePrimarySync() {
+      return isActive() && !isSpeculative();
     }
 
     public boolean isSpeculative() {
