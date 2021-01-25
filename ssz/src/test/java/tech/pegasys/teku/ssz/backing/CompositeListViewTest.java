@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class CompositeListViewTest {
 
@@ -70,7 +71,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+        public int sszSerialize(TreeNode node, SszWriter writer) {
           return 0;
         }
 

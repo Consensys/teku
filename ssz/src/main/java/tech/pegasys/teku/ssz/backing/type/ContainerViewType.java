@@ -29,6 +29,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public abstract class ContainerViewType<C extends ContainerViewRead>
     implements CompositeViewType<C> {
@@ -147,7 +148,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerialize(TreeNode node, SszWriter writer) {
     int variableChildOffset = getFixedPartSize();
     int[] variableSizes = new int[getChildCount()];
     for (int i = 0; i < getChildCount(); i++) {
@@ -157,7 +158,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
         int size = childType.sszSerialize(childSubtree, writer);
         assert size == childType.getFixedPartSize();
       } else {
-        writer.accept(SSZType.lengthToBytes(variableChildOffset));
+        writer.write(SSZType.lengthToBytes(variableChildOffset));
         int childSize = childType.getSszSize(childSubtree);
         variableSizes[i] = childSize;
         variableChildOffset += childSize;

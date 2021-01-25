@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.base.Preconditions;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class ListViewType<ElementViewT extends ViewRead>
     extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
@@ -108,16 +112,13 @@ public class ListViewType<ElementViewT extends ViewRead>
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerialize(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      BytesCollector bytesCollector = new BytesCollector();
+      BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/);
       sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
-      Bytes allBits = bytesCollector.getAll();
-      Bytes allBitsWithBoundary = Bitlist.sszAppendLeadingBit(allBits, elementsCount);
-      writer.accept(allBitsWithBoundary);
-      return allBitsWithBoundary.size();
+      return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
     } else {
       return sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }
@@ -170,19 +171,6 @@ public class ListViewType<ElementViewT extends ViewRead>
     return ((BranchNode) listNode).left();
   }
 
-  private static class BytesCollector implements Consumer<Bytes> {
-    private final List<Bytes> bytesList = new ArrayList<>();
-
-    @Override
-    public void accept(Bytes bytes) {
-      bytesList.add(bytes);
-    }
-
-    public Bytes getAll() {
-      return Bytes.wrap(bytesList.toArray(new Bytes[0]));
-    }
-  }
-
   @Override
   public SszLengthBounds getSszLengthBounds() {
     SszLengthBounds elementLengthBounds = getElementType().getSszLengthBounds();
@@ -193,5 +181,55 @@ public class ListViewType<ElementViewT extends ViewRead>
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
     // adding 1 boundary bit for Bitlist
     return maxLenBounds.addBits(getElementType().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
+  }
+
+  private static class BytesCollector implements SszWriter {
+
+    private static class UnsafeBytes {
+      private final byte[] bytes;
+      private final int offset;
+      private final int length;
+
+      public UnsafeBytes(byte[] bytes, int offset, int length) {
+        this.bytes = bytes;
+        this.offset = offset;
+        this.length = length;
+      }
+    }
+    private final List<UnsafeBytes> bytesList = new ArrayList<>();
+    private int size;
+
+    @Override
+    public void write(byte[] bytes, int offset, int length) {
+      if (length == 0) {
+        return;
+      }
+      bytesList.add(new UnsafeBytes(bytes, offset, length));
+      size += length;
+    }
+
+    public int flushWithBoundaryBit(SszWriter writer, int boundaryBitOffset) {
+      int bitIdx = boundaryBitOffset % 8;
+      checkArgument((boundaryBitOffset + 7) / 8 == size, "Invalid boundary bit offset");
+      if (bitIdx == 0) {
+        bytesList.forEach(bb -> writer.write(bb.bytes, bb.offset, bb.length));
+        writer.write(new byte[] {1});
+        return size + 1;
+      } else {
+        UnsafeBytes lastBytes = bytesList.get(bytesList.size() - 1);
+        byte lastByte = lastBytes.bytes[lastBytes.offset + lastBytes.length - 1];
+        byte lastByteWithBoundaryBit = (byte) (lastByte ^ (1 << bitIdx));
+
+        for (int i = 0; i < bytesList.size() - 1; i++) {
+          UnsafeBytes bb = bytesList.get(i);
+          writer.write(bb.bytes, bb.offset, bb.length);
+        }
+        if (lastBytes.length > 1) {
+          writer.write(lastBytes.bytes, lastBytes.offset, lastBytes.length - 1);
+        }
+        writer.write(new byte[] {lastByteWithBoundaryBit});
+        return size;
+      }
+    }
   }
 }

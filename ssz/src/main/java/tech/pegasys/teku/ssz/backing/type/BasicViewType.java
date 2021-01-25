@@ -18,10 +18,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
  * Represents primitive view type
@@ -79,10 +81,17 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
-    Bytes ret = node.hashTreeRoot().slice(0, getSSZBytesSize());
-    writer.accept(ret);
-    return ret.size();
+  public int sszSerialize(TreeNode node, SszWriter writer) {
+    int sszBytesSize = getSSZBytesSize();
+    final Bytes nodeData;
+    if (node instanceof LeafDataNode) {
+      // small perf optimization
+      nodeData = ((LeafDataNode) node).getData();
+    } else {
+      nodeData = node.hashTreeRoot();
+    }
+    writer.write(nodeData.toArrayUnsafe(), 0, sszBytesSize);
+    return sszBytesSize;
   }
 
   @Override

@@ -31,6 +31,7 @@ import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class VectorViewType<ElementViewT extends ViewRead>
     extends CollectionViewType<ElementViewT, VectorViewRead<ElementViewT>> {
@@ -129,7 +130,7 @@ public class VectorViewType<ElementViewT extends ViewRead>
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerialize(TreeNode node, SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 

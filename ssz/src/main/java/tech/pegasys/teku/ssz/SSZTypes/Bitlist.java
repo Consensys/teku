@@ -49,22 +49,6 @@ public class Bitlist {
     }
   }
 
-  public static Bytes sszAppendLeadingBit(Bytes bytes, int length) {
-    checkArgument(length <= bytes.size() * 8 && length > (bytes.size() - 1) * 8);
-    if (length % 8 == 0) {
-      return Bytes.wrap(bytes, Bytes.of(1));
-    } else {
-      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
-      int leadingBit = 1 << (length % 8);
-      checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
-      int lastByteWithLeadingBit = lastByte ^ leadingBit;
-      // workaround for Bytes bug. See BitlistViewTest.tuweniBytesIssue() test
-      MutableBytes resultBytes = bytes.mutableCopy();
-      resultBytes.set(bytes.size() - 1, (byte) lastByteWithLeadingBit);
-      return resultBytes;
-    }
-  }
-
   public static int sszGetLengthAndValidate(Bytes bytes) {
     int numBytes = bytes.size();
     checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
