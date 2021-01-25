@@ -55,7 +55,7 @@ public class ListViewType<ElementViewT extends ViewRead>
     this.containerViewType = ContainerViewType
         .create(
             Arrays.asList(getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
-            (type, node) -> new ListContainerRead(this, type, node));
+            (type, node) -> new ListContainerRead<>(this, type, node));
   }
 
   @Override
