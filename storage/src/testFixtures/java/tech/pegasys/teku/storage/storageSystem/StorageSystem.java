@@ -31,8 +31,8 @@ import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class StorageSystem implements AutoCloseable {
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();

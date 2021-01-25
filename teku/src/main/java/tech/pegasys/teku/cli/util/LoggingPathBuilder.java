@@ -16,7 +16,7 @@ package tech.pegasys.teku.cli.util;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class LoggingPathBuilder {
   public static final String SEP = System.getProperty("file.separator");

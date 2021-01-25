@@ -11,19 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.exceptions;
+package tech.pegasys.teku.validator.api;
 
-import java.util.Optional;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+public enum ValidatorPerformanceTrackingMode {
+  LOGGING,
+  METRICS,
+  ALL,
+  NONE;
 
-public class ExceptionUtil {
+  public boolean isEnabled() {
+    return this != NONE;
+  }
 
-  @SuppressWarnings("unchecked")
-  public static <T extends Throwable> Optional<T> getCause(
-      final Throwable err, Class<T> targetType) {
-    return ExceptionUtils.getThrowableList(err).stream()
-        .filter(targetType::isInstance)
-        .map(e -> (T) e)
-        .findFirst();
+  public boolean isMetricsEnabled() {
+    return this != NONE && this != LOGGING;
+  }
+
+  public boolean isLoggingEnabled() {
+    return this != NONE && this != METRICS;
   }
 }

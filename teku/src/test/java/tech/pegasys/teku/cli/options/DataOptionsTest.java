@@ -14,8 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.config.StateStorageMode.ARCHIVE;
-import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;

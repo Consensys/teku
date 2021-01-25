@@ -23,9 +23,9 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.PortAvailability;
 
 public class NetworkConfig {
   private static final Logger LOG = LogManager.getLogger();

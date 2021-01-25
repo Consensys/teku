@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
+package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +29,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeyStoreFilesLocatorTest {
   private static final String PATH_SEP = System.getProperty("path.separator");

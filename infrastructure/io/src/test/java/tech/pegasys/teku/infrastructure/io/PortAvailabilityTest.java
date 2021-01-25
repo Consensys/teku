@@ -11,65 +11,64 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package tech.pegasys.teku.infrastructure.io;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class PortAvailabilityTest {
 
   @Test
   void isValidPort_shouldRejectBelowBounds() {
-    assertThat(PortAvailability.isPortValid(-1)).isFalse();
+    Assertions.assertThat(PortAvailability.isPortValid(-1)).isFalse();
   }
 
   @Test
   void isValidPort_shouldRejectAboveBounds() {
-    assertThat(PortAvailability.isPortValid(65536)).isFalse();
+    Assertions.assertThat(PortAvailability.isPortValid(65536)).isFalse();
   }
 
   @Test
   void isValidPort_shouldBeValidInsideBounds() {
-    assertThat(PortAvailability.isPortValid(0)).isTrue();
-    assertThat(PortAvailability.isPortValid(1)).isTrue();
-    assertThat(PortAvailability.isPortValid(1025)).isTrue();
-    assertThat(PortAvailability.isPortValid(65535)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortValid(0)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortValid(1)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortValid(1025)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortValid(65535)).isTrue();
   }
 
   @Test
   void shouldDetectPortNotAvailableForTcp() throws IOException {
     try (final ServerSocket serverSocket = new ServerSocket(0)) {
       final int port = serverSocket.getLocalPort();
-      assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
-      assertThat(PortAvailability.isPortAvailable(port)).isFalse();
+      Assertions.assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
+      Assertions.assertThat(PortAvailability.isPortAvailable(port)).isFalse();
     }
   }
 
   @Test
   void shouldDetectPortAvailableForTcp() {
     final int port = 0;
-    assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailable(port)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortAvailable(port)).isTrue();
   }
 
   @Test
   void shouldDetectPortAvailableForUdp() {
     final int port = 0;
-    assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailable(port)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
+    Assertions.assertThat(PortAvailability.isPortAvailable(port)).isTrue();
   }
 
   @Test
   void shouldDetectPortNotAvailableForUdp() throws SocketException {
     try (final DatagramSocket datagramSocket = new DatagramSocket(0)) {
       final int port = datagramSocket.getPort();
-      assertThat(PortAvailability.isPortAvailableForUdp(port)).isFalse();
-      assertThat(PortAvailability.isPortAvailable(port)).isFalse();
+      Assertions.assertThat(PortAvailability.isPortAvailableForUdp(port)).isFalse();
+      Assertions.assertThat(PortAvailability.isPortAvailable(port)).isFalse();
     }
   }
 }
