@@ -51,6 +51,7 @@ public class SignedBeaconBlockHeader
 
   public SignedBeaconBlockHeader(final BeaconBlockHeader message, final BLSSignature signature) {
     super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    signatureCache = signature;
   }
 
   public BeaconBlockHeader getMessage() {
@@ -58,7 +59,10 @@ public class SignedBeaconBlockHeader
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override
