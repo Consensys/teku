@@ -15,8 +15,8 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.teku.util.exceptions.ExceptionUtil.exceptionHandlingConsumer;
-import static tech.pegasys.teku.util.exceptions.ExceptionUtil.exceptionHandlingRunnable;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingConsumer;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingRunnable;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
