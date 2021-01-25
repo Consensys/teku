@@ -15,6 +15,8 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingConsumer;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingRunnable;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
@@ -115,7 +117,8 @@ public class BatchSync implements Sync {
   @Override
   public SafeFuture<SyncResult> syncToChain(final TargetChain targetChain) {
     final SafeFuture<SyncResult> result = new SafeFuture<>();
-    eventThread.execute(() -> switchSyncTarget(targetChain, result));
+    eventThread.execute(
+        exceptionHandlingRunnable(() -> switchSyncTarget(targetChain, result), result));
     return result;
   }
 
@@ -144,7 +147,7 @@ public class BatchSync implements Sync {
 
   private SafeFuture<UInt64> getCommonAncestorSlot() {
     final SafeFuture<UInt64> commonAncestor = commonAncestorFinder.findCommonAncestor(targetChain);
-    commonAncestor.thenRunAsync(this::progressSync, eventThread).reportExceptions();
+    commonAncestor.thenRunAsync(this::progressSync, eventThread).propagateExceptionTo(syncResult);
     return commonAncestor;
   }
 
@@ -303,7 +306,7 @@ public class BatchSync implements Sync {
               batchImporter
                   .importBatch(batch)
                   .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
-                  .reportExceptions();
+                  .propagateExceptionTo(syncResult);
             });
   }
 
@@ -410,9 +413,11 @@ public class BatchSync implements Sync {
   }
 
   private void fillRetrievingQueue() {
-    if (commonAncestorSlot.isDone() && !commonAncestorSlot.isCompletedExceptionally()) {
+    if (commonAncestorSlot.isCompletedNormally()) {
       batchDataRequester.fillRetrievingQueue(
-          targetChain, commonAncestorSlot.join(), this::onBatchReceivedBlocks);
+          targetChain,
+          commonAncestorSlot.join(),
+          exceptionHandlingConsumer(this::onBatchReceivedBlocks, syncResult));
     }
   }
 
