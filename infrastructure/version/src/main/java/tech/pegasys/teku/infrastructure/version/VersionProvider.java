@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.cli;
+package tech.pegasys.teku.infrastructure.version;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;

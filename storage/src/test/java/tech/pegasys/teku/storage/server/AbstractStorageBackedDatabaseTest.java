@@ -36,7 +36,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
   private final List<File> tmpDirectories = new ArrayList<>();
