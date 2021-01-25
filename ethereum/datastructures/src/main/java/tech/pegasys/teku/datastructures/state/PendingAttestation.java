@@ -38,13 +38,16 @@ public class PendingAttestation
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
+  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE = new ListViewType<>(
+      BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+
   static class PendingAttestationType
       extends ContainerType4<
           PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
 
     public PendingAttestationType() {
       super(
-          new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+          AGGREGATION_BITS_TYPE,
           AttestationData.TYPE,
           BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.UINT64_TYPE);
@@ -69,7 +72,7 @@ public class PendingAttestation
       UInt64 proposer_index) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(aggregation_bitfield),
+        ViewUtils.createBitlistView(AGGREGATION_BITS_TYPE, aggregation_bitfield),
         data,
         new UInt64View(inclusion_delay),
         new UInt64View(proposer_index));

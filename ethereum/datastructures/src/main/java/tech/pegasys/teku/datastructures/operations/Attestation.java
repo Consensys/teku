@@ -42,13 +42,16 @@ public class Attestation
         Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
+  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE = new ListViewType<>(
+      BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+
   public static class AttestationType
       extends ContainerType3<
           Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
     public AttestationType() {
       super(
-          new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+          AGGREGATION_BITS_TYPE,
           AttestationData.TYPE,
           new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
     }
@@ -71,7 +74,7 @@ public class Attestation
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(aggregation_bits),
+        ViewUtils.createBitlistView(AGGREGATION_BITS_TYPE, aggregation_bits),
         data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;

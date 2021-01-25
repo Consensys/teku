@@ -82,14 +82,13 @@ public class ViewUtils {
    * from {@link Bitlist} value
    */
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
-    ListViewWrite<BitView> viewWrite =
-        new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
-            .getDefault()
-            .createWritableCopy();
-    for (int i = 0; i < bitlist.getCurrentSize(); i++) {
-      viewWrite.append(BitView.viewOf(bitlist.getBit(i)));
-    }
-    return viewWrite.commitChanges();
+    return createBitlistView(new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize()),
+        bitlist);
+  }
+
+  public static ListViewRead<BitView> createBitlistView(ListViewType<BitView> type,
+      Bitlist bitlist) {
+    return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 
   /** Converts list of bits to {@link Bitlist} value */
