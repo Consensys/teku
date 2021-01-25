@@ -52,4 +52,11 @@ public class SszPendingAttestationBenchmark
   public static void main(String[] args) {
     new SszPendingAttestationBenchmark().customRun(10, 100000);
   }
+
+  public static void main1(String[] args) {
+    SszPendingAttestationBenchmark benchmark = new SszPendingAttestationBenchmark();
+    while (true) {
+      benchmark.benchCreate(benchmark.blackhole);
+    }
+  }
 }

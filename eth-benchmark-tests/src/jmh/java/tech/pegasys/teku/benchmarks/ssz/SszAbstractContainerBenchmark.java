@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -28,89 +29,62 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-//@Threads(1)
-//@State(Scope.Thread)
-//@Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-//@Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializable> {
+@Threads(1)
+@State(Scope.Thread)
+@Fork(1)
+@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializable> {
   protected final Blackhole blackhole =
       new Blackhole(
           "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
-  //  private final ContainerViewType<TView> containerType = getType();
   private final TView aContainer = createContainer();
   private final Bytes aContainerSsz = SimpleOffsetSerializer.serialize(aContainer);
-  //  private final TreeNode aContainerTree = aContainer.getBackingNode();
 
-  // Workaround for IDEA JMH plugin: it doesn't like abstract 'State' benchmarks
-  protected TView createContainer() {
-    throw new UnsupportedOperationException("To override");
-  }
+  protected abstract TView createContainer();
 
-  protected Class<TView> getContainerClass() {
-    throw new UnsupportedOperationException("To override");
-  }
+  protected abstract Class<TView> getContainerClass();
 
-  //  protected ContainerViewType<TView> getType() {
-  //    throw new UnsupportedOperationException("To override");
-  //  }
+  protected abstract void iterateData(TView container, Blackhole bh);
 
-  protected void iterateData(TView container, Blackhole bh) {
-    throw new UnsupportedOperationException("To override");
-  }
-
-//  @Benchmark
+  @Benchmark
   public void benchCreate(Blackhole bh) {
     bh.consume(createContainer());
   }
 
-//  @Benchmark
+  @Benchmark
   public void benchIterate(Blackhole bh) {
     iterateData(aContainer, bh);
   }
 
-//  @Benchmark
+  @Benchmark
   public void benchCreateAndIterate(Blackhole bh) {
     TView container = createContainer();
     iterateData(container, bh);
   }
 
-  //  @Benchmark
-  //  public void benchCreateFromTree(Blackhole bh) {
-  //    bh.consume(containerType.createFromBackingNode(aContainerTree));
-  //  }
-  //
-  //  @Benchmark
-  //  public void benchCreateFromTreeAndIterate(Blackhole bh) {
-  //    TView container = containerType.createFromBackingNode(aContainerTree);
-  //    iterateData(container);
-  //  }
-
-//  @Benchmark
+  @Benchmark
   public void benchSerialize(Blackhole bh) {
     bh.consume(SimpleOffsetSerializer.serialize(aContainer));
   }
 
-//  @Benchmark
+  @Benchmark
   public void benchDeserialize(Blackhole bh) {
     bh.consume(SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass()));
   }
 
-//  @Benchmark
+  @Benchmark
   public void benchDeserializeAndIterate(Blackhole bh) {
     TView container1 = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
     iterateData(container1, bh);
   }
-
-
 
   public void customRun(int runs, int runLength) {
     Map<String, Consumer<Blackhole>> benches = new LinkedHashMap<>();
     benches.put("benchCreate", this::benchCreate);
     benches.put("benchIterate", this::benchIterate);
     benches.put("benchCreateAndIterate", this::benchCreateAndIterate);
-    //        this::benchCreateFromTree,
-    //        this::benchCreateFromTreeAndIterate,
     benches.put("benchSerialize", this::benchSerialize);
     benches.put("benchDeserialize", this::benchDeserialize);
     benches.put("benchDeserializeAndIterate", this::benchDeserializeAndIterate);

@@ -53,6 +53,7 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
     return BeaconBlockBody.class;
   }
 
+  @Override
   protected void iterateData(BeaconBlockBody bbb, Blackhole bh) {
     SszBenchUtil.iterateData(bbb, bh);
   }
