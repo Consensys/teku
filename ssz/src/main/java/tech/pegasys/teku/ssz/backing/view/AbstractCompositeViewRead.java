@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.function.IntFunction;
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -36,7 +37,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
     implements CompositeViewRead<ChildType> {
 
-  private IntCache<ChildType> childrenViewCache;
+  private final IntCache<ChildType> childrenViewCache;
   private final int sizeCache;
   private final CompositeViewType<?> type;
   private final TreeNode backingNode;
