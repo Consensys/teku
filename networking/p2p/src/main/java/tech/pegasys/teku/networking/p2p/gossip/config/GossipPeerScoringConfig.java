@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.p2p.gossip.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class GossipPeerScoringConfig {
   private final List<NodeId> directPeers;
   private final PeerScorer appSpecificScore;
   private final double appSpecificWeight;
-  private final List<Inet4Address> whitelistedIps;
+  private final List<InetAddress> whitelistedIps;
   private final double ipColocationFactorWeight;
   private final int ipColocationFactorThreshold;
   private final double behaviourPenaltyWeight;
@@ -41,7 +41,7 @@ public class GossipPeerScoringConfig {
       final List<NodeId> directPeers,
       final PeerScorer appSpecificScore,
       final double appSpecificWeight,
-      final List<Inet4Address> whitelistedIps,
+      final List<InetAddress> whitelistedIps,
       final double ipColocationFactorWeight,
       final int ipColocationFactorThreshold,
       final double behaviourPenaltyWeight,
@@ -85,7 +85,7 @@ public class GossipPeerScoringConfig {
     return appSpecificWeight;
   }
 
-  public List<Inet4Address> getWhitelistedIps() {
+  public List<InetAddress> getWhitelistedIps() {
     return whitelistedIps;
   }
 
@@ -126,7 +126,7 @@ public class GossipPeerScoringConfig {
     private List<NodeId> directPeers = new ArrayList<>();
     private PeerScorer appSpecificScore = PeerScorer.NOOP;
     private Double appSpecificWeight = 0.0;
-    private List<Inet4Address> whitelistedIps = new ArrayList<>();
+    private List<InetAddress> whitelistedIps = new ArrayList<>();
     private Double ipColocationFactorWeight = 0.0;
     private Integer ipColocationFactorThreshold = 0;
     private Double behaviourPenaltyWeight = 0.0;
@@ -179,7 +179,7 @@ public class GossipPeerScoringConfig {
       return this;
     }
 
-    public Builder whitelistedIps(final List<Inet4Address> whitelistedIps) {
+    public Builder whitelistedIps(final List<InetAddress> whitelistedIps) {
       checkNotNull(whitelistedIps);
       this.whitelistedIps = whitelistedIps;
       return this;
