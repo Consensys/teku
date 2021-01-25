@@ -37,12 +37,12 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.sync.events.SyncStateTracker;
-import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 public class ValidatorApiHandlerIntegrationTest {

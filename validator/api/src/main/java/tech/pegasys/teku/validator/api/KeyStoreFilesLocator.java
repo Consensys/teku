@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
+package tech.pegasys.teku.validator.api;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,8 +29,9 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
-public class KeyStoreFilesLocator {
+class KeyStoreFilesLocator {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Path, Path> pathMap = new HashMap<>();
   private final List<String> colonSeparatedPairs;

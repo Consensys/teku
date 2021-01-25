@@ -16,8 +16,8 @@ package tech.pegasys.teku.cli.options;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class DataStorageOptions {
   @CommandLine.Option(
