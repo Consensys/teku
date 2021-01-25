@@ -51,7 +51,12 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
   }
 
   @Override
-  public abstract C createFromBackingNode(TreeNode node, int internalIndex);
+  public final C createFromBackingNode(TreeNode node, int internalIndex) {
+    assert node instanceof LeafDataNode;
+    return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
+  }
+
+  public abstract C createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
   public TreeNode createBackingNode(C newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
