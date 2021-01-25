@@ -11,16 +11,18 @@
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
 ## Next Release
-- Use advertised IP via (--p2p-advertised-ip) regardless of the IP returned by the discv5 PONG responses. This is particularly useful when using setups like docker and having some peers within the docker network but wanting discovery to work external to that network.
+
+### Additions and Improvements
+- `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
 - Implement missing API event streams: block, attestation, voluntary_exit. Now Teku fully supports event streams, on top of the Teku-specific sync-state event stream.
+- If an advertised IP is set via `--p2p-advertised-ip` it is always used, regardless of the external IP discovered via the discv5 process.
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
 - Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
 - Fixed validator client timeout when reading from the event stream to avoid unnecessary reconnections.
+- Reduced bandwidth usage during a forward sync by skipping requesting parents of blocks received via gossip as they are likely to be retrieved via the forward sync more efficiently.
 
-### Additions and Improvements
-- `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
 
 ## 21.1.0
 
