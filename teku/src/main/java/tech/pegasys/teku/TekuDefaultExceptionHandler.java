@@ -25,11 +25,11 @@ import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public final class TekuDefaultExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
