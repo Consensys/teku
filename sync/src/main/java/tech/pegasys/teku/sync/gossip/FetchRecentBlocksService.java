@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 
@@ -43,6 +44,7 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   private static final RetryDelayFunction RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
+  private final ForwardSync forwardSync;
   private final int maxConcurrentRequests;
   private final P2PNetwork<Eth2Peer> eth2Network;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
@@ -59,9 +61,11 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final ForwardSync forwardSync,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
       final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
+    this.forwardSync = forwardSync;
     this.maxConcurrentRequests = maxConcurrentRequests;
     this.eth2Network = eth2Network;
     this.pendingBlocksPool = pendingBlocksPool;
@@ -71,11 +75,13 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
-      final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
+      final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final ForwardSync forwardSync) {
     return new FetchRecentBlocksService(
         asyncRunner,
         eth2Network,
         pendingBlocksPool,
+        forwardSync,
         FetchBlockTask::create,
         MAX_CONCURRENT_REQUESTS);
   }
@@ -103,10 +109,24 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   private void setupSubscribers() {
     this.pendingBlocksPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
     this.pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+    forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
+  }
+
+  private void onSyncStatusChanged(final boolean syncActive) {
+    if (syncActive) {
+      return;
+    }
+    // Ensure we are requesting the parents of any pending blocks not already filled in by the sync
+    // We may have ignored these requested blocks while the sync was in progress
+    pendingBlocksPool.getAllRequiredBlockRoots().forEach(this::requestRecentBlock);
   }
 
   @Override
   public void requestRecentBlock(final Bytes32 blockRoot) {
+    if (forwardSync.isSyncActive()) {
+      // Forward sync already in progress, assume it will fetch any missing blocks
+      return;
+    }
     if (pendingBlocksPool.contains(blockRoot)) {
       // We've already got this block
       return;
