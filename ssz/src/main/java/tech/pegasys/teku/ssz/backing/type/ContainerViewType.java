@@ -177,10 +177,11 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
-    List<Integer> variableChildrenOffsets = new ArrayList<>();
     int endOffset = reader.getAvailableBytes();
-    for (int i = 0; i < getChildCount(); i++) {
+    int childCount = getChildCount();
+    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
+    List<Integer> variableChildrenOffsets = new ArrayList<>(childCount);
+    for (int i = 0; i < childCount; i++) {
       ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
@@ -206,18 +207,19 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
     variableChildrenOffsets.add(endOffset);
 
-    ArrayDeque<Integer> variableChildrenSizes =
-        IntStream.range(0, variableChildrenOffsets.size() - 1)
-            .map(i -> variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i))
-            .boxed()
-            .collect(Collectors.toCollection(ArrayDeque::new));
+    ArrayDeque<Integer> variableChildrenSizes = new ArrayDeque<>(
+        variableChildrenOffsets.size() - 1);
+    for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
+      variableChildrenSizes
+          .add(variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i));
+    }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
       throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
     }
 
-    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
-    for (int i = 0; i < getChildCount(); i++) {
+    List<TreeNode> childrenSubtrees = new ArrayList<>(childCount);
+    for (int i = 0; i < childCount; i++) {
       ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         childrenSubtrees.add(fixedChildrenSubtrees.remove());
