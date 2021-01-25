@@ -18,7 +18,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
@@ -82,12 +81,12 @@ public class ViewUtils {
    * from {@link Bitlist} value
    */
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
-    return createBitlistView(new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize()),
-        bitlist);
+    return createBitlistView(
+        new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize()), bitlist);
   }
 
-  public static ListViewRead<BitView> createBitlistView(ListViewType<BitView> type,
-      Bitlist bitlist) {
+  public static ListViewRead<BitView> createBitlistView(
+      ListViewType<BitView> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 

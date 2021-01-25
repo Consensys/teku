@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 
 public class ListViewWriteImpl<
         ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
@@ -37,7 +36,8 @@ public class ListViewWriteImpl<
       extends ContainerViewWriteImpl {
     private final ListViewType<ElementReadType> listType;
 
-    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView,
+    public ListContainerWrite(
+        ListContainerRead<ElementReadType> backingImmutableView,
         ListViewType<ElementReadType> type) {
       super(backingImmutableView);
       listType = type;

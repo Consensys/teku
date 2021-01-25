@@ -17,17 +17,13 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
-public class SszAttestationBenchmark
-    extends SszAbstractContainerBenchmark<Attestation> {
+public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
 
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
-  private static final Attestation anAttestation =
-      dataStructureUtil.randomAttestation();
+  private static final Attestation anAttestation = dataStructureUtil.randomAttestation();
 
   private static final Bitlist aggregation_bits = anAttestation.getAggregation_bits();
   private static final AttestationData attestationData = anAttestation.getData();
@@ -35,8 +31,7 @@ public class SszAttestationBenchmark
 
   @Override
   protected Attestation createContainer() {
-    return new Attestation(
-        aggregation_bits, attestationData, signature);
+    return new Attestation(aggregation_bits, attestationData, signature);
   }
 
   @Override

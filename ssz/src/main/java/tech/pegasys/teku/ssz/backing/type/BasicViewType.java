@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;

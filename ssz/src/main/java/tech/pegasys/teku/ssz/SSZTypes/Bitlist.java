@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bitlist {
 

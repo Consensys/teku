@@ -18,7 +18,6 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;

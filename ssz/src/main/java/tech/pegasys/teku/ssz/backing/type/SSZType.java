@@ -14,9 +14,7 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import java.nio.ByteOrder;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszByteArrayWriter;

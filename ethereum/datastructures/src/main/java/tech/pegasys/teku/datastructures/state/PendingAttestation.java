@@ -38,8 +38,8 @@ public class PendingAttestation
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE = new ListViewType<>(
-      BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE =
+      new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
 
   static class PendingAttestationType
       extends ContainerType4<

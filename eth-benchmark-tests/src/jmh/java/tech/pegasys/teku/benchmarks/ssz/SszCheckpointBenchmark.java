@@ -15,16 +15,10 @@ package tech.pegasys.teku.benchmarks.ssz;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
-public class SszCheckpointBenchmark
-    extends SszAbstractContainerBenchmark<Checkpoint> {
+public class SszCheckpointBenchmark extends SszAbstractContainerBenchmark<Checkpoint> {
 
   private static final Bytes32 ROOT = Bytes32.random();
 

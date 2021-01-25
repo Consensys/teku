@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -127,8 +126,7 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     return bytesCnt[0];
   }
 
-  private int sszSerializeVariableVector(
-      TreeNode vectorNode, SszWriter writer, int elementsCount) {
+  private int sszSerializeVariableVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
     ViewType<?> elementType = getElementType();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {

@@ -42,8 +42,8 @@ public class Attestation
         Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE = new ListViewType<>(
-      BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE =
+      new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
 
   public static class AttestationType
       extends ContainerType3<

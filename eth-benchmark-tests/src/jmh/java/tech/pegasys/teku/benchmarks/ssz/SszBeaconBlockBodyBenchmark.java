@@ -15,19 +15,6 @@ package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {
@@ -65,9 +52,9 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
   public static void main1(String[] args) {
     SszBeaconBlockBodyBenchmark bench = new SszBeaconBlockBodyBenchmark();
     long cnt = 0;
-    while(true) {
+    while (true) {
       bench.benchDeserializeAndIterate(bench.blackhole);
-//      bench.benchIterate(bench.blackhole);
+      //      bench.benchIterate(bench.blackhole);
       if (cnt % 10000 == 0) {
         System.out.println("Iterated: " + cnt);
       }

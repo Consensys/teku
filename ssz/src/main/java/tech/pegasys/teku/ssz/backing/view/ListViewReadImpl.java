@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.Arrays;
 import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
@@ -21,10 +20,8 @@ import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
 
 /**
@@ -33,7 +30,8 @@ import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
  */
 public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewRead<ElementType> {
 
-  public static class ListContainerRead<ElementType extends ViewRead> extends ContainerViewReadImpl {
+  public static class ListContainerRead<ElementType extends ViewRead>
+      extends ContainerViewReadImpl {
     private final ListViewType<ElementType> type;
 
     private ListContainerRead(ListViewType<ElementType> type) {
@@ -41,8 +39,8 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
       this.type = type;
     }
 
-    public ListContainerRead(ListViewType<ElementType> type,
-        ContainerViewType<?> containerType, TreeNode backingNode) {
+    public ListContainerRead(
+        ListViewType<ElementType> type, ContainerViewType<?> containerType, TreeNode backingNode) {
       super(containerType, backingNode);
       this.type = type;
     }

@@ -17,7 +17,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -104,8 +103,8 @@ public class DepositData
 
   public BLSPublicKey getPubkey() {
     if (pubkeyCache == null) {
-      pubkeyCache = BLSPublicKey
-          .fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+      pubkeyCache =
+          BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
     }
     return pubkeyCache;
   }

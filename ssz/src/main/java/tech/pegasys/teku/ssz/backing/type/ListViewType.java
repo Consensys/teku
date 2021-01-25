@@ -15,12 +15,10 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
@@ -50,10 +48,10 @@ public class ListViewType<ElementViewT extends ViewRead>
 
   public ListViewType(ViewType<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
-    this.compatibleVectorType = new VectorViewType<>(getElementType(), getMaxLength(), true,
-        getHints());
-    this.containerViewType = ContainerViewType
-        .create(
+    this.compatibleVectorType =
+        new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+    this.containerViewType =
+        ContainerViewType.create(
             Arrays.asList(getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
             (type, node) -> new ListContainerRead<>(this, type, node));
   }
@@ -116,7 +114,7 @@ public class ListViewType<ElementViewT extends ViewRead>
     int elementsCount = getLength(node);
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/);
+      BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
       sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
       return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
     } else {
@@ -196,6 +194,7 @@ public class ListViewType<ElementViewT extends ViewRead>
         this.length = length;
       }
     }
+
     private final List<UnsafeBytes> bytesList = new ArrayList<>();
     private int size;
 

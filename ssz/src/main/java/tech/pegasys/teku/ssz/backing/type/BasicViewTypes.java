@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;

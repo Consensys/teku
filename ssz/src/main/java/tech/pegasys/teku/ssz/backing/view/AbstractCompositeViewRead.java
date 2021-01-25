@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.function.IntFunction;
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;

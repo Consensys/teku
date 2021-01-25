@@ -19,10 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -207,11 +204,11 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
     variableChildrenOffsets.add(endOffset);
 
-    ArrayDeque<Integer> variableChildrenSizes = new ArrayDeque<>(
-        variableChildrenOffsets.size() - 1);
+    ArrayDeque<Integer> variableChildrenSizes =
+        new ArrayDeque<>(variableChildrenOffsets.size() - 1);
     for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
-      variableChildrenSizes
-          .add(variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i));
+      variableChildrenSizes.add(
+          variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i));
     }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
