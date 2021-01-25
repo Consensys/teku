@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.cli;
+package tech.pegasys.teku.infrastructure.version;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.cli.VersionProvider.ENV_HOME;
-import static tech.pegasys.teku.util.cli.VersionProvider.ENV_LOCALAPPDATA;
-import static tech.pegasys.teku.util.cli.VersionProvider.ENV_XDG_DATA_HOME;
+import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_HOME;
+import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_LOCALAPPDATA;
+import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_XDG_DATA_HOME;
 
 import java.util.Map;
 import org.apache.logging.log4j.util.Strings;

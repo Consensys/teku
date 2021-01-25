@@ -51,7 +51,7 @@ import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;

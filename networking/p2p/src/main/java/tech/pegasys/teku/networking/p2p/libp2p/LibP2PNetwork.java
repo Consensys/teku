@@ -65,7 +65,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 

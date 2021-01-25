@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public abstract class DataOptions {
 

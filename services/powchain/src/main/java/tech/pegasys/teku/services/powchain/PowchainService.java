@@ -44,7 +44,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class PowchainService extends Service {
 

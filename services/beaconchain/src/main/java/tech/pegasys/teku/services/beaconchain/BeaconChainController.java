@@ -119,7 +119,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
