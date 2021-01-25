@@ -28,11 +28,14 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-@Threads(1)
-@State(Scope.Thread)
-@Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+//@Threads(1)
+//@State(Scope.Thread)
+//@Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+//@Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
 public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializable> {
+  protected final Blackhole blackhole =
+      new Blackhole(
+          "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
   //  private final ContainerViewType<TView> containerType = getType();
   private final TView aContainer = createContainer();
@@ -56,17 +59,17 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
     throw new UnsupportedOperationException("To override");
   }
 
-  @Benchmark
+//  @Benchmark
   public void benchCreate(Blackhole bh) {
     bh.consume(createContainer());
   }
 
-  @Benchmark
+//  @Benchmark
   public void benchIterate(Blackhole bh) {
     iterateData(aContainer, bh);
   }
 
-  @Benchmark
+//  @Benchmark
   public void benchCreateAndIterate(Blackhole bh) {
     TView container = createContainer();
     iterateData(container, bh);
@@ -83,27 +86,25 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
   //    iterateData(container);
   //  }
 
-  @Benchmark
+//  @Benchmark
   public void benchSerialize(Blackhole bh) {
     bh.consume(SimpleOffsetSerializer.serialize(aContainer));
   }
 
-  @Benchmark
+//  @Benchmark
   public void benchDeserialize(Blackhole bh) {
     bh.consume(SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass()));
   }
 
-  @Benchmark
+//  @Benchmark
   public void benchDeserializeAndIterate(Blackhole bh) {
     TView container1 = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
     iterateData(container1, bh);
   }
 
-  public void customRun(int runs, int runLength) {
-    Blackhole blackhole =
-        new Blackhole(
-            "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
+
+  public void customRun(int runs, int runLength) {
     Map<String, Consumer<Blackhole>> benches = new LinkedHashMap<>();
     benches.put("benchCreate", this::benchCreate);
     benches.put("benchIterate", this::benchIterate);
@@ -119,11 +120,11 @@ public class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializabl
       Consumer<Blackhole> bench = entry.getValue();
       System.out.print("Bench #" + entry.getKey() + ": ");
       for (int j = 0; j < runs; j++) {
-        long s = System.currentTimeMillis();
+        long s = System.nanoTime();
         for (int k = 0; k < runLength; k++) {
           bench.accept(blackhole);
         }
-        long t = System.currentTimeMillis() - s;
+        long t = (System.nanoTime() - s) / 1_000_000;
         System.out.print(t + " ");
       }
       System.out.println();

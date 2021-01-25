@@ -39,11 +39,6 @@ public class SszPendingAttestationBenchmark
         aggregation_bits, attestationData, inclusion_delay, proposer_index);
   }
 
-  //  @Override
-  //  protected ContainerViewType<PendingAttestation> getType() {
-  //    return PendingAttestation.TYPE;
-  //  }
-
   @Override
   protected Class<PendingAttestation> getContainerClass() {
     return PendingAttestation.class;
@@ -51,26 +46,10 @@ public class SszPendingAttestationBenchmark
 
   @Override
   protected void iterateData(PendingAttestation pa, Blackhole bh) {
-    bh.consume(pa.getAggregation_bits());
-    bh.consume(pa.getInclusion_delay());
-    bh.consume(pa.getProposer_index());
-    iterateData(pa.getData(), bh);
-  }
-
-  private void iterateData(AttestationData ad, Blackhole bh) {
-    bh.consume(ad.getSlot());
-    bh.consume(ad.getIndex());
-    bh.consume(ad.getEarliestSlotForForkChoice());
-    iterateData(ad.getSource(), bh);
-    iterateData(ad.getTarget(), bh);
-  }
-
-  private void iterateData(Checkpoint cp, Blackhole bh) {
-    bh.consume(cp.getEpoch());
-    bh.consume(cp.getRoot());
+    SszBenchUtil.iterateData(pa, bh);
   }
 
   public static void main(String[] args) {
-    new SszPendingAttestationBenchmark().customRun(5, 10000);
+    new SszPendingAttestationBenchmark().customRun(10, 100000);
   }
 }
