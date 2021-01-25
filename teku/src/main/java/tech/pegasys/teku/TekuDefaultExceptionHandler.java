@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.util.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public final class TekuDefaultExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
