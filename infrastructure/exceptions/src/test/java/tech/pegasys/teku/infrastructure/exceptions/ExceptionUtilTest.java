@@ -14,8 +14,14 @@
 package tech.pegasys.teku.infrastructure.exceptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExceptionUtilTest {
 
@@ -60,6 +66,58 @@ public class ExceptionUtilTest {
 
     // Match error
     assertThat(ExceptionUtil.getCause(err, RuntimeException.class)).contains(err);
+  }
+
+  @Test
+  void exceptionHandlingRunnable_shouldPropagateExceptionInRunnable() {
+    final SafeFuture<Void> future = new SafeFuture<>();
+    final RuntimeException exception = new RuntimeException("oops");
+    final Runnable delegate = mock(Runnable.class);
+    doThrow(exception).when(delegate).run();
+    final Runnable runnable = ExceptionUtil.exceptionHandlingRunnable(delegate, future);
+    runnable.run();
+    verify(delegate).run();
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::join).hasRootCause(exception);
+  }
+
+  @Test
+  void exceptionHandlingRunnable_shouldNotCompleteFutureWhenRunnableCompletesNormally() {
+    final SafeFuture<Void> future = new SafeFuture<>();
+    final Runnable delegate = mock(Runnable.class);
+    final Runnable runnable = ExceptionUtil.exceptionHandlingRunnable(delegate, future);
+    runnable.run();
+
+    verify(delegate).run();
+    assertThat(future).isNotCompleted();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void exceptionHandlingConsumer_shouldPropagateExceptionInConsumer() {
+    final SafeFuture<Void> future = new SafeFuture<>();
+    final RuntimeException exception = new RuntimeException("oops");
+    final String value = "the value";
+    final Consumer<String> delegate = mock(Consumer.class);
+    doThrow(exception).when(delegate).accept(value);
+    final Consumer<String> consumer = ExceptionUtil.exceptionHandlingConsumer(delegate, future);
+    consumer.accept(value);
+    verify(delegate).accept(value);
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::join).hasRootCause(exception);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void exceptionHandlingConsumer_shouldNotCompleteFutureWhenRunnableCompletesNormally() {
+    final SafeFuture<Void> future = new SafeFuture<>();
+    final String value = "the value";
+    final Consumer<String> delegate = mock(Consumer.class);
+    final Consumer<String> consumer = ExceptionUtil.exceptionHandlingConsumer(delegate, future);
+    consumer.accept(value);
+
+    verify(delegate).accept(value);
+    assertThat(future).isNotCompleted();
   }
 
   private static class CustomRuntimeException extends RuntimeException {}
