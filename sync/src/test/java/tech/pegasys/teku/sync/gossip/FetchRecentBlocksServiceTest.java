@@ -257,7 +257,7 @@ public class FetchRecentBlocksServiceTest {
 
     final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);
-    recentBlockFetcher.start();
+    assertThat(recentBlockFetcher.start()).isCompleted();
     verify(forwardSync).subscribeToSyncChanges(syncListenerCaptor.capture());
     final SyncSubscriber syncSubscriber = syncListenerCaptor.getValue();
 
