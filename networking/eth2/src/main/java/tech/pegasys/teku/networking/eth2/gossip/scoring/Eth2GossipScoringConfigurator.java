@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.scoring;
 
-import io.libp2p.pubsub.gossip.builders.GossipTopicScoreParamsBuilder;
 import java.time.Duration;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
@@ -22,8 +21,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringBuilder;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringBuilder;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 
 /**
  * These calculations have been derived following the gossip scoring implementation from Lighthouse
@@ -40,7 +40,7 @@ class Eth2GossipScoringConfigurator {
     this.scoringConfig = scoringConfig;
   }
 
-  public void configure(final GossipScoringBuilder builder) {
+  public void configure(final GossipScoringConfig.Builder builder) {
     final double maxPositiveScore = scoringConfig.getMaxPositiveScore();
 
     final double behaviorPenaltyThreshold = 6.0;
@@ -73,10 +73,10 @@ class Eth2GossipScoringConfigurator {
 
     // Configure topics
     final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig);
-    topicConfigurator.configure(builder.topicsScoringBuilder());
+    builder.topicScoring(topicConfigurator::configure);
   }
 
-  public void configureDynamicTopics(final GossipTopicsScoringBuilder builder) {
+  public void configureDynamicTopics(final GossipTopicsScoringConfig.Builder builder) {
     final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig);
     topicConfigurator.configureDynamicTopics(builder);
   }
@@ -88,7 +88,7 @@ class Eth2GossipScoringConfigurator {
       this.scoringConfig = scoringConfig;
     }
 
-    public void configure(final GossipTopicsScoringBuilder builder) {
+    public void configure(final GossipTopicsScoringConfig.Builder builder) {
       configureVoluntaryExitTopic(builder);
       configureAttesterSlashingTopic(builder);
       configureProposerSlashingTopic(builder);
@@ -97,13 +97,13 @@ class Eth2GossipScoringConfigurator {
 
     // Configure topics that rely on changing values (active validators, current slot) and must be
     // updated periodically
-    public void configureDynamicTopics(final GossipTopicsScoringBuilder builder) {
+    public void configureDynamicTopics(final GossipTopicsScoringConfig.Builder builder) {
       configureBlockTopic(builder);
       configureAggregateTopic(builder);
       configureAttestationSubnetTopics(builder);
     }
 
-    private void configureVoluntaryExitTopic(final GossipTopicsScoringBuilder builder) {
+    private void configureVoluntaryExitTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
               scoringConfig.getForkDigest(),
@@ -119,7 +119,7 @@ class Eth2GossipScoringConfigurator {
                   scoringConfig.getTargetScoreDecayFactor()));
     }
 
-    private void configureAttesterSlashingTopic(final GossipTopicsScoringBuilder builder) {
+    private void configureAttesterSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
               scoringConfig.getForkDigest(),
@@ -135,7 +135,7 @@ class Eth2GossipScoringConfigurator {
                   scoringConfig.getTargetScoreDecayFactor()));
     }
 
-    private void configureProposerSlashingTopic(final GossipTopicsScoringBuilder builder) {
+    private void configureProposerSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
               scoringConfig.getForkDigest(),
@@ -151,7 +151,7 @@ class Eth2GossipScoringConfigurator {
                   scoringConfig.getTargetScoreDecayFactor()));
     }
 
-    private void configureBlockTopic(final GossipTopicsScoringBuilder builder) {
+    private void configureBlockTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
               scoringConfig.getForkDigest(),
@@ -172,7 +172,7 @@ class Eth2GossipScoringConfigurator {
                   Optional.of(msgDeliveryOptions)));
     }
 
-    private void configureAggregateTopic(final GossipTopicsScoringBuilder builder) {
+    private void configureAggregateTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
               scoringConfig.getForkDigest(),
@@ -192,7 +192,7 @@ class Eth2GossipScoringConfigurator {
                   Optional.of(msgDeliveryOptions)));
     }
 
-    private void configureAttestationSubnetTopics(final GossipTopicsScoringBuilder builder) {
+    private void configureAttestationSubnetTopics(final GossipTopicsScoringConfig.Builder builder) {
       final double slotsPerEpoch = scoringConfig.getSlotsPerEpoch();
       final double subnetCount = scoringConfig.getAttestationSubnetCount();
       final double subnetWeight = scoringConfig.getAttestationSubnetTopicWeight();
@@ -234,7 +234,7 @@ class Eth2GossipScoringConfigurator {
     }
 
     private void configureTopic(
-        final GossipTopicScoreParamsBuilder builder,
+        final GossipTopicScoringConfig.Builder builder,
         final double topicWeight,
         final double expectedMessageRate,
         final double firstMessageDeliveryDecay) {
@@ -243,7 +243,7 @@ class Eth2GossipScoringConfigurator {
     }
 
     private void configureTopic(
-        final GossipTopicScoreParamsBuilder builder,
+        final GossipTopicScoringConfig.Builder builder,
         final double topicWeight,
         final double expectedMessageRate,
         final double firstMessageDeliveryDecay,
