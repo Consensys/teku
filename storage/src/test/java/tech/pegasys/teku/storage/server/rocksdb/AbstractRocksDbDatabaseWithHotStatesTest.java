@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractRocksDbDatabaseTest {
 

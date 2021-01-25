@@ -24,7 +24,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 @Command(
     name = "debug-tools",

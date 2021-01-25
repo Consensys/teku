@@ -28,6 +28,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.util.cli.VersionProvider;
 
 public class PowchainService extends Service {
 
