@@ -11,23 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
-
-import java.util.Objects;
+package tech.pegasys.teku.storage.server;
 
 public enum StateStorageMode {
   // All historical state is available to query in archive mode
   ARCHIVE,
   // No historical state is available to query in mode "prune"
-  PRUNE;
-
-  static StateStorageMode fromString(final String value) {
-    final String normalizedValue = value.trim().toUpperCase();
-    for (StateStorageMode mode : StateStorageMode.values()) {
-      if (Objects.equals(mode.name(), normalizedValue)) {
-        return mode;
-      }
-    }
-    throw new IllegalArgumentException("Unknown value supplied: " + value);
-  }
+  PRUNE
 }
