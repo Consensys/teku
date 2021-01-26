@@ -31,6 +31,6 @@ class BeaconBlocksByRangeRequestMessageTest {
     final BeaconBlocksByRangeRequestMessage result =
         SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);
 
-    assertThat(result).isEqualToComparingFieldByField(request);
+    assertThat(result).isEqualTo(request);
   }
 }

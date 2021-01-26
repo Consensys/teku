@@ -35,6 +35,6 @@ class StatusMessageTest {
 
     final Bytes data = SimpleOffsetSerializer.serialize(message);
     final StatusMessage result = SimpleOffsetSerializer.deserialize(data, StatusMessage.class);
-    assertThat(result).isEqualToComparingFieldByField(message);
+    assertThat(result).isEqualTo(message);
   }
 }

@@ -36,7 +36,7 @@ class GoodbyeMessageTest {
   public void shouldDeserializeFromSsz() {
     final GoodbyeMessage result =
         SimpleOffsetSerializer.deserialize(EXPECTED_SSZ, GoodbyeMessage.class);
-    assertThat(result).isEqualToComparingFieldByField(MESSAGE);
+    assertThat(result).isEqualTo(MESSAGE);
   }
 
   @Test

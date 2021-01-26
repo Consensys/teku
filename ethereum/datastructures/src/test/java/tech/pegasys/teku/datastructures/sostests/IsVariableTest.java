@@ -70,6 +70,7 @@ public class IsVariableTest {
         Arguments.of(Checkpoint.TYPE),
         Arguments.of(Fork.TYPE),
         Arguments.of(HistoricalBatch.TYPE),
+        Arguments.of(VoteTracker.TYPE),
         Arguments.of(Validator.TYPE));
   }
 
@@ -83,10 +84,5 @@ public class IsVariableTest {
   @MethodSource("fixedSizeTypes")
   void testTheTypeIsFixedSize(ViewType<?> type) {
     assertTrue(type.isFixedSize());
-  }
-
-  @Test
-  void isVoteTrackerVariableTest() {
-    assertFalse(SimpleOffsetSerializer.classReflectionInfo.get(VoteTracker.class).isVariable());
   }
 }
