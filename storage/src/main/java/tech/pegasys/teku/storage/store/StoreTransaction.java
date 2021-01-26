@@ -125,17 +125,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public VoteTracker getVote(UInt64 validatorIndex) {
-    VoteTracker vote = votes.get(validatorIndex);
-    if (vote == null) {
-      vote = store.getVote(validatorIndex);
-      if (vote == null) {
-        vote = VoteTracker.Default();
-      } else {
-        vote = vote.copy();
-      }
-      votes.put(validatorIndex, vote);
+    VoteTracker txVote = votes.get(validatorIndex);
+    if (txVote != null) {
+      return txVote;
+    } else {
+      VoteTracker storeVote = store.getVote(validatorIndex);
+      return storeVote != null ? storeVote : VoteTracker.DEFAULT;
     }
-    return vote;
+  }
+
+  @Override
+  public void putVote(UInt64 validatorIndex, VoteTracker vote) {
+    votes.put(validatorIndex, vote);
   }
 
   @Override

@@ -23,22 +23,17 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class VoteTracker implements SimpleOffsetSerializable {
 
-  private Bytes32 currentRoot;
-  private Bytes32 nextRoot;
-  private UInt64 nextEpoch;
+  public static final VoteTracker DEFAULT =
+      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
+
+  private final Bytes32 currentRoot;
+  private final Bytes32 nextRoot;
+  private final UInt64 nextEpoch;
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
-  }
-
-  public VoteTracker copy() {
-    return new VoteTracker(currentRoot, nextRoot, nextEpoch);
-  }
-
-  public static VoteTracker Default() {
-    return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
   }
 
   @Override
@@ -79,19 +74,6 @@ public class VoteTracker implements SimpleOffsetSerializable {
   @Override
   public int hashCode() {
     return Objects.hashCode(getCurrentRoot(), getNextRoot(), getNextEpoch());
-  }
-
-  /** ****************** * GETTERS & SETTERS * * ******************* */
-  public void setCurrentRoot(Bytes32 currentRoot) {
-    this.currentRoot = currentRoot;
-  }
-
-  public void setNextRoot(Bytes32 nextRoot) {
-    this.nextRoot = nextRoot;
-  }
-
-  public void setNextEpoch(UInt64 nextEpoch) {
-    this.nextEpoch = nextEpoch;
   }
 
   public Bytes32 getCurrentRoot() {

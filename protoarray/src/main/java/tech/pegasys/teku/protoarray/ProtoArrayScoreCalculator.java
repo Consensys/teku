@@ -100,7 +100,9 @@ class ProtoArrayScoreCalculator {
           deltas.set(nextDeltaIndex, delta);
         }
 
-        vote.setCurrentRoot(vote.getNextRoot());
+        VoteTracker newVote =
+            new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
+        store.putVote(validatorIndex, newVote);
       }
     }
     return deltas;

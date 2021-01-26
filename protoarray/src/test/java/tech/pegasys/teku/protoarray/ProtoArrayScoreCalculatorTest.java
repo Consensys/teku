@@ -71,7 +71,9 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      store.getVote(UInt64.valueOf(i)).setNextRoot(getHash(0));
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(0), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -100,7 +102,9 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      store.getVote(UInt64.valueOf(i)).setNextRoot(getHash(i));
+      VoteTracker vote = store.getVote(UInt64.valueOf(i));
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(i), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -122,8 +126,8 @@ public class ProtoArrayScoreCalculatorTest {
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      vote.setCurrentRoot(getHash(0));
-      vote.setNextRoot(getHash(1));
+      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -163,13 +167,14 @@ public class ProtoArrayScoreCalculatorTest {
 
     // One validator moves their vote from the block to the zero hash.
     VoteTracker validator1vote = store.getVote(UInt64.valueOf(0));
-    validator1vote.setCurrentRoot(getHash(1));
-    validator1vote.setNextRoot(Bytes32.ZERO);
+    VoteTracker newVote1 = new VoteTracker(getHash(1), Bytes32.ZERO, validator1vote.getNextEpoch());
+    store.putVote(UInt64.valueOf(0), newVote1);
 
     // One validator moves their vote from the block to something outside the tree.
     VoteTracker validator2vote = store.getVote(UInt64.valueOf(1));
-    validator2vote.setCurrentRoot(getHash(1));
-    validator2vote.setNextRoot(getHash(1337));
+    VoteTracker newVote2 =
+        new VoteTracker(getHash(1), getHash(1337), validator2vote.getNextEpoch());
+    store.putVote(UInt64.valueOf(1), newVote2);
 
     List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
     assertThat(deltas).hasSize(1);
@@ -191,8 +196,8 @@ public class ProtoArrayScoreCalculatorTest {
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      vote.setCurrentRoot(getHash(0));
-      vote.setNextRoot(getHash(1));
+      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(OLD_BALANCE);
       newBalances.add(NEW_BALANCE);
     }
@@ -234,8 +239,8 @@ public class ProtoArrayScoreCalculatorTest {
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      vote.setCurrentRoot(getHash(1));
-      vote.setNextRoot(getHash(2));
+      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
     }
 
     List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
@@ -267,8 +272,8 @@ public class ProtoArrayScoreCalculatorTest {
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      vote.setCurrentRoot(getHash(1));
-      vote.setNextRoot(getHash(2));
+      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2), vote.getNextEpoch());
+      store.putVote(UInt64.valueOf(i), newVote);
     }
 
     List<Long> deltas = computeDeltas(store, indices.size(), indices, oldBalances, newBalances);
