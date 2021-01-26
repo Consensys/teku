@@ -19,70 +19,83 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId.EnrForkIdType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-/** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
-public class MetadataMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+/**
+ * https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata
+ */
+public class MetadataMessage extends
+    Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>> implements RpcRequest,
+    SimpleOffsetSerializable, SSZContainer {
 
-  public static MetadataMessage createDefault() {
-    return new MetadataMessage();
+  public static final MetadataMessage DEFAULT = new MetadataMessage();
+
+  static class MetadataMessageType extends
+      ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
+
+    public MetadataMessageType() {
+      super(BasicViewTypes.UINT64_TYPE,
+          new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.ATTESTATION_SUBNET_COUNT));
+    }
+
+    @Override
+    public MetadataMessage createFromBackingNode(TreeNode node) {
+      return new MetadataMessage(this, node);
+    }
   }
 
-  private final UInt64 seqNumber;
-  private final Bitvector attnets; // vector of size Constants.ATTESTATION_SUBNET_COUNT
+  @SszTypeDescriptor
+  public static final MetadataMessageType TYPE = new MetadataMessageType();
 
-  public MetadataMessage() {
-    this(UInt64.ZERO, new Bitvector(Constants.ATTESTATION_SUBNET_COUNT));
+  private Bitvector attnetsCache;
+
+  private MetadataMessage(
+      ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  private MetadataMessage() {
+    super(TYPE);
   }
 
   public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
+    super(TYPE, new UInt64View(seqNumber), ViewUtils.createBitvectorView(attnets));
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
-    this.seqNumber = seqNumber;
-    this.attnets = attnets;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encodeUInt64(seqNumber.longValue()), attnets.serialize());
+    this.attnetsCache = attnets;
   }
 
   public UInt64 getSeqNumber() {
-    return seqNumber;
+    return getField0().get();
   }
 
   public Bitvector getAttnets() {
-    return attnets;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    if (attnetsCache == null) {
+      attnetsCache = ViewUtils.getBitvector(getField1());
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    MetadataMessage that = (MetadataMessage) o;
-    return seqNumber.equals(that.seqNumber) && attnets.equals(that.attnets);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(seqNumber, attnets);
+    return attnetsCache;
   }
 
   @Override
   public String toString() {
-    return "MetadataMessage{" + "seqNumber=" + seqNumber + ", attnets=" + attnets + '}';
+    return "MetadataMessage{" + "seqNumber=" + getSeqNumber() + ", attnets=" + getAttnets() + '}';
   }
 
   @Override
