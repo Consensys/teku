@@ -132,9 +132,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder()
-            .p2p(b -> b.network(n -> n.networkInterface("1.2.3.5")))
-            .build();
+        expectedConfigurationBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -152,9 +150,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .p2p(p -> p.network(n -> n.networkInterface("1.2.3.5")))
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -168,9 +164,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .p2p(p -> p.network(n -> n.networkInterface("1.2.3.5")))
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -381,18 +375,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
-        .p2p(
-            p ->
-                p.isDiscoveryEnabled(true)
-                    .peerRateLimit(500)
-                    .peerRequestLimit(50)
-                    .network(
-                        n ->
-                            n.advertisedPort(OptionalInt.empty())
-                                .bootnodes(networkConfig.getDiscoveryBootnodes())
-                                .networkInterface("0.0.0.0")
-                                .listenPort(9000)
-                                .privateKeyFile("")))
+        .p2p(p -> p.isDiscoveryEnabled(true).peerRateLimit(500).peerRequestLimit(50))
+        .network(
+            n ->
+                n.advertisedPort(OptionalInt.empty())
+                    .bootnodes(networkConfig.getDiscoveryBootnodes())
+                    .networkInterface("0.0.0.0")
+                    .listenPort(9000)
+                    .privateKeyFile(""))
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
@@ -436,15 +426,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .peerRequestLimit(50)
                     .minPeers(64)
                     .maxPeers(74)
-                    .minRandomlySelectedPeers(12)
-                    .network(
-                        n ->
-                            n.networkInterface("1.2.3.4")
-                                .listenPort(1234)
-                                .advertisedPort(OptionalInt.of(9000))
-                                .advertisedIp(Optional.empty())
-                                .privateKeyFile("path/to/file")
-                                .staticPeers(Collections.emptyList())))
+                    .minRandomlySelectedPeers(12))
+        .network(
+            n ->
+                n.networkInterface("1.2.3.4")
+                    .listenPort(1234)
+                    .advertisedPort(OptionalInt.of(9000))
+                    .advertisedIp(Optional.empty())
+                    .privateKeyFile("path/to/file")
+                    .staticPeers(Collections.emptyList()))
         .restApi(
             b ->
                 b.restApiPort(5051)

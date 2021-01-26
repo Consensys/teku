@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuild
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
@@ -226,6 +227,16 @@ public class TekuConfiguration {
 
     public Builder p2p(final Consumer<P2PConfig.Builder> p2pConfigConsumer) {
       p2pConfigConsumer.accept(p2pConfigBuilder);
+      return this;
+    }
+
+    public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
+      p2p(b -> b.network(consumer));
+      return this;
+    }
+
+    public Builder wireLogs(final Consumer<WireLogsConfig.Builder> consumer) {
+      p2p(b -> b.network(n -> n.wireLogs(consumer)));
       return this;
     }
 

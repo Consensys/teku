@@ -164,34 +164,33 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder.p2p(
-        p2pBuilder -> {
-          p2pBuilder
-              .isP2PEnabled(p2pEnabled)
-              .isDiscoveryEnabled(p2pDiscoveryEnabled)
-              .multiPeerSyncEnabled(multiPeerSyncEnabled)
-              .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
-              .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-              .minPeers(getP2pLowerBound())
-              .maxPeers(getP2pUpperBound())
-              .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount())
-              .network(
-                  n -> {
-                    if (p2pDiscoveryBootnodes != null) {
-                      n.bootnodes(p2pDiscoveryBootnodes);
-                    }
-                    if (p2pPrivateKeyFile != null) {
-                      n.privateKeyFile(p2pPrivateKeyFile);
-                    }
-                    n.networkInterface(p2pInterface)
-                        .listenPort(p2pPort)
-                        .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-                        .advertisedPort(
-                            p2pAdvertisedPort == null
-                                ? OptionalInt.empty()
-                                : OptionalInt.of(p2pAdvertisedPort))
-                        .staticPeers(p2pStaticPeers);
-                  });
-        });
+    builder
+        .p2p(
+            b ->
+                b.isP2PEnabled(p2pEnabled)
+                    .isDiscoveryEnabled(p2pDiscoveryEnabled)
+                    .multiPeerSyncEnabled(multiPeerSyncEnabled)
+                    .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+                    .minPeers(getP2pLowerBound())
+                    .maxPeers(getP2pUpperBound())
+                    .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount()))
+        .network(
+            n -> {
+              if (p2pDiscoveryBootnodes != null) {
+                n.bootnodes(p2pDiscoveryBootnodes);
+              }
+              if (p2pPrivateKeyFile != null) {
+                n.privateKeyFile(p2pPrivateKeyFile);
+              }
+              n.networkInterface(p2pInterface)
+                  .listenPort(p2pPort)
+                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
+                  .advertisedPort(
+                      p2pAdvertisedPort == null
+                          ? OptionalInt.empty()
+                          : OptionalInt.of(p2pAdvertisedPort))
+                  .staticPeers(p2pStaticPeers);
+            });
   }
 }

@@ -185,15 +185,11 @@ public class LoggingOptions {
                     .logWirePlain(logWirePlainEnabled)
                     .logWireMuxFrames(logWireMuxEnabled)
                     .logWireGossip(logWireGossipEnabled))
-        .p2p(
-            p ->
-                p.network(
-                    n ->
-                        n.wireLogs(
-                            l ->
-                                l.logWireCipher(logWireCipherEnabled)
-                                    .logWirePlain(logWirePlainEnabled)
-                                    .logWireMuxFrames(logWireMuxEnabled)
-                                    .logWireGossip(logWireGossipEnabled))));
+        .wireLogs(
+            b ->
+                b.logWireCipher(logWireCipherEnabled)
+                    .logWirePlain(logWirePlainEnabled)
+                    .logWireMuxFrames(logWireMuxEnabled)
+                    .logWireGossip(logWireGossipEnabled));
   }
 }
