@@ -54,7 +54,6 @@ public class MetadataMessage
   @SszTypeDescriptor public static final MetadataMessageType TYPE = new MetadataMessageType();
   public static final MetadataMessage DEFAULT = new MetadataMessage();
 
-
   private Bitvector attnetsCache;
 
   private MetadataMessage(
