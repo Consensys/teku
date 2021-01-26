@@ -27,8 +27,8 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View>
     implements SimpleOffsetSerializable {
 
-  static class VoteTrackerType extends
-      ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
+  static class VoteTrackerType
+      extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
     public VoteTrackerType() {
       super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE);
@@ -40,10 +40,8 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
     }
   }
 
-  @SszTypeDescriptor
-  public static final VoteTrackerType TYPE = new VoteTrackerType();
+  @SszTypeDescriptor public static final VoteTrackerType TYPE = new VoteTrackerType();
   public static final VoteTracker DEFAULT = new VoteTracker();
-
 
   private VoteTracker(
       ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> type,

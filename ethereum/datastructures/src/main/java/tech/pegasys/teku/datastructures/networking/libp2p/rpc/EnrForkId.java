@@ -41,18 +41,20 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
     }
   }
 
-  @SszTypeDescriptor
-  public static final EnrForkIdType TYPE = new EnrForkIdType();
+  @SszTypeDescriptor public static final EnrForkIdType TYPE = new EnrForkIdType();
 
   private EnrForkId(
-      ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> type,
-      TreeNode backingNode) {
+      ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public EnrForkId(
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
-    super(TYPE, new Bytes4View(forkDigest), new Bytes4View(nextForkVersion), new UInt64View(nextForkEpoch));
+    super(
+        TYPE,
+        new Bytes4View(forkDigest),
+        new Bytes4View(nextForkVersion),
+        new UInt64View(nextForkEpoch));
   }
 
   public Bytes4 getForkDigest() {

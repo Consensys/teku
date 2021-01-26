@@ -36,7 +36,6 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.util.config.Constants;
 
 public class FuzzUtil {
@@ -63,22 +62,23 @@ public class FuzzUtil {
     }
     // guessing this might be necessary soon?
     SimpleOffsetSerializer.setConstants();
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        AttestationFuzzInput.class, new ReflectionInformation(AttestationFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        AttesterSlashingFuzzInput.class,
-//        new ReflectionInformation(AttesterSlashingFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        BlockFuzzInput.class, new ReflectionInformation(BlockFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        BlockHeaderFuzzInput.class, new ReflectionInformation(BlockHeaderFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        DepositFuzzInput.class, new ReflectionInformation(DepositFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        ProposerSlashingFuzzInput.class,
-//        new ReflectionInformation(ProposerSlashingFuzzInput.class));
-//    SimpleOffsetSerializer.classReflectionInfo.put(
-//        VoluntaryExitFuzzInput.class, new ReflectionInformation(VoluntaryExitFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        AttestationFuzzInput.class, new ReflectionInformation(AttestationFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        AttesterSlashingFuzzInput.class,
+    //        new ReflectionInformation(AttesterSlashingFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        BlockFuzzInput.class, new ReflectionInformation(BlockFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        BlockHeaderFuzzInput.class, new ReflectionInformation(BlockHeaderFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        DepositFuzzInput.class, new ReflectionInformation(DepositFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        ProposerSlashingFuzzInput.class,
+    //        new ReflectionInformation(ProposerSlashingFuzzInput.class));
+    //    SimpleOffsetSerializer.classReflectionInfo.put(
+    //        VoluntaryExitFuzzInput.class, new
+    // ReflectionInformation(VoluntaryExitFuzzInput.class));
 
     if (disable_bls) {
       BLSConstants.disableBLSVerification();

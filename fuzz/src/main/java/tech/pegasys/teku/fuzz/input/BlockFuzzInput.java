@@ -13,16 +13,9 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
@@ -30,18 +23,15 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class BlockFuzzInput extends
-    Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> implements SimpleOffsetSerializable, SSZContainer {
+public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock>
+    implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> TYPE = ContainerType2
-      .create(
-          BeaconState.getSSZType(),
-          SignedBeaconBlock.TYPE, BlockFuzzInput::new);
+  public static final ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> TYPE =
+      ContainerType2.create(BeaconState.getSSZType(), SignedBeaconBlock.TYPE, BlockFuzzInput::new);
 
   private BlockFuzzInput(
-      ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type,
-      TreeNode backingNode) {
+      ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

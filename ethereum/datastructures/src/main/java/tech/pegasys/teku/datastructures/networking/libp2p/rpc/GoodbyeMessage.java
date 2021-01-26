@@ -16,10 +16,6 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
@@ -32,13 +28,13 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  public static final ContainerType1<GoodbyeMessage, UInt64View> TYPE = new ContainerType1<>(
-      BasicViewTypes.UINT64_TYPE) {
-    @Override
-    public GoodbyeMessage createFromBackingNode(TreeNode node) {
-      return new GoodbyeMessage(this, node);
-    }
-  };
+  public static final ContainerType1<GoodbyeMessage, UInt64View> TYPE =
+      new ContainerType1<>(BasicViewTypes.UINT64_TYPE) {
+        @Override
+        public GoodbyeMessage createFromBackingNode(TreeNode node) {
+          return new GoodbyeMessage(this, node);
+        }
+      };
 
   public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
   public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
@@ -50,9 +46,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
   public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
   public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
 
-  public GoodbyeMessage(
-      ContainerType1<GoodbyeMessage, UInt64View> type,
-      TreeNode backingNode) {
+  public GoodbyeMessage(ContainerType1<GoodbyeMessage, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

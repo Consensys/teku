@@ -13,15 +13,9 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
@@ -29,18 +23,15 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class DepositFuzzInput extends
-    Container2<DepositFuzzInput, BeaconState, Deposit> implements SimpleOffsetSerializable, SSZContainer {
+public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit>
+    implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<DepositFuzzInput, BeaconState, Deposit> TYPE = ContainerType2
-      .create(
-          BeaconState.getSSZType(),
-          Deposit.TYPE, DepositFuzzInput::new);
+  public static final ContainerType2<DepositFuzzInput, BeaconState, Deposit> TYPE =
+      ContainerType2.create(BeaconState.getSSZType(), Deposit.TYPE, DepositFuzzInput::new);
 
   public DepositFuzzInput(
-      ContainerType2<DepositFuzzInput, BeaconState, Deposit> type,
-      TreeNode backingNode) {
+      ContainerType2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

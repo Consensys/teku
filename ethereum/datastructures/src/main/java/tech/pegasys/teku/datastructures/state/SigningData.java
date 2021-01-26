@@ -27,11 +27,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> implements
-    Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  static class SigningDataType extends
-      ContainerType2<SigningData, Bytes32View, Bytes32View> {
+  static class SigningDataType extends ContainerType2<SigningData, Bytes32View, Bytes32View> {
 
     public SigningDataType() {
       super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.BYTES32_TYPE);
@@ -43,13 +42,10 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
     }
   }
 
-  @SszTypeDescriptor
-  public static final SigningDataType TYPE = new SigningDataType();
-
+  @SszTypeDescriptor public static final SigningDataType TYPE = new SigningDataType();
 
   public SigningData(
-      ContainerType2<SigningData, Bytes32View, Bytes32View> type,
-      TreeNode backingNode) {
+      ContainerType2<SigningData, Bytes32View, Bytes32View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

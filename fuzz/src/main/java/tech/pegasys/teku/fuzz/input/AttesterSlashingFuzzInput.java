@@ -13,14 +13,9 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
@@ -28,15 +23,15 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttesterSlashingFuzzInput extends
-    Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> implements SimpleOffsetSerializable, SSZContainer {
+public class AttesterSlashingFuzzInput
+    extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
+    implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> TYPE = ContainerType2
-      .create(
-          BeaconState.getSSZType(),
-          AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
-
+  public static final ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
+      TYPE =
+          ContainerType2.create(
+              BeaconState.getSSZType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
 
   private AttesterSlashingFuzzInput(
       ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,

@@ -13,36 +13,26 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage.StatusMessageType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public final class BeaconBlocksByRangeRequestMessage extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>
+public final class BeaconBlocksByRangeRequestMessage
+    extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
   public static class BeaconBlocksByRangeRequestMessageType
-      extends
-      ContainerType3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> {
+      extends ContainerType3<
+          BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> {
 
     public BeaconBlocksByRangeRequestMessageType() {
-      super(
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE);
+      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE);
     }
 
     @Override
@@ -52,7 +42,8 @@ public final class BeaconBlocksByRangeRequestMessage extends Container3<BeaconBl
   }
 
   @SszTypeDescriptor
-  public static final BeaconBlocksByRangeRequestMessageType TYPE = new BeaconBlocksByRangeRequestMessageType();
+  public static final BeaconBlocksByRangeRequestMessageType TYPE =
+      new BeaconBlocksByRangeRequestMessageType();
 
   public BeaconBlocksByRangeRequestMessage(
       ContainerType3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> type,

@@ -27,8 +27,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class PingMessage extends Container1<PingMessage, UInt64View>
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  static class PingMessageType extends
-      ContainerType1<PingMessage, UInt64View> {
+  static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
 
     public PingMessageType() {
       super(BasicViewTypes.UINT64_TYPE);
@@ -40,13 +39,9 @@ public class PingMessage extends Container1<PingMessage, UInt64View>
     }
   }
 
-  @SszTypeDescriptor
-  public static final PingMessageType TYPE = new PingMessageType();
+  @SszTypeDescriptor public static final PingMessageType TYPE = new PingMessageType();
 
-
-  public PingMessage(
-      ContainerType1<PingMessage, UInt64View> type,
-      TreeNode backingNode) {
+  public PingMessage(ContainerType1<PingMessage, UInt64View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

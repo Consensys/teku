@@ -14,25 +14,16 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.state.Fork.ForkType;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
@@ -51,12 +42,9 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
     }
   }
 
-  @SszTypeDescriptor
-  public static final ForkDataType TYPE = new ForkDataType();
+  @SszTypeDescriptor public static final ForkDataType TYPE = new ForkDataType();
 
-  private ForkData(
-      ContainerType2<ForkData, Bytes4View, Bytes32View> type,
-      TreeNode backingNode) {
+  private ForkData(ContainerType2<ForkData, Bytes4View, Bytes32View> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -77,6 +65,7 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
     return hashTreeRoot();
   }
 
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("currentVersion", getCurrentVersion())

@@ -34,15 +34,6 @@ import org.apache.tuweni.ssz.SSZReader;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.datastructures.state.ForkData;
-import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
@@ -66,40 +57,39 @@ public class SimpleOffsetSerializer {
   public static HashMap<Class, LengthBounds> classLengthBounds = new HashMap<>();
 
   public static void setConstants() {
-    List<Class> classes =
-        List.of();
-            //            SignedBeaconBlock.class,
-            //            BeaconBlock.class,
-            //            BeaconBlockBody.class,
-            //            BeaconBlockHeader.class,
-            //            SignedBeaconBlockHeader.class,
-            //            Eth1Data.class,
-            //            Attestation.class,
-            //            AttestationData.class,
-            //            AttesterSlashing.class,
-            //            Deposit.class,
-            //            DepositData.class,
-            //            DepositMessage.class,
-            //            IndexedAttestation.class,
-            //            ProposerSlashing.class,
-            //            SignedVoluntaryExit.class,
-            //            VoluntaryExit.class,
-            //            Checkpoint.class,
-            //            HistoricalBatch.class,
-            //            PendingAttestation.class,
-            //            Validator.class,
-//            StatusMessage.class,
-//            GoodbyeMessage.class,
-//            BeaconBlocksByRangeRequestMessage.class,
-//            //            AggregateAndProof.class,
-//            //            SignedAggregateAndProof.class,
-//            ForkData.class,
-//            EnrForkId.class,
-//            VoteTracker.class,
-//            MetadataMessage.class,
-//            EmptyMessage.class,
-//            PingMessage.class,
-//            SigningData.class);
+    List<Class> classes = List.of();
+    //            SignedBeaconBlock.class,
+    //            BeaconBlock.class,
+    //            BeaconBlockBody.class,
+    //            BeaconBlockHeader.class,
+    //            SignedBeaconBlockHeader.class,
+    //            Eth1Data.class,
+    //            Attestation.class,
+    //            AttestationData.class,
+    //            AttesterSlashing.class,
+    //            Deposit.class,
+    //            DepositData.class,
+    //            DepositMessage.class,
+    //            IndexedAttestation.class,
+    //            ProposerSlashing.class,
+    //            SignedVoluntaryExit.class,
+    //            VoluntaryExit.class,
+    //            Checkpoint.class,
+    //            HistoricalBatch.class,
+    //            PendingAttestation.class,
+    //            Validator.class,
+    //            StatusMessage.class,
+    //            GoodbyeMessage.class,
+    //            BeaconBlocksByRangeRequestMessage.class,
+    //            //            AggregateAndProof.class,
+    //            //            SignedAggregateAndProof.class,
+    //            ForkData.class,
+    //            EnrForkId.class,
+    //            VoteTracker.class,
+    //            MetadataMessage.class,
+    //            EmptyMessage.class,
+    //            PingMessage.class,
+    //            SigningData.class);
 
     for (Class classItem : classes) {
       classReflectionInfo.put(classItem, new ReflectionInformation(classItem));
