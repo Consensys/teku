@@ -19,53 +19,70 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageType;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
+public class BeaconBlocksByRootRequestMessage extends
+    Container1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> implements RpcRequest,
+    SSZContainer {
 
-  private final SSZMutableList<Bytes32> blockRoots =
-      SSZList.createMutable(Bytes32.class, MAX_REQUEST_BLOCKS);
+  private static final ListViewType<Bytes32View> LIST_TYPE = new ListViewType<>(
+      BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+
+  public static class BeaconBlocksByRootRequestMessageType
+      extends ContainerType1<
+            BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> {
+
+    public BeaconBlocksByRootRequestMessageType() {
+      super(LIST_TYPE);
+    }
+
+    @Override
+    public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
+      return new BeaconBlocksByRootRequestMessage(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final BeaconBlocksByRootRequestMessageType TYPE =
+      new BeaconBlocksByRootRequestMessageType();
+
+
+  public BeaconBlocksByRootRequestMessage(
+      ContainerType1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
-    this.blockRoots.addAll(blockRoots);
+    super(TYPE, ViewUtils.toListView(LIST_TYPE, blockRoots, Bytes32View::new));
   }
 
-  public SSZList<Bytes32> getBlockRoots() {
-    return blockRoots;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(blockRoots);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconBlocksByRootRequestMessage)) {
-      return false;
-    }
-
-    BeaconBlocksByRootRequestMessage other = (BeaconBlocksByRootRequestMessage) obj;
-    return Objects.equals(this.blockRoots, other.blockRoots);
+  public ListViewRead<Bytes32View> getBlockRoots() {
+    return getField0();
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("blockRoots", blockRoots).toString();
+    return MoreObjects.toStringHelper(this).add("blockRoots", getBlockRoots()).toString();
   }
 
   @Override
   public int getMaximumRequestChunks() {
-    return blockRoots.size();
+    return getBlockRoots().size();
   }
 }

@@ -22,6 +22,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconBlocksByRootMessageHandler
@@ -49,13 +50,13 @@ public class BeaconBlocksByRootMessageHandler
         return;
       }
 
-      for (Bytes32 blockRoot : message.getBlockRoots()) {
+      for (Bytes32View blockRoot : message.getBlockRoots()) {
         future =
             future.thenCompose(
                 __ ->
                     storageClient
                         .getStore()
-                        .retrieveSignedBlock(blockRoot)
+                        .retrieveSignedBlock(blockRoot.get())
                         .thenCompose(
                             block -> block.map(callback::respond).orElse(SafeFuture.COMPLETE)));
       }
