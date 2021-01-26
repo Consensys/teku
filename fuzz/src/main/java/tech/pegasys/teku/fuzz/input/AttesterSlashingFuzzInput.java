@@ -16,66 +16,44 @@ package tech.pegasys.teku.fuzz.input;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttesterSlashingFuzzInput implements SimpleOffsetSerializable, SSZContainer {
+public class AttesterSlashingFuzzInput extends
+    Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> implements SimpleOffsetSerializable, SSZContainer {
 
-  private BeaconStateImpl state;
-  private AttesterSlashing attester_slashing;
+  @SszTypeDescriptor
+  public static final ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> TYPE = ContainerType2
+      .create(
+          BeaconState.getSSZType(),
+          AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+
+
+  private AttesterSlashingFuzzInput(
+      ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AttesterSlashingFuzzInput(
       final BeaconStateImpl state, final AttesterSlashing attester_slashing) {
-    this.state = state;
-    this.attester_slashing = attester_slashing;
+    super(TYPE, state, attester_slashing);
   }
 
-  // NOTE: empty constructor is needed for reflection/introspection
-  // public AttesterSlashingFuzzInput() {
-  //  this(new BeaconStateImpl(), new AttesterSlashing());
-  // }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    // Because we know both fields are variable and registered, we can just serialize.
-    return List.of(
-        SimpleOffsetSerializer.serialize(state),
-        SimpleOffsetSerializer.serialize(attester_slashing));
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public AttesterSlashing getAttester_slashing() {
-    return attester_slashing;
+    return getField1();
   }
 
   public BeaconState getState() {
-    return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof AttesterSlashingFuzzInput)) {
-      return false;
-    }
-    final AttesterSlashingFuzzInput that = (AttesterSlashingFuzzInput) o;
-    return Objects.equals(getState(), that.getState())
-        && Objects.equals(getAttester_slashing(), that.getAttester_slashing());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getState(), getAttester_slashing());
+    return getField0();
   }
 }

@@ -17,67 +17,51 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 /**
  * Note: BlockHeader fuzzing target accepts a block as input (not a SignedBeaconBlock or
  * BeaconBlockHeader)
  */
-public class BlockHeaderFuzzInput implements SimpleOffsetSerializable, SSZContainer {
+public class BlockHeaderFuzzInput extends
+    Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> implements SimpleOffsetSerializable, SSZContainer {
 
-  private BeaconStateImpl state;
-  private BeaconBlock block;
+  @SszTypeDescriptor
+  public static final ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> TYPE = ContainerType2
+      .create(
+          BeaconState.getSSZType(),
+          BeaconBlock.TYPE, BlockHeaderFuzzInput::new);
+
+
+  private BlockHeaderFuzzInput(
+      ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public BlockHeaderFuzzInput(final BeaconStateImpl state, final BeaconBlock block) {
-    this.state = state;
-    this.block = block;
+    super(TYPE, state, block);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public BlockHeaderFuzzInput() {
-    this(new BeaconStateImpl(), new BeaconBlock());
+    super(TYPE);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    // Because we know both fields are variable and registered, we can just serialize.
-    return List.of(
-        SimpleOffsetSerializer.serialize(state), SimpleOffsetSerializer.serialize(block));
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public BeaconBlock getBlock() {
-    return block;
+    return getField1();
   }
 
   public BeaconState getState() {
-    return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof BlockHeaderFuzzInput)) {
-      return false;
-    }
-    final BlockHeaderFuzzInput that = (BlockHeaderFuzzInput) o;
-    return Objects.equals(getState(), that.getState())
-        && Objects.equals(getBlock(), that.getBlock());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getState(), getBlock());
+    return getField0();
   }
 }

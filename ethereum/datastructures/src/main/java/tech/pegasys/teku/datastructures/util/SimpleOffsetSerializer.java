@@ -67,7 +67,7 @@ public class SimpleOffsetSerializer {
 
   public static void setConstants() {
     List<Class> classes =
-        List.of(
+        List.of();
             //            SignedBeaconBlock.class,
             //            BeaconBlock.class,
             //            BeaconBlockBody.class,
@@ -88,18 +88,18 @@ public class SimpleOffsetSerializer {
             //            HistoricalBatch.class,
             //            PendingAttestation.class,
             //            Validator.class,
-            StatusMessage.class,
-            GoodbyeMessage.class,
-            BeaconBlocksByRangeRequestMessage.class,
-            //            AggregateAndProof.class,
-            //            SignedAggregateAndProof.class,
-            ForkData.class,
-            EnrForkId.class,
-            VoteTracker.class,
-            MetadataMessage.class,
-            EmptyMessage.class,
-            PingMessage.class,
-            SigningData.class);
+//            StatusMessage.class,
+//            GoodbyeMessage.class,
+//            BeaconBlocksByRangeRequestMessage.class,
+//            //            AggregateAndProof.class,
+//            //            SignedAggregateAndProof.class,
+//            ForkData.class,
+//            EnrForkId.class,
+//            VoteTracker.class,
+//            MetadataMessage.class,
+//            EmptyMessage.class,
+//            PingMessage.class,
+//            SigningData.class);
 
     for (Class classItem : classes) {
       classReflectionInfo.put(classItem, new ReflectionInformation(classItem));
