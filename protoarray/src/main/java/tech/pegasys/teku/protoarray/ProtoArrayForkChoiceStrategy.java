@@ -181,9 +181,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       MutableStore store, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = store.getVote(validatorIndex);
 
-    if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.Default())) {
-      vote.setNextRoot(blockRoot);
-      vote.setNextEpoch(targetEpoch);
+    if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
+      store.putVote(validatorIndex, newVote);
     }
   }
 

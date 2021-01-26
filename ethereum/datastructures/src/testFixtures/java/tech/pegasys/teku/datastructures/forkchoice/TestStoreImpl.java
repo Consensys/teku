@@ -258,11 +258,12 @@ class TestStoreImpl implements MutableStore {
   @Override
   public VoteTracker getVote(final UInt64 validatorIndex) {
     VoteTracker vote = votes.get(validatorIndex);
-    if (vote == null) {
-      vote = VoteTracker.Default();
-    }
-    this.votes.put(validatorIndex, vote);
-    return vote;
+    return vote != null ? vote : VoteTracker.DEFAULT;
+  }
+
+  @Override
+  public void putVote(UInt64 validatorIndex, VoteTracker vote) {
+    votes.put(validatorIndex, vote);
   }
 
   @Override
