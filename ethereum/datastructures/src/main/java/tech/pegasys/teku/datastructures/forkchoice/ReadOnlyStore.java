@@ -71,6 +71,8 @@ public interface ReadOnlyStore {
 
   Set<UInt64> getVotedValidatorIndices();
 
+  VoteTracker getVote(UInt64 validatorIndex);
+
   /**
    * Returns a block state only if it is immediately available (not pruned).
    *
