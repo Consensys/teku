@@ -510,7 +510,8 @@ class Store implements UpdatableStore {
     }
   }
 
-  VoteTracker getVote(UInt64 validatorIndex) {
+  @Override
+  public VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
       return votes.get(validatorIndex);
