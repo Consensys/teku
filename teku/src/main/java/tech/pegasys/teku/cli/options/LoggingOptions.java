@@ -180,11 +180,7 @@ public class LoggingOptions {
                     .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
                     .destination(logDestination)
                     .logFile(logFile)
-                    .logFileNamePattern(logFileNamePattern)
-                    .logWireCipher(logWireCipherEnabled)
-                    .logWirePlain(logWirePlainEnabled)
-                    .logWireMuxFrames(logWireMuxEnabled)
-                    .logWireGossip(logWireGossipEnabled))
+                    .logFileNamePattern(logFileNamePattern))
         .wireLogs(
             b ->
                 b.logWireCipher(logWireCipherEnabled)
