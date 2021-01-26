@@ -167,8 +167,7 @@ public class P2POptions {
     builder
         .p2p(
             b ->
-                b.multiPeerSyncEnabled(multiPeerSyncEnabled)
-                    .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount))
         .discovery(
             d -> {
@@ -194,6 +193,7 @@ public class P2POptions {
                       p2pAdvertisedPort == null
                           ? OptionalInt.empty()
                           : OptionalInt.of(p2pAdvertisedPort));
-            });
+            })
+        .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }
 }

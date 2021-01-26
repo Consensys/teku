@@ -679,7 +679,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initSyncService()");
     syncService =
         SyncServiceFactory.createSyncService(
-            beaconConfig.p2pConfig(),
+            beaconConfig.syncConfig(),
             metricsSystem,
             asyncRunnerFactory,
             beaconAsyncRunner,

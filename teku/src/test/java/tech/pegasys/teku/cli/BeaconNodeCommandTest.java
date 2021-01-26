@@ -428,6 +428,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .advertisedPort(OptionalInt.of(9000))
                     .advertisedIp(Optional.empty())
                     .privateKeyFile("path/to/file"))
+        .sync(s -> s.isSyncEnabled(false).isMultiPeerSyncEnabled(false))
         .restApi(
             b ->
                 b.restApiPort(5051)

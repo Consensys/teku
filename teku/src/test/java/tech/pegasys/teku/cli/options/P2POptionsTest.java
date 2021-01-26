@@ -49,8 +49,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final NetworkConfig config = getTekuConfigurationFromArguments("--p2p-enabled").network();
-    assertThat(config.isEnabled()).isTrue();
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--p2p-enabled");
+    assertThat(config.network().isEnabled()).isTrue();
+    assertThat(config.sync().isSyncEnabled()).isTrue();
+  }
+
+  @Test
+  public void p2pEnabled_false() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--p2p-enabled=false");
+    assertThat(config.network().isEnabled()).isFalse();
+    assertThat(config.sync().isSyncEnabled()).isFalse();
   }
 
   @Test

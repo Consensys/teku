@@ -26,7 +26,6 @@ public class P2PConfig {
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
 
-  private final boolean multiPeerSyncEnabled;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int peerRateLimit;
@@ -37,7 +36,6 @@ public class P2PConfig {
   private P2PConfig(
       final NetworkConfig networkConfig,
       final DiscoveryConfig discoveryConfig,
-      final boolean multiPeerSyncEnabled,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       Optional<Checkpoint> requiredCheckpoint,
@@ -45,7 +43,6 @@ public class P2PConfig {
       final int peerRequestLimit) {
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
-    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.requiredCheckpoint = requiredCheckpoint;
@@ -78,10 +75,6 @@ public class P2PConfig {
     return discoveryConfig;
   }
 
-  public boolean isMultiPeerSyncEnabled() {
-    return multiPeerSyncEnabled;
-  }
-
   public int getTargetSubnetSubscriberCount() {
     return targetSubnetSubscriberCount;
   }
@@ -105,7 +98,6 @@ public class P2PConfig {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
-    private Boolean multiPeerSyncEnabled = false;
     private Integer targetSubnetSubscriberCount = 2;
     private Boolean subscribeAllSubnetsEnabled = false;
     private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
@@ -118,7 +110,6 @@ public class P2PConfig {
       return new P2PConfig(
           networkConfig.build(),
           discoveryConfig.build(),
-          multiPeerSyncEnabled,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           requiredCheckpoint,
@@ -133,12 +124,6 @@ public class P2PConfig {
 
     public Builder discovery(final Consumer<DiscoveryConfig.Builder> consumer) {
       consumer.accept(discoveryConfig);
-      return this;
-    }
-
-    public Builder multiPeerSyncEnabled(final Boolean multiPeerSyncEnabled) {
-      checkNotNull(multiPeerSyncEnabled);
-      this.multiPeerSyncEnabled = multiPeerSyncEnabled;
       return this;
     }
 
