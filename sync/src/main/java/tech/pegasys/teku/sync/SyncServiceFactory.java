@@ -112,7 +112,7 @@ public class SyncServiceFactory {
   }
 
   private SyncService create() {
-    if (!p2pConfig.isP2PEnabled()) {
+    if (!p2pConfig.getNetworkConfig().isEnabled()) {
       return new NoopSyncService();
     }
 

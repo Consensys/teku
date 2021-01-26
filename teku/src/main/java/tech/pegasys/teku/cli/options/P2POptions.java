@@ -167,30 +167,33 @@ public class P2POptions {
     builder
         .p2p(
             b ->
-                b.isP2PEnabled(p2pEnabled)
-                    .isDiscoveryEnabled(p2pDiscoveryEnabled)
-                    .multiPeerSyncEnabled(multiPeerSyncEnabled)
+                b.multiPeerSyncEnabled(multiPeerSyncEnabled)
                     .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
-                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .minPeers(getP2pLowerBound())
-                    .maxPeers(getP2pUpperBound())
-                    .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount()))
+                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount))
+        .discovery(
+            d -> {
+              if (p2pDiscoveryBootnodes != null) {
+                d.bootnodes(p2pDiscoveryBootnodes);
+              }
+              d.isDiscoveryEnabled(p2pDiscoveryEnabled)
+                  .staticPeers(p2pStaticPeers)
+                  .minPeers(getP2pLowerBound())
+                  .maxPeers(getP2pUpperBound())
+                  .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount());
+            })
         .network(
             n -> {
-              if (p2pDiscoveryBootnodes != null) {
-                n.bootnodes(p2pDiscoveryBootnodes);
-              }
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
               n.networkInterface(p2pInterface)
+                  .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
                   .advertisedPort(
                       p2pAdvertisedPort == null
                           ? OptionalInt.empty()
-                          : OptionalInt.of(p2pAdvertisedPort))
-                  .staticPeers(p2pStaticPeers);
+                          : OptionalInt.of(p2pAdvertisedPort));
             });
   }
 }

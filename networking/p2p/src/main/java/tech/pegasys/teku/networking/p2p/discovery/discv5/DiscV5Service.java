@@ -29,6 +29,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NewAddressHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
@@ -41,20 +42,26 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
 
   public static DiscoveryService create(
-      NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore, final Bytes privateKey) {
-    return new DiscV5Service(p2pConfig, kvStore, privateKey);
+      final DiscoveryConfig discoConfig,
+      final NetworkConfig p2pConfig,
+      final KeyValueStore<String, Bytes> kvStore,
+      final Bytes privateKey) {
+    return new DiscV5Service(discoConfig, p2pConfig, kvStore, privateKey);
   }
 
   private final DiscoverySystem discoverySystem;
   private final KeyValueStore<String, Bytes> kvStore;
 
   private DiscV5Service(
-      NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore, final Bytes privateKey) {
+      final DiscoveryConfig discoConfig,
+      NetworkConfig p2pConfig,
+      KeyValueStore<String, Bytes> kvStore,
+      final Bytes privateKey) {
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
     final int advertisedPort = p2pConfig.getAdvertisedPort();
-    final List<String> bootnodes = p2pConfig.getBootnodes();
+    final List<String> bootnodes = discoConfig.getBootnodes();
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     final NewAddressHandler maybeUpdateNodeRecordHandler =

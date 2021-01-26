@@ -18,8 +18,6 @@ import static com.google.common.net.InetAddresses.isInetAddress;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
@@ -35,29 +33,28 @@ public class NetworkConfig {
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
 
+  private final boolean isEnabled;
   private final Optional<String> privateKeyFile;
   private final String networkInterface;
   private final Optional<String> advertisedIp;
   private final int listenPort;
   private final OptionalInt advertisedPort;
-  private final List<String> staticPeers;
-  private final List<String> bootnodes;
 
   private NetworkConfig(
+      final boolean isEnabled,
       final GossipConfig gossipConfig,
       final WireLogsConfig wireLogsConfig,
       final Optional<String> privateKeyFile,
       final String networkInterface,
       final Optional<String> advertisedIp,
       final int listenPort,
-      final OptionalInt advertisedPort,
-      final List<String> staticPeers,
-      final List<String> bootnodes) {
+      final OptionalInt advertisedPort) {
 
     this.privateKeyFile = privateKeyFile;
     this.networkInterface = networkInterface;
 
     this.advertisedIp = advertisedIp.filter(ip -> !ip.isBlank());
+    this.isEnabled = isEnabled;
     if (this.advertisedIp.map(ip -> !isInetAddress(ip)).orElse(false)) {
       throw new InvalidConfigurationException(
           String.format(
@@ -66,8 +63,6 @@ public class NetworkConfig {
 
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
-    this.staticPeers = staticPeers;
-    this.bootnodes = bootnodes;
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
   }
@@ -84,6 +79,10 @@ public class NetworkConfig {
                   + "Check for other processes using this port.",
               listenPort));
     }
+  }
+
+  public boolean isEnabled() {
+    return isEnabled;
   }
 
   public Optional<String> getPrivateKeyFile() {
@@ -108,14 +107,6 @@ public class NetworkConfig {
 
   public int getAdvertisedPort() {
     return advertisedPort.orElse(listenPort);
-  }
-
-  public List<String> getStaticPeers() {
-    return staticPeers;
-  }
-
-  public List<String> getBootnodes() {
-    return bootnodes;
   }
 
   public GossipConfig getGossipConfig() {
@@ -144,30 +135,34 @@ public class NetworkConfig {
   public static class Builder {
     public static final int DEFAULT_P2P_PORT = 9000;
 
-    private GossipConfig.Builder gossipConfigBuilder = GossipConfig.builder();
-    private WireLogsConfig.Builder wireLogsConfig = WireLogsConfig.builder();
+    private final GossipConfig.Builder gossipConfigBuilder = GossipConfig.builder();
+    private final WireLogsConfig.Builder wireLogsConfig = WireLogsConfig.builder();
 
+    private Boolean isEnabled = true;
     private Optional<String> privateKeyFile = Optional.empty();
     private String networkInterface = "0.0.0.0";
     private Optional<String> advertisedIp = Optional.empty();
     private Integer listenPort = DEFAULT_P2P_PORT;
     private OptionalInt advertisedPort = OptionalInt.empty();
-    private List<String> staticPeers = Collections.emptyList();
-    private List<String> bootnodes = Collections.emptyList();
 
     private Builder() {}
 
     public NetworkConfig build() {
       return new NetworkConfig(
+          isEnabled,
           gossipConfigBuilder.build(),
           wireLogsConfig.build(),
           privateKeyFile,
           networkInterface,
           advertisedIp,
           listenPort,
-          advertisedPort,
-          staticPeers,
-          bootnodes);
+          advertisedPort);
+    }
+
+    public Builder isEnabled(final Boolean enabled) {
+      checkNotNull(enabled);
+      isEnabled = enabled;
+      return this;
     }
 
     public Builder gossipConfig(final Consumer<GossipConfig.Builder> consumer) {
@@ -207,18 +202,6 @@ public class NetworkConfig {
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
       this.advertisedPort = advertisedPort;
-      return this;
-    }
-
-    public Builder staticPeers(final List<String> staticPeers) {
-      checkNotNull(staticPeers);
-      this.staticPeers = staticPeers;
-      return this;
-    }
-
-    public Builder bootnodes(final List<String> bootnodes) {
-      checkNotNull(bootnodes);
-      this.bootnodes = bootnodes;
       return this;
     }
   }

@@ -30,9 +30,10 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
-import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -80,13 +81,10 @@ public class DiscoveryNetworkFactory {
 
         final Random random = new Random();
         final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+        final DiscoveryConfig discoveryConfig =
+            DiscoveryConfig.builder().staticPeers(staticPeers).bootnodes(bootnodes).build();
         final NetworkConfig config =
-            NetworkConfig.builder()
-                .listenPort(port)
-                .staticPeers(staticPeers)
-                .bootnodes(bootnodes)
-                .networkInterface("127.0.0.1")
-                .build();
+            NetworkConfig.builder().listenPort(port).networkInterface("127.0.0.1").build();
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
@@ -113,8 +111,8 @@ public class DiscoveryNetworkFactory {
                     },
                     topic -> true),
                 peerSelectionStrategy,
-                config,
-                true);
+                discoveryConfig,
+                config);
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);

@@ -61,7 +61,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(eth2NetworkConfig.getInitialState());
 
     // p2p config
-    assertThat(tekuConfig.network().getBootnodes())
+    assertThat(tekuConfig.discovery().getBootnodes())
         .isEqualTo(eth2NetworkConfig.getDiscoveryBootnodes());
 
     // Rest api
@@ -95,7 +95,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "pyrmont", "--p2p-discovery-bootnodes"});
 
-    final List<String> bootnodes = getResultingTekuConfiguration().network().getBootnodes();
+    final List<String> bootnodes = getResultingTekuConfiguration().discovery().getBootnodes();
     assertThat(bootnodes).isEmpty();
   }
 

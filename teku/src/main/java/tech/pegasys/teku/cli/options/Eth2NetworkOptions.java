@@ -88,7 +88,7 @@ public class Eth2NetworkOptions {
         .storageConfiguration(
             b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
         .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit))
-        .network(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
+        .discovery(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
         .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()))
         .weakSubjectivity(
             b -> eth2Config.getInitialState().ifPresent(b::weakSubjectivityStateResource));

@@ -375,11 +375,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
-        .p2p(p -> p.isDiscoveryEnabled(true).peerRateLimit(500).peerRequestLimit(50))
+        .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
+        .discovery(d -> d.isDiscoveryEnabled(true).bootnodes(networkConfig.getDiscoveryBootnodes()))
         .network(
             n ->
                 n.advertisedPort(OptionalInt.empty())
-                    .bootnodes(networkConfig.getDiscoveryBootnodes())
                     .networkInterface("0.0.0.0")
                     .listenPort(9000)
                     .privateKeyFile(""))
@@ -417,24 +417,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
         .data(b -> b.dataBasePath(dataPath))
-        .p2p(
-            b ->
-                b.isP2PEnabled(false)
-                    .isDiscoveryEnabled(false)
-                    .targetSubnetSubscriberCount(2)
-                    .peerRateLimit(500)
-                    .peerRequestLimit(50)
-                    .minPeers(64)
-                    .maxPeers(74)
-                    .minRandomlySelectedPeers(12))
+        .p2p(b -> b.targetSubnetSubscriberCount(2).peerRateLimit(500).peerRequestLimit(50))
+        .discovery(
+            d -> d.isDiscoveryEnabled(false).minPeers(64).maxPeers(74).minRandomlySelectedPeers(12))
         .network(
             n ->
-                n.networkInterface("1.2.3.4")
+                n.isEnabled(false)
+                    .networkInterface("1.2.3.4")
                     .listenPort(1234)
                     .advertisedPort(OptionalInt.of(9000))
                     .advertisedIp(Optional.empty())
-                    .privateKeyFile("path/to/file")
-                    .staticPeers(Collections.emptyList()))
+                    .privateKeyFile("path/to/file"))
         .restApi(
             b ->
                 b.restApiPort(5051)

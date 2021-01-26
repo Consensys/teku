@@ -61,8 +61,9 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestations
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -197,9 +198,12 @@ public class Eth2NetworkFactory {
         final GossipTopicFilter gossipTopicsFilter =
             new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
+        final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =
             new TargetPeerRange(
-                config.getMinPeers(), config.getMaxPeers(), config.getMinRandomlySelectedPeers());
+                discoConfig.getMinPeers(),
+                discoConfig.getMaxPeers(),
+                discoConfig.getMinRandomlySelectedPeers());
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -224,8 +228,8 @@ public class Eth2NetworkFactory {
                             config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
-                config.getNetworkConfig(),
-                false);
+                config.getDiscoveryConfig(),
+                config.getNetworkConfig());
 
         return new ActiveEth2Network(
             asyncRunner,
@@ -258,14 +262,14 @@ public class Eth2NetworkFactory {
 
       return P2PConfig.builder()
           .targetSubnetSubscriberCount(2)
-          .minPeers(20)
-          .maxPeers(30)
-          .minRandomlySelectedPeers(0)
-          .network(
-              b ->
-                  b.listenPort(port)
+          .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
+          .discovery(
+              d ->
+                  d.isDiscoveryEnabled(false)
                       .staticPeers(peerAddresses)
-                      .wireLogs(w -> w.logWireMuxFrames(true)))
+                      .minPeers(20)
+                      .maxPeers(30)
+                      .minRandomlySelectedPeers(0))
           .build();
     }
 

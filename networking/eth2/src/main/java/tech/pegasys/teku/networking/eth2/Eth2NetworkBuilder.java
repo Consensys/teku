@@ -42,8 +42,9 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubsc
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
@@ -150,6 +151,7 @@ public class Eth2NetworkBuilder {
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
     final NetworkConfig networkConfig = config.getNetworkConfig();
+    final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
     final LibP2PNetwork p2pNetwork =
         new LibP2PNetwork(
             asyncRunner,
@@ -163,9 +165,12 @@ public class Eth2NetworkBuilder {
             gossipTopicsFilter);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+
     final TargetPeerRange targetPeerRange =
         new TargetPeerRange(
-            config.getMinPeers(), config.getMaxPeers(), config.getMinRandomlySelectedPeers());
+            discoConfig.getMinPeers(),
+            discoConfig.getMaxPeers(),
+            discoConfig.getMinRandomlySelectedPeers());
     return DiscoveryNetwork.create(
         metricsSystem,
         asyncRunner,
@@ -178,8 +183,8 @@ public class Eth2NetworkBuilder {
                     network, subnetTopicProvider, config.getTargetSubnetSubscriberCount()),
             reputationManager,
             Collections::shuffle),
-        networkConfig,
-        config.isDiscoveryEnabled());
+        discoConfig,
+        networkConfig);
   }
 
   private void validate() {

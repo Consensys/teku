@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
@@ -29,32 +30,34 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
     final P2PConfig p2pConfig = tekuConfig.p2p();
-    assertThat(p2pConfig.isP2PEnabled()).isTrue();
-    assertThat(p2pConfig.isDiscoveryEnabled()).isTrue();
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
-    assertThat(p2pConfig.getMinPeers()).isEqualTo(70);
-    assertThat(p2pConfig.getMaxPeers()).isEqualTo(85);
-    assertThat(p2pConfig.getMinRandomlySelectedPeers()).isEqualTo(1);
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    assertThat(discoConfig.isDiscoveryEnabled()).isTrue();
+    assertThat(discoConfig.getMinPeers()).isEqualTo(70);
+    assertThat(discoConfig.getMaxPeers()).isEqualTo(85);
+    assertThat(discoConfig.getMinRandomlySelectedPeers()).isEqualTo(1);
+    assertThat(discoConfig.getStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
 
     final NetworkConfig networkConfig = tekuConfig.network();
+    assertThat(networkConfig.isEnabled()).isTrue();
     assertThat(networkConfig.getAdvertisedIp()).isEqualTo("127.200.0.1");
     assertThat(networkConfig.getNetworkInterface()).isEqualTo("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
     assertThat(networkConfig.getPrivateKeyFile()).contains("/the/file");
-    assertThat(networkConfig.getStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
   }
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final P2PConfig globalConfiguration = getTekuConfigurationFromArguments("--p2p-enabled").p2p();
-    assertThat(globalConfiguration.isP2PEnabled()).isTrue();
+    final NetworkConfig config = getTekuConfigurationFromArguments("--p2p-enabled").network();
+    assertThat(config.isEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final P2PConfig config =
-        getTekuConfigurationFromArguments("--p2p-discovery-enabled").beaconChain().p2pConfig();
-    assertThat(config.isP2PEnabled()).isTrue();
+    final DiscoveryConfig config =
+        getTekuConfigurationFromArguments("--p2p-discovery-enabled").discovery();
+    assertThat(config.isDiscoveryEnabled()).isTrue();
   }
 
   @Test
@@ -93,7 +96,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             getTekuConfigurationFromArguments(
                     "--p2p-peer-lower-bound", "100",
                     "--p2p-peer-upper-bound", "110")
-                .p2p()
+                .discovery()
                 .getMinRandomlySelectedPeers())
         .isEqualTo(20);
   }
@@ -123,7 +126,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
                     "--p2p-peer-lower-bound", "100",
                     "--p2p-peer-upper-bound", "110",
                     "--Xp2p-minimum-randomly-selected-peer-count", "40")
-                .p2p()
+                .discovery()
                 .getMinRandomlySelectedPeers())
         .isEqualTo(40);
   }

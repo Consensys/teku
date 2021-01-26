@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p;
+package tech.pegasys.teku.networking.p2p.discovery;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
@@ -36,8 +36,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
-import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
@@ -88,10 +86,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final KeyValueStore<String, Bytes> kvStore,
       final P2PNetwork<P> p2pNetwork,
       final PeerSelectionStrategy peerSelectionStrategy,
-      final NetworkConfig p2pConfig,
-      final boolean isDiscoveryEnabled) {
+      final DiscoveryConfig discoveryConfig,
+      final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService =
-        createDiscoveryService(isDiscoveryEnabled, p2pConfig, kvStore, p2pNetwork.getPrivateKey());
+        createDiscoveryService(discoveryConfig, p2pConfig, kvStore, p2pNetwork.getPrivateKey());
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
@@ -99,20 +97,20 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             asyncRunner,
             p2pNetwork,
             peerSelectionStrategy,
-            p2pConfig.getStaticPeers().stream()
+            discoveryConfig.getStaticPeers().stream()
                 .map(p2pNetwork::createPeerAddress)
                 .collect(toList()));
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 
   private static DiscoveryService createDiscoveryService(
-      final boolean isDiscoveryEnabled,
+      final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
       final KeyValueStore<String, Bytes> kvStore,
       final Bytes privateKey) {
     final DiscoveryService discoveryService;
-    if (isDiscoveryEnabled) {
-      discoveryService = DiscV5Service.create(p2pConfig, kvStore, privateKey);
+    if (discoConfig.isDiscoveryEnabled()) {
+      discoveryService = DiscV5Service.create(discoConfig, p2pConfig, kvStore, privateKey);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p;
+package tech.pegasys.teku.networking.p2p.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,8 +49,6 @@ import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
-import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -144,6 +142,8 @@ class DiscoveryNetworkTest {
 
   @Test
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
+    final DiscoveryConfig discoveryConfig =
+        DiscoveryConfig.builder().isDiscoveryEnabled(false).build();
     final NetworkConfig networkConfig = NetworkConfig.builder().build();
     final PeerSelectionStrategy peerSelectionStrategy =
         new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
@@ -154,8 +154,8 @@ class DiscoveryNetworkTest {
             new MemKeyValueStore<>(),
             p2pNetwork,
             peerSelectionStrategy,
-            networkConfig,
-            false);
+            discoveryConfig,
+            networkConfig);
     assertThat(network.getEnr()).isEmpty();
   }
 

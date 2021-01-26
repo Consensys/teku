@@ -18,49 +18,39 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2PConfig {
 
   private final NetworkConfig networkConfig;
-  private final boolean isP2PEnabled;
-  private final boolean isDiscoveryEnabled;
+  private final DiscoveryConfig discoveryConfig;
+
   private final boolean multiPeerSyncEnabled;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int peerRateLimit;
   private final int peerRequestLimit;
-  private final int minPeers;
-  private final int maxPeers;
-  private final int minRandomlySelectedPeers;
 
   private volatile Optional<Checkpoint> requiredCheckpoint;
 
   private P2PConfig(
       final NetworkConfig networkConfig,
-      final boolean isP2PEnabled,
-      final boolean isDiscoveryEnabled,
+      final DiscoveryConfig discoveryConfig,
       final boolean multiPeerSyncEnabled,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       Optional<Checkpoint> requiredCheckpoint,
       final int peerRateLimit,
-      final int peerRequestLimit,
-      final int minPeers,
-      final int maxPeers,
-      final int minRandomlySelectedPeers) {
-    this.isP2PEnabled = isP2PEnabled;
+      final int peerRequestLimit) {
     this.networkConfig = networkConfig;
-    this.isDiscoveryEnabled = isDiscoveryEnabled;
+    this.discoveryConfig = discoveryConfig;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.requiredCheckpoint = requiredCheckpoint;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.minPeers = minPeers;
-    this.maxPeers = maxPeers;
-    this.minRandomlySelectedPeers = minRandomlySelectedPeers;
   }
 
   public static Builder builder() {
@@ -84,12 +74,8 @@ public class P2PConfig {
     return networkConfig;
   }
 
-  public boolean isP2PEnabled() {
-    return isP2PEnabled;
-  }
-
-  public boolean isDiscoveryEnabled() {
-    return isDiscoveryEnabled;
+  public DiscoveryConfig getDiscoveryConfig() {
+    return discoveryConfig;
   }
 
   public boolean isMultiPeerSyncEnabled() {
@@ -112,52 +98,32 @@ public class P2PConfig {
     return peerRequestLimit;
   }
 
-  public int getMinPeers() {
-    return minPeers;
-  }
-
-  public int getMaxPeers() {
-    return maxPeers;
-  }
-
-  public int getMinRandomlySelectedPeers() {
-    return minRandomlySelectedPeers;
-  }
-
   public static class Builder {
     public static final int DEFAULT_PEER_RATE_LIMIT = 500;
     public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
 
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
+    private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
-    private Boolean isP2PEnabled = true;
-    private Boolean isDiscoveryEnabled = true;
     private Boolean multiPeerSyncEnabled = false;
     private Integer targetSubnetSubscriberCount = 2;
     private Boolean subscribeAllSubnetsEnabled = false;
     private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-    private Integer minPeers = 64;
-    private Integer maxPeers = 74;
-    private Integer minRandomlySelectedPeers = 2;
 
     private Builder() {}
 
     public P2PConfig build() {
       return new P2PConfig(
           networkConfig.build(),
-          isP2PEnabled,
-          isDiscoveryEnabled,
+          discoveryConfig.build(),
           multiPeerSyncEnabled,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           requiredCheckpoint,
           peerRateLimit,
-          peerRequestLimit,
-          minPeers,
-          maxPeers,
-          minRandomlySelectedPeers);
+          peerRequestLimit);
     }
 
     public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
@@ -165,15 +131,8 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder isP2PEnabled(final Boolean isP2PEnabled) {
-      checkNotNull(isP2PEnabled);
-      this.isP2PEnabled = isP2PEnabled;
-      return this;
-    }
-
-    public Builder isDiscoveryEnabled(final Boolean isDiscoveryEnabled) {
-      checkNotNull(isDiscoveryEnabled);
-      this.isDiscoveryEnabled = isDiscoveryEnabled;
+    public Builder discovery(final Consumer<DiscoveryConfig.Builder> consumer) {
+      consumer.accept(discoveryConfig);
       return this;
     }
 
@@ -210,24 +169,6 @@ public class P2PConfig {
     public Builder peerRequestLimit(final Integer peerRequestLimit) {
       checkNotNull(peerRequestLimit);
       this.peerRequestLimit = peerRequestLimit;
-      return this;
-    }
-
-    public Builder minPeers(final Integer minPeers) {
-      checkNotNull(minPeers);
-      this.minPeers = minPeers;
-      return this;
-    }
-
-    public Builder maxPeers(final Integer maxPeers) {
-      checkNotNull(maxPeers);
-      this.maxPeers = maxPeers;
-      return this;
-    }
-
-    public Builder minRandomlySelectedPeers(final Integer minRandomlySelectedPeers) {
-      checkNotNull(minRandomlySelectedPeers);
-      this.minRandomlySelectedPeers = minRandomlySelectedPeers;
       return this;
     }
   }
