@@ -13,78 +13,73 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.base.Objects;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class VoteTracker implements SimpleOffsetSerializable {
+public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View>
+    implements SimpleOffsetSerializable {
 
-  public static final VoteTracker DEFAULT =
-      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
+  static class VoteTrackerType extends
+      ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
-  private final Bytes32 currentRoot;
-  private final Bytes32 nextRoot;
-  private final UInt64 nextEpoch;
+    public VoteTrackerType() {
+      super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE);
+    }
+
+    @Override
+    public VoteTracker createFromBackingNode(TreeNode node) {
+      return new VoteTracker(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final VoteTrackerType TYPE = new VoteTrackerType();
+  public static final VoteTracker DEFAULT = new VoteTracker();
+
+
+  private VoteTracker(
+      ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  private VoteTracker() {
+    super(TYPE);
+  }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    this.currentRoot = currentRoot;
-    this.nextRoot = nextRoot;
-    this.nextEpoch = nextEpoch;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 3;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(getCurrentRoot())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getNextRoot())),
-        SSZ.encodeUInt64(getNextEpoch().longValue()));
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof VoteTracker)) return false;
-    VoteTracker that = (VoteTracker) o;
-    return Objects.equal(getCurrentRoot(), that.getCurrentRoot())
-        && Objects.equal(getNextRoot(), that.getNextRoot())
-        && Objects.equal(getNextEpoch(), that.getNextEpoch());
+    super(TYPE, new Bytes32View(currentRoot), new Bytes32View(nextRoot), new UInt64View(nextEpoch));
   }
 
   @Override
   public String toString() {
     return "VoteTracker{"
         + "currentRoot="
-        + currentRoot
+        + getCurrentRoot()
         + ", nextRoot="
-        + nextRoot
+        + getNextRoot()
         + ", nextEpoch="
-        + nextEpoch
+        + getNextEpoch()
         + '}';
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(getCurrentRoot(), getNextRoot(), getNextEpoch());
-  }
-
   public Bytes32 getCurrentRoot() {
-    return currentRoot;
+    return getField0().get();
   }
 
   public Bytes32 getNextRoot() {
-    return nextRoot;
+    return getField1().get();
   }
 
   public UInt64 getNextEpoch() {
-    return nextEpoch;
+    return getField2().get();
   }
 }
