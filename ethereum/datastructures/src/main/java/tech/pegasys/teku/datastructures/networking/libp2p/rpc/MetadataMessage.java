@@ -36,8 +36,6 @@ public class MetadataMessage
     extends Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>>
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  public static final MetadataMessage DEFAULT = new MetadataMessage();
-
   static class MetadataMessageType
       extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
 
@@ -54,6 +52,8 @@ public class MetadataMessage
   }
 
   @SszTypeDescriptor public static final MetadataMessageType TYPE = new MetadataMessageType();
+  public static final MetadataMessage DEFAULT = new MetadataMessage();
+
 
   private Bitvector attnetsCache;
 
