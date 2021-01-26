@@ -59,14 +59,9 @@ public class AggregateAndProof
 
   @SszTypeDescriptor public static final AggregateAndProofType TYPE = new AggregateAndProofType();
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  private BLSSignature selectionProofCache;
 
-  private UInt64 index;
-  private Attestation aggregate;
-  private BLSSignature selection_proof;
-
-  public AggregateAndProof(
+  private AggregateAndProof(
       ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
     super(type, backingNode);
@@ -78,37 +73,15 @@ public class AggregateAndProof
         new UInt64View(index),
         aggregate,
         ViewUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + selection_proof.getSSZFieldCount() + aggregate.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.add(SSZ.encodeUInt64(index.longValue()));
-    fixedPartsList.add(Bytes.EMPTY);
-    fixedPartsList.addAll(selection_proof.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.add(Bytes.EMPTY);
-    variablePartsList.add(SimpleOffsetSerializer.serialize(aggregate));
-    variablePartsList.addAll(Collections.nCopies(selection_proof.getSSZFieldCount(), Bytes.EMPTY));
-    return variablePartsList;
+    selectionProofCache = selection_proof;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("index", index)
-        .add("selection_proof", selection_proof)
-        .add("aggregate", aggregate)
+        .add("index", getIndex())
+        .add("selection_proof", getSelection_proof())
+        .add("aggregate", getAggregate())
         .toString();
   }
 
@@ -122,7 +95,10 @@ public class AggregateAndProof
   }
 
   public BLSSignature getSelection_proof() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    if (selectionProofCache == null) {
+      selectionProofCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    }
+    return selectionProofCache;
   }
 
   @Override

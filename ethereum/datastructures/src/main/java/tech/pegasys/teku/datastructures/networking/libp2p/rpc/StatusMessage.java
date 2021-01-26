@@ -21,19 +21,63 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody.BeaconBlockBodyType;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public class StatusMessage extends
+    Container5<StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View> implements
+    RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  private final Bytes4 forkDigest;
-  private final Bytes32 finalizedRoot;
-  private final UInt64 finalizedEpoch;
-  private final Bytes32 headRoot;
-  private final UInt64 headSlot;
+  public static class StatusMessageType
+      extends ContainerType5<StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View> {
+
+    public StatusMessageType() {
+      super(
+          BasicViewTypes.BYTES4_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.UINT64_TYPE);
+    }
+
+    @Override
+    public StatusMessage createFromBackingNode(TreeNode node) {
+      return new StatusMessage(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final StatusMessageType TYPE = new StatusMessageType();
+
+  private StatusMessage(
+      ContainerType5<StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public StatusMessage(
       Bytes4 forkDigest,
@@ -41,11 +85,8 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
       UInt64 finalizedEpoch,
       Bytes32 headRoot,
       UInt64 headSlot) {
-    this.forkDigest = forkDigest;
-    this.finalizedRoot = finalizedRoot;
-    this.finalizedEpoch = finalizedEpoch;
-    this.headRoot = headRoot;
-    this.headSlot = headSlot;
+    super(TYPE, new Bytes4View(forkDigest), new Bytes32View(finalizedRoot),
+        new UInt64View(finalizedEpoch), new Bytes32View(headRoot), new UInt64View(headSlot));
   }
 
   public static StatusMessage createPreGenesisStatus() {
@@ -59,77 +100,34 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
     return compute_fork_digest(genesisFork, emptyValidatorsRoot);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return 5;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(forkDigest.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
-        SSZ.encodeUInt64(finalizedEpoch.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
-        SSZ.encodeUInt64(headSlot.longValue()));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(forkDigest, finalizedRoot, finalizedEpoch, headRoot, headSlot);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof StatusMessage)) {
-      return false;
-    }
-
-    StatusMessage other = (StatusMessage) obj;
-    return Objects.equals(
-            this.getForkDigest().getWrappedBytes(), other.getForkDigest().getWrappedBytes())
-        && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
-        && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
-        && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
-        && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
-  }
-
   public Bytes4 getForkDigest() {
-    return forkDigest;
+    return getField0().get();
   }
 
   public Bytes32 getFinalizedRoot() {
-    return finalizedRoot;
+    return getField1().get();
   }
 
   public UInt64 getFinalizedEpoch() {
-    return finalizedEpoch;
+    return getField2().get();
   }
 
   public Bytes32 getHeadRoot() {
-    return headRoot;
+    return getField3().get();
   }
 
   public UInt64 getHeadSlot() {
-    return headSlot;
+    return getField4().get();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("forkDigest", forkDigest)
-        .add("finalizedRoot", finalizedRoot)
-        .add("finalizedEpoch", finalizedEpoch)
-        .add("headRoot", headRoot)
-        .add("headSlot", headSlot)
+        .add("forkDigest", getForkDigest())
+        .add("finalizedRoot", getFinalizedRoot())
+        .add("finalizedEpoch", getFinalizedEpoch())
+        .add("headRoot", getHeadRoot())
+        .add("headSlot", getHeadSlot())
         .toString();
   }
 

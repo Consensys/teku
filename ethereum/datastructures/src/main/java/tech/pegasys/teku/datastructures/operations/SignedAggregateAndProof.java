@@ -42,6 +42,8 @@ public class SignedAggregateAndProof
               new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
               SignedAggregateAndProof::new);
 
+  private BLSSignature signatureCache;
+
   public SignedAggregateAndProof(
       ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> type,
       TreeNode backingNode) {
@@ -50,6 +52,7 @@ public class SignedAggregateAndProof
 
   public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
     super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    signatureCache = signature;
   }
 
   public AggregateAndProof getMessage() {
@@ -57,7 +60,10 @@ public class SignedAggregateAndProof
   }
 
   public BLSSignature getSignature() {
-    return BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override

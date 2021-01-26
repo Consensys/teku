@@ -19,75 +19,68 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.datastructures.state.Fork.ForkType;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class ForkData implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
-  public static final int SSZ_FIELD_COUNT = 2;
-  private final Bytes4 currentVersion;
-  private final Bytes32 genesisValidatorsRoot;
+  static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
+
+    public ForkDataType() {
+      super(BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES32_TYPE);
+    }
+
+    @Override
+    public ForkData createFromBackingNode(TreeNode node) {
+      return new ForkData(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final ForkDataType TYPE = new ForkDataType();
+
+  private ForkData(
+      ContainerType2<ForkData, Bytes4View, Bytes32View> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    this.currentVersion = currentVersion;
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    super(TYPE, new Bytes4View(currentVersion), new Bytes32View(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {
-    return currentVersion;
+    return getField0().get();
   }
 
   public Bytes32 getGenesisValidatorsRoot() {
-    return genesisValidatorsRoot;
+    return getField1().get();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        List.of(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, currentVersion.getWrappedBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, genesisValidatorsRoot)));
+    return hashTreeRoot();
   }
 
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final ForkData forkData = (ForkData) o;
-    return Objects.equals(currentVersion, forkData.currentVersion)
-        && Objects.equals(genesisValidatorsRoot, forkData.genesisValidatorsRoot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(currentVersion, genesisValidatorsRoot);
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("currentVersion", currentVersion)
-        .add("genesisValidatorsRoot", genesisValidatorsRoot)
+        .add("currentVersion", getCurrentVersion())
+        .add("genesisValidatorsRoot", getGenesisValidatorsRoot())
         .toString();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(currentVersion.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(genesisValidatorsRoot)));
   }
 }
