@@ -28,9 +28,7 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,11 +47,12 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -145,26 +144,18 @@ class DiscoveryNetworkTest {
 
   @Test
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
-    final NetworkConfig networkConfig =
-        new NetworkConfig(
-            null,
-            "127.0.0.1",
-            Optional.empty(),
-            0,
-            OptionalInt.empty(),
-            Collections.emptyList(),
-            false,
-            Collections.emptyList(),
-            new TargetPeerRange(20, 30, 0),
-            2);
+    final NetworkConfig networkConfig = NetworkConfig.builder().build();
+    final PeerSelectionStrategy peerSelectionStrategy =
+        new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
             new NoOpMetricsSystem(),
             DelayedExecutorAsyncRunner.create(),
             new MemKeyValueStore<>(),
             p2pNetwork,
-            new SimplePeerSelectionStrategy(networkConfig.getTargetPeerRange()),
-            networkConfig);
+            peerSelectionStrategy,
+            networkConfig,
+            false);
     assertThat(network.getEnr()).isEmpty();
   }
 

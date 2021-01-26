@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,7 +61,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(eth2NetworkConfig.getInitialState());
 
     // p2p config
-    assertThat(tekuConfig.beaconChain().p2pConfig().getP2pDiscoveryBootnodes())
+    assertThat(tekuConfig.network().getBootnodes())
         .isEqualTo(eth2NetworkConfig.getDiscoveryBootnodes());
 
     // Rest api
@@ -94,8 +95,8 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "pyrmont", "--p2p-discovery-bootnodes"});
 
-    final P2PConfig config = getResultingTekuConfiguration().beaconChain().p2pConfig();
-    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
+    final List<String> bootnodes = getResultingTekuConfiguration().network().getBootnodes();
+    assertThat(bootnodes).isEmpty();
   }
 
   @Test

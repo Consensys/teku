@@ -43,11 +43,13 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -60,8 +62,7 @@ public class Eth2NetworkBuilder {
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
-  private NetworkConfig config;
-  private Eth2Config eth2Config;
+  private P2PConfig config;
   private EventBus eventBus;
   private RecentChainData recentChainData;
   private OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -84,8 +85,6 @@ public class Eth2NetworkBuilder {
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
-  private int peerRateLimit = Constants.MAX_BLOCKS_PER_MINUTE;
-  private int peerRequestLimit = 50;
 
   private Eth2NetworkBuilder() {}
 
@@ -107,13 +106,13 @@ public class Eth2NetworkBuilder {
             metricsSystem,
             attestationSubnetService,
             rpcEncoding,
-            eth2Config.getRequiredCheckpoint(),
+            config.getRequiredCheckpoint(),
             eth2RpcPingInterval,
             eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval,
             timeProvider,
-            peerRateLimit,
-            peerRequestLimit);
+            config.getPeerRateLimit(),
+            config.getPeerRequestLimit());
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -150,10 +149,12 @@ public class Eth2NetworkBuilder {
         (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
+    final NetworkConfig networkConfig = config.getNetworkConfig();
     final LibP2PNetwork p2pNetwork =
         new LibP2PNetwork(
             asyncRunner,
-            config,
+            networkConfig,
+            new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()),
             reputationManager,
             metricsSystem,
             rpcMethods,
@@ -162,24 +163,27 @@ public class Eth2NetworkBuilder {
             gossipTopicsFilter);
     final AttestationSubnetTopicProvider subnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+    final TargetPeerRange targetPeerRange =
+        new TargetPeerRange(
+            config.getMinPeers(), config.getMaxPeers(), config.getMinRandomlySelectedPeers());
     return DiscoveryNetwork.create(
         metricsSystem,
         asyncRunner,
         keyValueStore,
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
-            config.getTargetPeerRange(),
+            targetPeerRange,
             network ->
                 PeerSubnetSubscriptions.create(
                     network, subnetTopicProvider, config.getTargetSubnetSubscriberCount()),
             reputationManager,
             Collections::shuffle),
-        config);
+        networkConfig,
+        config.isDiscoveryEnabled());
   }
 
   private void validate() {
-    assertNotNull("config", config);
-    assertNotNull("eth2Config", eth2Config);
+    assertNotNull("eth2Config", config);
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
@@ -198,25 +202,9 @@ public class Eth2NetworkBuilder {
     checkState(fieldValue != null, "Field " + fieldName + " must be set.");
   }
 
-  public Eth2NetworkBuilder config(final NetworkConfig config) {
+  public Eth2NetworkBuilder config(final P2PConfig config) {
     checkNotNull(config);
     this.config = config;
-    return this;
-  }
-
-  public Eth2NetworkBuilder peerRateLimit(final int peerRateLimit) {
-    this.peerRateLimit = peerRateLimit;
-    return this;
-  }
-
-  public Eth2NetworkBuilder peerRequestLimit(final int peerRequestLimit) {
-    this.peerRequestLimit = peerRequestLimit;
-    return this;
-  }
-
-  public Eth2NetworkBuilder eth2Config(final Eth2Config eth2Config) {
-    checkNotNull(eth2Config);
-    this.eth2Config = eth2Config;
     return this;
   }
 

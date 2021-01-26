@@ -132,7 +132,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder().p2p(b -> b.p2pInterface("1.2.3.5")).build();
+        expectedConfigurationBuilder()
+            .p2p(b -> b.network(n -> n.networkInterface("1.2.3.5")))
+            .build();
     assertTekuConfiguration(expected);
   }
 
@@ -151,10 +153,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
+            .p2p(p -> p.network(n -> n.networkInterface("1.2.3.5")))
             .build();
     assertTekuConfiguration(expected);
   }
@@ -170,10 +169,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration expected =
         expectedCompleteConfigInFileBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
+            .p2p(p -> p.network(n -> n.networkInterface("1.2.3.5")))
             .build();
     assertTekuConfiguration(expected);
   }
@@ -386,15 +382,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(
-            b ->
-                b.p2pAdvertisedPort(OptionalInt.empty())
-                    .p2pDiscoveryEnabled(true)
-                    .p2pDiscoveryBootnodes(networkConfig.getDiscoveryBootnodes())
-                    .p2pInterface("0.0.0.0")
-                    .p2pPort(9000)
-                    .p2pPrivateKeyFile(null)
+            p ->
+                p.isDiscoveryEnabled(true)
                     .peerRateLimit(500)
-                    .peerRequestLimit(50))
+                    .peerRequestLimit(50)
+                    .network(
+                        n ->
+                            n.advertisedPort(OptionalInt.empty())
+                                .bootnodes(networkConfig.getDiscoveryBootnodes())
+                                .networkInterface("0.0.0.0")
+                                .listenPort(9000)
+                                .privateKeyFile("")))
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
@@ -431,20 +429,22 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
-                b.p2pEnabled(false)
-                    .p2pInterface("1.2.3.4")
-                    .p2pPort(1234)
-                    .p2pDiscoveryEnabled(false)
-                    .p2pAdvertisedPort(OptionalInt.of(9000))
-                    .p2pAdvertisedIp(Optional.empty())
-                    .p2pPrivateKeyFile("path/to/file")
-                    .p2pPeerLowerBound(64)
-                    .p2pPeerUpperBound(74)
+                b.isP2PEnabled(false)
+                    .isDiscoveryEnabled(false)
                     .targetSubnetSubscriberCount(2)
-                    .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
-                    .p2pStaticPeers(Collections.emptyList())
                     .peerRateLimit(500)
-                    .peerRequestLimit(50))
+                    .peerRequestLimit(50)
+                    .minPeers(64)
+                    .maxPeers(74)
+                    .minRandomlySelectedPeers(12)
+                    .network(
+                        n ->
+                            n.networkInterface("1.2.3.4")
+                                .listenPort(1234)
+                                .advertisedPort(OptionalInt.of(9000))
+                                .advertisedIp(Optional.empty())
+                                .privateKeyFile("path/to/file")
+                                .staticPeers(Collections.emptyList())))
         .restApi(
             b ->
                 b.restApiPort(5051)

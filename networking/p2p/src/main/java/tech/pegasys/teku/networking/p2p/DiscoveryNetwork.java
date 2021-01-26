@@ -41,8 +41,8 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
@@ -88,8 +88,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final KeyValueStore<String, Bytes> kvStore,
       final P2PNetwork<P> p2pNetwork,
       final PeerSelectionStrategy peerSelectionStrategy,
-      final NetworkConfig p2pConfig) {
-    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig, kvStore);
+      final NetworkConfig p2pConfig,
+      final boolean isDiscoveryEnabled) {
+    final DiscoveryService discoveryService =
+        createDiscoveryService(isDiscoveryEnabled, p2pConfig, kvStore, p2pNetwork.getPrivateKey());
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
@@ -104,10 +106,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   private static DiscoveryService createDiscoveryService(
-      final NetworkConfig p2pConfig, final KeyValueStore<String, Bytes> kvStore) {
+      final boolean isDiscoveryEnabled,
+      final NetworkConfig p2pConfig,
+      final KeyValueStore<String, Bytes> kvStore,
+      final Bytes privateKey) {
     final DiscoveryService discoveryService;
-    if (p2pConfig.isDiscoveryEnabled()) {
-      discoveryService = DiscV5Service.create(p2pConfig, kvStore);
+    if (isDiscoveryEnabled) {
+      discoveryService = DiscV5Service.create(p2pConfig, kvStore, privateKey);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }

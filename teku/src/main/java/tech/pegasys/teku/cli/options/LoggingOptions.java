@@ -171,18 +171,29 @@ public class LoggingOptions {
             .maybeFromCommandLine(getMaybeLogPattern())
             .build();
 
-    return builder.logging(
-        loggingBuilder ->
-            loggingBuilder
-                .colorEnabled(logColorEnabled)
-                .includeEventsEnabled(logIncludeEventsEnabled)
-                .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                .destination(logDestination)
-                .logFile(logFile)
-                .logFileNamePattern(logFileNamePattern)
-                .logWireCipher(logWireCipherEnabled)
-                .logWirePlain(logWirePlainEnabled)
-                .logWireMuxFrames(logWireMuxEnabled)
-                .logWireGossip(logWireGossipEnabled));
+    return builder
+        .logging(
+            loggingBuilder ->
+                loggingBuilder
+                    .colorEnabled(logColorEnabled)
+                    .includeEventsEnabled(logIncludeEventsEnabled)
+                    .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                    .destination(logDestination)
+                    .logFile(logFile)
+                    .logFileNamePattern(logFileNamePattern)
+                    .logWireCipher(logWireCipherEnabled)
+                    .logWirePlain(logWirePlainEnabled)
+                    .logWireMuxFrames(logWireMuxEnabled)
+                    .logWireGossip(logWireGossipEnabled))
+        .p2p(
+            p ->
+                p.network(
+                    n ->
+                        n.wireLogs(
+                            l ->
+                                l.logWireCipher(logWireCipherEnabled)
+                                    .logWirePlain(logWirePlainEnabled)
+                                    .logWireMuxFrames(logWireMuxEnabled)
+                                    .logWireGossip(logWireGossipEnabled))));
   }
 }

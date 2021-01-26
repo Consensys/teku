@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.network.p2p;
 
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,11 +28,13 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
@@ -83,23 +81,20 @@ public class DiscoveryNetworkFactory {
         final Random random = new Random();
         final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
         final NetworkConfig config =
-            new NetworkConfig(
-                KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
-                "127.0.0.1",
-                Optional.empty(),
-                port,
-                OptionalInt.empty(),
-                staticPeers,
-                true,
-                bootnodes,
-                new TargetPeerRange(20, 30, 0),
-                2);
+            NetworkConfig.builder()
+                .listenPort(port)
+                .staticPeers(staticPeers)
+                .bootnodes(bootnodes)
+                .networkInterface("127.0.0.1")
+                .build();
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
                 Constants.REPUTATION_MANAGER_CAPACITY);
+        final PeerSelectionStrategy peerSelectionStrategy =
+            new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -108,6 +103,7 @@ public class DiscoveryNetworkFactory {
                 new LibP2PNetwork(
                     DelayedExecutorAsyncRunner.create(),
                     config,
+                    PrivateKeyGenerator::generate,
                     reputationManager,
                     METRICS_SYSTEM,
                     Collections.emptyList(),
@@ -116,8 +112,9 @@ public class DiscoveryNetworkFactory {
                       throw new UnsupportedOperationException();
                     },
                     topic -> true),
-                new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
-                config);
+                peerSelectionStrategy,
+                config,
+                true);
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);

@@ -16,49 +16,51 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final P2PConfig config =
-        getTekuConfigurationFromFile("P2POptions_config.yaml").beaconChain().p2pConfig();
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
-    assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
-    assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
-    assertThat(config.isP2pEnabled()).isTrue();
-    assertThat(config.isP2pDiscoveryEnabled()).isTrue();
-    assertThat(config.getP2pPort()).isEqualTo(4321);
-    assertThat(config.getP2pPrivateKeyFile()).isEqualTo("/the/file");
-    assertThat(config.getP2pStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
-    assertThat(config.getP2pPeerLowerBound()).isEqualTo(70);
-    assertThat(config.getP2pPeerUpperBound()).isEqualTo(85);
-    assertThat(config.getTargetSubnetSubscriberCount()).isEqualTo(5);
-    assertThat(config.getMinimumRandomlySelectedPeerCount()).isEqualTo(1);
+    final P2PConfig p2pConfig = tekuConfig.p2p();
+    assertThat(p2pConfig.isP2PEnabled()).isTrue();
+    assertThat(p2pConfig.isDiscoveryEnabled()).isTrue();
+    assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
+    assertThat(p2pConfig.getMinPeers()).isEqualTo(70);
+    assertThat(p2pConfig.getMaxPeers()).isEqualTo(85);
+    assertThat(p2pConfig.getMinRandomlySelectedPeers()).isEqualTo(1);
+
+    final NetworkConfig networkConfig = tekuConfig.network();
+    assertThat(networkConfig.getAdvertisedIp()).isEqualTo("127.200.0.1");
+    assertThat(networkConfig.getNetworkInterface()).isEqualTo("127.100.0.1");
+    assertThat(networkConfig.getListenPort()).isEqualTo(4321);
+    assertThat(networkConfig.getPrivateKeyFile()).contains("/the/file");
+    assertThat(networkConfig.getStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
   }
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final P2PConfig globalConfiguration =
-        getTekuConfigurationFromArguments("--p2p-enabled").beaconChain().p2pConfig();
-    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
+    final P2PConfig globalConfiguration = getTekuConfigurationFromArguments("--p2p-enabled").p2p();
+    assertThat(globalConfiguration.isP2PEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final P2PConfig globalConfiguration =
+    final P2PConfig config =
         getTekuConfigurationFromArguments("--p2p-discovery-enabled").beaconChain().p2pConfig();
-    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
+    assertThat(config.isP2PEnabled()).isTrue();
   }
 
   @Test
   public void advertisedIp_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().beaconChain().p2pConfig().getP2pAdvertisedIp())
-        .isEmpty();
+    final NetworkConfig config = getTekuConfigurationFromArguments().network();
+    assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
   }
 
   @Test
@@ -66,26 +68,23 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final String ip = "10.0.1.200";
     assertThat(
             getTekuConfigurationFromArguments("--p2p-advertised-ip", ip)
-                .beaconChain()
-                .p2pConfig()
-                .getP2pAdvertisedIp())
+                .network()
+                .getAdvertisedIp())
         .contains(ip);
   }
 
   @Test
-  public void advertisedPort_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().beaconChain().p2pConfig().getP2pAdvertisedPort())
-        .isEmpty();
+  public void advertisedPort_shouldDefaultToListenPort() {
+    assertThat(getTekuConfigurationFromArguments().network().getAdvertisedPort()).isEqualTo(9000);
   }
 
   @Test
   public void advertisedPort_shouldAcceptValue() {
     assertThat(
             getTekuConfigurationFromArguments("--p2p-advertised-port", "8056")
-                .beaconChain()
-                .p2pConfig()
-                .getP2pAdvertisedPort())
-        .hasValue(8056);
+                .network()
+                .getAdvertisedPort())
+        .isEqualTo(8056);
   }
 
   @Test
@@ -94,10 +93,27 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             getTekuConfigurationFromArguments(
                     "--p2p-peer-lower-bound", "100",
                     "--p2p-peer-upper-bound", "110")
-                .beaconChain()
-                .p2pConfig()
-                .getMinimumRandomlySelectedPeerCount())
+                .p2p()
+                .getMinRandomlySelectedPeers())
         .isEqualTo(20);
+  }
+
+  @Test
+  public void privateKeyFile_shouldBeSettable() {
+    assertThat(
+            getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file")
+                .network()
+                .getPrivateKeyFile())
+        .contains("/some/file");
+  }
+
+  @Test
+  public void privateKeyFile_ignoreBlankStrings() {
+    assertThat(
+            getTekuConfigurationFromArguments("--p2p-private-key-file", "   ")
+                .network()
+                .getPrivateKeyFile())
+        .isEmpty();
   }
 
   @Test
@@ -107,9 +123,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
                     "--p2p-peer-lower-bound", "100",
                     "--p2p-peer-upper-bound", "110",
                     "--Xp2p-minimum-randomly-selected-peer-count", "40")
-                .beaconChain()
-                .p2pConfig()
-                .getMinimumRandomlySelectedPeerCount())
+                .p2p()
+                .getMinRandomlySelectedPeers())
         .isEqualTo(40);
   }
 }

@@ -52,6 +52,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
+  public Bytes getPrivateKey() {
+    return network.getPrivateKey();
+  }
+
+  @Override
   public PeerAddress createPeerAddress(final String peerAddress) {
     return network.createPeerAddress(peerAddress);
   }

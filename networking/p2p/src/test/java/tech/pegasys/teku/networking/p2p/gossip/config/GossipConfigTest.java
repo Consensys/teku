@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.network;
+package tech.pegasys.teku.networking.p2p.gossip.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

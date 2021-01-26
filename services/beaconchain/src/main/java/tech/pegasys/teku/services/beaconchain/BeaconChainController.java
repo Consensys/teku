@@ -22,14 +22,8 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
-import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
 import java.net.BindException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Random;
@@ -63,11 +57,9 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
@@ -77,10 +69,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2Network;
-import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
-import tech.pegasys.teku.networking.p2p.network.GossipConfig;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -143,7 +131,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
-  private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
   private final BeaconChainConfiguration beaconConfig;
   private final SpecProvider specProvider;
@@ -554,89 +541,65 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
-    final P2PConfig configOptions = beaconConfig.p2pConfig();
-    if (!configOptions.isP2pEnabled()) {
+    if (!beaconConfig.p2pConfig().isP2PEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
-    } else {
-      final KeyValueStore<String, Bytes> keyValueStore =
-          new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
-      final PrivKey pk =
-          KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes(keyValueStore).toArrayUnsafe());
-      final LoggingConfig loggingConfig = beaconConfig.loggingConfig();
-      final NetworkConfig p2pConfig =
-          new NetworkConfig(
-              pk,
-              configOptions.getP2pInterface(),
-              configOptions.getP2pAdvertisedIp(),
-              configOptions.getP2pPort(),
-              configOptions.getP2pAdvertisedPort(),
-              configOptions.getP2pStaticPeers(),
-              configOptions.isP2pDiscoveryEnabled(),
-              configOptions.getP2pDiscoveryBootnodes(),
-              new TargetPeerRange(
-                  configOptions.getP2pPeerLowerBound(),
-                  configOptions.getP2pPeerUpperBound(),
-                  configOptions.getMinimumRandomlySelectedPeerCount()),
-              configOptions.getTargetSubnetSubscriberCount(),
-              GossipConfig.DEFAULT_CONFIG,
-              new WireLogsConfig(
-                  loggingConfig.isLogWireCipher(),
-                  loggingConfig.isLogWirePlain(),
-                  loggingConfig.isLogWireMuxFrames(),
-                  loggingConfig.isLogWireGossip()));
-
-      p2pConfig.validateListenPortAvailable();
-      final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
-
-      // Set up gossip for voluntary exits
-      voluntaryExitPool.subscribeOperationAdded(
-          (item, result) -> {
-            if (result.equals(InternalValidationResult.ACCEPT)) {
-              voluntaryExitGossipPublisher.publish(item);
-            }
-          });
-      // Set up gossip for attester slashings
-      attesterSlashingPool.subscribeOperationAdded(
-          (item, result) -> {
-            if (result.equals(InternalValidationResult.ACCEPT)) {
-              attesterSlashingGossipPublisher.publish(item);
-            }
-          });
-      // Set up gossip for proposer slashings
-      proposerSlashingPool.subscribeOperationAdded(
-          (item, result) -> {
-            if (result.equals(InternalValidationResult.ACCEPT)) {
-              proposerSlashingGossipPublisher.publish(item);
-            }
-          });
-
-      this.p2pNetwork =
-          Eth2NetworkBuilder.create()
-              .config(p2pConfig)
-              .eth2Config(eth2Config)
-              .eventBus(eventBus)
-              .recentChainData(recentChainData)
-              .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-              .gossipedAttestationProcessor(attestationManager::addAttestation)
-              .gossipedAggregateProcessor(attestationManager::addAggregate)
-              .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
-              .attesterSlashingGossipPublisher(attesterSlashingGossipPublisher)
-              .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
-              .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
-              .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
-              .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
-              .processedAttestationSubscriptionProvider(
-                  attestationManager::subscribeToAttestationsToSend)
-              .historicalChainData(
-                  eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
-              .metricsSystem(metricsSystem)
-              .timeProvider(timeProvider)
-              .asyncRunner(networkAsyncRunner)
-              .keyValueStore(keyValueStore)
-              .peerRateLimit(configOptions.getPeerRateLimit())
-              .peerRequestLimit(configOptions.getPeerRequestLimit())
-              .build();
+      return;
     }
+
+    final P2PConfig p2PConfig = beaconConfig.p2pConfig();
+    weakSubjectivityValidator
+        .getWSCheckpoint()
+        .ifPresentOrElse(p2PConfig::setRequiredCheckpoint, p2PConfig::clearRequiredCheckpoint);
+    beaconConfig.p2pConfig().getNetworkConfig().validateListenPortAvailable();
+
+    // Set up gossip for voluntary exits
+    voluntaryExitPool.subscribeOperationAdded(
+        (item, result) -> {
+          if (result.equals(InternalValidationResult.ACCEPT)) {
+            voluntaryExitGossipPublisher.publish(item);
+          }
+        });
+    // Set up gossip for attester slashings
+    attesterSlashingPool.subscribeOperationAdded(
+        (item, result) -> {
+          if (result.equals(InternalValidationResult.ACCEPT)) {
+            attesterSlashingGossipPublisher.publish(item);
+          }
+        });
+    // Set up gossip for proposer slashings
+    proposerSlashingPool.subscribeOperationAdded(
+        (item, result) -> {
+          if (result.equals(InternalValidationResult.ACCEPT)) {
+            proposerSlashingGossipPublisher.publish(item);
+          }
+        });
+
+    final KeyValueStore<String, Bytes> keyValueStore =
+        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
+
+    this.p2pNetwork =
+        Eth2NetworkBuilder.create()
+            .config(p2PConfig)
+            .eventBus(eventBus)
+            .recentChainData(recentChainData)
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+            .gossipedAttestationProcessor(attestationManager::addAttestation)
+            .gossipedAggregateProcessor(attestationManager::addAggregate)
+            .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
+            .attesterSlashingGossipPublisher(attesterSlashingGossipPublisher)
+            .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
+            .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
+            .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
+            .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
+            .processedAttestationSubscriptionProvider(
+                attestationManager::subscribeToAttestationsToSend)
+            .historicalChainData(
+                eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner))
+            .metricsSystem(metricsSystem)
+            .timeProvider(timeProvider)
+            .asyncRunner(networkAsyncRunner)
+            .keyValueStore(keyValueStore)
+            .build();
   }
 
   private void initSlotProcessor() {
@@ -647,32 +610,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             forkChoice,
             p2pNetwork,
             slotEventsChannelPublisher);
-  }
-
-  @VisibleForTesting
-  Bytes getP2pPrivateKeyBytes(KeyValueStore<String, Bytes> keyValueStore) {
-    final Bytes privateKey;
-    final String p2pPrivateKeyFile = beaconConfig.p2pConfig().getP2pPrivateKeyFile();
-    if (p2pPrivateKeyFile != null) {
-      try {
-        privateKey = Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile)));
-      } catch (IOException e) {
-        throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
-      }
-    } else {
-      final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
-      if (generatedKeyBytes.isEmpty()) {
-        final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
-        privateKey = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
-        keyValueStore.put(GENERATED_NODE_KEY_KEY, privateKey);
-        STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, true);
-      } else {
-        privateKey = generatedKeyBytes.get();
-        STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, false);
-      }
-    }
-
-    return privateKey;
   }
 
   @VisibleForTesting

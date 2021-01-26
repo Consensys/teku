@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.network.p2p.jvmlibp2p;
 
-import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import io.libp2p.core.crypto.KEY_TYPE;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.PrivKey;
 
-public class Eth2Config {
-  private final Optional<Checkpoint> requiredCheckpoint;
-
-  public Eth2Config(Optional<Checkpoint> requiredCheckpoint) {
-    this.requiredCheckpoint = requiredCheckpoint;
-  }
-
-  public Optional<Checkpoint> getRequiredCheckpoint() {
-    return requiredCheckpoint;
+public class PrivateKeyGenerator {
+  public static PrivKey generate() {
+    return KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
   }
 }

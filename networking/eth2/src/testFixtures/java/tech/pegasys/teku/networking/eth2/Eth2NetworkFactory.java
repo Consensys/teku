@@ -15,20 +15,16 @@ package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +49,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
@@ -68,11 +65,8 @@ import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
-import tech.pegasys.teku.networking.p2p.network.GossipConfig;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
-import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -141,7 +135,7 @@ public class Eth2NetworkFactory {
     protected Eth2Network buildAndStartNetwork() throws Exception {
       int attempt = 1;
       while (true) {
-        final NetworkConfig config = generateConfig();
+        final P2PConfig config = generateConfig();
         final Eth2Network network = buildNetwork(config);
         try {
           network.start().get(30, TimeUnit.SECONDS);
@@ -165,7 +159,7 @@ public class Eth2NetworkFactory {
       }
     }
 
-    protected Eth2Network buildNetwork(final NetworkConfig config) {
+    protected Eth2Network buildNetwork(final P2PConfig config) {
       {
         // Setup eth2 handlers
         final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
@@ -203,6 +197,9 @@ public class Eth2NetworkFactory {
         final GossipTopicFilter gossipTopicsFilter =
             new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
+        final TargetPeerRange targetPeerRange =
+            new TargetPeerRange(
+                config.getMinPeers(), config.getMaxPeers(), config.getMinRandomlySelectedPeers());
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -210,7 +207,8 @@ public class Eth2NetworkFactory {
                 keyValueStore,
                 new LibP2PNetwork(
                     asyncRunner,
-                    config,
+                    config.getNetworkConfig(),
+                    PrivateKeyGenerator::generate,
                     reputationManager,
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
@@ -218,7 +216,7 @@ public class Eth2NetworkFactory {
                     (__, msg) -> gossipEncoding.prepareUnknownMessage(msg),
                     gossipTopicsFilter),
                 new Eth2PeerSelectionStrategy(
-                    config.getTargetPeerRange(),
+                    targetPeerRange,
                     gossipNetwork ->
                         PeerSubnetSubscriptions.create(
                             gossipNetwork,
@@ -226,7 +224,8 @@ public class Eth2NetworkFactory {
                             config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
-                config);
+                config.getNetworkConfig(),
+                false);
 
         return new ActiveEth2Network(
             asyncRunner,
@@ -250,26 +249,24 @@ public class Eth2NetworkFactory {
       }
     }
 
-    private NetworkConfig generateConfig() {
+    private P2PConfig generateConfig() {
       final List<String> peerAddresses =
           peers.stream().map(P2PNetwork::getNodeAddress).collect(toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
-      return new NetworkConfig(
-          KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
-          "127.0.0.1",
-          Optional.empty(),
-          port,
-          OptionalInt.empty(),
-          peerAddresses,
-          false,
-          emptyList(),
-          new TargetPeerRange(20, 30, 0),
-          2,
-          GossipConfig.DEFAULT_CONFIG,
-          new WireLogsConfig(false, false, true, false));
+      return P2PConfig.builder()
+          .targetSubnetSubscriberCount(2)
+          .minPeers(20)
+          .maxPeers(30)
+          .minRandomlySelectedPeers(0)
+          .network(
+              b ->
+                  b.listenPort(port)
+                      .staticPeers(peerAddresses)
+                      .wireLogs(w -> w.logWireMuxFrames(true)))
+          .build();
     }
 
     private void setDefaults() {
