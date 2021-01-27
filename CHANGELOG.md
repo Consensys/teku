@@ -13,8 +13,8 @@
 ## Next Release
 
 ### Additions and Improvements
-- `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
-- Implement missing API event streams: block, attestation, voluntary_exit. Now Teku fully supports event streams, on top of the Teku-specific sync-state event stream.
+- `--validators-external-signer-public-keys` arguments can now include URLs to load the public keys from. The URL should provide a list of public keys as a JSON array.
+- Added support for `block`, `attestation` and `voluntary_exit` event streams from the standard REST API.
 - If an advertised IP is set via `--p2p-advertised-ip` it is always used, regardless of the external IP discovered via the discv5 process.
 
 ### Bug Fixes
