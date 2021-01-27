@@ -60,7 +60,7 @@ public class NatManager extends Service {
   private final SafeFuture<String> externalIpQueryFuture = new SafeFuture<>();
 
   private final Map<String, SafeFuture<RemoteService>> recognizedServices = new HashMap<>();
-  private volatile Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
+  private final Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
   private Optional<String> discoveredOnLocalAddress = Optional.empty();
 
   public NatManager(final NatMethod natMethod) {
