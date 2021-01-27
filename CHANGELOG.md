@@ -10,7 +10,7 @@
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
 
-## Next Release
+## 21.1.1
 
 ### Additions and Improvements
 - `--validators-external-signer-public-keys` arguments can now include URLs to load the public keys from. The URL should provide a list of public keys as a JSON array.
