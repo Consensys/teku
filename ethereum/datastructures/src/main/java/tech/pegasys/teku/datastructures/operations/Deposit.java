@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing.AttesterSlashingType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -39,12 +40,23 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
   private static final SSZVector<Bytes32> EMPTY_PROOF =
       SSZVector.createMutable(PROOF_TYPE.getLength(), Bytes32.ZERO);
 
-  @SszTypeDescriptor
-  public static final ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> TYPE =
-      ContainerType2.create(PROOF_TYPE, DepositData.TYPE, Deposit::new);
+  public static class DepositType
+      extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
 
-  private Deposit(
-      ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> type,
+    public DepositType() {
+      super(PROOF_TYPE, DepositData.TYPE);
+    }
+
+    @Override
+    public Deposit createFromBackingNode(TreeNode node) {
+      return new Deposit(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final DepositType TYPE = new DepositType();
+
+  private Deposit(DepositType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }

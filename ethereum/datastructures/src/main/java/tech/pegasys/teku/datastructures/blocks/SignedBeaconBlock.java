@@ -26,6 +26,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -35,13 +36,22 @@ public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
     implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
+  public static class SignedBeaconBlockType
+      extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
+
+    public SignedBeaconBlockType() {
+      super(BeaconBlock.TYPE,
+          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+    }
+
+    @Override
+    public SignedBeaconBlock createFromBackingNode(TreeNode node) {
+      return new SignedBeaconBlock(this, node);
+    }
+  }
+
   @SszTypeDescriptor
-  public static final ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
-      TYPE =
-          ContainerType2.create(
-              BeaconBlock.TYPE,
-              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-              SignedBeaconBlock::new);
+  public static final SignedBeaconBlockType TYPE = new SignedBeaconBlockType();
 
   private BLSSignature signatureCache;
 

@@ -20,12 +20,18 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data.Eth1DataType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
@@ -33,11 +39,21 @@ public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
+  public static class AttesterSlashingType
+      extends ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+
+    public AttesterSlashingType() {
+      super(IndexedAttestation.TYPE, IndexedAttestation.TYPE);
+    }
+
+    @Override
+    public AttesterSlashing createFromBackingNode(TreeNode node) {
+      return new AttesterSlashing(this, node);
+    }
+  }
+
   @SszTypeDescriptor
-  public static final ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
-      TYPE =
-          ContainerType2.create(
-              IndexedAttestation.TYPE, IndexedAttestation.TYPE, AttesterSlashing::new);
+  public static final AttesterSlashingType TYPE = new AttesterSlashingType();
 
   private final Supplier<Set<UInt64>> intersectingIndices =
       Suppliers.memoize(
@@ -50,7 +66,7 @@ public class AttesterSlashing
                   new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
 
   private AttesterSlashing(
-      ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> type,
+      AttesterSlashingType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
