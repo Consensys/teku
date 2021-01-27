@@ -16,12 +16,15 @@ package tech.pegasys.teku.datastructures.operations;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.operations.AttestationData.AttestationDataType;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
@@ -36,18 +39,27 @@ public class DepositMessage
     extends Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
-  @SszTypeDescriptor
-  public static final ContainerType3<
-          DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View>
-      TYPE =
-          ContainerType3.create(
-              new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
-              BasicViewTypes.BYTES32_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              DepositMessage::new);
+  static class DepositMessageType
+      extends ContainerType3<
+      DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
 
-  private DepositMessage(
-      ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> type,
+    public DepositMessageType() {
+      super(
+          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 48),
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.UINT64_TYPE);
+    }
+
+    @Override
+    public DepositMessage createFromBackingNode(TreeNode node) {
+      return new DepositMessage(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final DepositMessageType TYPE = new DepositMessageType();
+
+
+  private DepositMessage(      DepositMessageType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }

@@ -57,11 +57,6 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
         new UInt64View(epoch));
   }
 
-  public Fork(Fork fork) {
-    super(TYPE, fork.getBackingNode());
-  }
-
-  /** ****************** * GETTERS & SETTERS * * ******************* */
   public Bytes4 getPrevious_version() {
     return getField0().get();
   }

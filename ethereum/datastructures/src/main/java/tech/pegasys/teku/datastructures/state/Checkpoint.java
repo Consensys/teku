@@ -35,38 +35,28 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  @SszTypeDescriptor
-  public static final ContainerType2<Checkpoint, UInt64View, Bytes32View> TYPE =
-      ContainerType2.create(
-          BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE, Checkpoint::new);
+  static class CheckpointType
+      extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
+
+    public CheckpointType() {
+      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
+    }
+
+    @Override
+    public Checkpoint createFromBackingNode(TreeNode node) {
+      return new Checkpoint(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final CheckpointType TYPE = new CheckpointType();
 
   private Checkpoint(
-      ContainerType2<Checkpoint, UInt64View, Bytes32View> type, TreeNode backingNode) {
+      CheckpointType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Checkpoint(UInt64 epoch, Bytes32 root) {
     super(TYPE, new UInt64View(epoch), new Bytes32View(root));
-  }
-
-  public Checkpoint() {
-    super(TYPE);
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeUInt64(getEpoch().longValue());
-          writer.writeFixedBytes(getRoot());
-        });
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("epoch", getEpoch())
-        .add("root", getRoot())
-        .toString();
   }
 
   public UInt64 getEpoch() {
@@ -88,5 +78,13 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("epoch", getEpoch())
+        .add("root", getRoot())
+        .toString();
   }
 }

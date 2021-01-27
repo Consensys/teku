@@ -14,6 +14,8 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing.ProposerSlashingType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -28,13 +30,23 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  @SszTypeDescriptor
-  public static final ContainerType2<VoluntaryExit, UInt64View, UInt64View> TYPE =
-      ContainerType2.create(
-          BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, VoluntaryExit::new);
+  static class VoluntaryExitType
+      extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
+
+    public VoluntaryExitType() {
+      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE);
+    }
+
+    @Override
+    public VoluntaryExit createFromBackingNode(TreeNode node) {
+      return new VoluntaryExit(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final VoluntaryExitType TYPE = new VoluntaryExitType();
 
   private VoluntaryExit(
-      ContainerType2<VoluntaryExit, UInt64View, UInt64View> type, TreeNode backingNode) {
+      VoluntaryExitType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

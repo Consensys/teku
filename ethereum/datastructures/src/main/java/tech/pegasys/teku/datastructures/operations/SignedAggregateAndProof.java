@@ -16,6 +16,8 @@ package tech.pegasys.teku.datastructures.operations;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing.ProposerSlashingType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -33,19 +35,26 @@ public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
-  @SszTypeDescriptor
-  public static final ContainerType2<
-          SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
-      TYPE =
-          ContainerType2.create(
-              AggregateAndProof.TYPE,
-              new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
-              SignedAggregateAndProof::new);
+  static class SignedAggregateAndProofType
+      extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
+
+    public SignedAggregateAndProofType() {
+      super(AggregateAndProof.TYPE,
+          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+    }
+
+    @Override
+    public SignedAggregateAndProof createFromBackingNode(TreeNode node) {
+      return new SignedAggregateAndProof(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final SignedAggregateAndProofType TYPE = new SignedAggregateAndProofType();
 
   private BLSSignature signatureCache;
 
-  public SignedAggregateAndProof(
-      ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> type,
+  private SignedAggregateAndProof(
+      SignedAggregateAndProofType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }

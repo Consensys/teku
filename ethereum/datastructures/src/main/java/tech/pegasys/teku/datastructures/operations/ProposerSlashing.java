@@ -15,11 +15,17 @@ package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.datastructures.operations.AttestationData.AttestationDataType;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
@@ -27,15 +33,23 @@ public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  @SszTypeDescriptor
-  public static final ContainerType2<
-          ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
-      TYPE =
-          ContainerType2.create(
-              SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE, ProposerSlashing::new);
+  static class ProposerSlashingType
+      extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
+
+    public ProposerSlashingType() {
+      super(SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE);
+    }
+
+    @Override
+    public ProposerSlashing createFromBackingNode(TreeNode node) {
+      return new ProposerSlashing(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final ProposerSlashingType TYPE = new ProposerSlashingType();
 
   private ProposerSlashing(
-      ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> type,
+      ProposerSlashingType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }

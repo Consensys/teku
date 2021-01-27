@@ -104,34 +104,6 @@ public class Validator
         new UInt64View(withdrawable_epoch));
   }
 
-  public Validator(Validator validator) {
-    super(TYPE, validator.getBackingNode());
-  }
-
-  public Validator() {
-    super(TYPE);
-  }
-
-  public static Validator create(
-      Bytes48 pubkey,
-      Bytes32 withdrawal_credentials,
-      UInt64 effective_balance,
-      boolean slashed,
-      UInt64 activation_eligibility_epoch,
-      UInt64 activation_epoch,
-      UInt64 exit_epoch,
-      UInt64 withdrawable_epoch) {
-    return new Validator(
-        pubkey,
-        withdrawal_credentials,
-        effective_balance,
-        slashed,
-        activation_eligibility_epoch,
-        activation_epoch,
-        exit_epoch,
-        withdrawable_epoch);
-  }
-
   /**
    * Returns compressed BLS public key bytes
    *
@@ -174,7 +146,7 @@ public class Validator
   }
 
   public Validator withEffective_balance(UInt64 effective_balance) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         effective_balance,
@@ -186,7 +158,7 @@ public class Validator
   }
 
   public Validator withSlashed(boolean slashed) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         getEffective_balance(),
@@ -198,7 +170,7 @@ public class Validator
   }
 
   public Validator withActivation_eligibility_epoch(UInt64 activation_eligibility_epoch) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         getEffective_balance(),
@@ -210,7 +182,7 @@ public class Validator
   }
 
   public Validator withActivation_epoch(UInt64 activation_epoch) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         getEffective_balance(),
@@ -222,7 +194,7 @@ public class Validator
   }
 
   public Validator withExit_epoch(UInt64 exit_epoch) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         getEffective_balance(),
@@ -234,7 +206,7 @@ public class Validator
   }
 
   public Validator withWithdrawable_epoch(UInt64 withdrawable_epoch) {
-    return create(
+    return new Validator(
         getPubkey(),
         getWithdrawal_credentials(),
         getEffective_balance(),

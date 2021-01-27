@@ -105,7 +105,7 @@ public class Validator {
   }
 
   public tech.pegasys.teku.datastructures.state.Validator asInternalValidator() {
-    return tech.pegasys.teku.datastructures.state.Validator.create(
+    return new tech.pegasys.teku.datastructures.state.Validator(
         pubkey.asBLSPublicKey().toBytesCompressed(),
         withdrawal_credentials,
         effective_balance,

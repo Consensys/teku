@@ -38,14 +38,23 @@ public class HistoricalBatch
   private static final VectorViewType<Bytes32View> LIST_VIEW_TYPE =
       new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT);
 
-  @SszTypeDescriptor
-  public static final ContainerType2<
-          HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
-      TYPE = ContainerType2.create(LIST_VIEW_TYPE, LIST_VIEW_TYPE, HistoricalBatch::new);
+  static class HistoricalBatchType
+      extends ContainerType2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>> {
+
+    public HistoricalBatchType() {
+      super(LIST_VIEW_TYPE, LIST_VIEW_TYPE);
+    }
+
+    @Override
+    public HistoricalBatch createFromBackingNode(TreeNode node) {
+      return new HistoricalBatch(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final HistoricalBatchType TYPE = new HistoricalBatchType();
 
   private HistoricalBatch(
-      ContainerType2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
-          type,
+      HistoricalBatchType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
