@@ -37,7 +37,7 @@ public class BeaconBlocksByRootRequestMessageEncoder
 
   @Override
   public Bytes encode(final BeaconBlocksByRootRequestMessage message) {
-    return message.sszSerialize();
+    return message.getBlockRoots().sszSerialize();
   }
 
   @Override
