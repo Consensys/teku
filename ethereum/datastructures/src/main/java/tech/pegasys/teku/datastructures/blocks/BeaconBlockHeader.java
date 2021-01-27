@@ -16,34 +16,50 @@ package tech.pegasys.teku.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class BeaconBlockHeader extends AbstractImmutableContainer
+public class BeaconBlockHeader extends Container5<BeaconBlockHeader, UInt64View, UInt64View,  Bytes32View,  Bytes32View,  Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
 
-  @SszTypeDescriptor
-  public static final ContainerViewType<BeaconBlockHeader> TYPE =
-      ContainerViewType.create(
-          List.of(
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.BYTES32_TYPE,
-              BasicViewTypes.BYTES32_TYPE,
-              BasicViewTypes.BYTES32_TYPE),
-          BeaconBlockHeader::new);
+  public static class BeaconBlockHeaderType
+      extends ContainerType5<BeaconBlockHeader, UInt64View, UInt64View,  Bytes32View,  Bytes32View,  Bytes32View> {
 
-  private BeaconBlockHeader(ContainerViewType<BeaconBlockHeader> type, TreeNode backingNode) {
+    public BeaconBlockHeaderType() {
+      super(BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.UINT64_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.BYTES32_TYPE,
+          BasicViewTypes.BYTES32_TYPE);
+    }
+
+    @Override
+    public BeaconBlockHeader createFromBackingNode(TreeNode node) {
+      return new BeaconBlockHeader(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
+
+  private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -96,27 +112,27 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
 
   @Override
   public UInt64 getSlot() {
-    return ((UInt64View) get(0)).get();
+    return getField0().get();
   }
 
   @Override
   public UInt64 getProposerIndex() {
-    return ((UInt64View) get(1)).get();
+    return getField1().get();
   }
 
   @Override
   public Bytes32 getParentRoot() {
-    return ((Bytes32View) get(2)).get();
+    return getField2().get();
   }
 
   @Override
   public Bytes32 getStateRoot() {
-    return ((Bytes32View) get(3)).get();
+    return getField3().get();
   }
 
   @Override
   public Bytes32 getBodyRoot() {
-    return ((Bytes32View) get(4)).get();
+    return getField4().get();
   }
 
   @Override
