@@ -61,6 +61,7 @@ public class ViewUtils {
         throw new IllegalArgumentException("List size exceeds vector size");
       }
       ret.set(idx, v);
+      idx++;
     }
     return ret.commitChanges();
   }
