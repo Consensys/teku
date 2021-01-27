@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
@@ -86,6 +88,7 @@ public class Eth2NetworkBuilder {
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+  private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
 
   private Eth2NetworkBuilder() {}
 
@@ -107,7 +110,7 @@ public class Eth2NetworkBuilder {
             metricsSystem,
             attestationSubnetService,
             rpcEncoding,
-            config.getRequiredCheckpoint(),
+            requiredCheckpoint,
             eth2RpcPingInterval,
             eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval,
@@ -346,6 +349,12 @@ public class Eth2NetworkBuilder {
       final int eth2RpcOutstandingPingThreshold) {
     checkArgument(eth2RpcOutstandingPingThreshold > 0);
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
+    return this;
+  }
+
+  public Eth2NetworkBuilder requiredCheckpoint(final Optional<Checkpoint> requiredCheckpoint) {
+    checkNotNull(requiredCheckpoint);
+    this.requiredCheckpoint = requiredCheckpoint;
     return this;
   }
 }

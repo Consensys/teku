@@ -62,7 +62,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -546,10 +545,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       return;
     }
 
-    final P2PConfig p2PConfig = beaconConfig.p2pConfig();
-    weakSubjectivityValidator
-        .getWSCheckpoint()
-        .ifPresentOrElse(p2PConfig::setRequiredCheckpoint, p2PConfig::clearRequiredCheckpoint);
     beaconConfig.p2pConfig().getNetworkConfig().validateListenPortAvailable();
 
     // Set up gossip for voluntary exits
@@ -579,7 +574,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
     this.p2pNetwork =
         Eth2NetworkBuilder.create()
-            .config(p2PConfig)
+            .config(beaconConfig.p2pConfig())
             .eventBus(eventBus)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
@@ -599,6 +594,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .timeProvider(timeProvider)
             .asyncRunner(networkAsyncRunner)
             .keyValueStore(keyValueStore)
+            .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .build();
   }
 

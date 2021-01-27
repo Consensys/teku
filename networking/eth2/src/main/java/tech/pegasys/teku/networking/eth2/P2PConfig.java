@@ -15,9 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
 import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
@@ -31,40 +29,23 @@ public class P2PConfig {
   private final int peerRateLimit;
   private final int peerRequestLimit;
 
-  private volatile Optional<Checkpoint> requiredCheckpoint;
-
   private P2PConfig(
       final NetworkConfig networkConfig,
       final DiscoveryConfig discoveryConfig,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
-      Optional<Checkpoint> requiredCheckpoint,
       final int peerRateLimit,
       final int peerRequestLimit) {
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-    this.requiredCheckpoint = requiredCheckpoint;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
   }
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public Optional<Checkpoint> getRequiredCheckpoint() {
-    return requiredCheckpoint;
-  }
-
-  public void setRequiredCheckpoint(final Checkpoint checkpoint) {
-    checkNotNull(checkpoint);
-    this.requiredCheckpoint = Optional.of(checkpoint);
-  }
-
-  public void clearRequiredCheckpoint() {
-    this.requiredCheckpoint = Optional.empty();
   }
 
   public NetworkConfig getNetworkConfig() {
@@ -100,7 +81,6 @@ public class P2PConfig {
 
     private Integer targetSubnetSubscriberCount = 2;
     private Boolean subscribeAllSubnetsEnabled = false;
-    private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
 
@@ -112,7 +92,6 @@ public class P2PConfig {
           discoveryConfig.build(),
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
-          requiredCheckpoint,
           peerRateLimit,
           peerRequestLimit);
     }
@@ -136,12 +115,6 @@ public class P2PConfig {
     public Builder subscribeAllSubnetsEnabled(final Boolean subscribeAllSubnetsEnabled) {
       checkNotNull(subscribeAllSubnetsEnabled);
       this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-      return this;
-    }
-
-    public Builder requiredCheckpoint(final Optional<Checkpoint> requiredCheckpoint) {
-      checkNotNull(requiredCheckpoint);
-      this.requiredCheckpoint = requiredCheckpoint;
       return this;
     }
 
