@@ -44,7 +44,7 @@ public final class BeaconBlock
           BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.BYTES32_TYPE,
           BasicViewTypes.BYTES32_TYPE,
-          BeaconBlockBody.TYPE);
+          BeaconBlockBody.TYPE.get());
     }
 
     @Override
@@ -72,10 +72,6 @@ public final class BeaconBlock
         new Bytes32View(parent_root),
         new Bytes32View(state_root),
         body);
-  }
-
-  public BeaconBlock() {
-    super(TYPE);
   }
 
   public static BeaconBlock fromGenesisState(final BeaconState genesisState) {

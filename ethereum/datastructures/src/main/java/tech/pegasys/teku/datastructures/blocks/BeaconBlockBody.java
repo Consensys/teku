@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.spec.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -54,17 +56,6 @@ public class BeaconBlockBody
         ListViewRead<SignedVoluntaryExit>>
     implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
-  private static final ListViewType<ProposerSlashing> PROPOSER_SLASHINGS_TYPE =
-      new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS);
-  private static final ListViewType<AttesterSlashing> ATTESTER_SLASHINGS_TYPE =
-      new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS);
-  private static final ListViewType<Attestation> ATTESTATIONS_TYPE =
-      new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS);
-  private static final ListViewType<Deposit> DEPOSITS_TYPE =
-      new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS);
-  private static final ListViewType<SignedVoluntaryExit> VOLUNTARY_EXITS_TYPE =
-      new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS);
-
   public static class BeaconBlockBodyType
       extends ContainerType8<
           BeaconBlockBody,
@@ -77,16 +68,33 @@ public class BeaconBlockBody
           ListViewRead<Deposit>,
           ListViewRead<SignedVoluntaryExit>> {
 
-    public BeaconBlockBodyType() {
+    final ListViewType<ProposerSlashing> proposerSlashingsType;
+    final ListViewType<AttesterSlashing> attesterSlashingsType;
+    final ListViewType<Attestation> attestationsType;
+    final ListViewType<Deposit> depositsType;
+    final ListViewType<SignedVoluntaryExit> voluntaryExitsType;
+
+    public BeaconBlockBodyType(
+        ListViewType<ProposerSlashing> proposerSlashingsType,
+        ListViewType<AttesterSlashing> attesterSlashingsType,
+        ListViewType<Attestation> attestationsType,
+        ListViewType<Deposit> depositsType,
+        ListViewType<SignedVoluntaryExit> voluntaryExitsType
+    ) {
       super(
           ComplexViewTypes.BYTES_96_TYPE,
           Eth1Data.TYPE,
           BasicViewTypes.BYTES32_TYPE,
-          PROPOSER_SLASHINGS_TYPE,
-          ATTESTER_SLASHINGS_TYPE,
-          ATTESTATIONS_TYPE,
-          DEPOSITS_TYPE,
-          VOLUNTARY_EXITS_TYPE);
+          proposerSlashingsType,
+          attesterSlashingsType,
+          attestationsType,
+          depositsType,
+          voluntaryExitsType);
+      this.proposerSlashingsType = proposerSlashingsType;
+      this.attesterSlashingsType = attesterSlashingsType;
+      this.attestationsType = attestationsType;
+      this.depositsType = depositsType;
+      this.voluntaryExitsType = voluntaryExitsType;
     }
 
     @Override
@@ -95,7 +103,15 @@ public class BeaconBlockBody
     }
   }
 
-  @SszTypeDescriptor public static final BeaconBlockBodyType TYPE = new BeaconBlockBodyType();
+  @SszTypeDescriptor
+  public static final SpecDependent<BeaconBlockBodyType> TYPE = SpecDependent
+      .of(spec -> new BeaconBlockBodyType(
+          new ListViewType<>(ProposerSlashing.TYPE, spec.getConstants().getMaxProposerSlashings()),
+          new ListViewType<>(AttesterSlashing.TYPE, spec.getConstants().getMaxAttesterSlashings()),
+          new ListViewType<>(Attestation.TYPE, spec.getConstants().getMaxAttestations()),
+          new ListViewType<>(Deposit.TYPE, spec.getConstants().getMaxDeposits()),
+          new ListViewType<>(SignedVoluntaryExit.TYPE,
+              spec.getConstants().getMaxVoluntaryExits())));
 
   private BLSSignature randaoRevealCache;
 
@@ -103,6 +119,7 @@ public class BeaconBlockBody
     super(type, backingNode);
   }
 
+  @Deprecated // Use the constructor with type
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
@@ -112,21 +129,36 @@ public class BeaconBlockBody
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
+    this(TYPE.get(), randao_reveal, eth1_data, graffiti, proposer_slashings, attester_slashings,
+        attestations, deposits, voluntary_exits);
+    this.randaoRevealCache = randao_reveal;
+  }
+
+  public BeaconBlockBody(
+      BeaconBlockBodyType type,
+      BLSSignature randao_reveal,
+      Eth1Data eth1_data,
+      Bytes32 graffiti,
+      SSZList<ProposerSlashing> proposer_slashings,
+      SSZList<AttesterSlashing> attester_slashings,
+      SSZList<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<SignedVoluntaryExit> voluntary_exits) {
     super(
-        TYPE,
+        type,
         ViewUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
         eth1_data,
         new Bytes32View(graffiti),
-        ViewUtils.toListView(PROPOSER_SLASHINGS_TYPE, proposer_slashings),
-        ViewUtils.toListView(ATTESTER_SLASHINGS_TYPE, attester_slashings),
-        ViewUtils.toListView(ATTESTATIONS_TYPE, attestations),
-        ViewUtils.toListView(DEPOSITS_TYPE, deposits),
-        ViewUtils.toListView(VOLUNTARY_EXITS_TYPE, voluntary_exits));
+        ViewUtils.toListView(type.proposerSlashingsType, proposer_slashings),
+        ViewUtils.toListView(type.attesterSlashingsType, attester_slashings),
+        ViewUtils.toListView(type.attestationsType, attestations),
+        ViewUtils.toListView(type.depositsType, deposits),
+        ViewUtils.toListView(type.voluntaryExitsType, voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 
   public BeaconBlockBody() {
-    super(TYPE);
+    super(TYPE.get());
   }
 
   public BLSSignature getRandao_reveal() {

@@ -46,8 +46,20 @@ public class SignedBeaconBlock
       return new SignedBeaconBlock(this, node);
     }
   }
+  @SszTypeDescriptor
+  public static SignedBeaconBlockType getSszType() {
+    if (TYPE == null) {
+      TYPE = new SignedBeaconBlockType();
+    }
+    return TYPE;
+  }
 
-  @SszTypeDescriptor public static final SignedBeaconBlockType TYPE = new SignedBeaconBlockType();
+  public static void resetSszType() {
+    TYPE = null;
+  }
+
+  private static SignedBeaconBlockType TYPE;
+
 
   private BLSSignature signatureCache;
 
@@ -58,7 +70,7 @@ public class SignedBeaconBlock
   }
 
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(getSszType(), message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

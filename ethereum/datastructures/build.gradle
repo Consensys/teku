@@ -5,6 +5,7 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':ethereum:independent')
+  implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:io')
