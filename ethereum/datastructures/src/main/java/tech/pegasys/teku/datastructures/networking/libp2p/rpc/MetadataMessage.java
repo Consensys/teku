@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -40,9 +40,7 @@ public class MetadataMessage
       extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
 
     public MetadataMessageType() {
-      super(
-          BasicViewTypes.UINT64_TYPE,
-          new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.ATTESTATION_SUBNET_COUNT));
+      super(BasicViewTypes.UINT64_TYPE, new BitVectorType(Constants.ATTESTATION_SUBNET_COUNT));
     }
 
     @Override

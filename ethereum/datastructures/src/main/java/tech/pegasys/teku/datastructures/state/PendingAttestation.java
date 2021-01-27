@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -38,8 +38,8 @@ public class PendingAttestation
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  private static final ListViewType<BitView> AGGREGATION_BITS_TYPE =
-      new ListViewType<>(BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  private static final BitListType AGGREGATION_BITS_TYPE =
+      new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
 
   static class PendingAttestationType
       extends ContainerType4<

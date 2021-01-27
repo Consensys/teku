@@ -25,7 +25,9 @@ import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
 import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
@@ -68,7 +70,7 @@ public class ViewUtils {
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
-    VectorViewType<ByteView> type = new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
+    VectorViewType<ByteView> type = new ByteVectorType(bytes.size());
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
@@ -82,8 +84,7 @@ public class ViewUtils {
    * from {@link Bitlist} value
    */
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
-    return createBitlistView(
-        new ListViewType<>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize()), bitlist);
+    return createBitlistView(new BitListType(bitlist.getMaxSize()), bitlist);
   }
 
   public static ListViewRead<BitView> createBitlistView(
@@ -99,9 +100,7 @@ public class ViewUtils {
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
   public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
     VectorViewWrite<BitView> viewWrite =
-        new VectorViewType<>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
-            .getDefault()
-            .createWritableCopy();
+        new BitVectorType(bitvector.getSize()).getDefault().createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
       viewWrite.set(i, BitView.viewOf(bitvector.getBit(i)));
     }
