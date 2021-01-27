@@ -20,8 +20,10 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuild
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
-import tech.pegasys.teku.networking.eth2.P2PConfig.P2PConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.store.StoreConfig;
+import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.InteropConfig.InteropConfigBuilder;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -56,7 +59,8 @@ public class TekuConfiguration {
       final PowchainConfiguration powchainConfiguration,
       final InteropConfig interopConfig,
       final DataConfig dataConfig,
-      final P2PConfig p2pConfig,
+      final P2PConfig p2PConfig,
+      final SyncConfig syncConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final LoggingConfig loggingConfig,
       final MetricsConfig metricsConfig,
@@ -75,7 +79,8 @@ public class TekuConfiguration {
             weakSubjectivityConfig,
             validatorConfig,
             interopConfig,
-            p2pConfig,
+            p2PConfig,
+            syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
             loggingConfig,
@@ -110,6 +115,22 @@ public class TekuConfiguration {
     return validatorClientConfig;
   }
 
+  public P2PConfig p2p() {
+    return beaconChainConfig.p2pConfig();
+  }
+
+  public DiscoveryConfig discovery() {
+    return p2p().getDiscoveryConfig();
+  }
+
+  public NetworkConfig network() {
+    return p2p().getNetworkConfig();
+  }
+
+  public SyncConfig sync() {
+    return beaconChain().syncConfig();
+  }
+
   public PowchainConfiguration powchain() {
     return powchainConfiguration;
   }
@@ -142,7 +163,8 @@ public class TekuConfiguration {
         PowchainConfiguration.builder();
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
-    private final P2PConfigBuilder p2pConfigBuilder = P2PConfig.builder();
+    private final P2PConfig.Builder p2pConfigBuilder = P2PConfig.builder();
+    private final SyncConfig.Builder syncConfig = SyncConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
         BeaconRestApiConfig.builder();
     private final LoggingConfig.LoggingConfigBuilder loggingConfigBuilder = LoggingConfig.builder();
@@ -168,6 +190,7 @@ public class TekuConfiguration {
           interopConfigBuilder.build(),
           dataConfigBuilder.build(),
           p2pConfigBuilder.build(),
+          syncConfig.build(),
           restApiBuilder.build(),
           loggingConfigBuilder.build(),
           metricsConfigBuilder.build(),
@@ -216,8 +239,28 @@ public class TekuConfiguration {
       return this;
     }
 
-    public Builder p2p(final Consumer<P2PConfigBuilder> p2pConfigConsumer) {
+    public Builder p2p(final Consumer<P2PConfig.Builder> p2pConfigConsumer) {
       p2pConfigConsumer.accept(p2pConfigBuilder);
+      return this;
+    }
+
+    public Builder discovery(final Consumer<DiscoveryConfig.Builder> consumer) {
+      p2p(b -> b.discovery(consumer));
+      return this;
+    }
+
+    public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
+      p2p(b -> b.network(consumer));
+      return this;
+    }
+
+    public Builder wireLogs(final Consumer<WireLogsConfig.Builder> consumer) {
+      p2p(b -> b.network(n -> n.wireLogs(consumer)));
+      return this;
+    }
+
+    public Builder sync(final Consumer<SyncConfig.Builder> consumer) {
+      consumer.accept(syncConfig);
       return this;
     }
 

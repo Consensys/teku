@@ -65,6 +65,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
+  public Bytes getPrivateKey() {
+    return Bytes.EMPTY;
+  }
+
+  @Override
   public Optional<P> getPeer(final NodeId id) {
     return Optional.empty();
   }
