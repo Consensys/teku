@@ -23,8 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +60,7 @@ public class NatManager extends Service {
   private final SafeFuture<String> externalIpQueryFuture = new SafeFuture<>();
 
   private final Map<String, SafeFuture<RemoteService>> recognizedServices = new HashMap<>();
-  private final List<NatPortMapping> forwardedPorts = new ArrayList<>();
+  private volatile Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
   private Optional<String> discoveredOnLocalAddress = Optional.empty();
 
   public NatManager(final NatMethod natMethod) {
@@ -132,7 +134,7 @@ public class NatManager extends Service {
         () -> {
           SafeFuture<Void> portForwardReleaseFuture = releaseAllPortForwards();
           try {
-            LOG.info("Allowing 3 seconds to release all port forwards...");
+            LOG.debug("Allowing 3 seconds to release all port forwards...");
             portForwardReleaseFuture.get(3, TimeUnit.SECONDS);
           } catch (Exception e) {
             LOG.warn("Caught exception while trying to release port forwards, ignoring", e);
@@ -206,7 +208,7 @@ public class NatManager extends Service {
                   };
               FutureUtil.ignoreFuture(upnpService.getControlPoint().execute(callback));
             })
-        .reportExceptions();
+        .finish(error -> LOG.warn("Failed to retrieve external ip address", error));
   }
 
   @VisibleForTesting
@@ -225,27 +227,23 @@ public class NatManager extends Service {
     SafeFuture<RemoteService> wanIPConnectionServiceFuture =
         getService(SERVICE_TYPE_WAN_IP_CONNECTION);
     if (!wanIPConnectionServiceFuture.isDone()) {
+      LOG.debug("Ports had not completed setting up, will not be able to disconnect.");
       return SafeFuture.COMPLETE;
     }
 
+    if (forwardedPorts.isEmpty()) {
+      LOG.debug("Port list is empty.");
+      return SafeFuture.COMPLETE;
+    } else {
+      LOG.debug("Have {} ports to close", forwardedPorts.size());
+    }
     RemoteService service = wanIPConnectionServiceFuture.join();
 
     List<SafeFuture<Void>> futures = new ArrayList<>();
 
-    boolean done = false;
-    while (!done) {
-      NatPortMapping portMapping;
-      synchronized (forwardedPorts) {
-        if (forwardedPorts.isEmpty()) {
-          done = true;
-          continue;
-        }
-
-        portMapping = forwardedPorts.get(0);
-        forwardedPorts.remove(0);
-      }
-
-      LOG.info(
+    while (!forwardedPorts.isEmpty()) {
+      final NatPortMapping portMapping = forwardedPorts.remove();
+      LOG.debug(
           "Releasing port forward for {} {} -> {}",
           portMapping.getProtocol(),
           portMapping.getInternalPort(),
@@ -314,8 +312,8 @@ public class NatManager extends Service {
                 new UnsignedIntegerTwoBytes(port),
                 null,
                 toJupnpProtocol(protocol),
-                "teku-" + serviceType.getValue()))
-        .reportExceptions();
+                serviceType.getValue()))
+        .finish(error -> LOG.warn("Failed to forward port", error));
   }
 
   private SafeFuture<Void> requestPortForward(final PortMapping portMapping) {
@@ -350,19 +348,17 @@ public class NatManager extends Service {
                       portMapping.getInternalPort(),
                       portMapping.getExternalPort());
 
-                  synchronized (forwardedPorts) {
-                    final NatServiceType natServiceType =
-                        NatServiceType.fromString(portMapping.getDescription());
-                    final NatPortMapping natPortMapping =
-                        new NatPortMapping(
-                            natServiceType,
-                            NetworkProtocol.valueOf(portMapping.getProtocol().name()),
-                            portMapping.getInternalClient(),
-                            portMapping.getRemoteHost(),
-                            portMapping.getExternalPort().getValue().intValue(),
-                            portMapping.getInternalPort().getValue().intValue());
-                    forwardedPorts.add(natPortMapping);
-                  }
+                  final NatServiceType natServiceType =
+                      NatServiceType.fromString(portMapping.getDescription());
+                  final NatPortMapping natPortMapping =
+                      new NatPortMapping(
+                          natServiceType,
+                          NetworkProtocol.valueOf(portMapping.getProtocol().name()),
+                          portMapping.getInternalClient(),
+                          portMapping.getRemoteHost(),
+                          portMapping.getExternalPort().getValue().intValue(),
+                          portMapping.getInternalPort().getValue().intValue());
+                  forwardedPorts.add(natPortMapping);
 
                   upnpQueryFuture.complete(null);
                 }
@@ -387,7 +383,7 @@ public class NatManager extends Service {
                 }
               };
 
-          LOG.info(
+          LOG.debug(
               "Requesting port forward for {} {} -> {}",
               portMapping.getProtocol(),
               portMapping.getInternalPort(),

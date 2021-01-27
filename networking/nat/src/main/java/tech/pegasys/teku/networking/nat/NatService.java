@@ -51,20 +51,16 @@ public class NatService extends Service {
         .start()
         .thenRun(
             () -> {
-              natManager.requestPortForward(p2pPort, NetworkProtocol.TCP, NatServiceType.P2P);
+              natManager.requestPortForward(p2pPort, NetworkProtocol.TCP, NatServiceType.TEKU_P2P);
               if (isDiscoveryEnabled) {
                 natManager.requestPortForward(
-                    p2pPort, NetworkProtocol.UDP, NatServiceType.DISCOVERY);
+                    p2pPort, NetworkProtocol.UDP, NatServiceType.TEKU_DISCOVERY);
               }
             });
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    if (maybeNatManager.isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-    final NatManager natManager = maybeNatManager.get();
-    return natManager.stop();
+    return maybeNatManager.map(NatManager::stop).orElse(SafeFuture.completedFuture(null));
   }
 }

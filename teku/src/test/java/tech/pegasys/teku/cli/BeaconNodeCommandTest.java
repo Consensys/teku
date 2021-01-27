@@ -276,7 +276,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldSetNatMethod() {
-    final String[] args = {"--nat-method", "upnp"};
+    final String[] args = {"--p2p-nat-method", "upnp"};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().natConfiguration().getNatMethod())
         .isEqualTo(NatMethod.UPNP);

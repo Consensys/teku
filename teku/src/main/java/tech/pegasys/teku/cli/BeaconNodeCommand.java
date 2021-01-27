@@ -312,6 +312,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
       // set log level per CLI flags
       LoggingConfigurator.setAllLevels(logLevel);
     }
+    // jupnp logs a lot of context to level WARN, and it is quite verbose.
+    LoggingConfigurator.setAllLevels("org.jupnp", Level.ERROR);
   }
 
   public Level getLogLevel() {

@@ -39,10 +39,10 @@ class NatServiceTypeTest {
   public static Stream<Arguments> stringToNatMethod() {
     Stream.Builder<Arguments> builder = Stream.builder();
 
-    builder.add(Arguments.of("discovery", NatServiceType.DISCOVERY));
-    builder.add(Arguments.of("p2p", NatServiceType.P2P));
-    builder.add(Arguments.of("DISCOVERY", NatServiceType.DISCOVERY));
-    builder.add(Arguments.of("P2P", NatServiceType.P2P));
+    builder.add(Arguments.of("teku_discovery", NatServiceType.TEKU_DISCOVERY));
+    builder.add(Arguments.of("teku_p2p", NatServiceType.TEKU_P2P));
+    builder.add(Arguments.of("TEKU_DISCOVERY", NatServiceType.TEKU_DISCOVERY));
+    builder.add(Arguments.of("TEKU_P2P", NatServiceType.TEKU_P2P));
 
     return builder.build();
   }

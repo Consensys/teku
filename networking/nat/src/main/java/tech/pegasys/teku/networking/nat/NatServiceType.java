@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.nat;
 
 public enum NatServiceType {
-  DISCOVERY("discovery"),
-  P2P("p2p");
+  TEKU_DISCOVERY("teku_discovery"),
+  TEKU_P2P("teku_p2p");
   private final String value;
 
   NatServiceType(final String value) {

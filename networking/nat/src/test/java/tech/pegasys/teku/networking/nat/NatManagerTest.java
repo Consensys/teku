@@ -93,7 +93,7 @@ class NatManagerTest {
   public void requestPortForwardThrowsWhenCalledBeforeStart() {
     assertThatThrownBy(
             () -> {
-              natManager.requestPortForward(80, NetworkProtocol.TCP, NatServiceType.DISCOVERY);
+              natManager.requestPortForward(80, NetworkProtocol.TCP, NatServiceType.TEKU_DISCOVERY);
             })
         .isInstanceOf(IllegalStateException.class);
   }
@@ -103,7 +103,9 @@ class NatManagerTest {
     assertThat(natManager.start()).isCompleted();
 
     assertThatThrownBy(
-            () -> natManager.requestPortForward(0, NetworkProtocol.TCP, NatServiceType.DISCOVERY))
+            () ->
+                natManager.requestPortForward(
+                    0, NetworkProtocol.TCP, NatServiceType.TEKU_DISCOVERY))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
