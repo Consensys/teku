@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class LoggingPathBuilderTest {
 

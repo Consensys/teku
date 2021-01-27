@@ -88,9 +88,12 @@ public class PeerSubnetSubscriptions {
     public Builder addSubscriber(final int subnetId, final NodeId peer) {
       subscriberCountBySubnetId.put(
           subnetId, subscriberCountBySubnetId.getOrDefault(subnetId, 0) + 1);
-      subscriptionsByPeer
-          .computeIfAbsent(peer, __ -> new Bitvector(Constants.ATTESTATION_SUBNET_COUNT))
-          .setBit(subnetId);
+      subscriptionsByPeer.compute(
+          peer,
+          (__, existingVector) ->
+              existingVector == null
+                  ? new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, subnetId)
+                  : existingVector.withBit(subnetId));
       return this;
     }
 

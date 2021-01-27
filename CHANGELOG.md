@@ -12,14 +12,17 @@
 
 ## Next Release
 
+### Additions and Improvements
+- `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
+- Implement missing API event streams: block, attestation, voluntary_exit. Now Teku fully supports event streams, on top of the Teku-specific sync-state event stream.
+- If an advertised IP is set via `--p2p-advertised-ip` it is always used, regardless of the external IP discovered via the discv5 process.
+- `--nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
+
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
 - Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
 - Fixed validator client timeout when reading from the event stream to avoid unnecessary reconnections.
-
-### Additions and Improvements
-- `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
-- `--nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
+- Reduced bandwidth usage during a forward sync by skipping requesting parents of blocks received via gossip as they are likely to be retrieved via the forward sync more efficiently.
 
 ## 21.1.0
 

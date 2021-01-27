@@ -11,10 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.exceptions;
+package tech.pegasys.teku.infrastructure.exceptions;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExceptionUtil {
 
@@ -25,5 +27,27 @@ public class ExceptionUtil {
         .filter(targetType::isInstance)
         .map(e -> (T) e)
         .findFirst();
+  }
+
+  public static Runnable exceptionHandlingRunnable(
+      final Runnable runnable, final SafeFuture<?> target) {
+    return () -> {
+      try {
+        runnable.run();
+      } catch (final Throwable t) {
+        target.completeExceptionally(t);
+      }
+    };
+  }
+
+  public static <T> Consumer<T> exceptionHandlingConsumer(
+      final Consumer<T> consumer, final SafeFuture<?> target) {
+    return value -> {
+      try {
+        consumer.accept(value);
+      } catch (final Throwable t) {
+        target.completeExceptionally(t);
+      }
+    };
   }
 }

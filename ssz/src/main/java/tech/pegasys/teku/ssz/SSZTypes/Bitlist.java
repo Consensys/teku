@@ -21,101 +21,11 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bitlist {
-
-  private final BitSet data;
-  private final int size;
-  private final long maxSize;
-
-  public Bitlist(int arraySize, long maxSize) {
-    this.size = arraySize;
-    this.data = new BitSet(arraySize);
-    this.maxSize = maxSize;
-  }
-
-  public Bitlist(Bitlist bitlist) {
-    this.size = bitlist.size;
-    this.data = (BitSet) bitlist.data.clone();
-    this.maxSize = bitlist.getMaxSize();
-  }
-
-  private Bitlist(int size, BitSet data, long maxSize) {
-    this.size = size;
-    this.data = data;
-    this.maxSize = maxSize;
-  }
-
-  public void setBit(int i) {
-    checkElementIndex(i, size);
-    data.set(i);
-  }
-
-  public void setBits(int... indexes) {
-    for (int i : indexes) {
-      setBit(i);
-    }
-  }
-
-  public boolean getBit(int i) {
-    checkElementIndex(i, size);
-    return data.get(i);
-  }
-
-  public int getBitCount() {
-    return data.cardinality();
-  }
-
-  public boolean intersects(Bitlist other) {
-    return data.intersects(other.data);
-  }
-
-  public boolean isSuperSetOf(final Bitlist other) {
-    return other.streamAllSetBits().allMatch(this::getBit);
-  }
-
-  public List<Integer> getAllSetBits() {
-    final List<Integer> setBits = new ArrayList<>();
-    for (int i = data.nextSetBit(0); i >= 0; i = data.nextSetBit(i + 1)) {
-      setBits.add(i);
-    }
-    return setBits;
-  }
-
-  public IntStream streamAllSetBits() {
-    return data.stream();
-  }
-
-  /** Sets all bits in this bitlist which are set in the [other] list */
-  public void setAllBits(Bitlist other) {
-    if (other.getCurrentSize() > getCurrentSize()) {
-      throw new IllegalArgumentException(
-          "Argument bitfield size is greater: "
-              + other.getCurrentSize()
-              + " > "
-              + getCurrentSize());
-    }
-    data.or(other.data);
-  }
-
-  public long getMaxSize() {
-    return maxSize;
-  }
-
-  public int getCurrentSize() {
-    return size;
-  }
-
-  @SuppressWarnings("NarrowingCompoundAssignment")
-  public Bytes serialize() {
-    int len = size;
-    byte[] array = new byte[sszSerializationLength(len)];
-    IntStream.range(0, len).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
-    array[len / 8] |= 1 << (len % 8);
-    return Bytes.wrap(array);
-  }
 
   public static int sszSerializationLength(final int size) {
     return (size / 8) + 1;
@@ -171,8 +81,109 @@ public class Bitlist {
     return leadingBitIndex + 8 * (numBytes - 1);
   }
 
-  public Bitlist copy() {
-    return new Bitlist(this);
+  public static Bitlist nullableOr(
+      @Nullable Bitlist bitlist1OrNull, @Nullable Bitlist bitlist2OrNull) {
+    checkArgument(
+        bitlist1OrNull != null || bitlist2OrNull != null,
+        "At least one argument should be non-null");
+    if (bitlist1OrNull == null) {
+      return bitlist2OrNull;
+    } else if (bitlist2OrNull == null) {
+      return bitlist1OrNull;
+    } else {
+      return bitlist1OrNull.or(bitlist2OrNull);
+    }
+  }
+
+  private final BitSet data;
+  private final int size;
+  private final long maxSize;
+
+  public Bitlist(int arraySize, long maxSize) {
+    this.size = arraySize;
+    this.data = new BitSet(arraySize);
+    this.maxSize = maxSize;
+  }
+
+  public Bitlist(int size, long maxSize, int... bitIndexes) {
+    this.size = size;
+    this.data = new BitSet(size);
+    this.maxSize = maxSize;
+    for (int bitIndex : bitIndexes) {
+      checkElementIndex(bitIndex, size);
+      data.set(bitIndex);
+    }
+  }
+
+  private Bitlist(int size, BitSet data, long maxSize) {
+    this.size = size;
+    this.data = data;
+    this.maxSize = maxSize;
+  }
+
+  /**
+   * Returns new instance of this Bitlist with set bits from the other Bitlist
+   *
+   * @throws IllegalArgumentException if the size of the other Bitlist is greater than the size of
+   *     this Bitlist
+   */
+  public Bitlist or(Bitlist other) {
+    if (other.getCurrentSize() > getCurrentSize()) {
+      throw new IllegalArgumentException(
+          "Argument bitfield size is greater: "
+              + other.getCurrentSize()
+              + " > "
+              + getCurrentSize());
+    }
+    BitSet newData = (BitSet) this.data.clone();
+    newData.or(other.data);
+    return new Bitlist(size, newData, maxSize);
+  }
+
+  public boolean getBit(int i) {
+    checkElementIndex(i, size);
+    return data.get(i);
+  }
+
+  public int getBitCount() {
+    return data.cardinality();
+  }
+
+  public boolean intersects(Bitlist other) {
+    return data.intersects(other.data);
+  }
+
+  public boolean isSuperSetOf(final Bitlist other) {
+    return other.streamAllSetBits().allMatch(this::getBit);
+  }
+
+  public List<Integer> getAllSetBits() {
+    final List<Integer> setBits = new ArrayList<>();
+    for (int i = data.nextSetBit(0); i >= 0; i = data.nextSetBit(i + 1)) {
+      setBits.add(i);
+    }
+    return setBits;
+  }
+
+  public IntStream streamAllSetBits() {
+    return data.stream();
+  }
+
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  public int getCurrentSize() {
+    return size;
+  }
+
+  @SuppressWarnings("NarrowingCompoundAssignment")
+  public Bytes serialize() {
+    int len = size;
+    byte[] array = new byte[sszSerializationLength(len)];
+    IntStream.range(0, len).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
+    array[len / 8] |= 1 << (len % 8);
+    return Bytes.wrap(array);
   }
 
   @Override

@@ -36,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -54,6 +55,7 @@ public class GetEvents implements Handler {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
     this(
+        dataProvider.getNodeDataProvider(),
         dataProvider.getChainDataProvider(),
         jsonProvider,
         dataProvider.getSyncDataProvider(),
@@ -62,7 +64,8 @@ public class GetEvents implements Handler {
   }
 
   GetEvents(
-      final ChainDataProvider provider,
+      final NodeDataProvider nodeDataProvider,
+      final ChainDataProvider chainDataProvider,
       final JsonProvider jsonProvider,
       final SyncDataProvider syncDataProvider,
       final EventChannels eventChannels,
@@ -70,7 +73,12 @@ public class GetEvents implements Handler {
     this.jsonProvider = jsonProvider;
     eventSubscriptionManager =
         new EventSubscriptionManager(
-            provider, jsonProvider, syncDataProvider, asyncRunner, eventChannels);
+            nodeDataProvider,
+            chainDataProvider,
+            jsonProvider,
+            syncDataProvider,
+            asyncRunner,
+            eventChannels);
   }
 
   @OpenApi(
@@ -88,8 +96,7 @@ public class GetEvents implements Handler {
             required = true,
             description =
                 "Event types to subscribe to."
-                    + "Available values: [`head`, `finalized_checkpoint`, `chain_reorg`, block, attestation, voluntary_exit]\n\n"
-                    + "Events that are currently not reporting: [block, attestation, voluntary_exit]"),
+                    + "Available values: [`head`, `finalized_checkpoint`, `chain_reorg`, block, attestation, voluntary_exit]\n\n"),
       },
       responses = {
         @OpenApiResponse(

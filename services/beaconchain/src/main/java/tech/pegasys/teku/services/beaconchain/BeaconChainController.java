@@ -66,6 +66,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
@@ -119,13 +120,12 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
@@ -228,7 +228,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     .importBlock(block)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (root) -> syncService.getRecentBlockFetcher().cancelRecentBlockRequest(root));
+        (block) -> syncService.getRecentBlockFetcher().cancelRecentBlockRequest(block.getRoot()));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
@@ -700,6 +700,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
             attestationPool,
+            blockManager,
+            attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool);

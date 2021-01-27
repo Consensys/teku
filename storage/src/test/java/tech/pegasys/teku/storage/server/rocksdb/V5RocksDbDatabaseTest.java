@@ -15,10 +15,10 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.io.File;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V5RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
 

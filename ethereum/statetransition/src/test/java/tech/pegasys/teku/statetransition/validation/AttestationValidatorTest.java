@@ -53,9 +53,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 /**
  * The following validations MUST pass before forwarding the attestation on the subnet.
@@ -130,9 +130,9 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     final Bitlist validAggregationBits = attestation.getAggregation_bits();
-    final Bitlist invalidAggregationBits =
-        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
-    invalidAggregationBits.setAllBits(validAggregationBits);
+    Bitlist invalidAggregationBits =
+        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize())
+            .or(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());

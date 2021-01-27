@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
@@ -211,9 +211,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, Bitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        Bitlist bitlistToInsert =
-            slotToBitlists.computeIfAbsent(slot, __ -> attestation.getAggregation_bits().copy());
-        bitlistToInsert.setAllBits(attestation.getAggregation_bits());
+        slotToBitlists.merge(slot, attestation.getAggregation_bits(), Bitlist::nullableOr);
       }
     }
 
