@@ -19,6 +19,7 @@
 
 ### Additions and Improvements
 - `--validators-external-signer-public-keys` now accepts a URL to load public keys from.
+- `--nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
 
 ## 21.1.0
 

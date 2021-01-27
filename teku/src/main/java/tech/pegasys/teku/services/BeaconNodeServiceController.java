@@ -15,6 +15,7 @@ package tech.pegasys.teku.services;
 
 import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.nat.NatService;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
@@ -31,6 +32,11 @@ public class BeaconNodeServiceController extends ServiceController {
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
+    services.add(
+        new NatService(
+            tekuConfig.natConfiguration(),
+            tekuConfig.beaconChain().p2pConfig().getP2pPort(),
+            tekuConfig.beaconChain().p2pConfig().isP2pDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
   }
 
