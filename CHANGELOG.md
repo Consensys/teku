@@ -22,6 +22,7 @@
 - Fixed help text for `--validators-graffiti-file` to refer to `--validators-graffiti` as the fallback not `--graffiti`.
 - Fixed validator client timeout when reading from the event stream to avoid unnecessary reconnections.
 - Reduced bandwidth usage during a forward sync by skipping requesting parents of blocks received via gossip as they are likely to be retrieved via the forward sync more efficiently.
+- Error conditions which prevent Teku from starting, such as being unable to load validator keys, are now reported to both the log and system error to make them more likely to be seen.
 
 
 ## 21.1.0
