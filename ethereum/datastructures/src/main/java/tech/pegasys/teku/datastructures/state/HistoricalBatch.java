@@ -39,7 +39,8 @@ public class HistoricalBatch
       new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT);
 
   static class HistoricalBatchType
-      extends ContainerType2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>> {
+      extends ContainerType2<
+          HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>> {
 
     public HistoricalBatchType() {
       super(LIST_VIEW_TYPE, LIST_VIEW_TYPE);
@@ -53,9 +54,7 @@ public class HistoricalBatch
 
   @SszTypeDescriptor public static final HistoricalBatchType TYPE = new HistoricalBatchType();
 
-  private HistoricalBatch(
-      HistoricalBatchType type,
-      TreeNode backingNode) {
+  private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -39,10 +39,7 @@ public class AggregateAndProof
       extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
 
     public AggregateAndProofType() {
-      super(
-          BasicViewTypes.UINT64_TYPE,
-          Attestation.TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(BasicViewTypes.UINT64_TYPE, Attestation.TYPE, ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override

@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -48,10 +48,10 @@ public class DepositData
 
     public DepositDataType() {
       super(
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 48),
+          ComplexViewTypes.BYTES_48_TYPE,
           BasicViewTypes.BYTES32_TYPE,
           BasicViewTypes.UINT64_TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+          ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override

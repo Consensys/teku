@@ -31,8 +31,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -79,7 +79,7 @@ public class BeaconBlockBody
 
     public BeaconBlockBodyType() {
       super(
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96),
+          ComplexViewTypes.BYTES_96_TYPE,
           Eth1Data.TYPE,
           BasicViewTypes.BYTES32_TYPE,
           PROPOSER_SLASHINGS_TYPE,

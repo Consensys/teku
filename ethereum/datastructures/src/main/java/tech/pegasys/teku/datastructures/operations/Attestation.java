@@ -28,8 +28,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -50,10 +50,7 @@ public class Attestation
           Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
     public AttestationType() {
-      super(
-          AGGREGATION_BITS_TYPE,
-          AttestationData.TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(AGGREGATION_BITS_TYPE, AttestationData.TYPE, ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override

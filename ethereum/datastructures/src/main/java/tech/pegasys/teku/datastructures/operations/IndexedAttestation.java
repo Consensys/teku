@@ -26,8 +26,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -49,10 +49,7 @@ public class IndexedAttestation
         new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
 
     public IndexedAttestationType() {
-      super(
-          AttestingIndicesType,
-          AttestationData.TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(AttestingIndicesType, AttestationData.TYPE, ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override

@@ -15,17 +15,11 @@ package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.operations.AttestationData.AttestationDataType;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
@@ -48,9 +42,7 @@ public class ProposerSlashing
 
   @SszTypeDescriptor public static final ProposerSlashingType TYPE = new ProposerSlashingType();
 
-  private ProposerSlashing(
-      ProposerSlashingType type,
-      TreeNode backingNode) {
+  private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

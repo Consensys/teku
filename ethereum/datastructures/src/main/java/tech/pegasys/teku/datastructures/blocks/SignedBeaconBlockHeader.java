@@ -21,8 +21,7 @@ import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -36,7 +35,7 @@ public class SignedBeaconBlockHeader
       extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
 
     public SignedBeaconBlockHeaderType() {
-      super(BeaconBlockHeader.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(BeaconBlockHeader.TYPE, ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override

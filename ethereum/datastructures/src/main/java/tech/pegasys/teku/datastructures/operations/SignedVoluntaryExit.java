@@ -16,16 +16,13 @@ package tech.pegasys.teku.datastructures.operations;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing.ProposerSlashingType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -39,8 +36,7 @@ public class SignedVoluntaryExit
       extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
 
     public SignedVoluntaryExitType() {
-      super(VoluntaryExit.TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(VoluntaryExit.TYPE, ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override
@@ -49,13 +45,12 @@ public class SignedVoluntaryExit
     }
   }
 
-  @SszTypeDescriptor public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
+  @SszTypeDescriptor
+  public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
 
   private BLSSignature signatureCache;
 
-  private SignedVoluntaryExit(
-      SignedVoluntaryExitType type,
-      TreeNode backingNode) {
+  private SignedVoluntaryExit(SignedVoluntaryExitType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

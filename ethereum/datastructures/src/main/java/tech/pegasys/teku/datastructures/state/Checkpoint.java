@@ -16,9 +16,7 @@ package tech.pegasys.teku.datastructures.state;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,8 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  static class CheckpointType
-      extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
+  static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
 
     public CheckpointType() {
       super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
@@ -50,8 +47,7 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
 
   @SszTypeDescriptor public static final CheckpointType TYPE = new CheckpointType();
 
-  private Checkpoint(
-      CheckpointType type, TreeNode backingNode) {
+  private Checkpoint(CheckpointType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
