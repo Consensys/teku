@@ -57,10 +57,10 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
@@ -86,13 +86,14 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   public LibP2PNetwork(
       final AsyncRunner asyncRunner,
       final NetworkConfig config,
+      final PrivateKeyProvider privateKeyProvider,
       final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers,
       final PreparedGossipMessageFactory defaultMessageFactory,
       final GossipTopicFilter gossipTopicFilter) {
-    this.privKey = config.getPrivateKey();
+    this.privKey = privateKeyProvider.get();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
     advertisedAddr =
@@ -222,6 +223,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public Bytes getPrivateKey() {
+    return Bytes.wrap(privKey.raw());
+  }
+
+  @Override
   public Optional<Peer> getPeer(final NodeId id) {
     return peerManager.getPeer(id);
   }
@@ -283,5 +289,10 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return gossipNetwork.getSubscribersByTopic();
+  }
+
+  @FunctionalInterface
+  public interface PrivateKeyProvider {
+    PrivKey get();
   }
 }

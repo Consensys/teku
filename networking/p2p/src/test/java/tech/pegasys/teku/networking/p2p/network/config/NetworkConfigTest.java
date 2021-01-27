@@ -11,17 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.network;
+package tech.pegasys.teku.networking.p2p.network.config;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import java.util.Optional;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 
 class NetworkConfigTest {
 
@@ -62,16 +57,6 @@ class NetworkConfigTest {
   }
 
   private NetworkConfig createConfig() {
-    return new NetworkConfig(
-        KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
-        listenIp,
-        advertisedIp,
-        9000,
-        OptionalInt.empty(),
-        emptyList(),
-        false,
-        emptyList(),
-        new TargetPeerRange(20, 30, 0),
-        2);
+    return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
   }
 }

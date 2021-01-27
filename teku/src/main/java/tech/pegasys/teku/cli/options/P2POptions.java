@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description = "P2P port",
       arity = "1")
-  private int p2pPort = 9000;
+  private int p2pPort = DEFAULT_P2P_PORT;
 
   @Option(
       names = {"--p2p-discovery-enabled"},
@@ -163,30 +164,36 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder.p2p(
-        p2pBuilder -> {
-          if (p2pDiscoveryBootnodes != null) {
-            p2pBuilder.p2pDiscoveryBootnodes(p2pDiscoveryBootnodes);
-          }
-
-          p2pBuilder
-              .p2pEnabled(p2pEnabled)
-              .p2pInterface(p2pInterface)
-              .p2pPort(p2pPort)
-              .p2pDiscoveryEnabled(p2pDiscoveryEnabled)
-              .p2pAdvertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-              .p2pAdvertisedPort(
-                  p2pAdvertisedPort == null
-                      ? OptionalInt.empty()
-                      : OptionalInt.of(p2pAdvertisedPort))
-              .p2pPrivateKeyFile(p2pPrivateKeyFile)
-              .p2pPeerLowerBound(getP2pLowerBound())
-              .p2pPeerUpperBound(getP2pUpperBound())
-              .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-              .minimumRandomlySelectedPeerCount(getMinimumRandomlySelectedPeerCount())
-              .p2pStaticPeers(p2pStaticPeers)
-              .multiPeerSyncEnabled(multiPeerSyncEnabled)
-              .subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled);
-        });
+    builder
+        .p2p(
+            b ->
+                b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount))
+        .discovery(
+            d -> {
+              if (p2pDiscoveryBootnodes != null) {
+                d.bootnodes(p2pDiscoveryBootnodes);
+              }
+              d.isDiscoveryEnabled(p2pDiscoveryEnabled)
+                  .staticPeers(p2pStaticPeers)
+                  .minPeers(getP2pLowerBound())
+                  .maxPeers(getP2pUpperBound())
+                  .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount());
+            })
+        .network(
+            n -> {
+              if (p2pPrivateKeyFile != null) {
+                n.privateKeyFile(p2pPrivateKeyFile);
+              }
+              n.networkInterface(p2pInterface)
+                  .isEnabled(p2pEnabled)
+                  .listenPort(p2pPort)
+                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
+                  .advertisedPort(
+                      p2pAdvertisedPort == null
+                          ? OptionalInt.empty()
+                          : OptionalInt.of(p2pAdvertisedPort));
+            })
+        .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }
 }
