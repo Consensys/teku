@@ -14,36 +14,32 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class BeaconBlockHeader extends Container5<BeaconBlockHeader, UInt64View, UInt64View,  Bytes32View,  Bytes32View,  Bytes32View>
+public class BeaconBlockHeader
+    extends Container5<
+        BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
 
   public static class BeaconBlockHeaderType
-      extends ContainerType5<BeaconBlockHeader, UInt64View, UInt64View,  Bytes32View,  Bytes32View,  Bytes32View> {
+      extends ContainerType5<
+          BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View> {
 
     public BeaconBlockHeaderType() {
-      super(BasicViewTypes.UINT64_TYPE,
+      super(
+          BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.UINT64_TYPE,
           BasicViewTypes.BYTES32_TYPE,
           BasicViewTypes.BYTES32_TYPE,
@@ -56,8 +52,7 @@ public class BeaconBlockHeader extends Container5<BeaconBlockHeader, UInt64View,
     }
   }
 
-  @SszTypeDescriptor
-  public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
+  @SszTypeDescriptor public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
 
   private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
     super(type, backingNode);

@@ -14,22 +14,14 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -42,7 +34,7 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
       extends ContainerType3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
 
     public Eth1DataType() {
-      super( BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
+      super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
     }
 
     @Override
@@ -51,8 +43,7 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
     }
   }
 
-  @SszTypeDescriptor
-  public static final Eth1DataType TYPE = new Eth1DataType();
+  @SszTypeDescriptor public static final Eth1DataType TYPE = new Eth1DataType();
 
   private Eth1Data(Eth1DataType type, TreeNode backingNode) {
     super(type, backingNode);

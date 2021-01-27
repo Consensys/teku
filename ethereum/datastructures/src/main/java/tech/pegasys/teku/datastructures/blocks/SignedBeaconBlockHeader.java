@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.blocks;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -37,8 +36,7 @@ public class SignedBeaconBlockHeader
       extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
 
     public SignedBeaconBlockHeaderType() {
-      super(BeaconBlockHeader.TYPE,
-          new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
+      super(BeaconBlockHeader.TYPE, new VectorViewType<>(BasicViewTypes.BYTE_TYPE, 96));
     }
 
     @Override
@@ -52,9 +50,7 @@ public class SignedBeaconBlockHeader
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlockHeader(
-      SignedBeaconBlockHeaderType type,
-      TreeNode backingNode) {
+  private SignedBeaconBlockHeader(SignedBeaconBlockHeaderType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
