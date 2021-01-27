@@ -130,23 +130,22 @@ public class NatManager extends Service {
 
   @Override
   protected SafeFuture<Void> doStop() {
-    return SafeFuture.fromRunnable(
-        () -> {
-          SafeFuture<Void> portForwardReleaseFuture = releaseAllPortForwards();
-          try {
-            LOG.debug("Allowing 3 seconds to release all port forwards...");
-            portForwardReleaseFuture.get(3, TimeUnit.SECONDS);
-          } catch (Exception e) {
-            LOG.warn("Caught exception while trying to release port forwards, ignoring", e);
-          }
+    return releaseAllPortForwards()
+        .orTimeout(3, TimeUnit.SECONDS)
+        .exceptionally(
+            error -> {
+              LOG.warn("Failed to release port forwards", error);
+              return null;
+            })
+        .alwaysRun(
+            () -> {
+              for (SafeFuture<RemoteService> future : recognizedServices.values()) {
+                future.cancel(true);
+              }
 
-          for (SafeFuture<RemoteService> future : recognizedServices.values()) {
-            future.cancel(true);
-          }
-
-          upnpService.getRegistry().removeListener(registryListener);
-          upnpService.shutdown();
-        });
+              upnpService.getRegistry().removeListener(registryListener);
+              upnpService.shutdown();
+            });
   }
 
   private synchronized SafeFuture<RemoteService> discoverService(final String serviceType) {
