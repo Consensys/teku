@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
@@ -40,7 +41,7 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
   public T decode(final Bytes message) throws RpcException {
     try {
       return SimpleOffsetSerializer.deserialize(message, clazz);
-    } catch (final InvalidSSZTypeException e) {
+    } catch (final InvalidSSZTypeException | SSZDeserializeException e) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }
