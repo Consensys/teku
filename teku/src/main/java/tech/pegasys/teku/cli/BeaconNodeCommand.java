@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
@@ -260,8 +262,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
     errorWriter.println(ex.getMessage());
 
-    CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
-    printUsage(outputWriter);
+    CommandLine.UnmatchedArgumentException.printSuggestions(ex, errorWriter);
+    printUsage(errorWriter);
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
@@ -295,16 +297,28 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   public void reportUnexpectedError(final Throwable t) {
-    System.err.println("Teku failed to start.");
-    t.printStackTrace();
-
+    getLogger().fatal("Teku failed to start", t);
     errorWriter.println("Teku failed to start");
     printUsage(errorWriter);
   }
 
   public void reportUserError(final Throwable ex) {
+    getLogger().fatal(ex.getMessage(), ex);
     errorWriter.println(ex.getMessage());
     printUsage(errorWriter);
+  }
+
+  /**
+   * Not using a static field for this log instance because some code in this class executes prior
+   * to the logging configuration being applied so it's not always safe to use the logger.
+   *
+   * <p>Where this is used we also ensure the messages are printed to the error writer so they will
+   * be printed even if logging is not yet configured.
+   *
+   * @return the logger for this class
+   */
+  private Logger getLogger() {
+    return LogManager.getLogger();
   }
 
   public void setLogLevels() {
