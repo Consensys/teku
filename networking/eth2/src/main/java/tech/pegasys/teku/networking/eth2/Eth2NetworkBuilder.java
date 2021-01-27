@@ -188,7 +188,7 @@ public class Eth2NetworkBuilder {
   }
 
   private void validate() {
-    assertNotNull("eth2Config", config);
+    assertNotNull("config", config);
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
