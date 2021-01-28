@@ -130,7 +130,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
         .stop()
         .handleComposed(
             (__, err) -> {
-              LOG.warn("Error shutting down connection manager");
+              if (err != null) {
+                LOG.warn("Error shutting down connection manager", err);
+              }
               return SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop());
             });
   }
