@@ -159,4 +159,21 @@ public class VectorViewType<ElementViewT extends ViewRead>
         .mul(getLength())
         .ceilToBytes();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof VectorViewType)) {
+      return false;
+    }
+    VectorViewType<?> that = (VectorViewType<?>) o;
+    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
 }

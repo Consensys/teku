@@ -231,4 +231,21 @@ public class ListViewType<ElementViewT extends ViewRead>
       }
     }
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ListViewType)) {
+      return false;
+    }
+    ListViewType<?> that = (ListViewType<?>) o;
+    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
 }
