@@ -50,13 +50,7 @@ public abstract class Eth2ReferenceTestCase {
   private void setConstants(final String spec) {
     if (!spec.equals("general")) {
       Constants.setConstants(spec);
-      if (Constants.SLOTS_PER_HISTORICAL_ROOT
-          != SimpleOffsetSerializer.classReflectionInfo
-              .get(BeaconStateImpl.class)
-              .getVectorLengths()
-              .get(0)) {
-        SimpleOffsetSerializer.setConstants();
-      }
+      SimpleOffsetSerializer.setConstants();
     }
   }
 
