@@ -96,16 +96,11 @@ public abstract class AbstractNode implements Node {
     getServiceController()
         .stop()
         .orTimeout(30, TimeUnit.SECONDS)
-        .exceptionally(error -> reportShutdownError("Failed to stop services", error))
+        .handleException(error -> LOG.error("Failed to stop services", error))
         .thenCompose(__ -> metricsEndpoint.stop())
         .orTimeout(5, TimeUnit.SECONDS)
-        .exceptionally(error -> reportShutdownError("Failed to stop metrics", error))
+        .handleException(error -> LOG.error("Failed to stop metrics", error))
         .thenRun(vertx::close)
         .join();
-  }
-
-  private <T> T reportShutdownError(final String message, final Throwable error) {
-    LOG.error(message, error);
-    return null;
   }
 }
