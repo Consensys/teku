@@ -19,8 +19,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
@@ -34,6 +37,8 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 @Fork(1)
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializable> {
   protected final Blackhole blackhole =
       new Blackhole(
@@ -70,6 +75,12 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
   }
 
   @Benchmark
+  public void benchCreateAndSerialize(Blackhole bh) {
+    TView container = createContainer();
+    bh.consume(SimpleOffsetSerializer.serialize(container));
+  }
+
+  @Benchmark
   public void benchDeserialize(Blackhole bh) {
     bh.consume(SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass()));
   }
@@ -78,6 +89,12 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
   public void benchDeserializeAndIterate(Blackhole bh) {
     TView container1 = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
     iterateData(container1, bh);
+  }
+
+  @Benchmark
+  public void benchDeserializeAndSerialize(Blackhole bh) {
+    TView container = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
+    bh.consume(SimpleOffsetSerializer.serialize(container));
   }
 
   public void customRun(int runs, int runLength) {
