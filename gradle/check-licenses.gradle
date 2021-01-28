@@ -127,6 +127,7 @@ downloadLicenses {
       ],
       (cddl): [
               'CDDL',
+              'CDDL 1.0',
               'CDDL/GPLv2+CE',
               'Common Development and Distribution License (CDDL) v1.0',
               'Common Development and Distribution License 1.0',
