@@ -46,8 +46,8 @@ public class IsVariableTest {
 
   static Stream<Arguments> variableSizeTypes() {
     return Stream.of(
-        Arguments.of(BeaconBlockBody.TYPE),
-        Arguments.of(BeaconBlock.TYPE),
+        Arguments.of(BeaconBlockBody.TYPE.get()),
+        Arguments.of(BeaconBlock.TYPE.get()),
         Arguments.of(Attestation.TYPE),
         Arguments.of(AttesterSlashing.TYPE),
         Arguments.of(IndexedAttestation.TYPE),
