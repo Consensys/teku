@@ -53,7 +53,6 @@ public class NatManager extends Service {
   private final UpnpService upnpService;
   private final RegistryListener registryListener;
   private final SafeFuture<String> externalIpQueryFuture = new SafeFuture<>();
-
   private final SafeFuture<RemoteService> wanIpConnection = new SafeFuture<>();
   private final Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
   private Optional<String> discoveredOnLocalAddress = Optional.empty();
