@@ -19,12 +19,9 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -42,8 +39,6 @@ import org.jupnp.model.types.UnsignedIntegerTwoBytes;
 import org.jupnp.registry.Registry;
 import org.jupnp.registry.RegistryListener;
 import org.jupnp.support.igd.callback.GetExternalIP;
-import org.jupnp.support.igd.callback.PortMappingAdd;
-import org.jupnp.support.igd.callback.PortMappingDelete;
 import org.jupnp.support.model.PortMapping;
 import tech.pegasys.teku.infrastructure.async.FutureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,7 +46,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 @SuppressWarnings("unchecked")
 public class NatManager extends Service {
-  protected static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   static final String SERVICE_TYPE_WAN_IP_CONNECTION = "WANIPConnection";
 
@@ -59,8 +54,8 @@ public class NatManager extends Service {
   private final RegistryListener registryListener;
   private final SafeFuture<String> externalIpQueryFuture = new SafeFuture<>();
 
-  private final Map<String, SafeFuture<RemoteService>> recognizedServices = new HashMap<>();
-  private volatile Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
+  private final SafeFuture<RemoteService> wanIpConnection = new SafeFuture<>();
+  private final Queue<NatPortMapping> forwardedPorts = new ConcurrentLinkedQueue<>();
   private Optional<String> discoveredOnLocalAddress = Optional.empty();
 
   public NatManager(final NatMethod natMethod) {
@@ -83,38 +78,26 @@ public class NatManager extends Service {
   NatManager(final UpnpService service, final NatMethod natMethod) {
     upnpService = service;
 
-    // prime our recognizedServices map so we can use its key-set later
-    recognizedServices.put(SERVICE_TYPE_WAN_IP_CONNECTION, new SafeFuture<>());
-
     // registry listener to observe new devices and look for specific services
     registryListener =
         new TekuRegistryListener() {
           @Override
           public void remoteDeviceAdded(final Registry registry, final RemoteDevice device) {
             LOG.debug("UPnP Device discovered: " + device.getDetails().getFriendlyName());
-            inspectDeviceRecursive(device, recognizedServices.keySet());
+            inspectDeviceRecursive(device);
           }
         };
   }
 
-  private void inspectDeviceRecursive(final RemoteDevice device, final Set<String> serviceTypes) {
+  private void inspectDeviceRecursive(final RemoteDevice device) {
     for (RemoteService service : device.getServices()) {
       String serviceType = service.getServiceType().getType();
-      if (serviceTypes.contains(serviceType)) {
-        synchronized (this) {
-          // log a warning if we detect a second WANIPConnection service
-          SafeFuture<RemoteService> existingFuture = recognizedServices.get(serviceType);
-          if (existingFuture.isDone()) {
-            LOG.warn(
-                "Detected multiple WANIPConnection services on network. This may interfere with NAT circumvention.");
-            continue;
-          }
-          existingFuture.complete(service);
-        }
+      if (serviceType.equalsIgnoreCase(SERVICE_TYPE_WAN_IP_CONNECTION)) {
+        wanIpConnection.complete(service);
       }
     }
     for (RemoteDevice subDevice : device.getEmbeddedDevices()) {
-      inspectDeviceRecursive(subDevice, serviceTypes);
+      inspectDeviceRecursive(subDevice);
     }
   }
 
@@ -134,26 +117,20 @@ public class NatManager extends Service {
         .orTimeout(3, TimeUnit.SECONDS)
         .exceptionally(
             error -> {
-              LOG.warn("Failed to release port forwards", error);
+              LOG.debug("Failed to release port forwards", error);
               return null;
             })
         .alwaysRun(
             () -> {
-              for (SafeFuture<RemoteService> future : recognizedServices.values()) {
-                future.cancel(true);
-              }
+              wanIpConnection.cancel(true);
 
               upnpService.getRegistry().removeListener(registryListener);
               upnpService.shutdown();
             });
   }
 
-  private synchronized SafeFuture<RemoteService> discoverService(final String serviceType) {
-    return recognizedServices.get(serviceType);
-  }
-
   private void initiateExternalIpQuery() {
-    discoverService(SERVICE_TYPE_WAN_IP_CONNECTION)
+    wanIpConnection
         .thenAccept(
             service -> {
 
@@ -211,21 +188,15 @@ public class NatManager extends Service {
   }
 
   @VisibleForTesting
-  synchronized CompletableFuture<RemoteService> getWANIPConnectionService() {
+  CompletableFuture<RemoteService> getWANIPConnectionService() {
     checkState(isRunning(), "Cannot call getWANIPConnectionService() when in stopped state");
-    return getService(SERVICE_TYPE_WAN_IP_CONNECTION);
-  }
-
-  private synchronized SafeFuture<RemoteService> getService(final String type) {
-    return recognizedServices.get(type);
+    return wanIpConnection;
   }
 
   private SafeFuture<Void> releaseAllPortForwards() {
     // if we haven't observed the WANIPConnection service yet, we should have no port forwards to
     // release
-    SafeFuture<RemoteService> wanIPConnectionServiceFuture =
-        getService(SERVICE_TYPE_WAN_IP_CONNECTION);
-    if (!wanIPConnectionServiceFuture.isDone()) {
+    if (!wanIpConnection.isDone()) {
       LOG.debug("Ports had not completed setting up, will not be able to disconnect.");
       return SafeFuture.COMPLETE;
     }
@@ -236,7 +207,7 @@ public class NatManager extends Service {
     } else {
       LOG.debug("Have {} ports to close", forwardedPorts.size());
     }
-    RemoteService service = wanIPConnectionServiceFuture.join();
+    RemoteService service = wanIpConnection.join();
 
     List<SafeFuture<Void>> futures = new ArrayList<>();
 
@@ -248,49 +219,12 @@ public class NatManager extends Service {
           portMapping.getInternalPort(),
           portMapping.getExternalPort());
 
-      SafeFuture<Void> future = new SafeFuture<>();
-
-      PortMappingDelete callback =
-          new PortMappingDelete(service, toJupnpPortMapping(portMapping)) {
-            /**
-             * Because the underlying jupnp library omits generics info in this method signature, we
-             * must too when we override it.
-             */
-            @Override
-            @SuppressWarnings("rawtypes")
-            public void success(final ActionInvocation invocation) {
-              LOG.info(
-                  "Port forward {} {} -> {} removed successfully.",
-                  portMapping.getProtocol(),
-                  portMapping.getInternalPort(),
-                  portMapping.getExternalPort());
-
-              future.complete(null);
-            }
-
-            /**
-             * Because the underlying jupnp library omits generics info in this method signature, we
-             * must too when we override it.
-             */
-            @Override
-            @SuppressWarnings("rawtypes")
-            public void failure(
-                final ActionInvocation invocation, final UpnpResponse operation, final String msg) {
-              LOG.warn(
-                  "Port forward removal request for {} {} -> {} failed (ignoring): {}",
-                  portMapping.getProtocol(),
-                  portMapping.getInternalPort(),
-                  portMapping.getExternalPort(),
-                  msg);
-
-              // ignore exceptions; we did our best
-              future.complete(null);
-            }
-          };
+      TekuPortMappingDelete callback =
+          new TekuPortMappingDelete(service, toJupnpPortMapping(portMapping));
 
       FutureUtil.ignoreFuture(upnpService.getControlPoint().execute(callback));
 
-      futures.add(future);
+      futures.add(callback.getFuture());
     }
 
     // return a future that completes successfully only when each of our port delete requests
@@ -312,18 +246,15 @@ public class NatManager extends Service {
                 null,
                 toJupnpProtocol(protocol),
                 serviceType.getValue()))
-        .finish(error -> LOG.warn("Failed to forward port", error));
+        .finish(error -> LOG.debug("Failed to forward port ", error));
   }
 
   private SafeFuture<Void> requestPortForward(final PortMapping portMapping) {
-
-    SafeFuture<Void> upnpQueryFuture = new SafeFuture<>();
-
     return externalIpQueryFuture.thenCompose(
         address -> {
           // note that this future is a dependency of externalIpQueryFuture, so it must be completed
           // by now
-          RemoteService service = getService(SERVICE_TYPE_WAN_IP_CONNECTION).join();
+          RemoteService service = wanIpConnection.join();
 
           // at this point, we should have the local address we discovered the IGD on,
           // so we can prime the NewInternalClient field if it was omitted
@@ -332,55 +263,7 @@ public class NatManager extends Service {
           }
 
           // our query, which will be handled asynchronously by the jupnp library
-          PortMappingAdd callback =
-              new PortMappingAdd(service, portMapping) {
-                /**
-                 * Because the underlying jupnp library omits generics info in this method
-                 * signature, we must too when we override it.
-                 */
-                @Override
-                @SuppressWarnings("rawtypes")
-                public void success(final ActionInvocation invocation) {
-                  LOG.info(
-                      "Port forward request for {} {} -> {} succeeded.",
-                      portMapping.getProtocol(),
-                      portMapping.getInternalPort(),
-                      portMapping.getExternalPort());
-
-                  final NatServiceType natServiceType =
-                      NatServiceType.fromString(portMapping.getDescription());
-                  final NatPortMapping natPortMapping =
-                      new NatPortMapping(
-                          natServiceType,
-                          NetworkProtocol.valueOf(portMapping.getProtocol().name()),
-                          portMapping.getInternalClient(),
-                          portMapping.getRemoteHost(),
-                          portMapping.getExternalPort().getValue().intValue(),
-                          portMapping.getInternalPort().getValue().intValue());
-                  forwardedPorts.add(natPortMapping);
-
-                  upnpQueryFuture.complete(null);
-                }
-
-                /**
-                 * Because the underlying jupnp library omits generics info in this method
-                 * signature, we must too when we override it.
-                 */
-                @Override
-                @SuppressWarnings("rawtypes")
-                public void failure(
-                    final ActionInvocation invocation,
-                    final UpnpResponse operation,
-                    final String msg) {
-                  LOG.warn(
-                      "Port forward request for {} {} -> {} failed: {}",
-                      portMapping.getProtocol(),
-                      portMapping.getInternalPort(),
-                      portMapping.getExternalPort(),
-                      msg);
-                  upnpQueryFuture.completeExceptionally(new Exception(msg));
-                }
-              };
+          TekuPortMappingAdd callback = new TekuPortMappingAdd(service, portMapping);
 
           LOG.debug(
               "Requesting port forward for {} {} -> {}",
@@ -389,8 +272,18 @@ public class NatManager extends Service {
               portMapping.getExternalPort());
 
           ignoreFuture(upnpService.getControlPoint().execute(callback));
-
-          return upnpQueryFuture;
+          return callback
+              .getFuture()
+              .thenCompose(
+                  port -> {
+                    forwardedPorts.add(port);
+                    return SafeFuture.COMPLETE;
+                  })
+              .exceptionallyCompose(
+                  error -> {
+                    LOG.debug("Failed to forward port", error);
+                    return SafeFuture.failedFuture(error);
+                  });
         });
   }
 

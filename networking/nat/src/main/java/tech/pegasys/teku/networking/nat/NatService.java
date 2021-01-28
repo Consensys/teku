@@ -26,19 +26,25 @@ public class NatService extends Service {
   private final boolean isDiscoveryEnabled;
   private final int p2pPort;
 
+  NatService(
+      final int p2pPort,
+      final boolean isDiscoveryEnabled,
+      final Optional<NatManager> maybeNatManager) {
+    this.p2pPort = p2pPort;
+    this.isDiscoveryEnabled = isDiscoveryEnabled;
+    this.maybeNatManager = maybeNatManager;
+  }
+
   public NatService(
       final NatConfiguration natConfiguration,
       final int p2pPort,
       final boolean isDiscoveryEnabled) {
-    final NatMethod currentNatMethod = natConfiguration.getNatMethod();
-    this.p2pPort = p2pPort;
-    this.isDiscoveryEnabled = isDiscoveryEnabled;
-
-    if (currentNatMethod.equals(NatMethod.UPNP)) {
-      maybeNatManager = Optional.of(new NatManager(natConfiguration.getNatMethod()));
-    } else {
-      maybeNatManager = Optional.empty();
-    }
+    this(
+        p2pPort,
+        isDiscoveryEnabled,
+        natConfiguration.getNatMethod().equals(NatMethod.UPNP)
+            ? Optional.of(new NatManager(natConfiguration.getNatMethod()))
+            : Optional.empty());
   }
 
   @Override
