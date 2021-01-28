@@ -29,7 +29,7 @@ public class ProposerSlashingFuzzInput
 
   @SszTypeDescriptor
   public static ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
-  createType() {
+      createType() {
     return ContainerType2.create(
         BeaconState.getSSZType(), ProposerSlashing.TYPE, ProposerSlashingFuzzInput::new);
   }

@@ -29,7 +29,7 @@ public class VoluntaryExitFuzzInput
 
   @SszTypeDescriptor
   public static ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-  createType() {
+      createType() {
     return ContainerType2.create(
         BeaconState.getSSZType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
   }

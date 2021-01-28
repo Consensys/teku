@@ -32,8 +32,8 @@ public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, Beaco
 
   @SszTypeDescriptor
   public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
-    return ContainerType2
-        .create(BeaconState.getSSZType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
+    return ContainerType2.create(
+        BeaconState.getSSZType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
   }
 
   private BlockHeaderFuzzInput(

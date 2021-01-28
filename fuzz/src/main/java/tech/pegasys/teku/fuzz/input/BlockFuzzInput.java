@@ -28,8 +28,8 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
 
   @SszTypeDescriptor
   public static ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
-    return ContainerType2
-        .create(BeaconState.getSSZType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
+    return ContainerType2.create(
+        BeaconState.getSSZType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(

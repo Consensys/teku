@@ -68,9 +68,13 @@ public class HistoricalBatch
   }
 
   public static final SpecDependent<HistoricalBatchType> TYPE =
-      SpecDependent.of(() -> new HistoricalBatchType(
-          new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-          new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
+      SpecDependent.of(
+          () ->
+              new HistoricalBatchType(
+                  new VectorViewType<>(
+                      BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+                  new VectorViewType<>(
+                      BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
 
   private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
     super(type, backingNode);

@@ -28,7 +28,8 @@ public class AttestationFuzzInput extends Container2<AttestationFuzzInput, Beaco
 
   @SszTypeDescriptor
   public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
-    return ContainerType2.create(BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+    return ContainerType2.create(
+        BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(

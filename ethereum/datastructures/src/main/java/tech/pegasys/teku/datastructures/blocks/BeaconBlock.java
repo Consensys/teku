@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;

@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.blocks;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
@@ -79,8 +78,7 @@ public class BeaconBlockBody
         ListViewType<AttesterSlashing> attesterSlashingsType,
         ListViewType<Attestation> attestationsType,
         ListViewType<Deposit> depositsType,
-        ListViewType<SignedVoluntaryExit> voluntaryExitsType
-    ) {
+        ListViewType<SignedVoluntaryExit> voluntaryExitsType) {
       super(
           ComplexViewTypes.BYTES_96_TYPE,
           Eth1Data.TYPE,
@@ -108,13 +106,15 @@ public class BeaconBlockBody
     return TYPE.get();
   }
 
-  public static final SpecDependent<BeaconBlockBodyType> TYPE = SpecDependent
-      .of(() -> new BeaconBlockBodyType(
-          new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS),
-          new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS),
-          new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS),
-          new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS),
-          new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+  public static final SpecDependent<BeaconBlockBodyType> TYPE =
+      SpecDependent.of(
+          () ->
+              new BeaconBlockBodyType(
+                  new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS),
+                  new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS),
+                  new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS),
+                  new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS),
+                  new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
 
   private BLSSignature randaoRevealCache;
 
@@ -132,8 +132,16 @@ public class BeaconBlockBody
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
-    this(TYPE.get(), randao_reveal, eth1_data, graffiti, proposer_slashings, attester_slashings,
-        attestations, deposits, voluntary_exits);
+    this(
+        TYPE.get(),
+        randao_reveal,
+        eth1_data,
+        graffiti,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
     this.randaoRevealCache = randao_reveal;
   }
 
