@@ -16,31 +16,24 @@ package tech.pegasys.teku.networking.p2p.connection;
 import com.google.common.base.Preconditions;
 
 public class TargetPeerRange {
-  private final int addPeersWhenLessThan;
-  private final int dropPeersWhenGreaterThan;
+  private final int lowerBound;
+  private final int upperBound;
   private final int minimumRandomlySelectedPeerCount;
 
   public TargetPeerRange(
-      final int addPeersWhenLessThan,
-      final int dropPeersWhenGreaterThan,
-      final int minimumRandomlySelectedPeerCount) {
-    Preconditions.checkArgument(
-        addPeersWhenLessThan <= dropPeersWhenGreaterThan, "Invalid target peer count range");
-    this.addPeersWhenLessThan = addPeersWhenLessThan;
-    this.dropPeersWhenGreaterThan = dropPeersWhenGreaterThan;
+      final int lowerBound, final int upperBound, final int minimumRandomlySelectedPeerCount) {
+    Preconditions.checkArgument(lowerBound <= upperBound, "Invalid target peer count range");
+    this.lowerBound = lowerBound;
+    this.upperBound = upperBound;
     this.minimumRandomlySelectedPeerCount = minimumRandomlySelectedPeerCount;
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
-    return currentPeerCount < addPeersWhenLessThan
-        ? dropPeersWhenGreaterThan - currentPeerCount
-        : 0;
+    return currentPeerCount < lowerBound ? upperBound - currentPeerCount : 0;
   }
 
   public int getPeersToDrop(final int currentPeerCount) {
-    return currentPeerCount > dropPeersWhenGreaterThan
-        ? currentPeerCount - dropPeersWhenGreaterThan
-        : 0;
+    return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
   public int getRandomlySelectedPeersToAdd(final int currentRandomlySelectedPeerCount) {

@@ -11,7 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.network;
+package tech.pegasys.teku.networking.p2p.gossip.config;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
 
@@ -30,18 +32,6 @@ public class GossipConfig {
   public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
   public static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(550);
 
-  public static final GossipConfig DEFAULT_CONFIG =
-      new GossipConfig(
-          DEFAULT_D,
-          DEFAULT_D_LOW,
-          DEFAULT_D_HIGH,
-          DEFAULT_D_LAZY,
-          DEFAULT_FANOUT_TTL,
-          DEFAULT_ADVERTISE,
-          DEFAULT_HISTORY,
-          DEFAULT_HEARTBEAT_INTERVAL,
-          DEFAULT_SEEN_TTL);
-
   private final int d;
   private final int dLow;
   private final int dHigh;
@@ -52,7 +42,7 @@ public class GossipConfig {
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
 
-  public GossipConfig(
+  private GossipConfig(
       int d,
       int dLow,
       int dHigh,
@@ -71,6 +61,14 @@ public class GossipConfig {
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
     this.seenTTL = seenTTL;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static GossipConfig createDefault() {
+    return builder().build();
   }
 
   public int getD() {
@@ -107,5 +105,78 @@ public class GossipConfig {
 
   public Duration getSeenTTL() {
     return seenTTL;
+  }
+
+  public static class Builder {
+    private Integer d = DEFAULT_D;
+    private Integer dLow = DEFAULT_D_LOW;
+    private Integer dHigh = DEFAULT_D_HIGH;
+    private Integer dLazy = DEFAULT_D_LAZY;
+    private Duration fanoutTTL = DEFAULT_FANOUT_TTL;
+    private Integer advertise = DEFAULT_ADVERTISE;
+    private Integer history = DEFAULT_HISTORY;
+    private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+    private Duration seenTTL = DEFAULT_SEEN_TTL;
+
+    private Builder() {}
+
+    public GossipConfig build() {
+      return new GossipConfig(
+          d, dLow, dHigh, dLazy, fanoutTTL, advertise, history, heartbeatInterval, seenTTL);
+    }
+
+    public Builder d(final Integer d) {
+      checkNotNull(d);
+      this.d = d;
+      return this;
+    }
+
+    public Builder dLow(final Integer dLow) {
+      checkNotNull(dLow);
+      this.dLow = dLow;
+      return this;
+    }
+
+    public Builder dHigh(final Integer dHigh) {
+      checkNotNull(dHigh);
+      this.dHigh = dHigh;
+      return this;
+    }
+
+    public Builder dLazy(final Integer dLazy) {
+      checkNotNull(dLazy);
+      this.dLazy = dLazy;
+      return this;
+    }
+
+    public Builder fanoutTTL(final Duration fanoutTTL) {
+      checkNotNull(fanoutTTL);
+      this.fanoutTTL = fanoutTTL;
+      return this;
+    }
+
+    public Builder advertise(final Integer advertise) {
+      checkNotNull(advertise);
+      this.advertise = advertise;
+      return this;
+    }
+
+    public Builder history(final Integer history) {
+      checkNotNull(history);
+      this.history = history;
+      return this;
+    }
+
+    public Builder heartbeatInterval(final Duration heartbeatInterval) {
+      checkNotNull(heartbeatInterval);
+      this.heartbeatInterval = heartbeatInterval;
+      return this;
+    }
+
+    public Builder seenTTL(final Duration seenTTL) {
+      checkNotNull(seenTTL);
+      this.seenTTL = seenTTL;
+      return this;
+    }
   }
 }

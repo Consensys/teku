@@ -514,6 +514,26 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
+   * Returns a void future that completes successfully with null result. The consumer is invoked if
+   * this future completes exceptions and the returned future only completes once the consumer
+   * returns.
+   *
+   * <p>The returned future will only complete exceptionally if the consumer throws an exception.
+   *
+   * @param action the exception handler to invoke.
+   * @return a void future that completes successfully unless the consumer throws an exception.
+   */
+  public SafeFuture<Void> handleException(final Consumer<Throwable> action) {
+    return handle(
+        (__, error) -> {
+          if (error != null) {
+            action.accept(error);
+          }
+          return null;
+        });
+  }
+
+  /**
    * Returns the future which completes with the same result or exception as this one. The resulting
    * future becomes complete when `waitForStage` completes. If the `waitForStage` completes
    * exceptionally the resulting future also completes exceptionally with the same exception

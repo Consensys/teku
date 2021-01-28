@@ -18,27 +18,32 @@ import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAUL
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void loggingOptions_shouldReadFromConfigurationFile() {
-    final LoggingConfig config =
-        getTekuConfigurationFromFile("loggingOptions_config.yaml").loggingConfig();
+    final TekuConfiguration config = getTekuConfigurationFromFile("loggingOptions_config.yaml");
 
-    assertThat(config.getDestination()).isEqualTo(LoggingDestination.FILE);
-    assertThat(config.isColorEnabled()).isFalse();
-    assertThat(config.isIncludeEventsEnabled()).isFalse();
-    assertThat(config.getLogFile()).isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a.log");
-    assertThat(config.getLogFileNamePattern())
+    final LoggingConfig loggingConfig = config.loggingConfig();
+    assertThat(loggingConfig.getDestination()).isEqualTo(LoggingDestination.FILE);
+    assertThat(loggingConfig.isColorEnabled()).isFalse();
+    assertThat(loggingConfig.isIncludeEventsEnabled()).isFalse();
+    assertThat(loggingConfig.getLogFile())
+        .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a.log");
+    assertThat(loggingConfig.getLogFileNamePattern())
         .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a%d.log");
-    assertThat(config.isLogWireCipher()).isTrue();
-    assertThat(config.isLogWirePlain()).isTrue();
-    assertThat(config.isLogWireMuxFrames()).isTrue();
-    assertThat(config.isLogWireGossip()).isTrue();
+
+    final WireLogsConfig wireConfig = config.network().getWireLogsConfig();
+    assertThat(wireConfig.isLogWireCipher()).isTrue();
+    assertThat(wireConfig.isLogWirePlain()).isTrue();
+    assertThat(wireConfig.isLogWireMuxFrames()).isTrue();
+    assertThat(wireConfig.isLogWireGossip()).isTrue();
   }
 
   @Test

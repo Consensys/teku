@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -68,6 +69,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   void unsubscribeConnect(long subscriptionId);
 
   boolean isConnected(PeerAddress peerAddress);
+
+  Bytes getPrivateKey();
 
   Optional<T> getPeer(NodeId id);
 

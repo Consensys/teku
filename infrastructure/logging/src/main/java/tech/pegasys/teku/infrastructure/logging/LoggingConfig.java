@@ -21,10 +21,6 @@ public class LoggingConfig {
   private final LoggingDestination destination;
   private final String logFile;
   private final String logFileNamePattern;
-  private final boolean logWireCipher;
-  private final boolean logWirePlain;
-  private final boolean logWireMuxFrames;
-  private final boolean logWireGossip;
 
   private LoggingConfig(
       final boolean colorEnabled,
@@ -32,21 +28,13 @@ public class LoggingConfig {
       final boolean includeValidatorDutiesEnabled,
       final LoggingDestination destination,
       final String logFile,
-      final String logFileNamePattern,
-      final boolean logWireCipher,
-      final boolean logWirePlain,
-      final boolean logWireMuxFrames,
-      final boolean logWireGossip) {
+      final String logFileNamePattern) {
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
     this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
     this.destination = destination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
-    this.logWireCipher = logWireCipher;
-    this.logWirePlain = logWirePlain;
-    this.logWireMuxFrames = logWireMuxFrames;
-    this.logWireGossip = logWireGossip;
   }
 
   public static LoggingConfigBuilder builder() {
@@ -77,22 +65,6 @@ public class LoggingConfig {
     return logFileNamePattern;
   }
 
-  public boolean isLogWireCipher() {
-    return logWireCipher;
-  }
-
-  public boolean isLogWirePlain() {
-    return logWirePlain;
-  }
-
-  public boolean isLogWireMuxFrames() {
-    return logWireMuxFrames;
-  }
-
-  public boolean isLogWireGossip() {
-    return logWireGossip;
-  }
-
   public static final class LoggingConfigBuilder {
 
     private boolean colorEnabled;
@@ -101,10 +73,6 @@ public class LoggingConfig {
     private LoggingDestination destination;
     private String logFile;
     private String logFileNamePattern;
-    private boolean logWireCipher;
-    private boolean logWirePlain;
-    private boolean logWireMuxFrames;
-    private boolean logWireGossip;
 
     private LoggingConfigBuilder() {}
 
@@ -139,26 +107,6 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logWireCipher(boolean logWireCipher) {
-      this.logWireCipher = logWireCipher;
-      return this;
-    }
-
-    public LoggingConfigBuilder logWirePlain(boolean logWirePlain) {
-      this.logWirePlain = logWirePlain;
-      return this;
-    }
-
-    public LoggingConfigBuilder logWireMuxFrames(boolean logWireMuxFrames) {
-      this.logWireMuxFrames = logWireMuxFrames;
-      return this;
-    }
-
-    public LoggingConfigBuilder logWireGossip(boolean logWireGossip) {
-      this.logWireGossip = logWireGossip;
-      return this;
-    }
-
     public LoggingConfig build() {
       return new LoggingConfig(
           colorEnabled,
@@ -166,11 +114,7 @@ public class LoggingConfig {
           includeValidatorDutiesEnabled,
           destination,
           logFile,
-          logFileNamePattern,
-          logWireCipher,
-          logWirePlain,
-          logWireMuxFrames,
-          logWireGossip);
+          logFileNamePattern);
     }
   }
 }
