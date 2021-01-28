@@ -35,8 +35,8 @@ public class BeaconNodeServiceController extends ServiceController {
     services.add(
         new NatService(
             tekuConfig.natConfiguration(),
-            tekuConfig.beaconChain().p2pConfig().getP2pPort(),
-            tekuConfig.beaconChain().p2pConfig().isP2pDiscoveryEnabled()));
+            tekuConfig.network().getListenPort(),
+            tekuConfig.discovery().isDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
   }
 
