@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 public class ComplexViewTypes {
 
   public static final ByteVectorType BYTES_48_TYPE = new ByteVectorType(48);
-  public static final ByteVectorType BYTES_96_TYPE = new ByteVectorType(48);
+  public static final ByteVectorType BYTES_96_TYPE = new ByteVectorType(96);
 
   public static class ByteListType extends ListViewType<ByteView> {
     public ByteListType(long maxLength) {

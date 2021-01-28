@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -38,7 +39,7 @@ public class SignedBeaconBlock
       extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
 
     public SignedBeaconBlockType() {
-      super(BeaconBlock.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(BeaconBlock.TYPE.get(), ComplexViewTypes.BYTES_96_TYPE);
     }
 
     @Override
@@ -46,31 +47,29 @@ public class SignedBeaconBlock
       return new SignedBeaconBlock(this, node);
     }
   }
+
   @SszTypeDescriptor
   public static SignedBeaconBlockType getSszType() {
-    if (TYPE == null) {
-      TYPE = new SignedBeaconBlockType();
-    }
-    return TYPE;
+    return TYPE.get();
   }
 
-  public static void resetSszType() {
-    TYPE = null;
-  }
-
-  private static SignedBeaconBlockType TYPE;
-
+  public static final SpecDependent<SignedBeaconBlockType> TYPE =
+      SpecDependent.of(SignedBeaconBlockType::new);
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlock(
-      ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> type,
-      TreeNode backingNode) {
+  private SignedBeaconBlock(SignedBeaconBlockType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
+  @Deprecated
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    super(getSszType(), message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this(TYPE.get(), message, signature);
+  }
+
+  public SignedBeaconBlock(
+      final SignedBeaconBlockType type, final BeaconBlock message, final BLSSignature signature) {
+    super(type, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

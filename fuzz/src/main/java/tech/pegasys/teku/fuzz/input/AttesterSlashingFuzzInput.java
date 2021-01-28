@@ -28,10 +28,11 @@ public class AttesterSlashingFuzzInput
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
-      TYPE =
-          ContainerType2.create(
-              BeaconState.getSSZType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+  public static ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
+      createType() {
+    return ContainerType2.create(
+        BeaconState.getSSZType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+  }
 
   private AttesterSlashingFuzzInput(
       ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
@@ -41,7 +42,7 @@ public class AttesterSlashingFuzzInput
 
   public AttesterSlashingFuzzInput(
       final BeaconStateImpl state, final AttesterSlashing attester_slashing) {
-    super(TYPE, state, attester_slashing);
+    super(createType(), state, attester_slashing);
   }
 
   public AttesterSlashing getAttester_slashing() {

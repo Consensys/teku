@@ -16,8 +16,10 @@ package tech.pegasys.teku.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
@@ -51,22 +53,48 @@ public final class BeaconBlock
     public BeaconBlock createFromBackingNode(TreeNode node) {
       return new BeaconBlock(this, node);
     }
+
+    public BeaconBlock fromGenesisState(final BeaconState genesisState) {
+      return new BeaconBlock(
+          this,
+          UInt64.ZERO,
+          UInt64.ZERO,
+          Bytes32.ZERO,
+          genesisState.hashTreeRoot(),
+          new BeaconBlockBody());
+    }
   }
 
-  @SszTypeDescriptor public static final BeaconBlockType TYPE = new BeaconBlockType();
+  @SszTypeDescriptor
+  public static BeaconBlockType getSszType() {
+    return TYPE.get();
+  }
+
+  public static final SpecDependent<BeaconBlockType> TYPE = SpecDependent.of(BeaconBlockType::new);
 
   private BeaconBlock(BeaconBlockType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
+  @Deprecated
   public BeaconBlock(
       UInt64 slot,
       UInt64 proposer_index,
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body) {
+    this(TYPE.get(), slot, proposer_index, parent_root, state_root, body);
+  }
+
+  public BeaconBlock(
+      BeaconBlockType type,
+      UInt64 slot,
+      UInt64 proposer_index,
+      Bytes32 parent_root,
+      Bytes32 state_root,
+      BeaconBlockBody body) {
     super(
-        TYPE,
+        type,
         new UInt64View(slot),
         new UInt64View(proposer_index),
         new Bytes32View(parent_root),
@@ -74,13 +102,25 @@ public final class BeaconBlock
         body);
   }
 
+  @Deprecated
   public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
     return new BeaconBlock(
-        UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, genesisState.hashTreeRoot(), new BeaconBlockBody());
+        TYPE.get(),
+        UInt64.ZERO,
+        UInt64.ZERO,
+        Bytes32.ZERO,
+        genesisState.hashTreeRoot(),
+        new BeaconBlockBody());
   }
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
-    return new BeaconBlock(getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
+    return new BeaconBlock(
+        getType(), getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
+  }
+
+  @Override
+  public BeaconBlockType getType() {
+    return (BeaconBlockType) super.getType();
   }
 
   @Override

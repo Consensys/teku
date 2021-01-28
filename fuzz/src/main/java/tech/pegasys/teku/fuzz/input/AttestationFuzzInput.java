@@ -27,8 +27,9 @@ public class AttestationFuzzInput extends Container2<AttestationFuzzInput, Beaco
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<AttestationFuzzInput, BeaconState, Attestation> TYPE =
-      ContainerType2.create(BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+  public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
+    return ContainerType2.create(BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+  }
 
   private AttestationFuzzInput(
       ContainerType2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
@@ -36,12 +37,12 @@ public class AttestationFuzzInput extends Container2<AttestationFuzzInput, Beaco
   }
 
   public AttestationFuzzInput(final BeaconStateImpl state, final Attestation attestation) {
-    super(TYPE, state, attestation);
+    super(createType(), state, attestation);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public AttestationFuzzInput() {
-    super(TYPE);
+    super(createType());
   }
 
   public Attestation getAttestation() {

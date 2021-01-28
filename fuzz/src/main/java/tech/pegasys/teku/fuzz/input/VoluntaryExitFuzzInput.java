@@ -28,10 +28,11 @@ public class VoluntaryExitFuzzInput
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-      TYPE =
-          ContainerType2.create(
-              BeaconState.getSSZType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
+  public static ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
+  createType() {
+    return ContainerType2.create(
+        BeaconState.getSSZType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
+  }
 
   public VoluntaryExitFuzzInput(
       ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> type,
@@ -40,12 +41,12 @@ public class VoluntaryExitFuzzInput
   }
 
   public VoluntaryExitFuzzInput(final BeaconStateImpl state, final SignedVoluntaryExit exit) {
-    super(TYPE, state, exit);
+    super(createType(), state, exit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public VoluntaryExitFuzzInput() {
-    super(TYPE);
+    super(createType());
   }
 
   public SignedVoluntaryExit getExit() {

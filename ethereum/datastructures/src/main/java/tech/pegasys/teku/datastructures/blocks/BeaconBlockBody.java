@@ -16,13 +16,14 @@ package tech.pegasys.teku.datastructures.blocks;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock.SignedBeaconBlockType;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.spec.util.SpecDependent;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -104,14 +104,17 @@ public class BeaconBlockBody
   }
 
   @SszTypeDescriptor
+  public static BeaconBlockBodyType getSszType() {
+    return TYPE.get();
+  }
+
   public static final SpecDependent<BeaconBlockBodyType> TYPE = SpecDependent
-      .of(spec -> new BeaconBlockBodyType(
-          new ListViewType<>(ProposerSlashing.TYPE, spec.getConstants().getMaxProposerSlashings()),
-          new ListViewType<>(AttesterSlashing.TYPE, spec.getConstants().getMaxAttesterSlashings()),
-          new ListViewType<>(Attestation.TYPE, spec.getConstants().getMaxAttestations()),
-          new ListViewType<>(Deposit.TYPE, spec.getConstants().getMaxDeposits()),
-          new ListViewType<>(SignedVoluntaryExit.TYPE,
-              spec.getConstants().getMaxVoluntaryExits())));
+      .of(() -> new BeaconBlockBodyType(
+          new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS),
+          new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS),
+          new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS),
+          new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS),
+          new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
 
   private BLSSignature randaoRevealCache;
 

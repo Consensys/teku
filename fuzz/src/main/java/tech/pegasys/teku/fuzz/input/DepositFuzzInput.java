@@ -27,8 +27,9 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<DepositFuzzInput, BeaconState, Deposit> TYPE =
-      ContainerType2.create(BeaconState.getSSZType(), Deposit.TYPE, DepositFuzzInput::new);
+  public static ContainerType2<DepositFuzzInput, BeaconState, Deposit> createType() {
+    return ContainerType2.create(BeaconState.getSSZType(), Deposit.TYPE, DepositFuzzInput::new);
+  }
 
   public DepositFuzzInput(
       ContainerType2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
@@ -36,12 +37,12 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
   }
 
   public DepositFuzzInput(final BeaconStateImpl state, final Deposit deposit) {
-    super(TYPE, state, deposit);
+    super(createType(), state, deposit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public DepositFuzzInput() {
-    super(TYPE);
+    super(createType());
   }
 
   public Deposit getDeposit() {

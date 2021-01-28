@@ -57,47 +57,7 @@ public class SimpleOffsetSerializer {
   public static HashMap<Class, LengthBounds> classLengthBounds = new HashMap<>();
 
   public static void setConstants() {
-    List<Class> classes = List.of();
-    //            SignedBeaconBlock.class,
-    //            BeaconBlock.class,
-    //            BeaconBlockBody.class,
-    //            BeaconBlockHeader.class,
-    //            SignedBeaconBlockHeader.class,
-    //            Eth1Data.class,
-    //            Attestation.class,
-    //            AttestationData.class,
-    //            AttesterSlashing.class,
-    //            Deposit.class,
-    //            DepositData.class,
-    //            DepositMessage.class,
-    //            IndexedAttestation.class,
-    //            ProposerSlashing.class,
-    //            SignedVoluntaryExit.class,
-    //            VoluntaryExit.class,
-    //            Checkpoint.class,
-    //            HistoricalBatch.class,
-    //            PendingAttestation.class,
-    //            Validator.class,
-    //            StatusMessage.class,
-    //            GoodbyeMessage.class,
-    //            BeaconBlocksByRangeRequestMessage.class,
-    //            //            AggregateAndProof.class,
-    //            //            SignedAggregateAndProof.class,
-    //            ForkData.class,
-    //            EnrForkId.class,
-    //            VoteTracker.class,
-    //            MetadataMessage.class,
-    //            EmptyMessage.class,
-    //            PingMessage.class,
-    //            SigningData.class);
-
-    for (Class classItem : classes) {
-      classReflectionInfo.put(classItem, new ReflectionInformation(classItem));
-    }
-
-    for (Class classItem : classes) {
-      classLengthBounds.put(classItem, LengthBoundCalculator.calculateLengthBounds(classItem));
-    }
+    SpecDependent.resetAll();
   }
 
   static {

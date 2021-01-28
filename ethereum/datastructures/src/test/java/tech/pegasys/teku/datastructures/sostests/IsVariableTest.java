@@ -67,7 +67,7 @@ public class IsVariableTest {
         Arguments.of(VoluntaryExit.TYPE),
         Arguments.of(Checkpoint.TYPE),
         Arguments.of(Fork.TYPE),
-        Arguments.of(HistoricalBatch.TYPE),
+        Arguments.of(HistoricalBatch.TYPE.get()),
         Arguments.of(VoteTracker.TYPE),
         Arguments.of(Validator.TYPE));
   }

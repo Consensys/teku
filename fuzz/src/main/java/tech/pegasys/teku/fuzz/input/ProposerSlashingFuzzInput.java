@@ -28,10 +28,11 @@ public class ProposerSlashingFuzzInput
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
-      TYPE =
-          ContainerType2.create(
-              BeaconState.getSSZType(), ProposerSlashing.TYPE, ProposerSlashingFuzzInput::new);
+  public static ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
+  createType() {
+    return ContainerType2.create(
+        BeaconState.getSSZType(), ProposerSlashing.TYPE, ProposerSlashingFuzzInput::new);
+  }
 
   public ProposerSlashingFuzzInput(
       ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing> type,
@@ -41,7 +42,7 @@ public class ProposerSlashingFuzzInput
 
   public ProposerSlashingFuzzInput(
       final BeaconStateImpl state, final ProposerSlashing proposer_slashing) {
-    super(TYPE, state, proposer_slashing);
+    super(createType(), state, proposer_slashing);
   }
 
   public ProposerSlashing getProposer_slashing() {

@@ -15,8 +15,7 @@ package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.util.SpecDependent;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -26,12 +25,10 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBatch
@@ -45,8 +42,8 @@ public class HistoricalBatch
     private final VectorViewType<Bytes32View> blockRootsType;
     private final VectorViewType<Bytes32View> stateRootsType;
 
-    public HistoricalBatchType(VectorViewType<Bytes32View> blockRootsType,
-        VectorViewType<Bytes32View> stateRootsType) {
+    public HistoricalBatchType(
+        VectorViewType<Bytes32View> blockRootsType, VectorViewType<Bytes32View> stateRootsType) {
       super(blockRootsType, stateRootsType);
       this.blockRootsType = blockRootsType;
       this.stateRootsType = stateRootsType;
@@ -70,14 +67,10 @@ public class HistoricalBatch
     }
   }
 
-  private static final SpecDependent<VectorViewType<Bytes32View>> BLOCK_ROOTS_TYPE = SpecDependent
-      .of(spec -> new VectorViewType<>(BasicViewTypes.BYTES32_TYPE,
-          spec.getConstants().getSlotsPerHistoricalRoot()));
-  private static final SpecDependent<VectorViewType<Bytes32View>> STATE_ROOTS_TYPE = SpecDependent
-      .of(spec -> new VectorViewType<>(BasicViewTypes.BYTES32_TYPE,
-          spec.getConstants().getSlotsPerHistoricalRoot()));
-  private static final SpecDependent<HistoricalBatchType> TYPE = SpecDependent
-      .combineAndMap(BLOCK_ROOTS_TYPE, STATE_ROOTS_TYPE, HistoricalBatchType::new);
+  public static final SpecDependent<HistoricalBatchType> TYPE =
+      SpecDependent.of(() -> new HistoricalBatchType(
+          new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+          new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
 
   private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -88,7 +81,8 @@ public class HistoricalBatch
     this(TYPE.get(), block_roots, state_roots);
   }
 
-  private HistoricalBatch(HistoricalBatchType type, SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+  private HistoricalBatch(
+      HistoricalBatchType type, SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
     super(
         type,
         ViewUtils.toVectorView(type.getBlockRootsType(), block_roots, Bytes32View::new),

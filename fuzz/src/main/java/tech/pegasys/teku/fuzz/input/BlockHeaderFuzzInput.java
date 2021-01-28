@@ -31,8 +31,10 @@ public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, Beaco
     implements SimpleOffsetSerializable, SSZContainer {
 
   @SszTypeDescriptor
-  public static final ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> TYPE =
-      ContainerType2.create(BeaconState.getSSZType(), BeaconBlock.TYPE, BlockHeaderFuzzInput::new);
+  public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
+    return ContainerType2
+        .create(BeaconState.getSSZType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
+  }
 
   private BlockHeaderFuzzInput(
       ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
@@ -40,12 +42,12 @@ public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, Beaco
   }
 
   public BlockHeaderFuzzInput(final BeaconStateImpl state, final BeaconBlock block) {
-    super(TYPE, state, block);
+    super(createType(), state, block);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public BlockHeaderFuzzInput() {
-    super(TYPE);
+    super(createType());
   }
 
   public BeaconBlock getBlock() {
