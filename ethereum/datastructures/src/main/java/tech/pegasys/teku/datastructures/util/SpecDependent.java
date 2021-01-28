@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.util;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -31,11 +30,6 @@ public class SpecDependent<V> {
 
   public static void resetAll() {
     allDependents.forEach(SpecDependent::reset);
-  }
-
-  public static <V1, V2, R> SpecDependent<R> combineAndMap(
-      SpecDependent<V1> dep1, SpecDependent<V2> dep2, BiFunction<V1, V2, R> mapper) {
-    return of(() -> mapper.apply(dep1.get(), dep2.get()));
   }
 
   private final Supplier<V> supplier;
@@ -62,10 +56,5 @@ public class SpecDependent<V> {
 
   public <R> SpecDependent<R> map(Function<V, R> mapper) {
     return of(() -> mapper.apply(get()));
-  }
-
-  public <V1, R> SpecDependent<R> combineAndMap(
-      SpecDependent<V1> other1, BiFunction<V, V1, R> mapper) {
-    return of(() -> mapper.apply(this.get(), other1.get()));
   }
 }
