@@ -39,4 +39,9 @@ public abstract class ContainerType1<C extends ContainerViewRead, V0 extends Vie
 
     super(List.of(fieldType0));
   }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V0> getFieldType0() {
+    return (ViewType<V0>) getChildType(0);
+  }
 }

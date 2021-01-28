@@ -58,4 +58,24 @@ public abstract class ContainerType4<
 
     super(List.of(fieldType0, fieldType1, fieldType2, fieldType3));
   }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V0> getFieldType0() {
+    return (ViewType<V0>) getChildType(0);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V1> getFieldType1() {
+    return (ViewType<V1>) getChildType(1);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V2> getFieldType2() {
+    return (ViewType<V2>) getChildType(2);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V3> getFieldType3() {
+    return (ViewType<V3>) getChildType(3);
+  }
 }

@@ -116,6 +116,17 @@ public class ContainersGenerator {
                                     + "    return getAny($);\n"
                                     + "  }")
                                 .replace("$", "" + i))
+                    .collect(Collectors.joining("\n\n"))),
+            Map.entry(
+                "TypeGetters",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i ->
+                            ("  @SuppressWarnings(\"unchecked\")\n"
+                                    + "  public ViewType<V$> getFieldType$() {\n"
+                                    + "    return (ViewType<V$>) getChildType($);\n"
+                                    + "  }\n")
+                                .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(
         templateSrcPath.resolve(typePackagePath).resolve(containerTypeTemplateFile),
