@@ -83,13 +83,8 @@ public class ErrorConditionsIntegrationTest {
     }
 
     @Override
-    public int getSSZFieldCount() {
-      return 1;
-    }
-
-    @Override
-    public List<Bytes> get_fixed_parts() {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.fromHexString("0xABCDEF"))));
+    public Bytes sszSerialize() {
+      return Bytes.fromHexString("0xABCDEF");
     }
   }
 }

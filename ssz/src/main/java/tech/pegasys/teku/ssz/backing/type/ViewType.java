@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -77,5 +78,9 @@ public interface ViewType<V extends ViewRead> extends SSZType {
 
   default V sszDeserialize(SszReader reader) {
     return createFromBackingNode(sszDeserializeTree(reader));
+  }
+
+  default V sszDeserialize(Bytes ssz) {
+    return sszDeserialize(SszReader.fromBytes(ssz));
   }
 }
