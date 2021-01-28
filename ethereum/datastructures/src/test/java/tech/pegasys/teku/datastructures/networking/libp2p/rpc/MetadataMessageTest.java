@@ -18,15 +18,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 class MetadataMessageTest {
 
-  private static final Bytes EXPECTED_SSZ = Bytes.fromHexString("0x23000000000000000100000000000080");
-  private static final MetadataMessage MESSAGE = new MetadataMessage(UInt64.valueOf(0x23),
-      new Bitvector(64, 0, 63));
+  private static final Bytes EXPECTED_SSZ =
+      Bytes.fromHexString("0x23000000000000000100000000000080");
+  private static final MetadataMessage MESSAGE =
+      new MetadataMessage(UInt64.valueOf(0x23), new Bitvector(64, 0, 63));
 
   @Test
   public void shouldSerializeToSsz() {

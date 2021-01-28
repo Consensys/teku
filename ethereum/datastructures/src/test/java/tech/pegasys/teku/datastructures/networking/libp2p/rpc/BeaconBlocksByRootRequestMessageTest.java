@@ -19,21 +19,21 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlocksByRootRequestMessageTest {
 
   @Test
   public void shouldRoundTripViaSsz() {
     final BeaconBlocksByRootRequestMessage request =
-        new BeaconBlocksByRootRequestMessage(List.of(
-            Bytes32.fromHexString("0x1111111111111111111111111111111111111111111111111111111111111111"),
-            Bytes32.fromHexString("0x2222222222222222222222222222222222222222222222222222222222222222")
-        ));
+        new BeaconBlocksByRootRequestMessage(
+            List.of(
+                Bytes32.fromHexString(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111"),
+                Bytes32.fromHexString(
+                    "0x2222222222222222222222222222222222222222222222222222222222222222")));
     final Bytes data = request.sszSerialize();
-    final BeaconBlocksByRootRequestMessage result = BeaconBlocksByRootRequestMessage.TYPE
-        .sszDeserialize(data);
+    final BeaconBlocksByRootRequestMessage result =
+        BeaconBlocksByRootRequestMessage.TYPE.sszDeserialize(data);
     assertThat(result).isEqualTo(request);
   }
 }

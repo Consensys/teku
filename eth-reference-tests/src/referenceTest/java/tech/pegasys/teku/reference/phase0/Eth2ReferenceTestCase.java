@@ -15,7 +15,6 @@ package tech.pegasys.teku.reference.phase0;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
