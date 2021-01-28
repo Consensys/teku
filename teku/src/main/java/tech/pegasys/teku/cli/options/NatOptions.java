@@ -23,8 +23,7 @@ import tech.pegasys.teku.networking.nat.NatMethod;
 public class NatOptions {
 
   @CommandLine.Option(
-      names = {"--nat-method"},
-      hidden = true,
+      names = {"--p2p-nat-method"},
       description =
           "Specify the NAT circumvention method to be used, possible values are ${COMPLETION-CANDIDATES}."
               + " NONE will require manual router configuration.")

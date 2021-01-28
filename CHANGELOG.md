@@ -21,6 +21,7 @@
 - `--validators-external-signer-public-keys` arguments can now include URLs to load the public keys from. The URL should provide a list of public keys as a JSON array.
 - Added support for `block`, `attestation` and `voluntary_exit` event streams from the standard REST API.
 - If an advertised IP is set via `--p2p-advertised-ip` it is always used, regardless of the external IP discovered via the discv5 process.
+- `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.
@@ -28,7 +29,6 @@
 - Fixed validator client timeout when reading from the event stream to avoid unnecessary reconnections.
 - Reduced bandwidth usage during a forward sync by skipping requesting parents of blocks received via gossip as they are likely to be retrieved via the forward sync more efficiently.
 - Error conditions which prevent Teku from starting, such as being unable to load validator keys, are now reported to both the log and system error to make them more likely to be seen.
-
 
 ## 21.1.0
 
