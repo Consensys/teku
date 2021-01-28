@@ -53,5 +53,10 @@ public class GossipTopicsScoringConfig {
       consumer.accept(builder);
       return this;
     }
+
+    public Builder clear() {
+      topicScoringConfigBuilders.clear();
+      return this;
+    }
   }
 }

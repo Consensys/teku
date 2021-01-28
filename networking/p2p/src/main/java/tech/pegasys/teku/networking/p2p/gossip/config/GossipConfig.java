@@ -202,5 +202,19 @@ public class GossipConfig {
       this.seenTTL = seenTTL;
       return this;
     }
+
+    public Builder resetDefaults() {
+      this.d = DEFAULT_D;
+      this.dLow = DEFAULT_D_LOW;
+      this.dHigh = DEFAULT_D_HIGH;
+      this.dLazy = DEFAULT_D_LAZY;
+      this.fanoutTTL = DEFAULT_FANOUT_TTL;
+      this.advertise = DEFAULT_ADVERTISE;
+      this.history = DEFAULT_HISTORY;
+      this.heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+      this.seenTTL = DEFAULT_SEEN_TTL;
+
+      return this;
+    }
   }
 }

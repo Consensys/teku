@@ -11,17 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.scoring;
+package tech.pegasys.teku.networking.eth2.gossip.config;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 
 import com.google.common.base.Suppliers;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
@@ -56,7 +57,7 @@ class Eth2ScoringConfig {
   private final Duration targetScoringDuration;
 
   // Chain-specific and dynamic variables that can be updated over time
-  private final Eth2State eth2State;
+  private volatile Eth2State eth2State;
 
   private Eth2ScoringConfig(final SpecConstants constants, final int d, final Eth2State eth2State) {
     this.constants = constants;
@@ -70,15 +71,14 @@ class Eth2ScoringConfig {
   }
 
   public static Eth2ScoringConfig create(
-      final GossipConfig gossipConfig,
-      final SpecConstants constants,
-      final Bytes4 forkDigest,
-      final GossipEncoding encoding) {
-    // TODO - update eth2 state periodically
-    final Eth2State eth2State =
-        new Eth2State(
-            constants.getMinGenesisActiveValidatorCount(), UInt64.ZERO, forkDigest, encoding);
-    return new Eth2ScoringConfig(constants, gossipConfig.getD(), eth2State);
+      final SpecConstants constants, final Eth2State eth2State, final int gossipDParam) {
+    return new Eth2ScoringConfig(constants, gossipDParam, eth2State);
+  }
+
+  public Eth2ScoringConfig setEth2State(final Eth2State eth2State) {
+    checkNotNull(eth2State);
+    this.eth2State = eth2State;
+    return this;
   }
 
   public double getMaxInMeshScore() {
@@ -161,7 +161,7 @@ class Eth2ScoringConfig {
     return eth2State.getCurrentSlot();
   }
 
-  public Bytes4 getForkDigest() {
+  public Optional<Bytes4> getForkDigest() {
     return eth2State.getForkDigest();
   }
 
@@ -290,39 +290,5 @@ class Eth2ScoringConfig {
    */
   public double calculateDecayConvergence(final double decayFactor, final double eventRate) {
     return eventRate / (1.0 - decayFactor);
-  }
-
-  public static class Eth2State {
-    private final int activeValidatorCount;
-    private final UInt64 currentSlot;
-    private final Bytes4 forkDigest;
-    private final GossipEncoding gossipEncoding;
-
-    public Eth2State(
-        final int activeValidatorCount,
-        final UInt64 currentSlot,
-        final Bytes4 forkDigest,
-        final GossipEncoding gossipEncoding) {
-      this.activeValidatorCount = activeValidatorCount;
-      this.currentSlot = currentSlot;
-      this.forkDigest = forkDigest;
-      this.gossipEncoding = gossipEncoding;
-    }
-
-    public int getActiveValidatorCount() {
-      return activeValidatorCount;
-    }
-
-    public UInt64 getCurrentSlot() {
-      return currentSlot;
-    }
-
-    public Bytes4 getForkDigest() {
-      return forkDigest;
-    }
-
-    public GossipEncoding getGossipEncoding() {
-      return gossipEncoding;
-    }
   }
 }

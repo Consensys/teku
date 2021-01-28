@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuild
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -131,6 +133,10 @@ public class TekuConfiguration {
     return beaconChain().syncConfig();
   }
 
+  public GossipConfig gossipConfig() {
+    return beaconChain().p2pConfig().getNetworkConfig().getGossipConfig();
+  }
+
   public PowchainConfiguration powchain() {
     return powchainConfiguration;
   }
@@ -175,11 +181,20 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
+      // Create spec, and pass spec to other builders that require it
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
       final SpecProvider specProvider =
           SpecProvider.create(eth2NetworkConfiguration.getSpecConfig());
+      final SpecConstants genesisConstants = specProvider.getGenesisSpecConstants();
+      // Update storage config
       storageConfigurationBuilder.specProvider(specProvider);
+      // Update p2p config
+      p2pConfigBuilder.gossipConfig(
+          g ->
+              g.specConstants(genesisConstants)
+                  .validatorCount(genesisConstants.getMinGenesisActiveValidatorCount()));
+
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           specProvider,

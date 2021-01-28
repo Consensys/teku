@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.scoring;
+package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import java.time.Duration;
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.scoring;
+package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -21,9 +21,12 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 /**
  * These calculations have been derived following the gossip scoring implementation from Lighthouse
@@ -33,14 +36,24 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
  *     href="https://github.com/sigp/lighthouse/blob/f183af20e3fb44773397c9e26540703ee94ec366/beacon_node/eth2_libp2p/src/behaviour/gossipsub_scoring_parameters.rs">Sigma
  *     Prime's Lighthouse gossip scoring logic</a>
  */
-class Eth2GossipScoringConfigurator {
+class GossipScoringConfigurator implements GossipConfigurator {
   private final Eth2ScoringConfig scoringConfig;
 
-  Eth2GossipScoringConfigurator(final Eth2ScoringConfig scoringConfig) {
-    this.scoringConfig = scoringConfig;
+  public GossipScoringConfigurator(final SpecConstants specConstants, final Eth2State eth2State) {
+    this.scoringConfig = Eth2ScoringConfig.create(specConstants, eth2State, GossipConfig.DEFAULT_D);
   }
 
-  public void configure(final GossipScoringConfig.Builder builder) {
+  @Override
+  public void configure(final GossipConfig.Builder gossipParams) {
+    gossipParams.resetDefaults().scoring(this::configureScoring);
+  }
+
+  @Override
+  public void updateState(final Eth2State eth2State) {
+    scoringConfig.setEth2State(eth2State);
+  }
+
+  private void configureScoring(final GossipScoringConfig.Builder builder) {
     final double maxPositiveScore = scoringConfig.getMaxPositiveScore();
 
     final double behaviorPenaltyThreshold = 6.0;
@@ -73,7 +86,7 @@ class Eth2GossipScoringConfigurator {
 
     // Configure topics
     final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig);
-    builder.topicScoring(topicConfigurator::configure);
+    builder.topicScoring(topicConfigurator::configureTopicScoring);
   }
 
   public void configureDynamicTopics(final GossipTopicsScoringConfig.Builder builder) {
@@ -83,12 +96,20 @@ class Eth2GossipScoringConfigurator {
 
   private static class TopicConfigurator {
     private final Eth2ScoringConfig scoringConfig;
+    private final boolean isConfigurable;
+    private final Bytes4 forkDigest;
 
     TopicConfigurator(final Eth2ScoringConfig scoringConfig) {
       this.scoringConfig = scoringConfig;
+      this.forkDigest = scoringConfig.getForkDigest().orElse(null);
+      this.isConfigurable = this.forkDigest != null;
     }
 
-    public void configure(final GossipTopicsScoringConfig.Builder builder) {
+    public void configureTopicScoring(final GossipTopicsScoringConfig.Builder builder) {
+      if (!isConfigurable) {
+        return;
+      }
+
       configureVoluntaryExitTopic(builder);
       configureAttesterSlashingTopic(builder);
       configureProposerSlashingTopic(builder);
@@ -106,9 +127,7 @@ class Eth2GossipScoringConfigurator {
     private void configureVoluntaryExitTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              scoringConfig.getForkDigest(),
-              VoluntaryExitGossipManager.TOPIC_NAME,
-              scoringConfig.getGossipEncoding());
+              forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -122,7 +141,7 @@ class Eth2GossipScoringConfigurator {
     private void configureAttesterSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              scoringConfig.getForkDigest(),
+              forkDigest,
               AttesterSlashingGossipManager.TOPIC_NAME,
               scoringConfig.getGossipEncoding());
       builder.topicScoring(
@@ -138,7 +157,7 @@ class Eth2GossipScoringConfigurator {
     private void configureProposerSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              scoringConfig.getForkDigest(),
+              forkDigest,
               ProposerSlashingGossipManager.TOPIC_NAME,
               scoringConfig.getGossipEncoding());
       builder.topicScoring(
@@ -154,9 +173,7 @@ class Eth2GossipScoringConfigurator {
     private void configureBlockTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              scoringConfig.getForkDigest(),
-              BlockGossipManager.TOPIC_NAME,
-              scoringConfig.getGossipEncoding());
+              forkDigest, BlockGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 3.0, scoringConfig.convertEpochsToSlots(5));
@@ -175,9 +192,7 @@ class Eth2GossipScoringConfigurator {
     private void configureAggregateTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              scoringConfig.getForkDigest(),
-              AggregateGossipManager.TOPIC_NAME,
-              scoringConfig.getGossipEncoding());
+              forkDigest, AggregateGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 4.0, scoringConfig.convertEpochsToSlots(2));
@@ -219,8 +234,7 @@ class Eth2GossipScoringConfigurator {
       for (int i = 0; i < scoringConfig.getAttestationSubnetCount(); i++) {
         final String subnetName = TopicNames.getAttestationSubnetTopicName(i);
         final String topic =
-            TopicNames.getTopic(
-                scoringConfig.getForkDigest(), subnetName, scoringConfig.getGossipEncoding());
+            TopicNames.getTopic(forkDigest, subnetName, scoringConfig.getGossipEncoding());
         builder.topicScoring(
             topic,
             b ->
