@@ -205,7 +205,7 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
       }
       return new DeserializedData(
           TreeUtil.createTree(childNodes, treeDepth()),
-          bytesSize / getElementType().getFixedPartSize(),
+          bytesSize * 8 / getElementType().getBitsSize(),
           lastByte);
     } else {
       checkSsz(
