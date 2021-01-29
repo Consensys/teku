@@ -31,7 +31,10 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
       extends ContainerType2<SigningData, Bytes32View, Bytes32View> {
 
     public SigningDataType() {
-      super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.BYTES32_TYPE);
+      super(
+          "SigningData",
+          namedType("object_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("domain", BasicViewTypes.BYTES32_TYPE));
     }
 
     @Override

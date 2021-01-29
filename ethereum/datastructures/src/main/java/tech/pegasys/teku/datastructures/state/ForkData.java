@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -33,7 +32,10 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
   static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
 
     public ForkDataType() {
-      super(BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES32_TYPE);
+      super(
+          "ForkData",
+          namedType("currentVersion", BasicViewTypes.BYTES4_TYPE),
+          namedType("genesisValidatorsRoot", BasicViewTypes.BYTES32_TYPE));
     }
 
     @Override
@@ -63,13 +65,5 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("currentVersion", getCurrentVersion())
-        .add("genesisValidatorsRoot", getGenesisValidatorsRoot())
-        .toString();
   }
 }

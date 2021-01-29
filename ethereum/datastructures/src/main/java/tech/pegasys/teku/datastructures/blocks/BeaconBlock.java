@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -41,11 +40,12 @@ public final class BeaconBlock
 
     public BeaconBlockType() {
       super(
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BeaconBlockBody.TYPE.get());
+          "BeaconBlock",
+          namedType("slot", BasicViewTypes.UINT64_TYPE),
+          namedType("proposer_index", BasicViewTypes.UINT64_TYPE),
+          namedType("parent_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("state_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("body", BeaconBlockBody.TYPE.get()));
     }
 
     @Override
@@ -164,17 +164,5 @@ public final class BeaconBlock
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(this);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("root", hash_tree_root())
-        .add("slot", getSlot())
-        .add("proposer_index", getProposerIndex())
-        .add("parent_root", getParentRoot())
-        .add("state_root", getStateRoot())
-        .add("body", getBody().hash_tree_root())
-        .toString();
   }
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -61,14 +60,15 @@ public class Validator
 
     public ValidatorType() {
       super(
-          ComplexViewTypes.BYTES_48_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BIT_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE);
+          "Validator",
+          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
+          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
+          namedType("effective_balance", BasicViewTypes.UINT64_TYPE),
+          namedType("slashed", BasicViewTypes.BIT_TYPE),
+          namedType("activation_eligibility_epoch", BasicViewTypes.UINT64_TYPE),
+          namedType("activation_epoch", BasicViewTypes.UINT64_TYPE),
+          namedType("exit_epoch", BasicViewTypes.UINT64_TYPE),
+          namedType("withdrawable_epoch", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -220,19 +220,5 @@ public class Validator
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("pubkey", getPubkey())
-        .add("withdrawal_credentials", getWithdrawal_credentials())
-        .add("effective_balance", getEffective_balance())
-        .add("slashed", isSlashed())
-        .add("activation_eligibility_epoch", getActivation_eligibility_epoch())
-        .add("activation_epoch", getActivation_epoch())
-        .add("exit_epoch", getExit_epoch())
-        .add("withdrawable_epoch", getWithdrawable_epoch())
-        .toString();
   }
 }

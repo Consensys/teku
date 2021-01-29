@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.state;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -36,7 +35,10 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
   static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
 
     public CheckpointType() {
-      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
+      super(
+          "Checkpoint",
+          namedType("epoch", BasicViewTypes.UINT64_TYPE),
+          namedType("root", BasicViewTypes.BYTES32_TYPE));
     }
 
     @Override
@@ -74,13 +76,5 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("epoch", getEpoch())
-        .add("root", getRoot())
-        .toString();
   }
 }
