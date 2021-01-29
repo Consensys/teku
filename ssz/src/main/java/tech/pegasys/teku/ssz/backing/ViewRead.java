@@ -17,13 +17,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
  * Base class of immutable views over Binary Backing Tree ({@link TreeNode}) Overlay views concept
  * described here:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#views
  */
-public interface ViewRead extends Merkleizable {
+public interface ViewRead extends Merkleizable, SimpleOffsetSerializable {
 
   /**
    * Creates a corresponding writeable copy of this immutable structure Any modifications made to
@@ -42,7 +43,13 @@ public interface ViewRead extends Merkleizable {
     return getBackingNode().hashTreeRoot();
   }
 
+  @Override
   default Bytes sszSerialize() {
     return getType().sszSerializeTree(getBackingNode());
+  }
+
+  @Override
+  default int sszSerialize(SszWriter writer) {
+    return getType().sszSerializeTree(getBackingNode(), writer);
   }
 }
