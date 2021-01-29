@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Collection of SSZ related methods for {@link ViewType} */
-public interface SSZType {
+public interface SszType {
 
   // the size of SSZ UIn32 lengths and offsets
   int SSZ_LENGTH_SIZE = 4;

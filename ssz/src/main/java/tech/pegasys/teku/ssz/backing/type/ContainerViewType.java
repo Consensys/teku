@@ -155,7 +155,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
         int size = childType.sszSerializeTree(childSubtree, writer);
         assert size == childType.getFixedPartSize();
       } else {
-        writer.write(SSZType.lengthToBytes(variableChildOffset));
+        writer.write(SszType.lengthToBytes(variableChildOffset));
         int childSize = childType.getSszSize(childSubtree);
         variableSizes[i] = childSize;
         variableChildOffset += childSize;
@@ -186,7 +186,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
           fixedChildrenSubtrees.add(childNode);
         }
       } else {
-        int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int childOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         variableChildrenOffsets.add(childOffset);
       }
     }
