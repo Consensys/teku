@@ -85,7 +85,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
   }
 
   @Override
-  public int sszSerialize(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int sszBytesSize = getSSZBytesSize();
     final Bytes nodeData;
     if (node instanceof LeafDataNode) {

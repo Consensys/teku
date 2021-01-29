@@ -18,7 +18,9 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszByteArrayWriter;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
  * Base class for any SSZ type like Vector, List, Container, basic types
@@ -74,6 +76,14 @@ public interface ViewType<V extends ViewRead> extends SSZType {
    */
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
+  }
+
+  default Bytes sszSerialize(V view) {
+    return sszSerializeTree(view.getBackingNode());
+  }
+
+  default int sszSerialize(V view, SszWriter writer) {
+    return sszSerializeTree(view.getBackingNode(), writer);
   }
 
   default V sszDeserialize(SszReader reader) {

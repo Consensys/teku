@@ -60,9 +60,9 @@ public interface SSZType {
   }
 
   /** SSZ serializes the backing tree instance of this type */
-  default Bytes sszSerialize(TreeNode node) {
+  default Bytes sszSerializeTree(TreeNode node) {
     SszByteArrayWriter writer = new SszByteArrayWriter(getSszSize(node));
-    sszSerialize(node, writer);
+    sszSerializeTree(node, writer);
     return writer.toBytes();
   }
 
@@ -70,7 +70,7 @@ public interface SSZType {
    * SSZ serializes the backing tree of this type and returns the data as bytes 'stream' via passed
    * {@code writer}
    */
-  int sszSerialize(TreeNode node, SszWriter writer);
+  int sszSerializeTree(TreeNode node, SszWriter writer);
 
   TreeNode sszDeserializeTree(SszReader reader);
 

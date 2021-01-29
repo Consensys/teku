@@ -137,7 +137,7 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     }
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
-      elementType.sszSerialize(childSubtree, writer);
+      elementType.sszSerializeTree(childSubtree, writer);
     }
     return variableOffset;
   }
