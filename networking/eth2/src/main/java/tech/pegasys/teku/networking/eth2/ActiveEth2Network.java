@@ -291,13 +291,16 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     if (gossipUpdateTask != null) {
       gossipUpdateTask.cancel();
     }
-    blockGossipManager.shutdown();
-    attestationGossipManager.shutdown();
-    aggregateGossipManager.shutdown();
-    voluntaryExitGossipManager.shutdown();
-    proposerSlashingGossipManager.shutdown();
-    attesterSlashingGossipManager.shutdown();
-    attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+    if (gossipStarted.get()) {
+      blockGossipManager.shutdown();
+      attestationGossipManager.shutdown();
+      aggregateGossipManager.shutdown();
+      voluntaryExitGossipManager.shutdown();
+      proposerSlashingGossipManager.shutdown();
+      attesterSlashingGossipManager.shutdown();
+      attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+    }
+
     return peerManager
         .sendGoodbyeToPeers()
         .exceptionally(
