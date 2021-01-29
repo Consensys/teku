@@ -19,15 +19,13 @@ import static java.util.Objects.isNull;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.impl.Signature;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public class BLSSignature implements SimpleOffsetSerializable {
+public class BLSSignature {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -63,16 +61,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
    */
   public static BLSSignature empty() {
     return BLSSignature.fromBytesCompressed(Bytes.wrap(new byte[SSZ_BLS_SIGNATURE_SIZE]));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(toSSZBytes());
   }
 
   public static BLSSignature fromBytesCompressed(Bytes bytes) {

@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.operations;
 import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
@@ -26,12 +25,10 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AggregateAndProof
-    extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
 
   public static class AggregateAndProofType
       extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {

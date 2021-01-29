@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
@@ -31,14 +30,12 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
     extends Container3<
-        Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer {
+        Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
   private static final BitListType AGGREGATION_BITS_TYPE =
       new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
