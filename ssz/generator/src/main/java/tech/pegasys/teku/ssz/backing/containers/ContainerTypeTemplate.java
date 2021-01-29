@@ -57,6 +57,14 @@ public abstract class /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<
     super(List.of(/*$$Fields*/ fieldType1, fieldType2 /*$$*/));
   }
 
+  protected /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/(
+      String containerName,
+      /*$$NamedFieldsDeclarations*/ NamedType<V0> fieldNamedType0,
+      NamedType<V1> fieldNamedType1 /*$$*/) {
+
+    super(containerName, List.of(fieldNamedType0, fieldNamedType1));
+  }
+
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public ViewType<V0> getFieldType0() {
