@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
@@ -31,11 +33,46 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public abstract class ContainerViewType<C extends ContainerViewRead>
     implements CompositeViewType<C> {
 
+  protected static class NamedType<T extends ViewRead> {
+    private final String name;
+    private final ViewType<T> type;
+
+    private NamedType(String name, ViewType<T> type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public ViewType<T> getType() {
+      return type;
+    }
+  }
+
+  protected static <T extends ViewRead> NamedType<T> namedType(String fieldName, ViewType<T> type) {
+    return new NamedType<>(fieldName, type);
+  }
+
+  private final String containerName;
+  private final List<String> childrenNames;
   private final List<ViewType<?>> childrenTypes;
   private final TreeNode defaultTree;
   private final long treeWidth;
 
+  protected ContainerViewType(String name, List<NamedType<?>> childrenTypes) {
+    this.containerName = name;
+    this.childrenNames = childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
+    this.childrenTypes = childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
+    this.defaultTree = createDefaultTree();
+    this.treeWidth = CompositeViewType.super.treeWidth();
+  }
+
   protected ContainerViewType(List<ViewType<?>> childrenTypes) {
+    this.containerName = "";
+    this.childrenNames = IntStream.range(0, childrenTypes.size()).mapToObj(i -> "field-" + i)
+        .collect(Collectors.toList());
     this.childrenTypes = childrenTypes;
     this.defaultTree = createDefaultTree();
     this.treeWidth = CompositeViewType.super.treeWidth();
@@ -240,5 +277,18 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
         // elements are not packed in containers
         .map(SszLengthBounds::ceilToBytes)
         .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
+  }
+
+  public String getContainerName() {
+    return containerName;
+  }
+
+  public List<String> getChildrenNames() {
+    return childrenNames;
+  }
+
+  @Override
+  public String toString() {
+    return getContainerName().isEmpty() ? getClass().getSimpleName() : getContainerName();
   }
 }
