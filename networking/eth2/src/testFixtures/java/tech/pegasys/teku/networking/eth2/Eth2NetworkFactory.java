@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
+import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -238,8 +239,9 @@ public class Eth2NetworkFactory {
             eth2PeerManager,
             eventBus,
             recentChainData,
-            gossipEncoding,
             attestationSubnetService,
+            gossipEncoding,
+            GossipConfigurator.NOOP,
             gossipedBlockProcessor,
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,

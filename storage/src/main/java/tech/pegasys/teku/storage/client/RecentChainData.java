@@ -324,6 +324,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.of(ForkChoiceUtil.get_current_slot(store));
   }
 
+  /** @return The number of slots between our chainhead and the current slot by time */
+  public Optional<UInt64> getChainHeadSlotsBehind() {
+    return chainHead
+        .map(StateAndBlockSummary::getSlot)
+        .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
+  }
+
   public Optional<ForkInfo> getHeadForkInfo() {
     return getBestState().map(BeaconState::getForkInfo);
   }
