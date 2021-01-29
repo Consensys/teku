@@ -70,7 +70,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public int sszSerialize(TreeNode node, SszWriter writer) {
+        public int sszSerializeTree(TreeNode node, SszWriter writer) {
           return 0;
         }
 

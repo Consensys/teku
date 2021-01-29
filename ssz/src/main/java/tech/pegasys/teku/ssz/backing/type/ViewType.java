@@ -19,12 +19,13 @@ import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface ViewType<V extends ViewRead> extends SSZType {
+public interface ViewType<V extends ViewRead> extends SszType {
 
   static Optional<ViewType<?>> getType(Class<?> clazz) {
     return Utils.getSszType(clazz);
@@ -74,6 +75,14 @@ public interface ViewType<V extends ViewRead> extends SSZType {
    */
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
+  }
+
+  default Bytes sszSerialize(V view) {
+    return sszSerializeTree(view.getBackingNode());
+  }
+
+  default int sszSerialize(V view, SszWriter writer) {
+    return sszSerializeTree(view.getBackingNode(), writer);
   }
 
   default V sszDeserialize(SszReader reader) {

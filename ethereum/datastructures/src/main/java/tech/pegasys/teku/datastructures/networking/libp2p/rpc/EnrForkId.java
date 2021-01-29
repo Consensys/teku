@@ -43,8 +43,7 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
 
   @SszTypeDescriptor public static final EnrForkIdType TYPE = new EnrForkIdType();
 
-  private EnrForkId(
-      ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> type, TreeNode backingNode) {
+  private EnrForkId(EnrForkIdType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

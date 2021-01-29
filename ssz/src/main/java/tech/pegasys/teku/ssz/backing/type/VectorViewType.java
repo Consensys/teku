@@ -129,7 +129,7 @@ public class VectorViewType<ElementViewT extends ViewRead>
   }
 
   @Override
-  public int sszSerialize(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 

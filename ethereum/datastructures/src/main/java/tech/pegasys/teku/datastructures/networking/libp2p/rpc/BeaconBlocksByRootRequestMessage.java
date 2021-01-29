@@ -53,9 +53,8 @@ public class BeaconBlocksByRootRequestMessage
   public static final BeaconBlocksByRootRequestMessageType TYPE =
       new BeaconBlocksByRootRequestMessageType();
 
-  public BeaconBlocksByRootRequestMessage(
-      ContainerType1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> type,
-      TreeNode backingNode) {
+  private BeaconBlocksByRootRequestMessage(
+      BeaconBlocksByRootRequestMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

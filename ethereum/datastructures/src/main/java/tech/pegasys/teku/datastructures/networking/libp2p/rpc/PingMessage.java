@@ -41,7 +41,7 @@ public class PingMessage extends Container1<PingMessage, UInt64View>
 
   @SszTypeDescriptor public static final PingMessageType TYPE = new PingMessageType();
 
-  public PingMessage(ContainerType1<PingMessage, UInt64View> type, TreeNode backingNode) {
+  public PingMessage(PingMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

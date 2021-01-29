@@ -64,15 +64,7 @@ public class DepositData
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;
 
-  public DepositData(
-      ContainerType4<
-              DepositData,
-              VectorViewRead<ByteView>,
-              Bytes32View,
-              UInt64View,
-              VectorViewRead<ByteView>>
-          type,
-      TreeNode backingNode) {
+  private DepositData(DepositDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

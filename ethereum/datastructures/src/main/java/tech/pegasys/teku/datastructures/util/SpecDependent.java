@@ -18,6 +18,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * This is the interim placeholder for structures dependent on specification The future intended
+ * usage of SpecDependent would be like <code>SpecDependent.get(Spec spec)</code>
+ */
+@Deprecated
 public class SpecDependent<V> {
 
   private static List<SpecDependent<?>> allDependents = new CopyOnWriteArrayList<>();

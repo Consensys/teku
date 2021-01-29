@@ -7,6 +7,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')

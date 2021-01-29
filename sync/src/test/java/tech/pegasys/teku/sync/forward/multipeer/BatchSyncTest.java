@@ -42,13 +42,13 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.forward.multipeer.batches.StubBatchFactory;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChains;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 class BatchSyncTest {
   private final UInt64 BATCH_SIZE = UInt64.valueOf(25);

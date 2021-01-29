@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class MetadataMessageTest {
 
@@ -37,6 +38,7 @@ class MetadataMessageTest {
   @Test
   public void shouldDeserializeFromSsz() {
     MetadataMessage result = MetadataMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
+    assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }
 

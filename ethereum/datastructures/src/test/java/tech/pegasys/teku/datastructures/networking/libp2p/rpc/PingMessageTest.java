@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class PingMessageTest {
 
@@ -33,6 +34,7 @@ class PingMessageTest {
   @Test
   public void shouldDeserializeFromSsz() {
     PingMessage result = PingMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
+    assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }
 }

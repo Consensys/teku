@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class DiscoveryNetworkIntegrationTest {

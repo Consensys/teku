@@ -27,7 +27,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
-import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -47,13 +47,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   final Eth1Address address =
@@ -131,7 +132,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder().p2p(b -> b.p2pInterface("1.2.3.5")).build();
+        expectedConfigurationBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -149,12 +150,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -168,12 +164,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .p2p(
-                b -> {
-                  b.p2pInterface("1.2.3.5");
-                })
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuConfiguration(expected);
   }
 
@@ -271,6 +262,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
         .isEqualTo("/yo/logs/teku.log");
+  }
+
+  @Test
+  public void shouldSetNatMethod() {
+    final String[] args = {"--p2p-nat-method", "upnp"};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.tekuConfiguration().natConfiguration().getNatMethod())
+        .isEqualTo(NatMethod.UPNP);
   }
 
   @Test
@@ -376,16 +375,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                         StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
-        .p2p(
-            b ->
-                b.p2pAdvertisedPort(OptionalInt.empty())
-                    .p2pDiscoveryEnabled(true)
-                    .p2pDiscoveryBootnodes(networkConfig.getDiscoveryBootnodes())
-                    .p2pInterface("0.0.0.0")
-                    .p2pPort(9000)
-                    .p2pPrivateKeyFile(null)
-                    .peerRateLimit(500)
-                    .peerRequestLimit(50))
+        .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
+        .discovery(d -> d.isDiscoveryEnabled(true).bootnodes(networkConfig.getDiscoveryBootnodes()))
+        .network(
+            n ->
+                n.advertisedPort(OptionalInt.empty())
+                    .networkInterface("0.0.0.0")
+                    .listenPort(9000)
+                    .privateKeyFile(""))
         .validator(
             b ->
                 b.validatorKeystoreLockingEnabled(true)
@@ -420,22 +417,18 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
         .data(b -> b.dataBasePath(dataPath))
-        .p2p(
-            b ->
-                b.p2pEnabled(false)
-                    .p2pInterface("1.2.3.4")
-                    .p2pPort(1234)
-                    .p2pDiscoveryEnabled(false)
-                    .p2pAdvertisedPort(OptionalInt.of(9000))
-                    .p2pAdvertisedIp(Optional.empty())
-                    .p2pPrivateKeyFile("path/to/file")
-                    .p2pPeerLowerBound(64)
-                    .p2pPeerUpperBound(74)
-                    .targetSubnetSubscriberCount(2)
-                    .minimumRandomlySelectedPeerCount(12) // floor(20% of lower bound)
-                    .p2pStaticPeers(Collections.emptyList())
-                    .peerRateLimit(500)
-                    .peerRequestLimit(50))
+        .p2p(b -> b.targetSubnetSubscriberCount(2).peerRateLimit(500).peerRequestLimit(50))
+        .discovery(
+            d -> d.isDiscoveryEnabled(false).minPeers(64).maxPeers(74).minRandomlySelectedPeers(12))
+        .network(
+            n ->
+                n.isEnabled(false)
+                    .networkInterface("1.2.3.4")
+                    .listenPort(1234)
+                    .advertisedPort(OptionalInt.of(9000))
+                    .advertisedIp(Optional.empty())
+                    .privateKeyFile("path/to/file"))
+        .sync(s -> s.isSyncEnabled(false).isMultiPeerSyncEnabled(true))
         .restApi(
             b ->
                 b.restApiPort(5051)
@@ -474,7 +467,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .interopOwnedValidatorStartIndex(0)
                     .interopOwnedValidatorCount(64)
                     .interopNumberOfValidators(64)
-                    .interopEnabled(true));
+                    .interopEnabled(true))
+        .natConfig(b -> b.natMethod(NatMethod.NONE));
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

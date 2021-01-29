@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
@@ -947,6 +948,31 @@ public class SafeFutureTest {
     source.completeExceptionally(new UnsupportedOperationException());
     assertThat(result).isCompleted();
     assertThat(result).isCompletedWithValue("yo");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void handleException_shouldCompleteWithNullResultWhenNoExceptionThrown() {
+    final Consumer<Throwable> exceptionHandler = mock(Consumer.class);
+    final SafeFuture<String> input = new SafeFuture<>();
+    final SafeFuture<Void> result = input.handleException(exceptionHandler);
+
+    input.complete("Yay");
+    assertThat(result).isCompletedWithValue(null);
+    verifyNoInteractions(exceptionHandler);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void handleException_shouldInvokeExceptionHandlerThenCompleteWithNullResultWhenExceptionThrown() {
+    final Consumer<Throwable> exceptionHandler = mock(Consumer.class);
+    final SafeFuture<String> input = new SafeFuture<>();
+    final SafeFuture<Void> result = input.handleException(exceptionHandler);
+
+    final RuntimeException exception = new RuntimeException("Doh!");
+    input.completeExceptionally(exception);
+    assertThatSafeFuture(result).isCompletedWithValue(null);
+    verify(exceptionHandler).accept(exception);
   }
 
   private List<Throwable> collectUncaughtExceptions() {

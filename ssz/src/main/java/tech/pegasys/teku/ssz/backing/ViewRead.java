@@ -43,6 +43,6 @@ public interface ViewRead extends Merkleizable {
   }
 
   default Bytes sszSerialize() {
-    return getType().sszSerialize(getBackingNode());
+    return getType().sszSerializeTree(getBackingNode());
   }
 }

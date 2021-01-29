@@ -126,15 +126,16 @@ public class SyncingNodeManager {
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
-    recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
-    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
-
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
+
+    final FetchRecentBlocksService recentBlockFetcher =
+        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks, syncService);
+    recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
+    blockManager.subscribeToReceivedBlocks(
+        (block) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
 
     recentBlockFetcher.start().join();
     blockManager.start().join();

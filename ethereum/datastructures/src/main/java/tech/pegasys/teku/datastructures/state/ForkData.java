@@ -43,7 +43,7 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
 
   @SszTypeDescriptor public static final ForkDataType TYPE = new ForkDataType();
 
-  private ForkData(ContainerType2<ForkData, Bytes4View, Bytes32View> type, TreeNode backingNode) {
+  private ForkData(ForkDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

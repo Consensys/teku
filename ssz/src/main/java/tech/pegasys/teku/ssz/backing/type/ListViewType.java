@@ -110,7 +110,7 @@ public class ListViewType<ElementViewT extends ViewRead>
   }
 
   @Override
-  public int sszSerialize(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially

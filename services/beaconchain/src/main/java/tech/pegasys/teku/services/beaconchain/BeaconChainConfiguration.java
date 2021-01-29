@@ -20,6 +20,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.store.StoreConfig;
+import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -30,6 +31,7 @@ public class BeaconChainConfiguration {
   private final ValidatorConfig validatorConfig;
   private final InteropConfig interopConfig;
   private final P2PConfig p2pConfig;
+  private final SyncConfig syncConfig;
   private final BeaconRestApiConfig beaconRestApiConfig;
   private final LoggingConfig loggingConfig;
   private final StoreConfig storeConfig;
@@ -42,6 +44,7 @@ public class BeaconChainConfiguration {
       final ValidatorConfig validatorConfig,
       final InteropConfig interopConfig,
       final P2PConfig p2pConfig,
+      final SyncConfig syncConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
       final LoggingConfig loggingConfig,
@@ -52,6 +55,7 @@ public class BeaconChainConfiguration {
     this.validatorConfig = validatorConfig;
     this.interopConfig = interopConfig;
     this.p2pConfig = p2pConfig;
+    this.syncConfig = syncConfig;
     this.beaconRestApiConfig = beaconRestApiConfig;
     this.powchainConfiguration = powchainConfiguration;
     this.loggingConfig = loggingConfig;
@@ -81,6 +85,10 @@ public class BeaconChainConfiguration {
 
   public P2PConfig p2pConfig() {
     return p2pConfig;
+  }
+
+  public SyncConfig syncConfig() {
+    return syncConfig;
   }
 
   public BeaconRestApiConfig beaconRestApiConfig() {

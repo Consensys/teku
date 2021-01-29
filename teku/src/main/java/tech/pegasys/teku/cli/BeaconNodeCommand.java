@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
+import tech.pegasys.teku.cli.options.NatOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -173,6 +176,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions;
 
+  @Mixin(name = "NAT")
+  private NatOptions natOptions;
+
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
@@ -256,8 +262,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
     errorWriter.println(ex.getMessage());
 
-    CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
-    printUsage(outputWriter);
+    CommandLine.UnmatchedArgumentException.printSuggestions(ex, errorWriter);
+    printUsage(errorWriter);
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
@@ -291,16 +297,28 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   public void reportUnexpectedError(final Throwable t) {
-    System.err.println("Teku failed to start.");
-    t.printStackTrace();
-
+    getLogger().fatal("Teku failed to start", t);
     errorWriter.println("Teku failed to start");
     printUsage(errorWriter);
   }
 
   public void reportUserError(final Throwable ex) {
+    getLogger().fatal(ex.getMessage(), ex);
     errorWriter.println(ex.getMessage());
     printUsage(errorWriter);
+  }
+
+  /**
+   * Not using a static field for this log instance because some code in this class executes prior
+   * to the logging configuration being applied so it's not always safe to use the logger.
+   *
+   * <p>Where this is used we also ensure the messages are printed to the error writer so they will
+   * be printed even if logging is not yet configured.
+   *
+   * @return the logger for this class
+   */
+  private Logger getLogger() {
+    return LogManager.getLogger();
   }
 
   public void setLogLevels() {
@@ -308,6 +326,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
       // set log level per CLI flags
       LoggingConfigurator.setAllLevels(logLevel);
     }
+    // jupnp logs a lot of context to level WARN, and it is quite verbose.
+    LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
   public Level getLogLevel() {
@@ -333,6 +353,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
       metricsOptions.configure(builder);
+      natOptions.configure(builder);
       storeOptions.configure(builder);
 
       return builder.build();

@@ -51,6 +51,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
       Subscribers.create(true);
+  private final Subscribers<ProcessedAttestationListener> allValidAttestationsSubscribers =
+      Subscribers.create(true);
 
   private final AttestationValidator attestationValidator;
   private final AggregateAttestationValidator aggregateValidator;
@@ -90,9 +92,21 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregateValidator);
   }
 
+  public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
+    allValidAttestationsSubscribers.subscribe(listener);
+  }
+
+  private void notifyAllValidAttestationsSubscribers(ValidateableAttestation attestation) {
+    allValidAttestationsSubscribers.forEach(s -> s.accept(attestation));
+  }
+
   public void subscribeToAttestationsToSend(
       ProcessedAttestationListener attestationsToSendListener) {
     attestationsToSendSubscribers.subscribe(attestationsToSendListener);
+  }
+
+  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
+    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
   }
 
   public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
@@ -122,6 +136,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                         result.ifInvalid(
                             reason -> LOG.debug("Rejected received attestation: " + reason)),
                     err -> LOG.error("Failed to process received attestation.", err));
+            notifyAllValidAttestationsSubscribers(attestation);
           }
         });
   }
@@ -137,11 +152,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     attestations.stream()
         .filter(ValidateableAttestation::isProducedLocally)
         .filter(a -> !a.isGossiped())
-        .forEach(this::notifyAttestationsToSendSubscribers);
-  }
-
-  private void notifyAttestationsToSendSubscribers(ValidateableAttestation attestation) {
-    attestationsToSendSubscribers.forEach(s -> s.accept(attestation));
+        .forEach(
+            a -> {
+              notifyAttestationsToSendSubscribers(a);
+              notifyAllValidAttestationsSubscribers(a);
+            });
   }
 
   @Subscribe
@@ -221,6 +236,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     }
 
     notifyAttestationsToSendSubscribers(attestation);
+    notifyAllValidAttestationsSubscribers(attestation);
     attestation.markGossiped();
   }
 

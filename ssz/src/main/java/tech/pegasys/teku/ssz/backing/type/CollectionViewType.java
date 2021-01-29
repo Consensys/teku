@@ -132,12 +132,12 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
       int childSize = elementType.getSszSize(childSubtree);
-      writer.write(SSZType.lengthToBytes(variableOffset));
+      writer.write(SszType.lengthToBytes(variableOffset));
       variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
-      elementType.sszSerialize(childSubtree, writer);
+      elementType.sszSerializeTree(childSubtree, writer);
     }
     return variableOffset;
   }
@@ -227,14 +227,14 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     final int endOffset = reader.getAvailableBytes();
     final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
-      int firstElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      int firstElementOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
 
       List<Integer> elementOffsets = new ArrayList<>();
       elementOffsets.add(firstElementOffset);
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
       for (int i = 1; i < elementsCount; i++) {
-        int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int offset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         elementOffsets.add(offset);
       }
       elementOffsets.add(endOffset);

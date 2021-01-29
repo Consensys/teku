@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class GoodbyeMessageTest {
 
@@ -36,6 +37,7 @@ class GoodbyeMessageTest {
   public void shouldDeserializeFromSsz() {
     final GoodbyeMessage result =
         SimpleOffsetSerializer.deserialize(EXPECTED_SSZ, GoodbyeMessage.class);
+    assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }
 

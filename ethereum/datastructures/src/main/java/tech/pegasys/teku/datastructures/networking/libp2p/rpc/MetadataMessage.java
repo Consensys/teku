@@ -54,9 +54,7 @@ public class MetadataMessage
 
   private Bitvector attnetsCache;
 
-  private MetadataMessage(
-      ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> type,
-      TreeNode backingNode) {
+  private MetadataMessage(MetadataMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

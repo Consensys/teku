@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
+
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -56,7 +59,7 @@ public class Eth2NetworkOptions {
           "The number of requested objects per peer to allow per minute before disconnecting the peer.",
       arity = "1",
       hidden = true)
-  private Integer peerRateLimit = 500;
+  private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
 
   @Option(
       names = {"--Xpeer-request-limit"},
@@ -65,7 +68,7 @@ public class Eth2NetworkOptions {
           "The number of requests per peer to allow per minute before disconnecting the peer.",
       arity = "1",
       hidden = true)
-  private Integer peerRequestLimit = 50;
+  private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
@@ -84,11 +87,8 @@ public class Eth2NetworkOptions {
             })
         .storageConfiguration(
             b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
-        .p2p(
-            b ->
-                b.p2pDiscoveryBootnodes(eth2Config.getDiscoveryBootnodes())
-                    .peerRateLimit(peerRateLimit)
-                    .peerRequestLimit(peerRequestLimit))
+        .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit))
+        .discovery(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
         .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()))
         .weakSubjectivity(
             b -> eth2Config.getInitialState().ifPresent(b::weakSubjectivityStateResource));

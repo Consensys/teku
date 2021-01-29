@@ -45,9 +45,8 @@ public final class BeaconBlocksByRangeRequestMessage
   public static final BeaconBlocksByRangeRequestMessageType TYPE =
       new BeaconBlocksByRangeRequestMessageType();
 
-  public BeaconBlocksByRangeRequestMessage(
-      ContainerType3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> type,
-      TreeNode backingNode) {
+  private BeaconBlocksByRangeRequestMessage(
+      BeaconBlocksByRangeRequestMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
