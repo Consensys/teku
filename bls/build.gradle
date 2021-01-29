@@ -16,4 +16,5 @@ dependencies {
   }
 
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 }
