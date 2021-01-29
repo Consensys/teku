@@ -44,8 +44,23 @@ class GossipScoringConfigurator implements GossipConfigurator {
   }
 
   @Override
-  public void configure(final GossipConfig.Builder gossipParams, final Eth2Context eth2Context) {
-    gossipParams.resetDefaults().scoring(b -> configureScoring(b, eth2Context));
+  public void configure(
+      final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {
+    gossipConfigBuilder.resetDefaults().scoring(b -> configureScoring(b, eth2Context));
+  }
+
+  @Override
+  public void configureAllTopics(
+      final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context) {
+    final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig, eth2Context);
+    topicConfigurator.configureAllTopics(topicsConfigBuilder);
+  }
+
+  @Override
+  public void configureDynamicTopics(
+      final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context) {
+    final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig, eth2Context);
+    topicConfigurator.configureDynamicTopics(topicsConfigBuilder);
   }
 
   private void configureScoring(
@@ -82,7 +97,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     // Configure topics
     final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig, eth2Context);
-    builder.topicScoring(topicConfigurator::configureTopicScoring);
+    builder.topicScoring(topicConfigurator::configureAllTopics);
   }
 
   private static class TopicConfigurator {
@@ -98,7 +113,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
       this.isConfigurable = this.forkDigest != null;
     }
 
-    public void configureTopicScoring(final GossipTopicsScoringConfig.Builder builder) {
+    public void configureAllTopics(final GossipTopicsScoringConfig.Builder builder) {
       if (!isConfigurable) {
         return;
       }

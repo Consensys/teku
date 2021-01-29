@@ -81,6 +81,11 @@ public class Eth2Context {
       return this;
     }
 
+    public Builder forkDigest(final Bytes4 forkDigest) {
+      checkNotNull(forkDigest);
+      return forkDigest(Optional.of(forkDigest));
+    }
+
     public Builder forkDigest(final Optional<Bytes4> forkDigest) {
       checkNotNull(forkDigest);
       this.forkDigest = forkDigest;

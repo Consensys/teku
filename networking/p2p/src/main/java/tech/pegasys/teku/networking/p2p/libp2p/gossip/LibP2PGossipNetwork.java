@@ -32,6 +32,7 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.pubsub.gossip.GossipScoreParams;
+import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,6 +59,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -187,6 +190,17 @@ public class LibP2PGossipNetwork implements GossipNetwork {
               topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
     }
     return result;
+  }
+
+  @Override
+  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
+    final Map<String, GossipTopicScoreParams> params =
+        config.getTopicConfigs().entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> LibP2PParamsFactory.createTopicScoreParams(e.getValue())));
+    gossip.updateTopicScoreParams(params);
   }
 
   public Gossip getGossip() {

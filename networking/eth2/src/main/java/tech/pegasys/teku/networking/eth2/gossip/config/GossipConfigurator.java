@@ -14,14 +14,54 @@
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public interface GossipConfigurator {
-  GossipConfigurator NOOP = (gossipParams, eth2State) -> {};
+  GossipConfigurator NOOP =
+      new GossipConfigurator() {
+        @Override
+        public void configure(
+            final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {}
+
+        @Override
+        public void configureAllTopics(
+            final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
+            final Eth2Context eth2Context) {}
+
+        @Override
+        public void configureDynamicTopics(
+            final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
+            final Eth2Context eth2Context) {}
+      };
 
   static GossipConfigurator scoringEnabled(SpecConstants specConstants) {
     return new GossipScoringConfigurator(specConstants);
   }
 
-  void configure(final GossipConfig.Builder gossipParams, final Eth2Context eth2Context);
+  /**
+   * Configure gossip
+   *
+   * @param gossipConfigBuilder The builder to be configured
+   * @param eth2Context Contextual information about the current chain
+   */
+  void configure(final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context);
+
+  /**
+   * Configure scoring for all topics
+   *
+   * @param topicsConfigBuilder The builder to be configured
+   * @param eth2Context Contextual information about the current chain
+   */
+  void configureAllTopics(
+      final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context);
+
+  /**
+   * Configure scoring for dynamic topics that should be updated over time
+   *
+   * @param topicsConfigBuilder The builder to be configured
+   * @param eth2Context Contextual information about the current chain
+   */
+  void configureDynamicTopics(
+      final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context);
 }

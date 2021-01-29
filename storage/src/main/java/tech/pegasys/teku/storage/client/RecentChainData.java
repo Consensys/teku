@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -322,6 +323,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return Optional.empty();
     }
     return Optional.of(ForkChoiceUtil.get_current_slot(store));
+  }
+
+  public Optional<UInt64> getCurrentEpoch() {
+    return getCurrentSlot().map(BeaconStateUtil::compute_epoch_at_slot);
   }
 
   /** @return The number of slots between our chainhead and the current slot by time */
