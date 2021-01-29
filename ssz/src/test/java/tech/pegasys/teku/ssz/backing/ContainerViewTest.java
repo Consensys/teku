@@ -499,6 +499,8 @@ public class ContainerViewTest {
 
     assertThat(modified)
         .allMatch(
-            c -> SszTestUtils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+            c ->
+                SszTestUtils.equalsByGetters(c, c3r)
+                    && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
   }
 }

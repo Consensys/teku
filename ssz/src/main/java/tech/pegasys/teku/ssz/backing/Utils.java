@@ -85,5 +85,4 @@ public class Utils {
   public static long nextPowerOf2(long x) {
     return x <= 1 ? 1 : Long.highestOneBit(x - 1) << 1;
   }
-
 }

@@ -65,10 +65,7 @@ public class DepositData
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;
 
-  private DepositData(
-      DepositDataType
-          type,
-      TreeNode backingNode) {
+  private DepositData(DepositDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

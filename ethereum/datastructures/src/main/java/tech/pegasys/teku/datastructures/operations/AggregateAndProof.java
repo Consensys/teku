@@ -52,9 +52,7 @@ public class AggregateAndProof
 
   private BLSSignature selectionProofCache;
 
-  private AggregateAndProof(
-      AggregateAndProofType type,
-      TreeNode backingNode) {
+  private AggregateAndProof(AggregateAndProofType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
