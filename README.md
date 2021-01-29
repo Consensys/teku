@@ -4,7 +4,7 @@
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ConsenSys/teku/blob/master/LICENSE)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-blue)](https://discord.gg/7hPv2T6)
 
-Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing rapidly hence we recommend building from the latest master. See the [Changelog](CHANGELOG.md) for known issues and breaking changes.
+Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changelog](https://github.com/ConsenSys/teku/releases) for details of the latest releases and upcoming breaking changes.
 
 ## Useful links 
 
