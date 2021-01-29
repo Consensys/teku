@@ -77,9 +77,11 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
 
   @Override
   public String toString() {
-    return getType().getContainerName() + "{" +
-        IntStream.range(0, getType().getChildCount()).mapToObj(idx ->
-            getType().getChildrenNames().get(idx) + "=" + get(idx)).collect(Collectors.joining(", "))
+    return getType().getContainerName()
+        + "{"
+        + IntStream.range(0, getType().getChildCount())
+            .mapToObj(idx -> getType().getChildrenNames().get(idx) + "=" + get(idx))
+            .collect(Collectors.joining(", "))
         + "}";
   }
 }

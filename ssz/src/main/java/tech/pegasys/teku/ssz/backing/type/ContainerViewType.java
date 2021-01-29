@@ -63,16 +63,20 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   protected ContainerViewType(String name, List<NamedType<?>> childrenTypes) {
     this.containerName = name;
-    this.childrenNames = childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
-    this.childrenTypes = childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
+    this.childrenNames =
+        childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
+    this.childrenTypes =
+        childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
     this.treeWidth = CompositeViewType.super.treeWidth();
   }
 
   protected ContainerViewType(List<ViewType<?>> childrenTypes) {
     this.containerName = "";
-    this.childrenNames = IntStream.range(0, childrenTypes.size()).mapToObj(i -> "field-" + i)
-        .collect(Collectors.toList());
+    this.childrenNames =
+        IntStream.range(0, childrenTypes.size())
+            .mapToObj(i -> "field-" + i)
+            .collect(Collectors.toList());
     this.childrenTypes = childrenTypes;
     this.defaultTree = createDefaultTree();
     this.treeWidth = CompositeViewType.super.treeWidth();
