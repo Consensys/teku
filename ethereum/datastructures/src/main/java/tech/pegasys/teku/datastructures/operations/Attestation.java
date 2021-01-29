@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,7 +45,8 @@ public class Attestation
           Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
     public AttestationType() {
-      super("Attestation",
+      super(
+          "Attestation",
           namedType("aggregation_bits", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedType("data", AttestationData.TYPE),
           namedType("signature", ComplexViewTypes.BYTES_96_TYPE));

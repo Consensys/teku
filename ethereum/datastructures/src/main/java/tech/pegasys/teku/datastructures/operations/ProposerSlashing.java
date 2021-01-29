@@ -27,11 +27,14 @@ public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  static class ProposerSlashingType
+  public static class ProposerSlashingType
       extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
     public ProposerSlashingType() {
-      super(SignedBeaconBlockHeader.TYPE, SignedBeaconBlockHeader.TYPE);
+      super(
+          "ProposerSlashing",
+          namedType("header_1", SignedBeaconBlockHeader.TYPE),
+          namedType("header_2", SignedBeaconBlockHeader.TYPE));
     }
 
     @Override
