@@ -56,10 +56,7 @@ public class StatusMessage
 
   @SszTypeDescriptor public static final StatusMessageType TYPE = new StatusMessageType();
 
-  private StatusMessage(
-      ContainerType5<StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View>
-          type,
-      TreeNode backingNode) {
+  private StatusMessage(StatusMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
