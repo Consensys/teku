@@ -176,4 +176,9 @@ public class VectorViewType<ElementViewT extends ViewRead>
   public int hashCode() {
     return super.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return "Vector[" + getElementType() + ", " + getLength() + "]";
+  }
 }

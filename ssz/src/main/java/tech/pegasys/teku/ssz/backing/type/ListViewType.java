@@ -248,4 +248,9 @@ public class ListViewType<ElementViewT extends ViewRead>
   public int hashCode() {
     return super.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return "List[" + getElementType() + ", " + getMaxLength() + "]";
+  }
 }
