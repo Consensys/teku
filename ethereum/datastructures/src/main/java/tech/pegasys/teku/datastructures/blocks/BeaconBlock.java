@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public final class BeaconBlock
     extends Container5<
         BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody>
-    implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements BeaconBlockSummary, SimpleOffsetSerializable, SSZContainer {
 
   public static class BeaconBlockType
       extends ContainerType5<
@@ -148,16 +147,11 @@ public final class BeaconBlock
 
   @Override
   public Bytes32 getBodyRoot() {
-    return getBody().hash_tree_root();
+    return getBody().hashTreeRoot();
   }
 
   @Override
   public Bytes32 getRoot() {
-    return hash_tree_root();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
 
@@ -169,12 +163,12 @@ public final class BeaconBlock
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("root", hash_tree_root())
+        .add("root", hashTreeRoot())
         .add("slot", getSlot())
         .add("proposer_index", getProposerIndex())
         .add("parent_root", getParentRoot())
         .add("state_root", getStateRoot())
-        .add("body", getBody().hash_tree_root())
+        .add("body", getBody().hashTreeRoot())
         .toString();
   }
 }

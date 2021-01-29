@@ -47,6 +47,6 @@ public class StateRootRecorder {
       slot = slot.plus(UInt64.ONE);
     }
 
-    stateRootConsumer.accept(state.hash_tree_root(), state.getSlot());
+    stateRootConsumer.accept(state.hashTreeRoot(), state.getSlot());
   }
 }

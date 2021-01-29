@@ -17,7 +17,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -36,7 +35,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class DepositData
     extends Container4<
         DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class DepositDataType
       extends ContainerType4<
@@ -122,10 +121,5 @@ public class DepositData
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

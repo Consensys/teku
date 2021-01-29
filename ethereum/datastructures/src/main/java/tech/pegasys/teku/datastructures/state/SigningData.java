@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
@@ -25,7 +24,7 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class SigningDataType extends ContainerType2<SigningData, Bytes32View, Bytes32View> {
 
@@ -56,10 +55,5 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
 
   public Bytes32 getDomain() {
     return getField1().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

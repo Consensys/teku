@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
@@ -31,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class BeaconBlockHeader
     extends Container5<
         BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
+    implements SimpleOffsetSerializable, SSZContainer, BeaconBlockSummary {
 
   public static class BeaconBlockHeaderType
       extends ContainerType5<
@@ -92,7 +91,7 @@ public class BeaconBlockHeader
 
     if (latestHeader.getStateRoot().isZero()) {
       // If the state root is empty, replace it with the current state root
-      final Bytes32 stateRoot = state.hash_tree_root();
+      final Bytes32 stateRoot = state.hashTreeRoot();
       latestHeader =
           new BeaconBlockHeader(
               latestHeader.getSlot(),
@@ -132,11 +131,6 @@ public class BeaconBlockHeader
 
   @Override
   public Bytes32 getRoot() {
-    return hash_tree_root();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
 

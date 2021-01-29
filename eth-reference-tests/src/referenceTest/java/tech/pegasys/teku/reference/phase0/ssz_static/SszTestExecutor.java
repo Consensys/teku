@@ -47,11 +47,11 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
@@ -115,7 +115,7 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     final T result = SimpleOffsetSerializer.deserialize(inputData, clazz);
 
     // Deserialize
-    assertThat(result.hash_tree_root()).isEqualTo(expectedRoot);
+    assertThat(result.hashTreeRoot()).isEqualTo(expectedRoot);
 
     // Serialize
     assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);

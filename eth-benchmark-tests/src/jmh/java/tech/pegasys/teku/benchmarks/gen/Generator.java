@@ -91,7 +91,7 @@ public class Generator {
           final StateAndBlockSummary postState =
               localStorage
                   .getStore()
-                  .retrieveStateAndBlockSummary(block.getMessage().hash_tree_root())
+                  .retrieveStateAndBlockSummary(block.getMessage().hashTreeRoot())
                   .join()
                   .orElseThrow();
 

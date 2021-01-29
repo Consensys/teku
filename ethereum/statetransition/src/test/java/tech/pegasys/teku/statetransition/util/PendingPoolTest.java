@@ -242,7 +242,7 @@ public class PendingPoolTest {
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
     final UInt64 epoch = compute_epoch_at_slot(block.getSlot()).plus(UInt64.ONE);
-    final Bytes32 root = block.getMessage().hash_tree_root();
+    final Bytes32 root = block.getMessage().hashTreeRoot();
 
     return new Checkpoint(epoch, root);
   }
@@ -345,7 +345,7 @@ public class PendingPoolTest {
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
 
-        parentRoot = block.getMessage().hash_tree_root();
+        parentRoot = block.getMessage().hashTreeRoot();
       }
     }
 
@@ -377,7 +377,7 @@ public class PendingPoolTest {
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
 
-        parentRoot = block.getMessage().hash_tree_root();
+        parentRoot = block.getMessage().hashTreeRoot();
       }
     }
 

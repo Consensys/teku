@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -31,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
 
@@ -69,11 +68,6 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
 
   public SlotAndBlockRoot toSlotAndBlockRoot() {
     return new SlotAndBlockRoot(getEpochStartSlot(), getRoot());
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

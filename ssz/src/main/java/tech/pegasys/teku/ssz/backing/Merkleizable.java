@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.util;
+package tech.pegasys.teku.ssz.backing;
 
 import org.apache.tuweni.bytes.Bytes32;
 
+/**
+ * Returns `hash_tree_root` conforming to SSZ spec:
+ * https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#merkleization
+ */
 public interface Merkleizable {
 
-  Bytes32 hash_tree_root();
+  Bytes32 hashTreeRoot();
 }

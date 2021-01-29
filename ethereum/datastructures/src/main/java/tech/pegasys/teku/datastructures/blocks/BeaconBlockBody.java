@@ -21,7 +21,6 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -53,7 +52,7 @@ public class BeaconBlockBody
         ListViewRead<Attestation>,
         ListViewRead<Deposit>,
         ListViewRead<SignedVoluntaryExit>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class BeaconBlockBodyType
       extends ContainerType8<
@@ -210,10 +209,5 @@ public class BeaconBlockBody
   public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
     return new SSZBackingList<>(
         SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

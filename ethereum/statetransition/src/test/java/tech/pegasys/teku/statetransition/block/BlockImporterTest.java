@@ -265,7 +265,7 @@ public class BlockImporterTest {
         new BeaconBlock(
             block.getSlot(),
             block.getMessage().getProposerIndex(),
-            block.getMessage().hash_tree_root(),
+            block.getMessage().hashTreeRoot(),
             block.getMessage().getStateRoot(),
             block.getMessage().getBody());
     final Signer signer = localChain.getSigner(block.getMessage().getProposerIndex().intValue());

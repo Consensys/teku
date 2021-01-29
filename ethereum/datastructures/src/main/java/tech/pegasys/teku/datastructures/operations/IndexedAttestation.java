@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -39,7 +37,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class IndexedAttestation
     extends Container3<
         IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class IndexedAttestationType
       extends ContainerType3<
@@ -90,10 +88,5 @@ public class IndexedAttestation
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
-    implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements BeaconBlockSummary, SimpleOffsetSerializable, SSZContainer {
 
   public static class SignedBeaconBlockType
       extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
@@ -131,7 +130,7 @@ public class SignedBeaconBlock
    */
   @Override
   public Bytes32 getRoot() {
-    return getMessage().hash_tree_root();
+    return getMessage().hashTreeRoot();
   }
 
   @Override
@@ -140,10 +139,5 @@ public class SignedBeaconBlock
         .add("message", getMessage())
         .add("signature", getSignature())
         .toString();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

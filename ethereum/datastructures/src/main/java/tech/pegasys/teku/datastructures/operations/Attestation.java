@@ -18,7 +18,6 @@ import com.google.common.collect.Sets;
 import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class Attestation
     extends Container3<
         Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   private static final BitListType AGGREGATION_BITS_TYPE =
       new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
@@ -110,11 +109,6 @@ public class Attestation
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

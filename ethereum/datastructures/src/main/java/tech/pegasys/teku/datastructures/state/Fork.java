@@ -14,8 +14,6 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -29,7 +27,7 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
 
@@ -67,11 +65,6 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
 
   public UInt64 getEpoch() {
     return getField2().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

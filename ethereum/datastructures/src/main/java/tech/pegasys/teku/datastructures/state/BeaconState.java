@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
@@ -42,8 +41,7 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public interface BeaconState
-    extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public interface BeaconState extends ContainerViewRead, SimpleOffsetSerializable, SSZContainer {
 
   Field GENESIS_TIME_FIELD = new Field(0, BasicViewTypes.UINT64_TYPE);
   Field GENESIS_VALIDATORS_ROOT_FIELD = new Field(1, BasicViewTypes.BYTES32_TYPE);

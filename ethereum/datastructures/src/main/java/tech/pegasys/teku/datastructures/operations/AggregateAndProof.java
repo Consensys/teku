@@ -14,9 +14,7 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -33,7 +31,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AggregateAndProof
     extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class AggregateAndProofType
       extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
@@ -90,10 +88,5 @@ public class AggregateAndProof
       selectionProofCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
     }
     return selectionProofCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

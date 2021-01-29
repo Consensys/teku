@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.operations;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class DepositMessage
     extends Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class DepositMessageType
       extends ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
@@ -75,10 +74,5 @@ public class DepositMessage
 
   public UInt64 getAmount() {
     return getField2().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

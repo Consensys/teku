@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
  * described here:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#views
  */
-public interface ViewRead {
+public interface ViewRead extends Merkleizable {
 
   /**
    * Creates a corresponding writeable copy of this immutable structure Any modifications made to
@@ -37,10 +37,7 @@ public interface ViewRead {
   /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();
 
-  /**
-   * Returns `hash_tree_root` conforming to SSZ spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#merkleization
-   */
+  @Override
   default Bytes32 hashTreeRoot() {
     return getBackingNode().hashTreeRoot();
   }

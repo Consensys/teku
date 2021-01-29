@@ -207,7 +207,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         new HashMap<>();
     for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
       for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
-        Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
+        Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
         NavigableMap<UInt64, Bitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
@@ -216,7 +216,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     for (Attestation sentAttestation : producedAttestations) {
-      Bytes32 sentAttestationDataHash = sentAttestation.getData().hash_tree_root();
+      Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
       UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
         continue;

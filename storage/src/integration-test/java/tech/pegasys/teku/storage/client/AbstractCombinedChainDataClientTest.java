@@ -265,7 +265,7 @@ public abstract class AbstractCombinedChainDataClientTest {
       throws ExecutionException, InterruptedException {
     final SignedBlockAndState bestBlockAndState = advanceChainAndGetBestBlockAndState(2);
     Optional<BeaconState> result =
-        client.getStateByStateRoot(bestBlockAndState.getState().hash_tree_root()).get();
+        client.getStateByStateRoot(bestBlockAndState.getState().hashTreeRoot()).get();
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(bestBlockAndState.getState());
   }

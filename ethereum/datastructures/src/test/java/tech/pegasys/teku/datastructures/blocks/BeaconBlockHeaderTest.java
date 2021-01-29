@@ -121,7 +121,7 @@ class BeaconBlockHeaderTest {
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            block.getBody().hash_tree_root());
-    assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
+            block.getBody().hashTreeRoot());
+    assertEquals(block.hashTreeRoot(), blockHeader.hashTreeRoot());
   }
 }

@@ -78,11 +78,6 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public Bytes32 hashTreeRoot() {
     return commitChanges().hashTreeRoot();
   }

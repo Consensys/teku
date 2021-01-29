@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -45,7 +44,7 @@ public class Validator
         UInt64View,
         UInt64View,
         UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class ValidatorType
       extends ContainerType8<
@@ -215,11 +214,6 @@ public class Validator
         getActivation_epoch(),
         getExit_epoch(),
         withdrawable_epoch);
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

@@ -14,9 +14,7 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -30,7 +28,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class SignedAggregateAndProofType
       extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
@@ -76,10 +74,5 @@ public class SignedAggregateAndProof
         .add("message", getMessage())
         .add("signature", getSignature())
         .toString();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

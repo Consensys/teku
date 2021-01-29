@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBatch
     extends Container2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   static class HistoricalBatchType
       extends ContainerType2<
@@ -107,10 +106,5 @@ public class HistoricalBatch
   public SSZVector<Bytes32> getStateRoots() {
     return new SSZBackingVector<>(
         Bytes32.class, getField1(), Bytes32View::new, AbstractBasicView::get);
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

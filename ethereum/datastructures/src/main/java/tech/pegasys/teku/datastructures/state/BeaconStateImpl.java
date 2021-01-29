@@ -162,11 +162,6 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   }
 
   @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public TransitionCaches getTransitionCaches() {
     return transitionCaches;
   }

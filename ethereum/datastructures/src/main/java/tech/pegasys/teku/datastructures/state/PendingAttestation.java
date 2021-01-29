@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.Copyable;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -36,7 +34,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class PendingAttestation
     extends Container4<
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
-    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements Copyable<PendingAttestation>, SimpleOffsetSerializable, SSZContainer {
 
   private static final BitListType AGGREGATION_BITS_TYPE =
       new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
@@ -105,11 +103,6 @@ public class PendingAttestation
 
   public UInt64 getProposer_index() {
     return getField3().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

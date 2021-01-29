@@ -19,8 +19,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -31,7 +29,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   public static class AttesterSlashingType
       extends ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
@@ -76,10 +74,5 @@ public class AttesterSlashing
 
   public IndexedAttestation getAttestation_2() {
     return getField1();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

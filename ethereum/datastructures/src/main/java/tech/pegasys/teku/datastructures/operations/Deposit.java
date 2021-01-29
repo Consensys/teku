@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -32,7 +31,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements SimpleOffsetSerializable, SSZContainer {
 
   private static final VectorViewType<Bytes32View> PROOF_TYPE =
       new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
@@ -77,10 +76,5 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   public DepositData getData() {
     return getField1();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }
