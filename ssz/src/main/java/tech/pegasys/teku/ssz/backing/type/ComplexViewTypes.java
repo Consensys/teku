@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import com.google.common.base.Preconditions;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class ComplexViewTypes {
 
@@ -25,11 +30,23 @@ public class ComplexViewTypes {
     public ByteListType(long maxLength) {
       super(BasicViewTypes.BYTE_TYPE, maxLength);
     }
+
+    public ListViewRead<ByteView> createList(Bytes bytes) {
+      Preconditions.checkArgument(
+          bytes.size() > getMaxLength(), "Bytes length exceeds List type maximum length ");
+      return ViewUtils.createListFromBytes(this, bytes);
+    }
   }
 
   public static class ByteVectorType extends VectorViewType<ByteView> {
     public ByteVectorType(long maxLength) {
       super(BasicViewTypes.BYTE_TYPE, maxLength);
+    }
+
+    public VectorViewRead<ByteView> createVector(Bytes bytes) {
+      Preconditions.checkArgument(
+          bytes.size() == getLength(), "Bytes length doesn't match Vector type length ");
+      return ViewUtils.createVectorFromBytes(this, bytes);
     }
   }
 

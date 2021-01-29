@@ -74,6 +74,16 @@ public class ViewUtils {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
+  public static VectorViewRead<ByteView> createVectorFromBytes(
+      VectorViewType<ByteView> type, Bytes bytes) {
+    return type.sszDeserialize(SszReader.fromBytes(bytes));
+  }
+
+  public static ListViewRead<ByteView> createListFromBytes(
+      ListViewType<ByteView> type, Bytes bytes) {
+    return type.sszDeserialize(SszReader.fromBytes(bytes));
+  }
+
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
   public static Bytes getAllBytes(VectorViewRead<ByteView> vector) {
     return vector.sszSerialize();
