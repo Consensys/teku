@@ -70,6 +70,10 @@ public class LoggingConfigurator {
     Configurator.setAllLevels(filter, level);
   }
 
+  public static synchronized void setAllLevelsSilently(final String filter, final Level level) {
+    Configurator.setAllLevels(filter, level);
+  }
+
   public static synchronized void update(final LoggingConfig configuration) {
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
