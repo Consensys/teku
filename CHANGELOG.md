@@ -12,6 +12,9 @@
 
 ## Next Release
 
+### Additions and Improvements
+- Enabled the new sync algorithm by default. This improves sync behaviour when there are multiple forks and distributes requests for blocks across available peers. The old sync algorithm can still be used by setting `--Xp2p-multipeer-sync-enabled=false`.
+
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
 
