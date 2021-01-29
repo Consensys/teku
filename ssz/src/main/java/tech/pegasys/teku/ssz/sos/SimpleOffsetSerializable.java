@@ -13,20 +13,23 @@
 
 package tech.pegasys.teku.ssz.sos;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
+@Deprecated
 public interface SimpleOffsetSerializable {
+  @Deprecated
   default int getSSZFieldCount() {
-    throw new RuntimeException();
+    throw new UnsupportedOperationException();
   }
 
+  @Deprecated
   default List<Bytes> get_fixed_parts() {
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    throw new UnsupportedOperationException();
   }
 
+  @Deprecated
   default List<Bytes> get_variable_parts() {
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    throw new UnsupportedOperationException();
   }
 }
