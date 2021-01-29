@@ -48,7 +48,7 @@ public class GenesisGenerator {
   private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final ListViewType<DepositData> depositDataListType =
-      new ListViewType<>(DepositData.TYPE, DEPOSIT_CONTRACT_TREE_DEPTH);
+      new ListViewType<>(DepositData.TYPE, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
   private final ListViewWrite<DepositData> depositDataList =
       depositDataListType.getDefault().createWritableCopy();
 
