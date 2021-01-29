@@ -15,6 +15,9 @@ package tech.pegasys.teku.ssz.backing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -42,5 +45,56 @@ public class ListViewTest {
     lw3.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
     ListViewRead<TestSubContainer> lr3 = lw3.commitChanges();
     assertThat(lr3.size()).isEqualTo(1);
+  }
+
+  @Test
+  void testMutableListReusable() {
+    List<TestSubContainer> elements =
+        IntStream.range(0, 5)
+            .mapToObj(i -> new TestSubContainer(UInt64.valueOf(i), Bytes32.leftPad(Bytes.of(i))))
+            .collect(Collectors.toList());
+
+    ListViewType<TestSubContainer> type =
+        new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
+    ListViewRead<TestSubContainer> lr1 = type.getDefault();
+    ListViewWrite<TestSubContainer> lw1 = lr1.createWritableCopy();
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr1.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr1.hashTreeRoot());
+
+    lw1.append(elements.get(0));
+    ListViewWrite<TestSubContainer> lw2 = type.getDefault().createWritableCopy();
+    lw2.append(elements.get(0));
+    ListViewRead<TestSubContainer> lr2 = lw2.commitChanges();
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr2.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
+
+    lw1.appendAll(elements.subList(1, 5));
+    ListViewWrite<TestSubContainer> lw3 = type.getDefault().createWritableCopy();
+    lw3.appendAll(elements);
+    ListViewRead<TestSubContainer> lr3 = lw3.commitChanges();
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr3.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr3.hashTreeRoot());
+
+    lw1.clear();
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr1.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr1.hashTreeRoot());
+
+    lw1.appendAll(elements.subList(0, 5));
+    ListViewWrite<TestSubContainer> lw4 = type.getDefault().createWritableCopy();
+    lw4.appendAll(elements);
+    ListViewRead<TestSubContainer> lr4 = lw3.commitChanges();
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr4.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr4.hashTreeRoot());
+
+    lw1.clear();
+    lw1.append(elements.get(0));
+
+    assertThat(lw1.sszSerialize()).isEqualTo(lr2.sszSerialize());
+    assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
   }
 }
