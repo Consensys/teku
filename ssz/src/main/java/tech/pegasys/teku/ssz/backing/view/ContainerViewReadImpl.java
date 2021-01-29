@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ContainerViewWrite;
 import tech.pegasys.teku.ssz.backing.ViewRead;
@@ -46,6 +48,11 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
   }
 
   @Override
+  public ContainerViewType<?> getType() {
+    return (ContainerViewType<?>) super.getType();
+  }
+
+  @Override
   public ContainerViewWrite createWritableCopy() {
     return new ContainerViewWriteImpl(this);
   }
@@ -66,5 +73,13 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for container with size " + size());
     }
+  }
+
+  @Override
+  public String toString() {
+    return getType().getContainerName() + "{" +
+        IntStream.range(0, getType().getChildCount()).mapToObj(idx ->
+            getType().getChildrenNames().get(idx) + "=" + get(idx)).collect(Collectors.joining(", "))
+        + "}";
   }
 }

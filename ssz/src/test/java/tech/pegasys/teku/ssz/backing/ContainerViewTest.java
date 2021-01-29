@@ -202,7 +202,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected SubContainerReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
@@ -237,7 +237,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected ContainerReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
