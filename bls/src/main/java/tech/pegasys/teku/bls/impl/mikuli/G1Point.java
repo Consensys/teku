@@ -14,7 +14,6 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import java.util.Objects;
-import java.util.Random;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.FP;
@@ -27,21 +26,6 @@ import tech.pegasys.teku.bls.impl.DeserializeException;
  * is defined by: y^2 = x^3 + 4.
  */
 public final class G1Point implements Group<G1Point> {
-
-  static G1Point random(Random rng) {
-    ECP point;
-    byte[] xBytes = new byte[48];
-
-    // Repeatedly choose random X coords until one is on the curve. This generally takes only a
-    // couple of attempts.
-    do {
-      rng.nextBytes(xBytes);
-      point = new ECP(BIG.fromBytes(xBytes));
-    } while (point.is_infinity());
-
-    // Multiply by the cofactor to ensure that we end up on G1
-    return new G1Point(scaleWithCofactor(point));
-  }
 
   public static G1Point fromBytes(Bytes bytes) {
     if (bytes.size() != 49) {

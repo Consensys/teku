@@ -14,6 +14,8 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import java.util.Random;
+import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.ECP;
 
 public class MikuliTestUtil {
   /**
@@ -24,6 +26,21 @@ public class MikuliTestUtil {
    * @return a random point on the curve.
    */
   public static G1Point randomG1Point(long seed) {
-    return G1Point.random(new Random(seed));
+    return randomG1Point(new Random(seed));
+  }
+
+  static G1Point randomG1Point(Random rng) {
+    ECP point;
+    byte[] xBytes = new byte[48];
+
+    // Repeatedly choose random X coords until one is on the curve. This generally takes only a
+    // couple of attempts.
+    do {
+      rng.nextBytes(xBytes);
+      point = new ECP(BIG.fromBytes(xBytes));
+    } while (point.is_infinity());
+
+    // Multiply by the cofactor to ensure that we end up on G1
+    return new G1Point(G1Point.scaleWithCofactor(point));
   }
 }
