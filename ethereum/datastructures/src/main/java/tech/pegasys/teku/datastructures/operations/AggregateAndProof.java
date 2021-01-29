@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -39,7 +38,11 @@ public class AggregateAndProof
       extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
 
     public AggregateAndProofType() {
-      super(BasicViewTypes.UINT64_TYPE, Attestation.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "AggregateAndProof",
+          namedType("index", BasicViewTypes.UINT64_TYPE),
+          namedType("aggregate", Attestation.TYPE),
+          namedType("selection_proof", ComplexViewTypes.BYTES_96_TYPE));
     }
 
     @Override
@@ -83,14 +86,5 @@ public class AggregateAndProof
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("index", getIndex())
-        .add("selection_proof", getSelection_proof())
-        .add("aggregate", getAggregate())
-        .toString();
   }
 }

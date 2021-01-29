@@ -41,15 +41,19 @@ public class Attestation
         Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  private static final BitListType AGGREGATION_BITS_TYPE =
-      new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
-
   public static class AttestationType
       extends ContainerType3<
           Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
 
     public AttestationType() {
-      super(AGGREGATION_BITS_TYPE, AttestationData.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super("Attestation",
+          namedType("aggregation_bits", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedType("data", AttestationData.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+    }
+
+    public BitListType getAggregationBitsType() {
+      return (BitListType) getFieldType0();
     }
 
     @Override
@@ -70,7 +74,7 @@ public class Attestation
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(AGGREGATION_BITS_TYPE, aggregation_bits),
+        ViewUtils.createBitlistView(TYPE.getAggregationBitsType(), aggregation_bits),
         data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;
@@ -115,14 +119,5 @@ public class Attestation
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("aggregation_bits", getAggregation_bits())
-        .add("data", getData())
-        .add("signature", getAggregate_signature())
-        .toString();
   }
 }
