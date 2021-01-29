@@ -702,7 +702,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
     if (initialAnchor.isPresent()) {
       final AnchorPoint anchor = initialAnchor.get();
-      client.initializeFromAnchorPoint(anchor);
+      client.initializeFromAnchorPoint(anchor, timeProvider.getTimeInSeconds());
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
@@ -725,7 +725,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         InteropStartupUtil.createMockedStartInitialBeaconState(
             config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),
