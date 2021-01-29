@@ -28,18 +28,7 @@ import tech.pegasys.teku.bls.impl.DeserializeException;
  */
 public final class G1Point implements Group<G1Point> {
 
-  /**
-   * Generate a random point on the curve from a seed value. The same seed value gives the same
-   * point.
-   *
-   * @param seed the seed value
-   * @return a random point on the curve.
-   */
-  public static G1Point random(long seed) {
-    return random(new Random(seed));
-  }
-
-  private static G1Point random(Random rng) {
+  static G1Point random(Random rng) {
     ECP point;
     byte[] xBytes = new byte[48];
 

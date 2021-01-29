@@ -31,7 +31,7 @@ import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -97,7 +97,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
       final long validatorCommitteeIndex,
       final UInt64 slot) {
     return new AttesterDuty(
-        new BLSPubKey(BLSPublicKey.random(1)),
+        new BLSPubKey(BLSTestUtil.randomPublicKey(1)),
         UInt64.valueOf(validatorIndex),
         UInt64.valueOf(committeeIndex),
         UInt64.valueOf(committeeLength),

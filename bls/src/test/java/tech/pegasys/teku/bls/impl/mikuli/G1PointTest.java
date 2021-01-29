@@ -28,43 +28,43 @@ class G1PointTest {
 
   @Test
   void succeedsWhenSameSeedGivesSamePoint() {
-    G1Point point1 = G1Point.random(42L);
-    G1Point point2 = G1Point.random(42L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(42L);
+    G1Point point2 = MikuliTestUtil.randomG1Point(42L);
     assertEquals(point1, point2);
   }
 
   @Test
   void succeedsWhenDifferentSeedsGiveDifferentPoints() {
-    G1Point point1 = G1Point.random(1L);
-    G1Point point2 = G1Point.random(2L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(1L);
+    G1Point point2 = MikuliTestUtil.randomG1Point(2L);
     assertNotEquals(point1, point2);
   }
 
   @Test
   void succeedsWhenRandomPointsAreInTheG1Subgroup() {
     for (long i = 1; i <= 20; i++) {
-      G1Point point = G1Point.random(i);
+      G1Point point = MikuliTestUtil.randomG1Point(i);
       assertTrue(isInGroup(point.ecpPoint()));
     }
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePoint() {
-    G1Point point = G1Point.random(65L);
+    G1Point point = MikuliTestUtil.randomG1Point(65L);
     assertEquals(point, point);
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalPoints() {
-    G1Point point = G1Point.random(129L);
+    G1Point point = MikuliTestUtil.randomG1Point(129L);
     G1Point copyOfPoint = new G1Point(point.ecpPoint());
     assertEquals(point, copyOfPoint);
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentPoints() {
-    G1Point point1 = G1Point.random(42L);
-    G1Point point2 = G1Point.random(43L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(42L);
+    G1Point point2 = MikuliTestUtil.randomG1Point(43L);
     assertNotEquals(point1, point2);
   }
 
@@ -77,7 +77,7 @@ class G1PointTest {
 
   @Test
   void succeedsWhenPointIsImmutableUnderNeg() {
-    G1Point expected = G1Point.random(42L);
+    G1Point expected = MikuliTestUtil.randomG1Point(42L);
     G1Point actual = expected;
     actual.neg(); // Should not change the value of actual
     assertEquals(expected, actual);
@@ -85,16 +85,16 @@ class G1PointTest {
 
   @Test
   void succeedsWhenPointIsImmutableUnderAdd() {
-    G1Point expected = G1Point.random(42L);
+    G1Point expected = MikuliTestUtil.randomG1Point(42L);
     G1Point actual = expected;
-    G1Point test = G1Point.random(43L);
+    G1Point test = MikuliTestUtil.randomG1Point(43L);
     actual.add(test); // Should not change the value of actual
     assertEquals(expected, actual);
   }
 
   @Test
   void succeedsWhenPointIsImmutableUnderMul() {
-    G1Point expected = G1Point.random(42L);
+    G1Point expected = MikuliTestUtil.randomG1Point(42L);
     G1Point actual = expected;
     Scalar test = new Scalar(new BIG(2));
     actual.mul(test); // Should not change the value of actual
@@ -103,14 +103,14 @@ class G1PointTest {
 
   @Test
   void succeedsWhenSerializeDeserializeRoundTripWorks() {
-    G1Point point1 = G1Point.random(257L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(257L);
     G1Point point2 = G1Point.fromBytes(point1.toBytes());
     assertEquals(point1, point2);
   }
 
   @Test
   void succeedsWhenSerializeDeserializeCompressedRoundTripWorks() {
-    G1Point point1 = G1Point.random(513L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(513L);
     G1Point point2 = G1Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
   }
@@ -254,8 +254,8 @@ class G1PointTest {
 
   @Test
   void succeedsWhenDifferentPointsHaveDifferentHashCodes() {
-    G1Point point1 = G1Point.random(1234L);
-    G1Point point2 = G1Point.random(4321L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(1234L);
+    G1Point point2 = MikuliTestUtil.randomG1Point(4321L);
     assertNotEquals(point1, point2);
     assertNotEquals(point1.hashCode(), point2.hashCode());
   }
@@ -263,7 +263,7 @@ class G1PointTest {
   @Test
   void succeedsWhenTheSamePointsHaveTheSameHashCodes() {
     // Arrive at the same point in two different ways
-    G1Point point1 = G1Point.random(1025L);
+    G1Point point1 = MikuliTestUtil.randomG1Point(1025L);
     G1Point point2 = new G1Point(point1.ecpPoint());
     point2.add(point2);
     point1.ecpPoint().dbl();

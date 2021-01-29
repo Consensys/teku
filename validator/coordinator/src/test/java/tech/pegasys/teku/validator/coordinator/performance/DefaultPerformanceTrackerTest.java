@@ -30,7 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -241,7 +241,7 @@ public class DefaultPerformanceTrackerTest {
         new Attestation(
             dataStructureUtil.randomBitlist(),
             dataStructureUtil.randomAttestationData(UInt64.ONE),
-            BLSSignature.random(0)));
+            BLSTestUtil.randomSignature(0)));
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();

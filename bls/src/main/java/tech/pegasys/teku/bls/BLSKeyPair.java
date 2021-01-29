@@ -16,8 +16,6 @@ package tech.pegasys.teku.bls;
 import com.google.common.base.MoreObjects;
 import java.security.SecureRandom;
 import java.util.Objects;
-import java.util.Random;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.impl.KeyPair;
 
 public final class BLSKeyPair {
@@ -31,19 +29,6 @@ public final class BLSKeyPair {
    */
   public static BLSKeyPair random(final SecureRandom srng) {
     return new BLSKeyPair(BLS.getBlsImpl().generateKeyPair(srng));
-  }
-
-  /**
-   * Generate a key pair based on a secret key generated from a seed value.
-   *
-   * <p>This MUST NOT be used to generate production keys.
-   *
-   * @return a keypair generated from a seed
-   */
-  public static BLSKeyPair random(int seed) {
-    BLSSecretKey pseudoRandomSecretBytes =
-        BLSSecretKey.fromBytesModR(Bytes32.random(new Random(seed)));
-    return new BLSKeyPair(pseudoRandomSecretBytes);
   }
 
   private final BLSPublicKey publicKey;

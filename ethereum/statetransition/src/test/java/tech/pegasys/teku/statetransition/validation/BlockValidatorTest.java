@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -167,7 +168,8 @@ public class BlockValidatorTest {
 
     final SignedBeaconBlock block =
         new SignedBeaconBlock(
-            beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
+            beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
+            BLSTestUtil.randomSignature(0));
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertThat(result).isEqualTo(InternalValidationResult.REJECT);

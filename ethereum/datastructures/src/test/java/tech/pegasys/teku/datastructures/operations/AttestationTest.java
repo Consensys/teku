@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
@@ -112,7 +113,7 @@ class AttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    BLSSignature differentAggregateSignature = BLSSignature.random(99);
+    BLSSignature differentAggregateSignature = BLSTestUtil.randomSignature(99);
     Attestation testAttestation =
         new Attestation(aggregationBitfield, data, differentAggregateSignature);
 

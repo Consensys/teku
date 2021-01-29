@@ -29,6 +29,7 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
 import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
@@ -214,7 +215,7 @@ public class ProfilingRun {
   @Disabled
   @Test
   void runSszDeserialize() {
-    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
     System.out.println("Generating state...");
     BeaconState beaconState =
         new DataStructureUtil(1).withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);

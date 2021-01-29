@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
@@ -69,7 +70,7 @@ public class VoluntaryExitGenerator {
   }
 
   private BLSKeyPair getKeypair(int validatorIndex, boolean valid) {
-    return valid ? validatorKeys.get(validatorIndex) : BLSKeyPair.random(12345);
+    return valid ? validatorKeys.get(validatorIndex) : BLSTestUtil.randomKeyPair(12345);
   }
 
   // It is easy to miss to update the state to a slot where validator can finally exit. This check
