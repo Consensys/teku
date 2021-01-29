@@ -190,10 +190,7 @@ public class TekuConfiguration {
       // Update storage config
       storageConfigurationBuilder.specProvider(specProvider);
       // Update p2p config
-      p2pConfigBuilder.gossipConfig(
-          g ->
-              g.specConstants(genesisConstants)
-                  .validatorCount(genesisConstants.getMinGenesisActiveValidatorCount()));
+      p2pConfigBuilder.specConstants(genesisConstants);
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,

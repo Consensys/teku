@@ -16,18 +16,17 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class Eth2State {
+public class Eth2Context {
   private final int activeValidatorCount;
   private final UInt64 currentSlot;
   private final Optional<Bytes4> forkDigest;
   private final GossipEncoding gossipEncoding;
 
-  private Eth2State(
+  private Eth2Context(
       final int activeValidatorCount,
       final UInt64 currentSlot,
       final Optional<Bytes4> forkDigest,
@@ -40,18 +39,6 @@ public class Eth2State {
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public Eth2State updated(final Consumer<Builder> updater) {
-    final Builder builder =
-        builder()
-            .activeValidatorCount(activeValidatorCount)
-            .gossipEncoding(gossipEncoding)
-            .currentSlot(currentSlot)
-            .forkDigest(forkDigest);
-
-    updater.accept(builder);
-    return builder.build();
   }
 
   public int getActiveValidatorCount() {
@@ -78,9 +65,9 @@ public class Eth2State {
 
     private Builder() {}
 
-    public Eth2State build() {
+    public Eth2Context build() {
       validate();
-      return new Eth2State(activeValidatorCount, currentSlot, forkDigest, gossipEncoding);
+      return new Eth2Context(activeValidatorCount, currentSlot, forkDigest, gossipEncoding);
     }
 
     private void validate() {

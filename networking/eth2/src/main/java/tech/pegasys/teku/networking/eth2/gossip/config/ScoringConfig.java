@@ -13,21 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 
 import com.google.common.base.Suppliers;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
-class Eth2ScoringConfig {
+class ScoringConfig {
   private static final double MAX_IN_MESH_SCORE = 10.0;
   private static final double MAX_FIRST_MESSAGE_DELIVERIES_SCORE = 40.0;
   private static final double BEACON_BLOCK_WEIGHT = 0.5;
@@ -57,12 +52,11 @@ class Eth2ScoringConfig {
   private final Duration targetScoringDuration;
 
   // Chain-specific and dynamic variables that can be updated over time
-  private volatile Eth2State eth2State;
+  private volatile Eth2Context eth2Context;
 
-  private Eth2ScoringConfig(final SpecConstants constants, final int d, final Eth2State eth2State) {
+  private ScoringConfig(final SpecConstants constants, final int d) {
     this.constants = constants;
     this.d = d;
-    this.eth2State = eth2State;
 
     this.slotDuration = Duration.ofSeconds(constants.getSecondsPerSlot());
     this.epochDuration = slotDuration.multipliedBy(constants.getSlotsPerEpoch());
@@ -70,15 +64,8 @@ class Eth2ScoringConfig {
     this.targetScoringDuration = epochDuration.multipliedBy(100);
   }
 
-  public static Eth2ScoringConfig create(
-      final SpecConstants constants, final Eth2State eth2State, final int gossipDParam) {
-    return new Eth2ScoringConfig(constants, gossipDParam, eth2State);
-  }
-
-  public Eth2ScoringConfig setEth2State(final Eth2State eth2State) {
-    checkNotNull(eth2State);
-    this.eth2State = eth2State;
-    return this;
+  public static ScoringConfig create(final SpecConstants constants, final int gossipDParam) {
+    return new ScoringConfig(constants, gossipDParam);
   }
 
   public double getMaxInMeshScore() {
@@ -153,26 +140,6 @@ class Eth2ScoringConfig {
     return epochDuration;
   }
 
-  public int getActiveValidatorCount() {
-    return eth2State.getActiveValidatorCount();
-  }
-
-  public UInt64 getCurrentSlot() {
-    return eth2State.getCurrentSlot();
-  }
-
-  public Optional<Bytes4> getForkDigest() {
-    return eth2State.getForkDigest();
-  }
-
-  public GossipEncoding getGossipEncoding() {
-    return eth2State.getGossipEncoding();
-  }
-
-  public double getAggregatorsPerSlot() {
-    return getAggregatorsPerSlot(getActiveValidatorCount());
-  }
-
   public double getAggregatorsPerSlot(final int activeValidatorCount) {
     final int committeesPerEpoch =
         get_committee_count_per_slot(activeValidatorCount)
@@ -197,10 +164,6 @@ class Eth2ScoringConfig {
 
     return ((double) smallCommitteeAggregatorPerEpoch + largeCommitteeAggregatorPerEpoch)
         / constants.getSlotsPerEpoch();
-  }
-
-  public int getCommitteesPerSlot() {
-    return getCommitteesPerSlot(getActiveValidatorCount());
   }
 
   public int getCommitteesPerSlot(final int activeValidatorCount) {

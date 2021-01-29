@@ -37,23 +37,19 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
  *     Prime's Lighthouse gossip scoring logic</a>
  */
 class GossipScoringConfigurator implements GossipConfigurator {
-  private final Eth2ScoringConfig scoringConfig;
+  private final ScoringConfig scoringConfig;
 
-  public GossipScoringConfigurator(final SpecConstants specConstants, final Eth2State eth2State) {
-    this.scoringConfig = Eth2ScoringConfig.create(specConstants, eth2State, GossipConfig.DEFAULT_D);
+  public GossipScoringConfigurator(final SpecConstants specConstants) {
+    this.scoringConfig = ScoringConfig.create(specConstants, GossipConfig.DEFAULT_D);
   }
 
   @Override
-  public void configure(final GossipConfig.Builder gossipParams) {
-    gossipParams.resetDefaults().scoring(this::configureScoring);
+  public void configure(final GossipConfig.Builder gossipParams, final Eth2Context eth2Context) {
+    gossipParams.resetDefaults().scoring(b -> configureScoring(b, eth2Context));
   }
 
-  @Override
-  public void updateState(final Eth2State eth2State) {
-    scoringConfig.setEth2State(eth2State);
-  }
-
-  private void configureScoring(final GossipScoringConfig.Builder builder) {
+  private void configureScoring(
+      final GossipScoringConfig.Builder builder, final Eth2Context eth2Context) {
     final double maxPositiveScore = scoringConfig.getMaxPositiveScore();
 
     final double behaviorPenaltyThreshold = 6.0;
@@ -85,23 +81,20 @@ class GossipScoringConfigurator implements GossipConfigurator {
                     .topicScoreCap(0.5 * maxPositiveScore));
 
     // Configure topics
-    final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig);
+    final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig, eth2Context);
     builder.topicScoring(topicConfigurator::configureTopicScoring);
   }
 
-  public void configureDynamicTopics(final GossipTopicsScoringConfig.Builder builder) {
-    final TopicConfigurator topicConfigurator = new TopicConfigurator(scoringConfig);
-    topicConfigurator.configureDynamicTopics(builder);
-  }
-
   private static class TopicConfigurator {
-    private final Eth2ScoringConfig scoringConfig;
+    private final ScoringConfig scoringConfig;
+    private final Eth2Context eth2Context;
     private final boolean isConfigurable;
     private final Bytes4 forkDigest;
 
-    TopicConfigurator(final Eth2ScoringConfig scoringConfig) {
+    TopicConfigurator(final ScoringConfig scoringConfig, final Eth2Context eth2Context) {
       this.scoringConfig = scoringConfig;
-      this.forkDigest = scoringConfig.getForkDigest().orElse(null);
+      this.eth2Context = eth2Context;
+      this.forkDigest = eth2Context.getForkDigest().orElse(null);
       this.isConfigurable = this.forkDigest != null;
     }
 
@@ -127,7 +120,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
     private void configureVoluntaryExitTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
+              forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -143,7 +136,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           TopicNames.getTopic(
               forkDigest,
               AttesterSlashingGossipManager.TOPIC_NAME,
-              scoringConfig.getGossipEncoding());
+              eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -159,7 +152,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           TopicNames.getTopic(
               forkDigest,
               ProposerSlashingGossipManager.TOPIC_NAME,
-              scoringConfig.getGossipEncoding());
+              eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -173,7 +166,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
     private void configureBlockTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              forkDigest, BlockGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
+              forkDigest, BlockGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 3.0, scoringConfig.convertEpochsToSlots(5));
@@ -192,7 +185,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
     private void configureAggregateTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
           TopicNames.getTopic(
-              forkDigest, AggregateGossipManager.TOPIC_NAME, scoringConfig.getGossipEncoding());
+              forkDigest, AggregateGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 4.0, scoringConfig.convertEpochsToSlots(2));
@@ -202,7 +195,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
               configureTopic(
                   b,
                   scoringConfig.getBeaconAggregateProofWeight(),
-                  scoringConfig.getAggregatorsPerSlot(),
+                  scoringConfig.getAggregatorsPerSlot(eth2Context.getActiveValidatorCount()),
                   scoringConfig.calculateDecayFactor(scoringConfig.getEpochDuration()),
                   Optional.of(msgDeliveryOptions)));
     }
@@ -212,9 +205,10 @@ class GossipScoringConfigurator implements GossipConfigurator {
       final double subnetCount = scoringConfig.getAttestationSubnetCount();
       final double subnetWeight = scoringConfig.getAttestationSubnetTopicWeight();
       final double messageRate =
-          (double) scoringConfig.getActiveValidatorCount() / subnetCount / slotsPerEpoch;
+          (double) eth2Context.getActiveValidatorCount() / subnetCount / slotsPerEpoch;
       final boolean multipleBurstsPerSubnetPerEpoch =
-          scoringConfig.getCommitteesPerSlot() >= subnetCount * 2 / slotsPerEpoch;
+          scoringConfig.getCommitteesPerSlot(eth2Context.getActiveValidatorCount())
+              >= subnetCount * 2 / slotsPerEpoch;
       final Duration timeToDecay =
           multipleBurstsPerSubnetPerEpoch
               ? scoringConfig.getEpochDuration()
@@ -234,7 +228,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
       for (int i = 0; i < scoringConfig.getAttestationSubnetCount(); i++) {
         final String subnetName = TopicNames.getAttestationSubnetTopicName(i);
         final String topic =
-            TopicNames.getTopic(forkDigest, subnetName, scoringConfig.getGossipEncoding());
+            TopicNames.getTopic(forkDigest, subnetName, eth2Context.getGossipEncoding());
         builder.topicScoring(
             topic,
             b ->
@@ -303,7 +297,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
                 .meshFailurePenaltyDecay(decayFactor)
                 .meshFailurePenaltyWeight(weight);
 
-            if (scoringConfig.getCurrentSlot().isLessThan(options.getDecaySlots())) {
+            if (eth2Context.getCurrentSlot().isLessThan(options.getDecaySlots())) {
               // Disable mesh delivery scoring component until after decaySlots have been processed
               // by the chain. This prevents us from descoring all of our peers during the period
               // between the genesis block being known and the chain actually starting up at

@@ -178,7 +178,7 @@ public class P2POptions {
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .gossipConfig(g -> g.isScoringEnabled(gossipScoringEnabled)))
+                    .isGossipScoringEnabled(gossipScoringEnabled))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {
