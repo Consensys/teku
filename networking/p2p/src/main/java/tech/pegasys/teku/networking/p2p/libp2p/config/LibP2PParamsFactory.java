@@ -19,10 +19,7 @@ import io.libp2p.pubsub.gossip.GossipPeerScoreParams;
 import io.libp2p.pubsub.gossip.GossipScoreParams;
 import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
 import io.libp2p.pubsub.gossip.GossipTopicsScoreParams;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.List;
+import io.libp2p.pubsub.gossip.builders.GossipPeerScoreParamsBuilder;
 import java.util.Map;
 import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function1;
@@ -31,7 +28,6 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class LibP2PParamsFactory {
   public static GossipParams createGossipParams(final GossipConfig gossipConfig) {
@@ -70,50 +66,48 @@ public class LibP2PParamsFactory {
   }
 
   public static GossipPeerScoreParams createPeerScoreParams(final GossipPeerScoringConfig config) {
-    // TODO - move lambda parameters into config
-    // Direct peers lambda
-    final List<NodeId> directPeers = config.getDirectPeers();
-    final Function1<? super PeerId, Boolean> isDirectPeer =
-        peerId -> {
-          if (directPeers.isEmpty()) {
-            return false;
-          }
-          final byte[] peerIdBytes = peerId.getBytes();
-          return directPeers.stream()
-              .anyMatch(dp -> Arrays.equals(peerIdBytes, dp.toBytes().toArrayUnsafe()));
-        };
+    final GossipPeerScoreParamsBuilder builder =
+        GossipPeerScoreParams.builder()
+            .topicScoreCap(config.getTopicScoreCap())
+            .appSpecificWeight(config.getAppSpecificWeight())
+            .ipColocationFactorWeight(config.getIpColocationFactorWeight())
+            .ipColocationFactorThreshold(config.getIpColocationFactorThreshold())
+            .behaviourPenaltyWeight(config.getBehaviourPenaltyWeight())
+            .behaviourPenaltyDecay(config.getBehaviourPenaltyDecay())
+            .behaviourPenaltyThreshold(config.getBehaviourPenaltyThreshold())
+            .decayInterval(config.getDecayInterval())
+            .decayToZero(config.getDecayToZero())
+            .retainScore(config.getRetainScore());
 
-    // App-specific score
-    final Function1<? super PeerId, Double> appSpecificScore =
-        peerId -> config.getAppSpecificScore().scorePeer(new LibP2PNodeId(peerId));
+    // Configure optional params
+    config
+        .getAppSpecificScorer()
+        .ifPresent(
+            scorer -> {
+              final Function1<? super PeerId, Double> appSpecificScore =
+                  peerId -> scorer.scorePeer(new LibP2PNodeId(peerId));
+              builder.appSpecificScore(appSpecificScore);
+            });
 
-    // Ip whitelisting
-    final List<InetAddress> whitelistedIps = config.getWhitelistedIps();
-    final Function1<? super String, Boolean> isIpWhitelisted =
-        ipString -> {
-          try {
-            return !whitelistedIps.isEmpty()
-                && whitelistedIps.contains(InetAddress.getByName(ipString));
-          } catch (UnknownHostException e) {
-            return false;
-          }
-        };
+    config
+        .getDirectPeerManager()
+        .ifPresent(
+            mgr -> {
+              final Function1<? super PeerId, Boolean> isDirectPeer =
+                  peerId -> mgr.isDirectPeer(new LibP2PNodeId(peerId));
+              builder.isDirect(isDirectPeer);
+            });
 
-    return GossipPeerScoreParams.builder()
-        .topicScoreCap(config.getTopicScoreCap())
-        .isDirect(isDirectPeer)
-        .appSpecificScore(appSpecificScore)
-        .appSpecificWeight(config.getAppSpecificWeight())
-        .ipWhitelisted(isIpWhitelisted)
-        .ipColocationFactorWeight(config.getIpColocationFactorWeight())
-        .ipColocationFactorThreshold(config.getIpColocationFactorThreshold())
-        .behaviourPenaltyWeight(config.getBehaviourPenaltyWeight())
-        .behaviourPenaltyDecay(config.getBehaviourPenaltyDecay())
-        .behaviourPenaltyThreshold(config.getBehaviourPenaltyThreshold())
-        .decayInterval(config.getDecayInterval())
-        .decayToZero(config.getDecayToZero())
-        .retainScore(config.getRetainScore())
-        .build();
+    config
+        .getWhitelistManager()
+        .ifPresent(
+            mgr -> {
+              // Ip whitelisting
+              final Function1<? super String, Boolean> isIpWhitelisted = mgr::isWhitelisted;
+              builder.ipWhitelisted(isIpWhitelisted);
+            });
+
+    return builder.build();
   }
 
   public static GossipTopicsScoreParams createTopicsScoreParams(final GossipScoringConfig config) {
