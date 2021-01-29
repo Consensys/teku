@@ -19,6 +19,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class BeaconBlocksByRootRequestMessageTest {
 
@@ -34,6 +35,7 @@ class BeaconBlocksByRootRequestMessageTest {
     final Bytes data = request.sszSerialize();
     final BeaconBlocksByRootRequestMessage result =
         BeaconBlocksByRootRequestMessage.TYPE.sszDeserialize(data);
+    assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
     assertThat(result).isEqualTo(request);
   }
 }

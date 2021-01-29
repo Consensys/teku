@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 class StatusMessageTest {
@@ -35,6 +36,7 @@ class StatusMessageTest {
 
     final Bytes data = SimpleOffsetSerializer.serialize(message);
     final StatusMessage result = SimpleOffsetSerializer.deserialize(data, StatusMessage.class);
+    assertThat(SszTestUtils.equalsByGetters(result, message)).isTrue();
     assertThat(result).isEqualTo(message);
   }
 }
