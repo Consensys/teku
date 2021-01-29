@@ -12,6 +12,10 @@
 
 ## Next Release
 
+### Additions and Improvements
+- Enabled the new sync algorithm by default. This improves sync behaviour when there are multiple forks and distributes requests for blocks across available peers. The old sync algorithm can still be used by setting `--Xp2p-multipeer-sync-enabled=false`.
+- `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
+
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
 
@@ -21,7 +25,6 @@
 - `--validators-external-signer-public-keys` arguments can now include URLs to load the public keys from. The URL should provide a list of public keys as a JSON array.
 - Added support for `block`, `attestation` and `voluntary_exit` event streams from the standard REST API.
 - If an advertised IP is set via `--p2p-advertised-ip` it is always used, regardless of the external IP discovered via the discv5 process.
-- `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
 
 ### Bug Fixes
 - Restored the state cache size to 160 to improve performance during sync.

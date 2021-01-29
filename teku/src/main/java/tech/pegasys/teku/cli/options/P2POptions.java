@@ -129,7 +129,7 @@ public class P2POptions {
       description = "Enables experimental multipeer sync",
       hidden = true,
       arity = "1")
-  private boolean multiPeerSyncEnabled = false;
+  private boolean multiPeerSyncEnabled = true;
 
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
