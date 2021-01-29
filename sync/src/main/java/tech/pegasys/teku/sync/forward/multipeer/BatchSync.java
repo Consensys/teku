@@ -15,6 +15,8 @@ package tech.pegasys.teku.sync.forward.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingConsumer;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingRunnable;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
@@ -115,7 +117,8 @@ public class BatchSync implements Sync {
   @Override
   public SafeFuture<SyncResult> syncToChain(final TargetChain targetChain) {
     final SafeFuture<SyncResult> result = new SafeFuture<>();
-    eventThread.execute(() -> switchSyncTarget(targetChain, result));
+    eventThread.execute(
+        exceptionHandlingRunnable(() -> switchSyncTarget(targetChain, result), result));
     return result;
   }
 
@@ -125,15 +128,15 @@ public class BatchSync implements Sync {
     eventThread.checkOnEventThread();
     // If we're starting a sync after the previous has completed, track the import start time
     // If we're just switching targets, we should still be able to keep imports running
-    if (this.syncResult.isDone()) {
+    final boolean firstChain = this.syncResult.isDone();
+    if (firstChain) {
       this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
     }
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
-    final boolean firstChain = this.targetChain == null;
     this.targetChain = targetChain;
     if (firstChain) {
-      // Only set the common ancestor if we haven't previously sync'd a chain
+      // Only set the common ancestor if we aren't currently syncing a chain
       // Otherwise we'll optimistically assume the new chain extends the current one and only reset
       // the common ancestor if we later find out that's not the case
       this.commonAncestorSlot = getCommonAncestorSlot();
@@ -144,7 +147,7 @@ public class BatchSync implements Sync {
 
   private SafeFuture<UInt64> getCommonAncestorSlot() {
     final SafeFuture<UInt64> commonAncestor = commonAncestorFinder.findCommonAncestor(targetChain);
-    commonAncestor.thenRunAsync(this::progressSync, eventThread).reportExceptions();
+    commonAncestor.thenRunAsync(this::progressSync, eventThread).propagateExceptionTo(syncResult);
     return commonAncestor;
   }
 
@@ -303,7 +306,7 @@ public class BatchSync implements Sync {
               batchImporter
                   .importBatch(batch)
                   .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
-                  .reportExceptions();
+                  .propagateExceptionTo(syncResult);
             });
   }
 
@@ -410,9 +413,11 @@ public class BatchSync implements Sync {
   }
 
   private void fillRetrievingQueue() {
-    if (commonAncestorSlot.isDone() && !commonAncestorSlot.isCompletedExceptionally()) {
+    if (commonAncestorSlot.isCompletedNormally()) {
       batchDataRequester.fillRetrievingQueue(
-          targetChain, commonAncestorSlot.join(), this::onBatchReceivedBlocks);
+          targetChain,
+          commonAncestorSlot.join(),
+          exceptionHandlingConsumer(this::onBatchReceivedBlocks, syncResult));
     }
   }
 

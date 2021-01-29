@@ -18,10 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.nio.file.Path;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V6SeparateRocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
 

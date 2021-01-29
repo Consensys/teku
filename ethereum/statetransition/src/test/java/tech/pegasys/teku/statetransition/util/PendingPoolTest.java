@@ -329,6 +329,30 @@ public class PendingPoolTest {
   }
 
   @Test
+  void getAllRequiredBlockRoots_shouldExcludeRootsForAlreadyPendingItems() {
+    final SignedBeaconBlock blockA =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final Bytes32 parentRoot = blockA.getParentRoot();
+    final SignedBeaconBlock blockB =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot);
+    // Should not be included as blockB is already present
+    final SignedBeaconBlock blockC =
+        dataStructureUtil.randomSignedBeaconBlock(
+            currentSlot.longValue() + 1, blockB.getParentRoot());
+    final SignedBeaconBlock blockD =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() + 1);
+
+    pendingPool.add(blockA);
+    pendingPool.add(blockB);
+    pendingPool.add(blockC);
+    pendingPool.add(blockD);
+    assertThat(pendingPool.size()).isEqualTo(4);
+
+    assertThat(pendingPool.getAllRequiredBlockRoots())
+        .containsExactlyInAnyOrder(parentRoot, blockD.getParentRoot());
+  }
+
+  @Test
   public void getItemsDependingOn_includeIndirect() {
     final int chainDepth = 2;
     final int descendentChainCount = 2;

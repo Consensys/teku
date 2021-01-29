@@ -23,9 +23,12 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -33,6 +36,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.sync.forward.ForwardSync;
+import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFactory;
@@ -40,12 +45,14 @@ import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFact
 public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private Eth2Network eth2Network = mock(Eth2Network.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   @SuppressWarnings("unchecked")
-  private PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+  private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
 
-  private FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+  private final FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+
+  private final ForwardSync forwardSync = mock(ForwardSync.class);
 
   private final int maxConcurrentRequests = 2;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -63,6 +70,7 @@ public class FetchRecentBlocksServiceTest {
             asyncRunner,
             eth2Network,
             pendingBlocksPool,
+            forwardSync,
             fetchBlockTaskFactory,
             maxConcurrentRequests);
 
@@ -233,10 +241,43 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(taskCount - 1, taskCount - 1, 0);
   }
 
+  @Test
+  void shouldNotFetchBlocksWhileForwardSyncIsInProgress() {
+    when(forwardSync.isSyncActive()).thenReturn(true);
+
+    recentBlockFetcher.requestRecentBlock(dataStructureUtil.randomBytes32());
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
+  void shouldRequestRemainingRequiredBlocksWhenForwardSyncCompletes() {
+    final Set<Bytes32> requiredRoots =
+        Set.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32());
+    when(pendingBlocksPool.getAllRequiredBlockRoots()).thenReturn(requiredRoots);
+
+    final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
+        ArgumentCaptor.forClass(SyncSubscriber.class);
+    assertThat(recentBlockFetcher.start()).isCompleted();
+    verify(forwardSync).subscribeToSyncChanges(syncListenerCaptor.capture());
+    final SyncSubscriber syncSubscriber = syncListenerCaptor.getValue();
+
+    syncSubscriber.onSyncingChange(false);
+    assertTaskCounts(2, 2, 0);
+    final Set<Bytes32> requestingRoots =
+        tasks.stream().map(FetchBlockTask::getBlockRoot).collect(Collectors.toSet());
+    assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requestingRoots);
+  }
+
   private void assertTaskCounts(
       final int totalTasks, final int activeTasks, final int queuedTasks) {
-    assertThat(recentBlockFetcher.countTrackedTasks()).isEqualTo(totalTasks);
-    assertThat(recentBlockFetcher.countActiveTasks()).isEqualTo(activeTasks);
-    assertThat(recentBlockFetcher.countPendingTasks()).isEqualTo(queuedTasks);
+    assertThat(recentBlockFetcher.countTrackedTasks())
+        .describedAs("Tracked tasks")
+        .isEqualTo(totalTasks);
+    assertThat(recentBlockFetcher.countActiveTasks())
+        .describedAs("Active tasks")
+        .isEqualTo(activeTasks);
+    assertThat(recentBlockFetcher.countPendingTasks())
+        .describedAs("Pending tasks")
+        .isEqualTo(queuedTasks);
   }
 }

@@ -46,7 +46,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubsc
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;

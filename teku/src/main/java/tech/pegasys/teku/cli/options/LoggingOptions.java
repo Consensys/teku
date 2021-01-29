@@ -171,18 +171,21 @@ public class LoggingOptions {
             .maybeFromCommandLine(getMaybeLogPattern())
             .build();
 
-    return builder.logging(
-        loggingBuilder ->
-            loggingBuilder
-                .colorEnabled(logColorEnabled)
-                .includeEventsEnabled(logIncludeEventsEnabled)
-                .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                .destination(logDestination)
-                .logFile(logFile)
-                .logFileNamePattern(logFileNamePattern)
-                .logWireCipher(logWireCipherEnabled)
-                .logWirePlain(logWirePlainEnabled)
-                .logWireMuxFrames(logWireMuxEnabled)
-                .logWireGossip(logWireGossipEnabled));
+    return builder
+        .logging(
+            loggingBuilder ->
+                loggingBuilder
+                    .colorEnabled(logColorEnabled)
+                    .includeEventsEnabled(logIncludeEventsEnabled)
+                    .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                    .destination(logDestination)
+                    .logFile(logFile)
+                    .logFileNamePattern(logFileNamePattern))
+        .wireLogs(
+            b ->
+                b.logWireCipher(logWireCipherEnabled)
+                    .logWirePlain(logWirePlainEnabled)
+                    .logWireMuxFrames(logWireMuxEnabled)
+                    .logWireGossip(logWireGossipEnabled));
   }
 }

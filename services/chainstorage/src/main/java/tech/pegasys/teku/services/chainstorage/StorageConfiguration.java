@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.util.config.StateStorageMode;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class StorageConfiguration {
   private final Optional<Eth1Address> eth1DepositContract;

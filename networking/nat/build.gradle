@@ -1,0 +1,7 @@
+dependencies {
+    implementation project(':infrastructure:async')
+    implementation project(':services:serviceutils')
+    implementation 'org.jupnp:org.jupnp'
+    implementation 'org.jupnp:org.jupnp.support'
+    implementation 'com.squareup.okhttp3:okhttp'
+}

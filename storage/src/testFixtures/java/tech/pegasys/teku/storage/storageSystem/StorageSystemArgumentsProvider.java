@@ -22,8 +22,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
   private final List<Long> stateStorageFrequencyOptions =
