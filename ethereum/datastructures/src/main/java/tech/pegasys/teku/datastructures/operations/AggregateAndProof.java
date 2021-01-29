@@ -53,7 +53,7 @@ public class AggregateAndProof
   private BLSSignature selectionProofCache;
 
   private AggregateAndProof(
-      ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> type,
+      AggregateAndProofType type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -67,16 +67,6 @@ public class AggregateAndProof
     selectionProofCache = selection_proof;
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("index", getIndex())
-        .add("selection_proof", getSelection_proof())
-        .add("aggregate", getAggregate())
-        .toString();
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getIndex() {
     return getField0().get();
   }
@@ -95,5 +85,14 @@ public class AggregateAndProof
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("index", getIndex())
+        .add("selection_proof", getSelection_proof())
+        .add("aggregate", getAggregate())
+        .toString();
   }
 }
