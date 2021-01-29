@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -33,7 +34,7 @@ class LocalSignerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
-  private static final BLSKeyPair KEYPAIR = BLSKeyPair.random(1234);
+  private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final LocalSigner signer = new LocalSigner(KEYPAIR, asyncRunner);

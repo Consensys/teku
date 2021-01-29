@@ -42,7 +42,7 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -72,7 +72,7 @@ public class ValidatorDataProviderTest {
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
-      tech.pegasys.teku.bls.BLSSignature.random(1234);
+      BLSTestUtil.randomSignature(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
 
   @Test
@@ -278,8 +278,8 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
-    AttesterDuty v1 = new AttesterDuty(BLSPublicKey.random(0), 1, 2, 3, 15, 4, ONE);
-    AttesterDuty v2 = new AttesterDuty(BLSPublicKey.random(1), 11, 12, 13, 15, 14, ZERO);
+    AttesterDuty v1 = new AttesterDuty(BLSTestUtil.randomPublicKey(0), 1, 2, 3, 15, 4, ONE);
+    AttesterDuty v2 = new AttesterDuty(BLSTestUtil.randomPublicKey(1), 11, 12, 13, 15, 14, ZERO);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(
             completedFuture(

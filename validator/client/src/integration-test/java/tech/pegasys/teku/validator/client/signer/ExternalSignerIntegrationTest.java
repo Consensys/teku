@@ -50,6 +50,7 @@ import org.mockserver.model.MediaType;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -68,7 +69,7 @@ import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory
 @ExtendWith(MockServerExtension.class)
 public class ExternalSignerIntegrationTest {
   private static final Duration TIMEOUT = Duration.ofMillis(500);
-  private static final BLSKeyPair KEYPAIR = BLSKeyPair.random(1234);
+  private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final JsonProvider jsonProvider = new JsonProvider();

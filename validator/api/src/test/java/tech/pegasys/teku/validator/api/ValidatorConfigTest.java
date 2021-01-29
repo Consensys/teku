@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 class ValidatorConfigTest {
@@ -59,7 +59,7 @@ class ValidatorConfigTest {
   public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerPublicKeys(
-            List.of(BLSKeyPair.random(0).getPublicKey()));
+            List.of(BLSTestUtil.randomKeyPair(0).getPublicKey()));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
@@ -79,7 +79,7 @@ class ValidatorConfigTest {
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
-            .validatorExternalSignerPublicKeys(List.of(BLSKeyPair.random(0).getPublicKey()))
+            .validatorExternalSignerPublicKeys(List.of(BLSTestUtil.randomKeyPair(0).getPublicKey()))
             .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
 
     Assertions.assertThatCode(builder::build).doesNotThrowAnyException();

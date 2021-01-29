@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -30,7 +31,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public class DefaultValidatorStatusLoggerTest {
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final List<BLSPublicKey> validatorKeys = List.of(BLSPublicKey.random(0));
+  private final List<BLSPublicKey> validatorKeys = List.of(BLSTestUtil.randomPublicKey(0));
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DefaultValidatorStatusLogger logger =
