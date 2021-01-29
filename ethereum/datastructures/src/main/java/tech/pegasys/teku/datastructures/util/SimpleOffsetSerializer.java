@@ -19,7 +19,6 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
-import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class SimpleOffsetSerializer {
 
@@ -35,7 +34,6 @@ public class SimpleOffsetSerializer {
     if (value instanceof ViewRead) {
       return ((ViewRead) value).sszSerialize();
     }
-
     throw new UnsupportedOperationException();
   }
 
@@ -43,15 +41,9 @@ public class SimpleOffsetSerializer {
   public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     Optional<ViewType<?>> maybeViewType = ViewType.getType(classInfo);
     if (maybeViewType.isPresent()) {
-      return (T) deserialize(bytes, maybeViewType.get());
+      return (T) maybeViewType.get().sszDeserialize(bytes);
     } else {
       throw new UnsupportedOperationException();
-    }
-  }
-
-  private static ViewRead deserialize(Bytes bytes, ViewType<?> sszViewType) {
-    try (SszReader sszReader = SszReader.fromBytes(bytes)) {
-      return sszViewType.sszDeserialize(sszReader);
     }
   }
 

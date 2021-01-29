@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -63,9 +60,6 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, getObjectRoot()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, getDomain())));
+    return hashTreeRoot();
   }
 }
