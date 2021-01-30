@@ -29,7 +29,7 @@ import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -72,6 +72,6 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   }
 
   private ProposerDuty getProposerDuty(final int validatorIndex, final UInt64 slot) {
-    return new ProposerDuty(new BLSPubKey(BLSPublicKey.random(1)), validatorIndex, slot);
+    return new ProposerDuty(new BLSPubKey(BLSTestUtil.randomPublicKey(1)), validatorIndex, slot);
   }
 }

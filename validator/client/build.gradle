@@ -32,4 +32,5 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':bls'))
 }

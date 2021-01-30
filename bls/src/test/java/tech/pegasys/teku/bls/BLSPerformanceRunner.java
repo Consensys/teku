@@ -83,14 +83,14 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
   void generateRandomSignature(Integer i) {
-    Long time = executeRun(BLSSignature::random, i);
+    Long time = executeRun(BLSTestUtil::randomSignature, i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
   @ParameterizedTest()
   @MethodSource("singleAggregationCount")
   void testAggregateManySignatures(Integer i) {
-    final BLSSignature signature = BLSSignature.random();
+    final BLSSignature signature = BLSTestUtil.randomSignature();
     final List<BLSSignature> sigs = Collections.nCopies(i, signature);
 
     Long time =
@@ -112,7 +112,7 @@ public class BLSPerformanceRunner {
   void testSigning(Integer i) {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
 
-    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
 
     Long time = executeRun(() -> BLS.sign(keyPair1.getSecretKey(), message), i);
     LOG.info("Time for i: {}, time: {}", i, time);
@@ -121,7 +121,7 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCount")
   void testAggregationTime(Integer i) {
-    BLSSignature signature = BLSSignature.random();
+    BLSSignature signature = BLSTestUtil.randomSignature();
 
     Long time =
         executeRun(
@@ -157,7 +157,7 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
   void testSignatureSerialize(Integer i) {
-    BLSSignature signature1 = BLSSignature.random();
+    BLSSignature signature1 = BLSTestUtil.randomSignature();
 
     Long time = executeRun(signature1::toSSZBytes, i);
     LOG.info("Time for i: {}, time: {}", i, time);
@@ -166,7 +166,7 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
   void testSignatureDeserialize(Integer i) {
-    BLSSignature signature1 = BLSSignature.random();
+    BLSSignature signature1 = BLSTestUtil.randomSignature();
     Bytes bytes = signature1.toSSZBytes();
 
     Long time = executeRun(() -> BLSSignature.fromSSZBytes(bytes), i);

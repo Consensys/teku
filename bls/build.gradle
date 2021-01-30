@@ -14,4 +14,7 @@ dependencies {
   testImplementation('com.googlecode.json-simple:json-simple') {
       exclude group: 'junit', module: 'junit'
   }
+
+  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 }
