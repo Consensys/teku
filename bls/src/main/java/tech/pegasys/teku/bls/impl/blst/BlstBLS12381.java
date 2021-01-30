@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,13 +33,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();
@@ -75,8 +74,8 @@ public class BlstBLS12381 implements BLS12381 {
     }
 
     P2 sig = new P2();
-    byte[] sig_for_wire = sig
-            .hash_to(message.toArrayUnsafe(), HashToCurve.ETH2_DST.toString())
+    byte[] sig_for_wire =
+        sig.hash_to(message.toArrayUnsafe(), HashToCurve.ETH2_DST.toString())
             .sign_with(secretKey.getKey())
             .serialize();
 
@@ -97,13 +96,8 @@ public class BlstBLS12381 implements BLS12381 {
       return publicKey.isInfinity() && signature.isInfinity();
     }
     BLST_ERROR res =
-            publicKey.ecPoint.core_verify(
-                    signature.ec2Point,
-                    true,
-                    message.toArrayUnsafe(),
-                    dst.toString(),
-                    new byte[0]
-            );
+        publicKey.ecPoint.core_verify(
+            signature.ec2Point, true, message.toArrayUnsafe(), dst.toString(), new byte[0]);
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
@@ -163,12 +157,11 @@ public class BlstBLS12381 implements BLS12381 {
     Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST.toArrayUnsafe());
     try {
       BLST_ERROR ret =
-              ctx.mul_n_aggregate(
-                      pubKey.ecPoint,
-                      blstSignature.ec2Point,
-                      nextBatchRandomMultiplier(),
-                      message.toArray()
-              );
+          ctx.mul_n_aggregate(
+              pubKey.ecPoint,
+              blstSignature.ec2Point,
+              nextBatchRandomMultiplier(),
+              message.toArray());
       if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
 
       ctx.commit();
@@ -219,7 +212,8 @@ public class BlstBLS12381 implements BLS12381 {
       Pairing ctx0 = blstList.get(0).getCtx();
       boolean mergeRes = true;
       for (int i = 1; i < blstList.size(); i++) {
-        BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());;
+        BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());
+        ;
         mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
       }
 

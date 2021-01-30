@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
-
-import java.util.List;
-import java.util.Random;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class BlstTest {
   private static final Random random = new Random(1);

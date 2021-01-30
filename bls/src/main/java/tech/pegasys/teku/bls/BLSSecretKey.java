@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.bls;
 
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.impl.SecretKeyInterface;
-
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.impl.SecretKeyInterface;
 
 public final class BLSSecretKey {
   /**

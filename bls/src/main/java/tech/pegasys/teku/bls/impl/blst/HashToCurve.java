@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
-
-import java.nio.charset.StandardCharsets;
 
 class HashToCurve {
   // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag
