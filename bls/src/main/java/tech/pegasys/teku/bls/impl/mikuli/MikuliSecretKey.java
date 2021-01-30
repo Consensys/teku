@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
-import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
-
-import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.impl.SecretKey;
+import tech.pegasys.teku.bls.impl.SecretKeyInterface;
 import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
+import java.util.Objects;
+
+import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
+
 /** This class represents a BLS12-381 private key. */
-public class MikuliSecretKey implements SecretKey {
+public class MikuliSecretKey implements SecretKeyInterface {
 
   /**
    * Create a private key from bytes
@@ -37,11 +38,11 @@ public class MikuliSecretKey implements SecretKey {
     return new MikuliSecretKey(new Scalar(BIG.fromBytes(Bytes48.leftPad(bytes).toArrayUnsafe())));
   }
 
-  public static MikuliSecretKey fromSecretKey(SecretKey genericSecretKey) {
-    if (genericSecretKey instanceof MikuliSecretKey) {
-      return (MikuliSecretKey) genericSecretKey;
+  public static MikuliSecretKey fromSecretKey(SecretKeyInterface genericSecretKeyInterface) {
+    if (genericSecretKeyInterface instanceof MikuliSecretKey) {
+      return (MikuliSecretKey) genericSecretKeyInterface;
     } else {
-      return fromBytes(genericSecretKey.toBytes());
+      return fromBytes(genericSecretKeyInterface.toBytes());
     }
   }
 
@@ -83,17 +84,11 @@ public class MikuliSecretKey implements SecretKey {
     return scalarValue;
   }
 
-  /** Overwrites the key with zeros so that it is no longer in memory */
-  @Override
-  public void destroy() {
-    scalarValue.destroy();
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SecretKey)) return false;
-    MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKey) o);
+    if (!(o instanceof SecretKeyInterface)) return false;
+    MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKeyInterface) o);
     return Objects.equals(scalarValue, secretKey.scalarValue);
   }
 

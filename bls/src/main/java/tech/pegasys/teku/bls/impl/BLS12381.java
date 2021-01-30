@@ -83,7 +83,7 @@ public interface BLS12381 {
    * @param secretKeyBytes 32 bytes of the private key
    * @return a new SecretKey object
    */
-  SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes);
+  SecretKeyInterface secretKeyFromBytes(Bytes32 secretKeyBytes);
 
   /**
    * Aggregates list of PublicKeys, returns the public key that corresponds to G1 point at infinity

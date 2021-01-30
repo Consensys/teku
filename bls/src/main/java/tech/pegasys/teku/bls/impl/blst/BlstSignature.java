@@ -13,21 +13,20 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.p2;
-import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
-import tech.pegasys.teku.bls.impl.blst.swig.pairing;
+import tech.pegasys.teku.bls.impl.blst.swig.P2;
+import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
+import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
@@ -41,9 +40,8 @@ public class BlstSignature implements Signature {
   static final BlstSignature INFINITY;
 
   static {
-    p2_affine ec2Point = new p2_affine();
-    blst.p2_uncompress(ec2Point, INFINITY_BYTES.toArrayUnsafe());
-    INFINITY = new BlstSignature(ec2Point, true);
+    P2_Affine ec2Point = new P2_Affine(INFINITY_BYTES.toArrayUnsafe());
+    INFINITY = new BlstSignature(ec2Point);
   }
 
   public static BlstSignature fromBytes(Bytes compressed) {
@@ -54,12 +52,14 @@ public class BlstSignature implements Signature {
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         compressed.size());
-    p2_affine ec2Point = new p2_affine();
+    P2_Affine ec2Point = null;
     try {
-      BLST_ERROR rc = blst.p2_uncompress(ec2Point, compressed.toArrayUnsafe());
-      return new BlstSignature(ec2Point, rc == BLST_ERROR.BLST_SUCCESS);
+      ec2Point = new P2_Affine(compressed.toArrayUnsafe());
+      return new BlstSignature(ec2Point);
     } catch (Exception e) {
-      ec2Point.delete();
+      if (ec2Point != null) {
+        ec2Point.delete();
+      }
       throw e;
     }
   }
@@ -76,69 +76,60 @@ public class BlstSignature implements Signature {
     List<BlstSignature> finiteSignatures =
         signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
 
-    if (finiteSignatures.size() < signatures.size()) {
-      return BlstSignature.INFINITY;
-    }
+//    if (finiteSignatures.size() < signatures.size()) {
+//      return BlstSignature.INFINITY;
+//    }
+//
+//    Optional<BlstSignature> invalidSignature =
+//        finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
+//    if (invalidSignature.isPresent()) {
+//      throw new IllegalArgumentException(
+//          "Can't aggregate invalid signature: " + invalidSignature.get());
+//    }
 
-    Optional<BlstSignature> invalidSignature =
-        finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
-    if (invalidSignature.isPresent()) {
-      throw new IllegalArgumentException(
-          "Can't aggregate invalid signature: " + invalidSignature.get());
-    }
-
-    p2 sum = new p2();
+    P2 sum = new P2();
     try {
-      blst.p2_from_affine(sum, finiteSignatures.get(0).ec2Point);
-      for (int i = 1; i < finiteSignatures.size(); i++) {
-        blst.p2_add_affine(sum, sum, finiteSignatures.get(i).ec2Point);
+      for (BlstSignature finiteSignature : finiteSignatures) {
+        sum.aggregate(finiteSignature.ec2Point);
       }
-      p2_affine res = new p2_affine();
-      blst.p2_to_affine(res, sum);
 
-      return new BlstSignature(res, true);
+      return new BlstSignature(sum.to_affine());
     } finally {
       sum.delete();
     }
   }
 
   private static void blstPrepareVerifyAggregated(
-      BlstPublicKey pubKey, Bytes message, pairing ctx, BlstSignature blstSignature) {
+      BlstPublicKey pubKey, Bytes message, Pairing ctx, BlstSignature blstSignature) {
 
     BLST_ERROR ret =
-        blst.pairing_aggregate_pk_in_g1(
-            ctx,
-            pubKey.ecPoint,
-            blstSignature == null ? null : blstSignature.ec2Point,
-            1,
-            message.toArrayUnsafe(),
-            HashToCurve.ETH2_DST.toArrayUnsafe(),
-            null);
+            ctx.aggregate(
+                    pubKey.ecPoint,
+                    blstSignature == null ? null : blstSignature.ec2Point,
+                    message.toArrayUnsafe(),
+                    HashToCurve.ETH2_DST.toArrayUnsafe()
+            );
     if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
   }
 
-  private static boolean blstCompleteVerifyAggregated(pairing ctx) {
+  private static boolean blstCompleteVerifyAggregated(Pairing ctx) {
     try {
-      blst.pairing_commit(ctx);
-      return blst.pairing_finalverify(ctx, null) > 0;
+      ctx.commit();
+      return ctx.finalverify();
     } finally {
       ctx.delete();
     }
   }
 
-  final p2_affine ec2Point;
-  private final boolean isValid;
+  final P2_Affine ec2Point;
 
-  public BlstSignature(p2_affine ec2Point, boolean isValid) {
+  public BlstSignature(P2_Affine ec2Point) {
     this.ec2Point = ec2Point;
-    this.isValid = isValid;
   }
 
   @Override
   public Bytes toBytesCompressed() {
-    byte[] res = new byte[96];
-    blst.p2_affine_compress(res, ec2Point);
-    return Bytes.wrap(res);
+    return Bytes.wrap(ec2Point.compress());
   }
 
   @Override
@@ -161,10 +152,9 @@ public class BlstSignature implements Signature {
       return false;
     }
 
-    pairing ctx = new pairing();
+    Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST.toArrayUnsafe());
 
     try {
-      blst.pairing_init(ctx);
       for (int i = 0; i < keysToMessages.size(); i++) {
         BlstPublicKey publicKey = BlstPublicKey.fromPublicKey(keysToMessages.get(i).getPublicKey());
         Bytes message = keysToMessages.get(i).getMessage();

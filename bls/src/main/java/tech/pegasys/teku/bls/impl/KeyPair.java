@@ -15,20 +15,20 @@ package tech.pegasys.teku.bls.impl;
 
 /** KeyPair represents a public and private key. */
 public class KeyPair {
-  private final SecretKey secretKey;
+  private final SecretKeyInterface secretKeyInterface;
   private final PublicKey publicKey;
 
-  public KeyPair(SecretKey secretKey, PublicKey publicKey) {
-    this.secretKey = secretKey;
+  public KeyPair(SecretKeyInterface secretKeyInterface, PublicKey publicKey) {
+    this.secretKeyInterface = secretKeyInterface;
     this.publicKey = publicKey;
   }
 
-  public KeyPair(SecretKey secretKey) {
-    this(secretKey, secretKey.derivePublicKey());
+  public KeyPair(SecretKeyInterface secretKeyInterface) {
+    this(secretKeyInterface, secretKeyInterface.derivePublicKey());
   }
 
-  public SecretKey getSecretKey() {
-    return secretKey;
+  public SecretKeyInterface getSecretKey() {
+    return secretKeyInterface;
   }
 
   public PublicKey getPublicKey() {

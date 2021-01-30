@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import java.util.Objects;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.impl.SecretKey;
+import tech.pegasys.teku.bls.impl.SecretKeyInterface;
 import tech.pegasys.teku.bls.impl.Signature;
-import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.p1;
-import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
-import tech.pegasys.teku.bls.impl.blst.swig.scalar;
+import tech.pegasys.teku.bls.impl.blst.swig.P1;
+import tech.pegasys.teku.bls.impl.blst.swig.SecretKey;
 
-public class BlstSecretKey implements SecretKey {
+import java.util.Objects;
+import java.util.Random;
+
+public class BlstSecretKey implements SecretKeyInterface {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
 
   public static BlstSecretKey fromBytes(Bytes32 bytes) {
@@ -36,31 +35,32 @@ public class BlstSecretKey implements SecretKey {
   }
 
   private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
-    scalar scalarVal = new scalar();
-    blst.scalar_from_bendian(scalarVal, bytes.toArrayUnsafe());
-    return new BlstSecretKey(scalarVal);
+    SecretKey secretKey = new SecretKey();
+    secretKey.from_bendian(bytes.toArrayUnsafe());
+    return new BlstSecretKey(secretKey);
   }
 
   public static BlstSecretKey generateNew(Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
-    scalar sk = new scalar();
-    blst.keygen(sk, ikm, null);
+    SecretKey sk = new SecretKey();
+    sk.keygen(ikm);
     return new BlstSecretKey(sk);
   }
 
-  private final scalar scalarVal;
-  private boolean destroyed = false;
+  private final tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey;
 
-  public BlstSecretKey(scalar scalarVal) {
-    this.scalarVal = scalarVal;
+  public BlstSecretKey(SecretKey secretKey) {
+    this.secretKey = secretKey;
+  }
+
+  public SecretKey getKey() {
+    return secretKey;
   }
 
   @Override
   public Bytes32 toBytes() {
-    byte[] res = new byte[32];
-    blst.bendian_from_scalar(res, getScalarVal());
-    return Bytes32.wrap(res);
+    return Bytes32.wrap(secretKey.to_bendian());
   }
 
   @Override
@@ -74,31 +74,12 @@ public class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public void destroy() {
-    blst.scalar_from_bendian(getScalarVal(), Bytes32.ZERO.toArrayUnsafe());
-    destroyed = true;
-  }
-
-  @Override
   public BlstPublicKey derivePublicKey() {
     if (isZero()) {
       return BlstPublicKey.INFINITY;
     }
-    p1 pk = new p1();
-    try {
-      blst.sk_to_pk_in_g1(pk, getScalarVal());
-      p1_affine pkAffine = new p1_affine();
-      blst.p1_to_affine(pkAffine, pk);
-
-      return new BlstPublicKey(pkAffine);
-    } finally {
-      pk.delete();
-    }
-  }
-
-  scalar getScalarVal() {
-    if (destroyed) throw new IllegalStateException("Private key was destroyed");
-    return scalarVal;
+    P1 pk = new P1(secretKey);
+    return new BlstPublicKey(pk.to_affine());
   }
 
   @SuppressWarnings("ReferenceEquality")
@@ -116,9 +97,9 @@ public class BlstSecretKey implements SecretKey {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SecretKey)) {
+    if (!(o instanceof SecretKeyInterface)) {
       return false;
     }
-    return Objects.equals(toBytes(), ((SecretKey) o).toBytes());
+    return Objects.equals(toBytes(), ((SecretKeyInterface) o).toBytes());
   }
 }

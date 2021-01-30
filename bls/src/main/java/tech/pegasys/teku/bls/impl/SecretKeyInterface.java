@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 /** This class represents a BLS12-381 private key. */
-public interface SecretKey {
+public interface SecretKeyInterface {
 
   /**
    * Returns byte secret key representation
@@ -45,9 +45,6 @@ public interface SecretKey {
    * @return The Signature, not null
    */
   Signature sign(Bytes message, Bytes dst);
-
-  /** Overwrites the key with zeros so that it is no longer in memory */
-  void destroy();
 
   /** Implementation must override */
   @Override

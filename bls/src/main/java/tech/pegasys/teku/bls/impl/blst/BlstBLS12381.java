@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -30,10 +24,16 @@ import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.p2;
-import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
-import tech.pegasys.teku.bls.impl.blst.swig.pairing;
+import tech.pegasys.teku.bls.impl.blst.swig.P2;
+import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
+import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();
@@ -74,18 +74,13 @@ public class BlstBLS12381 implements BLS12381 {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     }
 
-    p2 hash = HashToCurve.hashToG2(message, dst);
-    p2 p2Signature = new p2();
-    try {
-      blst.sign_pk_in_g1(p2Signature, hash, secretKey.getScalarVal());
-      p2_affine p2SignatureAffine = new p2_affine();
-      blst.p2_to_affine(p2SignatureAffine, p2Signature);
+    P2 sig = new P2();
+    byte[] sig_for_wire = sig
+            .hash_to(message.toArrayUnsafe(), HashToCurve.ETH2_DST.toString())
+            .sign_with(secretKey.getKey())
+            .serialize();
 
-      return new BlstSignature(p2SignatureAffine, true);
-    } finally {
-      hash.delete();
-      p2Signature.delete();
-    }
+    return new BlstSignature(new P2_Affine(sig_for_wire));
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
@@ -102,13 +97,13 @@ public class BlstBLS12381 implements BLS12381 {
       return publicKey.isInfinity() && signature.isInfinity();
     }
     BLST_ERROR res =
-        blst.core_verify_pk_in_g1(
-            publicKey.ecPoint,
-            signature.ec2Point,
-            1,
-            message.toArrayUnsafe(),
-            dst.toArrayUnsafe(),
-            new byte[0]);
+            publicKey.ecPoint.core_verify(
+                    signature.ec2Point,
+                    true,
+                    message.toArrayUnsafe(),
+                    dst.toString(),
+                    new byte[0]
+            );
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
@@ -164,23 +159,19 @@ public class BlstBLS12381 implements BLS12381 {
   BatchSemiAggregate blstPrepareBatchVerify(
       BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
 
-    p2 g2Hash = HashToCurve.hashToG2(message);
-    p2_affine p2Affine = new p2_affine();
-    pairing ctx = new pairing();
+    P2 g2Hash = HashToCurve.hashToG2(message);
+    Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST.toArrayUnsafe());
     try {
-      blst.p2_to_affine(p2Affine, g2Hash);
-      blst.pairing_init(ctx);
       BLST_ERROR ret =
-          blst.pairing_mul_n_aggregate_pk_in_g1(
-              ctx,
-              pubKey.ecPoint,
-              blstSignature.ec2Point,
-              p2Affine,
-              nextBatchRandomMultiplier(),
-              BATCH_RANDOM_BYTES * 8);
+              ctx.mul_n_aggregate(
+                      pubKey.ecPoint,
+                      blstSignature.ec2Point,
+                      nextBatchRandomMultiplier(),
+                      message.toArray()
+              );
       if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
 
-      blst.pairing_commit(ctx);
+      ctx.commit();
 
       return new BlstFiniteSemiAggregate(ctx);
     } catch (Exception e) {
@@ -188,7 +179,6 @@ public class BlstBLS12381 implements BLS12381 {
       throw e;
     } finally {
       g2Hash.delete();
-      p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
     }
   }
 
@@ -226,15 +216,14 @@ public class BlstBLS12381 implements BLS12381 {
       if (blstList.isEmpty()) {
         return !anyInvalidInfinity;
       }
-      pairing ctx0 = blstList.get(0).getCtx();
+      Pairing ctx0 = blstList.get(0).getCtx();
       boolean mergeRes = true;
       for (int i = 1; i < blstList.size(); i++) {
-        BLST_ERROR ret = blst.pairing_merge(ctx0, blstList.get(i).getCtx());
+        BLST_ERROR ret = ctx0.merge(blstList.get(i).getCtx());;
         mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
       }
 
-      int boolRes = blst.pairing_finalverify(ctx0, null);
-      return mergeRes && boolRes != 0 && !anyInvalidInfinity;
+      return mergeRes && ctx0.finalverify() && !anyInvalidInfinity;
 
     } finally {
       preparedList.stream()

@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.bls;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.impl.SecretKeyInterface;
+
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
   /**
@@ -53,19 +54,19 @@ public final class BLSSecretKey {
     return fromBytes(keyBytes);
   }
 
-  private SecretKey secretKey;
+  private SecretKeyInterface secretKeyInterface;
 
   /**
    * Construct from a Mikuli SecretKey object.
    *
-   * @param secretKey A Mikuli SecretKey
+   * @param secretKeyInterface A Mikuli SecretKey
    */
-  public BLSSecretKey(SecretKey secretKey) {
-    this.secretKey = secretKey;
+  public BLSSecretKey(SecretKeyInterface secretKeyInterface) {
+    this.secretKeyInterface = secretKeyInterface;
   }
 
-  SecretKey getSecretKey() {
-    return secretKey;
+  SecretKeyInterface getSecretKey() {
+    return secretKeyInterface;
   }
 
   public BLSPublicKey toPublicKey() {
@@ -73,12 +74,7 @@ public final class BLSSecretKey {
   }
 
   public Bytes32 toBytes() {
-    return secretKey.toBytes();
-  }
-
-  /** Overwrites the key with zeros so that it is no longer in memory */
-  public void destroy() {
-    secretKey.destroy();
+    return secretKeyInterface.toBytes();
   }
 
   @Override
@@ -86,11 +82,11 @@ public final class BLSSecretKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final BLSSecretKey that = (BLSSecretKey) o;
-    return secretKey.equals(that.secretKey);
+    return secretKeyInterface.equals(that.secretKeyInterface);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(secretKey);
+    return Objects.hash(secretKeyInterface);
   }
 }

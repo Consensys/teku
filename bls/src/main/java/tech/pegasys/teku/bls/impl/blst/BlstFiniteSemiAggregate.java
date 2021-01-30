@@ -15,8 +15,7 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.pairing;
+import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
 
 final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
 
@@ -46,14 +45,14 @@ final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
     }
   }
 
-  private final pairing ctx;
+  private final Pairing ctx;
   private boolean released = false;
 
-  BlstFiniteSemiAggregate(pairing ctx) {
+  BlstFiniteSemiAggregate(Pairing ctx) {
     this.ctx = ctx;
   }
 
-  pairing getCtx() {
+  Pairing getCtx() {
     if (released) throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
     return ctx;
   }
@@ -65,7 +64,7 @@ final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
   }
 
   void mergeWith(BlstFiniteSemiAggregate other) {
-    BLST_ERROR ret = blst.pairing_merge(getCtx(), other.getCtx());
+    BLST_ERROR ret = getCtx().merge(other.getCtx());
     if (ret != BLST_ERROR.BLST_SUCCESS) {
       throw new IllegalStateException("Error merging Blst pairing contexts: " + ret);
     }
