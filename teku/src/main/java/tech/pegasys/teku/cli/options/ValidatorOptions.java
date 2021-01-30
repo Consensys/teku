@@ -85,7 +85,7 @@ public class ValidatorOptions {
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
-  private boolean useDependentRoots = false;
+  private boolean useDependentRoots = true;
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
