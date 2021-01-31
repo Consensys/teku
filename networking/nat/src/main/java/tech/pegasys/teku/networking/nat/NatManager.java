@@ -29,16 +29,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jupnp.UpnpService;
 import org.jupnp.UpnpServiceImpl;
-import org.jupnp.model.action.ActionInvocation;
-import org.jupnp.model.message.UpnpResponse;
 import org.jupnp.model.meta.RemoteDevice;
-import org.jupnp.model.meta.RemoteDeviceIdentity;
 import org.jupnp.model.meta.RemoteService;
 import org.jupnp.model.types.UnsignedIntegerFourBytes;
 import org.jupnp.model.types.UnsignedIntegerTwoBytes;
 import org.jupnp.registry.Registry;
 import org.jupnp.registry.RegistryListener;
-import org.jupnp.support.igd.callback.GetExternalIP;
 import org.jupnp.support.model.PortMapping;
 import tech.pegasys.teku.infrastructure.async.FutureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -132,58 +128,23 @@ public class NatManager extends Service {
     wanIpConnection
         .thenAccept(
             service -> {
-
-              // our query, which will be handled asynchronously by the jupnp library
-              GetExternalIP callback =
-                  new GetExternalIP(service) {
-
-                    /**
-                     * Override the success(ActionInvocation) version of success so that we can take
-                     * a peek at the network interface that we discovered this on.
-                     *
-                     * <p>Because the underlying jupnp library omits generics info in this method
-                     * signature, we must too when we override it.
-                     */
-                    @Override
-                    @SuppressWarnings("rawtypes")
-                    public void success(final ActionInvocation invocation) {
-                      RemoteService service = (RemoteService) invocation.getAction().getService();
-                      RemoteDevice device = service.getDevice();
-                      RemoteDeviceIdentity identity = device.getIdentity();
-
-                      discoveredOnLocalAddress =
-                          Optional.of(identity.getDiscoveredOnLocalAddress().getHostAddress());
-
-                      super.success(invocation);
-                    }
-
-                    @Override
-                    protected void success(final String result) {
-
-                      LOG.info(
-                          "External IP address {} detected for internal address {}",
-                          result,
-                          discoveredOnLocalAddress.get());
-
-                      externalIpQueryFuture.complete(result);
-                    }
-
-                    /**
-                     * Because the underlying jupnp library omits generics info in this method
-                     * signature, we must too when we override it.
-                     */
-                    @Override
-                    @SuppressWarnings("rawtypes")
-                    public void failure(
-                        final ActionInvocation invocation,
-                        final UpnpResponse operation,
-                        final String msg) {
-                      externalIpQueryFuture.completeExceptionally(new Exception(msg));
-                    }
-                  };
+              TekuGetExternalIP callback = new TekuGetExternalIP(service);
               FutureUtil.ignoreFuture(upnpService.getControlPoint().execute(callback));
+              callback
+                  .getFuture()
+                  .thenAccept(
+                      externalIpAddress -> {
+                        LOG.info("Finished getting IP Address");
+                        discoveredOnLocalAddress = callback.getDiscoveredOnLocalAddress();
+                        externalIpQueryFuture.complete(externalIpAddress);
+                      })
+                  .finish(
+                      error -> {
+                        LOG.debug("Failed to get external ip address", error);
+                        externalIpQueryFuture.completeExceptionally(error);
+                      });
             })
-        .finish(error -> LOG.warn("Failed to retrieve external ip address", error));
+        .finish(error -> LOG.debug("Failed to retrieve external ip address", error));
   }
 
   @VisibleForTesting
