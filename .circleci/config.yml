@@ -278,6 +278,17 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel -no-configure-on-demand bintrayUpload
 
+  publish-cloudsmith:
+    executor: small_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish to Cloudsmith
+          command: |
+            ./gradlew --no-daemon --parallel cloudsmithUpload publish
+
   publishDocker:
     executor: medium_executor
     steps:
@@ -428,6 +439,25 @@ workflows:
               only:
                 - master
                 - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+          context:
+            - dockerhub-quorumengineering-ro
+            - quorum-gradle
+      - publish-cloudsmith:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+                - cloudsmith
             tags:
               <<: *filters-release-tags
           requires:
