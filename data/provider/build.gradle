@@ -24,4 +24,5 @@ dependencies {
     testImplementation testFixtures(project(':ethereum:datastructures'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':storage'))
+    testImplementation testFixtures(project(':bls'))
 }

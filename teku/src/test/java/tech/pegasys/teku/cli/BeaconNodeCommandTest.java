@@ -409,7 +409,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 b.eth1Endpoint("http://localhost:8545")
                     .depositContract(address)
                     .eth1LogsMaxBlockRange(10_000))
-        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
+        .store(b -> b.hotStatePersistenceFrequencyInEpochs(2).updateHeadForEmptySlots(false))
         .storageConfiguration(
             b ->
                 b.eth1DepositContract(Optional.of(address))
@@ -428,7 +428,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .advertisedPort(OptionalInt.of(9000))
                     .advertisedIp(Optional.empty())
                     .privateKeyFile("path/to/file"))
-        .sync(s -> s.isSyncEnabled(false).isMultiPeerSyncEnabled(false))
+        .sync(s -> s.isSyncEnabled(false).isMultiPeerSyncEnabled(true))
         .restApi(
             b ->
                 b.restApiPort(5051)
@@ -444,6 +444,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .validatorExternalSignerConcurrentRequestLimit(32)
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
+                    .useDependentRoots(true)
                     .graffitiProvider(new FileBackedGraffitiProvider()))
         .logging(
             b ->

@@ -21,9 +21,9 @@ class AtePairingTest {
 
   @Test
   void pairAndPair2AreEquivalent() {
-    G1Point p1 = G1Point.random(1L);
+    G1Point p1 = MikuliTestUtil.randomG1Point(1L);
     G2Point q2 = G2Point.random(2L);
-    G1Point r1 = G1Point.random(3L);
+    G1Point r1 = MikuliTestUtil.randomG1Point(3L);
     G2Point s2 = G2Point.random(4L);
 
     GTPoint expected = AtePairing.pair(p1, q2).mul(AtePairing.pair(r1, s2));
@@ -34,9 +34,9 @@ class AtePairingTest {
 
   @Test
   void pairNoExpPlusFexpAndPairAreSame() {
-    G1Point p1 = G1Point.random(1L);
+    G1Point p1 = MikuliTestUtil.randomG1Point(1L);
     G2Point q2 = G2Point.random(2L);
-    G1Point r1 = G1Point.random(3L);
+    G1Point r1 = MikuliTestUtil.randomG1Point(3L);
     G2Point s2 = G2Point.random(4L);
 
     assertEquals(AtePairing.pair(p1, q2), AtePairing.fexp(AtePairing.pairNoExp(p1, q2)));

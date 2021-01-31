@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.DepositOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeyGenerationOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.VerbosityOptions;
@@ -127,8 +128,8 @@ class GenerateKeysAndSendDepositsCommandTest {
   private List<ValidatorKeys> createValidatorKeys(final int noOfKeysToCreate) {
     final List<ValidatorKeys> validatorKeys = new ArrayList<>();
     for (int i = 1; i <= noOfKeysToCreate * 2; i += 2) {
-      final BLSKeyPair validatorKey = BLSKeyPair.random(i);
-      final BLSKeyPair withdrawalKey = BLSKeyPair.random(i + 1);
+      final BLSKeyPair validatorKey = BLSTestUtil.randomKeyPair(i);
+      final BLSKeyPair withdrawalKey = BLSTestUtil.randomKeyPair(i + 1);
       validatorKeys.add(new ValidatorKeys(validatorKey, withdrawalKey));
     }
     return validatorKeys;
