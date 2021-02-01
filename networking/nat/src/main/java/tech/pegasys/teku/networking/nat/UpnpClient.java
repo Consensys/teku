@@ -129,8 +129,7 @@ public class UpnpClient {
         .thenCompose(
             address -> {
               // note that this future is a dependency of externalIpQueryFuture, so it must be
-              // completed
-              // by now
+              // completed by now
               RemoteService service = getWanIpFuture().join();
 
               // at this point, we should have the local address we discovered the IGD on,
