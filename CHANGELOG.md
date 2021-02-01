@@ -1,7 +1,9 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-
+- Binary downloads will be transitioned from Bintray to Cloudsmith.  Please ensure you use links in the documentation or release notes.
+  Ansible users should ensure they have the latest version of the ansible role.
+  To ensure a smooth migration, releases are currently published to both Cloudsmith and Bintray but support for Bintray will be dropped in the near future.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments will be removed in a future release.
