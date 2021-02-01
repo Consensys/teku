@@ -31,7 +31,11 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
       extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
     public VoteTrackerType() {
-      super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE);
+      super(
+          "VoteTracker",
+          namedType("currentRoot", BasicViewTypes.BYTES32_TYPE),
+          namedType("nextRoot", BasicViewTypes.BYTES32_TYPE),
+          namedType("nextEpoch", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -55,18 +59,6 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
     super(TYPE, new Bytes32View(currentRoot), new Bytes32View(nextRoot), new UInt64View(nextEpoch));
-  }
-
-  @Override
-  public String toString() {
-    return "VoteTracker{"
-        + "currentRoot="
-        + getCurrentRoot()
-        + ", nextRoot="
-        + getNextRoot()
-        + ", nextEpoch="
-        + getNextEpoch()
-        + '}';
   }
 
   public Bytes32 getCurrentRoot() {

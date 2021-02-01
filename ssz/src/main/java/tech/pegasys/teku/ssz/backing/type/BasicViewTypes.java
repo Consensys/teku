@@ -59,6 +59,11 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
         }
+
+        @Override
+        public String toString() {
+          return "Bit";
+        }
       };
 
   public static final BasicViewType<ByteView> BYTE_TYPE =
@@ -79,6 +84,11 @@ public class BasicViewTypes {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
+        }
+
+        @Override
+        public String toString() {
+          return "Byte";
         }
       };
 
@@ -123,6 +133,11 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[8];
         }
+
+        @Override
+        public String toString() {
+          return "UInt64";
+        }
       };
 
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
@@ -146,6 +161,11 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[4];
         }
+
+        @Override
+        public String toString() {
+          return "Bytes4";
+        }
       };
 
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
@@ -163,6 +183,11 @@ public class BasicViewTypes {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public String toString() {
+          return "Bytes32";
         }
       };
 

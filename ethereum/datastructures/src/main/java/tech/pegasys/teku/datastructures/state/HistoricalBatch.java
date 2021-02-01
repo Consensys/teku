@@ -35,18 +35,21 @@ public class HistoricalBatch
     extends Container2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
     implements SimpleOffsetSerializable, SSZContainer {
 
-  static class HistoricalBatchType
+  public static class HistoricalBatchType
       extends ContainerType2<
           HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>> {
 
-    private final VectorViewType<Bytes32View> blockRootsType;
-    private final VectorViewType<Bytes32View> stateRootsType;
-
-    public HistoricalBatchType(
-        VectorViewType<Bytes32View> blockRootsType, VectorViewType<Bytes32View> stateRootsType) {
-      super(blockRootsType, stateRootsType);
-      this.blockRootsType = blockRootsType;
-      this.stateRootsType = stateRootsType;
+    public HistoricalBatchType() {
+      super(
+          "HistoricalBatch",
+          namedType(
+              "block_roots",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)),
+          namedType(
+              "state_roots",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
     }
 
     @Override
@@ -59,11 +62,11 @@ public class HistoricalBatch
     }
 
     public VectorViewType<Bytes32View> getBlockRootsType() {
-      return blockRootsType;
+      return (VectorViewType<Bytes32View>) getFieldType0();
     }
 
     public VectorViewType<Bytes32View> getStateRootsType() {
-      return stateRootsType;
+      return (VectorViewType<Bytes32View>) getFieldType1();
     }
   }
 
@@ -73,13 +76,7 @@ public class HistoricalBatch
   }
 
   public static final SpecDependent<HistoricalBatchType> TYPE =
-      SpecDependent.of(
-          () ->
-              new HistoricalBatchType(
-                  new VectorViewType<>(
-                      BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-                  new VectorViewType<>(
-                      BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
+      SpecDependent.of(HistoricalBatchType::new);
 
   private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
     super(type, backingNode);

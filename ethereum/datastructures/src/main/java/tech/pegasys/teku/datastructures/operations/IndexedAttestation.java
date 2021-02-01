@@ -43,11 +43,19 @@ public class IndexedAttestation
       extends ContainerType3<
           IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
 
-    static final ListViewType<UInt64View> AttestingIndicesType =
-        new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-
     public IndexedAttestationType() {
-      super(AttestingIndicesType, AttestationData.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "IndexedAttestation",
+          namedType(
+              "attesting_indices",
+              new ListViewType<>(
+                  BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedType("data", AttestationData.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+    }
+
+    public ListViewType<UInt64View> getAttestingIndicesType() {
+      return (ListViewType<UInt64View>) getFieldType0();
     }
 
     @Override
@@ -68,8 +76,7 @@ public class IndexedAttestation
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.toListView(
-            IndexedAttestationType.AttestingIndicesType, attesting_indices, UInt64View::new),
+        ViewUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
         data,
         ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;

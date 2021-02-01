@@ -34,7 +34,10 @@ public class SignedVoluntaryExit
       extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
 
     public SignedVoluntaryExitType() {
-      super(VoluntaryExit.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "SignedVoluntaryExit",
+          namedType("message", VoluntaryExit.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
     }
 
     @Override

@@ -29,7 +29,10 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
   static class VoluntaryExitType extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
 
     public VoluntaryExitType() {
-      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE);
+      super(
+          "VoluntaryExit",
+          namedType("epoch", BasicViewTypes.UINT64_TYPE),
+          namedType("validator_index", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override

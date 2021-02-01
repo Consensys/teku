@@ -36,19 +36,22 @@ public class PendingAttestation
         PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
     implements Copyable<PendingAttestation>, SimpleOffsetSerializable, SSZContainer {
 
-  private static final BitListType AGGREGATION_BITS_TYPE =
-      new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE);
-
-  static class PendingAttestationType
+  public static class PendingAttestationType
       extends ContainerType4<
           PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
 
     public PendingAttestationType() {
       super(
-          AGGREGATION_BITS_TYPE,
-          AttestationData.TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE);
+          "PendingAttestation",
+          namedType(
+              "aggregation_bitfield", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedType("data", AttestationData.TYPE),
+          namedType("inclusion_delay", BasicViewTypes.UINT64_TYPE),
+          namedType("proposer_index", BasicViewTypes.UINT64_TYPE));
+    }
+
+    public BitListType getAggregationBitfieldType() {
+      return (BitListType) getFieldType0();
     }
 
     @Override
@@ -70,7 +73,7 @@ public class PendingAttestation
       UInt64 proposer_index) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(AGGREGATION_BITS_TYPE, aggregation_bitfield),
+        ViewUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
         data,
         new UInt64View(inclusion_delay),
         new UInt64View(proposer_index));
@@ -103,19 +106,5 @@ public class PendingAttestation
 
   public UInt64 getProposer_index() {
     return getField3().get();
-  }
-
-  @Override
-  public String toString() {
-    return "PendingAttestation{"
-        + "aggregation_bits="
-        + getAggregation_bits()
-        + ", data="
-        + getData()
-        + ", inclusion_delay="
-        + getInclusion_delay()
-        + ", proposer_index="
-        + getProposer_index()
-        + '}';
   }
 }

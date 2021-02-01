@@ -33,7 +33,10 @@ public class SignedBeaconBlockHeader
       extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
 
     public SignedBeaconBlockHeaderType() {
-      super(BeaconBlockHeader.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "SignedBeaconBlockHeader",
+          namedType("message", BeaconBlockHeader.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
     }
 
     @Override

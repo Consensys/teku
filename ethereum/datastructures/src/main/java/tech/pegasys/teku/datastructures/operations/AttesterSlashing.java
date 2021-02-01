@@ -35,7 +35,10 @@ public class AttesterSlashing
       extends ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
     public AttesterSlashingType() {
-      super(IndexedAttestation.TYPE, IndexedAttestation.TYPE);
+      super(
+          "AttesterSlashing",
+          namedType("attestation_1", IndexedAttestation.TYPE),
+          namedType("attestation_2", IndexedAttestation.TYPE));
     }
 
     @Override

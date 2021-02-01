@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.base.MoreObjects;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -32,7 +32,11 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
   static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
 
     public ForkType() {
-      super(BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE);
+      super(
+          "Fork",
+          namedType("previous_version", BasicViewTypes.BYTES4_TYPE),
+          namedType("current_version", BasicViewTypes.BYTES4_TYPE),
+          namedType("epoch", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -65,14 +69,5 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
 
   public UInt64 getEpoch() {
     return getField2().get();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("previous_version", getPrevious_version())
-        .add("current_version", getCurrent_version())
-        .add("epoch", getEpoch())
-        .toString();
   }
 }

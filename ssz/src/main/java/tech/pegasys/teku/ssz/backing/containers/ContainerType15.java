@@ -139,6 +139,44 @@ public abstract class ContainerType15<
             fieldType14));
   }
 
+  protected ContainerType15(
+      String containerName,
+      NamedType<V0> fieldNamedType0,
+      NamedType<V1> fieldNamedType1,
+      NamedType<V2> fieldNamedType2,
+      NamedType<V3> fieldNamedType3,
+      NamedType<V4> fieldNamedType4,
+      NamedType<V5> fieldNamedType5,
+      NamedType<V6> fieldNamedType6,
+      NamedType<V7> fieldNamedType7,
+      NamedType<V8> fieldNamedType8,
+      NamedType<V9> fieldNamedType9,
+      NamedType<V10> fieldNamedType10,
+      NamedType<V11> fieldNamedType11,
+      NamedType<V12> fieldNamedType12,
+      NamedType<V13> fieldNamedType13,
+      NamedType<V14> fieldNamedType14) {
+
+    super(
+        containerName,
+        List.of(
+            fieldNamedType0,
+            fieldNamedType1,
+            fieldNamedType2,
+            fieldNamedType3,
+            fieldNamedType4,
+            fieldNamedType5,
+            fieldNamedType6,
+            fieldNamedType7,
+            fieldNamedType8,
+            fieldNamedType9,
+            fieldNamedType10,
+            fieldNamedType11,
+            fieldNamedType12,
+            fieldNamedType13,
+            fieldNamedType14));
+  }
+
   @SuppressWarnings("unchecked")
   public ViewType<V0> getFieldType0() {
     return (ViewType<V0>) getChildType(0);

@@ -32,7 +32,11 @@ public final class BeaconBlocksByRangeRequestMessage
           BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> {
 
     public BeaconBlocksByRangeRequestMessageType() {
-      super(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE);
+      super(
+          "BeaconBlocksByRangeRequestMessage",
+          namedType("startSlot", BasicViewTypes.UINT64_TYPE),
+          namedType("count", BasicViewTypes.UINT64_TYPE),
+          namedType("step", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override

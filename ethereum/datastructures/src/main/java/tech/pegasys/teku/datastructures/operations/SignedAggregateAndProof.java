@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -34,7 +34,10 @@ public class SignedAggregateAndProof
       extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
 
     public SignedAggregateAndProofType() {
-      super(AggregateAndProof.TYPE, ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "SignedAggregateAndProof",
+          namedType("message", AggregateAndProof.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
     }
 
     @Override
@@ -66,13 +69,5 @@ public class SignedAggregateAndProof
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("message", getMessage())
-        .add("signature", getSignature())
-        .toString();
   }
 }

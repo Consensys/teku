@@ -56,7 +56,7 @@ public class ListViewWriteImpl<
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected ContainerViewReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new ListContainerRead<>(listType, backingNode, viewCache);
     }

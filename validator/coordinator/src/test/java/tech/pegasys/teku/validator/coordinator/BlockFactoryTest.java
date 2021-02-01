@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createProposerSlashings;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createVoluntaryExits;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createAttestations;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createAttesterSlashings;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createDeposits;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createProposerSlashings;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createVoluntaryExits;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.eventbus.EventBus;

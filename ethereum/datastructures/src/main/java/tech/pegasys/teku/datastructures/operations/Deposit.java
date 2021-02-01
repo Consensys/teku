@@ -33,16 +33,21 @@ import tech.pegasys.teku.util.config.Constants;
 public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData>
     implements SimpleOffsetSerializable, SSZContainer {
 
-  private static final VectorViewType<Bytes32View> PROOF_TYPE =
-      new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-  private static final SSZVector<Bytes32> EMPTY_PROOF =
-      SSZVector.createMutable(PROOF_TYPE.getLength(), Bytes32.ZERO);
-
   public static class DepositType
       extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
 
     public DepositType() {
-      super(PROOF_TYPE, DepositData.TYPE);
+      super(
+          "Deposit",
+          namedType(
+              "proof",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+          namedType("data", DepositData.TYPE));
+    }
+
+    public VectorViewType<Bytes32View> getProofType() {
+      return (VectorViewType<Bytes32View>) getFieldType0();
     }
 
     @Override
@@ -53,12 +58,15 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   @SszTypeDescriptor public static final DepositType TYPE = new DepositType();
 
+  private static final SSZVector<Bytes32> EMPTY_PROOF =
+      SSZVector.createMutable(TYPE.getProofType().getLength(), Bytes32.ZERO);
+
   private Deposit(DepositType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(TYPE, ViewUtils.toVectorView(PROOF_TYPE, proof, Bytes32View::new), data);
+    super(TYPE, ViewUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
   }
 
   public Deposit() {

@@ -66,32 +66,44 @@ public class BeaconBlockBody
           ListViewRead<Deposit>,
           ListViewRead<SignedVoluntaryExit>> {
 
-    final ListViewType<ProposerSlashing> proposerSlashingsType;
-    final ListViewType<AttesterSlashing> attesterSlashingsType;
-    final ListViewType<Attestation> attestationsType;
-    final ListViewType<Deposit> depositsType;
-    final ListViewType<SignedVoluntaryExit> voluntaryExitsType;
-
-    public BeaconBlockBodyType(
-        ListViewType<ProposerSlashing> proposerSlashingsType,
-        ListViewType<AttesterSlashing> attesterSlashingsType,
-        ListViewType<Attestation> attestationsType,
-        ListViewType<Deposit> depositsType,
-        ListViewType<SignedVoluntaryExit> voluntaryExitsType) {
+    public BeaconBlockBodyType() {
       super(
-          ComplexViewTypes.BYTES_96_TYPE,
-          Eth1Data.TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          proposerSlashingsType,
-          attesterSlashingsType,
-          attestationsType,
-          depositsType,
-          voluntaryExitsType);
-      this.proposerSlashingsType = proposerSlashingsType;
-      this.attesterSlashingsType = attesterSlashingsType;
-      this.attestationsType = attestationsType;
-      this.depositsType = depositsType;
-      this.voluntaryExitsType = voluntaryExitsType;
+          "BeaconBlockBody",
+          namedType("randao_reveal", ComplexViewTypes.BYTES_96_TYPE),
+          namedType("eth1_data", Eth1Data.TYPE),
+          namedType("graffiti", BasicViewTypes.BYTES32_TYPE),
+          namedType(
+              "proposer_slashings",
+              new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
+          namedType(
+              "attester_slashings",
+              new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
+          namedType(
+              "attestations", new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
+          namedType("deposits", new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
+          namedType(
+              "voluntary_exits",
+              new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+    }
+
+    public ListViewType<ProposerSlashing> getProposerSlashingsType() {
+      return (ListViewType<ProposerSlashing>) getFieldType3();
+    }
+
+    public ListViewType<AttesterSlashing> getAttesterSlashingsType() {
+      return (ListViewType<AttesterSlashing>) getFieldType4();
+    }
+
+    public ListViewType<Attestation> getAttestationsType() {
+      return (ListViewType<Attestation>) getFieldType5();
+    }
+
+    public ListViewType<Deposit> getDepositsType() {
+      return (ListViewType<Deposit>) getFieldType6();
+    }
+
+    public ListViewType<SignedVoluntaryExit> getVoluntaryExitsType() {
+      return (ListViewType<SignedVoluntaryExit>) getFieldType7();
     }
 
     @Override
@@ -106,14 +118,7 @@ public class BeaconBlockBody
   }
 
   public static final SpecDependent<BeaconBlockBodyType> TYPE =
-      SpecDependent.of(
-          () ->
-              new BeaconBlockBodyType(
-                  new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS),
-                  new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS),
-                  new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS),
-                  new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS),
-                  new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+      SpecDependent.of(BeaconBlockBodyType::new);
 
   private BLSSignature randaoRevealCache;
 
@@ -159,11 +164,11 @@ public class BeaconBlockBody
         ViewUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
         eth1_data,
         new Bytes32View(graffiti),
-        ViewUtils.toListView(type.proposerSlashingsType, proposer_slashings),
-        ViewUtils.toListView(type.attesterSlashingsType, attester_slashings),
-        ViewUtils.toListView(type.attestationsType, attestations),
-        ViewUtils.toListView(type.depositsType, deposits),
-        ViewUtils.toListView(type.voluntaryExitsType, voluntary_exits));
+        ViewUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
+        ViewUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
+        ViewUtils.toListView(type.getAttestationsType(), attestations),
+        ViewUtils.toListView(type.getDepositsType(), deposits),
+        ViewUtils.toListView(type.getVoluntaryExitsType(), voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 

@@ -50,6 +50,15 @@ public abstract class ContainerType3<
     super(List.of(fieldType0, fieldType1, fieldType2));
   }
 
+  protected ContainerType3(
+      String containerName,
+      NamedType<V0> fieldNamedType0,
+      NamedType<V1> fieldNamedType1,
+      NamedType<V2> fieldNamedType2) {
+
+    super(containerName, List.of(fieldNamedType0, fieldNamedType1, fieldNamedType2));
+  }
+
   @SuppressWarnings("unchecked")
   public ViewType<V0> getFieldType0() {
     return (ViewType<V0>) getChildType(0);

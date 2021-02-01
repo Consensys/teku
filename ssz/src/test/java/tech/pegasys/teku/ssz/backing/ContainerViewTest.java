@@ -34,7 +34,6 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractCompositeViewRead;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -202,7 +201,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected SubContainerReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
@@ -237,8 +236,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+    protected ContainerReadImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 

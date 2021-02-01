@@ -40,7 +40,10 @@ public class DepositMessage
 
     public DepositMessageType() {
       super(
-          ComplexViewTypes.BYTES_48_TYPE, BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE);
+          "DepositMessage",
+          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
+          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
+          namedType("amount", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override

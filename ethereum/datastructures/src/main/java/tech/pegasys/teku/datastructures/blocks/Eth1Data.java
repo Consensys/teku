@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -33,7 +32,11 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
       extends ContainerType3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
 
     public Eth1DataType() {
-      super(BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE);
+      super(
+          "Eth1Data",
+          namedType("deposit_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("deposit_count", BasicViewTypes.UINT64_TYPE),
+          namedType("block_hash", BasicViewTypes.BYTES32_TYPE));
     }
 
     @Override
@@ -76,14 +79,5 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
   /** @return the block_hash */
   public Bytes32 getBlock_hash() {
     return getField2().get();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("deposit_root", getDeposit_root())
-        .add("deposit_count", getDeposit_count())
-        .add("block_hash", getBlock_hash())
-        .toString();
   }
 }

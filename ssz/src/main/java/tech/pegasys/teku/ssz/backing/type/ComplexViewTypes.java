@@ -36,6 +36,11 @@ public class ComplexViewTypes {
           bytes.size() > getMaxLength(), "Bytes length exceeds List type maximum length ");
       return ViewUtils.createListFromBytes(this, bytes);
     }
+
+    @Override
+    public String toString() {
+      return "ByteList[" + getMaxLength() + "]";
+    }
   }
 
   public static class ByteVectorType extends VectorViewType<ByteView> {
@@ -48,17 +53,32 @@ public class ComplexViewTypes {
           bytes.size() == getLength(), "Bytes length doesn't match Vector type length ");
       return ViewUtils.createVectorFromBytes(this, bytes);
     }
+
+    @Override
+    public String toString() {
+      return "Bytes" + getLength();
+    }
   }
 
   public static class BitListType extends ListViewType<BitView> {
     public BitListType(long maxLength) {
       super(BasicViewTypes.BIT_TYPE, maxLength);
     }
+
+    @Override
+    public String toString() {
+      return "BitList[" + getMaxLength() + "]";
+    }
   }
 
   public static class BitVectorType extends VectorViewType<BitView> {
     public BitVectorType(long maxLength) {
       super(BasicViewTypes.BIT_TYPE, maxLength);
+    }
+
+    @Override
+    public String toString() {
+      return "BitVector[" + getLength() + "]";
     }
   }
 }
