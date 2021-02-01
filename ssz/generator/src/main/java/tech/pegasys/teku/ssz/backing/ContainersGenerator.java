@@ -102,6 +102,11 @@ public class ContainersGenerator {
                     .mapToObj(i -> "fieldType" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
+                "NamedFields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldNamedType" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
                 "ViewParams",
                 IntStream.range(0, fieldsCount)
                     .mapToObj(i -> "V" + i + " arg" + i)

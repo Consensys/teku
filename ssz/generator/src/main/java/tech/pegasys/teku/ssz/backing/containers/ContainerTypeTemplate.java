@@ -62,7 +62,7 @@ public abstract class /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<
       /*$$NamedFieldsDeclarations*/ NamedType<V0> fieldNamedType0,
       NamedType<V1> fieldNamedType1 /*$$*/) {
 
-    super(containerName, List.of(fieldNamedType0, fieldNamedType1));
+    super(containerName, List.of(/*$$NamedFields*/ fieldNamedType0, fieldNamedType1 /*$$*/));
   }
 
   /*$$TypeGetters*/

@@ -42,7 +42,7 @@ public abstract class ContainerType1<C extends ContainerViewRead, V0 extends Vie
 
   protected ContainerType1(String containerName, NamedType<V0> fieldNamedType0) {
 
-    super(containerName, List.of(fieldNamedType0, fieldNamedType1));
+    super(containerName, List.of(fieldNamedType0));
   }
 
   @SuppressWarnings("unchecked")

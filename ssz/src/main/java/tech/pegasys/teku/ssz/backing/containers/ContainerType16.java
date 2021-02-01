@@ -165,7 +165,25 @@ public abstract class ContainerType16<
       NamedType<V14> fieldNamedType14,
       NamedType<V15> fieldNamedType15) {
 
-    super(containerName, List.of(fieldNamedType0, fieldNamedType1));
+    super(
+        containerName,
+        List.of(
+            fieldNamedType0,
+            fieldNamedType1,
+            fieldNamedType2,
+            fieldNamedType3,
+            fieldNamedType4,
+            fieldNamedType5,
+            fieldNamedType6,
+            fieldNamedType7,
+            fieldNamedType8,
+            fieldNamedType9,
+            fieldNamedType10,
+            fieldNamedType11,
+            fieldNamedType12,
+            fieldNamedType13,
+            fieldNamedType14,
+            fieldNamedType15));
   }
 
   @SuppressWarnings("unchecked")
