@@ -22,8 +22,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
-public class PingMessage extends Container1<PingMessage, UInt64View>
-    implements RpcRequest {
+public class PingMessage extends Container1<PingMessage, UInt64View> implements RpcRequest {
 
   static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
 

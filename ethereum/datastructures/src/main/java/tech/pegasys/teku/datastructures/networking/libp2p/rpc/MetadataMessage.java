@@ -31,8 +31,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class MetadataMessage
-    extends Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>>
-    implements RpcRequest {
+    extends Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>> implements RpcRequest {
 
   static class MetadataMessageType
       extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

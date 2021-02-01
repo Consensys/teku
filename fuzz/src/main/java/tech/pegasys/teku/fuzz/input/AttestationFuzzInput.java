@@ -21,7 +21,8 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttestationFuzzInput extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
+public class AttestationFuzzInput
+    extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
   @SszTypeDescriptor
   public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
