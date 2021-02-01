@@ -16,24 +16,21 @@ package tech.pegasys.teku.infrastructure.metrics;
 import io.vertx.core.Vertx;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.hyperledger.besu.metrics.MetricsService;
 import org.hyperledger.besu.metrics.prometheus.MetricsConfiguration;
-import org.hyperledger.besu.metrics.prometheus.MetricsService;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class MetricsEndpoint {
 
   private final Optional<MetricsService> metricsService;
-  private final MetricsSystem metricsSystem;
+  private final PrometheusMetricsSystem metricsSystem;
 
   public MetricsEndpoint(final MetricsConfig config, final Vertx vertx) {
     final MetricsConfiguration metricsConfig = createMetricsConfiguration(config);
-    metricsSystem = PrometheusMetricsSystem.init(metricsConfig);
-    if (metricsConfig.isEnabled()) {
-      metricsService = Optional.of(MetricsService.create(vertx, metricsConfig, metricsSystem));
-    } else {
-      metricsService = Optional.empty();
-    }
+    metricsSystem = new PrometheusMetricsSystem(config.getMetricsCategories(), true);
+    metricsSystem.init();
+    metricsService = MetricsService.create(vertx, metricsConfig, metricsSystem);
   }
 
   public CompletableFuture<?> start() {
