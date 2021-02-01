@@ -52,9 +52,6 @@ class ScoringConfig {
   private final Duration decayInterval;
   private final Duration targetScoringDuration;
 
-  // Chain-specific and dynamic variables that can be updated over time
-  private volatile Eth2Context eth2Context;
-
   private ScoringConfig(final SpecConstants constants, final int d) {
     this.constants = constants;
     this.d = d;
