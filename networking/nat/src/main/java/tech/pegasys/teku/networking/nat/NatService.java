@@ -43,7 +43,7 @@ public class NatService extends Service {
         p2pPort,
         isDiscoveryEnabled,
         natConfiguration.getNatMethod().equals(NatMethod.UPNP)
-            ? Optional.of(new NatManager(natConfiguration.getNatMethod()))
+            ? Optional.of(new NatManager())
             : Optional.empty());
   }
 
