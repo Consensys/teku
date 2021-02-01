@@ -28,7 +28,7 @@ class CheckpointTest {
     Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     Bytes checkpointSerialized = checkpoint.sszSerialize();
     Checkpoint newCheckpoint =
-        SimpleOffsetSerializer.deserialize(checkpointSerialized, Checkpoint.class);
+        Checkpoint.TYPE.sszDeserialize(checkpointSerialized);
     assertEquals(checkpoint, newCheckpoint);
   }
 }

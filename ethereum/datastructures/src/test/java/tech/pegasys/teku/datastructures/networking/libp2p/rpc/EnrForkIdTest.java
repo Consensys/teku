@@ -27,7 +27,7 @@ class EnrForkIdTest {
   public void shouldRoundTripViaSsz() {
     final EnrForkId original = dataStructureUtil.randomEnrForkId();
     final Bytes encoded = original.sszSerialize();
-    final EnrForkId result = SimpleOffsetSerializer.deserialize(encoded, EnrForkId.class);
+    final EnrForkId result = EnrForkId.TYPE.sszDeserialize(encoded);
     assertThat(result).isEqualTo(original);
   }
 }

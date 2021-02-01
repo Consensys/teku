@@ -77,6 +77,6 @@ class ProposerSlashingTest {
     Bytes sszProposerSlashingBytes = proposerSlashing.sszSerialize();
     assertEquals(
         proposerSlashing,
-        SimpleOffsetSerializer.deserialize(sszProposerSlashingBytes, ProposerSlashing.class));
+        ProposerSlashing.TYPE.sszDeserialize(sszProposerSlashingBytes));
   }
 }

@@ -46,10 +46,10 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -72,8 +72,8 @@ public class ForkChoiceTestExecutor {
       Map content = mapper.readValue(file, Map.class);
 
       if (content.containsKey("steps")) {
-        BeaconStateImpl genesisState =
-            resolvePart(BeaconStateImpl.class, file, content.get("genesis"));
+        BeaconState genesisState =
+            resolvePart(BeaconState.class, BeaconState.getSszType(), file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
@@ -111,11 +111,11 @@ public class ForkChoiceTestExecutor {
         }
       case block:
         {
-          return resolvePart(SignedBeaconBlock.class, file, value);
+          return resolvePart(SignedBeaconBlock.class, SignedBeaconBlock.TYPE.get(), file, value);
         }
       case attestation:
         {
-          return resolvePart(Attestation.class, file, value);
+          return resolvePart(Attestation.class, Attestation.TYPE, file, value);
         }
       case checks:
         {
@@ -133,15 +133,14 @@ public class ForkChoiceTestExecutor {
         .get(0);
   }
 
-  private static <T> T resolvePart(Class<T> clazz, File testFile, Object value) {
+  private static <T extends ViewRead> T resolvePart(Class<T> clazz, ViewType<T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
         Path partPath = Paths.get(testFile.getParentFile().getParent(), "cache", path);
         try {
           if (path.endsWith(".ssz")) {
-            return SimpleOffsetSerializer.deserialize(
-                Bytes.wrap(Files.readAllBytes(partPath)), clazz);
+            return type.sszDeserialize(Bytes.wrap(Files.readAllBytes(partPath)));
           } else {
             return mapper.readValue(partPath.toFile(), clazz);
           }

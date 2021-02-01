@@ -109,7 +109,7 @@ class PendingAttestationTest {
             proposerIndex.plus(dataStructureUtil.randomUInt64()));
     Bytes ssz = testPendingAttestation.sszSerialize();
     PendingAttestation attestation =
-        SimpleOffsetSerializer.deserialize(ssz, PendingAttestation.class);
+        PendingAttestation.TYPE.sszDeserialize(ssz);
     assertEquals(testPendingAttestation, attestation);
   }
 }

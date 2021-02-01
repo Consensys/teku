@@ -28,7 +28,7 @@ class AggregateAndProofTest {
     AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     assertEquals(
         aggregateAndProof,
-        SimpleOffsetSerializer.deserialize(
-            aggregateAndProof.sszSerialize(), AggregateAndProof.class));
+        AggregateAndProof.TYPE.sszDeserialize(
+            aggregateAndProof.sszSerialize()));
   }
 }

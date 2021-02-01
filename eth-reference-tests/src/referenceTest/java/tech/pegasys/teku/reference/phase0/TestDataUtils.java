@@ -27,14 +27,16 @@ import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class TestDataUtils {
 
-  public static <T> T loadSsz(
-      final TestDefinition testDefinition, final String fileName, final Class<T> type) {
+  public static <T extends ViewRead> T loadSsz(
+      final TestDefinition testDefinition, final String fileName, final ViewType<T> type) {
     try {
       final Path path = testDefinition.getTestDirectory().resolve(fileName);
-      return SimpleOffsetSerializer.deserialize(Bytes.wrap(Files.readAllBytes(path)), type);
+      return type.sszDeserialize(Bytes.wrap(Files.readAllBytes(path)));
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -42,7 +44,7 @@ public class TestDataUtils {
 
   public static BeaconState loadStateFromSsz(
       final TestDefinition testDefinition, final String fileName) {
-    return loadSsz(testDefinition, fileName, BeaconStateImpl.class);
+    return loadSsz(testDefinition, fileName, BeaconState.getSszType());
   }
 
   public static Bytes32 loadBytes32FromSsz(

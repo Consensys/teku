@@ -31,7 +31,7 @@ public class BlockHeaderFuzzInput
   @SszTypeDescriptor
   public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
+        BeaconState.getSszType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
   }
 
   private BlockHeaderFuzzInput(
@@ -39,7 +39,7 @@ public class BlockHeaderFuzzInput
     super(type, backingNode);
   }
 
-  public BlockHeaderFuzzInput(final BeaconStateImpl state, final BeaconBlock block) {
+  public BlockHeaderFuzzInput(final BeaconState state, final BeaconBlock block) {
     super(createType(), state, block);
   }
 

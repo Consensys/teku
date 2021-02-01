@@ -15,12 +15,14 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationFuzzInput> {
 
+
   @Override
-  protected Class<AttestationFuzzInput> getInputType() {
-    return AttestationFuzzInput.class;
+  protected ViewType<AttestationFuzzInput> getInputType() {
+    return AttestationFuzzInput.createType();
   }
 
   @Override

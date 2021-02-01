@@ -27,7 +27,7 @@ class VoteTrackerTest {
   void shouldRoundTripViaSsz() {
     VoteTracker voteTracker = dataStructureUtil.randomVoteTracker();
     Bytes ser = voteTracker.sszSerialize();
-    VoteTracker deser = SimpleOffsetSerializer.deserialize(ser, VoteTracker.class);
+    VoteTracker deser = VoteTracker.TYPE.sszDeserialize(ser);
     assertEquals(voteTracker, deser);
   }
 }

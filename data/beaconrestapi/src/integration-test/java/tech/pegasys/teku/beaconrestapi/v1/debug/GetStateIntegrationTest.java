@@ -59,7 +59,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final Response response = get("head", HEADER_ACCEPT_OCTET);
     assertThat(response.code()).isEqualTo(SC_OK);
     final BeaconState state =
-        SimpleOffsetSerializer.deserialize(Bytes.wrap(response.body().bytes()), BeaconState.class);
+        BeaconState.getSszType().sszDeserialize(Bytes.wrap(response.body().bytes()));
     assertThat(state).isNotNull();
   }
 

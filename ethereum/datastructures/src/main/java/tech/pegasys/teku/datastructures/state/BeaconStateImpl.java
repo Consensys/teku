@@ -37,7 +37,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   private final TransitionCaches transitionCaches;
 
   public BeaconStateImpl() {
-    super(BeaconState.getSSZType());
+    super(BeaconState.getSszType());
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
@@ -94,7 +94,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
       Checkpoint finalized_checkpoint) {
 
     super(
-        BeaconState.getSSZType(),
+        BeaconState.getSszType(),
         BeaconState.create(
                 genesis_time,
                 genesis_validators_root,

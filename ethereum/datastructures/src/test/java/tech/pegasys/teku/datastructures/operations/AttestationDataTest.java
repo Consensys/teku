@@ -161,6 +161,6 @@ class AttestationDataTest {
     Bytes sszAttestationDataBytes = attestationData.sszSerialize();
     assertEquals(
         attestationData,
-        SimpleOffsetSerializer.deserialize(sszAttestationDataBytes, AttestationData.class));
+        AttestationData.TYPE.sszDeserialize(sszAttestationDataBytes));
   }
 }

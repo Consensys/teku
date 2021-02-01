@@ -103,7 +103,7 @@ class BeaconBlockTest {
   @Test
   void roundtripSSZ() {
     final Bytes ssz = beaconBlock.sszSerialize();
-    final BeaconBlock result = SimpleOffsetSerializer.deserialize(ssz, BeaconBlock.class);
+    final BeaconBlock result =  BeaconBlock.TYPE.get().sszDeserialize(ssz);
     assertThat(result).isEqualTo(beaconBlock);
   }
 }

@@ -68,7 +68,7 @@ public class HistoricalBatchTest {
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = batch.sszSerialize();
-    HistoricalBatch result = SimpleOffsetSerializer.deserialize(serialized, HistoricalBatch.class);
+    HistoricalBatch result = HistoricalBatch.TYPE.get().sszDeserialize(serialized);
     assertEquals(batch, result);
   }
 }

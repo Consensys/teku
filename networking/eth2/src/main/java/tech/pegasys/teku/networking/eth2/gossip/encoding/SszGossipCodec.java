@@ -21,8 +21,8 @@ import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
 
 class SszGossipCodec {
 
-  public <T extends SimpleOffsetSerializable> Bytes encode(final T value) {
-    return value.sszSerialize();
+  public <T> Bytes encode(final T value) {
+    return ((SimpleOffsetSerializable) value).sszSerialize();
   }
 
   public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {

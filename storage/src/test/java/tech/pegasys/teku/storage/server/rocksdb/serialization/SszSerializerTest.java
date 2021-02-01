@@ -27,11 +27,11 @@ public class SszSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final SszSerializer<SignedBeaconBlock> blockSerializer =
-      new SszSerializer<>(SignedBeaconBlock.class);
+      new SszSerializer<>(SignedBeaconBlock.getSszType());
   private final SszSerializer<BeaconState> stateSerializer =
-      new SszSerializer<>(BeaconStateImpl.class);
+      new SszSerializer<>(BeaconState.getSszType());
   private final SszSerializer<Checkpoint> checkpointSerializer =
-      new SszSerializer<>(Checkpoint.class);
+      new SszSerializer<>(Checkpoint.TYPE);
 
   @Test
   public void roundTrip_block() {

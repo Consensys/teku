@@ -28,7 +28,7 @@ class SignedAggregateAndProofTest {
     final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes data = original.sszSerialize();
     final SignedAggregateAndProof result =
-        SimpleOffsetSerializer.deserialize(data, SignedAggregateAndProof.class);
+        SignedAggregateAndProof.TYPE.sszDeserialize(data);
     assertThat(result).isEqualTo(original);
   }
 }

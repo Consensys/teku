@@ -42,7 +42,7 @@ class SignedBeaconBlockHeaderTest {
   public void shouldRoundTripViaSsz() {
     final Bytes ssz = signedBlockHeader.sszSerialize();
     final SignedBeaconBlockHeader result =
-        SimpleOffsetSerializer.deserialize(ssz, SignedBeaconBlockHeader.class);
+        SignedBeaconBlockHeader.TYPE.sszDeserialize(ssz);
 
     assertThat(result).isEqualTo(signedBlockHeader);
   }

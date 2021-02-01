@@ -26,7 +26,7 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
   @SszTypeDescriptor
   public static ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
+        BeaconState.getSszType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(
@@ -34,7 +34,7 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
     super(type, backingNode);
   }
 
-  public BlockFuzzInput(final BeaconStateImpl state, final SignedBeaconBlock signed_block) {
+  public BlockFuzzInput(final BeaconState state, final SignedBeaconBlock signed_block) {
     super(createType(), state, signed_block);
   }
 

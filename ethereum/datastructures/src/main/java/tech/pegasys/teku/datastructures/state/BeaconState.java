@@ -114,7 +114,7 @@ public interface BeaconState extends ContainerViewRead {
   SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, Checkpoint.TYPE);
 
   @SszTypeDescriptor
-  static ContainerViewType<BeaconState> getSSZType() {
+  static ContainerViewType<BeaconState> getSszType() {
     return ContainerViewType.create(
         Stream.of(
                 GENESIS_TIME_FIELD,

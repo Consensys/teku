@@ -64,6 +64,6 @@ class VoluntaryExitTest {
     Bytes sszVoluntaryExitBytes = voluntaryExit.sszSerialize();
     assertEquals(
         voluntaryExit,
-        SimpleOffsetSerializer.deserialize(sszVoluntaryExitBytes, VoluntaryExit.class));
+        VoluntaryExit.TYPE.sszDeserialize(sszVoluntaryExitBytes));
   }
 }

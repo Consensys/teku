@@ -27,7 +27,7 @@ public class AttestationFuzzInput
   @SszTypeDescriptor
   public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+        BeaconState.getSszType(), Attestation.TYPE, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
@@ -35,7 +35,7 @@ public class AttestationFuzzInput
     super(type, backingNode);
   }
 
-  public AttestationFuzzInput(final BeaconStateImpl state, final Attestation attestation) {
+  public AttestationFuzzInput(final BeaconState state, final Attestation attestation) {
     super(createType(), state, attestation);
   }
 

@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 
-  static class EnrForkIdType extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
+  public static class EnrForkIdType extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 
     public EnrForkIdType() {
       super(

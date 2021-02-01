@@ -15,13 +15,14 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class ProposerSlashingFuzzInputTest
     extends AbstractFuzzInputTest<ProposerSlashingFuzzInput> {
 
   @Override
-  protected Class<ProposerSlashingFuzzInput> getInputType() {
-    return ProposerSlashingFuzzInput.class;
+  protected ViewType<ProposerSlashingFuzzInput> getInputType() {
+    return ProposerSlashingFuzzInput.createType();
   }
 
   @Override

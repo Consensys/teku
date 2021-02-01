@@ -51,7 +51,7 @@ public class IsVariableTest {
         Arguments.of(Attestation.TYPE),
         Arguments.of(AttesterSlashing.TYPE),
         Arguments.of(IndexedAttestation.TYPE),
-        Arguments.of(BeaconState.getSSZType()),
+        Arguments.of(BeaconState.getSszType()),
         Arguments.of(PendingAttestation.TYPE),
         Arguments.of(AggregateAndProof.TYPE));
   }

@@ -16,18 +16,20 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class SszSerializer<T extends SimpleOffsetSerializable> implements RocksDbSerializer<T> {
+public class SszSerializer<T extends ViewRead> implements RocksDbSerializer<T> {
 
-  private final Class<? extends T> classInfo;
+  private final ViewType<T> type;
 
-  public <TImplementation extends T> SszSerializer(final Class<TImplementation> classInfo) {
-    this.classInfo = classInfo;
+  public SszSerializer(final ViewType<T> type) {
+    this.type = type;
   }
 
   @Override
   public T deserialize(final byte[] data) {
-    return SimpleOffsetSerializer.deserialize(Bytes.wrap(data), classInfo);
+    return type.sszDeserialize(Bytes.wrap(data));
   }
 
   @Override

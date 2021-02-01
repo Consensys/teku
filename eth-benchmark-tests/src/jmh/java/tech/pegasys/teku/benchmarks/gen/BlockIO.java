@@ -55,7 +55,7 @@ public class BlockIO {
         int size = inputStream.readInt();
         byte[] bytes = new byte[size];
         inputStream.readFully(bytes);
-        return SimpleOffsetSerializer.deserialize(Bytes.wrap(bytes), SignedBeaconBlock.class);
+        return SignedBeaconBlock.TYPE.get().sszDeserialize(Bytes.wrap(bytes));
       } catch (Exception e) {
         return null;
       }

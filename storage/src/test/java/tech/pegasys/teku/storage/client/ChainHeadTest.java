@@ -21,11 +21,10 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ChainHeadTest {
@@ -129,17 +128,17 @@ public class ChainHeadTest {
 
   private ChainHead copy(ChainHead original) {
     final SignedBeaconBlock blockCopy =
-        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.class);
+        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.TYPE.get());
     final BeaconState stateCopy =
-        copy((BeaconStateImpl) original.getState(), BeaconStateImpl.class);
+        copy(original.getState(), BeaconState.getSszType());
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy);
   }
 
-  private <T extends SimpleOffsetSerializable> T copy(final T original, final Class<T> objType) {
+  private <T extends ViewRead> T copy(final T original, final ViewType<T> objType) {
     final Bytes serialized = original.sszSerialize();
-    return SimpleOffsetSerializer.deserialize(serialized, objType);
+    return objType.sszDeserialize(serialized);
   }
 
   private UInt64 copy(final UInt64 value) {

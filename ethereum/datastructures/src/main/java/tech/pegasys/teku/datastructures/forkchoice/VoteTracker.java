@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
-  static class VoteTrackerType
+  public static class VoteTrackerType
       extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
     public VoteTrackerType() {

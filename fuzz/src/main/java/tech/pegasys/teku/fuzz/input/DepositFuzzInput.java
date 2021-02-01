@@ -15,7 +15,6 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -25,7 +24,7 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
 
   @SszTypeDescriptor
   public static ContainerType2<DepositFuzzInput, BeaconState, Deposit> createType() {
-    return ContainerType2.create(BeaconState.getSSZType(), Deposit.TYPE, DepositFuzzInput::new);
+    return ContainerType2.create(BeaconState.getSszType(), Deposit.TYPE, DepositFuzzInput::new);
   }
 
   public DepositFuzzInput(
@@ -33,7 +32,7 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
     super(type, backingNode);
   }
 
-  public DepositFuzzInput(final BeaconStateImpl state, final Deposit deposit) {
+  public DepositFuzzInput(final BeaconState state, final Deposit deposit) {
     super(createType(), state, deposit);
   }
 

@@ -22,8 +22,10 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.fuzz.FuzzUtil;
 import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public abstract class AbstractFuzzInputTest<T extends SimpleOffsetSerializable> {
+public abstract class AbstractFuzzInputTest<T extends ViewRead> {
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
@@ -37,11 +39,11 @@ public abstract class AbstractFuzzInputTest<T extends SimpleOffsetSerializable> 
     T original = createInput();
 
     final Bytes serialized = original.sszSerialize();
-    T deserialized = SimpleOffsetSerializer.deserialize(serialized, getInputType());
+    T deserialized = getInputType().sszDeserialize(serialized);
     assertThat(deserialized).isEqualTo(original);
   }
 
-  protected abstract Class<T> getInputType();
+  protected abstract ViewType<T> getInputType();
 
   protected abstract T createInput();
 }

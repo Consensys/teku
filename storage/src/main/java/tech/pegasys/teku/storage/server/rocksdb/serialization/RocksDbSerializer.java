@@ -30,9 +30,9 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
   RocksDbSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   RocksDbSerializer<SignedBeaconBlock> SIGNED_BLOCK_SERIALIZER =
-      new SszSerializer<>(SignedBeaconBlock.class);
-  RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
-  RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
+      new SszSerializer<>(SignedBeaconBlock.getSszType());
+  RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconState.getSszType());
+  RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.TYPE);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
       new DepositsFromBlockEventSerializer();

@@ -36,7 +36,7 @@ class GoodbyeMessageTest {
   @Test
   public void shouldDeserializeFromSsz() {
     final GoodbyeMessage result =
-        SimpleOffsetSerializer.deserialize(EXPECTED_SSZ, GoodbyeMessage.class);
+        GoodbyeMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
     assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }
