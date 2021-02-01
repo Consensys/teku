@@ -278,6 +278,22 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel -no-configure-on-demand bintrayUpload
 
+  publish-cloudsmith:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Install Python3
+          command: |
+            sudo apt update
+            sudo apt install python3 python3-pip python3-venv
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish to Cloudsmith
+          command: |
+            ./gradlew --no-daemon --parallel cloudsmithUpload publish
+
   publishDocker:
     executor: medium_executor
     steps:
@@ -423,6 +439,24 @@ workflows:
               <<: *filters-release-tags
           context: dockerhub-quorumengineering-ro
       - publish:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+          context:
+            - dockerhub-quorumengineering-ro
+            - quorum-gradle
+      - publish-cloudsmith:
           filters:
             branches:
               only:
