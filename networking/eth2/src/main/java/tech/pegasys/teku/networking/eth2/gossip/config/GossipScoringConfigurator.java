@@ -37,16 +37,21 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
  *     Prime's Lighthouse gossip scoring logic</a>
  */
 class GossipScoringConfigurator implements GossipConfigurator {
+  private static final int GOSSIP_D = 8;
   private final ScoringConfig scoringConfig;
 
   public GossipScoringConfigurator(final SpecConstants specConstants) {
-    this.scoringConfig = ScoringConfig.create(specConstants, GossipConfig.DEFAULT_D);
+    this.scoringConfig = ScoringConfig.create(specConstants, GOSSIP_D);
   }
 
   @Override
   public void configure(
       final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {
-    gossipConfigBuilder.resetDefaults().scoring(b -> configureScoring(b, eth2Context));
+    gossipConfigBuilder
+        .d(GOSSIP_D)
+        .dLazy(GOSSIP_D)
+        .dLow(6)
+        .scoring(b -> configureScoring(b, eth2Context));
   }
 
   @Override
@@ -68,13 +73,14 @@ class GossipScoringConfigurator implements GossipConfigurator {
     final double maxPositiveScore = scoringConfig.getMaxPositiveScore();
 
     final double behaviorPenaltyThreshold = 6.0;
-    final double behaviorPenaltyDecayFactor = scoringConfig.getTargetScoreDecayFactor();
+    final double behaviorPenaltyDecayFactor =
+        scoringConfig.calculateDecayFactor(scoringConfig.getEpochDuration().multipliedBy(10));
     final double targetValue =
         scoringConfig.calculateDecayConvergence(
                 behaviorPenaltyDecayFactor, 10.0 / scoringConfig.getSlotsPerEpoch())
             - behaviorPenaltyThreshold;
     final double behaviorPenaltyWeight =
-        scoringConfig.getGossipThreshold() / Math.pow(targetValue, 2);
+        scoringConfig.getGossipThreshold() / (targetValue * targetValue);
 
     builder
         .gossipThreshold(scoringConfig.getGossipThreshold())
@@ -92,7 +98,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
                     .ipColocationFactorThreshold(3)
                     .behaviourPenaltyWeight(behaviorPenaltyWeight)
                     .behaviourPenaltyThreshold(behaviorPenaltyThreshold)
-                    .behaviourPenaltyDecay(scoringConfig.getTargetScoreDecayFactor())
+                    .behaviourPenaltyDecay(behaviorPenaltyDecayFactor)
                     .topicScoreCap(0.5 * maxPositiveScore));
 
     // Configure topics
@@ -232,10 +238,12 @@ class GossipScoringConfigurator implements GossipConfigurator {
       final int decaySlots =
           multipleBurstsPerSubnetPerEpoch
               ? scoringConfig.convertEpochsToSlots(4)
-              : scoringConfig.convertEpochsToSlots(4);
+              : scoringConfig.convertEpochsToSlots(16);
       final Duration activationWindow =
           multipleBurstsPerSubnetPerEpoch
-              ? scoringConfig.getEpochDuration().multipliedBy(3).dividedBy(2)
+              ? scoringConfig
+                  .getSlotDuration()
+                  .multipliedBy(scoringConfig.getSlotsPerEpoch() / 2 + 1)
               : scoringConfig.getEpochDuration().multipliedBy(3);
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(activationWindow, 16.0, decaySlots);
@@ -288,7 +296,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
               scoringConfig.getMaxFirstMessageDeliveriesScore() / firstMessageDeliveriesCap)
           .invalidMessageDeliveriesWeight(-scoringConfig.getMaxPositiveScore() / topicWeight)
           .invalidMessageDeliveriesDecay(
-              scoringConfig.calculateDecayFactor(scoringConfig.getEpochDuration().multipliedBy(5)));
+              scoringConfig.calculateDecayFactor(
+                  scoringConfig.getEpochDuration().multipliedBy(50)));
 
       messageDeliveryOptions.ifPresentOrElse(
           options -> {
@@ -314,7 +323,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
             if (eth2Context.getCurrentSlot().isLessThan(options.getDecaySlots())) {
               // Disable mesh delivery scoring component until after decaySlots have been processed
-              // by the chain. This prevents us from descoring all of our peers during the period
+              // by the chain. This prevents us from de-scoring all of our peers during the period
               // between the genesis block being known and the chain actually starting up at
               // genesisTime.
               builder.meshMessageDeliveriesThreshold(0.0).meshMessageDeliveriesWeight(0.0);

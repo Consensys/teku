@@ -27,6 +27,7 @@ class ScoringConfig {
   private static final double MAX_FIRST_MESSAGE_DELIVERIES_SCORE = 40.0;
   private static final double BEACON_BLOCK_WEIGHT = 0.5;
   private static final double BEACON_AGGREGATE_PROOF_WEIGHT = 0.5;
+  private static final double ATTESTATION_SUBNET_CUMULATIVE_WEIGHT = 1.0;
   private static final double VOLUNTARY_EXIT_WEIGHT = 0.05;
   private static final double PROPOSER_SLASHING_WEIGHT = 0.05;
   private static final double ATTESTER_SLASHING_WEIGHT = 0.05;
@@ -193,20 +194,17 @@ class ScoringConfig {
   }
 
   private double calculateMaxPositiveScore() {
-    final double attestationSubnetCount = getAttestationSubnetCount();
-    final double subnetWeight = 1.0 / attestationSubnetCount;
-
     return (getMaxInMeshScore() + getMaxFirstMessageDeliveriesScore())
         * (getBeaconBlockWeight()
             + getBeaconAggregateProofWeight()
-            + subnetWeight * attestationSubnetCount
+            + ATTESTATION_SUBNET_CUMULATIVE_WEIGHT
             + getVoluntaryExitWeight()
             + getProposerSlashingWeight()
             + getAttesterSlashingWeight());
   }
 
   public double getAttestationSubnetTopicWeight() {
-    return 1.0 / getAttestationSubnetCount();
+    return ATTESTATION_SUBNET_CUMULATIVE_WEIGHT / getAttestationSubnetCount();
   }
 
   public int getAttestationSubnetCount() {

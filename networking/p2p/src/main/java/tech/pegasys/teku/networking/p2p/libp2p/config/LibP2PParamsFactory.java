@@ -36,6 +36,9 @@ public class LibP2PParamsFactory {
         .DLow(gossipConfig.getDLow())
         .DHigh(gossipConfig.getDHigh())
         .DLazy(gossipConfig.getDLazy())
+        // Calculate dScore and dOut based on other params
+        .DScore(gossipConfig.getD() * 2 / 3)
+        .DOut(Math.min(gossipConfig.getD() / 2, Math.max(0, gossipConfig.getDLow()) - 1))
         .fanoutTTL(gossipConfig.getFanoutTTL())
         .gossipSize(gossipConfig.getAdvertise())
         .gossipHistoryLength(gossipConfig.getHistory())
