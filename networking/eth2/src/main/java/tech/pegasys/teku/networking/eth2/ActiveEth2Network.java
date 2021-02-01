@@ -174,7 +174,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       return startGossip();
     } else if (slotsBehind.isLessThanOrEqualTo(1000)) {
       LOG.debug("Chain is almost in sync, check if gossip should be started in 5 seconds");
-      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(5));
+      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(5)).reportExceptions();
     } else {
       // Check again when we should be caught up assuming a speedy sync process
       final int blocksPerSecond = 100;
@@ -182,7 +182,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       LOG.debug(
           "Chain is not yet in sync, check if gossip should be started in {} seconds",
           delayInSeconds);
-      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(delayInSeconds));
+      asyncRunner
+          .runAfterDelay(this::queueGossipStart, Duration.ofSeconds(delayInSeconds))
+          .reportExceptions();
     }
 
     return false;
