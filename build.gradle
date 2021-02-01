@@ -55,6 +55,9 @@ apply plugin: 'com.jfrog.bintray'
 def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
 def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
 
+def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
+def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
+
 def bintrayPackage = bintray.pkg {
   repo = 'pegasys-repo'
   name = 'teku'
@@ -358,8 +361,8 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerVariants = [
+  "jdk15",
   "jdk14",
-  "jdk15"
 ]
 
 task distDocker  {
@@ -471,6 +474,16 @@ subprojects {
     apply plugin: 'maven-publish'
 
     publishing {
+      repositories {
+        maven {
+          name = "cloudsmith"
+          url = "https://api-g.cloudsmith.io/maven/consensys/teku/"
+          credentials {
+            username = cloudsmithUser
+            password = cloudsmithKey
+          }
+        }
+      }
       publications {
         mavenJava(MavenPublication) {
           groupId "tech.pegasys.teku.internal"
@@ -484,6 +497,8 @@ subprojects {
             usage('java-api') { fromResolutionOf('runtimeClasspath') }
             usage('java-runtime') { fromResolutionResult() }
           }
+          suppressPomMetadataWarningsFor('testFixturesApiElements')
+          suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
           pom {
             name = "Teku - ${project.name}"
             url = 'https://github.com/ConsenSys/teku'
@@ -720,6 +735,16 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
 
   tasks.withType(JavaCompile) {
     options.annotationProcessorPath = configurations.annotationProcessor
+  }
+}
+
+task cloudsmithUpload {
+  dependsOn([distTar, distZip])
+  doLast {
+    exec {
+      executable project.file("scripts/cloudsmith-upload.sh")
+      args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+    }
   }
 }
 

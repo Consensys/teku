@@ -70,21 +70,21 @@ abstract class BLSSignatureTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
-    BLSSignature signature = BLSSignature.random(42);
+    BLSSignature signature = BLSTestUtil.randomSignature(42);
     assertEquals(signature, signature);
     assertEquals(signature.hashCode(), signature.hashCode());
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
-    BLSSignature signature1 = BLSSignature.random(42);
-    BLSSignature signature2 = BLSSignature.random(43);
+    BLSSignature signature1 = BLSTestUtil.randomSignature(42);
+    BLSSignature signature2 = BLSTestUtil.randomSignature(43);
     assertNotEquals(signature1, signature2);
   }
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSameSignature() {
-    BLSSignature signature1 = BLSSignature.random(65);
+    BLSSignature signature1 = BLSTestUtil.randomSignature(65);
     BLSSignature signature2 = BLSSignature.fromSSZBytes(signature1.toSSZBytes());
     assertEquals(signature1, signature2);
   }
@@ -104,7 +104,7 @@ abstract class BLSSignatureTest {
 
   @Test
   void roundtripEncodeDecodeCompressed() {
-    BLSSignature signature = BLSSignature.random(513);
+    BLSSignature signature = BLSTestUtil.randomSignature(513);
     final BLSSignature result = BLSSignature.fromBytesCompressed(signature.toBytesCompressed());
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());

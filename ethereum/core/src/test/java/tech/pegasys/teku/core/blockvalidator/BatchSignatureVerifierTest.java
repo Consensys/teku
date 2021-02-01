@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 
 public class BatchSignatureVerifierTest {
 
@@ -35,9 +36,9 @@ public class BatchSignatureVerifierTest {
   public void testParallel() throws Exception {
     BatchSignatureVerifier verifier = new BatchSignatureVerifier();
 
-    BLSPublicKey publicKey = BLSPublicKey.random(42);
+    BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(42);
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    BLSSignature signature = BLSSignature.random(42);
+    BLSSignature signature = BLSTestUtil.randomSignature(42);
 
     int nThreads = 64;
     int iterations = 64;

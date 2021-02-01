@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
@@ -79,7 +80,7 @@ import tech.pegasys.teku.util.config.Constants;
 public final class DataStructureUtil {
 
   private int seed;
-  private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSPublicKey.random(nextSeed());
+  private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
 
   public DataStructureUtil() {
     this(92892824);
@@ -120,7 +121,7 @@ public final class DataStructureUtil {
   }
 
   public BLSSignature randomSignature() {
-    return BLSSignature.random(nextSeed());
+    return BLSTestUtil.randomSignature(nextSeed());
   }
 
   public <T> SSZList<T> randomSSZList(
@@ -455,7 +456,7 @@ public final class DataStructureUtil {
   }
 
   public DepositData randomDepositData() {
-    BLSKeyPair keyPair = BLSKeyPair.random(nextSeed());
+    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
     BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawal_credentials = randomBytes32();
 
@@ -520,7 +521,11 @@ public final class DataStructureUtil {
 
   public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
     return new tech.pegasys.teku.pow.event.Deposit(
-        BLSPublicKey.random(nextSeed()), randomBytes32(), randomSignature(), randomUInt64(), index);
+        BLSTestUtil.randomPublicKey(nextSeed()),
+        randomBytes32(),
+        randomSignature(),
+        randomUInt64(),
+        index);
   }
 
   public tech.pegasys.teku.pow.event.Deposit randomDepositEvent() {
@@ -551,7 +556,7 @@ public final class DataStructureUtil {
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
-      BLSKeyPair keypair = BLSKeyPair.random(i);
+      BLSKeyPair keypair = BLSTestUtil.randomKeyPair(i);
       DepositData depositData =
           depositGenerator.createDepositData(
               keypair, Constants.MAX_EFFECTIVE_BALANCE, keypair.getPublicKey());

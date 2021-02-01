@@ -102,7 +102,7 @@ public class MetricsHistogram {
     final MetricsHistogram histogram = new MetricsHistogram(histogram1);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
       ((PrometheusMetricsSystem) metricsSystem)
-          .addCollector(category, histogram.histogramToCollector(category, name, help));
+          .addCollector(category, () -> histogram.histogramToCollector(category, name, help));
     }
     return histogram;
   }

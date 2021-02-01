@@ -42,13 +42,14 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetNewBlockTest {
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
-      tech.pegasys.teku.bls.BLSSignature.random(1234);
+      BLSTestUtil.randomSignature(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
   private Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);

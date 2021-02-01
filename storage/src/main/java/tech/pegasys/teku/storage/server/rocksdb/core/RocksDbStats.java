@@ -214,7 +214,7 @@ public class RocksDbStats implements AutoCloseable {
     if (metricsSystem instanceof PrometheusMetricsSystem) {
       for (final HistogramType histogram : HISTOGRAMS) {
         ((PrometheusMetricsSystem) metricsSystem)
-            .addCollector(category, histogramToCollector(category, stats, histogram));
+            .addCollector(category, () -> histogramToCollector(category, stats, histogram));
       }
     }
   }
