@@ -20,6 +20,7 @@
 - The validator client now uses an independent timer to trigger attestation creation instead of depending on the beacon node publishing a `head` event 4 seconds into the slot. By default the beacon node no longer publishes a `head` event for empty slots. 
   The previous behaviour can be restored with `--Xvalidators-dependent-root-enabled=false`. Note: this should be applied to both the beacon node and validator client if running separately.
 - The default docker image has been upgraded to use Java 15.
+- Updated the ENRs for MainNet bootnodes run by the Nimbus team.
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
