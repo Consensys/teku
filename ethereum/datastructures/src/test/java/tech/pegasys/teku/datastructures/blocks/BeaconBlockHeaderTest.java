@@ -106,7 +106,7 @@ class BeaconBlockHeaderTest {
   @Test
   void roundtripSSZ() {
     BeaconBlockHeader beaconBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
-    Bytes beaconBlockSerialized = SimpleOffsetSerializer.serialize(beaconBlockHeader);
+    Bytes beaconBlockSerialized = beaconBlockHeader.sszSerialize();
     BeaconBlockHeader newBeaconBlockHeader =
         SimpleOffsetSerializer.deserialize(beaconBlockSerialized, BeaconBlockHeader.class);
     assertEquals(beaconBlockHeader, newBeaconBlockHeader);

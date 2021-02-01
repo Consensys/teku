@@ -83,7 +83,7 @@ class DepositTest {
   @Test
   void roundtripSSZ() {
     Deposit deposit = dataStructureUtil.randomDeposit();
-    Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
+    Bytes serialized = deposit.sszSerialize();
     Deposit newDeposit = SimpleOffsetSerializer.deserialize(serialized, Deposit.class);
     assertEquals(deposit, newDeposit);
   }

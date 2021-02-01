@@ -73,10 +73,10 @@ class FuzzUtilTest {
     final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), BeaconStateImpl.class);
 
     AttestationFuzzInput input = new AttestationFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }
@@ -94,10 +94,10 @@ class FuzzUtilTest {
 
     AttesterSlashingFuzzInput input =
         new AttesterSlashingFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzAttesterSlashing(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }
@@ -118,7 +118,7 @@ class FuzzUtilTest {
     BeaconState currentState = preState;
     for (SignedBeaconBlock block : blocks) {
       BlockFuzzInput input = new BlockFuzzInput((BeaconStateImpl) currentState, block);
-      byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+      byte[] rawInput = input.sszSerialize().toArrayUnsafe();
       Optional<Bytes> result = fuzzUtil.fuzzBlock(rawInput).map(Bytes::wrap);
       assertThat(result).isNotEmpty();
       currentState = SimpleOffsetSerializer.deserialize(result.get(), BeaconStateImpl.class);
@@ -139,10 +139,10 @@ class FuzzUtilTest {
     final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), BeaconStateImpl.class);
 
     BlockHeaderFuzzInput input = new BlockHeaderFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzBlockHeader(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }
@@ -157,10 +157,10 @@ class FuzzUtilTest {
     final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), BeaconStateImpl.class);
 
     DepositFuzzInput input = new DepositFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzDeposit(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }
@@ -177,10 +177,10 @@ class FuzzUtilTest {
 
     ProposerSlashingFuzzInput input =
         new ProposerSlashingFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzProposerSlashing(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }
@@ -196,10 +196,10 @@ class FuzzUtilTest {
     final BeaconState postState = loadSsz(testCaseDir.resolve("post.ssz"), BeaconStateImpl.class);
 
     VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput((BeaconStateImpl) preState, data);
-    byte[] rawInput = SimpleOffsetSerializer.serialize(input).toArrayUnsafe();
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzVoluntaryExit(rawInput).map(Bytes::wrap);
 
-    Bytes expected = SimpleOffsetSerializer.serialize(postState);
+    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expected);
   }

@@ -28,7 +28,7 @@ class BeaconBlocksByRangeRequestMessageTest {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
-    final Bytes data = SimpleOffsetSerializer.serialize(request);
+    final Bytes data = request.sszSerialize();
     final BeaconBlocksByRangeRequestMessage result =
         SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);
 

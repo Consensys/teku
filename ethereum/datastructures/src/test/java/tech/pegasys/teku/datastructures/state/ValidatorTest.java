@@ -172,7 +172,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = SimpleOffsetSerializer.serialize(validator);
+    Bytes sszValidatorBytes = validator.sszSerialize();
     assertEquals(validator, SimpleOffsetSerializer.deserialize(sszValidatorBytes, Validator.class));
   }
 }

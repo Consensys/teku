@@ -28,7 +28,7 @@ class IndexedAttestationTest {
     IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
     IndexedAttestation newIndexedAttestation =
         SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(indexedAttestation), IndexedAttestation.class);
+            indexedAttestation.sszSerialize(), IndexedAttestation.class);
     assertEquals(indexedAttestation, newIndexedAttestation);
   }
 }

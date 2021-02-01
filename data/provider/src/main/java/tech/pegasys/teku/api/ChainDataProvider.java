@@ -52,7 +52,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
@@ -164,8 +163,7 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
                             state.hashTreeRoot().toUnprefixedHexString())));
   }
 
@@ -179,8 +177,7 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
                             state.hashTreeRoot().toUnprefixedHexString())));
   }
 

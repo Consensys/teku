@@ -36,7 +36,7 @@ public abstract class AbstractFuzzInputTest<T extends SimpleOffsetSerializable> 
   public void serialize_roundTrip() {
     T original = createInput();
 
-    final Bytes serialized = SimpleOffsetSerializer.serialize(original);
+    final Bytes serialized = original.sszSerialize();
     T deserialized = SimpleOffsetSerializer.deserialize(serialized, getInputType());
     assertThat(deserialized).isEqualTo(original);
   }

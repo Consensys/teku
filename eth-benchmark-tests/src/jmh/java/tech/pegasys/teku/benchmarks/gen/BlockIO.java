@@ -95,7 +95,7 @@ public class BlockIO {
     @Override
     public void accept(SignedBeaconBlock block) {
       try {
-        Bytes bytes = SimpleOffsetSerializer.serialize(block);
+        Bytes bytes = block.sszSerialize();
         outputStream.writeInt(bytes.size());
         outputStream.write(bytes.toArrayUnsafe());
         outputStream.flush();

@@ -62,7 +62,7 @@ class Eth1DataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes eth1DataSerialized = SimpleOffsetSerializer.serialize(eth1Data);
+    Bytes eth1DataSerialized = eth1Data.sszSerialize();
     Eth1Data newEth1Data = SimpleOffsetSerializer.deserialize(eth1DataSerialized, Eth1Data.class);
     assertEquals(eth1Data, newEth1Data);
   }

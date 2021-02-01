@@ -45,7 +45,7 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
           "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
   private final TView aContainer = createContainer();
-  private final Bytes aContainerSsz = SimpleOffsetSerializer.serialize(aContainer);
+  private final Bytes aContainerSsz = aContainer.sszSerialize();
 
   protected abstract TView createContainer();
 
@@ -71,13 +71,13 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
 
   @Benchmark
   public void benchSerialize(Blackhole bh) {
-    bh.consume(SimpleOffsetSerializer.serialize(aContainer));
+    bh.consume(aContainer.sszSerialize());
   }
 
   @Benchmark
   public void benchCreateAndSerialize(Blackhole bh) {
     TView container = createContainer();
-    bh.consume(SimpleOffsetSerializer.serialize(container));
+    bh.consume(container.sszSerialize());
   }
 
   @Benchmark
@@ -94,7 +94,7 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
   @Benchmark
   public void benchDeserializeAndSerialize(Blackhole bh) {
     TView container = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
-    bh.consume(SimpleOffsetSerializer.serialize(container));
+    bh.consume(container.sszSerialize());
   }
 
   public void customRun(int runs, int runLength) {

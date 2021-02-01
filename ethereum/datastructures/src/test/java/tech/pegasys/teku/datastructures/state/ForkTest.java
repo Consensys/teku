@@ -72,8 +72,7 @@ class ForkTest {
   @Test
   void roundTripViaSsz() {
     Fork fork = dataStructureUtil.randomFork();
-    Fork newFork =
-        SimpleOffsetSerializer.deserialize(SimpleOffsetSerializer.serialize(fork), Fork.class);
+    Fork newFork = SimpleOffsetSerializer.deserialize(fork.sszSerialize(), Fork.class);
     assertEquals(fork, newFork);
   }
 }

@@ -29,6 +29,6 @@ class AggregateAndProofTest {
     assertEquals(
         aggregateAndProof,
         SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(aggregateAndProof), AggregateAndProof.class));
+            aggregateAndProof.sszSerialize(), AggregateAndProof.class));
   }
 }

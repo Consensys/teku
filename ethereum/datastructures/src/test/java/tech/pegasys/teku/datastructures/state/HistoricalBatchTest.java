@@ -67,7 +67,7 @@ public class HistoricalBatchTest {
               state_roots.set(i, dataStructureUtil.randomBytes32());
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
-    Bytes serialized = SimpleOffsetSerializer.serialize(batch);
+    Bytes serialized = batch.sszSerialize();
     HistoricalBatch result = SimpleOffsetSerializer.deserialize(serialized, HistoricalBatch.class);
     assertEquals(batch, result);
   }

@@ -138,7 +138,7 @@ public class ChainHeadTest {
   }
 
   private <T extends SimpleOffsetSerializable> T copy(final T original, final Class<T> objType) {
-    final Bytes serialized = SimpleOffsetSerializer.serialize(original);
+    final Bytes serialized = original.sszSerialize();
     return SimpleOffsetSerializer.deserialize(serialized, objType);
   }
 

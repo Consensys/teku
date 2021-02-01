@@ -29,7 +29,7 @@ class GoodbyeMessageTest {
 
   @Test
   public void shouldSerializeToSsz() {
-    final Bytes result = SimpleOffsetSerializer.serialize(MESSAGE);
+    final Bytes result = MESSAGE.sszSerialize();
     assertThat(result).isEqualTo(EXPECTED_SSZ);
   }
 

@@ -109,7 +109,7 @@ class BeaconStateTest {
   @Test
   void roundTripViaSsz() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
+    Bytes bytes = beaconState.sszSerialize();
     BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
     assertEquals(beaconState, state);
   }

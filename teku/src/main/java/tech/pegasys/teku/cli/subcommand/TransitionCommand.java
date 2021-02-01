@@ -128,7 +128,7 @@ public class TransitionCommand implements Runnable {
       final StateTransition stateTransition = new StateTransition();
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
-        out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
+        out.write(result.sszSerialize().toArrayUnsafe());
         return 0;
       } catch (final StateTransitionException
           | EpochProcessingException

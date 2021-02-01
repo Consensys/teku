@@ -74,7 +74,7 @@ class ProposerSlashingTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszProposerSlashingBytes = SimpleOffsetSerializer.serialize(proposerSlashing);
+    Bytes sszProposerSlashingBytes = proposerSlashing.sszSerialize();
     assertEquals(
         proposerSlashing,
         SimpleOffsetSerializer.deserialize(sszProposerSlashingBytes, ProposerSlashing.class));

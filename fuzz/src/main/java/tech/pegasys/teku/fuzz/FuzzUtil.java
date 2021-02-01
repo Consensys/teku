@@ -82,7 +82,7 @@ public class FuzzUtil {
                           state,
                           SSZList.singleton(structuredInput.getAttestation()),
                           IndexedAttestationProvider.DIRECT_PROVIDER));
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -103,7 +103,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_attester_slashings(
                         state, SSZList.singleton(structuredInput.getAttester_slashing()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -122,7 +122,7 @@ public class FuzzUtil {
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
       // "expected error"
@@ -141,7 +141,7 @@ public class FuzzUtil {
                   state -> {
                     BlockProcessorUtil.process_block_header(state, structuredInput.getBlock());
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -161,7 +161,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_deposits(
                         state, SSZList.singleton(structuredInput.getDeposit()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -182,7 +182,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_proposer_slashings(
                         state, SSZList.singleton(structuredInput.getProposer_slashing()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -229,7 +229,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_voluntary_exits(
                         state, SSZList.singleton(structuredInput.getExit()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"

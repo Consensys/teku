@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.rocksdb.serialization.VoteTrackerSeriali
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
-  private static Bytes votesSerialized = serialize(votes);
+  private static Bytes votesSerialized = votes.sszSerialize();
   private static VoteTrackerSerializer serializer = new VoteTrackerSerializer();
 
   @Benchmark
@@ -37,7 +37,7 @@ public class VoteTrackerSerialize {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void genericSerialization() {
-    checkSize(serialize(votes));
+    checkSize(votes.sszSerialize());
   }
 
   @Benchmark

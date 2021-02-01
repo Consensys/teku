@@ -198,8 +198,7 @@ class BeaconBlockBodyTest {
   void roundTripsViaSsz() {
     BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
     BeaconBlockBody newBeaconBlockBody =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+        SimpleOffsetSerializer.deserialize(beaconBlockBody.sszSerialize(), BeaconBlockBody.class);
     assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 }

@@ -158,7 +158,7 @@ class AttestationDataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszAttestationDataBytes = SimpleOffsetSerializer.serialize(attestationData);
+    Bytes sszAttestationDataBytes = attestationData.sszSerialize();
     assertEquals(
         attestationData,
         SimpleOffsetSerializer.deserialize(sszAttestationDataBytes, AttestationData.class));

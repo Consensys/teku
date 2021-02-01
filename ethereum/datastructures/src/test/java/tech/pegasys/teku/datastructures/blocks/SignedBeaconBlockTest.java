@@ -24,7 +24,7 @@ class SignedBeaconBlockTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
-    final Bytes ssz = SimpleOffsetSerializer.serialize(block);
+    final Bytes ssz = block.sszSerialize();
     final SignedBeaconBlock result =
         SimpleOffsetSerializer.deserialize(ssz, SignedBeaconBlock.class);
     assertThat(result).isEqualTo(block);

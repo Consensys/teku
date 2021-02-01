@@ -59,8 +59,7 @@ class MatchingDataAttestationGroupTest {
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
     final Attestation attestation = addAttestation(1).getAttestation();
     final Attestation copy =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
+        SimpleOffsetSerializer.deserialize(attestation.sszSerialize(), Attestation.class);
     int numRemoved = group.remove(copy);
 
     assertThat(group.stream()).isEmpty();
@@ -122,7 +121,7 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation copy =
         ValidateableAttestation.from(
             SimpleOffsetSerializer.deserialize(
-                SimpleOffsetSerializer.serialize(attestation.getAttestation()), Attestation.class));
+                attestation.getAttestation().sszSerialize(), Attestation.class));
 
     assertThat(group.add(copy)).isFalse();
     assertThat(group.stream()).containsExactly(attestation);

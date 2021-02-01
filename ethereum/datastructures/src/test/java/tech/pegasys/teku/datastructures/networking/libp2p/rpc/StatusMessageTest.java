@@ -34,7 +34,7 @@ class StatusMessageTest {
             Bytes32.fromHexStringLenient("0x03"),
             UInt64.valueOf(4));
 
-    final Bytes data = SimpleOffsetSerializer.serialize(message);
+    final Bytes data = message.sszSerialize();
     final StatusMessage result = SimpleOffsetSerializer.deserialize(data, StatusMessage.class);
     assertThat(SszTestUtils.equalsByGetters(result, message)).isTrue();
     assertThat(result).isEqualTo(message);

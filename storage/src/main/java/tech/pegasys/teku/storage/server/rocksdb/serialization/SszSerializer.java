@@ -32,6 +32,6 @@ public class SszSerializer<T extends SimpleOffsetSerializable> implements RocksD
 
   @Override
   public byte[] serialize(final T value) {
-    return SimpleOffsetSerializer.serialize(value).toArrayUnsafe();
+    return value.sszSerialize().toArrayUnsafe();
   }
 }

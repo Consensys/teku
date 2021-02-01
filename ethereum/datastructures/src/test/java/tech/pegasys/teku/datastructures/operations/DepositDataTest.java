@@ -81,7 +81,6 @@ class DepositDataTest {
   void roundtripSSZ() {
     assertEquals(
         depositData,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(depositData), DepositData.class));
+        SimpleOffsetSerializer.deserialize(depositData.sszSerialize(), DepositData.class));
   }
 }

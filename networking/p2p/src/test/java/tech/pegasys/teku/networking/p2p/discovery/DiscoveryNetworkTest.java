@@ -40,7 +40,6 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -169,8 +168,7 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(),
             currentForkInfo.getFork().getCurrent_version(),
             FAR_FUTURE_EPOCH);
-    verify(discoveryService)
-        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
+    verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
 
   @Test
@@ -182,8 +180,7 @@ class DiscoveryNetworkTest {
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(), nextFork.getCurrent_version(), nextFork.getEpoch());
-    verify(discoveryService)
-        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
+    verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
 
   @Test
@@ -197,7 +194,7 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(),
             currentForkInfo.getFork().getCurrent_version(),
             FAR_FUTURE_EPOCH);
-    Bytes encodedForkId = SimpleOffsetSerializer.serialize(expectedEnrForkId);
+    Bytes encodedForkId = expectedEnrForkId.sszSerialize();
     verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
         ArgumentCaptor.forClass(Predicate.class);
@@ -230,7 +227,7 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(),
             currentForkInfo.getFork().getCurrent_version(),
             FAR_FUTURE_EPOCH);
-    Bytes encodedForkId = SimpleOffsetSerializer.serialize(expectedEnrForkId);
+    Bytes encodedForkId = expectedEnrForkId.sszSerialize();
     verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
         ArgumentCaptor.forClass(Predicate.class);
@@ -265,8 +262,7 @@ class DiscoveryNetworkTest {
             compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
             GENESIS_FORK_VERSION,
             FAR_FUTURE_EPOCH);
-    verify(discoveryService)
-        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(enrForkId));
+    verify(discoveryService).updateCustomENRField("eth2", enrForkId.sszSerialize());
   }
 
   public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {

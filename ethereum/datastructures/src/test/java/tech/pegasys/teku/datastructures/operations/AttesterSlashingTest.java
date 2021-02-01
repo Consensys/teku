@@ -79,8 +79,7 @@ class AttesterSlashingTest {
   void roundtripSsz() {
     AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
+        SimpleOffsetSerializer.deserialize(attesterSlashing.sszSerialize(), AttesterSlashing.class);
     assertEquals(attesterSlashing, newAttesterSlashing);
   }
 }

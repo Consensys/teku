@@ -124,8 +124,7 @@ class AttestationTest {
   void roundtripViaSsz() {
     Attestation attestation = dataStructureUtil.randomAttestation();
     Attestation newAttestation =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
+        SimpleOffsetSerializer.deserialize(attestation.sszSerialize(), Attestation.class);
     assertEquals(attestation, newAttestation);
   }
 }

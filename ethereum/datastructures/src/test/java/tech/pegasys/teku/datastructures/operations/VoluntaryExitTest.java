@@ -61,7 +61,7 @@ class VoluntaryExitTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszVoluntaryExitBytes = SimpleOffsetSerializer.serialize(voluntaryExit);
+    Bytes sszVoluntaryExitBytes = voluntaryExit.sszSerialize();
     assertEquals(
         voluntaryExit,
         SimpleOffsetSerializer.deserialize(sszVoluntaryExitBytes, VoluntaryExit.class));
