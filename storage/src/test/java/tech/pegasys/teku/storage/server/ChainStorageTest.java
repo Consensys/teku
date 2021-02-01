@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 import tech.pegasys.teku.util.config.Constants;
@@ -93,7 +94,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor point
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Now generate missing historical blocks
@@ -135,11 +136,11 @@ public class ChainStorageTest {
     if (initializeWithAnchorStateAlone) {
       anchorPoint =
           AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
     } else {
       anchorPoint = AnchorPoint.create(anchorCheckpoint, anchorBlockAndState);
-      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
 
@@ -202,7 +203,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Try to save non-matching fork blocks
@@ -237,7 +238,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Get set of blocks to save
@@ -275,7 +276,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Get set of blocks to save
