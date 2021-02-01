@@ -99,7 +99,7 @@ public abstract class AbstractNode implements Node {
         .handleException(error -> LOG.error("Failed to stop services", error))
         .thenCompose(__ -> metricsEndpoint.stop())
         .orTimeout(5, TimeUnit.SECONDS)
-        .handleException(error -> LOG.error("Failed to stop metrics", error))
+        .handleException(error -> LOG.debug("Failed to stop metrics", error))
         .thenRun(vertx::close)
         .join();
   }
