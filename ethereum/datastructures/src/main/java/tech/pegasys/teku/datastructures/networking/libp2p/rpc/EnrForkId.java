@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -24,8 +23,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View>
-    implements SSZContainer {
+public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 
   static class EnrForkIdType extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 

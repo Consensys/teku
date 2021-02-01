@@ -18,18 +18,15 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> {
 
   static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
 

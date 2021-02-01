@@ -17,12 +17,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.datastructures.util.LengthBounds;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 class SszGossipCodec {
 
   public <T> Bytes encode(final T value) {
-    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) value);
+    return SimpleOffsetSerializer.serialize(value);
   }
 
   public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {

@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -24,8 +23,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
 
   static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
 

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
@@ -31,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class BeaconBlocksByRootRequestMessage
     extends Container1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>>
-    implements RpcRequest, SSZContainer {
+    implements RpcRequest {
 
   public static class BeaconBlocksByRootRequestMessageType
       extends ContainerType1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> {

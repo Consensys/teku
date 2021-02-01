@@ -14,17 +14,14 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View> {
 
   static class VoluntaryExitType extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
 

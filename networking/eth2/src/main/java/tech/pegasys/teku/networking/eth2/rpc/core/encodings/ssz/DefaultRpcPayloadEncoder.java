@@ -22,7 +22,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -34,7 +33,7 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
 
   @Override
   public Bytes encode(final T message) {
-    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
+    return SimpleOffsetSerializer.serialize(message);
   }
 
   @Override

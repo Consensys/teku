@@ -14,18 +14,16 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public final class BeaconBlocksByRangeRequestMessage
     extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>
-    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+    implements RpcRequest {
 
   public static class BeaconBlocksByRangeRequestMessageType
       extends ContainerType3<

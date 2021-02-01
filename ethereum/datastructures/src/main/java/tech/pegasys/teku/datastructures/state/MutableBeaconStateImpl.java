@@ -31,10 +31,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
     return new MutableBeaconStateImpl(new BeaconStateImpl(), true);
   }
 
-  @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
-
-  @Label("sos-ignore")
   private final boolean builder;
 
   private SSZMutableList<Validator> validators;
@@ -80,11 +77,6 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   @Override
   public Bytes32 hashTreeRoot() {
     return commitChanges().hashTreeRoot();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    throw new UnsupportedOperationException();
   }
 
   @Override

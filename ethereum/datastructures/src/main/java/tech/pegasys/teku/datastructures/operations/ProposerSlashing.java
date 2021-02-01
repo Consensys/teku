@@ -14,16 +14,13 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ProposerSlashing
-    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
   public static class ProposerSlashingType
       extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {

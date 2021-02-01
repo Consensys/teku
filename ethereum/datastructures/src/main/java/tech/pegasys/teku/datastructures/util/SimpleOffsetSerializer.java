@@ -17,7 +17,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 
 public class SimpleOffsetSerializer {
@@ -30,7 +29,7 @@ public class SimpleOffsetSerializer {
     setConstants();
   }
 
-  public static Bytes serialize(SimpleOffsetSerializable value) {
+  public static Bytes serialize(Object value) {
     if (value instanceof ViewRead) {
       return ((ViewRead) value).sszSerialize();
     }

@@ -14,17 +14,14 @@
 package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> {
 
   public static class SigningDataType
       extends ContainerType2<SigningData, Bytes32View, Bytes32View> {

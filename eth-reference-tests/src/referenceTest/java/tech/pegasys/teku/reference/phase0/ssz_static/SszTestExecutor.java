@@ -52,7 +52,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
 
 public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     implements TestExecutor {
@@ -118,7 +118,7 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     assertThat(result.hashTreeRoot()).isEqualTo(expectedRoot);
 
     // Serialize
-    assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);
+    assertThat(result.sszSerialize()).isEqualTo(inputData);
   }
 
   private static class Roots {

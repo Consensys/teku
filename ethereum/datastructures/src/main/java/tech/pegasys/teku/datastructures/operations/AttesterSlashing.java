@@ -20,16 +20,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttesterSlashing
-    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
   public static class AttesterSlashingType
       extends ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {

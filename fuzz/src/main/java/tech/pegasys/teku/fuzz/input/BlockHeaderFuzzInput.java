@@ -16,19 +16,16 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 /**
  * Note: BlockHeader fuzzing target accepts a block as input (not a SignedBeaconBlock or
  * BeaconBlockHeader)
  */
-public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> {
 
   @SszTypeDescriptor
   public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {

@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
 
 public class SszSerializer<T extends SimpleOffsetSerializable> implements RocksDbSerializer<T> {
 

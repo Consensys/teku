@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import tech.pegasys.teku.datastructures.Copyable;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
@@ -27,14 +25,12 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
     extends Container4<
-        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
-    implements Copyable<PendingAttestation>, SimpleOffsetSerializable, SSZContainer {
+        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
 
   public static class PendingAttestationType
       extends ContainerType4<
@@ -85,11 +81,6 @@ public class PendingAttestation
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
     super(TYPE, pendingAttestation.getBackingNode());
-  }
-
-  @Override
-  public PendingAttestation copy() {
-    return new PendingAttestation(this);
   }
 
   public Bitlist getAggregation_bits() {

@@ -16,16 +16,13 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttesterSlashingFuzzInput
-    extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> {
 
   @SszTypeDescriptor
   public static ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
