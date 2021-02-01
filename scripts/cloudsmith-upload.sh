@@ -15,5 +15,5 @@ fi
 
 python3 -m pip install --upgrade cloudsmith-cli
 
-cloudsmith push raw consensys/teku $TAR_DIST --version "${TEKU_VERSION}" --summary "Teku ${TEKU_VERSION} binary distribution" --description "Binary distribution of Teku ${TEKU_VERSION}." --content-type 'application/tar+gzip'
-cloudsmith push raw consensys/teku $ZIP_DIST --version "${TEKU_VERSION}" --summary "Teku ${TEKU_VERSION} binary distribution" --description "Binary distribution of Teku ${TEKU_VERSION}." --content-type 'application/zip'
+cloudsmith push raw consensys/teku $TAR_DIST --name 'teku.tar.gz' --version "${TEKU_VERSION}" --summary "Teku ${TEKU_VERSION} binary distribution" --description "Binary distribution of Teku ${TEKU_VERSION}." --content-type 'application/tar+gzip'
+cloudsmith push raw consensys/teku $ZIP_DIST --name 'teku.zip' --version "${TEKU_VERSION}" --summary "Teku ${TEKU_VERSION} binary distribution" --description "Binary distribution of Teku ${TEKU_VERSION}." --content-type 'application/zip'
