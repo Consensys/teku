@@ -167,16 +167,21 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private boolean queueGossipStart() {
+    LOG.debug("Check if gossip should be started");
     final UInt64 slotsBehind = recentChainData.getChainHeadSlotsBehind().orElseThrow();
     if (slotsBehind.isLessThanOrEqualTo(5)) {
       // Start gossip
       return startGossip();
     } else if (slotsBehind.isLessThanOrEqualTo(1000)) {
+      LOG.debug("Chain is almost in sync, check if gossip should be started in 5 seconds");
       asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(5));
     } else {
       // Check again when we should be caught up assuming a speedy sync process
       final int blocksPerSecond = 100;
       final int delayInSeconds = slotsBehind.dividedBy(blocksPerSecond).min(600).intValue();
+      LOG.debug(
+          "Chain is not yet in sync, check if gossip should be started in {} seconds",
+          delayInSeconds);
       asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(delayInSeconds));
     }
 
@@ -255,14 +260,15 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     gossipUpdateTask =
         asyncRunner.runWithFixedDelay(
-            this::updateTopicScoringParams,
+            this::updateDynamicTopicScoring,
             Duration.ofMinutes(1),
             (err) -> {
               LOG.error("Encountered error while attempting to updating gossip topic scoring", err);
             });
   }
 
-  private void updateTopicScoringParams() {
+  private void updateDynamicTopicScoring() {
+    LOG.trace("Update dynamic topic scoring");
     final GossipTopicsScoringConfig.Builder builder = GossipTopicsScoringConfig.builder();
     gossipConfigurator.configureDynamicTopics(builder, getEth2Context());
     discoveryNetwork.updateGossipTopicScoring(builder.build());
