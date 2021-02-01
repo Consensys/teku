@@ -43,7 +43,8 @@ public class FuzzRegressionTest {
         .isInstanceOf(BlockProcessingException.class);
   }
 
-  private <T extends ViewRead> T load(final String resource, final ViewType<T> type) throws Exception {
+  private <T extends ViewRead> T load(final String resource, final ViewType<T> type)
+      throws Exception {
     final URL resourceUrl = FuzzRegressionTest.class.getResource(resource);
     final Bytes data = Bytes.wrap(Resources.toByteArray(resourceUrl));
     return type.sszDeserialize(data);

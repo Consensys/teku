@@ -19,7 +19,6 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationFuzzInput> {
 
-
   @Override
   protected ViewType<AttestationFuzzInput> getInputType() {
     return AttestationFuzzInput.createType();

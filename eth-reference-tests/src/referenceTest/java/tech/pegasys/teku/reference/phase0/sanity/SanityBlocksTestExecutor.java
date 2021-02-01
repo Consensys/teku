@@ -45,7 +45,8 @@ public class SanityBlocksTestExecutor implements TestExecutor {
         IntStream.range(0, metaData.getBlocksCount())
             .mapToObj(
                 index ->
-                    loadSsz(testDefinition, "blocks_" + index + ".ssz", SignedBeaconBlock.getSszType()))
+                    loadSsz(
+                        testDefinition, "blocks_" + index + ".ssz", SignedBeaconBlock.getSszType()))
             .collect(Collectors.toList());
 
     if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILENAME).toFile().exists()) {

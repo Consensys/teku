@@ -23,7 +23,6 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
@@ -58,8 +57,7 @@ class MatchingDataAttestationGroupTest {
   @Test
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
     final Attestation attestation = addAttestation(1).getAttestation();
-    final Attestation copy =
-        Attestation.TYPE.sszDeserialize(attestation.sszSerialize());
+    final Attestation copy = Attestation.TYPE.sszDeserialize(attestation.sszSerialize());
     int numRemoved = group.remove(copy);
 
     assertThat(group.stream()).isEmpty();
@@ -120,8 +118,7 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation attestation = addAttestation(1);
     final ValidateableAttestation copy =
         ValidateableAttestation.from(
-            Attestation.TYPE.sszDeserialize(
-                attestation.getAttestation().sszSerialize()));
+            Attestation.TYPE.sszDeserialize(attestation.getAttestation().sszSerialize()));
 
     assertThat(group.add(copy)).isFalse();
     assertThat(group.stream()).containsExactly(attestation);

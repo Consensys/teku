@@ -40,7 +40,6 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
@@ -48,17 +47,13 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class SszTestExecutor<T extends ViewRead>
-    implements TestExecutor {
+public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
   private final ViewType<T> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
@@ -87,7 +82,8 @@ public class SszTestExecutor<T extends ViewRead>
           .put(
               "ssz_static/SignedAggregateAndProof",
               new SszTestExecutor<>(SignedAggregateAndProof.TYPE))
-          .put("ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.getSszType()))
+          .put(
+              "ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.getSszType()))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutor<>(SignedBeaconBlockHeader.TYPE))

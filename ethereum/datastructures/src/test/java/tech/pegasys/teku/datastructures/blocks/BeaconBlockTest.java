@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlockTest {
@@ -103,7 +102,7 @@ class BeaconBlockTest {
   @Test
   void roundtripSSZ() {
     final Bytes ssz = beaconBlock.sszSerialize();
-    final BeaconBlock result =  BeaconBlock.TYPE.get().sszDeserialize(ssz);
+    final BeaconBlock result = BeaconBlock.TYPE.get().sszDeserialize(ssz);
     assertThat(result).isEqualTo(beaconBlock);
   }
 }

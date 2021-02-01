@@ -30,7 +30,6 @@ import java.util.zip.GZIPInputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 /** Utility class to read/write SSZ serialized blocks */
 public class BlockIO {

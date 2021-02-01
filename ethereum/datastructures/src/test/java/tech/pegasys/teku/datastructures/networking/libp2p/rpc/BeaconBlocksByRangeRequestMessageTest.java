@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
@@ -29,8 +28,8 @@ class BeaconBlocksByRangeRequestMessageTest {
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
     final Bytes data = request.sszSerialize();
-    final BeaconBlocksByRangeRequestMessage result = BeaconBlocksByRangeRequestMessage.TYPE
-        .sszDeserialize(data);
+    final BeaconBlocksByRangeRequestMessage result =
+        BeaconBlocksByRangeRequestMessage.TYPE.sszDeserialize(data);
 
     assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
     assertThat(result).isEqualTo(request);

@@ -133,7 +133,8 @@ public class ForkChoiceTestExecutor {
         .get(0);
   }
 
-  private static <T extends ViewRead> T resolvePart(Class<T> clazz, ViewType<T> type, File testFile, Object value) {
+  private static <T extends ViewRead> T resolvePart(
+      Class<T> clazz, ViewType<T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {

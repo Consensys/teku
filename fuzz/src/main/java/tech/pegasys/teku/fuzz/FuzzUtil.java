@@ -93,7 +93,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttesterSlashing(final byte[] input) {
-    AttesterSlashingFuzzInput structuredInput = deserialize(input, AttesterSlashingFuzzInput.createType());
+    AttesterSlashingFuzzInput structuredInput =
+        deserialize(input, AttesterSlashingFuzzInput.createType());
 
     // process and return post state
     try {
@@ -172,7 +173,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzProposerSlashing(final byte[] input) {
-    ProposerSlashingFuzzInput structuredInput = deserialize(input, ProposerSlashingFuzzInput.createType());
+    ProposerSlashingFuzzInput structuredInput =
+        deserialize(input, ProposerSlashingFuzzInput.createType());
 
     // process and return post state
     try {
@@ -220,7 +222,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
-    VoluntaryExitFuzzInput structuredInput = deserialize(input, VoluntaryExitFuzzInput.createType());
+    VoluntaryExitFuzzInput structuredInput =
+        deserialize(input, VoluntaryExitFuzzInput.createType());
 
     try {
       BeaconState postState =

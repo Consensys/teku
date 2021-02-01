@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class VoluntaryExitTest {
@@ -62,8 +61,6 @@ class VoluntaryExitTest {
   @Test
   void roundtripSSZ() {
     Bytes sszVoluntaryExitBytes = voluntaryExit.sszSerialize();
-    assertEquals(
-        voluntaryExit,
-        VoluntaryExit.TYPE.sszDeserialize(sszVoluntaryExitBytes));
+    assertEquals(voluntaryExit, VoluntaryExit.TYPE.sszDeserialize(sszVoluntaryExitBytes));
   }
 }

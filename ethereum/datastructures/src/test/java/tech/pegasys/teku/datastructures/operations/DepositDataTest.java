@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class DepositDataTest {
@@ -79,8 +78,6 @@ class DepositDataTest {
 
   @Test
   void roundtripSSZ() {
-    assertEquals(
-        depositData,
-        DepositData.TYPE.sszDeserialize(depositData.sszSerialize()));
+    assertEquals(depositData, DepositData.TYPE.sszDeserialize(depositData.sszSerialize()));
   }
 }

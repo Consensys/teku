@@ -38,8 +38,6 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
@@ -172,7 +170,8 @@ public class TransitionCommand implements Runnable {
     return deserialize(blockData, SignedBeaconBlock.getSszType(), path);
   }
 
-  private <T extends ViewRead> T deserialize(final Bytes data, final ViewType<T> type, final String descriptor) {
+  private <T extends ViewRead> T deserialize(
+      final Bytes data, final ViewType<T> type, final String descriptor) {
     try {
       return type.sszDeserialize(data);
     } catch (final IllegalArgumentException e) {

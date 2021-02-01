@@ -21,16 +21,19 @@ import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class ChainDataLoader {
   public static BeaconState loadState(final String source) throws IOException {
-    return BeaconState.getSszType().sszDeserialize(
-        ResourceLoader.urlOrFile()
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
+    return BeaconState.getSszType()
+        .sszDeserialize(
+            ResourceLoader.urlOrFile()
+                .loadBytes(source)
+                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }
 
   public static SignedBeaconBlock loadBlock(final String source) throws IOException {
-    return SignedBeaconBlock.TYPE.get().sszDeserialize(
-        ResourceLoader.urlOrFile()
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
+    return SignedBeaconBlock.TYPE
+        .get()
+        .sszDeserialize(
+            ResourceLoader.urlOrFile()
+                .loadBytes(source)
+                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }
 }
