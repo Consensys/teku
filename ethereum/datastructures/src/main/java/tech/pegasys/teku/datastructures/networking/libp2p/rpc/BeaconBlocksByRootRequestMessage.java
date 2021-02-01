@@ -33,19 +33,23 @@ public class BeaconBlocksByRootRequestMessage
     extends Container1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>>
     implements RpcRequest, SSZContainer {
 
-  private static final ListViewType<Bytes32View> LIST_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
-
   public static class BeaconBlocksByRootRequestMessageType
       extends ContainerType1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>> {
 
     public BeaconBlocksByRootRequestMessageType() {
-      super(LIST_TYPE);
+      super(
+          "BeaconBlocksByRootRequestMessage",
+          namedType(
+              "blockRoots", new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS)));
     }
 
     @Override
     public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
       return new BeaconBlocksByRootRequestMessage(this, node);
+    }
+
+    public ListViewType<Bytes32View> getListType() {
+      return (ListViewType<Bytes32View>) getFieldType0();
     }
   }
 
@@ -59,7 +63,7 @@ public class BeaconBlocksByRootRequestMessage
   }
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
-    super(TYPE, ViewUtils.toListView(LIST_TYPE, blockRoots, Bytes32View::new));
+    super(TYPE, ViewUtils.toListView(TYPE.getListType(), blockRoots, Bytes32View::new));
   }
 
   public ListViewRead<Bytes32View> getBlockRoots() {

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
@@ -39,11 +38,12 @@ public class BeaconBlockHeader
 
     public BeaconBlockHeaderType() {
       super(
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.BYTES32_TYPE);
+          "BeaconBlockHeader",
+          namedType("slot", BasicViewTypes.UINT64_TYPE),
+          namedType("proposer_index", BasicViewTypes.UINT64_TYPE),
+          namedType("parent_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("state_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("body_root", BasicViewTypes.BYTES32_TYPE));
     }
 
     @Override
@@ -138,16 +138,5 @@ public class BeaconBlockHeader
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("slot", getSlot())
-        .add("proposer_index", getProposerIndex())
-        .add("parent_root", getParentRoot())
-        .add("state_root", getStateRoot())
-        .add("body_root", getBodyRoot())
-        .toString();
   }
 }

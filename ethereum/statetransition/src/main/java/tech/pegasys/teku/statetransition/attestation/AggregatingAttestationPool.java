@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -158,8 +157,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized SSZList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
-    final SSZMutableList<Attestation> attestations = SSZList
-        .createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
+    final SSZMutableList<Attestation> attestations =
+        SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
 
     dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)

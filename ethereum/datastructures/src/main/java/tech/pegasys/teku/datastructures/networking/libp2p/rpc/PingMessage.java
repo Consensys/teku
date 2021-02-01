@@ -30,7 +30,7 @@ public class PingMessage extends Container1<PingMessage, UInt64View>
   static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
 
     public PingMessageType() {
-      super(BasicViewTypes.UINT64_TYPE);
+      super("PingMessage", namedType("seqNumber", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -51,11 +51,6 @@ public class PingMessage extends Container1<PingMessage, UInt64View>
 
   public UInt64 getSeqNumber() {
     return getField0().get();
-  }
-
-  @Override
-  public String toString() {
-    return "PingMessage{" + "seqNumber=" + getSeqNumber() + '}';
   }
 
   @Override

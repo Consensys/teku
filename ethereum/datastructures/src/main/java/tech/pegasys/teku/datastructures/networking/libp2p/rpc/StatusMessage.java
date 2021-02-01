@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -41,11 +40,12 @@ public class StatusMessage
 
     public StatusMessageType() {
       super(
-          BasicViewTypes.BYTES4_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          BasicViewTypes.UINT64_TYPE);
+          "StatusMessage",
+          namedType("forkDigest", BasicViewTypes.BYTES4_TYPE),
+          namedType("finalizedRoot", BasicViewTypes.BYTES32_TYPE),
+          namedType("finalizedEpoch", BasicViewTypes.UINT64_TYPE),
+          namedType("headRoot", BasicViewTypes.BYTES32_TYPE),
+          namedType("headSlot", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -104,17 +104,6 @@ public class StatusMessage
 
   public UInt64 getHeadSlot() {
     return getField4().get();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("forkDigest", getForkDigest())
-        .add("finalizedRoot", getFinalizedRoot())
-        .add("finalizedEpoch", getFinalizedEpoch())
-        .add("headRoot", getHeadRoot())
-        .add("headSlot", getHeadSlot())
-        .toString();
   }
 
   @Override

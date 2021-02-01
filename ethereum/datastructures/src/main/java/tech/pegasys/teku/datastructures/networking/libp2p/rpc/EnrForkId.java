@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
@@ -32,7 +31,11 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
   static class EnrForkIdType extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 
     public EnrForkIdType() {
-      super(BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE);
+      super(
+          "EnrForkId",
+          namedType("forkDigest", BasicViewTypes.BYTES4_TYPE),
+          namedType("nextForkVersion", BasicViewTypes.BYTES4_TYPE),
+          namedType("nextForkEpoch", BasicViewTypes.UINT64_TYPE));
     }
 
     @Override
@@ -66,14 +69,5 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
 
   public UInt64 getNextForkEpoch() {
     return getField2().get();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("forkDigest", getForkDigest())
-        .add("nextForkVersion", getNextForkVersion())
-        .add("nextForkEpoch", getNextForkEpoch())
-        .toString();
   }
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -39,7 +38,10 @@ public class SignedBeaconBlock
       extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
 
     public SignedBeaconBlockType() {
-      super(BeaconBlock.TYPE.get(), ComplexViewTypes.BYTES_96_TYPE);
+      super(
+          "SignedBeaconBlock",
+          namedType("message", BeaconBlock.TYPE.get()),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
     }
 
     @Override
@@ -132,14 +134,6 @@ public class SignedBeaconBlock
   @Override
   public Bytes32 getRoot() {
     return getMessage().hash_tree_root();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("message", getMessage())
-        .add("signature", getSignature())
-        .toString();
   }
 
   @Override

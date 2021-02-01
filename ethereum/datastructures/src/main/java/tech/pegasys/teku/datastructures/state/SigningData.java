@@ -45,7 +45,7 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
 
   @SszTypeDescriptor public static final SigningDataType TYPE = new SigningDataType();
 
-  public SigningData(SigningDataType type, TreeNode backingNode) {
+  private SigningData(SigningDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

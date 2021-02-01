@@ -40,7 +40,10 @@ public class MetadataMessage
       extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
 
     public MetadataMessageType() {
-      super(BasicViewTypes.UINT64_TYPE, new BitVectorType(Constants.ATTESTATION_SUBNET_COUNT));
+      super(
+          "MetadataMessage",
+          namedType("seqNumber", BasicViewTypes.UINT64_TYPE),
+          namedType("attnets", new BitVectorType(Constants.ATTESTATION_SUBNET_COUNT)));
     }
 
     @Override
@@ -77,11 +80,6 @@ public class MetadataMessage
       attnetsCache = ViewUtils.getBitvector(getField1());
     }
     return attnetsCache;
-  }
-
-  @Override
-  public String toString() {
-    return "MetadataMessage{" + "seqNumber=" + getSeqNumber() + ", attnets=" + getAttnets() + '}';
   }
 
   @Override
