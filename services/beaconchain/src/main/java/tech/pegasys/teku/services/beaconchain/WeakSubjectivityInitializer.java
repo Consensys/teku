@@ -22,43 +22,66 @@ import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.ChainDataLoader;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 class WeakSubjectivityInitializer {
+  private static final String INITIAL_STATE_KEY = "initial-state";
+
   private static final Logger LOG = LogManager.getLogger();
 
-  public Optional<AnchorPoint> loadInitialAnchorPoint(final WeakSubjectivityConfig config) {
-    return config
-        .getWeakSubjectivityStateResource()
+  public Optional<AnchorPoint> loadInitialAnchorPoint(
+      final WeakSubjectivityConfig config, final KeyValueStore<String, Bytes> keyValueStore) {
+
+    final Optional<String> initialStateOption = config.getWeakSubjectivityStateResource();
+    return loadStoredInitialAnchorPoint(keyValueStore, initialStateOption)
+        .or(() -> loadSuppliedAnchorPoint(keyValueStore, initialStateOption));
+  }
+
+  private Optional<AnchorPoint> loadSuppliedAnchorPoint(
+      final KeyValueStore<String, Bytes> keyValueStore, final Optional<String> initialStateOption) {
+    return initialStateOption.map(
+        wsStateResource -> {
+          try {
+            STATUS_LOG.loadingInitialStateResource(wsStateResource);
+            final BeaconState state = ChainDataLoader.loadState(wsStateResource);
+            final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
+            STATUS_LOG.loadedInitialStateResource(
+                state.hashTreeRoot(),
+                anchor.getRoot(),
+                state.getSlot(),
+                anchor.getEpoch(),
+                anchor.getEpochStartSlot());
+            keyValueStore.put(INITIAL_STATE_KEY, SimpleOffsetSerializer.serialize(state));
+            return anchor;
+          } catch (IOException e) {
+            throw new IllegalStateException("Failed to load initial state", e);
+          }
+        });
+  }
+
+  private Optional<AnchorPoint> loadStoredInitialAnchorPoint(
+      final KeyValueStore<String, Bytes> keyValueStore, final Optional<String> initialStateOption) {
+    return keyValueStore
+        .get(INITIAL_STATE_KEY)
         .map(
-            wsStateResource -> {
-              try {
-                STATUS_LOG.loadingInitialStateResource(wsStateResource);
-                final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
-                STATUS_LOG.loadedInitialStateResource(
-                    state.hashTreeRoot(),
-                    anchor.getRoot(),
-                    state.getSlot(),
-                    anchor.getEpoch(),
-                    anchor.getEpochStartSlot());
-                return anchor;
-              } catch (IOException e) {
-                throw new IllegalStateException("Failed to load initial state", e);
+            data -> {
+              if (initialStateOption.isPresent()) {
+                STATUS_LOG.warnInitialStateIgnored();
               }
+              return AnchorPoint.fromInitialState(
+                  SimpleOffsetSerializer.deserialize(data, BeaconState.class));
             });
   }
 
@@ -167,86 +190,5 @@ class WeakSubjectivityInitializer {
           initialAnchor.getEpoch(),
           initialAnchor.getEpochStartSlot());
     }
-  }
-
-  /**
-   * @param client The local chain data
-   * @param anchor The configured anchor
-   * @param storageQueryChannel The storage query channel
-   * @return A future that completes successfully if the anchor is consitent with the stored chain
-   *     data, otherwise returns an exceptional future
-   */
-  public SafeFuture<Void> assertInitialAnchorIsConsistentWithExistingData(
-      final RecentChainData client,
-      final AnchorPoint anchor,
-      final StorageQueryChannel storageQueryChannel) {
-    return SafeFuture.of(
-        () -> {
-          if (client.isPreGenesis()) {
-            // Nothing to do
-            return SafeFuture.COMPLETE;
-          }
-          final Checkpoint finalizedCheckpoint = client.getFinalizedCheckpoint().orElseThrow();
-
-          // For now, disallow fast-forwarding an existing chain with a new anchor
-          if (anchor.getEpoch().isGreaterThan(finalizedCheckpoint.getEpoch())) {
-            throw new IllegalStateException(
-                "Cannot set future initial state for an existing database.");
-          }
-
-          // Validate state is consistent with stored data
-          if (anchor.getEpoch().equals(finalizedCheckpoint.getEpoch())) {
-            if (!anchor.getRoot().equals(finalizedCheckpoint.getRoot())) {
-              throw new IllegalStateException(
-                  "Configured initial state is incompatible with stored latest finalized checkpoint.");
-            }
-          } else {
-            // Look up historical chain data to check for consistency
-            return storageQueryChannel
-                .getLatestFinalizedBlockAtSlot(anchor.getEpochStartSlot())
-                .thenCompose(
-                    maybeBlock -> {
-                      final SafeFuture<Optional<BeaconBlockSummary>> summary;
-                      if (maybeBlock.isPresent()) {
-                        summary = SafeFuture.completedFuture(maybeBlock.map(a -> a));
-                      } else {
-                        // If block is unavailable, try looking up the corresponding state
-                        summary =
-                            storageQueryChannel
-                                .getLatestFinalizedStateAtSlot(anchor.getEpochStartSlot())
-                                .thenApply(
-                                    state -> state.map(BeaconBlockHeader::fromState).map(a -> a));
-                      }
-                      return summary;
-                    })
-                .thenApply(
-                    blockSummaryAtAnchor -> {
-                      if (blockSummaryAtAnchor.isEmpty()) {
-                        // We must have moved passed the anchor point and not saved its state, just
-                        // log a warning
-                        LOG.warn(
-                            "Ignoring configured initial state. Local database is already initialized and cannot be validated against the configured state (slot={}, blockRoot={}, stateRoot={}).",
-                            anchor.getBlockSlot(),
-                            anchor.getRoot(),
-                            anchor.getStateRoot());
-                        return null;
-                      }
-                      final Optional<Bytes32> storedBlockRoot =
-                          blockSummaryAtAnchor.map(BeaconBlockSummary::getRoot);
-                      final boolean storedBlockMatchesAnchor =
-                          storedBlockRoot.map(r -> r.equals(anchor.getRoot())).orElse(false);
-                      if (!storedBlockMatchesAnchor) {
-                        throw new IllegalStateException(
-                            "Configured initial state does not match stored block at epoch "
-                                + anchor.getEpoch()
-                                + ": "
-                                + storedBlockRoot.map(Object::toString).orElse("(empty)"));
-                      }
-                      return null;
-                    });
-          }
-
-          return SafeFuture.COMPLETE;
-        });
   }
 }

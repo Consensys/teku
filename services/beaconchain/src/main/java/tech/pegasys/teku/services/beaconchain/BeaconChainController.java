@@ -179,6 +179,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
   private BlockManager blockManager;
+  private KeyValueStore<String, Bytes> keyValueStore;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -258,6 +259,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
+
+    keyValueStore =
+        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -277,13 +281,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (initialAnchor.isPresent()) {
-                // If we already have an existing database and an initial anchor, validate that they
-                // are consistent
-                return wsInitializer
-                    .assertInitialAnchorIsConsistentWithExistingData(
-                        client, initialAnchor.get(), storageQueryChannel)
-                    .thenApply(__ -> client);
               }
               return SafeFuture.completedFuture(client);
             })
@@ -392,7 +389,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
-    this.initialAnchor = wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
+    this.initialAnchor =
+        wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity(), keyValueStore);
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
@@ -568,9 +566,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
-
-    final KeyValueStore<String, Bytes> keyValueStore =
-        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
     this.p2pNetwork =
         Eth2NetworkBuilder.create()
