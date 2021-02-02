@@ -166,19 +166,21 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     queueGossipStart();
   }
 
-  private boolean queueGossipStart() {
+  private void queueGossipStart() {
     LOG.debug("Check if gossip should be started");
     final UInt64 slotsBehind = recentChainData.getChainHeadSlotsBehind().orElseThrow();
-    if (slotsBehind.isLessThanOrEqualTo(5)) {
-      // Start gossip
-      return startGossip();
-    } else if (slotsBehind.isLessThanOrEqualTo(1000)) {
-      LOG.debug("Chain is almost in sync, check if gossip should be started in 5 seconds");
-      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(5)).reportExceptions();
+    if (slotsBehind.isLessThanOrEqualTo(500)) {
+      // Start gossip if we're "close enough" to the chain head
+      // Note: we don't want to be too strict here, otherwise we could end up with our sync logic
+      // inactive because our chain is almost caught up to the chainhead, but gossip inactive so
+      // that our node slowly falls behind because no gossip is propagating.  However, if we're too
+      // aggressive, our node could be down-scored for subscribing to topics that it can't yet
+      // validate causing our node to fail to propagate any gossip.
+      startGossip();
     } else {
       // Check again when we should be caught up assuming a speedy sync process
       final int blocksPerSecond = 100;
-      final int delayInSeconds = slotsBehind.dividedBy(blocksPerSecond).min(600).intValue();
+      final int delayInSeconds = slotsBehind.dividedBy(blocksPerSecond).min(600).max(10).intValue();
       LOG.debug(
           "Chain is not yet in sync, check if gossip should be started in {} seconds",
           delayInSeconds);
@@ -186,14 +188,12 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
           .runAfterDelay(this::queueGossipStart, Duration.ofSeconds(delayInSeconds))
           .reportExceptions();
     }
-
-    return false;
   }
 
-  private synchronized boolean startGossip() {
+  private synchronized void startGossip() {
     LOG.info("Starting eth2 gossip");
     if (!gossipStarted.compareAndSet(false, true)) {
-      return false;
+      return;
     }
 
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
@@ -251,8 +251,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
 
     setTopicScoringParams();
-
-    return true;
   }
 
   private void setTopicScoringParams() {
