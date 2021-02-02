@@ -32,7 +32,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class MetadataMessage
     extends Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>> implements RpcRequest {
 
-  static class MetadataMessageType
+  public static class MetadataMessageType
       extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
 
     public MetadataMessageType() {

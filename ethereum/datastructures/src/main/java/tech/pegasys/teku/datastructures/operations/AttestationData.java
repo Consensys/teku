@@ -27,7 +27,7 @@ public class AttestationData
     extends Container5<
         AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
 
-  static class AttestationDataType
+  public static class AttestationDataType
       extends ContainerType5<
           AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
 

@@ -26,13 +26,19 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
     implements RpcRequest {
 
-  public static final ContainerType1<GoodbyeMessage, UInt64View> TYPE =
-      new ContainerType1<>(BasicViewTypes.UINT64_TYPE) {
-        @Override
-        public GoodbyeMessage createFromBackingNode(TreeNode node) {
-          return new GoodbyeMessage(this, node);
-        }
-      };
+  public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, UInt64View> {
+
+    public GoodbyeMessageType() {
+      super("GoodbyeMessage", namedType("reason", BasicViewTypes.UINT64_TYPE));
+    }
+
+    @Override
+    public GoodbyeMessage createFromBackingNode(TreeNode node) {
+      return new GoodbyeMessage(this, node);
+    }
+  }
+
+  public static final GoodbyeMessageType TYPE = new GoodbyeMessageType();
 
   public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
   public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
@@ -44,7 +50,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
   public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
   public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
 
-  public GoodbyeMessage(ContainerType1<GoodbyeMessage, UInt64View> type, TreeNode backingNode) {
+  private GoodbyeMessage(GoodbyeMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -60,11 +66,6 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
 
   public UInt64 getReason() {
     return getField0().get();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("reason", getReason()).toString();
   }
 
   @Override

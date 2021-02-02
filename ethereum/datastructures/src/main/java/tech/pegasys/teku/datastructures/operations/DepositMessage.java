@@ -31,7 +31,7 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class DepositMessage
     extends Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
 
-  static class DepositMessageType
+  public static class DepositMessageType
       extends ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
 
     public DepositMessageType() {

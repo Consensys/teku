@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View> {
 
-  static class VoluntaryExitType extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
+  public static class VoluntaryExitType extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
 
     public VoluntaryExitType() {
       super(

@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class SignedVoluntaryExit
     extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
 
-  static class SignedVoluntaryExitType
+  public static class SignedVoluntaryExitType
       extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
 
     public SignedVoluntaryExitType() {

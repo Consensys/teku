@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View> {
 
-  static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
+  public static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
 
     public ForkType() {
       super(

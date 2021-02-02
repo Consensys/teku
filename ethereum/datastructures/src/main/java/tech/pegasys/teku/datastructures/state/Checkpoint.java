@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> {
 
-  static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
+  public static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
 
     public CheckpointType() {
       super(

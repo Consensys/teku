@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
 
-  static class SignedAggregateAndProofType
+  public static class SignedAggregateAndProofType
       extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
 
     public SignedAggregateAndProofType() {

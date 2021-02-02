@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 
 public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
 
-  static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
+  public static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
 
     public ForkDataType() {
       super(
