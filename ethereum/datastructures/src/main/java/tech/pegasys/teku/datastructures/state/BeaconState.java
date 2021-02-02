@@ -151,6 +151,7 @@ public interface BeaconState extends ContainerViewRead {
   }
 
   static BeaconState createEmpty() {
+    TYPE.reset();
     return new BeaconStateImpl();
   }
 
