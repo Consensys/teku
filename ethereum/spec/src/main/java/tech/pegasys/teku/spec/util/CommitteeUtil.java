@@ -11,25 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec;
+package tech.pegasys.teku.spec.util;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.util.CommitteeUtil;
 
-public class Spec {
-  private final SpecConstants constants;
-  private final CommitteeUtil committeeUtil;
+public class CommitteeUtil {
+  private final SpecConstants specConstants;
 
-  Spec(final SpecConstants constants) {
-    this.constants = constants;
-    this.committeeUtil = new CommitteeUtil(this.constants);
+  public CommitteeUtil(final SpecConstants specConstants) {
+    this.specConstants = specConstants;
   }
 
-  public SpecConstants getConstants() {
-    return constants;
-  }
-
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
+  public int getAggregatorModulo(final int committeeSize) {
+    return specConstants.getTargetAggregatorsPerCommittee() == 0
+        ? 1
+        : Math.max(1, committeeSize / specConstants.getTargetAggregatorsPerCommittee());
   }
 }
