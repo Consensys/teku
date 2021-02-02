@@ -179,20 +179,6 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
-  public void shouldHandleOldArgs(@TempDir final Path tempDir) throws IOException {
-    createFolders(tempDir, Path.of("key"), Path.of("pass"));
-    createFiles(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt"));
-    final String tempStr = tempDir.toString();
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(), PATH_SEP);
-    locator.parseKeyAndPasswordList(
-        List.of(Path.of(tempStr, "key", "a").toString()),
-        List.of(Path.of(tempStr, "pass", "a.txt").toString()));
-
-    assertThat(locator.getFilePairs())
-        .containsExactly(tuple(tempDir, List.of("key", "a"), List.of("pass", "a.txt")));
-  }
-
-  @Test
   @DisabledOnOs(OS.WINDOWS) // creating symlinks on Win requires elevated privileges
   public void shouldHandleSymlinkedDirectories(@TempDir final Path tempDir) throws IOException {
     Path realKeyDir = Path.of("actualKey");
