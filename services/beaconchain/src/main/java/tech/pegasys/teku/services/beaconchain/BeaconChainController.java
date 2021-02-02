@@ -169,7 +169,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       new GossipPublisher<>();
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
-  private volatile Optional<AnchorPoint> initialAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
@@ -179,7 +178,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
   private BlockManager blockManager;
-  private KeyValueStore<String, Bytes> keyValueStore;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -259,9 +257,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
-
-    keyValueStore =
-        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -281,6 +276,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
+              } else if (beaconConfig
+                  .weakSubjectivity()
+                  .getWeakSubjectivityStateResource()
+                  .isPresent()) {
+                STATUS_LOG.warnInitialStateIgnored();
               }
               return SafeFuture.completedFuture(client);
             })
@@ -389,18 +389,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
-    this.initialAnchor =
-        wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity(), keyValueStore);
-    // Validate
-    initialAnchor.ifPresent(
-        anchor -> {
-          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot);
-        });
-
     return wsInitializer
-        .finalizeAndStoreConfig(
-            beaconConfig.weakSubjectivity(), initialAnchor, queryChannel, updateChannel)
+        .finalizeAndStoreConfig(beaconConfig.weakSubjectivity(), queryChannel, updateChannel)
         .thenAccept(
             finalConfig -> {
               this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
@@ -567,6 +557,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           }
         });
 
+    final KeyValueStore<String, Bytes> keyValueStore =
+        new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
+
     this.p2pNetwork =
         Eth2NetworkBuilder.create()
             .config(beaconConfig.p2pConfig())
@@ -701,6 +694,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void setupInitialState(final RecentChainData client) {
+    final Optional<AnchorPoint> initialAnchor =
+        wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
+    // Validate
+    initialAnchor.ifPresent(
+        anchor -> {
+          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
+          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+        });
+
     if (initialAnchor.isPresent()) {
       final AnchorPoint anchor = initialAnchor.get();
       client.initializeFromAnchorPoint(anchor);

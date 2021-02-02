@@ -25,7 +25,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -55,8 +54,7 @@ public class WeakSubjectivityInitializerTest {
         .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
 
     final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(
-            defaultConfig, Optional.empty(), queryChannel, updateChannel);
+        initializer.finalizeAndStoreConfig(defaultConfig, queryChannel, updateChannel);
 
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
@@ -76,8 +74,7 @@ public class WeakSubjectivityInitializerTest {
         .thenReturn(SafeFuture.completedFuture(WeakSubjectivityState.empty()));
 
     final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(
-            cliConfig, Optional.empty(), queryChannel, updateChannel);
+        initializer.finalizeAndStoreConfig(cliConfig, queryChannel, updateChannel);
 
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
@@ -99,8 +96,7 @@ public class WeakSubjectivityInitializerTest {
         .thenReturn(SafeFuture.completedFuture(storedState));
 
     final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(
-            defaultConfig, Optional.empty(), queryChannel, updateChannel);
+        initializer.finalizeAndStoreConfig(defaultConfig, queryChannel, updateChannel);
 
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
@@ -129,8 +125,7 @@ public class WeakSubjectivityInitializerTest {
         .thenReturn(SafeFuture.completedFuture(storedState));
 
     final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(
-            cliConfig, Optional.empty(), queryChannel, updateChannel);
+        initializer.finalizeAndStoreConfig(cliConfig, queryChannel, updateChannel);
 
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
@@ -154,152 +149,12 @@ public class WeakSubjectivityInitializerTest {
         .thenReturn(SafeFuture.completedFuture(storedState));
 
     final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(
-            cliConfig, Optional.empty(), queryChannel, updateChannel);
+        initializer.finalizeAndStoreConfig(cliConfig, queryChannel, updateChannel);
 
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
     assertThat(result.join()).usingRecursiveComparison().isEqualTo(cliConfig);
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorAtSameEpochAsCLIWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(cliCheckpoint.getEpoch());
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isEmpty();
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorAfterCLIWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.plus(2));
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isEmpty();
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorPriorToCLIWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
-    final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.minus(2));
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.empty(), Optional.of(cliCheckpoint), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isPresent();
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorAtSameEpochAsStoredWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(storedCheckpoint.getEpoch());
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isEmpty();
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorAfterStoredWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
-    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(wsCheckpointEpoch.plus(2));
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isEmpty();
-  }
-
-  @Test
-  public void finalizeAndStoreConfig_anchorPriorToStoredWSCheckpoint() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-    final UInt64 wsCheckpointEpoch = UInt64.valueOf(10);
-    final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint(10);
-    final SignedBlockAndState anchorBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(
-            compute_start_slot_at_epoch(wsCheckpointEpoch.minus(2)));
-    final AnchorPoint anchor = AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
-
-    final Optional<Checkpoint> configuredCheckpoint =
-        testFinalizeAndStoreConfigWithAnchor(
-            Optional.of(storedCheckpoint), Optional.empty(), Optional.of(anchor));
-    // Sanity check
-    assertThat(configuredCheckpoint).isPresent();
-  }
-
-  private Optional<Checkpoint> testFinalizeAndStoreConfigWithAnchor(
-      Optional<Checkpoint> storedCheckpoint,
-      Optional<Checkpoint> cliCheckpoint,
-      Optional<AnchorPoint> wsInitialAnchor) {
-    // Set up expectations
-    final Optional<Checkpoint> expectedWsCheckpoint =
-        cliCheckpoint
-            .or(() -> storedCheckpoint)
-            .filter(
-                c ->
-                    wsInitialAnchor.isEmpty()
-                        || wsInitialAnchor.get().getEpoch().isLessThan(c.getEpoch()));
-    final boolean shouldPersistWsCheckpoint =
-        cliCheckpoint.isPresent() && expectedWsCheckpoint.isPresent();
-    final boolean shouldClearWsCheckpoint =
-        storedCheckpoint.isPresent() && expectedWsCheckpoint.isEmpty();
-    final WeakSubjectivityConfig expectedConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(expectedWsCheckpoint).build();
-
-    final WeakSubjectivityConfig cliConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
-
-    // Setup storage
-    final WeakSubjectivityState storedState = WeakSubjectivityState.create(storedCheckpoint);
-    when(queryChannel.getWeakSubjectivityState())
-        .thenReturn(SafeFuture.completedFuture(storedState));
-
-    final SafeFuture<WeakSubjectivityConfig> result =
-        initializer.finalizeAndStoreConfig(cliConfig, wsInitialAnchor, queryChannel, updateChannel);
-
-    assertThat(result).isCompleted();
-    verify(queryChannel).getWeakSubjectivityState();
-    if (shouldPersistWsCheckpoint) {
-      verify(updateChannel)
-          .onWeakSubjectivityUpdate(
-              WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(
-                  expectedWsCheckpoint.orElseThrow()));
-    } else if (shouldClearWsCheckpoint) {
-      verify(updateChannel)
-          .onWeakSubjectivityUpdate(WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint());
-    } else {
-      verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    }
-    assertThat(result.join()).usingRecursiveComparison().isEqualTo(expectedConfig);
-
-    return expectedWsCheckpoint;
   }
 
   @Test
