@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,6 +37,8 @@ import tech.pegasys.teku.spec.StubSpecProvider;
 public class CommitteeUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
+  private final tech.pegasys.teku.spec.util.CommitteeUtil specCommitteeUtil =
+      specProvider.atSlot(ZERO).getCommitteeUtil();
 
   @Test
   void testListShuffleAndShuffledIndexCompatibility() {
@@ -117,8 +120,7 @@ public class CommitteeUtilTest {
 
     assertThat(BLS.verify(pKey, signingRoot, selectionProof)).isTrue();
 
-    int aggregatorModulo =
-        specProvider.get(UInt64.ZERO).getCommitteeUtil().getAggregatorModulo(committeeLen);
+    int aggregatorModulo = specCommitteeUtil.getAggregatorModulo(committeeLen);
     assertThat(CommitteeUtil.isAggregator(selectionProof, aggregatorModulo)).isFalse();
   }
 }

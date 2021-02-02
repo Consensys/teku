@@ -140,7 +140,7 @@ public class AggregateAttestationValidator {
 
                         final int aggregatorModulo =
                             specProvider
-                                .atSlot(state.getSlot())
+                                .atSlot(aggregateSlot)
                                 .getCommitteeUtil()
                                 .getAggregatorModulo(beaconCommittee.size());
                         if (!isAggregator(
