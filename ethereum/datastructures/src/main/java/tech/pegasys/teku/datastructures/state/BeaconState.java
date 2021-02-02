@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
@@ -44,110 +45,134 @@ import tech.pegasys.teku.util.config.Constants;
 
 public interface BeaconState extends ContainerViewRead {
 
-  SszField GENESIS_TIME_FIELD = new SszField(0, BasicViewTypes.UINT64_TYPE);
-  SszField GENESIS_VALIDATORS_ROOT_FIELD = new SszField(1, BasicViewTypes.BYTES32_TYPE);
-  SszField SLOT_FIELD = new SszField(2, BasicViewTypes.UINT64_TYPE);
-  SszField FORK_FIELD = new SszField(3, Fork.TYPE);
-  SszField LATEST_BLOCK_HEADER_FIELD = new SszField(4, BeaconBlockHeader.TYPE);
+  SszField GENESIS_TIME_FIELD = new SszField(0, "genesis_time", BasicViewTypes.UINT64_TYPE);
+  SszField GENESIS_VALIDATORS_ROOT_FIELD =
+      new SszField(1, "genesis_validators_root", BasicViewTypes.BYTES32_TYPE);
+  SszField SLOT_FIELD = new SszField(2, "slot", BasicViewTypes.UINT64_TYPE);
+  SszField FORK_FIELD = new SszField(3, "fork", Fork.TYPE);
+  SszField LATEST_BLOCK_HEADER_FIELD =
+      new SszField(4, "latest_block_header", BeaconBlockHeader.TYPE);
   SszField BLOCK_ROOTS_FIELD =
       new SszField(
           5,
+          "block_roots",
           () ->
               new VectorViewType<>(
                   BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField STATE_ROOTS_FIELD =
       new SszField(
           6,
+          "state_roots",
           () ->
               new VectorViewType<>(
                   BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
+          "historical_roots",
           () -> new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT));
-  SszField ETH1_DATA_FIELD = new SszField(8, Eth1Data.TYPE);
+  SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.TYPE);
   SszField ETH1_DATA_VOTES_FIELD =
       new SszField(
           9,
+          "eth1_data_votes",
           () ->
               new ListViewType<>(
                   Eth1Data.TYPE,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
-  SszField ETH1_DEPOSIT_INDEX_FIELD = new SszField(10, BasicViewTypes.UINT64_TYPE);
+  SszField ETH1_DEPOSIT_INDEX_FIELD =
+      new SszField(10, "eth1_deposit_index", BasicViewTypes.UINT64_TYPE);
   SszField VALIDATORS_FIELD =
       new SszField(
           11,
+          "validators",
           () ->
               new ListViewType<>(
                   Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, TypeHints.sszSuperNode(8)));
   SszField BALANCES_FIELD =
       new SszField(
           12,
+          "balances",
           () -> new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
+          "randao_mixes",
           () ->
               new VectorViewType<>(
                   BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField SLASHINGS_FIELD =
       new SszField(
           14,
+          "slashings",
           () ->
               new VectorViewType<>(
                   BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           15,
+          "previous_epoch_attestations",
           () ->
               new ListViewType<>(
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           16,
+          "current_epoch_attestations",
           () ->
               new ListViewType<>(
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
-      new SszField(17, () -> new BitVectorType(Constants.JUSTIFICATION_BITS_LENGTH));
-  SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD = new SszField(18, Checkpoint.TYPE);
-  SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD = new SszField(19, Checkpoint.TYPE);
-  SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, Checkpoint.TYPE);
+      new SszField(
+          17, "justification_bits", () -> new BitVectorType(Constants.JUSTIFICATION_BITS_LENGTH));
+  SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
+      new SszField(18, "previous_justified_checkpoint", Checkpoint.TYPE);
+  SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
+      new SszField(19, "current_justified_checkpoint_field", Checkpoint.TYPE);
+  SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, "finalized_checkpoint", Checkpoint.TYPE);
 
-  SpecDependent<ContainerViewType<BeaconState>> TYPE = SpecDependent.of(BeaconState::createSszType);
+  SpecDependent<BeaconStateType> TYPE = SpecDependent.of(BeaconStateType::new);
 
   @SszTypeDescriptor
-  static ContainerViewType<BeaconState> getSszType() {
+  static BeaconStateType getSszType() {
     return TYPE.get();
   }
 
-  private static ContainerViewType<BeaconState> createSszType() {
-    return ContainerViewType.create(
-        Stream.of(
-                GENESIS_TIME_FIELD,
-                GENESIS_VALIDATORS_ROOT_FIELD,
-                SLOT_FIELD,
-                FORK_FIELD,
-                LATEST_BLOCK_HEADER_FIELD,
-                BLOCK_ROOTS_FIELD,
-                STATE_ROOTS_FIELD,
-                HISTORICAL_ROOTS_FIELD,
-                ETH1_DATA_FIELD,
-                ETH1_DATA_VOTES_FIELD,
-                ETH1_DEPOSIT_INDEX_FIELD,
-                VALIDATORS_FIELD,
-                BALANCES_FIELD,
-                RANDAO_MIXES_FIELD,
-                SLASHINGS_FIELD,
-                PREVIOUS_EPOCH_ATTESTATIONS_FIELD,
-                CURRENT_EPOCH_ATTESTATIONS_FIELD,
-                JUSTIFICATION_BITS_FIELD,
-                PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD,
-                CURRENT_JUSTIFIED_CHECKPOINT_FIELD,
-                FINALIZED_CHECKPOINT_FIELD)
-            .map(f -> f.getViewType().get())
-            .collect(Collectors.toList()),
-        BeaconStateImpl::new);
+  class BeaconStateType extends ContainerViewType<BeaconState> {
+
+    public BeaconStateType() {
+      super(
+          "BeaconState",
+          Stream.of(
+                  GENESIS_TIME_FIELD,
+                  GENESIS_VALIDATORS_ROOT_FIELD,
+                  SLOT_FIELD,
+                  FORK_FIELD,
+                  LATEST_BLOCK_HEADER_FIELD,
+                  BLOCK_ROOTS_FIELD,
+                  STATE_ROOTS_FIELD,
+                  HISTORICAL_ROOTS_FIELD,
+                  ETH1_DATA_FIELD,
+                  ETH1_DATA_VOTES_FIELD,
+                  ETH1_DEPOSIT_INDEX_FIELD,
+                  VALIDATORS_FIELD,
+                  BALANCES_FIELD,
+                  RANDAO_MIXES_FIELD,
+                  SLASHINGS_FIELD,
+                  PREVIOUS_EPOCH_ATTESTATIONS_FIELD,
+                  CURRENT_EPOCH_ATTESTATIONS_FIELD,
+                  JUSTIFICATION_BITS_FIELD,
+                  PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD,
+                  CURRENT_JUSTIFIED_CHECKPOINT_FIELD,
+                  FINALIZED_CHECKPOINT_FIELD)
+              .map(f -> namedType(f.getName(), f.getViewType().get()))
+              .collect(Collectors.toList()));
+    }
+
+    @Override
+    public BeaconState createFromBackingNode(TreeNode node) {
+      return new BeaconStateImpl(this, node);
+    }
   }
 
   static BeaconState createEmpty() {

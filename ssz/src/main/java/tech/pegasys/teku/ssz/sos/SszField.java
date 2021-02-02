@@ -18,6 +18,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class SszField {
   private final int index;
+  private final String name;
   private final Supplier<ViewType<?>> viewType;
 
   public SszField(int index, ViewType<?> viewType) {
@@ -25,12 +26,25 @@ public class SszField {
   }
 
   public SszField(int index, Supplier<ViewType<?>> viewType) {
+    this(index, "field-" + index, viewType);
+  }
+
+  public SszField(int index, String name, ViewType<?> viewType) {
+    this(index, name, () -> viewType);
+  }
+
+  public SszField(int index, String name, Supplier<ViewType<?>> viewType) {
     this.index = index;
+    this.name = name;
     this.viewType = viewType;
   }
 
   public int getIndex() {
     return index;
+  }
+
+  public String getName() {
+    return name;
   }
 
   public Supplier<ViewType<?>> getViewType() {
