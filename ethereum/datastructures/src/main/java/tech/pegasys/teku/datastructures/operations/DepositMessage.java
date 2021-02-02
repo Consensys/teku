@@ -27,7 +27,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class DepositMessage
     extends Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
@@ -49,7 +48,7 @@ public class DepositMessage
     }
   }
 
-  @SszTypeDescriptor public static final DepositMessageType TYPE = new DepositMessageType();
+  public static final DepositMessageType TYPE = new DepositMessageType();
 
   private DepositMessage(DepositMessageType type, TreeNode backingNode) {
     super(type, backingNode);

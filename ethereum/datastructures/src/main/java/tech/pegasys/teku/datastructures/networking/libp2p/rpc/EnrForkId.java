@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
 
@@ -42,7 +41,7 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
     }
   }
 
-  @SszTypeDescriptor public static final EnrForkIdType TYPE = new EnrForkIdType();
+  public static final EnrForkIdType TYPE = new EnrForkIdType();
 
   private EnrForkId(EnrForkIdType type, TreeNode backingNode) {
     super(type, backingNode);

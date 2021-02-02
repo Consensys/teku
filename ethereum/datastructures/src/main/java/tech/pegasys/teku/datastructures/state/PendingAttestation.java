@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
@@ -56,7 +55,7 @@ public class PendingAttestation
     }
   }
 
-  @SszTypeDescriptor public static final PendingAttestationType TYPE = new PendingAttestationType();
+  public static final PendingAttestationType TYPE = new PendingAttestationType();
 
   private PendingAttestation(PendingAttestationType type, TreeNode backingNode) {
     super(type, backingNode);

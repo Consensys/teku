@@ -28,7 +28,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class DepositData
     extends Container4<
@@ -57,7 +56,7 @@ public class DepositData
     }
   }
 
-  @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
+  public static final DepositDataType TYPE = new DepositDataType();
 
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;

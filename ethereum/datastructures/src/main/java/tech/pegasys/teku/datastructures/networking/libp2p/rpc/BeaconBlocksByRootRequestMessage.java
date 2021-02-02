@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class BeaconBlocksByRootRequestMessage
     extends Container1<BeaconBlocksByRootRequestMessage, ListViewRead<Bytes32View>>
@@ -52,7 +51,6 @@ public class BeaconBlocksByRootRequestMessage
     }
   }
 
-  @SszTypeDescriptor
   public static final BeaconBlocksByRootRequestMessageType TYPE =
       new BeaconBlocksByRootRequestMessageType();
 

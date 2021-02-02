@@ -18,12 +18,10 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  @SszTypeDescriptor
   public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
     return ContainerType2.create(
         BeaconState.getSszType(), Attestation.TYPE, AttestationFuzzInput::new);

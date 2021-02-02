@@ -19,7 +19,6 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> {
 
@@ -39,7 +38,7 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
     }
   }
 
-  @SszTypeDescriptor public static final SigningDataType TYPE = new SigningDataType();
+  public static final SigningDataType TYPE = new SigningDataType();
 
   private SigningData(SigningDataType type, TreeNode backingNode) {
     super(type, backingNode);

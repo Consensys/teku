@@ -29,7 +29,6 @@ import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
@@ -61,7 +60,7 @@ public class IndexedAttestation
     }
   }
 
-  @SszTypeDescriptor public static final IndexedAttestationType TYPE = new IndexedAttestationType();
+  public static final IndexedAttestationType TYPE = new IndexedAttestationType();
 
   private BLSSignature signatureCache;
 

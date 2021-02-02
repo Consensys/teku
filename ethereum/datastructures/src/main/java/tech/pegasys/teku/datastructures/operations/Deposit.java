@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
@@ -53,7 +52,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
     }
   }
 
-  @SszTypeDescriptor public static final DepositType TYPE = new DepositType();
+  public static final DepositType TYPE = new DepositType();
 
   private static final SSZVector<Bytes32> EMPTY_PROOF =
       SSZVector.createMutable(TYPE.getProofType().getLength(), Bytes32.ZERO);

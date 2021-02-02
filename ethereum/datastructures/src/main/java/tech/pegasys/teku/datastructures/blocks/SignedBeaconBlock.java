@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
@@ -47,7 +46,6 @@ public class SignedBeaconBlock
     }
   }
 
-  @SszTypeDescriptor
   public static SignedBeaconBlockType getSszType() {
     return TYPE.get();
   }

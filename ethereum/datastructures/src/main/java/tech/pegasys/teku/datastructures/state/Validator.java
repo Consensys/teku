@@ -28,7 +28,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Validator
     extends Container8<
@@ -73,7 +72,7 @@ public class Validator
     }
   }
 
-  @SszTypeDescriptor public static final ValidatorType TYPE = new ValidatorType();
+  public static final ValidatorType TYPE = new ValidatorType();
 
   private Validator(ValidatorType type, TreeNode backingNode) {
     super(type, backingNode);

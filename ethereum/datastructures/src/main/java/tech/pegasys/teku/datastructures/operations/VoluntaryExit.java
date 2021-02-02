@@ -19,7 +19,6 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View> {
 
@@ -38,7 +37,7 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
     }
   }
 
-  @SszTypeDescriptor public static final VoluntaryExitType TYPE = new VoluntaryExitType();
+  public static final VoluntaryExitType TYPE = new VoluntaryExitType();
 
   private VoluntaryExit(VoluntaryExitType type, TreeNode backingNode) {
     super(type, backingNode);

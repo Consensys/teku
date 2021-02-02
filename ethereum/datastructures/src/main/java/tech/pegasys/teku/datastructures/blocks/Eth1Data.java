@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
 
@@ -42,7 +41,7 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
     }
   }
 
-  @SszTypeDescriptor public static final Eth1DataType TYPE = new Eth1DataType();
+  public static final Eth1DataType TYPE = new Eth1DataType();
 
   private Eth1Data(Eth1DataType type, TreeNode backingNode) {
     super(type, backingNode);

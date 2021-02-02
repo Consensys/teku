@@ -29,7 +29,6 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
@@ -58,7 +57,7 @@ public class Attestation
     }
   }
 
-  @SszTypeDescriptor public static final AttestationType TYPE = new AttestationType();
+  public static final AttestationType TYPE = new AttestationType();
 
   private Bitlist aggregationBitsCache;
   private BLSSignature signatureCache;

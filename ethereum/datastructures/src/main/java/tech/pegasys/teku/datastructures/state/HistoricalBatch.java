@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBatch
@@ -67,7 +66,6 @@ public class HistoricalBatch
     }
   }
 
-  @SszTypeDescriptor
   public static HistoricalBatchType getSszType() {
     return TYPE.get();
   }

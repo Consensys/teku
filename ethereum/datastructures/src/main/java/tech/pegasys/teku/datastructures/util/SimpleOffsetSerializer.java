@@ -15,9 +15,6 @@ package tech.pegasys.teku.datastructures.util;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
-import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 
 public class SimpleOffsetSerializer {
 
@@ -30,29 +27,14 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(Object value) {
-    if (value instanceof ViewRead) {
-      return ((ViewRead) value).sszSerialize();
-    }
     throw new UnsupportedOperationException();
   }
 
-  @SuppressWarnings("unchecked")
   public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
-    Optional<ViewType<?>> maybeViewType = ViewType.getType(classInfo);
-    if (maybeViewType.isPresent()) {
-      return (T) maybeViewType.get().sszDeserialize(bytes);
-    } else {
-      throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
   }
 
   public static <T> Optional<LengthBounds> getLengthBounds(final Class<T> type) {
-    Optional<ViewType<?>> maybeViewType = ViewType.getType(type);
-    if (maybeViewType.isPresent()) {
-      SszLengthBounds lengthBounds = maybeViewType.get().getSszLengthBounds();
-      return Optional.of(new LengthBounds(lengthBounds.getMinBytes(), lengthBounds.getMaxBytes()));
-    } else {
-      throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
   }
 }

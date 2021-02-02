@@ -24,7 +24,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> {
 
@@ -43,7 +42,7 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> 
     }
   }
 
-  @SszTypeDescriptor public static final CheckpointType TYPE = new CheckpointType();
+  public static final CheckpointType TYPE = new CheckpointType();
 
   private Checkpoint(CheckpointType type, TreeNode backingNode) {
     super(type, backingNode);

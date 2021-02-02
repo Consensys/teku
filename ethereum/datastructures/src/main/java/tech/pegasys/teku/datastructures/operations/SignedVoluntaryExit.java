@@ -22,7 +22,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedVoluntaryExit
     extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
@@ -43,7 +42,6 @@ public class SignedVoluntaryExit
     }
   }
 
-  @SszTypeDescriptor
   public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
 
   private BLSSignature signatureCache;

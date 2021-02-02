@@ -35,7 +35,6 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A Beacon block body */
@@ -109,7 +108,6 @@ public class BeaconBlockBody
     }
   }
 
-  @SszTypeDescriptor
   public static BeaconBlockBodyType getSszType() {
     return TYPE.get();
   }

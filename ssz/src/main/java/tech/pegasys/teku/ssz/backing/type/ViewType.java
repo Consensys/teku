@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -26,10 +24,6 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
 public interface ViewType<V extends ViewRead> extends SszType {
-
-  static Optional<ViewType<?>> getType(Class<?> clazz) {
-    return Utils.getSszType(clazz);
-  }
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally

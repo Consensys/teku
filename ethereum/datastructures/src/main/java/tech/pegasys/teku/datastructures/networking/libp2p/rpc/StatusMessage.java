@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StatusMessage
@@ -52,7 +51,7 @@ public class StatusMessage
     }
   }
 
-  @SszTypeDescriptor public static final StatusMessageType TYPE = new StatusMessageType();
+  public static final StatusMessageType TYPE = new StatusMessageType();
 
   private StatusMessage(StatusMessageType type, TreeNode backingNode) {
     super(type, backingNode);

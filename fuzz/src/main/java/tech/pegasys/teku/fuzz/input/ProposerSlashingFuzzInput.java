@@ -18,12 +18,10 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ProposerSlashingFuzzInput
     extends Container2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing> {
 
-  @SszTypeDescriptor
   public static ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
       createType() {
     return ContainerType2.create(

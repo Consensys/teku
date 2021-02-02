@@ -24,7 +24,6 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AggregateAndProof
     extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
@@ -46,7 +45,7 @@ public class AggregateAndProof
     }
   }
 
-  @SszTypeDescriptor public static final AggregateAndProofType TYPE = new AggregateAndProofType();
+  public static final AggregateAndProofType TYPE = new AggregateAndProofType();
 
   private BLSSignature selectionProofCache;
 

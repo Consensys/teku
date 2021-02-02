@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
 
@@ -40,7 +39,7 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
     }
   }
 
-  @SszTypeDescriptor public static final ForkDataType TYPE = new ForkDataType();
+  public static final ForkDataType TYPE = new ForkDataType();
 
   private ForkData(ForkDataType type, TreeNode backingNode) {
     super(type, backingNode);

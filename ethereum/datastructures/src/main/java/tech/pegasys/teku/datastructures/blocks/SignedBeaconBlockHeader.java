@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedBeaconBlockHeader
     extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
@@ -42,7 +41,6 @@ public class SignedBeaconBlockHeader
     }
   }
 
-  @SszTypeDescriptor
   public static final SignedBeaconBlockHeaderType TYPE = new SignedBeaconBlockHeaderType();
 
   private BLSSignature signatureCache;

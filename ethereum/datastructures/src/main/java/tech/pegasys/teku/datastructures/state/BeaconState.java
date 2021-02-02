@@ -40,7 +40,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SszField;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public interface BeaconState extends ContainerViewRead {
@@ -133,7 +132,6 @@ public interface BeaconState extends ContainerViewRead {
 
   SpecDependent<BeaconStateType> TYPE = SpecDependent.of(BeaconStateType::new);
 
-  @SszTypeDescriptor
   static BeaconStateType getSszType() {
     return TYPE.get();
   }

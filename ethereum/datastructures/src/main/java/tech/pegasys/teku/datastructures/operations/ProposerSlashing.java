@@ -17,7 +17,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
@@ -38,7 +37,7 @@ public class ProposerSlashing
     }
   }
 
-  @SszTypeDescriptor public static final ProposerSlashingType TYPE = new ProposerSlashingType();
+  public static final ProposerSlashingType TYPE = new ProposerSlashingType();
 
   private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
     super(type, backingNode);

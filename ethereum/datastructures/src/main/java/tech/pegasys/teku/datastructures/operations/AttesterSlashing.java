@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
@@ -44,7 +43,7 @@ public class AttesterSlashing
     }
   }
 
-  @SszTypeDescriptor public static final AttesterSlashingType TYPE = new AttesterSlashingType();
+  public static final AttesterSlashingType TYPE = new AttesterSlashingType();
 
   private final Supplier<Set<UInt64>> intersectingIndices =
       Suppliers.memoize(

@@ -22,7 +22,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class BeaconBlockHeader
     extends Container5<
@@ -49,7 +48,7 @@ public class BeaconBlockHeader
     }
   }
 
-  @SszTypeDescriptor public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
+  public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
 
   private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
     super(type, backingNode);

@@ -22,12 +22,10 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
     implements RpcRequest {
 
-  @SszTypeDescriptor
   public static final ContainerType1<GoodbyeMessage, UInt64View> TYPE =
       new ContainerType1<>(BasicViewTypes.UINT64_TYPE) {
         @Override

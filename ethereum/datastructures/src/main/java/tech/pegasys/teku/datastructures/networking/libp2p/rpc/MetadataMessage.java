@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
@@ -49,7 +48,7 @@ public class MetadataMessage
     }
   }
 
-  @SszTypeDescriptor public static final MetadataMessageType TYPE = new MetadataMessageType();
+  public static final MetadataMessageType TYPE = new MetadataMessageType();
   public static final MetadataMessage DEFAULT = new MetadataMessage();
 
   private Bitvector attnetsCache;

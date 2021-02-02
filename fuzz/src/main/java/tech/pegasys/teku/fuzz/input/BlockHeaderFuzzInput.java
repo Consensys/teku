@@ -18,7 +18,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 /**
  * Note: BlockHeader fuzzing target accepts a block as input (not a SignedBeaconBlock or
@@ -27,7 +26,6 @@ import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 public class BlockHeaderFuzzInput
     extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> {
 
-  @SszTypeDescriptor
   public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
     return ContainerType2.create(
         BeaconState.getSszType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);

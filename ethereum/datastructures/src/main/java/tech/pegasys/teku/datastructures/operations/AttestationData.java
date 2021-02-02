@@ -22,7 +22,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttestationData
     extends Container5<
@@ -48,7 +47,7 @@ public class AttestationData
     }
   }
 
-  @SszTypeDescriptor public static final AttestationDataType TYPE = new AttestationDataType();
+  public static final AttestationDataType TYPE = new AttestationDataType();
 
   private AttestationData(AttestationDataType type, TreeNode backingNode) {
     super(type, backingNode);

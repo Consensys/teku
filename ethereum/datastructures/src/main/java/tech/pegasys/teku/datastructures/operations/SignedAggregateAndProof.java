@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, VectorViewRead<ByteView>> {
@@ -42,7 +41,6 @@ public class SignedAggregateAndProof
     }
   }
 
-  @SszTypeDescriptor
   public static final SignedAggregateAndProofType TYPE = new SignedAggregateAndProofType();
 
   private BLSSignature signatureCache;
