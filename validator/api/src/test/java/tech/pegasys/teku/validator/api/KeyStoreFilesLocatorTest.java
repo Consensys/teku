@@ -224,7 +224,7 @@ public class KeyStoreFilesLocatorTest {
   private void createFiles(final Path tempDir, Path... paths) throws IOException {
     for (Path path : paths) {
       File file = tempDir.resolve(path).toFile();
-      file.createNewFile();
+      assertThat(file.createNewFile()).isTrue();
     }
   }
 
@@ -243,14 +243,6 @@ public class KeyStoreFilesLocatorTest {
         separator,
         Path.of(tempStr, keyList.toArray(new String[0])).toString(),
         Path.of(tempStr, passList.toArray(new String[0])).toString());
-  }
-
-  private Pair<Path, Path> tuple(
-      final Path tempDir, final List<String> key, final List<String> path) {
-    final String tempStr = tempDir.toString();
-    return Pair.of(
-        Path.of(tempStr, key.toArray(new String[0])),
-        Path.of(tempStr, path.toArray(new String[0])));
   }
 
   private Pair<Path, Path> tuple(final Path tempDir, final String k, final String p) {
