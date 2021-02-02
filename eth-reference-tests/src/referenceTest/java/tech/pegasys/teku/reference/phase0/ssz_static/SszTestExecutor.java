@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
@@ -54,7 +56,7 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
-  private final ViewType<T> sszType;
+  private final Supplier<ViewType<T>> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
@@ -63,10 +65,10 @@ public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
           .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.TYPE))
           .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.TYPE))
           .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.TYPE))
-          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.getSszType()))
-          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.getSszType()))
+          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.TYPE))
+          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.TYPE))
           .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.TYPE))
-          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconState.getSszType()))
+          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconState.TYPE))
           .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.TYPE))
           .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.TYPE))
           .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.TYPE))
@@ -75,7 +77,7 @@ public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
           .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.TYPE))
           .put("ssz_static/Fork", new SszTestExecutor<>(Fork.TYPE))
           .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.TYPE))
-          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.getSszType()))
+          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.TYPE))
           .put("ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.TYPE))
           .put("ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.TYPE))
           .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.TYPE))
@@ -101,8 +103,12 @@ public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
           .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
+  public SszTestExecutor(final SpecDependent<? extends ViewType<T>> sszType) {
+    this.sszType = sszType::get;
+  }
+
   public SszTestExecutor(final ViewType<T> sszType) {
-    this.sszType = sszType;
+    this.sszType = () -> sszType;
   }
 
   @Override
@@ -111,7 +117,7 @@ public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
     final Bytes inputData = Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
-    final T result = sszType.sszDeserialize(inputData);
+    final T result = sszType.get().sszDeserialize(inputData);
 
     // Deserialize
     assertThat(result.hashTreeRoot()).isEqualTo(expectedRoot);
