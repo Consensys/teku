@@ -32,8 +32,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':bls'))
   testFixturesImplementation project(':ethereum:datastructures')
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
-  testFixturesImplementation project(':ethereum:spec')
-  testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':ssz')

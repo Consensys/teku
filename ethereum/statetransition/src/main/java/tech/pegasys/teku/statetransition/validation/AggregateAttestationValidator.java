@@ -17,6 +17,7 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
@@ -46,7 +47,6 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -58,15 +58,11 @@ public class AggregateAttestationValidator {
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final SpecProvider specProvider;
 
   public AggregateAttestationValidator(
-      final RecentChainData recentChainData,
-      final AttestationValidator attestationValidator,
-      final SpecProvider specProvider) {
+      final RecentChainData recentChainData, final AttestationValidator attestationValidator) {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
-    this.specProvider = specProvider;
   }
 
   public void addSeenAggregate(final ValidateableAttestation attestation) {
@@ -138,11 +134,7 @@ public class AggregateAttestationValidator {
                             CommitteeUtil.get_beacon_committee(
                                 state, aggregateSlot, aggregate.getData().getIndex());
 
-                        final int aggregatorModulo =
-                            specProvider
-                                .atSlot(state.getSlot())
-                                .getCommitteeUtil()
-                                .getAggregatorModulo(beaconCommittee.size());
+                        final int aggregatorModulo = getAggregatorModulo(beaconCommittee.size());
                         if (!isAggregator(
                             aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
                           LOG.trace(

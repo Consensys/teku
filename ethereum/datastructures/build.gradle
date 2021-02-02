@@ -19,8 +19,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
 
   testImplementation testFixtures(project(':bls'))
-  testImplementation project(':ethereum:spec')
-  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

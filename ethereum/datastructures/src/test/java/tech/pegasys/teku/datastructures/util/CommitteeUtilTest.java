@@ -30,12 +30,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 
 public class CommitteeUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final SpecProvider specProvider = StubSpecProvider.create();
 
   @Test
   void testListShuffleAndShuffledIndexCompatibility() {
@@ -117,8 +114,7 @@ public class CommitteeUtilTest {
 
     assertThat(BLS.verify(pKey, signingRoot, selectionProof)).isTrue();
 
-    int aggregatorModulo =
-        specProvider.get(UInt64.ZERO).getCommitteeUtil().getAggregatorModulo(committeeLen);
+    int aggregatorModulo = CommitteeUtil.getAggregatorModulo(committeeLen);
     assertThat(CommitteeUtil.isAggregator(selectionProof, aggregatorModulo)).isFalse();
   }
 }

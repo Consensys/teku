@@ -14,22 +14,15 @@
 package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.util.CommitteeUtil;
 
 public class Spec {
   private final SpecConstants constants;
-  private final CommitteeUtil committeeUtil;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
-    this.committeeUtil = new CommitteeUtil(this.constants);
   }
 
   public SpecConstants getConstants() {
     return constants;
-  }
-
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
   }
 }

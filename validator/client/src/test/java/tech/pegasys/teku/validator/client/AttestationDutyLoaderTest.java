@@ -32,8 +32,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -59,7 +57,6 @@ class AttestationDutyLoaderTest {
       new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-  private final SpecProvider specProvider = StubSpecProvider.create();
 
   private final AttestationDutyLoader dutyLoader =
       new AttestationDutyLoader(
@@ -68,8 +65,7 @@ class AttestationDutyLoaderTest {
           dependentRoot -> scheduledDuties,
           validators,
           validatorIndexProvider,
-          beaconCommitteeSubscriptions,
-          specProvider);
+          beaconCommitteeSubscriptions);
 
   @BeforeEach
   void setUp() {

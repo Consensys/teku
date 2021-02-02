@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assignment;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -56,8 +57,6 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -112,10 +111,9 @@ class SignedAggregateAndProofValidatorTest {
   private final AggregateGenerator generator =
       new AggregateGenerator(chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final SpecProvider specProvider = StubSpecProvider.create();
 
   private final AggregateAttestationValidator validator =
-      new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
+      new AggregateAttestationValidator(recentChainData, attestationValidator);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 
@@ -403,9 +401,7 @@ class SignedAggregateAndProofValidatorTest {
             .generate();
     whenAttestationIsValid(aggregate);
     // Sanity check
-    final int committeeLength = committeeAssignment.getCommittee().size();
-    final int aggregatorModulo =
-        specProvider.get(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
+    final int aggregatorModulo = getAggregatorModulo(committeeAssignment.getCommittee().size());
     assertThat(aggregatorModulo).isGreaterThan(1);
     assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();
