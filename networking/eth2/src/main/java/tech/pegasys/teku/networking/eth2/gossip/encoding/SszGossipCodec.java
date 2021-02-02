@@ -15,26 +15,23 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.teku.datastructures.util.LengthBounds;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 class SszGossipCodec {
 
-  public <T> Bytes encode(final T value) {
-    return ((SimpleOffsetSerializable) value).sszSerialize();
+  public <T extends ViewRead> Bytes encode(final T value) {
+    return value.sszSerialize();
   }
 
-  public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {
+  public <T extends ViewRead> T decode(final Bytes data, final ViewType<T> valueType)
+      throws DecodingException {
     try {
-      final LengthBounds lengthBounds =
-          SimpleOffsetSerializer.getLengthBounds(valueType)
-              .orElseThrow(() -> new DecodingException("Unknown message type: " + valueType));
-      if (!lengthBounds.isWithinBounds(data.size())) {
+      if (!valueType.getSszLengthBounds().isWithinBounds(data.size())) {
         throw new DecodingException(
             "Uncompressed length " + data.size() + " is not within expected bounds");
       }
-      final T result = SimpleOffsetSerializer.deserialize(data, valueType);
+      final T result = valueType.sszDeserialize(data);
       if (result == null) {
         throw new DecodingException("Unable to decode value");
       }

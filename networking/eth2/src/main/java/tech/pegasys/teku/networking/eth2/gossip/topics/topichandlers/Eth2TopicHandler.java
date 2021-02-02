@@ -29,30 +29,32 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class Eth2TopicHandler<T> implements TopicHandler {
+public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
-  private final OperationProcessor<T> processor;
+  private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
   private final String topicName;
-  private final Class<T> clazz;
+  private final ViewType<MessageT> messageType;
 
   public Eth2TopicHandler(
       AsyncRunner asyncRunner,
-      OperationProcessor<T> processor,
+      OperationProcessor<MessageT> processor,
       GossipEncoding gossipEncoding,
       Bytes4 forkDigest,
       String topicName,
-      Class<T> clazz) {
+      ViewType<MessageT> messageType) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
     this.topicName = topicName;
-    this.clazz = clazz;
+    this.messageType = messageType;
   }
 
   @Override
@@ -94,8 +96,8 @@ public class Eth2TopicHandler<T> implements TopicHandler {
     return topicName;
   }
 
-  private Class<T> getValueType() {
-    return clazz;
+  private ViewType<MessageT> getMessageType() {
+    return messageType;
   }
 
   protected ValidationResult handleMessageProcessingError(Throwable err) {
@@ -117,11 +119,11 @@ public class Eth2TopicHandler<T> implements TopicHandler {
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(payload, getValueType());
+    return getGossipEncoding().prepareMessage(payload, getMessageType());
   }
 
-  public T deserialize(PreparedGossipMessage message) throws DecodingException {
-    return getGossipEncoding().decodeMessage(message, getValueType());
+  MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
+    return getGossipEncoding().decodeMessage(message, getMessageType());
   }
 
   public String getTopic() {

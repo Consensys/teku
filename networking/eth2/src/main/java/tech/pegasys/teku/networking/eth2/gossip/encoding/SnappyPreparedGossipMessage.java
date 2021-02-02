@@ -18,9 +18,8 @@ import com.google.common.base.Suppliers;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.datastructures.util.LengthBounds;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to
@@ -36,7 +35,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   public static final Bytes MESSAGE_DOMAIN_VALID_SNAPPY = Bytes.fromHexString("0x01000000");
 
   private final Bytes compressedData;
-  private final Class<?> valueType;
+  private final ViewType<?> valueType;
   private final SnappyBlockCompressor snappyCompressor;
   private final Supplier<Optional<Bytes>> uncompressed =
       Suppliers.memoize(this::maybeUncompressPayload);
@@ -47,12 +46,12 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   }
 
   static SnappyPreparedGossipMessage create(
-      Bytes compressedData, Class<?> valueType, SnappyBlockCompressor snappyCompressor) {
+      Bytes compressedData, ViewType<?> valueType, SnappyBlockCompressor snappyCompressor) {
     return new SnappyPreparedGossipMessage(compressedData, valueType, snappyCompressor);
   }
 
   private SnappyPreparedGossipMessage(
-      Bytes compressedData, Class<?> valueType, SnappyBlockCompressor snappyCompressor) {
+      Bytes compressedData, ViewType<?> valueType, SnappyBlockCompressor snappyCompressor) {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
@@ -82,10 +81,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   }
 
   private Bytes uncompressPayload() throws DecodingException {
-    final LengthBounds lengthBounds =
-        SimpleOffsetSerializer.getLengthBounds(valueType)
-            .orElseThrow(() -> new DecodingException("Unknown message type: " + valueType));
-    return snappyCompressor.uncompress(compressedData, lengthBounds);
+    return snappyCompressor.uncompress(compressedData, valueType.getSszLengthBounds());
   }
 
   @Override

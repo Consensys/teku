@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -37,8 +38,8 @@ public class AggregateTopicHandlerTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private final AggregateAttestationTopicHandler topicHandler =
-      new AggregateAttestationTopicHandler(
+  private final Eth2TopicHandler<?> topicHandler =
+      AggregateAttestationTopicHandler.createHandler(
           asyncRunner,
           processor,
           gossipEncoding,
@@ -111,8 +112,9 @@ public class AggregateTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final AggregateAttestationTopicHandler topicHandler =
-        new AggregateAttestationTopicHandler(asyncRunner, processor, gossipEncoding, forkDigest);
+    Eth2TopicHandler<?> topicHandler =
+        AggregateAttestationTopicHandler.createHandler(
+            asyncRunner, processor, gossipEncoding, forkDigest);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }

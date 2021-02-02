@@ -22,8 +22,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public abstract class AbstractGossipManager<T> {
+public abstract class AbstractGossipManager<T extends ViewRead> {
 
   private final GossipEncoding gossipEncoding;
   private final GossipPublisher<T> publisher;
@@ -40,7 +42,7 @@ public abstract class AbstractGossipManager<T> {
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final GossipPublisher<T> publisher) {
-    final Eth2TopicHandler<T> topicHandler =
+    final Eth2TopicHandler<?> topicHandler =
         new Eth2TopicHandler<>(
             asyncRunner,
             processor,
@@ -55,7 +57,7 @@ public abstract class AbstractGossipManager<T> {
     this.subscriberId = publisher.subscribe(this::publishMessage);
   }
 
-  protected abstract Class<T> getGossipType();
+  protected abstract ViewType<T> getGossipType();
 
   protected void publishMessage(T message) {
     final Bytes data = gossipEncoding.encode(message);

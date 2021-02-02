@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public interface GossipEncoding {
 
@@ -33,23 +35,23 @@ public interface GossipEncoding {
    * @param value The value to serialize.
    * @return The serialized bytes.
    */
-  <T> Bytes encode(T value);
+  <T extends ViewRead> Bytes encode(T value);
 
   /**
    * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
-   * {@link #decodeMessage(PreparedGossipMessage, Class)}
+   * {@link #decodeMessage(PreparedGossipMessage, ViewType)}
    *
    * <p>If there is a problem while preprocessing a message the error should be memorized and later
    * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
-   * Class)}
+   * ViewType)}
    *
    * @param data Data received over gossip to be deserialized
    * @param valueType The concrete type to deserialize to
    */
-  <T> PreparedGossipMessage prepareMessage(Bytes data, Class<T> valueType);
+  <T extends ViewRead> PreparedGossipMessage prepareMessage(Bytes data, ViewType<T> valueType);
 
   /**
-   * Fallback for {@link #prepareMessage(Bytes, Class)} for the case when decoded {@code valueType}
+   * Fallback for {@link #prepareMessage(Bytes, ViewType)} for the case when decoded {@code valueType}
    * is unknown
    *
    * @param data raw Gossip message data
@@ -60,10 +62,11 @@ public interface GossipEncoding {
    * Decodes preprocessed message
    *
    * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
-   *     Class)}
+   *     ViewType)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T> T decodeMessage(PreparedGossipMessage message, Class<T> valueType) throws DecodingException;
+  <T extends ViewRead> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
+      throws DecodingException;
 }
