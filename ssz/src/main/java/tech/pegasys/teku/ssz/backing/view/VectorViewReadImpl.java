@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -89,5 +90,10 @@ public class VectorViewReadImpl<ElementReadType extends ViewRead>
   @Override
   public int hashCode() {
     return Objects.hash(hashTreeRoot());
+  }
+
+  @Override
+  public String toString() {
+    return "VectorViewRead{" + stream().map(Object::toString).collect(Collectors.joining()) + "}";
   }
 }

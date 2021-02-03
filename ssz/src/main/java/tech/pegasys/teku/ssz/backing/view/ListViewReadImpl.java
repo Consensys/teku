@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -140,5 +141,16 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   @Override
   public int hashCode() {
     return Objects.hash(hashTreeRoot());
+  }
+
+  @Override
+  public String toString() {
+    int maxToDisplay = 1024;
+    String elements = stream().limit(maxToDisplay).map(Object::toString)
+        .collect(Collectors.joining(", "));
+    if (size() > maxToDisplay) {
+      elements += " ... more " + (size() - maxToDisplay) + " elements";
+    }
+    return "ListViewRead{size=" + size() + ": " + elements + "}";
   }
 }
