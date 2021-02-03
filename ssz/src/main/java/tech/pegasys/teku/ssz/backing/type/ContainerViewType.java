@@ -293,6 +293,6 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   @Override
   public String toString() {
-    return getContainerName().isEmpty() ? getClass().getSimpleName() : getContainerName();
+    return getContainerName().isEmpty() ? getClass().getName() : getContainerName();
   }
 }

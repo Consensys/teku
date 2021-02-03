@@ -182,10 +182,21 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
 
   private DeserializedData sszDeserializeFixed(SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
-    if (getElementType() instanceof BasicViewType) {
+    checkSsz(
+        bytesSize % getElementType().getFixedPartSize() == 0,
+        "SSZ sequence length is not multiple of fixed element size");
+    int elementBitSize = getElementType().getBitsSize();
+    if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize % getElementType().getFixedPartSize() == 0,
-          "SSZ sequence length is not multiple of fixed element size");
+          bytesSize / getElementType().getFixedPartSize() <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+    } else {
+      // preliminary rough check
+      checkSsz(
+          (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+    }
+    if (getElementType() instanceof BasicViewType) {
       int bytesRemain = bytesSize;
       List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {
@@ -204,13 +215,8 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
         lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
       }
       return new DeserializedData(
-          TreeUtil.createTree(childNodes, treeDepth()),
-          bytesSize * 8 / getElementType().getBitsSize(),
-          lastByte);
+          TreeUtil.createTree(childNodes, treeDepth()), bytesSize * 8 / elementBitSize, lastByte);
     } else {
-      checkSsz(
-          bytesSize % getElementType().getFixedPartSize() == 0,
-          "Ssz length is not multiple of element length");
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
@@ -229,10 +235,10 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     if (endOffset > 0) {
       int firstElementOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
-
-      List<Integer> elementOffsets = new ArrayList<>();
-      elementOffsets.add(firstElementOffset);
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
+      checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
+      List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
+      elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
         int offset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         elementOffsets.add(offset);
@@ -258,7 +264,7 @@ public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT ex
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), childNodes.size());
   }
 
-  private static void checkSsz(boolean condition, String error) {
+  protected static void checkSsz(boolean condition, String error) {
     if (!condition) {
       throw new SSZDeserializeException(error);
     }

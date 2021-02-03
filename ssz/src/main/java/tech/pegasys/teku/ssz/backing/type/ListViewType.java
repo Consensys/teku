@@ -122,7 +122,12 @@ public class ListViewType<ElementViewT extends ViewRead>
   public TreeNode sszDeserializeTree(SszReader reader) {
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      Bytes bytes = reader.read(reader.getAvailableBytes());
+      int availableBytes = reader.getAvailableBytes();
+      // preliminary rough check
+      checkSsz(
+          (availableBytes - 1) * 8 <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+      Bytes bytes = reader.read(availableBytes);
       int length = Bitlist.sszGetLengthAndValidate(bytes);
       if (length > getMaxLength()) {
         throw new SSZDeserializeException("Too long bitlist");

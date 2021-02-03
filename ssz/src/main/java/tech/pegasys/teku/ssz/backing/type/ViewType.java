@@ -48,7 +48,7 @@ public interface ViewType<V extends ViewRead> extends SszType {
   V createFromBackingNode(TreeNode node);
 
   /** Creates a default immutable View */
-  default ViewRead getDefault() {
+  default V getDefault() {
     return createFromBackingNode(getDefaultTree());
   }
 
@@ -65,7 +65,7 @@ public interface ViewType<V extends ViewRead> extends SszType {
    * For example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node
    * and it's 'internal index' in this node would be `45`
    */
-  default ViewRead createFromBackingNode(TreeNode node, int internalIndex) {
+  default V createFromBackingNode(TreeNode node, int internalIndex) {
     return createFromBackingNode(node);
   }
 
