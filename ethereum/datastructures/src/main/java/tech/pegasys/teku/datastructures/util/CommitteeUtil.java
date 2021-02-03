@@ -50,10 +50,15 @@ public class CommitteeUtil {
    * @param index
    * @param index_count
    * @param seed
+   * @deprecated CommitteeUtil should be accessed via Spec.getCommitteeUtil().computeShuffledIndex()
    * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
+  /**
+   * @deprecated CommitteeUtil should be accessed via Spec.getCommitteeUtil().getAggregatorModulo()
+   */
+  @Deprecated
   public static int compute_shuffled_index(int index, int index_count, Bytes32 seed) {
     checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
 

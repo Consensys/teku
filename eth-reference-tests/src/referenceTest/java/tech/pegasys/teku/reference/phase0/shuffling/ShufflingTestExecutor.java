@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference.phase0.shuffling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.compute_shuffled_index;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,10 +22,16 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 public class ShufflingTestExecutor implements TestExecutor {
 
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
+      specProvider.atSlot(UInt64.ZERO).getCommitteeUtil();
   public static final ImmutableMap<String, TestExecutor> SHUFFLING_TEST_TYPES =
       ImmutableMap.of("shuffling", new ShufflingTestExecutor());
 
@@ -38,7 +43,8 @@ public class ShufflingTestExecutor implements TestExecutor {
     IntStream.range(0, shufflingData.getCount())
         .forEach(
             index ->
-                assertThat(compute_shuffled_index(index, shufflingData.getCount(), seed))
+                assertThat(
+                        committeeUtil.computeShuffledIndex(index, shufflingData.getCount(), seed))
                     .isEqualTo(shufflingData.getMapping(index)));
 
     final int[] inputs = IntStream.range(0, shufflingData.getCount()).toArray();

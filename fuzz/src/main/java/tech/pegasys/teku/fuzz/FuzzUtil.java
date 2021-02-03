@@ -26,7 +26,6 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
@@ -35,6 +34,11 @@ import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.util.config.Constants;
@@ -43,6 +47,10 @@ public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
+  private final SpecConfiguration specConfiguration;
+  private final SpecConstants specConstants;
+  private final SpecProvider specProvider;
+
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
 
@@ -50,6 +58,10 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
+    this.specConstants = ConstantsLoader.loadConstants(useMainnetConfig ? "mainnet" : "minimal");
+    this.specConfiguration = SpecConfiguration.builder().constants(specConstants).build();
+    specProvider = SpecProvider.create(specConfiguration);
+
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;
   }
@@ -229,7 +241,8 @@ public class FuzzUtil {
       // (java long is int64)
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
-      result_bb.putLong(CommitteeUtil.compute_shuffled_index(i, count, seed));
+      result_bb.putLong(
+          specProvider.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
     }
     return Optional.of(result_bb.array());
   }
