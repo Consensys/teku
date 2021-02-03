@@ -194,6 +194,10 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   @Override
   public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
+    if (config.isEmpty()) {
+      return;
+    }
+
     final Map<String, GossipTopicScoreParams> params =
         config.getTopicConfigs().entrySet().stream()
             .collect(

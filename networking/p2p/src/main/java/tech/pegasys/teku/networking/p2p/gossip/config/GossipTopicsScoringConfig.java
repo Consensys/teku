@@ -26,6 +26,10 @@ public class GossipTopicsScoringConfig {
     this.topicConfigs = topicConfigs;
   }
 
+  public boolean isEmpty() {
+    return topicConfigs.isEmpty();
+  }
+
   public static Builder builder() {
     return new Builder();
   }
