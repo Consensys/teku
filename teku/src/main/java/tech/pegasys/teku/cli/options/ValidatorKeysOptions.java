@@ -40,24 +40,6 @@ public class ValidatorKeysOptions {
   private List<String> validatorKeys = new ArrayList<>();
 
   @CommandLine.Option(
-      names = {"--validators-key-files"},
-      paramLabel = "<FILENAMES>",
-      description = "The list of encrypted keystore files to load the validator keys from",
-      split = ",",
-      hidden = true,
-      arity = "0..*")
-  private List<String> validatorKeystoreFiles = new ArrayList<>();
-
-  @CommandLine.Option(
-      names = {"--validators-key-password-files"},
-      paramLabel = "<FILENAMES>",
-      description = "The list of password files to decrypt the validator keystore files",
-      split = ",",
-      hidden = true,
-      arity = "0..*")
-  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
-
-  @CommandLine.Option(
       names = {"--validators-external-signer-public-keys"},
       paramLabel = "<STRINGS>",
       description = "The list of external signer public keys, or a URL to load the keys from",
@@ -133,9 +115,7 @@ public class ValidatorKeysOptions {
                     convertToPath(validatorExternalSignerKeystorePasswordFile))
                 .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
                 .validatorExternalSignerTruststorePasswordFile(
-                    convertToPath(validatorExternalSignerTruststorePasswordFile))
-                .validatorKeystoreFiles(validatorKeystoreFiles)
-                .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles));
+                    convertToPath(validatorExternalSignerTruststorePasswordFile)));
   }
 
   private List<BLSPublicKey> parseExternalSignerPublicKeys() {
