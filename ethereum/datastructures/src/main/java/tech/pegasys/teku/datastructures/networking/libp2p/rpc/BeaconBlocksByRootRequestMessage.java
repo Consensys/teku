@@ -69,6 +69,7 @@ public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32Vi
     return size();
   }
 
+  @Override
   public String toString() {
     return "BeaconBlocksByRootRequestMessage{" + super.toString() + "}";
   }
