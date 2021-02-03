@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.type;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -13,7 +26,7 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
 
   private final ViewType<? super ListTypeT> delegate;
 
-  public AbstractDelegateType(ViewType<? super ListTypeT> delegate) {
+  protected AbstractDelegateType(ViewType<? super ListTypeT> delegate) {
     this.delegate = delegate;
   }
 
@@ -36,15 +49,12 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   }
 
   @Override
-  public ViewRead createFromBackingNode(TreeNode node,
-      int internalIndex) {
+  public ViewRead createFromBackingNode(TreeNode node, int internalIndex) {
     return delegate.createFromBackingNode(node, internalIndex);
   }
 
   @Override
-  public TreeNode updateBackingNode(
-      TreeNode srcNode, int internalIndex,
-      ViewRead newValue) {
+  public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return delegate.updateBackingNode(srcNode, internalIndex, newValue);
   }
 
@@ -97,20 +107,17 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   }
 
   @Override
-  public Bytes sszSerializeTree(
-      TreeNode node) {
+  public Bytes sszSerializeTree(TreeNode node) {
     return delegate.sszSerializeTree(node);
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node,
-      SszWriter writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     return delegate.sszSerializeTree(node, writer);
   }
 
   @Override
-  public TreeNode sszDeserializeTree(
-      SszReader reader) throws SSZDeserializeException {
+  public TreeNode sszDeserializeTree(SszReader reader) throws SSZDeserializeException {
     return delegate.sszDeserializeTree(reader);
   }
 

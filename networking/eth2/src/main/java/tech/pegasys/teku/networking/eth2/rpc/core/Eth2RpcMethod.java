@@ -23,7 +23,8 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class Eth2RpcMethod<TRequest extends RpcRequest & ViewRead, TResponse extends ViewRead> implements RpcMethod {
+public class Eth2RpcMethod<TRequest extends RpcRequest & ViewRead, TResponse extends ViewRead>
+    implements RpcMethod {
 
   private final AsyncRunner asyncRunner;
 

@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.InvalidSSZTypeException;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
@@ -32,6 +30,7 @@ public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadE
   public DefaultRpcPayloadEncoder(ViewType<T> type) {
     this.type = type;
   }
+
   @Override
   public Bytes encode(final T message) {
     return message.sszSerialize();

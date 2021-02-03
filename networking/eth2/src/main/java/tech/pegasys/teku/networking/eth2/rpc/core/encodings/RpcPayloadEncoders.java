@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.RpcErrorMessagePayloadEncoder;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 

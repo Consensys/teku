@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.HISTO
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SERVER_ERROR_CODE;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -136,5 +135,4 @@ public class RpcException extends Exception {
   public int hashCode() {
     return Objects.hash(responseCode, errorMessage);
   }
-
 }

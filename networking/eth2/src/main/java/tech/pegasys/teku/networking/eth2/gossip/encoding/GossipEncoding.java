@@ -51,8 +51,8 @@ public interface GossipEncoding {
   <T extends ViewRead> PreparedGossipMessage prepareMessage(Bytes data, ViewType<T> valueType);
 
   /**
-   * Fallback for {@link #prepareMessage(Bytes, ViewType)} for the case when decoded {@code valueType}
-   * is unknown
+   * Fallback for {@link #prepareMessage(Bytes, ViewType)} for the case when decoded {@code
+   * valueType} is unknown
    *
    * @param data raw Gossip message data
    */

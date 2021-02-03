@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;

@@ -28,8 +28,11 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
     implements ListViewRead<Bytes32View>, RpcRequest {
 
-  static final ListViewType<Bytes32View> listViewType = new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
-  public static class BeaconBlocksByRootRequestMessageType extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {
+  static final ListViewType<Bytes32View> listViewType =
+      new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+
+  public static class BeaconBlocksByRootRequestMessageType
+      extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {
 
     private BeaconBlocksByRootRequestMessageType() {
       super(listViewType);

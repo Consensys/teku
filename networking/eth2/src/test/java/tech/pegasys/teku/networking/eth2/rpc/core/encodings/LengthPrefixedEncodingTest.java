@@ -223,8 +223,7 @@ class LengthPrefixedEncodingTest {
     final ByteBuf input = inputByteBuffer(TWO_BYTE_LENGTH_PREFIX.slice(0, 1));
     assertThatThrownBy(
             () -> {
-              RpcByteBufDecoder<StatusMessage> decoder =
-                  encoding.createDecoder(StatusMessage.TYPE);
+              RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
               decoder.decodeOneMessage(input);
               decoder.complete();
             })

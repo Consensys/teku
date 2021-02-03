@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
