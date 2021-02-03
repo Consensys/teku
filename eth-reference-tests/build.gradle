@@ -4,6 +4,7 @@ dependencies {
   referenceTestImplementation project(':bls')
   referenceTestImplementation project(':ethereum:core')
   referenceTestImplementation project(':ethereum:datastructures')
+  referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
   referenceTestImplementation testFixtures(project(':ethereum:spec'))
   referenceTestImplementation project(':ethereum:independent')
