@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Objects;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -74,15 +77,24 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   private final ListContainerRead<ElementType> container;
   private final int cachedSize;
 
+  protected ListViewReadImpl(ListViewRead<ElementType> other) {
+    checkArgument(other.getType().equals(getType()), "Argument list has incompatible type");
+    if (other instanceof ListViewReadImpl) {
+      // optimization to preserve child view caches
+      ListViewReadImpl<ElementType> otherImpl = (ListViewReadImpl<ElementType>) other;
+      this.type = otherImpl.type;
+      this.container = otherImpl.container;
+      this.cachedSize = otherImpl.cachedSize;
+    } else {
+      this.type = other.getType();
+      this.container = new ListContainerRead<>(type, other.getBackingNode());
+      this.cachedSize = container.getSize();
+    }
+  }
+
   public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;
     this.container = new ListContainerRead<>(type, node);
-    this.cachedSize = container.getSize();
-  }
-
-  public ListViewReadImpl(ListViewType<ElementType> type) {
-    this.type = type;
-    this.container = new ListContainerRead<>(type);
     this.cachedSize = container.getSize();
   }
 
@@ -140,5 +152,16 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   @Override
   public int hashCode() {
     return Objects.hash(hashTreeRoot());
+  }
+
+  @Override
+  public String toString() {
+    int maxToDisplay = 1024;
+    String elements =
+        stream().limit(maxToDisplay).map(Object::toString).collect(Collectors.joining(", "));
+    if (size() > maxToDisplay) {
+      elements += " ... more " + (size() - maxToDisplay) + " elements";
+    }
+    return "ListViewRead{size=" + size() + ": " + elements + "}";
   }
 }

@@ -144,8 +144,8 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependency 'org.hyperledger.besu.internal:metrics-core:1.5.4'
-    dependency 'org.hyperledger.besu:plugin-api:1.5.4'
+    dependency 'org.hyperledger.besu.internal:metrics-core:20.10.4'
+    dependency 'org.hyperledger.besu:plugin-api:20.10.4'
 
     dependency "org.testcontainers:testcontainers:1.15.0-rc2"
     dependency "org.testcontainers:junit-jupiter:1.15.0-rc2"

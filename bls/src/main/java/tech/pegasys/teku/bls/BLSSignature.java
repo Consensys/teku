@@ -14,13 +14,11 @@
 package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Objects;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -30,29 +28,6 @@ public class BLSSignature {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
   public static final int SSZ_BLS_SIGNATURE_SIZE = BLSConstants.BLS_SIGNATURE_SIZE;
-
-  /**
-   * Create a random, but valid, signature.
-   *
-   * <p>Generally prefer the seeded version.
-   *
-   * @return a random signature
-   */
-  static BLSSignature random() {
-    return random(new Random().nextInt());
-  }
-
-  /**
-   * Creates a random, but valid, signature based on a seed.
-   *
-   * @param entropy to seed the key pair generation
-   * @return the signature
-   */
-  public static BLSSignature random(int entropy) {
-    BLSKeyPair keyPair = BLSKeyPair.random(entropy);
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    return BLS.sign(keyPair.getSecretKey(), Bytes.wrap(message));
-  }
 
   /**
    * Creates an empty signature (all zero bytes). Note that this is not a valid signature.

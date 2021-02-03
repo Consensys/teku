@@ -25,6 +25,7 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -37,8 +38,8 @@ import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractDutySchedulerTest {
-  static final BLSPublicKey VALIDATOR1_KEY = BLSPublicKey.random(100);
-  static final BLSPublicKey VALIDATOR2_KEY = BLSPublicKey.random(200);
+  static final BLSPublicKey VALIDATOR1_KEY = BLSTestUtil.randomPublicKey(100);
+  static final BLSPublicKey VALIDATOR2_KEY = BLSTestUtil.randomPublicKey(200);
   static final Collection<BLSPublicKey> VALIDATOR_KEYS = Set.of(VALIDATOR1_KEY, VALIDATOR2_KEY);
   static final List<Integer> VALIDATOR_INDICES = List.of(123, 559);
   final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);

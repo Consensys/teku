@@ -32,15 +32,6 @@ public final class BLSPublicKey {
   public static final int SSZ_BLS_PUBKEY_SIZE = BLSConstants.BLS_PUBKEY_SIZE;
 
   /**
-   * Generates a compressed, serialized, random, valid public key based on a seed.
-   *
-   * @return PublicKey The public key, not null
-   */
-  public static BLSPublicKey random(int seed) {
-    return BLSKeyPair.random(seed).getPublicKey();
-  }
-
-  /**
    * Creates an empty public key (all zero bytes).
    *
    * @return the empty public key as per the Eth2 spec

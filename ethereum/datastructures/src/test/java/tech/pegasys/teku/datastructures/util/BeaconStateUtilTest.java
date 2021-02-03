@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
@@ -131,7 +132,7 @@ class BeaconStateUtilTest {
   @Test
   void validateProofOfPossessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     Deposit deposit = dataStructureUtil.newDeposits(1).get(0);
-    BLSPublicKey pubkey = BLSPublicKey.random(42);
+    BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(42);
     DepositData depositData = deposit.getData();
     DepositMessage depositMessage =
         new DepositMessage(

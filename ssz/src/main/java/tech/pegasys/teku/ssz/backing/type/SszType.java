@@ -72,7 +72,7 @@ public interface SszType {
    */
   int sszSerializeTree(TreeNode node, SszWriter writer);
 
-  TreeNode sszDeserializeTree(SszReader reader);
+  TreeNode sszDeserializeTree(SszReader reader) throws SSZDeserializeException;
 
   SszLengthBounds getSszLengthBounds();
 }

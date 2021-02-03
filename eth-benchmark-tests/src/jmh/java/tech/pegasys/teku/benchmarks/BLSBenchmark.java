@@ -32,6 +32,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 
 @Fork(1)
 @State(Scope.Thread)
@@ -41,7 +42,7 @@ public class BLSBenchmark {
   int sigCnt = 128;
 
   List<BLSKeyPair> keyPairs =
-      IntStream.range(0, sigCnt).mapToObj(BLSKeyPair::random).collect(Collectors.toList());
+      IntStream.range(0, sigCnt).mapToObj(BLSTestUtil::randomKeyPair).collect(Collectors.toList());
   List<Bytes> messages =
       Stream.generate(Bytes32::random).limit(sigCnt).collect(Collectors.toList());
   List<BLSSignature> signatures =

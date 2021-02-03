@@ -38,10 +38,6 @@ public class ListViewType<ElementViewT extends ViewRead>
   private final VectorViewType<ElementViewT> compatibleVectorType;
   private final ContainerViewType<?> containerViewType;
 
-  public ListViewType(VectorViewType<ElementViewT> vectorType) {
-    this(vectorType.getElementType(), vectorType.getMaxLength());
-  }
-
   public ListViewType(ViewType<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }

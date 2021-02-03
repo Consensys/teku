@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -28,7 +28,7 @@ class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private int seed = 100;
-  private Bytes48 pubkey = BLSPublicKey.random(seed).toBytesCompressed();
+  private Bytes48 pubkey = BLSTestUtil.randomPublicKey(seed).toBytesCompressed();
   private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
   private UInt64 activationEligibilityEpoch = dataStructureUtil.randomUInt64();
   private UInt64 activationEpoch = dataStructureUtil.randomUInt64();
@@ -73,7 +73,7 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    Bytes48 differentPublicKey = BLSPublicKey.random(99).toBytesCompressed();
+    Bytes48 differentPublicKey = BLSTestUtil.randomPublicKey(99).toBytesCompressed();
     Validator testValidator =
         new Validator(
             differentPublicKey,

@@ -37,13 +37,13 @@ abstract class BLSPublicKeyTest {
     assertThatCode(
             () ->
                 BLSPublicKey.fromBytesCompressedValidate(
-                    BLSPublicKey.random(1).toBytesCompressed()))
+                    BLSTestUtil.randomPublicKey(1).toBytesCompressed()))
         .doesNotThrowAnyException();
   }
 
   @Test
   void fromBytesCompressedValidate_throwsOnInvalidData() {
-    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
     assertThatThrownBy(
             () ->
                 BLSPublicKey.fromBytesCompressedValidate(
@@ -132,20 +132,20 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePublicKey() {
-    BLSPublicKey publicKey = BLSPublicKey.random(42);
+    BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(42);
     assertEquals(publicKey, publicKey);
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentPublicKeys() {
-    BLSPublicKey publicKey1 = BLSPublicKey.random(1);
-    BLSPublicKey publicKey2 = BLSPublicKey.random(2);
+    BLSPublicKey publicKey1 = BLSTestUtil.randomPublicKey(1);
+    BLSPublicKey publicKey2 = BLSTestUtil.randomPublicKey(2);
     assertNotEquals(publicKey1, publicKey2);
   }
 
   @Test
   public void succeedsWhenEqualsReturnsTrueForEquivalentPublicKeysCreatedFromDifferentRawBytes() {
-    BLSPublicKey publicKey1 = BLSPublicKey.random(1);
+    BLSPublicKey publicKey1 = BLSTestUtil.randomPublicKey(1);
     Bytes compressedBytes = publicKey1.toBytesCompressed();
 
     BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(compressedBytes);
@@ -156,7 +156,7 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSamePublicKey() {
-    BLSPublicKey publicKey1 = BLSPublicKey.random(42);
+    BLSPublicKey publicKey1 = BLSTestUtil.randomPublicKey(42);
     BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }

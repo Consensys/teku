@@ -19,9 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.RpcErrorMessagePayloadEncoder;
 import tech.pegasys.teku.ssz.backing.ViewRead;
@@ -41,9 +39,7 @@ public class RpcPayloadEncoders {
 
   public static RpcPayloadEncoders createSszEncoders() {
     return RpcPayloadEncoders.builder()
-        .withEncoder(
-            BeaconBlocksByRootRequestMessage.TYPE, new BeaconBlocksByRootRequestMessageEncoder())
-//        .withEncoder(RpcErrorMessage., new RpcErrorMessagePayloadEncoder())
+//        .withEncoder(RpcErrorMessage.class, new RpcErrorMessagePayloadEncoder())
         .defaultEncoderProvider(DefaultRpcPayloadEncoder::new)
         .build();
   }

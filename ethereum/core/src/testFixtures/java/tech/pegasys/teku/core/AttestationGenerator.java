@@ -31,6 +31,7 @@ import java.util.stream.StreamSupport;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -48,7 +49,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
-  private final BLSKeyPair randomKeyPair = BLSKeyPair.random(12345);
+  private final BLSKeyPair randomKeyPair = BLSTestUtil.randomKeyPair(12345);
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
