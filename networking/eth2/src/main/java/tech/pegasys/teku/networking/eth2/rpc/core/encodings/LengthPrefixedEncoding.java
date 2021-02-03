@@ -73,8 +73,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   @Override
   public <T extends ViewRead> RpcByteBufDecoder<T> createDecoder(ViewType<T> payloadType) {
-    // TODO
-    if (payloadType.equals(EmptyMessage.EMPTY_MESSAGE)) {
+    if (payloadType.equals(EmptyMessage.TYPE)) {
       return getEmptyMessageDecoder();
     } else {
       return new LengthPrefixedPayloadDecoder<>(
