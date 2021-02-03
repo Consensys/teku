@@ -39,17 +39,15 @@ public class BeaconBlocksByRootMessageHandler
       final Eth2Peer peer,
       final BeaconBlocksByRootRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    LOG.trace(
-        "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
+    LOG.trace("Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message);
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.wantToMakeRequest()
-          || !peer.wantToReceiveObjects(callback, message.getBlockRoots().size())) {
+      if (!peer.wantToMakeRequest() || !peer.wantToReceiveObjects(callback, message.size())) {
         peer.disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
         return;
       }
 
-      for (Bytes32View blockRoot : message.getBlockRoots()) {
+      for (Bytes32View blockRoot : message) {
         future =
             future.thenCompose(
                 __ ->

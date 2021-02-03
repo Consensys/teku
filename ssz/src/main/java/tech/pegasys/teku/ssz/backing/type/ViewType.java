@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
@@ -85,11 +86,11 @@ public interface ViewType<V extends ViewRead> extends SszType {
     return sszSerializeTree(view.getBackingNode(), writer);
   }
 
-  default V sszDeserialize(SszReader reader) {
+  default V sszDeserialize(SszReader reader) throws SSZDeserializeException {
     return createFromBackingNode(sszDeserializeTree(reader));
   }
 
-  default V sszDeserialize(Bytes ssz) {
+  default V sszDeserialize(Bytes ssz) throws SSZDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
   }
 }
