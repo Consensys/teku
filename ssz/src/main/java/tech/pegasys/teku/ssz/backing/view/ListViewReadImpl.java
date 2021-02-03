@@ -78,7 +78,6 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   private final int cachedSize;
 
   protected ListViewReadImpl(ListViewRead<ElementType> other) {
-    checkArgument(other.getType().equals(getType()), "Argument list has incompatible type");
     if (other instanceof ListViewReadImpl) {
       // optimization to preserve child view caches
       ListViewReadImpl<ElementType> otherImpl = (ListViewReadImpl<ElementType>) other;
