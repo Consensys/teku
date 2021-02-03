@@ -57,7 +57,7 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
 
     // WS config
-    assertThat(tekuConfig.weakSubjectivity().getWeakSubjectivityStateResource())
+    assertThat(tekuConfig.eth2NetworkConfiguration().getInitialState())
         .isEqualTo(eth2NetworkConfig.getInitialState());
 
     // p2p config
@@ -134,5 +134,44 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .contains(
             "-n, --network=<NETWORK>    Represents which network to use.\n"
                 + "                               Default: mainnet");
+  }
+
+  @Test
+  public void initialState_shouldAcceptValue() {
+    final String state = "state.ssz";
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--initial-state", state);
+    assertThat(config.eth2NetworkConfiguration().getInitialState()).contains(state);
+  }
+
+  @Test
+  public void initialState_shouldDefaultToNetworkValue() {
+    final String network = "medalla";
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(network).build();
+    assertThat(networkConfig.getInitialState()).isPresent();
+
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", network);
+    assertThat(config.eth2NetworkConfiguration().getInitialState())
+        .isEqualTo(networkConfig.getInitialState());
+  }
+
+  @Test
+  public void initialState_shouldOverrideNetworkValue() {
+    final String state = "state.ssz";
+    final String network = "medalla";
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(network).build();
+    assertThat(networkConfig.getInitialState()).isPresent();
+
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--initial-state", state, "--network", network);
+    assertThat(config.eth2NetworkConfiguration().getInitialState()).contains(state);
+  }
+
+  @Test
+  public void initialState_shouldDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final Optional<String> defaultState = config.eth2NetworkConfiguration().getInitialState();
+    assertThat(config.eth2NetworkConfiguration().getInitialState()).isEqualTo(defaultState);
   }
 }

@@ -38,28 +38,26 @@ class WeakSubjectivityInitializer {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public Optional<AnchorPoint> loadInitialAnchorPoint(final WeakSubjectivityConfig config) {
-    return config
-        .getWeakSubjectivityStateResource()
-        .map(
-            wsStateResource -> {
-              try {
-                STATUS_LOG.loadingInitialStateResource(wsStateResource);
-                final BeaconState state = ChainDataLoader.loadState(wsStateResource);
-                final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
-                STATUS_LOG.loadedInitialStateResource(
-                    state.hashTreeRoot(),
-                    anchor.getRoot(),
-                    state.getSlot(),
-                    anchor.getEpoch(),
-                    anchor.getEpochStartSlot());
-                return anchor;
-              } catch (IOException e) {
-                LOG.error("Failed to load initial state", e);
-                throw new InvalidConfigurationException(
-                    "Failed to load initial state from " + wsStateResource + ": " + e.getMessage());
-              }
-            });
+  public Optional<AnchorPoint> loadInitialAnchorPoint(final Optional<String> initialStateResource) {
+    return initialStateResource.map(
+        stateResource -> {
+          try {
+            STATUS_LOG.loadingInitialStateResource(stateResource);
+            final BeaconState state = ChainDataLoader.loadState(stateResource);
+            final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
+            STATUS_LOG.loadedInitialStateResource(
+                state.hashTreeRoot(),
+                anchor.getRoot(),
+                state.getSlot(),
+                anchor.getEpoch(),
+                anchor.getEpochStartSlot());
+            return anchor;
+          } catch (IOException e) {
+            LOG.error("Failed to load initial state", e);
+            throw new InvalidConfigurationException(
+                "Failed to load initial state from " + stateResource + ": " + e.getMessage());
+          }
+        });
   }
 
   public SafeFuture<WeakSubjectivityConfig> finalizeAndStoreConfig(

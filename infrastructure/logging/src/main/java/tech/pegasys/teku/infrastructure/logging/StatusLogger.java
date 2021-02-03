@@ -184,10 +184,6 @@ public class StatusLogger {
     }
   }
 
-  public void warnInitialStateIgnored() {
-    log.warn("Not loading specified initial state as chain data already exists.");
-  }
-
   public void warnOnInitialStateWithSkippedSlots(
       final Level level,
       final UInt64 anchorBlockSlot,

@@ -276,11 +276,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (beaconConfig
-                  .weakSubjectivity()
-                  .getWeakSubjectivityStateResource()
-                  .isPresent()) {
-                STATUS_LOG.warnInitialStateIgnored();
               }
               return SafeFuture.completedFuture(client);
             })
@@ -695,7 +690,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void setupInitialState(final RecentChainData client) {
     final Optional<AnchorPoint> initialAnchor =
-        wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
+        wsInitializer.loadInitialAnchorPoint(beaconConfig.eth2NetworkConfig().getInitialState());
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
