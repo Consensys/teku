@@ -125,6 +125,4 @@ public class SszSnappyGossipEncodingTest {
     assertThatThrownBy(() -> decode(encoding, Bytes.wrap(new byte[512]), StatusMessage.TYPE))
         .isInstanceOf(DecodingException.class);
   }
-
-  private static class RandomClass {}
 }

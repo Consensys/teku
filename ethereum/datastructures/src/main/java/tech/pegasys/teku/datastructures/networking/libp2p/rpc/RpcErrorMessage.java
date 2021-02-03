@@ -29,28 +29,29 @@ public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements ListV
 
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;
-  static final ListViewType<ByteView> listViewType =
+  private static final ListViewType<ByteView> LIST_VIEW_TYPE =
       new ListViewType<>(BasicViewTypes.BYTE_TYPE, MAX_ERROR_MESSAGE_LENGTH);
 
   public static class RpcErrorMessageType extends AbstractDelegateType<RpcErrorMessage> {
     private RpcErrorMessageType() {
-      super(listViewType);
+      super(LIST_VIEW_TYPE);
     }
 
     @Override
     public RpcErrorMessage createFromBackingNode(TreeNode node) {
-      return new RpcErrorMessage(this, node);
+      return new RpcErrorMessage(node);
     }
   }
 
   public static final RpcErrorMessageType TYPE = new RpcErrorMessageType();
 
   public RpcErrorMessage(Bytes bytes) {
-    super(ViewUtils.toListView(listViewType, ViewUtils.createListFromBytes(listViewType, bytes)));
+    super(
+        ViewUtils.toListView(LIST_VIEW_TYPE, ViewUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
   }
 
-  private RpcErrorMessage(RpcErrorMessageType type, TreeNode node) {
-    super(listViewType, node);
+  private RpcErrorMessage(TreeNode node) {
+    super(LIST_VIEW_TYPE, node);
   }
 
   public Bytes getData() {

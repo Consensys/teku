@@ -23,12 +23,12 @@ import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcRequest {
-  static final ListViewType<ByteView> listViewType =
+  private static final ListViewType<ByteView> LIST_VIEW_TYPE =
       new ListViewType<>(BasicViewTypes.BYTE_TYPE, 0);
 
   public static class EmptyMessageType extends AbstractDelegateType<EmptyMessage> {
     private EmptyMessageType() {
-      super(listViewType);
+      super(LIST_VIEW_TYPE);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcReque
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {
-    super(ViewUtils.toListView(listViewType, Collections.emptyList()));
+    super(ViewUtils.toListView(LIST_VIEW_TYPE, Collections.emptyList()));
   }
 
   @Override

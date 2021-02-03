@@ -28,19 +28,19 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
     implements ListViewRead<Bytes32View>, RpcRequest {
 
-  static final ListViewType<Bytes32View> listViewType =
+  private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
       new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
 
   public static class BeaconBlocksByRootRequestMessageType
       extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {
 
     private BeaconBlocksByRootRequestMessageType() {
-      super(listViewType);
+      super(LIST_VIEW_TYPE);
     }
 
     @Override
     public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
-      return new BeaconBlocksByRootRequestMessage(this, node);
+      return new BeaconBlocksByRootRequestMessage(node);
     }
   }
 
@@ -48,12 +48,11 @@ public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32Vi
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(ViewUtils.toListView(listViewType, roots, Bytes32View::new));
+    super(ViewUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
   }
 
-  private BeaconBlocksByRootRequestMessage(
-      BeaconBlocksByRootRequestMessageType type, TreeNode node) {
-    super(listViewType, node);
+  private BeaconBlocksByRootRequestMessage(TreeNode node) {
+    super(LIST_VIEW_TYPE, node);
   }
 
   @Override
