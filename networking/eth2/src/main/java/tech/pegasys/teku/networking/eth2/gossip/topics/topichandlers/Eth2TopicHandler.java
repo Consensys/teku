@@ -122,7 +122,7 @@ public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler
     return getGossipEncoding().prepareMessage(payload, getMessageType());
   }
 
-  MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
+  protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
     return getGossipEncoding().decodeMessage(message, getMessageType());
   }
 

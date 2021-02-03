@@ -219,6 +219,11 @@ public class Eth2TopicHandlerTest {
     }
 
     @Override
+    public SignedBeaconBlock deserialize(PreparedGossipMessage message) throws DecodingException {
+      return deserializer.deserialize(message);
+    }
+
+    @Override
     public Bytes4 getForkDigest() {
       return forkDigest;
     }
