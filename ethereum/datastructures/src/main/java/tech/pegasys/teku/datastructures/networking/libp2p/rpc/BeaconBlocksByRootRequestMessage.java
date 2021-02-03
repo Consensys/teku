@@ -25,12 +25,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszReader;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
-    implements ListViewRead<Bytes32View>, SimpleOffsetSerializable, RpcRequest {
+    implements ListViewRead<Bytes32View>, RpcRequest {
 
   public static class BeaconBlocksByRootRequestMessageType extends ListViewType<Bytes32View> {
 
@@ -46,7 +44,6 @@ public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32Vi
     }
   }
 
-  @SszTypeDescriptor
   public static final BeaconBlocksByRootRequestMessageType TYPE =
       new BeaconBlocksByRootRequestMessageType();
 
