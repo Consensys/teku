@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 
 public class RpcErrorMessagePayloadEncoder implements RpcPayloadEncoder<RpcErrorMessage> {

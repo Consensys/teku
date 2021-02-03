@@ -34,7 +34,7 @@ public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadE
   }
   @Override
   public Bytes encode(final T message) {
-    return SimpleOffsetSerializer.serialize(message);
+    return message.sszSerialize();
   }
 
   @Override

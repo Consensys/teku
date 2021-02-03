@@ -29,8 +29,9 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 
-public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
+public class Eth2IncomingRequestHandler<TRequest extends RpcRequest & ViewRead, TResponse extends ViewRead>
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 

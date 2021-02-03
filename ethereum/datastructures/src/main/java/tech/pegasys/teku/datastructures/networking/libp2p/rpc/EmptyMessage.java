@@ -13,10 +13,37 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-public class EmptyMessage implements RpcRequest {
+import java.util.Collections;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+
+public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcRequest {
+  static final ListViewType<ByteView> listViewType = new ListViewType<>(BasicViewTypes.BYTE_TYPE,
+      0);
+
+  public static class EmptyMessageType extends AbstractDelegateType<EmptyMessage> {
+    private EmptyMessageType() {
+      super(listViewType);
+    }
+
+    @Override
+    public EmptyMessage createFromBackingNode(TreeNode node) {
+      return EMPTY_MESSAGE;
+    }
+  }
+  public static final EmptyMessageType TYPE = new EmptyMessageType();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
-  private EmptyMessage() {}
+
+
+  private EmptyMessage() {
+    super(ViewUtils.toListView(listViewType, Collections.emptyList()));
+  }
 
   @Override
   public String toString() {
