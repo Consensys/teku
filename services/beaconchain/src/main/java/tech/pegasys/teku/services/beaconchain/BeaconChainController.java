@@ -276,6 +276,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
+              } else if (beaconConfig.eth2NetworkConfig().isUsingCustomInitialState()) {
+                STATUS_LOG.warnInitialStateIgnored();
               }
               return SafeFuture.completedFuture(client);
             })
