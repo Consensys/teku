@@ -39,8 +39,8 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   public abstract ListTypeT createFromBackingNode(TreeNode node);
 
   @Override
-  public ViewRead getDefault() {
-    return delegate.getDefault();
+  public ListTypeT getDefault() {
+    return createFromBackingNode(delegate.getDefaultTree());
   }
 
   @Override
@@ -49,8 +49,8 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   }
 
   @Override
-  public ViewRead createFromBackingNode(TreeNode node, int internalIndex) {
-    return delegate.createFromBackingNode(node, internalIndex);
+  public ListTypeT createFromBackingNode(TreeNode node, int internalIndex) {
+    return createFromBackingNode(node);
   }
 
   @Override

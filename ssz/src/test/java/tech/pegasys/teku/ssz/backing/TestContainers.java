@@ -152,7 +152,6 @@ public class TestContainers {
       extends Container3<
           VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View> {
 
-    @SszTypeDescriptor
     public static final ContainerType3<
             VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
         TYPE =
