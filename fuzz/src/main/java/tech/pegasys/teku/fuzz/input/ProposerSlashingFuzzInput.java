@@ -13,75 +13,43 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class ProposerSlashingFuzzInput implements SimpleOffsetSerializable, SSZContainer {
+public class ProposerSlashingFuzzInput
+    extends Container2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
+    implements SimpleOffsetSerializable, SSZContainer {
 
-  private BeaconStateImpl state;
-  private ProposerSlashing proposer_slashing;
+  @SszTypeDescriptor
+  public static ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
+      createType() {
+    return ContainerType2.create(
+        BeaconState.getSSZType(), ProposerSlashing.TYPE, ProposerSlashingFuzzInput::new);
+  }
+
+  public ProposerSlashingFuzzInput(
+      ContainerType2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing> type,
+      TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public ProposerSlashingFuzzInput(
       final BeaconStateImpl state, final ProposerSlashing proposer_slashing) {
-    this.state = state;
-    this.proposer_slashing = proposer_slashing;
+    super(createType(), state, proposer_slashing);
   }
 
-  // NOTE: empty constructor is needed for reflection/introspection
-  // public ProposerSlashingFuzzInput() {
-  //  this(new BeaconStateImpl(), new ProposerSlashing());
-  // }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.add(Bytes.EMPTY);
-    fixedPartsList.add(SimpleOffsetSerializer.serialize(proposer_slashing));
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(state), Bytes.EMPTY);
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public ProposerSlashing getProposer_slashing() {
-    return proposer_slashing;
+    return getField1();
   }
 
   public BeaconState getState() {
-    return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof ProposerSlashingFuzzInput)) {
-      return false;
-    }
-    final ProposerSlashingFuzzInput that = (ProposerSlashingFuzzInput) o;
-    return Objects.equals(getState(), that.getState())
-        && Objects.equals(getProposer_slashing(), that.getProposer_slashing());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getState(), getProposer_slashing());
+    return getField0();
   }
 }

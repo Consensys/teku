@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
@@ -83,13 +81,8 @@ public class ErrorConditionsIntegrationTest {
     }
 
     @Override
-    public int getSSZFieldCount() {
-      return 1;
-    }
-
-    @Override
-    public List<Bytes> get_fixed_parts() {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.fromHexString("0xABCDEF"))));
+    public Bytes sszSerialize() {
+      return Bytes.fromHexString("0xABCDEF");
     }
   }
 }

@@ -46,6 +46,6 @@ public interface ViewRead {
   }
 
   default Bytes sszSerialize() {
-    return getType().sszSerialize(getBackingNode());
+    return getType().sszSerializeTree(getBackingNode());
   }
 }

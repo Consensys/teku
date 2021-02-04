@@ -13,100 +13,101 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.Copyable;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBatch
-    implements Merkleizable, Copyable<HistoricalBatch>, SimpleOffsetSerializable, SSZContainer {
+    extends Container2<HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class HistoricalBatchType
+      extends ContainerType2<
+          HistoricalBatch, VectorViewRead<Bytes32View>, VectorViewRead<Bytes32View>> {
 
-  private final SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
-  private final SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+    public HistoricalBatchType() {
+      super(
+          "HistoricalBatch",
+          namedType(
+              "block_roots",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)),
+          namedType(
+              "state_roots",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
+    }
 
+    @Override
+    public HistoricalBatch createFromBackingNode(TreeNode node) {
+      return new HistoricalBatch(this, node);
+    }
+
+    public HistoricalBatch create(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+      return new HistoricalBatch(this, block_roots, state_roots);
+    }
+
+    public VectorViewType<Bytes32View> getBlockRootsType() {
+      return (VectorViewType<Bytes32View>) getFieldType0();
+    }
+
+    public VectorViewType<Bytes32View> getStateRootsType() {
+      return (VectorViewType<Bytes32View>) getFieldType1();
+    }
+  }
+
+  @SszTypeDescriptor
+  public static HistoricalBatchType getSszType() {
+    return TYPE.get();
+  }
+
+  public static final SpecDependent<HistoricalBatchType> TYPE =
+      SpecDependent.of(HistoricalBatchType::new);
+
+  private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  @Deprecated // Use the constructor with type
   public HistoricalBatch(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
-    this.block_roots = block_roots;
-    this.state_roots = state_roots;
+    this(TYPE.get(), block_roots, state_roots);
   }
 
-  public HistoricalBatch() {
-    this.block_roots = SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    this.state_roots = SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+  private HistoricalBatch(
+      HistoricalBatchType type, SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+    super(
+        type,
+        ViewUtils.toVectorView(type.getBlockRootsType(), block_roots, Bytes32View::new),
+        ViewUtils.toVectorView(type.getStateRootsType(), state_roots, Bytes32View::new));
   }
 
-  private HistoricalBatch(HistoricalBatch historicalBatch) {
-    this.block_roots = SSZVector.copy(historicalBatch.getBlockRoots());
-    this.state_roots = SSZVector.copy(historicalBatch.getStateRoots());
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots.asList())),
-        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots.asList())));
-  }
-
-  @Override
-  public HistoricalBatch copy() {
-    return new HistoricalBatch(this);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(block_roots, state_roots);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof HistoricalBatch)) {
-      return false;
-    }
-
-    HistoricalBatch other = (HistoricalBatch) obj;
-    return Objects.equals(this.getBlockRoots(), other.getBlockRoots())
-        && Objects.equals(this.getStateRoots(), other.getStateRoots());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public SSZVector<Bytes32> getBlockRoots() {
-    return block_roots;
+    return new SSZBackingVector<>(
+        Bytes32.class, getField0(), Bytes32View::new, AbstractBasicView::get);
   }
 
   public SSZVector<Bytes32> getStateRoots() {
-    return state_roots;
+    return new SSZBackingVector<>(
+        Bytes32.class, getField1(), Bytes32View::new, AbstractBasicView::get);
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots)));
+    return hashTreeRoot();
   }
 }

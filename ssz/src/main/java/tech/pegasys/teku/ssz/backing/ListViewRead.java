@@ -20,7 +20,8 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
  *
  * @param <ElementType> Type of list elements
  */
-public interface ListViewRead<ElementType extends ViewRead> extends CompositeViewRead<ElementType> {
+public interface ListViewRead<ElementType extends ViewRead>
+    extends CollectionViewRead<ElementType> {
 
   @Override
   ListViewWrite<ElementType> createWritableCopy();
@@ -31,8 +32,4 @@ public interface ListViewRead<ElementType extends ViewRead> extends CompositeVie
   /** Returns the number of elements in this list */
   @Override
   int size();
-
-  default boolean isEmpty() {
-    return size() == 0;
-  }
 }

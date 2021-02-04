@@ -19,24 +19,67 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public abstract class ContainerViewType<C extends ContainerViewRead>
     implements CompositeViewType<C> {
 
+  protected static class NamedType<T extends ViewRead> {
+    private final String name;
+    private final ViewType<T> type;
+
+    private NamedType(String name, ViewType<T> type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public ViewType<T> getType() {
+      return type;
+    }
+  }
+
+  protected static <T extends ViewRead> NamedType<T> namedType(String fieldName, ViewType<T> type) {
+    return new NamedType<>(fieldName, type);
+  }
+
+  private final String containerName;
+  private final List<String> childrenNames;
   private final List<ViewType<?>> childrenTypes;
-  private volatile TreeNode defaultTree;
+  private final TreeNode defaultTree;
+  private final long treeWidth;
+
+  protected ContainerViewType(String name, List<NamedType<?>> childrenTypes) {
+    this.containerName = name;
+    this.childrenNames =
+        childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
+    this.childrenTypes =
+        childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
+    this.defaultTree = createDefaultTree();
+    this.treeWidth = CompositeViewType.super.treeWidth();
+  }
 
   protected ContainerViewType(List<ViewType<?>> childrenTypes) {
+    this.containerName = "";
+    this.childrenNames =
+        IntStream.range(0, childrenTypes.size())
+            .mapToObj(i -> "field-" + i)
+            .collect(Collectors.toList());
     this.childrenTypes = childrenTypes;
+    this.defaultTree = createDefaultTree();
+    this.treeWidth = CompositeViewType.super.treeWidth();
   }
 
   public static <C extends ContainerViewRead> ContainerViewType<C> create(
@@ -56,10 +99,12 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   @Override
   public TreeNode getDefaultTree() {
-    if (defaultTree == null) {
-      this.defaultTree = createDefaultTree();
-    }
     return defaultTree;
+  }
+
+  @Override
+  public long treeWidth() {
+    return treeWidth;
   }
 
   private TreeNode createDefaultTree() {
@@ -126,28 +171,32 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     for (int i = 0; i < getChildCount(); i++) {
       ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
-        size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
+        size += childType.getSszSize(node.get(getGeneralizedIndex(i)));
       }
     }
     return size;
   }
 
-  private int getChildCount() {
+  public int getChildCount() {
     return (int) getMaxLength();
   }
 
+  public List<ViewType<?>> getChildTypes() {
+    return childrenTypes;
+  }
+
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int variableChildOffset = getFixedPartSize();
     int[] variableSizes = new int[getChildCount()];
     for (int i = 0; i < getChildCount(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
       ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
-        int size = childType.sszSerialize(childSubtree, writer);
+        int size = childType.sszSerializeTree(childSubtree, writer);
         assert size == childType.getFixedPartSize();
       } else {
-        writer.accept(SSZType.lengthToBytes(variableChildOffset));
+        writer.write(SszType.lengthToBytes(variableChildOffset));
         int childSize = childType.getSszSize(childSubtree);
         variableSizes[i] = childSize;
         variableChildOffset += childSize;
@@ -157,7 +206,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
       ViewType<?> childType = getChildType(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-        int size = childType.sszSerialize(childSubtree, writer);
+        int size = childType.sszSerializeTree(childSubtree, writer);
         assert size == variableSizes[i];
       }
     }
@@ -166,10 +215,11 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>();
-    List<Integer> variableChildrenOffsets = new ArrayList<>();
     int endOffset = reader.getAvailableBytes();
-    for (int i = 0; i < getChildCount(); i++) {
+    int childCount = getChildCount();
+    Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
+    List<Integer> variableChildrenOffsets = new ArrayList<>(childCount);
+    for (int i = 0; i < childCount; i++) {
       ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
@@ -177,7 +227,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
           fixedChildrenSubtrees.add(childNode);
         }
       } else {
-        int childOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int childOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         variableChildrenOffsets.add(childOffset);
       }
     }
@@ -196,17 +246,18 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     variableChildrenOffsets.add(endOffset);
 
     ArrayDeque<Integer> variableChildrenSizes =
-        IntStream.range(0, variableChildrenOffsets.size() - 1)
-            .map(i -> variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i))
-            .boxed()
-            .collect(Collectors.toCollection(ArrayDeque::new));
+        new ArrayDeque<>(variableChildrenOffsets.size() - 1);
+    for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
+      variableChildrenSizes.add(
+          variableChildrenOffsets.get(i + 1) - variableChildrenOffsets.get(i));
+    }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
       throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
     }
 
-    List<TreeNode> childrenSubtrees = new ArrayList<>(getChildCount());
-    for (int i = 0; i < getChildCount(); i++) {
+    List<TreeNode> childrenSubtrees = new ArrayList<>(childCount);
+    for (int i = 0; i < childCount; i++) {
       ViewType<?> childType = getChildType(i);
       if (childType.isFixedSize()) {
         childrenSubtrees.add(fixedChildrenSubtrees.remove());
@@ -219,5 +270,29 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     }
 
     return TreeUtil.createTree(childrenSubtrees);
+  }
+
+  @Override
+  public SszLengthBounds getSszLengthBounds() {
+    return IntStream.range(0, getChildCount())
+        .mapToObj(this::getChildType)
+        // dynamic sized children need 4-byte offset
+        .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
+        // elements are not packed in containers
+        .map(SszLengthBounds::ceilToBytes)
+        .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
+  }
+
+  public String getContainerName() {
+    return containerName;
+  }
+
+  public List<String> getChildrenNames() {
+    return childrenNames;
+  }
+
+  @Override
+  public String toString() {
+    return getContainerName().isEmpty() ? getClass().getName() : getContainerName();
   }
 }

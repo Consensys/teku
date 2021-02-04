@@ -34,7 +34,6 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractCompositeViewRead;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -202,7 +201,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected SubContainerReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
@@ -237,8 +236,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+    protected ContainerReadImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 
@@ -443,18 +441,18 @@ public class ContainerViewTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThat(Utils.equalsByGetters(c1r, c1w)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c1w)).isTrue();
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThat(Utils.equalsByGetters(c1r, c2w)).isFalse();
-    assertThat(Utils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c2w)).isFalse();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
 
     // new container from backing tree without any cached views
     ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
-        TestUtil.executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
+        TestUtil.executeParallel(() -> SszTestUtils.equalsByGetters(c2r, c1r), 512);
 
     assertThat(TestUtil.waitAll(futures)).containsOnly(true);
 
@@ -480,7 +478,7 @@ public class ContainerViewTest {
 
     ContainerRead c4r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
 
-    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -494,11 +492,13 @@ public class ContainerViewTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
     assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
 
     assertThat(modified)
         .allMatch(
-            c -> Utils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+            c ->
+                SszTestUtils.equalsByGetters(c, c3r)
+                    && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
   }
 }

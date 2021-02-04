@@ -98,4 +98,75 @@ public abstract class ContainerType9<
             fieldType7,
             fieldType8));
   }
+
+  protected ContainerType9(
+      String containerName,
+      NamedType<V0> fieldNamedType0,
+      NamedType<V1> fieldNamedType1,
+      NamedType<V2> fieldNamedType2,
+      NamedType<V3> fieldNamedType3,
+      NamedType<V4> fieldNamedType4,
+      NamedType<V5> fieldNamedType5,
+      NamedType<V6> fieldNamedType6,
+      NamedType<V7> fieldNamedType7,
+      NamedType<V8> fieldNamedType8) {
+
+    super(
+        containerName,
+        List.of(
+            fieldNamedType0,
+            fieldNamedType1,
+            fieldNamedType2,
+            fieldNamedType3,
+            fieldNamedType4,
+            fieldNamedType5,
+            fieldNamedType6,
+            fieldNamedType7,
+            fieldNamedType8));
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V0> getFieldType0() {
+    return (ViewType<V0>) getChildType(0);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V1> getFieldType1() {
+    return (ViewType<V1>) getChildType(1);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V2> getFieldType2() {
+    return (ViewType<V2>) getChildType(2);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V3> getFieldType3() {
+    return (ViewType<V3>) getChildType(3);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V4> getFieldType4() {
+    return (ViewType<V4>) getChildType(4);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V5> getFieldType5() {
+    return (ViewType<V5>) getChildType(5);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V6> getFieldType6() {
+    return (ViewType<V6>) getChildType(6);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V7> getFieldType7() {
+    return (ViewType<V7>) getChildType(7);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ViewType<V8> getFieldType8() {
+    return (ViewType<V8>) getChildType(8);
+  }
 }

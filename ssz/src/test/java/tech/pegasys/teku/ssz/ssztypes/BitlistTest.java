@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.ssztypes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -195,7 +197,7 @@ class BitlistTest {
   void testSszMethods(Bytes bitlistSsz) {
     int length = Bitlist.sszGetLengthAndValidate(bitlistSsz);
     Bytes truncBytes = Bitlist.sszTruncateLeadingBit(bitlistSsz, length);
-    Bytes bitlistSsz1 = Bitlist.sszAppendLeadingBit(truncBytes, length);
+    Bytes bitlistSsz1 = sszAppendLeadingBit(truncBytes, length);
     assertThat(bitlistSsz1).isEqualTo(bitlistSsz);
 
     Bitlist bitlist = Bitlist.fromSszBytes(bitlistSsz, length);
@@ -217,5 +219,21 @@ class BitlistTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Bitlist.fromSszBytes(bitlistSsz, 1024))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  public static Bytes sszAppendLeadingBit(Bytes bytes, int length) {
+    checkArgument(length <= bytes.size() * 8 && length > (bytes.size() - 1) * 8);
+    if (length % 8 == 0) {
+      return Bytes.wrap(bytes, Bytes.of(1));
+    } else {
+      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
+      int leadingBit = 1 << (length % 8);
+      checkArgument((-leadingBit & lastByte) == 0, "Bits higher than length should be 0");
+      int lastByteWithLeadingBit = lastByte ^ leadingBit;
+      // workaround for Bytes bug. See BitlistViewTest.tuweniBytesIssue() test
+      MutableBytes resultBytes = bytes.mutableCopy();
+      resultBytes.set(bytes.size() - 1, (byte) lastByteWithLeadingBit);
+      return resultBytes;
+    }
   }
 }

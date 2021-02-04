@@ -13,40 +13,10 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import java.util.Collections;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-
-public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public class EmptyMessage implements RpcRequest {
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
-  @Override
-  public int getSSZFieldCount() {
-    return 0;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return 0;
-  }
+  private EmptyMessage() {}
 
   @Override
   public String toString() {
