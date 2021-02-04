@@ -28,16 +28,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 class RocksDbExceptionUtilTest {
 
-  private static Stream<Arguments> recoverableErrorCodes() {
-    return Stream.of(
-        Arguments.of(Code.TimedOut),
-        Arguments.of(Code.TryAgain),
-        Arguments.of(Code.MergeInProgress),
-        Arguments.of(Code.Incomplete),
-        Arguments.of(Code.Busy),
-        Arguments.of(Code.Expired));
-  }
-
   @ParameterizedTest
   @MethodSource("recoverableErrorCodes")
   void shouldIdentifyRecoverableExceptions(final Code code) {
@@ -60,5 +50,15 @@ class RocksDbExceptionUtilTest {
         new RocksDBException(new Status(Code.IOError, SubCode.None, null));
     final DatabaseStorageException result = RocksDbExceptionUtil.wrapException("Test", exception);
     assertThat(result.isUnrecoverable()).isTrue();
+  }
+
+  static Stream<Arguments> recoverableErrorCodes() {
+    return Stream.of(
+        Arguments.of(Code.TimedOut),
+        Arguments.of(Code.TryAgain),
+        Arguments.of(Code.MergeInProgress),
+        Arguments.of(Code.Incomplete),
+        Arguments.of(Code.Busy),
+        Arguments.of(Code.Expired));
   }
 }
