@@ -58,14 +58,7 @@ class KeyStoreFilesLocator {
     }
   }
 
-  public void parseKeyAndPasswordList(
-      final List<String> keystoreFiles, final List<String> keystorePasswordFiles) {
-    for (int i = 0; i < keystoreFiles.size(); i++) {
-      parseEntry(keystoreFiles.get(i), keystorePasswordFiles.get(i));
-    }
-  }
-
-  void parseEntry(final String keyFileName, final String passwordFileName) {
+  private void parseEntry(final String keyFileName, final String passwordFileName) {
     final File keyFile = new File(keyFileName);
     final File passwordFile = new File(passwordFileName);
 
