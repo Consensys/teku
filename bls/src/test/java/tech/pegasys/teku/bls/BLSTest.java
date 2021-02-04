@@ -13,22 +13,23 @@
 
 package tech.pegasys.teku.bls;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
-import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class BLSTest {
 
@@ -75,7 +76,7 @@ public abstract class BLSTest {
 
   @Test
   // The empty signature is not a valid signature
-  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
+  void passingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
     BLSSignature signature1 = BLSTestUtil.randomSignature(1);
     BLSSignature signature2 = BLSSignature.empty();
     BLSSignature signature3 = BLSTestUtil.randomSignature(3);
