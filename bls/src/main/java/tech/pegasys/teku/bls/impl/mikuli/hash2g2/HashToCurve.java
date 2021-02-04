@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.bls.impl.mikuli.hash2g2;
 
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.tuweni.bytes.Bytes;
-
-import java.nio.charset.StandardCharsets;
-
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.clearH2;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.hashToField;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.isInG2;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.isOnCurve;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.iso3;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.Helper.mapToCurve;
+
+import java.nio.charset.StandardCharsets;
+import org.apache.milagro.amcl.BLS381.ECP2;
+import org.apache.tuweni.bytes.Bytes;
 
 /**
  * This package implements the new hash-to-curve method for Ethereum 2.0.
