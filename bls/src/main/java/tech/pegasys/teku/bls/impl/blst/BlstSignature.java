@@ -122,23 +122,12 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
-    //    keysToMessages.stream().anyMatch(pair -> pair.getPublicKey().)
-    //    List<BlstPublicKey> blstPKeys =
-    //        keysToMessages.stream()
-    //            .map(km -> BlstPublicKey.fromPublicKey(km.getPublicKey()))
-    //            .collect(Collectors.toList());
-    //
-    //    List<BlstPublicKey> finitePublicKeys =
-    //        blstPKeys.stream().filter(k -> !k.isInfinity()).collect(Collectors.toList());
-    //    if (finitePublicKeys.isEmpty()) {
-    //      return isInfinity();
-    //    }
-    //
-    //    if (finitePublicKeys.size() < blstPKeys.size()) {
-    //      // if the Infinity is not a valid public key then aggregating with any
-    //      // non-valid pubkey should result to invalid signature
-    //      return false;
-    //    }
+    boolean isAnyPublicKeyInfinity =
+        keysToMessages.stream()
+            .anyMatch(pair -> ((BlstPublicKey) pair.getPublicKey()).isInfinity());
+    if (isAnyPublicKeyInfinity) {
+      return false;
+    }
 
     Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST);
 
