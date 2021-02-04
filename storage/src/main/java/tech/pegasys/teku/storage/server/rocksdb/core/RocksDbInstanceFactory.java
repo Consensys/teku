@@ -39,6 +39,7 @@ import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 
@@ -106,7 +107,7 @@ public class RocksDbInstanceFactory {
 
       return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException(
+      throw RocksDbExceptionUtil.wrapException(
           "Failed to open database at path: " + configuration.getDatabaseDir(), e);
     }
   }
@@ -118,11 +119,12 @@ public class RocksDbInstanceFactory {
               try {
                 return Bytes.wrap(handle.getName()).equals(Schema.DEFAULT_COLUMN_ID);
               } catch (RocksDBException e) {
-                throw new DatabaseStorageException("Unable to retrieve default column handle", e);
+                throw RocksDbExceptionUtil.wrapException(
+                    "Unable to retrieve default column handle", e);
               }
             })
         .findFirst()
-        .orElseThrow(() -> new DatabaseStorageException("No default column defined"));
+        .orElseThrow(() -> DatabaseStorageException.unrecoverable("No default column defined"));
   }
 
   private static DBOptions createDBOptions(

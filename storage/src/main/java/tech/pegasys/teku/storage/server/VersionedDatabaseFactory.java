@@ -187,7 +187,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           specProvider);
     } catch (final IOException e) {
-      throw new DatabaseStorageException("Failed to read configuration file", e);
+      throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
     }
   }
 
@@ -209,7 +209,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           specProvider);
     } catch (final IOException e) {
-      throw new DatabaseStorageException("Failed to read metadata", e);
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
   }
 
@@ -225,7 +225,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V6DatabaseMetadata metaData =
           V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
       if (defaultMetaData.isSingleDB() != metaData.isSingleDB()) {
-        throw new DatabaseStorageException(
+        throw DatabaseStorageException.unrecoverable(
             "The database was originally created as "
                 + (metaData.isSingleDB() ? "Single" : "Separate")
                 + " but now accessed as "
@@ -258,7 +258,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageFrequency,
           specProvider);
     } catch (final IOException e) {
-      throw new DatabaseStorageException("Failed to read metadata", e);
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
   }
 
@@ -272,7 +272,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private void validateDataPaths() {
     if (dbDirectory.exists() && !dbVersionFile.exists()) {
-      throw new DatabaseStorageException(
+      throw DatabaseStorageException.unrecoverable(
           String.format(
               "No database version file was found, and the database path %s exists.",
               dataDirectory.getAbsolutePath()));
@@ -281,7 +281,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private void createDirectories(DatabaseVersion dbVersion) {
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
-      throw new DatabaseStorageException(
+      throw DatabaseStorageException.unrecoverable(
           String.format(
               "Unable to create the path to store database files at %s",
               dbDirectory.getAbsolutePath()));
@@ -291,7 +291,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V4:
       case V5:
         if (!v5ArchiveDirectory.mkdirs() && !v5ArchiveDirectory.isDirectory()) {
-          throw new DatabaseStorageException(
+          throw DatabaseStorageException.unrecoverable(
               String.format(
                   "Unable to create the path to store archive files at %s",
                   v5ArchiveDirectory.getAbsolutePath()));
@@ -301,7 +301,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         v6ArchiveDirectory.ifPresent(
             archiveDirectory -> {
               if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
-                throw new DatabaseStorageException(
+                throw DatabaseStorageException.unrecoverable(
                     "Unable to create the path to store archive files at "
                         + archiveDirectory.getAbsolutePath());
               }
@@ -320,9 +320,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         return DatabaseVersion.fromString(versionValue)
             .orElseThrow(
                 () ->
-                    new DatabaseStorageException("Unrecognized database version: " + versionValue));
+                    DatabaseStorageException.unrecoverable(
+                        "Unrecognized database version: " + versionValue));
       } catch (IOException e) {
-        throw new DatabaseStorageException(
+        throw DatabaseStorageException.unrecoverable(
             String.format(
                 "Unable to read database version from file %s", dbVersionFile.getAbsolutePath()),
             e);
@@ -336,7 +337,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       try {
         Files.writeString(dbVersionFile.toPath(), version.getValue(), StandardOpenOption.CREATE);
       } catch (IOException e) {
-        throw new DatabaseStorageException(
+        throw DatabaseStorageException.unrecoverable(
             "Failed to write database version to file " + dbVersionFile.getAbsolutePath(), e);
       }
     }
