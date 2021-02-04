@@ -40,6 +40,8 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
@@ -53,6 +55,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
   private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
   private final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
+  private final SpecProvider specProvider = StubSpecProvider.create();
 
   private AttestationDutyScheduler dutyScheduler;
 
@@ -806,7 +809,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                     validatorIndexProvider,
-                    beaconCommitteeSubscriptions)),
+                    beaconCommitteeSubscriptions,
+                    specProvider)),
             useDependentRoots);
   }
 
@@ -822,7 +826,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     dependentRoot -> scheduledDuties,
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                     validatorIndexProvider,
-                    beaconCommitteeSubscriptions)),
+                    beaconCommitteeSubscriptions,
+                    specProvider)),
             false);
   }
 }

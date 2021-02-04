@@ -24,9 +24,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -40,6 +40,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
+  private final SpecProvider specProvider;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
@@ -47,11 +48,13 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
       final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
       final Map<BLSPublicKey, Validator> validators,
       final ValidatorIndexProvider validatorIndexProvider,
-      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions) {
+      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
+      final SpecProvider specProvider) {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -74,7 +77,11 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private SafeFuture<Void> scheduleDuties(
       final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
     final Validator validator = validators.get(duty.getPublicKey());
-    final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());
+    final int aggregatorModulo =
+        specProvider
+            .atSlot(duty.getSlot())
+            .getCommitteeUtil()
+            .getAggregatorModulo(duty.getCommitteeLength());
 
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
         scheduleAttestationProduction(
