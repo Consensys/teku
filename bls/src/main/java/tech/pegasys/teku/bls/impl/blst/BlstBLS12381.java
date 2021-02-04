@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,13 +33,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();

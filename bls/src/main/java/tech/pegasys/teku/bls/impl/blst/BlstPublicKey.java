@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.P1;
 import tech.pegasys.teku.bls.impl.blst.swig.P1_Affine;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class BlstPublicKey implements PublicKey {
   //  private static final int COMPRESSED_PK_SIZE = 48;
