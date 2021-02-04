@@ -28,7 +28,8 @@ public class SyncDataProvider {
 
   public Syncing getSyncing() {
     tech.pegasys.teku.sync.events.SyncingStatus syncStatus = syncService.getSyncStatus();
-    return new Syncing(syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus));
+    return new Syncing(
+        syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus), syncStatus.isSyncing());
   }
 
   public long subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {
