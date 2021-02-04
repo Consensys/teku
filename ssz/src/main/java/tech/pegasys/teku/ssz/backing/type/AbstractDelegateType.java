@@ -21,6 +21,10 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
+/**
+ * Helper `ViewType` for making custom parametrized type without complexity of overriding existing
+ * types
+ */
 public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
     implements ViewType<ListTypeT> {
 
@@ -31,12 +35,12 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   }
 
   @Override
+  public abstract ListTypeT createFromBackingNode(TreeNode node);
+
+  @Override
   public TreeNode getDefaultTree() {
     return delegate.getDefaultTree();
   }
-
-  @Override
-  public abstract ListTypeT createFromBackingNode(TreeNode node);
 
   @Override
   public ListTypeT getDefault() {
