@@ -13,67 +13,44 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttestationFuzzInput implements SimpleOffsetSerializable, SSZContainer {
+public class AttestationFuzzInput extends Container2<AttestationFuzzInput, BeaconState, Attestation>
+    implements SimpleOffsetSerializable, SSZContainer {
 
-  private BeaconStateImpl state;
-  private Attestation attestation;
+  @SszTypeDescriptor
+  public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
+    return ContainerType2.create(
+        BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+  }
+
+  private AttestationFuzzInput(
+      ContainerType2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AttestationFuzzInput(final BeaconStateImpl state, final Attestation attestation) {
-    this.state = state;
-    this.attestation = attestation;
+    super(createType(), state, attestation);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public AttestationFuzzInput() {
-    this(new BeaconStateImpl(), new Attestation());
+    super(createType());
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    // Because we know both fields are variable and registered, we can just serialize.
-    return List.of(
-        SimpleOffsetSerializer.serialize(state), SimpleOffsetSerializer.serialize(attestation));
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Attestation getAttestation() {
-    return attestation;
+    return getField1();
   }
 
   public BeaconState getState() {
-    return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof AttestationFuzzInput)) {
-      return false;
-    }
-    final AttestationFuzzInput that = (AttestationFuzzInput) o;
-    return Objects.equals(getState(), that.getState())
-        && Objects.equals(getAttestation(), that.getAttestation());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getState(), getAttestation());
+    return getField0();
   }
 }

@@ -49,7 +49,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   @Test
   public void decodeNextResponse_shouldParseMultipleResponses() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
-    final Bytes secondMessageData = PAYLOAD_ENCODER.encode(secondMessage);
+    final Bytes secondMessageData = secondMessage.sszSerialize();
     final Bytes compressedPayload = COMPRESSOR.compress(secondMessageData);
 
     for (Iterable<ByteBuf> testByteBufSlice :

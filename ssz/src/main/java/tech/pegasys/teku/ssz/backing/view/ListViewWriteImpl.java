@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 
 public class ListViewWriteImpl<
         ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
@@ -35,11 +34,13 @@ public class ListViewWriteImpl<
   static class ListContainerWrite<
           ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
       extends ContainerViewWriteImpl {
-    private final VectorViewType<ElementReadType> vectorType;
+    private final ListViewType<ElementReadType> listType;
 
-    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView) {
+    public ListContainerWrite(
+        ListContainerRead<ElementReadType> backingImmutableView,
+        ListViewType<ElementReadType> type) {
       super(backingImmutableView);
-      vectorType = backingImmutableView.getVectorType();
+      listType = type;
     }
 
     public int getSize() {
@@ -55,9 +56,9 @@ public class ListViewWriteImpl<
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+    protected ContainerViewReadImpl createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ListContainerRead<ElementReadType>(vectorType, backingNode, viewCache);
+      return new ListContainerRead<>(listType, backingNode, viewCache);
     }
 
     @Override

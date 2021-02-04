@@ -13,96 +13,82 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static class DepositType
+      extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
 
-  private final SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
-  private final DepositData data;
+    public DepositType() {
+      super(
+          "Deposit",
+          namedType(
+              "proof",
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+          namedType("data", DepositData.TYPE));
+    }
+
+    public VectorViewType<Bytes32View> getProofType() {
+      return (VectorViewType<Bytes32View>) getFieldType0();
+    }
+
+    @Override
+    public Deposit createFromBackingNode(TreeNode node) {
+      return new Deposit(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final DepositType TYPE = new DepositType();
+
+  private static final SSZVector<Bytes32> EMPTY_PROOF =
+      SSZVector.createMutable(TYPE.getProofType().getLength(), Bytes32.ZERO);
+
+  private Deposit(DepositType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    this.proof = proof;
-    this.data = data;
+    super(TYPE, ViewUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
   }
 
   public Deposit() {
-    this.proof = SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-    this.data = new DepositData();
+    super(TYPE);
   }
 
   public Deposit(DepositData data) {
-    this.proof = null;
-    this.data = data;
+    this(EMPTY_PROOF, data);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof.asList()))));
-    fixedPartsList.addAll(data.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(proof, data);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Deposit)) {
-      return false;
-    }
-
-    Deposit other = (Deposit) obj;
-    return Objects.equals(this.getProof(), other.getProof())
-        && Objects.equals(this.getData(), other.getData());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public SSZVector<Bytes32> getProof() {
-    return proof;
+    return new SSZBackingVector<>(
+        Bytes32.class, getField0(), Bytes32View::new, AbstractBasicView::get);
   }
 
   public DepositData getData() {
-    return data;
+    return getField1();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, proof),
-            data.hash_tree_root()));
+    return hashTreeRoot();
   }
 }

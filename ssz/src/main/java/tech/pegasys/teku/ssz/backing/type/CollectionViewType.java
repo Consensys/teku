@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static java.lang.Integer.min;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,18 +33,21 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class CollectionViewType<V extends ViewRead> implements CompositeViewType<V> {
+public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT extends ViewRead>
+    implements CompositeViewType<ViewT> {
 
   private final long maxLength;
-  private final ViewType<?> elementType;
+  private final ViewType<ElementViewT> elementType;
   private final TypeHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
-  protected CollectionViewType(long maxLength, ViewType<?> elementType, TypeHints hints) {
+  protected CollectionViewType(
+      long maxLength, ViewType<ElementViewT> elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
@@ -64,7 +68,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     return maxLength;
   }
 
-  public ViewType<?> getElementType() {
+  public ViewType<ElementViewT> getElementType() {
     return elementType;
   }
 
@@ -96,7 +100,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
    * @param vectorNode for a {@link VectorViewType} type - the node itself, for a {@link
    *     ListViewType} - the left sibling node of list size node
    */
-  protected int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  protected int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
@@ -105,7 +109,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
   }
 
   private int sszSerializeFixedVectorFast(
-      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+      TreeNode vectorNode, SszWriter writer, int elementsCount) {
     if (elementsCount == 0) {
       return 0;
     }
@@ -116,25 +120,24 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
         getGeneralizedIndex(0),
         getGeneralizedIndex(nodesCount - 1),
         leafData -> {
-          writer.accept(leafData);
+          writer.write(leafData);
           bytesCnt[0] += leafData.size();
         });
     return bytesCnt[0];
   }
 
-  private int sszSerializeVariableVector(
-      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  private int sszSerializeVariableVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
     ViewType<?> elementType = getElementType();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
       int childSize = elementType.getSszSize(childSubtree);
-      writer.accept(SSZType.lengthToBytes(variableOffset));
+      writer.write(SszType.lengthToBytes(variableOffset));
       variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
-      elementType.sszSerialize(childSubtree, writer);
+      elementType.sszSerializeTree(childSubtree, writer);
     }
     return variableOffset;
   }
@@ -159,11 +162,16 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
       throw new SSZDeserializeException("Ssz length is not multiple of element length");
     }
     int elementsCount = sszSize / template.getSszLength();
-    List<SszSuperNode> sszNodes =
-        chunks(sszSize, (1 << supernodeDepth) * template.getSszLength())
-            .mapToObj(reader::read)
-            .map(bb -> new SszSuperNode(supernodeDepth, template, bb))
-            .collect(Collectors.toList());
+    int chunkSize = (1 << supernodeDepth) * template.getSszLength();
+    int bytesRemain = sszSize;
+    List<SszSuperNode> sszNodes = new ArrayList<>(bytesRemain / chunkSize + 1);
+    while (bytesRemain > 0) {
+      int toRead = min(bytesRemain, chunkSize);
+      bytesRemain -= toRead;
+      Bytes bytes = reader.read(toRead);
+      SszSuperNode node = new SszSuperNode(supernodeDepth, template, bytes);
+      sszNodes.add(node);
+    }
     TreeNode tree =
         TreeUtil.createTree(
             sszNodes,
@@ -174,15 +182,30 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
 
   private DeserializedData sszDeserializeFixed(SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
-    if (getElementType() instanceof BasicViewType) {
+    checkSsz(
+        bytesSize % getElementType().getFixedPartSize() == 0,
+        "SSZ sequence length is not multiple of fixed element size");
+    int elementBitSize = getElementType().getBitsSize();
+    if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize % getElementType().getFixedPartSize() == 0,
-          "SSZ sequence length is not multiple of fixed element size");
-      List<LeafNode> childNodes =
-          chunks(bytesSize, LeafNode.MAX_BYTE_SIZE)
-              .mapToObj(reader::read)
-              .map(LeafNode::create)
-              .collect(Collectors.toList());
+          bytesSize / getElementType().getFixedPartSize() <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+    } else {
+      // preliminary rough check
+      checkSsz(
+          (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+    }
+    if (getElementType() instanceof BasicViewType) {
+      int bytesRemain = bytesSize;
+      List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
+      while (bytesRemain > 0) {
+        int toRead = min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
+        bytesRemain -= toRead;
+        Bytes bytes = reader.read(toRead);
+        LeafNode node = LeafNode.create(bytes);
+        childNodes.add(node);
+      }
 
       Optional<Byte> lastByte;
       if (childNodes.isEmpty()) {
@@ -192,13 +215,8 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
         lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
       }
       return new DeserializedData(
-          TreeUtil.createTree(childNodes, treeDepth()),
-          bytesSize / getElementType().getFixedPartSize(),
-          lastByte);
+          TreeUtil.createTree(childNodes, treeDepth()), bytesSize * 8 / elementBitSize, lastByte);
     } else {
-      checkSsz(
-          bytesSize % getElementType().getFixedPartSize() == 0,
-          "Ssz length is not multiple of element length");
       int elementsCount = bytesSize / getElementType().getFixedPartSize();
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
@@ -215,14 +233,14 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     final int endOffset = reader.getAvailableBytes();
     final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
-      int firstElementOffset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      int firstElementOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
-
-      List<Integer> elementOffsets = new ArrayList<>();
-      elementOffsets.add(firstElementOffset);
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
+      checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
+      List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
+      elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
-        int offset = SSZType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int offset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
         elementOffsets.add(offset);
       }
       elementOffsets.add(endOffset);
@@ -246,16 +264,10 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), childNodes.size());
   }
 
-  private static void checkSsz(boolean condition, String error) {
+  protected static void checkSsz(boolean condition, String error) {
     if (!condition) {
       throw new SSZDeserializeException(error);
     }
-  }
-
-  protected static IntStream chunks(int totalSize, int chunkSize) {
-    return IntStream.concat(
-        IntStream.generate(() -> chunkSize).limit(totalSize / chunkSize),
-        IntStream.of(totalSize % chunkSize).filter(i -> i > 0));
   }
 
   public TypeHints getHints() {
@@ -270,7 +282,7 @@ public abstract class CollectionViewType<V extends ViewRead> implements Composit
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CollectionViewType<?> that = (CollectionViewType<?>) o;
+    CollectionViewType<?, ?> that = (CollectionViewType<?, ?>) o;
     return maxLength == that.maxLength && elementType.equals(that.elementType);
   }
 

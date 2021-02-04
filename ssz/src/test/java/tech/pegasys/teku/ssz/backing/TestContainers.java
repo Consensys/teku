@@ -18,9 +18,12 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
@@ -148,6 +151,29 @@ public class TestContainers {
         long l1, TestByteVectorContainer c1, long l2, TestByteVectorContainer c2, long l3) {
       super(
           TYPE, UInt64View.fromLong(l1), c1, UInt64View.fromLong(l2), c2, UInt64View.fromLong(l3));
+    }
+  }
+
+  public static class VariableSizeContainer
+      extends Container3<
+          VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View> {
+
+    @SszTypeDescriptor
+    public static final ContainerType3<
+            VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
+        TYPE =
+            ContainerType3.create(
+                TestSubContainer.TYPE,
+                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
+                BasicViewTypes.UINT64_TYPE,
+                VariableSizeContainer::new);
+
+    private VariableSizeContainer(
+        ContainerType3<
+                VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
+            type,
+        TreeNode backingNode) {
+      super(type, backingNode);
     }
   }
 }

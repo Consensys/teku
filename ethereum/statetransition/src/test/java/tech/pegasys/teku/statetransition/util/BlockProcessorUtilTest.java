@@ -213,7 +213,7 @@ class BlockProcessorUtilTest {
   }
 
   private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
-    return Validator.create(
+    return new Validator(
         pubkey.toBytesCompressed(),
         withdrawalCredentials,
         Constants.MAX_EFFECTIVE_BALANCE,

@@ -18,7 +18,6 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -26,11 +25,13 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class CompositeListViewTest {
 
-  static ViewType<?> testType =
+  static ViewType<TestView> testType =
       new ViewType<>() {
 
         @Override
@@ -69,13 +70,18 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+        public int sszSerializeTree(TreeNode node, SszWriter writer) {
           return 0;
         }
 
         @Override
         public TreeNode sszDeserializeTree(SszReader reader) {
           return null;
+        }
+
+        @Override
+        public SszLengthBounds getSszLengthBounds() {
+          return SszLengthBounds.ZERO;
         }
       };
 

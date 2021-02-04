@@ -57,7 +57,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -77,6 +76,8 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {
@@ -346,10 +347,9 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
+
     SigningData domain_wrapped_object =
-        new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
-            domain);
+        new SigningData(new UInt64View(UInt64.valueOf(number)).hashTreeRoot(), domain);
     return domain_wrapped_object.hash_tree_root();
   }
 
@@ -365,7 +365,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(Bytes bytes, Bytes32 domain) {
     SigningData domain_wrapped_object =
         new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
+            new ByteVectorType(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
     return domain_wrapped_object.hash_tree_root();
   }
 

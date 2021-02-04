@@ -18,10 +18,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
@@ -35,8 +35,8 @@ public class BasicViewTypes {
   public static final BasicViewType<BitView> BIT_TYPE =
       new BasicViewType<>(1) {
         @Override
-        public BitView createFromBackingNode(TreeNode node, int idx) {
-          return BitView.viewOf((node.hashTreeRoot().get(idx / 8) & (1 << (idx % 8))) != 0);
+        public BitView createFromLeafBackingNode(LeafDataNode node, int idx) {
+          return BitView.viewOf((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
         }
 
         @Override
@@ -59,13 +59,18 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
         }
+
+        @Override
+        public String toString() {
+          return "Bit";
+        }
       };
 
   public static final BasicViewType<ByteView> BYTE_TYPE =
       new BasicViewType<>(8) {
         @Override
-        public ByteView createFromBackingNode(TreeNode node, int internalIndex) {
-          return new ByteView(node.hashTreeRoot().get(internalIndex));
+        public ByteView createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return new ByteView(node.getData().get(internalIndex));
         }
 
         @Override
@@ -80,13 +85,18 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
         }
+
+        @Override
+        public String toString() {
+          return "Byte";
+        }
       };
 
   public static final BasicViewType<UInt64View> UINT64_TYPE =
       new BasicViewType<>(64) {
         @Override
-        public UInt64View createFromBackingNode(TreeNode node, int internalIndex) {
-          Bytes32 leafNodeBytes = node.hashTreeRoot();
+        public UInt64View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          Bytes leafNodeBytes = node.getData();
           try {
             Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
             return UInt64View.fromLong(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
@@ -123,13 +133,18 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[8];
         }
+
+        @Override
+        public String toString() {
+          return "UInt64";
+        }
       };
 
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
       new BasicViewType<>(32) {
         @Override
-        public Bytes4View createFromBackingNode(TreeNode node, int internalIndex) {
-          return new Bytes4View(new Bytes4(node.hashTreeRoot().slice(internalIndex * 4, 4)));
+        public Bytes4View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return new Bytes4View(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
         }
 
         @Override
@@ -146,12 +161,17 @@ public class BasicViewTypes {
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[4];
         }
+
+        @Override
+        public String toString() {
+          return "Bytes4";
+        }
       };
 
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
       new BasicViewType<>(256) {
         @Override
-        public Bytes32View createFromBackingNode(TreeNode node, int internalIndex) {
+        public Bytes32View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new Bytes32View(node.hashTreeRoot());
         }
 
@@ -163,6 +183,11 @@ public class BasicViewTypes {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public String toString() {
+          return "Bytes32";
         }
       };
 
