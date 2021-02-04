@@ -44,9 +44,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .validatorClient()
             .getValidatorConfig();
 
-    assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
-    assertThat(config.getValidatorKeystorePasswordFiles())
-        .containsExactly("a.password", "b.password");
     assertThat(config.getValidatorKeys())
         .containsExactlyInAnyOrder("a.key:a.password", "b.json:b.txt");
     assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);

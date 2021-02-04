@@ -179,20 +179,6 @@ public class KeyStoreFilesLocatorTest {
   }
 
   @Test
-  public void shouldHandleOldArgs(@TempDir final Path tempDir) throws IOException {
-    createFolders(tempDir, Path.of("key"), Path.of("pass"));
-    createFiles(tempDir, Path.of("key", "a"), Path.of("pass", "a.txt"));
-    final String tempStr = tempDir.toString();
-    KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(), PATH_SEP);
-    locator.parseKeyAndPasswordList(
-        List.of(Path.of(tempStr, "key", "a").toString()),
-        List.of(Path.of(tempStr, "pass", "a.txt").toString()));
-
-    assertThat(locator.getFilePairs())
-        .containsExactly(tuple(tempDir, List.of("key", "a"), List.of("pass", "a.txt")));
-  }
-
-  @Test
   @DisabledOnOs(OS.WINDOWS) // creating symlinks on Win requires elevated privileges
   public void shouldHandleSymlinkedDirectories(@TempDir final Path tempDir) throws IOException {
     Path realKeyDir = Path.of("actualKey");
@@ -238,7 +224,7 @@ public class KeyStoreFilesLocatorTest {
   private void createFiles(final Path tempDir, Path... paths) throws IOException {
     for (Path path : paths) {
       File file = tempDir.resolve(path).toFile();
-      file.createNewFile();
+      assertThat(file.createNewFile()).isTrue();
     }
   }
 
@@ -257,14 +243,6 @@ public class KeyStoreFilesLocatorTest {
         separator,
         Path.of(tempStr, keyList.toArray(new String[0])).toString(),
         Path.of(tempStr, passList.toArray(new String[0])).toString());
-  }
-
-  private Pair<Path, Path> tuple(
-      final Path tempDir, final List<String> key, final List<String> path) {
-    final String tempStr = tempDir.toString();
-    return Pair.of(
-        Path.of(tempStr, key.toArray(new String[0])),
-        Path.of(tempStr, path.toArray(new String[0])));
   }
 
   private Pair<Path, Path> tuple(final Path tempDir, final String k, final String p) {
