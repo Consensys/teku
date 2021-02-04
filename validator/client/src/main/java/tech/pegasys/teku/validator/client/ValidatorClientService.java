@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
@@ -43,6 +44,7 @@ public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
+  private final SpecProvider specProvider;
 
   private ValidatorTimingChannel attestationTimingChannel;
   private ValidatorTimingChannel blockProductionTimingChannel;
@@ -54,10 +56,12 @@ public class ValidatorClientService extends Service {
   private ValidatorClientService(
       final EventChannels eventChannels,
       final BeaconNodeApi beaconNodeApi,
-      final ForkProvider forkProvider) {
+      final ForkProvider forkProvider,
+      final SpecProvider specProvider) {
     this.eventChannels = eventChannels;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
+    this.specProvider = specProvider;
   }
 
   public static ValidatorClientService create(
@@ -86,7 +90,8 @@ public class ValidatorClientService extends Service {
         new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
 
     ValidatorClientService validatorClientService =
-        new ValidatorClientService(eventChannels, beaconNodeApi, forkProvider);
+        new ValidatorClientService(
+            eventChannels, beaconNodeApi, forkProvider, config.getSpecProvider());
 
     asyncRunner
         .runAsync(
@@ -126,7 +131,8 @@ public class ValidatorClientService extends Service {
                 dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
                 validators,
                 validatorIndexProvider,
-                beaconCommitteeSubscriptions));
+                beaconCommitteeSubscriptions,
+                specProvider));
     final DutyLoader blockDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import static java.util.Collections.emptyList;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -27,33 +25,6 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 class ValidatorConfigTest {
 
   private final ValidatorConfig.Builder configBuilder = ValidatorConfig.builder();
-
-  @Test
-  public void shouldThrowExceptionIfValidatorKeystoreFilesButNotValidatorKeystorePasswordFiles() {
-    final ValidatorConfig.Builder config = buildConfig(List.of("foo"), emptyList());
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::build)
-        .withMessageContaining(
-            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
-  }
-
-  @Test
-  public void shouldThrowExceptionIfValidatorKeystorePasswordFilesButNotValidatorKeystoreFiles() {
-    final ValidatorConfig.Builder config = buildConfig(emptyList(), List.of("foo"));
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::build)
-        .withMessageContaining(
-            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
-  }
-
-  @Test
-  public void shouldThrowExceptionIfValidatorKeystoreFilesPasswordsLengthMismatch() {
-    final ValidatorConfig.Builder config = buildConfig(List.of("a", "b"), List.of("password"));
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::build)
-        .withMessageContaining(
-            "Invalid configuration. The number of --validators-key-files (2) must equal the number of --validators-key-password-files (1)");
-  }
 
   @Test
   public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
@@ -144,13 +115,5 @@ class ValidatorConfigTest {
             .validatorExternalSignerTruststorePasswordFile(Path.of("somepath"));
 
     Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
-  }
-
-  private ValidatorConfig.Builder buildConfig(
-      final List<String> validatorKeystoreFiles,
-      final List<String> validatorKeystorePasswordFiles) {
-    return configBuilder
-        .validatorKeystoreFiles(validatorKeystoreFiles)
-        .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles);
   }
 }

@@ -40,8 +40,7 @@ public interface ListViewWriteRef<
    * Appends a new empty element to the list and returns its writeable reference for modification
    */
   default ElementWriteType append() {
-    @SuppressWarnings("unchecked")
-    ElementReadType newElement = (ElementReadType) getType().getElementType().getDefault();
+    ElementReadType newElement = getType().getElementType().getDefault();
     append(newElement);
     return getByRef(size() - 1);
   }
