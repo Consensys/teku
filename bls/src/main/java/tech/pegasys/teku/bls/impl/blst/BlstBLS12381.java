@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,6 +27,15 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();
@@ -77,7 +78,7 @@ public class BlstBLS12381 implements BLS12381 {
 
     P2 sig = new P2();
     byte[] sig_for_wire =
-        sig.hash_to(message.toArrayUnsafe(), ETH2_DST, new byte[0])
+        sig.hash_to(message.toArrayUnsafe(), dst, new byte[0])
             .sign_with(secretKey.getKey())
             .serialize();
 
@@ -99,7 +100,7 @@ public class BlstBLS12381 implements BLS12381 {
     }
 
     BLST_ERROR res =
-        signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), ETH2_DST);
+        signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), dst);
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
