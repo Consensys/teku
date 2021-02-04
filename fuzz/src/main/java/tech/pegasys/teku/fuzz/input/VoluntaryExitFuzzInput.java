@@ -15,7 +15,6 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -35,7 +34,7 @@ public class VoluntaryExitFuzzInput
     super(type, backingNode);
   }
 
-  public VoluntaryExitFuzzInput(final BeaconStateImpl state, final SignedVoluntaryExit exit) {
+  public VoluntaryExitFuzzInput(final BeaconState state, final SignedVoluntaryExit exit) {
     super(createType(), state, exit);
   }
 

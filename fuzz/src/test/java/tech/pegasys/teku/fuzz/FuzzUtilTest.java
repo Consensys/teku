@@ -33,7 +33,6 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
@@ -202,7 +201,7 @@ class FuzzUtilTest {
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
 
-    VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput((BeaconStateImpl) preState, data);
+    VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzVoluntaryExit(rawInput).map(Bytes::wrap);
 

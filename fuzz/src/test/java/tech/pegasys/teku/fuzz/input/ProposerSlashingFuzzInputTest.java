@@ -14,7 +14,7 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class ProposerSlashingFuzzInputTest
@@ -27,7 +27,7 @@ public class ProposerSlashingFuzzInputTest
 
   @Override
   protected ProposerSlashingFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     return new ProposerSlashingFuzzInput(state, slashing);
   }

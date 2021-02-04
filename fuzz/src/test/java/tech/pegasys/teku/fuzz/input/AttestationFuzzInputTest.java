@@ -14,7 +14,7 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationFuzzInput> {
@@ -26,7 +26,7 @@ public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationF
 
   @Override
   protected AttestationFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final Attestation attestation = dataStructureUtil.randomAttestation();
     return new AttestationFuzzInput(state, attestation);
   }

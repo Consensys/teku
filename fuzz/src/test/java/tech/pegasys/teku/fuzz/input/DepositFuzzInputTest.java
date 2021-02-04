@@ -14,7 +14,7 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput> {
@@ -26,7 +26,7 @@ public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput
 
   @Override
   protected DepositFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final Deposit deposit = dataStructureUtil.randomDeposit();
     return new DepositFuzzInput(state, deposit);
   }

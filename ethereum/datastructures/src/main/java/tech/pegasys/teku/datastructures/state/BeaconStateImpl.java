@@ -31,8 +31,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.view.ContainerViewReadImpl;
 
-public class BeaconStateImpl extends ContainerViewReadImpl
-    implements BeaconState, BeaconStateCache {
+class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
 
