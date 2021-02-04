@@ -13,15 +13,17 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.blst.swig.P1;
+import tech.pegasys.teku.bls.impl.blst.swig.P1_Affine;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.impl.PublicKey;
-import tech.pegasys.teku.bls.impl.blst.swig.P1;
-import tech.pegasys.teku.bls.impl.blst.swig.P1_Affine;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BlstPublicKey implements PublicKey {
   //  private static final int COMPRESSED_PK_SIZE = 48;
@@ -50,8 +52,12 @@ public class BlstPublicKey implements PublicKey {
       return INFINITY;
     }
 
-    P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
-    return new BlstPublicKey(ecPoint);
+    try {
+      P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
+      return new BlstPublicKey(ecPoint);
+    } catch (RuntimeException err) {
+      throw new DeserializeException("Invalid PublicKey bytes: " + compressed);
+    }
   }
 
   static BlstPublicKey fromPublicKey(PublicKey publicKey) {
@@ -96,7 +102,7 @@ public class BlstPublicKey implements PublicKey {
 
   @Override
   public void forceValidation() throws IllegalArgumentException {
-    if (ecPoint.in_group()) {
+    if (!ecPoint.in_group()) {
       throw new IllegalArgumentException("Invalid PublicKey: " + toBytesCompressed());
     }
   }
