@@ -26,13 +26,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
-import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
-import org.rocksdb.LRUCache;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.Statistics;
 import org.rocksdb.TransactionDB;
@@ -64,12 +62,9 @@ public class RocksDbInstanceFactory {
     final TransactionDBOptions txOptions = new TransactionDBOptions();
     final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
     final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
-    final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
-    final ColumnFamilyOptions columnFamilyOptions =
-        createColumnFamilyOptions(configuration, blockCache);
+    final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
     final List<AutoCloseable> resources =
-        new ArrayList<>(
-            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
+        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(columns, columnFamilyOptions);
@@ -148,11 +143,11 @@ public class RocksDbInstanceFactory {
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final RocksDbConfiguration configuration, final Cache cache) {
+      final RocksDbConfiguration configuration) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
+        .setTableFormatConfig(createBlockBasedTableConfig());
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
@@ -168,10 +163,9 @@ public class RocksDbInstanceFactory {
     return columnDescriptors;
   }
 
-  private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
+  private static BlockBasedTableConfig createBlockBasedTableConfig() {
     return new BlockBasedTableConfig()
-        .setBlockCache(cache)
-        .setCacheIndexAndFilterBlocks(true)
+        .setNoBlockCache(true)
         .setFormatVersion(4); // Use the latest format version (only applies to new tables)
   }
 }
