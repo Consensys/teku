@@ -92,9 +92,19 @@ public class ContainersGenerator {
                     .mapToObj(i -> "ViewType<V" + i + "> fieldType" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
+                "NamedFieldsDeclarations",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "NamedType<V" + i + "> fieldNamedType" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
                 "Fields",
                 IntStream.range(0, fieldsCount)
                     .mapToObj(i -> "fieldType" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedFields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldNamedType" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewParams",
@@ -115,6 +125,17 @@ public class ContainersGenerator {
                                     + "protected V$ getField$() {\n"
                                     + "    return getAny($);\n"
                                     + "  }")
+                                .replace("$", "" + i))
+                    .collect(Collectors.joining("\n\n"))),
+            Map.entry(
+                "TypeGetters",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i ->
+                            ("  @SuppressWarnings(\"unchecked\")\n"
+                                    + "  public ViewType<V$> getFieldType$() {\n"
+                                    + "    return (ViewType<V$>) getChildType($);\n"
+                                    + "  }\n")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(

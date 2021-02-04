@@ -22,18 +22,24 @@ import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
+import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
 public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<ViewRead, ViewWrite>
     implements ContainerViewWriteRef {
 
-  public ContainerViewWriteImpl(AbstractCompositeViewRead<ViewRead> backingImmutableView) {
+  public ContainerViewWriteImpl(ContainerViewReadImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
-  protected AbstractCompositeViewRead<ViewRead> createViewRead(
+  protected ContainerViewReadImpl createViewRead(
       TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new ContainerViewReadImpl(getType(), backingNode, viewCache);
+  }
+
+  @Override
+  public ContainerViewType<?> getType() {
+    return (ContainerViewType<?>) super.getType();
   }
 
   @Override

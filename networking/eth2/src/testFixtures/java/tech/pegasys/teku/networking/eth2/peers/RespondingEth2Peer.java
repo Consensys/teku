@@ -245,7 +245,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
-    return SafeFuture.completedFuture(MetadataMessage.createDefault());
+    return SafeFuture.completedFuture(MetadataMessage.DEFAULT);
   }
 
   @Override

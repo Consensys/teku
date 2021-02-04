@@ -14,79 +14,75 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class SignedVoluntaryExit implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
-  private final VoluntaryExit message;
-  private final BLSSignature signature;
+public class SignedVoluntaryExit
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+
+  static class SignedVoluntaryExitType
+      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
+
+    public SignedVoluntaryExitType() {
+      super(
+          "SignedVoluntaryExit",
+          namedType("message", VoluntaryExit.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+    }
+
+    @Override
+    public SignedVoluntaryExit createFromBackingNode(TreeNode node) {
+      return new SignedVoluntaryExit(this, node);
+    }
+  }
+
+  @SszTypeDescriptor
+  public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
+
+  private BLSSignature signatureCache;
+
+  private SignedVoluntaryExit(SignedVoluntaryExitType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    this.message = message;
-    this.signature = signature;
+    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public VoluntaryExit getMessage() {
-    return message;
+    return getField0();
   }
 
   public BLSSignature getSignature() {
-    return signature;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(message.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedVoluntaryExit that = (SignedVoluntaryExit) o;
-    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, signature);
+    return hashTreeRoot();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("signature", signature)
+        .add("message", getMessage())
+        .add("signature", getSignature())
         .toString();
   }
 }

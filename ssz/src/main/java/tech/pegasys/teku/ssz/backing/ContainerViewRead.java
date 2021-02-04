@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+
 /**
  * Base class for immutable containers. Since containers are heterogeneous their generic child view
  * is ViewRead
  */
 public interface ContainerViewRead extends CompositeViewRead<ViewRead> {
+
+  @Override
+  ContainerViewType<?> getType();
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here

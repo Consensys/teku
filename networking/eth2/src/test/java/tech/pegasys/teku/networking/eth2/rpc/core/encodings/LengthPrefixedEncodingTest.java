@@ -256,7 +256,7 @@ class LengthPrefixedEncodingTest {
 
   @Test
   void encodePayload_shouldReturnZeroBytesForEmptyMessages() {
-    final Bytes result = encoding.encodePayload(new EmptyMessage());
+    final Bytes result = encoding.encodePayload(EmptyMessage.EMPTY_MESSAGE);
     assertThat(result).isEqualTo(Bytes.EMPTY);
   }
 

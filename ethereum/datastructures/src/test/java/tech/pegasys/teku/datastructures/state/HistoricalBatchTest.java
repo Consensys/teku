@@ -20,25 +20,38 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
+  @BeforeAll
+  static void setConstants() {
+    Constants.setConstants("mainnet");
+    SimpleOffsetSerializer.setConstants();
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
+    SimpleOffsetSerializer.setConstants();
+  }
+
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(
-        vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).getVectorLengths());
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.TYPE.get()));
   }
 
   @Test

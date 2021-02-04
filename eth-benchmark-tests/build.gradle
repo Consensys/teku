@@ -11,6 +11,7 @@ idea {
 dependencies {
   implementation project(':bls')
   implementation project(':ethereum:weaksubjectivity')
+  implementation project(':ethereum:spec')
   implementation project(':eth-tests')
   implementation project(':infrastructure:async')
   implementation project(':util')
@@ -33,4 +34,12 @@ dependencies {
 jmh {
   resultFormat = 'CSV'
   duplicateClassesStrategy = 'warn'
+}
+
+jmhJar {
+  manifest {
+    attributes(
+        'Multi-Release': 'true'
+    )
+  }
 }

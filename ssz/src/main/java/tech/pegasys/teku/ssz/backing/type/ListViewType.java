@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
@@ -25,21 +27,29 @@ import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
+import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class ListViewType<C extends ViewRead> extends CollectionViewType<ListViewRead<C>> {
+public class ListViewType<ElementViewT extends ViewRead>
+    extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
+  private final VectorViewType<ElementViewT> compatibleVectorType;
+  private final ContainerViewType<?> containerViewType;
 
-  public ListViewType(VectorViewType<C> vectorType) {
-    this(vectorType.getElementType(), vectorType.getMaxLength());
-  }
-
-  public ListViewType(ViewType<?> elementType, long maxLength) {
+  public ListViewType(ViewType<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }
 
-  public ListViewType(ViewType<?> elementType, long maxLength, TypeHints hints) {
+  public ListViewType(ViewType<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
+    this.compatibleVectorType =
+        new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+    this.containerViewType =
+        ContainerViewType.create(
+            Arrays.asList(getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
+            (type, node) -> new ListContainerRead<>(this, type, node));
   }
 
   @Override
@@ -52,17 +62,21 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   }
 
   @Override
-  public ListViewRead<C> getDefault() {
-    return new ListViewReadImpl<C>(this, createDefaultTree());
+  public ListViewRead<ElementViewT> getDefault() {
+    return new ListViewReadImpl<>(this, createDefaultTree());
   }
 
   @Override
-  public ListViewRead<C> createFromBackingNode(TreeNode node) {
+  public ListViewRead<ElementViewT> createFromBackingNode(TreeNode node) {
     return new ListViewReadImpl<>(this, node);
   }
 
-  public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+  private VectorViewType<ElementViewT> getCompatibleVectorType() {
+    return compatibleVectorType;
+  }
+
+  public ContainerViewType<?> getCompatibleListContainerType() {
+    return containerViewType;
   }
 
   @Override
@@ -92,16 +106,13 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      BytesCollector bytesCollector = new BytesCollector();
+      BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
       sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
-      Bytes allBits = bytesCollector.getAll();
-      Bytes allBitsWithBoundary = Bitlist.sszAppendLeadingBit(allBits, elementsCount);
-      writer.accept(allBitsWithBoundary);
-      return allBitsWithBoundary.size();
+      return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
     } else {
       return sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }
@@ -111,7 +122,12 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
   public TreeNode sszDeserializeTree(SszReader reader) {
     if (getElementType().getBitsSize() == 1) {
       // Bitlist is handled specially
-      Bytes bytes = reader.read(reader.getAvailableBytes());
+      int availableBytes = reader.getAvailableBytes();
+      // preliminary rough check
+      checkSsz(
+          (availableBytes - 1) * 8 <= getMaxLength(),
+          "SSZ sequence length exceeds max type length");
+      Bytes bytes = reader.read(availableBytes);
       int length = Bitlist.sszGetLengthAndValidate(bytes);
       if (length > getMaxLength()) {
         throw new SSZDeserializeException("Too long bitlist");
@@ -154,16 +170,88 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<ListVie
     return ((BranchNode) listNode).left();
   }
 
-  private static class BytesCollector implements Consumer<Bytes> {
-    private final List<Bytes> bytesList = new ArrayList<>();
+  @Override
+  public SszLengthBounds getSszLengthBounds() {
+    SszLengthBounds elementLengthBounds = getElementType().getSszLengthBounds();
+    // if elements are of dynamic size the offset size should be added for every element
+    SszLengthBounds elementAndOffsetLengthBounds =
+        elementLengthBounds.addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
+    SszLengthBounds maxLenBounds =
+        SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
+    // adding 1 boundary bit for Bitlist
+    return maxLenBounds.addBits(getElementType().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
+  }
+
+  private static class BytesCollector implements SszWriter {
+
+    private static class UnsafeBytes {
+      private final byte[] bytes;
+      private final int offset;
+      private final int length;
+
+      public UnsafeBytes(byte[] bytes, int offset, int length) {
+        this.bytes = bytes;
+        this.offset = offset;
+        this.length = length;
+      }
+    }
+
+    private final List<UnsafeBytes> bytesList = new ArrayList<>();
+    private int size;
 
     @Override
-    public void accept(Bytes bytes) {
-      bytesList.add(bytes);
+    public void write(byte[] bytes, int offset, int length) {
+      if (length == 0) {
+        return;
+      }
+      bytesList.add(new UnsafeBytes(bytes, offset, length));
+      size += length;
     }
 
-    public Bytes getAll() {
-      return Bytes.wrap(bytesList.toArray(new Bytes[0]));
+    public int flushWithBoundaryBit(SszWriter writer, int boundaryBitOffset) {
+      int bitIdx = boundaryBitOffset % 8;
+      checkArgument((boundaryBitOffset + 7) / 8 == size, "Invalid boundary bit offset");
+      if (bitIdx == 0) {
+        bytesList.forEach(bb -> writer.write(bb.bytes, bb.offset, bb.length));
+        writer.write(new byte[] {1});
+        return size + 1;
+      } else {
+        UnsafeBytes lastBytes = bytesList.get(bytesList.size() - 1);
+        byte lastByte = lastBytes.bytes[lastBytes.offset + lastBytes.length - 1];
+        byte lastByteWithBoundaryBit = (byte) (lastByte ^ (1 << bitIdx));
+
+        for (int i = 0; i < bytesList.size() - 1; i++) {
+          UnsafeBytes bb = bytesList.get(i);
+          writer.write(bb.bytes, bb.offset, bb.length);
+        }
+        if (lastBytes.length > 1) {
+          writer.write(lastBytes.bytes, lastBytes.offset, lastBytes.length - 1);
+        }
+        writer.write(new byte[] {lastByteWithBoundaryBit});
+        return size;
+      }
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ListViewType)) {
+      return false;
+    }
+    ListViewType<?> that = (ListViewType<?>) o;
+    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return "List[" + getElementType() + ", " + getMaxLength() + "]";
   }
 }

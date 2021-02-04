@@ -570,7 +570,7 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator() {
-    return Validator.create(
+    return new Validator(
         randomPublicKeyBytes(),
         randomBytes32(),
         Constants.MAX_EFFECTIVE_BALANCE,

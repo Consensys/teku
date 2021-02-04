@@ -13,47 +13,42 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Fork extends AbstractImmutableContainer
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
+    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
+  static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
 
-  @SuppressWarnings("unused")
-  private final Bytes4 previous_version = null; // This is a Version type, aliased as a Bytes4
+    public ForkType() {
+      super(
+          "Fork",
+          namedType("previous_version", BasicViewTypes.BYTES4_TYPE),
+          namedType("current_version", BasicViewTypes.BYTES4_TYPE),
+          namedType("epoch", BasicViewTypes.UINT64_TYPE));
+    }
 
-  @SuppressWarnings("unused")
-  private final Bytes4 current_version = null; // This is a Version type, aliased as a Bytes4
+    @Override
+    public Fork createFromBackingNode(TreeNode node) {
+      return new Fork(this, node);
+    }
+  }
 
-  @SuppressWarnings("unused")
-  private final UInt64 epoch = null;
+  @SszTypeDescriptor public static final ForkType TYPE = new ForkType();
 
-  @SszTypeDescriptor
-  public static final ContainerViewType<Fork> TYPE =
-      ContainerViewType.create(
-          List.of(
-              BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE),
-          Fork::new);
-
-  private Fork(ContainerViewType<Fork> type, TreeNode backingNode) {
+  private Fork(ForkType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -65,47 +60,20 @@ public class Fork extends AbstractImmutableContainer
         new UInt64View(epoch));
   }
 
-  public Fork(Fork fork) {
-    super(TYPE, fork.getBackingNode());
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(getPrevious_version().getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getCurrent_version().getWrappedBytes())),
-        SSZ.encodeUInt64(getEpoch().longValue()));
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes4 getPrevious_version() {
-    return ((Bytes4View) get(0)).get();
+    return getField0().get();
   }
 
   public Bytes4 getCurrent_version() {
-    return ((Bytes4View) get(1)).get();
+    return getField1().get();
   }
 
   public UInt64 getEpoch() {
-    return ((UInt64View) get(2)).get();
+    return getField2().get();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("previous_version", getPrevious_version())
-        .add("current_version", getCurrent_version())
-        .add("epoch", getEpoch())
-        .toString();
   }
 }
