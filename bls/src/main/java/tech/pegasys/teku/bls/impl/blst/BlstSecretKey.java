@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import java.util.Objects;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.impl.SecretKeyInterface;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.P1;
 import tech.pegasys.teku.bls.impl.blst.swig.SecretKey;
+
+import java.util.Objects;
+import java.util.Random;
 
 public class BlstSecretKey implements SecretKeyInterface {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
@@ -77,7 +78,7 @@ public class BlstSecretKey implements SecretKeyInterface {
     if (isZero()) {
       return BlstPublicKey.INFINITY;
     }
-    P1 pk;
+    P1 pk = null;
     try {
       pk = new P1(secretKey);
       return new BlstPublicKey(pk.to_affine());
