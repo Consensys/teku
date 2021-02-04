@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -325,9 +324,7 @@ public abstract class BLSTest {
 
   @Test
   void succeedsWhenWeCanSignAndVerifyWithValidDST() {
-    final Bytes DST =
-        Bytes.wrap(
-            "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_".getBytes(StandardCharsets.US_ASCII));
+    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);
@@ -336,9 +333,7 @@ public abstract class BLSTest {
 
   @Test
   void verifyWithDifferentDSTFails() {
-    final Bytes DST =
-        Bytes.wrap(
-            "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_".getBytes(StandardCharsets.US_ASCII));
+    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);

@@ -46,8 +46,9 @@ public class HashToCurve {
 
   // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag
   // https://github.com/ethereum/eth2.0-specs/blob/v0.12.0/specs/phase0/beacon-chain.md#bls-signatures
-  public static final Bytes ETH2_DST =
-      Bytes.wrap("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_".getBytes(StandardCharsets.US_ASCII));
+  public static final String ETH2_DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
+  public static final Bytes ETH2_DST_BYTES =
+      Bytes.wrap(ETH2_DST.getBytes(StandardCharsets.US_ASCII));
 
   /**
    * Check whether a Milagro ECP2 point is in group G2.
@@ -130,6 +131,6 @@ public class HashToCurve {
    * @return a point from the G2 group representing the message hash
    */
   public static ECP2 hashToG2(Bytes message) {
-    return hashToG2(message, ETH2_DST);
+    return hashToG2(message, ETH2_DST_BYTES);
   }
 }

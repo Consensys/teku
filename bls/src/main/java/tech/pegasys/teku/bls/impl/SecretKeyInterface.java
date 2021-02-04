@@ -44,7 +44,7 @@ public interface SecretKeyInterface {
    * @param dst Domain seperation tag/cipher suite to use
    * @return The Signature, not null
    */
-  Signature sign(Bytes message, Bytes dst);
+  Signature sign(Bytes message, String dst);
 
   /** Implementation must override */
   @Override

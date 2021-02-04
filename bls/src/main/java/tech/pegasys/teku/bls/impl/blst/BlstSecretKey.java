@@ -68,7 +68,7 @@ public class BlstSecretKey implements SecretKeyInterface {
   }
 
   @Override
-  public Signature sign(Bytes message, Bytes dst) {
+  public Signature sign(Bytes message, String dst) {
     return BlstBLS12381.sign(this, message, dst);
   }
 

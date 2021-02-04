@@ -95,7 +95,7 @@ public class BlstSignature implements Signature {
             pubKey.ecPoint,
             blstSignature == null ? null : blstSignature.ec2Point,
             message.toArrayUnsafe(),
-            HashToCurve.ETH2_DST.toArrayUnsafe());
+            new byte[0]);
     if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
   }
 
@@ -122,24 +122,24 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
-    List<BlstPublicKey> blstPKeys =
-        keysToMessages.stream()
-            .map(km -> BlstPublicKey.fromPublicKey(km.getPublicKey()))
-            .collect(Collectors.toList());
+    //    List<BlstPublicKey> blstPKeys =
+    //        keysToMessages.stream()
+    //            .map(km -> BlstPublicKey.fromPublicKey(km.getPublicKey()))
+    //            .collect(Collectors.toList());
+    //
+    //    List<BlstPublicKey> finitePublicKeys =
+    //        blstPKeys.stream().filter(k -> !k.isInfinity()).collect(Collectors.toList());
+    //    if (finitePublicKeys.isEmpty()) {
+    //      return isInfinity();
+    //    }
+    //
+    //    if (finitePublicKeys.size() < blstPKeys.size()) {
+    //      // if the Infinity is not a valid public key then aggregating with any
+    //      // non-valid pubkey should result to invalid signature
+    //      return false;
+    //    }
 
-    List<BlstPublicKey> finitePublicKeys =
-        blstPKeys.stream().filter(k -> !k.isInfinity()).collect(Collectors.toList());
-    if (finitePublicKeys.isEmpty()) {
-      return isInfinity();
-    }
-
-    if (finitePublicKeys.size() < blstPKeys.size()) {
-      // if the Infinity is not a valid public key then aggregating with any
-      // non-valid pubkey should result to invalid signature
-      return false;
-    }
-
-    Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST.toArrayUnsafe());
+    Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST);
 
     try {
       for (int i = 0; i < keysToMessages.size(); i++) {
@@ -168,7 +168,7 @@ public class BlstSignature implements Signature {
   }
 
   @Override
-  public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
+  public boolean verify(PublicKey publicKey, Bytes message, String dst) {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
   }
 

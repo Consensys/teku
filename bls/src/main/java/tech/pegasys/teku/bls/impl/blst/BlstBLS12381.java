@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
+
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
@@ -68,14 +70,14 @@ public class BlstBLS12381 implements BLS12381 {
     return sign(secretKey, message, HashToCurve.ETH2_DST);
   }
 
-  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, Bytes dst) {
+  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, String dst) {
     if (secretKey.isZero()) {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     }
 
     P2 sig = new P2();
     byte[] sig_for_wire =
-        sig.hash_to(message.toArrayUnsafe(), HashToCurve.ETH2_DST_STRING)
+        sig.hash_to(message.toArrayUnsafe(), ETH2_DST, new byte[0])
             .sign_with(secretKey.getKey())
             .serialize();
 
@@ -87,7 +89,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(
-      BlstPublicKey publicKey, Bytes message, BlstSignature signature, Bytes dst) {
+      BlstPublicKey publicKey, Bytes message, BlstSignature signature, String dst) {
     if (publicKey.isInfinity()) {
       return false;
     }
@@ -95,9 +97,9 @@ public class BlstBLS12381 implements BLS12381 {
     if (publicKey.isInfinity() || signature.isInfinity()) {
       return publicKey.isInfinity() && signature.isInfinity();
     }
+
     BLST_ERROR res =
-        publicKey.ecPoint.core_verify(
-            signature.ec2Point, true, message.toArrayUnsafe(), dst.toString(), new byte[0]);
+        signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), ETH2_DST);
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
@@ -154,7 +156,7 @@ public class BlstBLS12381 implements BLS12381 {
       BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
 
     P2 g2Hash = HashToCurve.hashToG2(message);
-    Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST.toArrayUnsafe());
+    Pairing ctx = new Pairing(true, ETH2_DST);
     try {
       BLST_ERROR ret =
           ctx.mul_n_aggregate(
