@@ -32,8 +32,8 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteOptions;
-import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
@@ -65,7 +65,7 @@ public class RocksDbInstance implements RocksDbAccessor {
       return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
           .map(data -> variable.getSerializer().deserialize(data));
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("Failed to get value", e);
+      throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
   }
 
@@ -78,7 +78,7 @@ public class RocksDbInstance implements RocksDbAccessor {
       return Optional.ofNullable(db.get(handle, keyBytes))
           .map(data -> column.getValueSerializer().deserialize(data));
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("Failed to get value", e);
+      throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
   }
 
@@ -225,7 +225,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), serialized);
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to put variable", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to put variable", e);
             }
           });
     }
@@ -240,7 +240,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               rocksDbTx.put(handle, keyBytes, valueBytes);
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to put column data", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to put column data", e);
             }
           });
     }
@@ -256,7 +256,7 @@ public class RocksDbInstance implements RocksDbAccessor {
               try {
                 rocksDbTx.put(handle, key, value);
               } catch (RocksDBException e) {
-                throw new DatabaseStorageException("Failed to put column data", e);
+                throw RocksDbExceptionUtil.wrapException("Failed to put column data", e);
               }
             }
           });
@@ -270,7 +270,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to delete key", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to delete key", e);
             }
           });
     }
@@ -282,7 +282,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               rocksDbTx.delete(defaultHandle, variable.getId().toArrayUnsafe());
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to delete variable", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to delete variable", e);
             }
           });
     }
@@ -294,7 +294,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               this.rocksDbTx.commit();
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to commit transaction", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to commit transaction", e);
             } finally {
               close();
             }
@@ -308,7 +308,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               this.rocksDbTx.commit();
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to commit transaction", e);
+              throw RocksDbExceptionUtil.wrapException("Failed to commit transaction", e);
             } finally {
               close();
             }
