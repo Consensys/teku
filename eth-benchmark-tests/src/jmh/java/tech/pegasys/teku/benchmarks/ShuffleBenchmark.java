@@ -41,8 +41,7 @@ public class ShuffleBenchmark {
   int indexCount;
 
   Bytes32 seed = Bytes32.ZERO;
-  private final SpecConstants specConstants =
-      SpecConstants.builder().configName("mainnet").build();;
+  private final SpecConstants specConstants = SpecConstants.builder().configName("mainnet").build();
   private final SpecConfiguration specConfiguration =
       SpecConfiguration.builder().constants(specConstants).build();
   private final SpecProvider specProvider = SpecProvider.create(specConfiguration);
