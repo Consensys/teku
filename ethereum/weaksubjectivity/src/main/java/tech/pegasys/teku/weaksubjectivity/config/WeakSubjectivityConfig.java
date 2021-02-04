@@ -26,17 +26,14 @@ public class WeakSubjectivityConfig {
   public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
 
   private final UInt64 safetyDecay;
-  private final Optional<String> weakSubjectivityStateResource;
   private final Optional<Checkpoint> weakSubjectivityCheckpoint;
   private final Optional<UInt64> suppressWSPeriodChecksUntilEpoch;
 
   private WeakSubjectivityConfig(
       UInt64 safetyDecay,
-      final Optional<String> weakSubjectivityStateResource,
       final Optional<Checkpoint> weakSubjectivityCheckpoint,
       final Optional<UInt64> suppressWSPeriodChecksUntilEpoch) {
     this.safetyDecay = safetyDecay;
-    this.weakSubjectivityStateResource = weakSubjectivityStateResource;
     this.suppressWSPeriodChecksUntilEpoch = suppressWSPeriodChecksUntilEpoch;
     checkNotNull(weakSubjectivityCheckpoint);
 
@@ -66,10 +63,6 @@ public class WeakSubjectivityConfig {
         .safetyDecay(safetyDecay)
         .weakSubjectivityCheckpoint(weakSubjectivityCheckpoint)
         .suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);
-  }
-
-  public Optional<String> getWeakSubjectivityStateResource() {
-    return weakSubjectivityStateResource;
   }
 
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
@@ -111,7 +104,6 @@ public class WeakSubjectivityConfig {
 
   public static class Builder {
     private UInt64 safetyDecay = DEFAULT_SAFETY_DECAY;
-    private Optional<String> weakSubjectivityStateResource = Optional.empty();
     private Optional<Checkpoint> weakSubjectivityCheckpoint = Optional.empty();
     private Optional<UInt64> suppressWSPeriodChecksUntilEpoch = Optional.empty();
 
@@ -119,26 +111,11 @@ public class WeakSubjectivityConfig {
 
     public WeakSubjectivityConfig build() {
       return new WeakSubjectivityConfig(
-          safetyDecay,
-          weakSubjectivityStateResource,
-          weakSubjectivityCheckpoint,
-          suppressWSPeriodChecksUntilEpoch);
+          safetyDecay, weakSubjectivityCheckpoint, suppressWSPeriodChecksUntilEpoch);
     }
 
     public Builder weakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
       return weakSubjectivityCheckpoint(Optional.of(weakSubjectivityCheckpoint));
-    }
-
-    public Builder weakSubjectivityStateResource(final String weakSubjectivityStateResource) {
-      checkNotNull(weakSubjectivityStateResource);
-      return weakSubjectivityStateResource(Optional.of(weakSubjectivityStateResource));
-    }
-
-    public Builder weakSubjectivityStateResource(
-        final Optional<String> weakSubjectivityStateResource) {
-      checkNotNull(weakSubjectivityStateResource);
-      this.weakSubjectivityStateResource = weakSubjectivityStateResource;
-      return this;
     }
 
     public Builder weakSubjectivityCheckpoint(Optional<Checkpoint> weakSubjectivityCheckpoint) {
