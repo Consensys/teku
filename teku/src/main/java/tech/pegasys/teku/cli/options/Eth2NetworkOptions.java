@@ -16,6 +16,8 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
 
+import org.apache.commons.lang3.StringUtils;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -28,6 +30,14 @@ public class Eth2NetworkOptions {
       description = "Represents which network to use.",
       arity = "1")
   private String network = "mainnet";
+
+  @CommandLine.Option(
+      names = {"--initial-state"},
+      paramLabel = "<STRING>",
+      description =
+          "The initial state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
+      arity = "1")
+  private String initialState;
 
   @Option(
       names = {"--eth1-deposit-contract-address"},
@@ -89,9 +99,7 @@ public class Eth2NetworkOptions {
             b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
         .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit))
         .discovery(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
-        .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()))
-        .weakSubjectivity(
-            b -> eth2Config.getInitialState().ifPresent(b::weakSubjectivityStateResource));
+        .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()));
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig() {
@@ -110,6 +118,9 @@ public class Eth2NetworkOptions {
     }
     if (eth1DepositContractAddress != null) {
       builder.eth1DepositContractAddress(eth1DepositContractAddress);
+    }
+    if (StringUtils.isNotBlank(initialState)) {
+      builder.initialState(initialState);
     }
   }
 }
