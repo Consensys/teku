@@ -29,16 +29,6 @@ public class CommitteeUtil {
     this.specConstants = specConstants;
   }
 
-  /**
-   * Return the shuffled validator index corresponding to ``seed`` (and ``index_count``).
-   *
-   * @param index
-   * @param index_count
-   * @param seed
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
-   */
   public int computeShuffledIndex(int index, int index_count, Bytes32 seed) {
     checkArgument(index < index_count, "CommitteeUtil.computeShuffledIndex1");
 
