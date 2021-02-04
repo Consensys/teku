@@ -26,7 +26,6 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
