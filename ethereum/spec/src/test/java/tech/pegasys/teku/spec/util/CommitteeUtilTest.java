@@ -22,10 +22,11 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.genesis.CommitteeUtilGenesis;
 
 public class CommitteeUtilTest {
   final SpecConstants specConstants = mock(SpecConstants.class);
-  CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
+  CommitteeUtil committeeUtil = new CommitteeUtilGenesis(specConstants);
 
   @Test
   void aggregatorModulo_boundaryTest() {

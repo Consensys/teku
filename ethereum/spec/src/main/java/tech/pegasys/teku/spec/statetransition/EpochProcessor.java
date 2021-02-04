@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.util;
+package tech.pegasys.teku.spec.statetransition;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.containers.state.BeaconState;
 
-public interface CommitteeUtil {
-  int computeShuffledIndex(int index, int index_count, Bytes32 seed);
+public interface EpochProcessor {
 
-  int getAggregatorModulo(int committeeSize);
+  BeaconState processEpoch(final BeaconState preState);
 }

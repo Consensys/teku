@@ -11,12 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.util;
+package tech.pegasys.teku.spec.containers.state.genesis;
 
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.function.Consumer;
+import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.containers.state.MutableBeaconState;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
-public interface CommitteeUtil {
-  int computeShuffledIndex(int index, int index_count, Bytes32 seed);
+public interface MutableBeaconStateGenesis extends MutableBeaconState {
 
-  int getAggregatorModulo(int committeeSize);
+  void updatePrevious_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
+
+  void updateCurrent_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
 }

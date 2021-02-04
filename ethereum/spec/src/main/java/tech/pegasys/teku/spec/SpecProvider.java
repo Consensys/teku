@@ -38,14 +38,14 @@ public class SpecProvider {
   }
 
   public static SpecProvider create(final SpecConfiguration config) {
-    final Spec initialSpec = new Spec(config.constants());
-    return new SpecProvider(initialSpec);
+    final Spec genesisSpec = Spec.builder().buildGenesis(config);
+    return new SpecProvider(genesisSpec);
   }
 
   public static SpecProvider create(
       final SpecConfiguration config, final ForkManifest forkManifest) {
-    final Spec initialSpec = new Spec(config.constants());
-    return new SpecProvider(initialSpec, forkManifest);
+    final Spec genesisSpec = Spec.builder().buildGenesis(config);
+    return new SpecProvider(genesisSpec, forkManifest);
   }
 
   public Spec get(final UInt64 epoch) {
