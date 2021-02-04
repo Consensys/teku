@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.node.Syncing;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
@@ -29,16 +30,30 @@ import tech.pegasys.teku.sync.events.SyncingStatus;
 public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
-  public void shouldGetVersionFromRunningServer() throws IOException {
+  public void shouldGetSyncStatusWhenSyncing() throws IOException {
     startRestAPIAtGenesis();
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 10));
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 15));
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     final SyncingResponse syncingResponse =
         jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
-    assertThat(syncingResponse.data.headSlot).isEqualTo(UInt64.valueOf(10));
-    assertThat(syncingResponse.data.syncDistance).isEqualTo(UInt64.ZERO);
+    assertThat(syncingResponse.data)
+        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(5), true));
+  }
+
+  @Test
+  public void shouldGetSyncStatusWhenNotSyncing() throws IOException {
+    startRestAPIAtGenesis();
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
+
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final SyncingResponse syncingResponse =
+        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
+    assertThat(syncingResponse.data)
+        // 0 sync distance because we're not syncing.
+        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false));
   }
 
   private Response get() throws IOException {

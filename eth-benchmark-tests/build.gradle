@@ -35,3 +35,11 @@ jmh {
   resultFormat = 'CSV'
   duplicateClassesStrategy = 'warn'
 }
+
+jmhJar {
+  manifest {
+    attributes(
+        'Multi-Release': 'true'
+    )
+  }
+}

@@ -86,7 +86,7 @@ public class BlockProposalUtil {
       final BeaconState newState = stateTransition.process_block(blockSlotState, newBlock);
 
       Bytes32 stateRoot = newState.hash_tree_root();
-      BeaconBlock newCompleteBlock = new BeaconBlock(newBlock, stateRoot);
+      BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);
 
       return new BeaconBlockAndState(newCompleteBlock, newState);
     } catch (final BlockProcessingException e) {

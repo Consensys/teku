@@ -13,12 +13,7 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,20 +31,18 @@ public class AttestationData
     extends Container5<AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint>
     implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
-
   static class AttestationDataType
       extends ContainerType5<
           AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
 
     public AttestationDataType() {
       super(
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          Checkpoint.TYPE,
-          Checkpoint.TYPE);
+          "AttestationData",
+          namedType("slot", BasicViewTypes.UINT64_TYPE),
+          namedType("index", BasicViewTypes.UINT64_TYPE),
+          namedType("beacon_block_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("source", Checkpoint.TYPE),
+          namedType("target", Checkpoint.TYPE));
     }
 
     @Override
@@ -59,23 +52,6 @@ public class AttestationData
   }
 
   @SszTypeDescriptor public static final AttestationDataType TYPE = new AttestationDataType();
-
-  @SuppressWarnings("unused")
-  private final UInt64 slot = null;
-
-  @SuppressWarnings("unused")
-  private final UInt64 index = null;
-
-  // LMD GHOST vote
-  @SuppressWarnings("unused")
-  private final Bytes32 beacon_block_root = null;
-
-  // FFG vote
-  @SuppressWarnings("unused")
-  private final Checkpoint source = null;
-
-  @SuppressWarnings("unused")
-  private final Checkpoint target = null;
 
   private AttestationData(AttestationDataType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -94,35 +70,6 @@ public class AttestationData
 
   public AttestationData(UInt64 slot, AttestationData data) {
     this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + getSource().getSSZFieldCount() + getTarget().getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encodeUInt64(getSlot().longValue()),
-            SSZ.encodeUInt64(getIndex().longValue()),
-            SSZ.encode(writer -> writer.writeFixedBytes(getBeacon_block_root()))));
-    fixedPartsList.addAll(getSource().get_fixed_parts());
-    fixedPartsList.addAll(getTarget().get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("slot", getSlot())
-        .add("index", getIndex())
-        .add("beacon_block_root", getBeacon_block_root())
-        .add("source", getSource())
-        .add("target", getTarget())
-        .toString();
   }
 
   public UInt64 getEarliestSlotForForkChoice() {

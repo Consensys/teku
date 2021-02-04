@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
+import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createAttesterSlashings;
 
 import java.util.HashMap;
 import java.util.Map;

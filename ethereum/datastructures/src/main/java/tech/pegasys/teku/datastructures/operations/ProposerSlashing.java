@@ -13,80 +13,56 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class ProposerSlashing
+    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static class ProposerSlashingType
+      extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
-  private final SignedBeaconBlockHeader header_1;
-  private final SignedBeaconBlockHeader header_2;
+    public ProposerSlashingType() {
+      super(
+          "ProposerSlashing",
+          namedType("header_1", SignedBeaconBlockHeader.TYPE),
+          namedType("header_2", SignedBeaconBlockHeader.TYPE));
+    }
+
+    @Override
+    public ProposerSlashing createFromBackingNode(TreeNode node) {
+      return new ProposerSlashing(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final ProposerSlashingType TYPE = new ProposerSlashingType();
+
+  private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public ProposerSlashing(SignedBeaconBlockHeader header_1, SignedBeaconBlockHeader header_2) {
-    this.header_1 = header_1;
-    this.header_2 = header_2;
+    super(TYPE, header_1, header_2);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + header_1.getSSZFieldCount() + header_2.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(header_1.get_fixed_parts());
-    fixedPartsList.addAll(header_2.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(header_1, header_2);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof ProposerSlashing)) {
-      return false;
-    }
-
-    ProposerSlashing other = (ProposerSlashing) obj;
-    return Objects.equals(this.getHeader_1(), other.getHeader_1())
-        && Objects.equals(this.getHeader_2(), other.getHeader_2());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public SignedBeaconBlockHeader getHeader_1() {
-    return header_1;
+    return getField0();
   }
 
   public SignedBeaconBlockHeader getHeader_2() {
-    return header_2;
+    return getField1();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(header_1.hash_tree_root(), header_2.hash_tree_root()));
+    return hashTreeRoot();
   }
 }

@@ -20,7 +20,8 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
  *
  * @param <ElementType> Type of vector elements
  */
-public interface VectorViewRead<ElementType> extends CompositeViewRead<ElementType> {
+public interface VectorViewRead<ElementType extends ViewRead>
+    extends CollectionViewRead<ElementType> {
 
   @Override
   VectorViewWrite<ElementType> createWritableCopy();

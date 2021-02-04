@@ -16,11 +16,11 @@ package tech.pegasys.teku.ssz.backing.type;
 import static java.util.Collections.emptyList;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -28,28 +28,34 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
+public class VectorViewType<ElementViewT extends ViewRead>
+    extends CollectionViewType<ElementViewT, VectorViewRead<ElementViewT>> {
 
   private final boolean isListBacking;
 
-  public VectorViewType(ViewType<?> elementType, long vectorLength) {
+  public VectorViewType(ViewType<ElementViewT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  VectorViewType(ViewType<?> elementType, long vectorLength, boolean isListBacking) {
+  VectorViewType(ViewType<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
   VectorViewType(
-      ViewType<?> elementType, long vectorLength, boolean isListBacking, TypeHints hints) {
+      ViewType<ElementViewT> elementType,
+      long vectorLength,
+      boolean isListBacking,
+      TypeHints hints) {
     super(vectorLength, elementType, hints);
     this.isListBacking = isListBacking;
   }
 
   @Override
-  public VectorViewRead<C> getDefault() {
+  public VectorViewRead<ElementViewT> getDefault() {
     return createFromBackingNode(getDefaultTree());
   }
 
@@ -86,7 +92,7 @@ public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public VectorViewRead<C> createFromBackingNode(TreeNode node) {
+  public VectorViewRead<ElementViewT> createFromBackingNode(TreeNode node) {
     return new VectorViewReadImpl(this, node);
   }
 
@@ -123,7 +129,7 @@ public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
   }
 
   @Override
-  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 
@@ -142,5 +148,37 @@ public class VectorViewType<C> extends CollectionViewType<VectorViewRead<C>> {
       }
     }
     return data.getDataTree();
+  }
+
+  @Override
+  public SszLengthBounds getSszLengthBounds() {
+    return getElementType()
+        .getSszLengthBounds()
+        // if elements are of dynamic size the offset size should be added for every element
+        .addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
+        .mul(getLength())
+        .ceilToBytes();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof VectorViewType)) {
+      return false;
+    }
+    VectorViewType<?> that = (VectorViewType<?>) o;
+    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return "Vector[" + getElementType() + ", " + getLength() + "]";
   }
 }

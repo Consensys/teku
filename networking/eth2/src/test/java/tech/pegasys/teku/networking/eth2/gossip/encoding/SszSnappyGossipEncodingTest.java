@@ -119,7 +119,7 @@ public class SszSnappyGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(block);
     assertThatThrownBy(() -> decode(encoding, encoded, RandomClass.class))
-        .isInstanceOf(DecodingException.class);
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class SszSnappyGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(block);
     assertThatThrownBy(() -> decode(encoding, encoded, boolean.class))
-        .isInstanceOf(DecodingException.class);
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test

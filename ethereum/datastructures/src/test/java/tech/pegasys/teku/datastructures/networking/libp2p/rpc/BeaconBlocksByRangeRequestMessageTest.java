@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class BeaconBlocksByRangeRequestMessageTest {
 
@@ -31,6 +32,7 @@ class BeaconBlocksByRangeRequestMessageTest {
     final BeaconBlocksByRangeRequestMessage result =
         SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);
 
-    assertThat(result).isEqualToComparingFieldByField(request);
+    assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
+    assertThat(result).isEqualTo(request);
   }
 }

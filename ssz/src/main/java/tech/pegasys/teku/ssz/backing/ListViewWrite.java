@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.util.Collection;
+
 /**
  * Mutable List view with immutable elements This type of list can be modified by setting or
  * appending immutable elements
@@ -25,6 +27,9 @@ public interface ListViewWrite<ElementType extends ViewRead>
   @Override
   void set(int index, ElementType value);
 
+  @Override
+  ListViewRead<ElementType> commitChanges();
+
   /**
    * Appends a new immutable value to the end of the list. Size is incremented
    *
@@ -34,6 +39,7 @@ public interface ListViewWrite<ElementType extends ViewRead>
     set(size(), value);
   }
 
-  @Override
-  ListViewRead<ElementType> commitChanges();
+  default void appendAll(Collection<ElementType> elements) {
+    elements.forEach(this::append);
+  }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
@@ -109,9 +110,7 @@ public interface BeaconState
               new ListViewType<>(
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   Field JUSTIFICATION_BITS_FIELD =
-      new Field(
-          17,
-          () -> new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH));
+      new Field(17, () -> new BitVectorType(Constants.JUSTIFICATION_BITS_LENGTH));
   Field PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD = new Field(18, Checkpoint.TYPE);
   Field CURRENT_JUSTIFIED_CHECKPOINT_FIELD = new Field(19, Checkpoint.TYPE);
   Field FINALIZED_CHECKPOINT_FIELD = new Field(20, Checkpoint.TYPE);

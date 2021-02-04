@@ -30,16 +30,15 @@ public interface ViewWrite extends ViewRead {
   ViewRead commitChanges();
 
   /**
-   * This method may be not supported by mutable view implementation The general pattern for mutable
-   * views to get backing node is <code>
-   *   commit().getBackingNode()
-   * </code>
-   *
-   * @throws UnsupportedOperationException is the method is not supported
+   * Returns the backing tree of this modified view Note that calling this method on {@link
+   * ViewWrite} could be suboptimal from performance perspective as it internally needs to create an
+   * immutable {@link ViewRead} via {@link #commitChanges()} which is then discarded. It's normally
+   * better to make all modifications on {@link ViewWrite}, commit the changes and then call either
+   * {@link ViewRead#getBackingNode()} or {@link ViewRead#hashTreeRoot()} on the resulting immutable
+   * instance
    */
   @Override
   default TreeNode getBackingNode() {
-    throw new UnsupportedOperationException(
-        "Backing tree node should be accessed from ViewRead only");
+    return commitChanges().getBackingNode();
   }
 }

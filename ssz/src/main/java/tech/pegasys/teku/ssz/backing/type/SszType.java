@@ -14,14 +14,16 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import java.nio.ByteOrder;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszByteArrayWriter;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Collection of SSZ related methods for {@link ViewType} */
-public interface SSZType {
+public interface SszType {
 
   // the size of SSZ UIn32 lengths and offsets
   int SSZ_LENGTH_SIZE = 4;
@@ -58,27 +60,19 @@ public interface SSZType {
   }
 
   /** SSZ serializes the backing tree instance of this type */
-  default Bytes sszSerialize(TreeNode node) {
-    byte[] buf = new byte[getSszSize(node)];
-    sszSerialize(
-        node,
-        new Consumer<>() {
-          int off = 0;
-
-          @Override
-          public void accept(Bytes bytes) {
-            System.arraycopy(bytes.toArrayUnsafe(), 0, buf, off, bytes.size());
-            off += bytes.size();
-          }
-        });
-    return Bytes.wrap(buf);
+  default Bytes sszSerializeTree(TreeNode node) {
+    SszByteArrayWriter writer = new SszByteArrayWriter(getSszSize(node));
+    sszSerializeTree(node, writer);
+    return writer.toBytes();
   }
 
   /**
    * SSZ serializes the backing tree of this type and returns the data as bytes 'stream' via passed
    * {@code writer}
    */
-  int sszSerialize(TreeNode node, Consumer<Bytes> writer);
+  int sszSerializeTree(TreeNode node, SszWriter writer);
 
-  TreeNode sszDeserializeTree(SszReader reader);
+  TreeNode sszDeserializeTree(SszReader reader) throws SSZDeserializeException;
+
+  SszLengthBounds getSszLengthBounds();
 }

@@ -13,38 +13,73 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container4;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class DepositData
+    extends Container4<
+        DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  private static final int SSZ_FIELD_COUNT = 2;
+  public static class DepositDataType
+      extends ContainerType4<
+          DepositData,
+          VectorViewRead<ByteView>,
+          Bytes32View,
+          UInt64View,
+          VectorViewRead<ByteView>> {
 
-  private final BLSPublicKey pubkey;
-  private final Bytes32 withdrawal_credentials;
-  private final UInt64 amount;
-  private BLSSignature signature; // Signing over DepositMessage
+    public DepositDataType() {
+      super(
+          "DepositData",
+          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
+          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
+          namedType("amount", BasicViewTypes.UINT64_TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+    }
+
+    @Override
+    public DepositData createFromBackingNode(TreeNode node) {
+      return new DepositData(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
+
+  private BLSSignature signatureCache;
+  private BLSPublicKey pubkeyCache;
+
+  private DepositData(DepositDataType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public DepositData(
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
-    this.pubkey = pubkey;
-    this.withdrawal_credentials = withdrawal_credentials;
-    this.amount = amount;
-    this.signature = signature;
+    super(
+        TYPE,
+        ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        new Bytes32View(withdrawal_credentials),
+        new UInt64View(amount),
+        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.pubkeyCache = pubkey;
+    this.signatureCache = signature;
   }
 
   public DepositData(final DepositMessage depositMessage, final BLSSignature signature) {
@@ -56,83 +91,34 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public DepositData() {
-    this.pubkey = BLSPublicKey.empty();
-    this.withdrawal_credentials = Bytes32.ZERO;
-    this.amount = UInt64.ZERO;
-    this.signature = BLSSignature.empty();
+    super(TYPE);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(pubkey.get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(withdrawal_credentials)),
-            SSZ.encodeUInt64(amount.longValue())));
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(pubkey, withdrawal_credentials, amount, signature);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof DepositData)) {
-      return false;
-    }
-
-    DepositData other = (DepositData) obj;
-    return Objects.equals(this.getPubkey(), other.getPubkey())
-        && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
-        && Objects.equals(this.getAmount(), other.getAmount())
-        && Objects.equals(this.getSignature(), other.getSignature());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public BLSPublicKey getPubkey() {
-    return pubkey;
+    if (pubkeyCache == null) {
+      pubkeyCache =
+          BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+    }
+    return pubkeyCache;
   }
 
   public Bytes32 getWithdrawal_credentials() {
-    return withdrawal_credentials;
+    return getField1().get();
   }
 
   public UInt64 getAmount() {
-    return amount;
+    return getField2().get();
   }
 
   public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
-    this.signature = signature;
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
+    }
+    return signatureCache;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toSSZBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
+    return hashTreeRoot();
   }
 }

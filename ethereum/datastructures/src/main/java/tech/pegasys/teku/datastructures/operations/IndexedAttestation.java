@@ -13,120 +13,94 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class IndexedAttestation
+    extends Container3<
+        IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class IndexedAttestationType
+      extends ContainerType3<
+          IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
 
-  private final SSZList<UInt64> attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private final AttestationData data;
-  private final BLSSignature signature;
+    public IndexedAttestationType() {
+      super(
+          "IndexedAttestation",
+          namedType(
+              "attesting_indices",
+              new ListViewType<>(
+                  BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedType("data", AttestationData.TYPE),
+          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+    }
+
+    public ListViewType<UInt64View> getAttestingIndicesType() {
+      return (ListViewType<UInt64View>) getFieldType0();
+    }
+
+    @Override
+    public IndexedAttestation createFromBackingNode(TreeNode node) {
+      return new IndexedAttestation(this, node);
+    }
+  }
+
+  @SszTypeDescriptor public static final IndexedAttestationType TYPE = new IndexedAttestationType();
+
+  private BLSSignature signatureCache;
+
+  private IndexedAttestation(IndexedAttestationType type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public IndexedAttestation(
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
-    this.attesting_indices = attesting_indices;
-    this.data = data;
-    this.signature = signature;
+    super(
+        TYPE,
+        ViewUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
+        data,
+        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
-  // Required by SSZ reflection
-  public IndexedAttestation() {
-    this.attesting_indices =
-        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    data = null;
-    signature = null;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(data.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.add(
-        SSZ.encode(
-            writer ->
-                attesting_indices.stream()
-                    .forEach(value -> writer.writeUInt64(value.longValue()))));
-    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
-    return variablePartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(attesting_indices, data, signature);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof IndexedAttestation)) {
-      return false;
-    }
-
-    IndexedAttestation other = (IndexedAttestation) obj;
-    return Objects.equals(this.getAttesting_indices(), other.getAttesting_indices())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getSignature(), other.getSignature());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public SSZList<UInt64> getAttesting_indices() {
-    return attesting_indices;
+    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractBasicView::get);
   }
 
   public AttestationData getData() {
-    return data;
+    return getField1();
   }
 
   public BLSSignature getSignature() {
-    return signature;
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+    }
+    return signatureCache;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_list_ul(
-                attesting_indices.map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))),
-            data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
+    return hashTreeRoot();
   }
 }
