@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.benchmarks;
 
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
-
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;

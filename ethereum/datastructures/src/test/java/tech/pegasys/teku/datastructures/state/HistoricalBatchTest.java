@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
@@ -38,13 +38,13 @@ public class HistoricalBatchTest {
   @BeforeAll
   static void setConstants() {
     Constants.setConstants("mainnet");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @AfterAll
   static void restoreConstants() {
     Constants.setConstants("minimal");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @Test

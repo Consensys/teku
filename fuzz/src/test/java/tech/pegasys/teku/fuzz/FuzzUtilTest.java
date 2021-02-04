@@ -34,7 +34,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -62,7 +62,7 @@ class FuzzUtilTest {
   @AfterEach
   public void cleanup() {
     Constants.setConstants("minimal");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @Test

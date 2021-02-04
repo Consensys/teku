@@ -27,7 +27,7 @@ import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -63,7 +63,7 @@ public class FuzzUtil {
       Constants.setConstants("minimal");
     }
     // guessing this might be necessary soon?
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
 
     if (disable_bls) {
       BLSConstants.disableBLSVerification();

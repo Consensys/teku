@@ -63,13 +63,13 @@ public class LengthBoundsCalculatorTest {
   @BeforeAll
   static void setConstants() {
     Constants.setConstants("mainnet");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @AfterAll
   static void restoreConstants() {
     Constants.setConstants("minimal");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @ParameterizedTest(name = "{0}")
