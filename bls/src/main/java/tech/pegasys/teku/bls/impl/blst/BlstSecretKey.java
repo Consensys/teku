@@ -77,8 +77,15 @@ public class BlstSecretKey implements SecretKeyInterface {
     if (isZero()) {
       return BlstPublicKey.INFINITY;
     }
-    P1 pk = new P1(secretKey);
-    return new BlstPublicKey(pk.to_affine());
+    P1 pk;
+    try {
+      pk = new P1(secretKey);
+      return new BlstPublicKey(pk.to_affine());
+    } finally {
+      if (pk != null) {
+        pk.delete();
+      }
+    }
   }
 
   @SuppressWarnings("ReferenceEquality")
