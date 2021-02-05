@@ -27,9 +27,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
-public interface BeaconState {
+public interface BeaconState extends SszContainer {
 
   // Versioning
   UInt64 getGenesis_time();

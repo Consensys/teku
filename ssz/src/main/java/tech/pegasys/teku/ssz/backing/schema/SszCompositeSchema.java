@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.sos.SszField;
 
 /** Abstract schema of {@link tech.pegasys.teku.ssz.backing.SszComposite} subclasses */
 public interface SszCompositeSchema<SszCompositeT extends SszData>
@@ -36,6 +37,17 @@ public interface SszCompositeSchema<SszCompositeT extends SszData>
    * @throws IndexOutOfBoundsException if index >= getMaxLength
    */
   SszSchema<?> getChildSchema(int index);
+
+  /** Returns the field by name, if such a field exists. Otherwise returns null. */
+  SszField getField(String fieldName);
+
+  /**
+   * Get the index of a field by name
+   *
+   * @param fieldName
+   * @return The index if it exists, otherwise -1
+   */
+  int getFieldIndex(String fieldName);
 
   /**
    * Return the number of elements that may be stored in a single tree node This value is 1 for all

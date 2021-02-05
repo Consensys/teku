@@ -38,7 +38,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   private final IntCache<SszChildT> childrenViewCache;
   private final int sizeCache;
-  private final SszCompositeSchema<?> schema;
+  protected final SszCompositeSchema<?> schema;
   private final TreeNode backingNode;
 
   /** Creates an instance from a schema and a backing node */
