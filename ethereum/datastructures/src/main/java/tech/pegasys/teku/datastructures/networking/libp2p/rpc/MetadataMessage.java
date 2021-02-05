@@ -23,9 +23,9 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
@@ -62,7 +62,7 @@ public class MetadataMessage
   }
 
   public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
-    super(TYPE, new UInt64View(seqNumber), ViewUtils.createBitvectorView(attnets));
+    super(TYPE, new UInt64View(seqNumber), SszUtils.createBitvectorView(attnets));
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
     this.attnetsCache = attnets;
   }
@@ -73,7 +73,7 @@ public class MetadataMessage
 
   public Bitvector getAttnets() {
     if (attnetsCache == null) {
-      attnetsCache = ViewUtils.getBitvector(getField1());
+      attnetsCache = SszUtils.getBitvector(getField1());
     }
     return attnetsCache;
   }

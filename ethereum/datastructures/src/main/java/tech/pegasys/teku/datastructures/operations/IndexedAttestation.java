@@ -25,10 +25,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
@@ -72,14 +72,14 @@ public class IndexedAttestation
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
+        SszUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
         data,
-        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
   public SSZList<UInt64> getAttesting_indices() {
-    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractBasicView::get);
+    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractSszPrimitive::get);
   }
 
   public AttestationData getData() {
@@ -88,7 +88,7 @@ public class IndexedAttestation
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return signatureCache;
   }

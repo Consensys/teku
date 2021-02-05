@@ -26,20 +26,20 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
 /** Handy base class for immutable containers */
-public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
+public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
-  protected AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer> type) {
+  protected AbstractSszImmutableContainer(
+      ContainerViewType<? extends AbstractSszImmutableContainer> type) {
     this(type, type.getDefaultTree());
   }
 
-  protected AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer> type, TreeNode backingNode) {
+  protected AbstractSszImmutableContainer(
+      ContainerViewType<? extends AbstractSszImmutableContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  protected AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer> type, SszData... memberValues) {
+  protected AbstractSszImmutableContainer(
+      ContainerViewType<? extends AbstractSszImmutableContainer> type, SszData... memberValues) {
     super(type, createBackingTree(type, memberValues), createCache(memberValues));
     checkArgument(
         memberValues.length == getType().getMaxLength(),
@@ -89,11 +89,11 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
       return true;
     }
 
-    if (!(obj instanceof AbstractImmutableContainer)) {
+    if (!(obj instanceof AbstractSszImmutableContainer)) {
       return false;
     }
 
-    AbstractImmutableContainer other = (AbstractImmutableContainer) obj;
+    AbstractSszImmutableContainer other = (AbstractSszImmutableContainer) obj;
     return hashTreeRoot().equals(other.hashTreeRoot());
   }
 

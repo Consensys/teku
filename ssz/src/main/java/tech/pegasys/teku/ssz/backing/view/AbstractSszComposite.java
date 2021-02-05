@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  * @param <ChildType> the type of children. For heterogeneous composites (like container) this type
  *     would be just generic {@link SszData}
  */
-public abstract class AbstractCompositeViewRead<ChildType extends SszData>
+public abstract class AbstractSszComposite<ChildType extends SszData>
     implements SszComposite<ChildType> {
 
   private final IntCache<ChildType> childrenViewCache;
@@ -42,7 +42,7 @@ public abstract class AbstractCompositeViewRead<ChildType extends SszData>
   private final TreeNode backingNode;
 
   /** Creates an instance from a type and a backing node */
-  protected AbstractCompositeViewRead(CompositeViewType<?> type, TreeNode backingNode) {
+  protected AbstractSszComposite(CompositeViewType<?> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
     this.sizeCache = sizeImpl();
@@ -55,7 +55,7 @@ public abstract class AbstractCompositeViewRead<ChildType extends SszData>
    * <p>View instances cache is supplied for optimization to shortcut children views creation from
    * backing nodes. The cache should correspond to the supplied backing tree.
    */
-  protected AbstractCompositeViewRead(
+  protected AbstractSszComposite(
       CompositeViewType<?> type, TreeNode backingNode, IntCache<ChildType> cache) {
     this.type = type;
     this.backingNode = backingNode;

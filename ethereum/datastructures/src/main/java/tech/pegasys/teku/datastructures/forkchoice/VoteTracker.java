@@ -19,8 +19,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 

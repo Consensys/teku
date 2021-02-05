@@ -24,18 +24,18 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
-public class ContainerViewReadImpl extends AbstractCompositeViewRead<SszData>
+public class SszContainerImpl extends AbstractSszComposite<SszData>
     implements SszContainer {
 
-  public ContainerViewReadImpl(ContainerViewType<?> type) {
+  public SszContainerImpl(ContainerViewType<?> type) {
     this(type, type.getDefaultTree());
   }
 
-  public ContainerViewReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
+  public SszContainerImpl(ContainerViewType<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public ContainerViewReadImpl(
+  public SszContainerImpl(
       CompositeViewType<?> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
@@ -54,7 +54,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<SszData>
 
   @Override
   public SszMutableContainer createWritableCopy() {
-    return new ContainerViewWriteImpl(this);
+    return new SszMutableContainerImpl(this);
   }
 
   @Override

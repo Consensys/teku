@@ -31,12 +31,12 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 /** Handy view tool methods */
-public class ViewUtils {
+public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toListView(
       ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {

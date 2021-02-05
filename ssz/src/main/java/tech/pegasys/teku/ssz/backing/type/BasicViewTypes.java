@@ -24,11 +24,11 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 /** The collection of commonly used basic types */
 public class BasicViewTypes {

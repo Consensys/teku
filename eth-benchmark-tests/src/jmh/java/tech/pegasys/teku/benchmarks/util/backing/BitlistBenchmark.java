@@ -22,8 +22,8 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistBenchmark {
 
@@ -42,7 +42,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void fromCachedListView(Blackhole bh) {
-    bh.consume(ViewUtils.getBitlist(bitlist));
+    bh.consume(SszUtils.getBitlist(bitlist));
   }
 
   @Benchmark
@@ -50,6 +50,6 @@ public class BitlistBenchmark {
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void fromNewListView(Blackhole bh) {
     SszList<BitView> freshListView = type.createFromBackingNode(bitlist.getBackingNode());
-    bh.consume(ViewUtils.getBitlist(freshListView));
+    bh.consume(SszUtils.getBitlist(freshListView));
   }
 }

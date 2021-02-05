@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositData
     extends Container4<
@@ -69,10 +69,10 @@ public class DepositData
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(amount),
-        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.pubkeyCache = pubkey;
     this.signatureCache = signature;
   }
@@ -92,7 +92,7 @@ public class DepositData
   public BLSPublicKey getPubkey() {
     if (pubkeyCache == null) {
       pubkeyCache =
-          BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+          BLSPublicKey.fromBytesCompressed(Bytes48.wrap(SszUtils.getAllBytes(getField0())));
     }
     return pubkeyCache;
   }
@@ -107,7 +107,7 @@ public class DepositData
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField3()));
     }
     return signatureCache;
   }

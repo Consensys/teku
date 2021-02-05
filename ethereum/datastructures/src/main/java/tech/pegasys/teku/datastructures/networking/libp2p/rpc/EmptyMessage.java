@@ -18,11 +18,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcRequest {
+public class EmptyMessage extends SszListImpl<ByteView> implements RpcRequest {
   private static final ListViewType<ByteView> LIST_VIEW_TYPE =
       new ListViewType<>(BasicViewTypes.BYTE_TYPE, 0);
 
@@ -41,7 +41,7 @@ public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcReque
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {
-    super(ViewUtils.toListView(LIST_VIEW_TYPE, Collections.emptyList()));
+    super(SszUtils.toListView(LIST_VIEW_TYPE, Collections.emptyList()));
   }
 
   @Override

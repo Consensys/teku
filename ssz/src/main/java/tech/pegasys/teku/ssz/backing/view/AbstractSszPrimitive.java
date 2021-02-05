@@ -21,12 +21,12 @@ import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewType;
 
-public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
+public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
     implements SszPrimitive<C> {
   private final BasicViewType<V> type;
   private final C value;
 
-  protected AbstractBasicView(C value, BasicViewType<V> type) {
+  protected AbstractSszPrimitive(C value, BasicViewType<V> type) {
     checkNotNull(value);
     this.type = type;
     this.value = value;
@@ -65,7 +65,7 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AbstractBasicView<?, ?> that = (AbstractBasicView<?, ?>) o;
+    AbstractSszPrimitive<?, ?> that = (AbstractSszPrimitive<?, ?>) o;
     return Objects.equals(get(), that.get());
   }
 

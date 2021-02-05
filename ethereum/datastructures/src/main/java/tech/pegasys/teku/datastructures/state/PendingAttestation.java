@@ -22,9 +22,9 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
@@ -68,7 +68,7 @@ public class PendingAttestation
       UInt64 proposer_index) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
+        SszUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
         data,
         new UInt64View(inclusion_delay),
         new UInt64View(proposer_index));
@@ -83,7 +83,7 @@ public class PendingAttestation
   }
 
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitlist(getField0());
+    return SszUtils.getBitlist(getField0());
   }
 
   public AttestationData getData() {

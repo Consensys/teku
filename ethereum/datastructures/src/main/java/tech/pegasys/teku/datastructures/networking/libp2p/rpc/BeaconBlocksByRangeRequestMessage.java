@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public final class BeaconBlocksByRangeRequestMessage
     extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>

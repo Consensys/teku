@@ -24,17 +24,17 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
-public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, SszMutableData>
+public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {
 
-  public ContainerViewWriteImpl(ContainerViewReadImpl backingImmutableView) {
+  public SszMutableContainerImpl(SszContainerImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
-  protected ContainerViewReadImpl createViewRead(
+  protected SszContainerImpl createViewRead(
       TreeNode backingNode, IntCache<SszData> viewCache) {
-    return new ContainerViewReadImpl(getType(), backingNode, viewCache);
+    return new SszContainerImpl(getType(), backingNode, viewCache);
   }
 
   @Override

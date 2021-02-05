@@ -26,19 +26,19 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class VectorViewWriteImpl<
+public class SszMutableVectorImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends AbstractCompositeViewWrite<ElementReadType, ElementWriteType>
+    extends AbstractSszMutableComposite<ElementReadType, ElementWriteType>
     implements SszMutableRefVector<ElementReadType, ElementWriteType> {
 
-  public VectorViewWriteImpl(AbstractCompositeViewRead<ElementReadType> backingImmutableView) {
+  public SszMutableVectorImpl(AbstractSszComposite<ElementReadType> backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
-  protected AbstractCompositeViewRead<ElementReadType> createViewRead(
+  protected AbstractSszComposite<ElementReadType> createViewRead(
       TreeNode backingNode, IntCache<ElementReadType> viewCache) {
-    return new VectorViewReadImpl<>(getType(), backingNode, viewCache);
+    return new SszVectorImpl<>(getType(), backingNode, viewCache);
   }
 
   @Override
@@ -49,8 +49,8 @@ public class VectorViewWriteImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public VectorViewReadImpl<ElementReadType> commitChanges() {
-    return (VectorViewReadImpl<ElementReadType>) super.commitChanges();
+  public SszVectorImpl<ElementReadType> commitChanges() {
+    return (SszVectorImpl<ElementReadType>) super.commitChanges();
   }
 
   @Override

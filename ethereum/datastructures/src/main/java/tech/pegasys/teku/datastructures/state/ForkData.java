@@ -19,8 +19,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
 
 public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
 

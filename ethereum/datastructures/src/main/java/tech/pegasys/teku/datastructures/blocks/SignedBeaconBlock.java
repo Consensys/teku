@@ -23,8 +23,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<ByteView>>
@@ -66,7 +66,7 @@ public class SignedBeaconBlock
 
   public SignedBeaconBlock(
       final SignedBeaconBlockType type, final BeaconBlock message, final BLSSignature signature) {
-    super(type, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(type, message, SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
@@ -76,7 +76,7 @@ public class SignedBeaconBlock
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
     return signatureCache;
   }

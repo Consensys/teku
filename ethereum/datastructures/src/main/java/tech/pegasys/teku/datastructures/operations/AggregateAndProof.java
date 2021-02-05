@@ -21,9 +21,9 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class AggregateAndProof
     extends Container3<AggregateAndProof, UInt64View, Attestation, SszVector<ByteView>> {
@@ -58,7 +58,7 @@ public class AggregateAndProof
         TYPE,
         new UInt64View(index),
         aggregate,
-        ViewUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
+        SszUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
     selectionProofCache = selection_proof;
   }
 
@@ -72,7 +72,7 @@ public class AggregateAndProof
 
   public BLSSignature getSelection_proof() {
     if (selectionProofCache == null) {
-      selectionProofCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      selectionProofCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return selectionProofCache;
   }

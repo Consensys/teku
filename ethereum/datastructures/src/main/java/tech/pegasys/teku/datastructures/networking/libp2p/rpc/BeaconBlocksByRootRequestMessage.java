@@ -21,11 +21,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
+public class BeaconBlocksByRootRequestMessage extends SszListImpl<Bytes32View>
     implements SszList<Bytes32View>, RpcRequest {
 
   private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
@@ -48,7 +48,7 @@ public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32Vi
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(ViewUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
+    super(SszUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class PingMessage extends Container1<PingMessage, UInt64View> implements RpcRequest {

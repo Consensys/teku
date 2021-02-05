@@ -21,11 +21,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements SszList<ByteView> {
+public class RpcErrorMessage extends SszListImpl<ByteView> implements SszList<ByteView> {
 
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;
@@ -47,7 +47,7 @@ public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements SszLi
 
   public RpcErrorMessage(Bytes bytes) {
     super(
-        ViewUtils.toListView(LIST_VIEW_TYPE, ViewUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
+        SszUtils.toListView(LIST_VIEW_TYPE, SszUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
   }
 
   private RpcErrorMessage(TreeNode node) {
@@ -55,7 +55,7 @@ public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements SszLi
   }
 
   public Bytes getData() {
-    return ViewUtils.getAllBytes(this);
+    return SszUtils.getAllBytes(this);
   }
 
   @Override

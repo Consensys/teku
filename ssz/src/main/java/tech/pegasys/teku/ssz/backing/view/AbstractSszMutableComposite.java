@@ -44,11 +44,11 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  *
  * <p>The mutable views based on this class are inherently NOT thread safe
  */
-public abstract class AbstractCompositeViewWrite<
+public abstract class AbstractSszMutableComposite<
         ChildReadType extends SszData, ChildWriteType extends ChildReadType>
     implements SszMutableRefComposite<ChildReadType, ChildWriteType> {
 
-  protected AbstractCompositeViewRead<ChildReadType> backingImmutableView;
+  protected AbstractSszComposite<ChildReadType> backingImmutableView;
   private Consumer<SszMutableData> invalidator;
   private final Map<Integer, ChildReadType> childrenChanges = new HashMap<>();
   private final Map<Integer, ChildWriteType> childrenRefs = new HashMap<>();
@@ -56,8 +56,8 @@ public abstract class AbstractCompositeViewWrite<
   private Integer sizeCache;
 
   /** Creates a new mutable instance with backing immutable view */
-  protected AbstractCompositeViewWrite(
-      AbstractCompositeViewRead<ChildReadType> backingImmutableView) {
+  protected AbstractSszMutableComposite(
+      AbstractSszComposite<ChildReadType> backingImmutableView) {
     this.backingImmutableView = backingImmutableView;
     sizeCache = backingImmutableView.size();
   }
@@ -117,7 +117,7 @@ public abstract class AbstractCompositeViewWrite<
   @Override
   @SuppressWarnings("unchecked")
   public void clear() {
-    backingImmutableView = (AbstractCompositeViewRead<ChildReadType>) getType().getDefault();
+    backingImmutableView = (AbstractSszComposite<ChildReadType>) getType().getDefault();
     childrenChanges.clear();
     childrenRefs.clear();
     childrenRefsChanged.clear();
@@ -186,7 +186,7 @@ public abstract class AbstractCompositeViewWrite<
    * Should be implemented by subclasses to create respectful immutable view with backing tree and
    * views cache
    */
-  protected abstract AbstractCompositeViewRead<ChildReadType> createViewRead(
+  protected abstract AbstractSszComposite<ChildReadType> createViewRead(
       TreeNode backingNode, IntCache<ChildReadType> viewCache);
 
   @Override

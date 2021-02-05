@@ -19,9 +19,9 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 
 /** Collection of basic view classes */
-public class BasicViews {
+public class SszPrimitives {
 
-  public static class BitView extends AbstractBasicView<Boolean, BitView> {
+  public static class BitView extends AbstractSszPrimitive<Boolean, BitView> {
     private static final BitView TRUE_VIEW = new BitView(true);
     private static final BitView FALSE_VIEW = new BitView(false);
 
@@ -34,13 +34,13 @@ public class BasicViews {
     }
   }
 
-  public static class ByteView extends AbstractBasicView<Byte, ByteView> {
+  public static class ByteView extends AbstractSszPrimitive<Byte, ByteView> {
     public ByteView(Byte value) {
       super(value, BasicViewTypes.BYTE_TYPE);
     }
   }
 
-  public static class UInt64View extends AbstractBasicView<UInt64, UInt64View> {
+  public static class UInt64View extends AbstractSszPrimitive<UInt64, UInt64View> {
 
     public static UInt64View fromLong(long val) {
       return new UInt64View(UInt64.fromLongBits(val));
@@ -55,14 +55,14 @@ public class BasicViews {
     }
   }
 
-  public static class Bytes4View extends AbstractBasicView<Bytes4, Bytes4View> {
+  public static class Bytes4View extends AbstractSszPrimitive<Bytes4, Bytes4View> {
 
     public Bytes4View(Bytes4 val) {
       super(val, BasicViewTypes.BYTES4_TYPE);
     }
   }
 
-  public static class Bytes32View extends AbstractBasicView<Bytes32, Bytes32View> {
+  public static class Bytes32View extends AbstractSszPrimitive<Bytes32, Bytes32View> {
 
     public Bytes32View(Bytes32 val) {
       super(val, BasicViewTypes.BYTES32_TYPE);

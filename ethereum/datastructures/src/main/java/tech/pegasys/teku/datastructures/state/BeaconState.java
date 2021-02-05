@@ -35,10 +35,10 @@ import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -275,7 +275,7 @@ public interface BeaconState extends SszContainer {
         Bytes32.class,
         getAny(BLOCK_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
-        AbstractBasicView::get);
+        AbstractSszPrimitive::get);
   }
 
   default SSZVector<Bytes32> getState_roots() {
@@ -283,7 +283,7 @@ public interface BeaconState extends SszContainer {
         Bytes32.class,
         getAny(STATE_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
-        AbstractBasicView::get);
+        AbstractSszPrimitive::get);
   }
 
   default SSZList<Bytes32> getHistorical_roots() {
@@ -291,7 +291,7 @@ public interface BeaconState extends SszContainer {
         Bytes32.class,
         getAny(HISTORICAL_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
-        AbstractBasicView::get);
+        AbstractSszPrimitive::get);
   }
 
   // Eth1
@@ -322,7 +322,7 @@ public interface BeaconState extends SszContainer {
 
   default SSZList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UInt64.class, getAny(BALANCES_FIELD.getIndex()), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAny(BALANCES_FIELD.getIndex()), UInt64View::new, AbstractSszPrimitive::get);
   }
 
   default SSZVector<Bytes32> getRandao_mixes() {
@@ -330,13 +330,13 @@ public interface BeaconState extends SszContainer {
         Bytes32.class,
         getAny(RANDAO_MIXES_FIELD.getIndex()),
         Bytes32View::new,
-        AbstractBasicView::get);
+        AbstractSszPrimitive::get);
   }
 
   // Slashings
   default SSZVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), UInt64View::new, AbstractSszPrimitive::get);
   }
 
   // Attestations
@@ -358,7 +358,7 @@ public interface BeaconState extends SszContainer {
 
   // Finality
   default Bitvector getJustification_bits() {
-    return ViewUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getIndex()));
+    return SszUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getIndex()));
   }
 
   default Checkpoint getPrevious_justified_checkpoint() {

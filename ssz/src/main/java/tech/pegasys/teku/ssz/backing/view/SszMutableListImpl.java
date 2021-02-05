@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import static tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
+import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import static tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.ssz.backing.SszList;
@@ -27,13 +27,13 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 
-public class ListViewWriteImpl<
+public class SszMutableListImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     implements SszMutableRefList<ElementReadType, ElementWriteType> {
 
   static class ListContainerWrite<
           ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-      extends ContainerViewWriteImpl {
+      extends SszMutableContainerImpl {
     private final ListViewType<ElementReadType> listType;
 
     public ListContainerWrite(
@@ -56,7 +56,7 @@ public class ListViewWriteImpl<
     }
 
     @Override
-    protected ContainerViewReadImpl createViewRead(
+    protected SszContainerImpl createViewRead(
         TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ListContainerRead<>(listType, backingNode, viewCache);
     }
@@ -72,7 +72,7 @@ public class ListViewWriteImpl<
   private final ListContainerWrite<ElementReadType, ElementWriteType> container;
   private int cachedSize;
 
-  public ListViewWriteImpl(
+  public SszMutableListImpl(
       ListViewType<ElementReadType> type,
       ListContainerWrite<ElementReadType, ElementWriteType> container) {
     this.type = type;
@@ -104,7 +104,7 @@ public class ListViewWriteImpl<
 
   @Override
   public SszList<ElementReadType> commitChanges() {
-    return new ListViewReadImpl<>(getType(), container.commitChanges());
+    return new SszListImpl<>(getType(), container.commitChanges());
   }
 
   @Override

@@ -23,16 +23,16 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
+import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
 
 /**
  * View of SSZ List type. This view is compatible with and implemented as a <code>
  * Container[Vector(maxLength), size]</code> under the cover.
  */
-public class ListViewReadImpl<ElementType extends SszData> implements SszList<ElementType> {
+public class SszListImpl<ElementType extends SszData> implements SszList<ElementType> {
 
   public static class ListContainerRead<ElementType extends SszData>
-      extends ContainerViewReadImpl {
+      extends SszContainerImpl {
     private final ListViewType<ElementType> type;
 
     private ListContainerRead(ListViewType<ElementType> type) {
@@ -58,7 +58,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements SszList<El
     }
 
     public int getSize() {
-      return (int) ((BasicViews.UInt64View) get(1)).longValue();
+      return (int) ((SszPrimitives.UInt64View) get(1)).longValue();
     }
 
     public SszVector<ElementType> getData() {
@@ -75,10 +75,10 @@ public class ListViewReadImpl<ElementType extends SszData> implements SszList<El
   private final ListContainerRead<ElementType> container;
   private final int cachedSize;
 
-  protected ListViewReadImpl(SszList<ElementType> other) {
-    if (other instanceof ListViewReadImpl) {
+  protected SszListImpl(SszList<ElementType> other) {
+    if (other instanceof SszListImpl) {
       // optimization to preserve child view caches
-      ListViewReadImpl<ElementType> otherImpl = (ListViewReadImpl<ElementType>) other;
+      SszListImpl<ElementType> otherImpl = (SszListImpl<ElementType>) other;
       this.type = otherImpl.type;
       this.container = otherImpl.container;
       this.cachedSize = otherImpl.cachedSize;
@@ -89,13 +89,13 @@ public class ListViewReadImpl<ElementType extends SszData> implements SszList<El
     }
   }
 
-  public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
+  public SszListImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;
     this.container = new ListContainerRead<>(type, node);
     this.cachedSize = container.getSize();
   }
 
-  public ListViewReadImpl(
+  public SszListImpl(
       ListViewType<ElementType> type, ListContainerRead<ElementType> container) {
     this.type = type;
     this.container = container;
@@ -110,7 +110,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements SszList<El
 
   @Override
   public SszMutableList<ElementType> createWritableCopy() {
-    return new ListViewWriteImpl<>(getType(), container.createWritableCopy());
+    return new SszMutableListImpl<>(getType(), container.createWritableCopy());
   }
 
   @Override

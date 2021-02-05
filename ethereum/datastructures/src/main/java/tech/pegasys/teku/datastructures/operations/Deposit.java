@@ -22,9 +22,9 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, DepositData> {
@@ -62,7 +62,7 @@ public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, Deposit
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(TYPE, ViewUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
+    super(TYPE, SszUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
   }
 
   public Deposit() {
@@ -75,7 +75,7 @@ public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, Deposit
 
   public SSZVector<Bytes32> getProof() {
     return new SSZBackingVector<>(
-        Bytes32.class, getField0(), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getField0(), Bytes32View::new, AbstractSszPrimitive::get);
   }
 
   public DepositData getData() {

@@ -22,8 +22,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public final class BeaconBlock
     extends Container5<

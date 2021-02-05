@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
-import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
+import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -93,7 +93,7 @@ public class VectorViewType<ElementViewT extends SszData>
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public SszVector<ElementViewT> createFromBackingNode(TreeNode node) {
-    return new VectorViewReadImpl(this, node);
+    return new SszVectorImpl(this, node);
   }
 
   public int getLength() {

@@ -23,11 +23,11 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class Validator
     extends Container8<
@@ -89,7 +89,7 @@ public class Validator
       UInt64 withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey),
+        SszUtils.createVectorFromBytes(pubkey),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         BitView.viewOf(slashed),
@@ -109,7 +109,7 @@ public class Validator
    * if the {@link BeaconState} instance and validator index is available
    */
   public Bytes48 getPubkey() {
-    return Bytes48.wrap(ViewUtils.getAllBytes(getField0()));
+    return Bytes48.wrap(SszUtils.getAllBytes(getField0()));
   }
 
   public Bytes32 getWithdrawal_credentials() {

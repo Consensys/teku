@@ -24,14 +24,14 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class VectorViewReadImpl<ElementReadType extends SszData>
-    extends AbstractCompositeViewRead<ElementReadType> implements SszVector<ElementReadType> {
+public class SszVectorImpl<ElementReadType extends SszData>
+    extends AbstractSszComposite<ElementReadType> implements SszVector<ElementReadType> {
 
-  public VectorViewReadImpl(CompositeViewType<?> type, TreeNode backingNode) {
+  public SszVectorImpl(CompositeViewType<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public VectorViewReadImpl(
+  public SszVectorImpl(
       CompositeViewType<?> type, TreeNode backingNode, IntCache<ElementReadType> cache) {
     super(type, backingNode, cache);
   }
@@ -53,8 +53,8 @@ public class VectorViewReadImpl<ElementReadType extends SszData>
   }
 
   @Override
-  public VectorViewWriteImpl<ElementReadType, ?> createWritableCopy() {
-    return new VectorViewWriteImpl<>(this);
+  public SszMutableVectorImpl<ElementReadType, ?> createWritableCopy() {
+    return new SszMutableVectorImpl<>(this);
   }
 
   @SuppressWarnings("unchecked")

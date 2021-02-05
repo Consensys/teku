@@ -21,9 +21,9 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
+import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
-class MutableBeaconStateImpl extends ContainerViewWriteImpl
+class MutableBeaconStateImpl extends SszMutableContainerImpl
     implements MutableBeaconState, BeaconStateCache {
 
   static MutableBeaconStateImpl createBuilder() {

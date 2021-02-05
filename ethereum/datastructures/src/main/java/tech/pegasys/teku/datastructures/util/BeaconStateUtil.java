@@ -78,7 +78,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {

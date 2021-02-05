@@ -26,9 +26,9 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
@@ -69,9 +69,9 @@ public class Attestation
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        ViewUtils.createBitlistView(TYPE.getAggregationBitsType(), aggregation_bits),
+        SszUtils.createBitlistView(TYPE.getAggregationBitsType(), aggregation_bits),
         data,
-        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;
     signatureCache = signature;
   }
@@ -95,7 +95,7 @@ public class Attestation
 
   public Bitlist getAggregation_bits() {
     if (aggregationBitsCache == null) {
-      aggregationBitsCache = ViewUtils.getBitlist(getField0());
+      aggregationBitsCache = SszUtils.getBitlist(getField0());
     }
     return aggregationBitsCache;
   }
@@ -106,7 +106,7 @@ public class Attestation
 
   public BLSSignature getAggregate_signature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return signatureCache;
   }

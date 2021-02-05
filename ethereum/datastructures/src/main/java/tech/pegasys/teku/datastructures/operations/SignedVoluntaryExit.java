@@ -20,8 +20,8 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedVoluntaryExit
     extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<ByteView>> {
@@ -51,7 +51,7 @@ public class SignedVoluntaryExit
   }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(TYPE, message, SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
@@ -61,7 +61,7 @@ public class SignedVoluntaryExit
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
     return signatureCache;
   }

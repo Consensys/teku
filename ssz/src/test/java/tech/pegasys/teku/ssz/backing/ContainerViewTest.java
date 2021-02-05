@@ -34,11 +34,11 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
+import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -144,7 +144,7 @@ public class ContainerViewTest {
     ContainerRead commitChanges();
   }
 
-  public static class ImmutableSubContainerImpl extends AbstractImmutableContainer
+  public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
@@ -172,7 +172,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerReadImpl extends ContainerViewReadImpl
+  public static class SubContainerReadImpl extends SszContainerImpl
       implements SubContainerRead {
 
     public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
@@ -189,7 +189,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerWriteImpl extends ContainerViewWriteImpl
+  public static class SubContainerWriteImpl extends SszMutableContainerImpl
       implements SubContainerWrite {
 
     public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
@@ -208,7 +208,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerReadImpl extends ContainerViewReadImpl implements ContainerRead {
+  public static class ContainerReadImpl extends SszContainerImpl implements ContainerRead {
 
     public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -225,7 +225,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerWriteImpl extends ContainerViewWriteImpl implements ContainerWrite {
+  public static class ContainerWriteImpl extends SszMutableContainerImpl implements ContainerWrite {
 
     public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
       super(backingImmutableView);

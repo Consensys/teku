@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 
@@ -61,19 +61,19 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableVector<Bytes32> getBlock_roots() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(5), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(5), Bytes32View::new, AbstractSszPrimitive::get);
   }
 
   @Override
   default SSZMutableVector<Bytes32> getState_roots() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(6), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(6), Bytes32View::new, AbstractSszPrimitive::get);
   }
 
   @Override
   default SSZMutableList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(
-        Bytes32.class, getAnyByRef(7), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(7), Bytes32View::new, AbstractSszPrimitive::get);
   }
 
   // Eth1
@@ -101,20 +101,20 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UInt64.class, getAnyByRef(12), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAnyByRef(12), UInt64View::new, AbstractSszPrimitive::get);
   }
 
   @Override
   default SSZMutableVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(13), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(13), Bytes32View::new, AbstractSszPrimitive::get);
   }
 
   // Slashings
   @Override
   default SSZMutableVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAnyByRef(14), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAnyByRef(14), UInt64View::new, AbstractSszPrimitive::get);
   }
 
   // Attestations
@@ -132,7 +132,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   // Finality
   default void setJustification_bits(Bitvector justification_bits) {
-    set(17, ViewUtils.createBitvectorView(justification_bits));
+    set(17, SszUtils.createBitvectorView(justification_bits));
   }
 
   default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {

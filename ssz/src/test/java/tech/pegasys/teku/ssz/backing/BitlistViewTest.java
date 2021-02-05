@@ -19,8 +19,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistViewTest {
 
@@ -32,8 +32,8 @@ public class BitlistViewTest {
               .toArray();
       Bitlist bitlist = new Bitlist(size, size, bitIndexes);
 
-      SszList<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
-      Bitlist bitlist1 = ViewUtils.getBitlist(bitlistView);
+      SszList<BitView> bitlistView = SszUtils.createBitlistView(bitlist);
+      Bitlist bitlist1 = SszUtils.getBitlist(bitlistView);
 
       Assertions.assertThat(bitlist1).isEqualTo(bitlist);
     }

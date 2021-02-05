@@ -26,8 +26,8 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -63,12 +63,12 @@ public class ListViewType<ElementViewT extends SszData>
 
   @Override
   public SszList<ElementViewT> getDefault() {
-    return new ListViewReadImpl<>(this, createDefaultTree());
+    return new SszListImpl<>(this, createDefaultTree());
   }
 
   @Override
   public SszList<ElementViewT> createFromBackingNode(TreeNode node) {
-    return new ListViewReadImpl<>(this, node);
+    return new SszListImpl<>(this, node);
   }
 
   private VectorViewType<ElementViewT> getCompatibleVectorType() {

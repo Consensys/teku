@@ -25,16 +25,16 @@ import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class TestContainers {
 
-  public static class TestSubContainer extends AbstractImmutableContainer {
+  public static class TestSubContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestSubContainer> TYPE =
         ContainerViewType.create(
@@ -58,7 +58,7 @@ public class TestContainers {
     }
   }
 
-  public static class TestContainer extends AbstractImmutableContainer {
+  public static class TestContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestContainer> TYPE =
         ContainerViewType.create(
@@ -81,7 +81,7 @@ public class TestContainers {
     }
   }
 
-  public static class TestSmallContainer extends AbstractImmutableContainer {
+  public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestSmallContainer> TYPE =
         ContainerViewType.create(List.of(BasicViewTypes.BIT_TYPE), TestSmallContainer::new);
@@ -95,7 +95,7 @@ public class TestContainers {
     }
   }
 
-  public static class TestByteVectorContainer extends AbstractImmutableContainer {
+  public static class TestByteVectorContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestByteVectorContainer> TYPE =
         ContainerViewType.create(
@@ -119,12 +119,12 @@ public class TestContainers {
       super(
           TYPE,
           UInt64View.fromLong(l1),
-          ViewUtils.createVectorFromBytes(b1),
+          SszUtils.createVectorFromBytes(b1),
           UInt64View.fromLong(l2));
     }
   }
 
-  public static class TestDoubleSuperContainer extends AbstractImmutableContainer {
+  public static class TestDoubleSuperContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestDoubleSuperContainer> TYPE =
         ContainerViewType.create(

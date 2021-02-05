@@ -23,10 +23,10 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositMessage
     extends Container3<DepositMessage, SszVector<ByteView>, Bytes32View, UInt64View> {
@@ -58,13 +58,13 @@ public class DepositMessage
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(amount));
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(SszUtils.getAllBytes(getField0())));
   }
 
   public Bytes32 getWithdrawal_credentials() {

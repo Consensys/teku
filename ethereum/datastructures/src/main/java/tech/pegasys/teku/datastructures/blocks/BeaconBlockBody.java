@@ -32,9 +32,9 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A Beacon block body */
@@ -156,14 +156,14 @@ public class BeaconBlockBody
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
-        ViewUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
+        SszUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
         eth1_data,
         new Bytes32View(graffiti),
-        ViewUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
-        ViewUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
-        ViewUtils.toListView(type.getAttestationsType(), attestations),
-        ViewUtils.toListView(type.getDepositsType(), deposits),
-        ViewUtils.toListView(type.getVoluntaryExitsType(), voluntary_exits));
+        SszUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
+        SszUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
+        SszUtils.toListView(type.getAttestationsType(), attestations),
+        SszUtils.toListView(type.getDepositsType(), deposits),
+        SszUtils.toListView(type.getVoluntaryExitsType(), voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 
@@ -173,7 +173,7 @@ public class BeaconBlockBody
 
   public BLSSignature getRandao_reveal() {
     if (randaoRevealCache == null) {
-      randaoRevealCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField0()));
+      randaoRevealCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField0()));
     }
     return randaoRevealCache;
   }
