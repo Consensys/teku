@@ -202,8 +202,7 @@ jobs:
       - capture_test_results
       - capture_test_artifacts
 
-  referenceTests:
-    parallelism: 7
+  referenceTestsPrep:
     executor: large_executor
     steps:
       - prepare
@@ -225,6 +224,23 @@ jobs:
           name: CompileReferenceTests
           command: |
             ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - save_cache:
+          name: Caching reference tests
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./eth-reference-tests/
+
+  referenceTests:
+    parallelism: 7
+    executor: large_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
       - run:
           name: ReferenceTests
           no_output_timeout: 30m
@@ -237,12 +253,7 @@ jobs:
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            ./gradlew --no-daemon --parallel referenceTest $GRADLE_ARGS
-      - save_cache:
-          name: Caching reference tests
-          key: reftests-{{ checksum "build.gradle" }}
-          paths:
-            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
+            ./gradlew --no-daemon --parallel -x generateReferenceTestClasses referenceTest $GRADLE_ARGS
       - capture_test_results
 
   compatibilityTests:
@@ -391,10 +402,20 @@ workflows:
               <<: *filters-release-tags
           context:
             - dockerhub-quorumengineering-ro
+      - referenceTestsPrep:
+          requires:
+            - assemble
+            - spotless
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - referenceTests:
           requires:
             - assemble
             - spotless
+            - referenceTestsPrep
           filters:
             tags:
               <<: *filters-release-tags
