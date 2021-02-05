@@ -21,15 +21,15 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateSszSchema;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class BeaconBlocksByRootRequestMessage extends SszListImpl<Bytes32View>
-    implements SszList<Bytes32View>, RpcRequest {
+public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
+    implements SszList<SszBytes32>, RpcRequest {
 
-  private static final SszListSchema<Bytes32View> LIST_VIEW_TYPE =
-      new SszListSchema<>(SszPrimitiveSchemas.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+  private static final SszListSchema<SszBytes32> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
 
   public static class BeaconBlocksByRootRequestMessageType
       extends AbstractDelegateSszSchema<BeaconBlocksByRootRequestMessage> {
@@ -48,7 +48,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<Bytes32View>
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(SszUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
+    super(SszUtils.toListView(LIST_VIEW_TYPE, roots, SszBytes32::new));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

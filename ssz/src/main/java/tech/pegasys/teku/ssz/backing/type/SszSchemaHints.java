@@ -23,7 +23,7 @@ import java.util.Optional;
  */
 public class SszSchemaHints {
 
-  private static class TypeHint {}
+  private static class SszSchemaHint {}
 
   /**
    * Hint to use {@link tech.pegasys.teku.ssz.backing.tree.SszSuperNode} for lists/vectors to save
@@ -33,7 +33,7 @@ public class SszSchemaHints {
    * list/vector elements a single node can contain. Increasing this parameter saves memory but
    * makes list/vector update and hashTreeRoot recalculation more CPU expensive
    */
-  public static final class SszSuperNodeHint extends TypeHint {
+  public static final class SszSuperNodeHint extends SszSchemaHint {
     private final int depth;
 
     public SszSuperNodeHint(int depth) {
@@ -45,7 +45,7 @@ public class SszSchemaHints {
     }
   }
 
-  public static SszSchemaHints of(TypeHint... hints) {
+  public static SszSchemaHints of(SszSchemaHint... hints) {
     return new SszSchemaHints(Arrays.asList(hints));
   }
 
@@ -57,14 +57,14 @@ public class SszSchemaHints {
     return of(new SszSuperNodeHint(superNodeDepth));
   }
 
-  private final List<TypeHint> hints;
+  private final List<SszSchemaHint> hints;
 
-  private SszSchemaHints(List<TypeHint> hints) {
+  private SszSchemaHints(List<SszSchemaHint> hints) {
     this.hints = hints;
   }
 
   @SuppressWarnings("unchecked")
-  public <C extends TypeHint> Optional<C> getHint(Class<C> hintClass) {
+  public <C extends SszSchemaHint> Optional<C> getHint(Class<C> hintClass) {
     return (Optional<C>) hints.stream().filter(h -> h.getClass() == hintClass).findFirst();
   }
 }

@@ -18,15 +18,15 @@ import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
-public class PingMessage extends Container1<PingMessage, UInt64View> implements RpcRequest {
+public class PingMessage extends Container1<PingMessage, SszUInt64> implements RpcRequest {
 
-  static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
+  static class PingMessageType extends ContainerType1<PingMessage, SszUInt64> {
 
     public PingMessageType() {
-      super("PingMessage", namedType("seqNumber", SszPrimitiveSchemas.UINT64_TYPE));
+      super("PingMessage", namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -42,7 +42,7 @@ public class PingMessage extends Container1<PingMessage, UInt64View> implements 
   }
 
   public PingMessage(UInt64 seqNumber) {
-    super(TYPE, new UInt64View(seqNumber));
+    super(TYPE, new SszUInt64(seqNumber));
   }
 
   public UInt64 getSeqNumber() {

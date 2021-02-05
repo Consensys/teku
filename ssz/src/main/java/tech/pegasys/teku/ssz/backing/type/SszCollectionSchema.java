@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
@@ -31,25 +32,25 @@ import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.SszSchemaHints.SszSuperNodeHint;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT extends SszData>
-    implements SszCompositeSchema<ViewT> {
+public abstract class SszCollectionSchema<SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
+    implements SszCompositeSchema<SszCollectionT> {
 
   private final long maxLength;
-  private final SszSchema<ElementViewT> elementType;
+  private final SszSchema<SszElementT> elementSchema;
   private final SszSchemaHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
-      Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
+      Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementSchema()));
   private volatile TreeNode defaultTree;
 
   protected SszCollectionSchema(
-      long maxLength, SszSchema<ElementViewT> elementType, SszSchemaHints hints) {
+      long maxLength, SszSchema<SszElementT> elementSchema, SszSchemaHints hints) {
     this.maxLength = maxLength;
-    this.elementType = elementType;
+    this.elementSchema = elementSchema;
     this.hints = hints;
   }
 
@@ -68,18 +69,18 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
     return maxLength;
   }
 
-  public SszSchema<ElementViewT> getElementType() {
-    return elementType;
+  public SszSchema<SszElementT> getElementSchema() {
+    return elementSchema;
   }
 
   @Override
-  public SszSchema<?> getChildType(int index) {
-    return getElementType();
+  public SszSchema<?> getChildSchema(int index) {
+    return getElementSchema();
   }
 
   @Override
   public int getElementsPerChunk() {
-    return 256 / getElementType().getBitsSize();
+    return 256 / getElementSchema().getBitsSize();
   }
 
   protected int getVariablePartSize(TreeNode vectorNode, int length) {
@@ -88,7 +89,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
     } else {
       int size = 0;
       for (int i = 0; i < length; i++) {
-        size += getElementType().getSszSize(vectorNode.get(getGeneralizedIndex(i)));
+        size += getElementSchema().getSszSize(vectorNode.get(getGeneralizedIndex(i)));
       }
       return size;
     }
@@ -101,7 +102,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
    *     SszListSchema} - the left sibling node of list size node
    */
   protected int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
-    if (getElementType().isFixedSize()) {
+    if (getElementSchema().isFixedSize()) {
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
       return sszSerializeVariableVector(vectorNode, writer, elementsCount);
@@ -127,7 +128,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
   }
 
   private int sszSerializeVariableVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
-    SszSchema<?> elementType = getElementType();
+    SszSchema<?> elementType = getElementSchema();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
@@ -143,7 +144,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
   }
 
   protected DeserializedData sszDeserializeVector(SszReader reader) {
-    if (getElementType().isFixedSize()) {
+    if (getElementSchema().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       if (sszSuperNodeHint.isPresent()) {
         return sszDeserializeSupernode(reader, sszSuperNodeHint.get().getDepth());
@@ -159,7 +160,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
     SszNodeTemplate template = elementSszSupernodeTemplate.get();
     int sszSize = reader.getAvailableBytes();
     if (sszSize % template.getSszLength() != 0) {
-      throw new SSZDeserializeException("Ssz length is not multiple of element length");
+      throw new SszDeserializeException("Ssz length is not multiple of element length");
     }
     int elementsCount = sszSize / template.getSszLength();
     int chunkSize = (1 << supernodeDepth) * template.getSszLength();
@@ -183,12 +184,12 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
   private DeserializedData sszDeserializeFixed(SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
     checkSsz(
-        bytesSize % getElementType().getFixedPartSize() == 0,
+        bytesSize % getElementSchema().getFixedPartSize() == 0,
         "SSZ sequence length is not multiple of fixed element size");
-    int elementBitSize = getElementType().getBitsSize();
+    int elementBitSize = getElementSchema().getBitsSize();
     if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize / getElementType().getFixedPartSize() <= getMaxLength(),
+          bytesSize / getElementSchema().getFixedPartSize() <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     } else {
       // preliminary rough check
@@ -196,7 +197,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
           (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     }
-    if (getElementType() instanceof SszPrimitiveSchema) {
+    if (getElementSchema() instanceof SszPrimitiveSchema) {
       int bytesRemain = bytesSize;
       List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {
@@ -217,11 +218,11 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
       return new DeserializedData(
           TreeUtil.createTree(childNodes, treeDepth()), bytesSize * 8 / elementBitSize, lastByte);
     } else {
-      int elementsCount = bytesSize / getElementType().getFixedPartSize();
+      int elementsCount = bytesSize / getElementSchema().getFixedPartSize();
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
-        try (SszReader sszReader = reader.slice(getElementType().getFixedPartSize())) {
-          TreeNode childNode = getElementType().sszDeserializeTree(sszReader);
+        try (SszReader sszReader = reader.slice(getElementSchema().getFixedPartSize())) {
+          TreeNode childNode = getElementSchema().sszDeserializeTree(sszReader);
           childNodes.add(childNode);
         }
       }
@@ -252,12 +253,12 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
               .collect(Collectors.toList());
 
       if (elementSizes.stream().anyMatch(s -> s < 0)) {
-        throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
+        throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
       }
 
       for (int elementSize : elementSizes) {
         try (SszReader sszReader = reader.slice(elementSize)) {
-          childNodes.add(getElementType().sszDeserializeTree(sszReader));
+          childNodes.add(getElementSchema().sszDeserializeTree(sszReader));
         }
       }
     }
@@ -266,7 +267,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
 
   protected static void checkSsz(boolean condition, String error) {
     if (!condition) {
-      throw new SSZDeserializeException(error);
+      throw new SszDeserializeException(error);
     }
   }
 
@@ -283,12 +284,12 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
       return false;
     }
     SszCollectionSchema<?, ?> that = (SszCollectionSchema<?, ?>) o;
-    return maxLength == that.maxLength && elementType.equals(that.elementType);
+    return maxLength == that.maxLength && elementSchema.equals(that.elementSchema);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxLength, elementType);
+    return Objects.hash(maxLength, elementSchema);
   }
 
   static class DeserializedData {

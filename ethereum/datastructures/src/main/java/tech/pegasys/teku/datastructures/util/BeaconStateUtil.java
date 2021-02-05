@@ -77,8 +77,8 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.ByteVectorType;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszByteVectorSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {
@@ -350,7 +350,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
 
     SigningData domain_wrapped_object =
-        new SigningData(new UInt64View(UInt64.valueOf(number)).hashTreeRoot(), domain);
+        new SigningData(new SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
     return domain_wrapped_object.hashTreeRoot();
   }
 
@@ -366,7 +366,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(Bytes bytes, Bytes32 domain) {
     SigningData domain_wrapped_object =
         new SigningData(
-            new ByteVectorType(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
+            new SszByteVectorSchema(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
     return domain_wrapped_object.hashTreeRoot();
   }
 

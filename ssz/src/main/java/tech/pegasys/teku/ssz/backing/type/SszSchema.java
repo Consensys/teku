@@ -16,55 +16,64 @@ package tech.pegasys.teku.ssz.backing.type;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
- * Base class for any SSZ type like Vector, List, Container, basic types
+ * Base class for any SSZ structure schema like Vector, List, Container, primitive types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface SszSchema<V extends SszData> extends SszType {
+public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   /**
-   * Creates a default backing binary tree for this type E.g. if the type is basic then normally
-   * just a single leaf node is created E.g. if the type is a complex structure with multi-level
+   * Creates a default backing binary tree for this schema
+   *
+   * E.g. if the schema is primitive then normally
+   * just a single leaf node is created
+   *
+   * E.g. if the schema is a complex structure with multi-level
    * nested vectors and containers then the complete tree including all descendant members subtrees
    * is created
    */
   TreeNode getDefaultTree();
 
   /**
-   * Creates immutable View over the tree which should correspond to this type If the tree structure
-   * doesn't correspond this type that fact could only be detected later during access to View
+   * Creates immutable ssz structure over the tree which should correspond to this schema.
+   *
+   * Note: if the tree structure
+   * doesn't correspond this schema that fact could only be detected later during access to structure
    * members
    */
-  V createFromBackingNode(TreeNode node);
+  SszDataT createFromBackingNode(TreeNode node);
 
-  /** Creates a default immutable View */
-  default V getDefault() {
+  /** Returns the default immutable structure of this scheme */
+  default SszDataT getDefault() {
     return createFromBackingNode(getDefaultTree());
   }
 
   /**
-   * Returns the number of bits the element of this type occupies in a tree node More correct
-   * definition is: how many elements of this type one tree node may contain All complex types
+   * Returns the number of bits the element of this schema occupies in a tree node.
+   *
+   * More strict definition is: how many elements of this type one tree node may contain.
+   *
+   * Any structure of a complex schema
    * occupies the whole tree node and their bitsize assumed to be 256 Normally the bitsize < 256 is
-   * for basic types that can be packed into a single leaf node
+   * for primitive schemas that can be packed into a single leaf node
    */
   int getBitsSize();
 
   /**
-   * For packed basic values. Extracts a packed value from the tree node by its 'internal index'.
+   * For packed primitive values. Extracts a packed value from the tree node by its 'internal index'.
    * For example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node
    * and it's 'internal index' in this node would be `45`
    */
-  default V createFromBackingNode(TreeNode node, int internalIndex) {
+  default SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
     return createFromBackingNode(node);
   }
 
   /**
-   * For packed basic values. Packs the value to the existing node at 'internal index' For example
+   * For packed primitive values. Packs the value to the existing node at 'internal index' For example
    * in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and it's
    * 'internal index' in this node would be `45`
    */
@@ -72,19 +81,19 @@ public interface SszSchema<V extends SszData> extends SszType {
     return newValue.getBackingNode();
   }
 
-  default Bytes sszSerialize(V view) {
+  default Bytes sszSerialize(SszDataT view) {
     return sszSerializeTree(view.getBackingNode());
   }
 
-  default int sszSerialize(V view, SszWriter writer) {
+  default int sszSerialize(SszDataT view, SszWriter writer) {
     return sszSerializeTree(view.getBackingNode(), writer);
   }
 
-  default V sszDeserialize(SszReader reader) throws SSZDeserializeException {
+  default SszDataT sszDeserialize(SszReader reader) throws SszDeserializeException {
     return createFromBackingNode(sszDeserializeTree(reader));
   }
 
-  default V sszDeserialize(Bytes ssz) throws SSZDeserializeException {
+  default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
   }
 }

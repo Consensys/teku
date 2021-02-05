@@ -47,10 +47,10 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
         memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       checkArgument(
-          memberValues[i].getType().equals(type.getChildType(i)),
+          memberValues[i].getType().equals(type.getChildSchema(i)),
           "Wrong child type at index %s. Expected: %s, was %s",
           i,
-          type.getChildType(i),
+          type.getChildSchema(i),
           memberValues[i].getType());
     }
   }

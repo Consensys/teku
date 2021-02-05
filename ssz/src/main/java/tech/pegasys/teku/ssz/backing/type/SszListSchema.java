@@ -28,33 +28,33 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class SszListSchema<ElementViewT extends SszData>
-    extends SszCollectionSchema<ElementViewT, SszList<ElementViewT>> {
-  private final SszVectorSchema<ElementViewT> compatibleVectorType;
+public class SszListSchema<ElementDataT extends SszData>
+    extends SszCollectionSchema<ElementDataT, SszList<ElementDataT>> {
+  private final SszVectorSchema<ElementDataT> compatibleVectorSchema;
   private final SszContainerSchema<?> sszContainerSchema;
 
-  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength) {
-    this(elementType, maxLength, SszSchemaHints.none());
+  public SszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
+    this(elementSchema, maxLength, SszSchemaHints.none());
   }
 
-  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength, SszSchemaHints hints) {
-    super(maxLength, elementType, hints);
-    this.compatibleVectorType =
-        new SszVectorSchema<>(getElementType(), getMaxLength(), true, getHints());
+  public SszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+    super(maxLength, elementSchema, hints);
+    this.compatibleVectorSchema =
+        new SszVectorSchema<>(getElementSchema(), getMaxLength(), true, getHints());
     this.sszContainerSchema =
         SszContainerSchema.create(
-            Arrays.asList(getCompatibleVectorType(), SszPrimitiveSchemas.UINT64_TYPE),
+            Arrays.asList(getCompatibleVectorSchema(), SszPrimitiveSchemas.UINT64_SCHEMA),
             (type, node) -> new ListContainerRead<>(this, type, node));
   }
 
   @Override
   protected TreeNode createDefaultTree() {
-    return createTree(getCompatibleVectorType().createDefaultTree(), 0);
+    return createTree(getCompatibleVectorSchema().createDefaultTree(), 0);
   }
 
   private TreeNode createTree(TreeNode dataNode, int length) {
@@ -62,17 +62,17 @@ public class SszListSchema<ElementViewT extends SszData>
   }
 
   @Override
-  public SszList<ElementViewT> getDefault() {
+  public SszList<ElementDataT> getDefault() {
     return new SszListImpl<>(this, createDefaultTree());
   }
 
   @Override
-  public SszList<ElementViewT> createFromBackingNode(TreeNode node) {
+  public SszList<ElementDataT> createFromBackingNode(TreeNode node) {
     return new SszListImpl<>(this, node);
   }
 
-  private SszVectorSchema<ElementViewT> getCompatibleVectorType() {
-    return compatibleVectorType;
+  private SszVectorSchema<ElementDataT> getCompatibleVectorSchema() {
+    return compatibleVectorSchema;
   }
 
   public SszContainerSchema<?> getCompatibleListContainerType() {
@@ -87,13 +87,13 @@ public class SszListSchema<ElementViewT extends SszData>
   @Override
   public int getVariablePartSize(TreeNode node) {
     int length = getLength(node);
-    SszSchema<?> elementType = getElementType();
-    if (elementType.isFixedSize()) {
-      if (elementType.getBitsSize() == 1) {
+    SszSchema<?> elementSchema = getElementSchema();
+    if (elementSchema.isFixedSize()) {
+      if (elementSchema.getBitsSize() == 1) {
         // Bitlist is handled specially
         return length / 8 + 1;
       } else {
-        return length * elementType.getFixedPartSize();
+        return length * elementSchema.getFixedPartSize();
       }
     } else {
       return getVariablePartSize(getVectorNode(node), length) + length * SSZ_LENGTH_SIZE;
@@ -108,7 +108,7 @@ public class SszListSchema<ElementViewT extends SszData>
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
-    if (getElementType().getBitsSize() == 1) {
+    if (getElementSchema().getBitsSize() == 1) {
       // Bitlist is handled specially
       BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
       sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
@@ -120,7 +120,7 @@ public class SszListSchema<ElementViewT extends SszData>
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    if (getElementType().getBitsSize() == 1) {
+    if (getElementSchema().getBitsSize() == 1) {
       // Bitlist is handled specially
       int availableBytes = reader.getAvailableBytes();
       // preliminary rough check
@@ -130,7 +130,7 @@ public class SszListSchema<ElementViewT extends SszData>
       Bytes bytes = reader.read(availableBytes);
       int length = Bitlist.sszGetLengthAndValidate(bytes);
       if (length > getMaxLength()) {
-        throw new SSZDeserializeException("Too long bitlist");
+        throw new SszDeserializeException("Too long bitlist");
       }
       Bytes treeBytes = Bitlist.sszTruncateLeadingBit(bytes, length);
       try (SszReader sszReader = SszReader.fromBytes(treeBytes)) {
@@ -172,14 +172,14 @@ public class SszListSchema<ElementViewT extends SszData>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    SszLengthBounds elementLengthBounds = getElementType().getSszLengthBounds();
+    SszLengthBounds elementLengthBounds = getElementSchema().getSszLengthBounds();
     // if elements are of dynamic size the offset size should be added for every element
     SszLengthBounds elementAndOffsetLengthBounds =
-        elementLengthBounds.addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
+        elementLengthBounds.addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
     SszLengthBounds maxLenBounds =
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
     // adding 1 boundary bit for Bitlist
-    return maxLenBounds.addBits(getElementType().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
+    return maxLenBounds.addBits(getElementSchema().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
   }
 
   private static class BytesCollector implements SszWriter {
@@ -242,7 +242,7 @@ public class SszListSchema<ElementViewT extends SszData>
       return false;
     }
     SszListSchema<?> that = (SszListSchema<?>) o;
-    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+    return getElementSchema().equals(that.getElementSchema()) && getMaxLength() == that.getMaxLength();
   }
 
   @Override
@@ -252,6 +252,6 @@ public class SszListSchema<ElementViewT extends SszData>
 
   @Override
   public String toString() {
-    return "List[" + getElementType() + ", " + getMaxLength() + "]";
+    return "List[" + getElementSchema() + ", " + getMaxLength() + "]";
   }
 }

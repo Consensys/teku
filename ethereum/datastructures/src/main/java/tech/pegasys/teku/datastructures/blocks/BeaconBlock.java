@@ -22,26 +22,26 @@ import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public final class BeaconBlock
     extends Container5<
-        BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody>
+        BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary {
 
   public static class BeaconBlockType
       extends ContainerType5<
-          BeaconBlock, UInt64View, UInt64View, Bytes32View, Bytes32View, BeaconBlockBody> {
+          BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
 
     public BeaconBlockType() {
       super(
           "BeaconBlock",
-          namedType("slot", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("proposer_index", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("parent_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("state_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("body", BeaconBlockBody.TYPE.get()));
+          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("body", BeaconBlockBody.TYPE.get()));
     }
 
     @Override
@@ -89,10 +89,10 @@ public final class BeaconBlock
       BeaconBlockBody body) {
     super(
         type,
-        new UInt64View(slot),
-        new UInt64View(proposer_index),
-        new Bytes32View(parent_root),
-        new Bytes32View(state_root),
+        new SszUInt64(slot),
+        new SszUInt64(proposer_index),
+        new SszBytes32(parent_root),
+        new SszBytes32(state_root),
         body);
   }
 

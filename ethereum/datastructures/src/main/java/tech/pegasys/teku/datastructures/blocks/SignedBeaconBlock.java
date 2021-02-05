@@ -23,21 +23,21 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedBeaconBlock
-    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<ByteView>>
+    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
     implements BeaconBlockSummary {
 
   public static class SignedBeaconBlockType
-      extends ContainerType2<SignedBeaconBlock, BeaconBlock, SszVector<ByteView>> {
+      extends ContainerType2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
 
     public SignedBeaconBlockType() {
       super(
           "SignedBeaconBlock",
-          namedType("message", BeaconBlock.TYPE.get()),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("message", BeaconBlock.TYPE.get()),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override

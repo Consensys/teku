@@ -23,27 +23,27 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, DepositData> {
+public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositData> {
 
   public static class DepositType
-      extends ContainerType2<Deposit, SszVector<Bytes32View>, DepositData> {
+      extends ContainerType2<Deposit, SszVector<SszBytes32>, DepositData> {
 
     public DepositType() {
       super(
           "Deposit",
-          namedType(
+          namedSchema(
               "proof",
               new SszVectorSchema<>(
-                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
-          namedType("data", DepositData.TYPE));
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+          namedSchema("data", DepositData.TYPE));
     }
 
-    public SszVectorSchema<Bytes32View> getProofType() {
-      return (SszVectorSchema<Bytes32View>) getFieldType0();
+    public SszVectorSchema<SszBytes32> getProofType() {
+      return (SszVectorSchema<SszBytes32>) getFieldType0();
     }
 
     @Override
@@ -62,7 +62,7 @@ public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, Deposit
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(TYPE, SszUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
+    super(TYPE, SszUtils.toVectorView(TYPE.getProofType(), proof, SszBytes32::new), data);
   }
 
   public Deposit() {
@@ -75,7 +75,7 @@ public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, Deposit
 
   public SSZVector<Bytes32> getProof() {
     return new SSZBackingVector<>(
-        Bytes32.class, getField0(), Bytes32View::new, AbstractSszPrimitive::get);
+        Bytes32.class, getField0(), SszBytes32::new, AbstractSszPrimitive::get);
   }
 
   public DepositData getData() {

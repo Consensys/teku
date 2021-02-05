@@ -13,28 +13,27 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
-/** Abstract type of {@link SszComposite} views */
-public interface SszCompositeSchema<ViewT extends SszData> extends SszSchema<ViewT> {
+/** Abstract schema of {@link tech.pegasys.teku.ssz.backing.SszComposite} subclasses */
+public interface SszCompositeSchema<SszCompositeT extends SszData> extends SszSchema<SszCompositeT> {
 
   /**
-   * Returns the maximum number of elements in views of this type. For views with fixed number of
+   * Returns the maximum number of elements in ssz structures of this scheme. For structures with fixed number of
    * children (like Containers and Vectors) their size should always be equal to maxLength
    */
   long getMaxLength();
 
   /**
-   * Returns the child view type at index. For homogeneous structures (like Vector, List) the
-   * returned type is the same for any index For heterogeneous structures (like Container) each
-   * child has individual type
+   * Returns the child schema at index. For homogeneous structures (like Vector, List) the
+   * returned schema is the same for any index For heterogeneous structures (like Container) each
+   * child has individual schema
    *
    * @throws IndexOutOfBoundsException if index >= getMaxLength
    */
-  SszSchema<?> getChildType(int index);
+  SszSchema<?> getChildSchema(int index);
 
   /**
    * Return the number of elements that may be stored in a single tree node This value is 1 for all
@@ -45,7 +44,7 @@ public interface SszCompositeSchema<ViewT extends SszData> extends SszSchema<Vie
   }
 
   /**
-   * Returns the maximum number of this view backed subtree 'leaf' nodes required to store maxLength
+   * Returns the maximum number of this ssz structure backed subtree 'leaf' nodes required to store maxLength
    * elements
    */
   default long maxChunks() {

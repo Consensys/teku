@@ -35,8 +35,8 @@ import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
@@ -54,26 +54,26 @@ public class ContainerViewTest {
 
     SszContainerSchema<SubContainerRead> TYPE =
         SszContainerSchema.create(
-            List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.UINT64_TYPE),
+            List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             SubContainerReadImpl::new);
 
     default UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     default UInt64 getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((SszUInt64) get(1)).get();
     }
   }
 
   public interface SubContainerWrite extends SubContainerRead, SszMutableRefContainer {
 
     default void setLong1(UInt64 val) {
-      set(0, new UInt64View(val));
+      set(0, new SszUInt64(val));
     }
 
     default void setLong2(UInt64 val) {
-      set(1, new UInt64View(val));
+      set(1, new SszUInt64(val));
     }
   }
 
@@ -82,10 +82,10 @@ public class ContainerViewTest {
     SszContainerSchema<ContainerReadImpl> TYPE =
         SszContainerSchema.create(
             List.of(
-                SszPrimitiveSchemas.UINT64_TYPE,
-                SszPrimitiveSchemas.UINT64_TYPE,
+                SszPrimitiveSchemas.UINT64_SCHEMA,
+                SszPrimitiveSchemas.UINT64_SCHEMA,
                 SubContainerRead.TYPE,
-                new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, 10),
+                new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
                 new SszListSchema<>(SubContainerRead.TYPE, 2),
                 new SszVectorSchema<>(ImmutableSubContainerImpl.TYPE, 2)),
             ContainerReadImpl::new);
@@ -95,18 +95,18 @@ public class ContainerViewTest {
     }
 
     default UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     default UInt64 getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((SszUInt64) get(1)).get();
     }
 
     default SubContainerRead getSub1() {
       return (SubContainerRead) get(2);
     }
 
-    default SszList<UInt64View> getList1() {
+    default SszList<SszUInt64> getList1() {
       return getAny(3);
     }
 
@@ -132,7 +132,7 @@ public class ContainerViewTest {
     SubContainerWrite getSub1();
 
     @Override
-    SszMutableList<UInt64View> getList1();
+    SszMutableList<SszUInt64> getList1();
 
     @Override
     SszMutableRefList<SubContainerRead, SubContainerWrite> getList2();
@@ -149,7 +149,7 @@ public class ContainerViewTest {
 
     public static final SszContainerSchema<ImmutableSubContainerImpl> TYPE =
         SszContainerSchema.create(
-            List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.BYTES32_TYPE),
+            List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(
@@ -158,17 +158,17 @@ public class ContainerViewTest {
     }
 
     public ImmutableSubContainerImpl(UInt64 long1, Bytes32 bytes1) {
-      super(TYPE, new UInt64View(long1), new Bytes32View(bytes1));
+      super(TYPE, new SszUInt64(long1), new SszBytes32(bytes1));
     }
 
     @Override
     public UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     @Override
     public Bytes32 getBytes1() {
-      return ((Bytes32View) get(1)).get();
+      return ((SszBytes32) get(1)).get();
     }
   }
 
@@ -253,8 +253,8 @@ public class ContainerViewTest {
 
     @Override
     @SuppressWarnings("unchecked")
-    public SszMutableList<UInt64View> getList1() {
-      return (SszMutableList<UInt64View>) getByRef(3);
+    public SszMutableList<SszUInt64> getList1() {
+      return (SszMutableList<SszUInt64>) getByRef(3);
     }
 
     @Override
@@ -271,12 +271,12 @@ public class ContainerViewTest {
 
     @Override
     public void setLong1(UInt64 val) {
-      set(0, new UInt64View(val));
+      set(0, new SszUInt64(val));
     }
 
     @Override
     public void setLong2(UInt64 val) {
-      set(1, new UInt64View(val));
+      set(1, new SszUInt64(val));
     }
   }
 
@@ -306,8 +306,8 @@ public class ContainerViewTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(UInt64View.fromLong(0x333));
-    c1w.getList1().append(UInt64View.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.fromLong(0x333));
+    c1w.getList1().append(SszUInt64.fromLong(0x444));
 
     c1w.getList2()
         .append(
@@ -413,8 +413,8 @@ public class ContainerViewTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(UInt64View.fromLong(0x333));
-    c1w.getList1().append(UInt64View.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.fromLong(0x333));
+    c1w.getList1().append(SszUInt64.fromLong(0x444));
 
     c1w.getList2()
         .append(
@@ -456,8 +456,8 @@ public class ContainerViewTest {
         w -> {
           w.setLong2(UInt64.valueOf(0x11111));
           w.getSub1().setLong2(UInt64.valueOf(0x22222));
-          w.getList1().append(UInt64View.fromLong(0x44444));
-          w.getList1().set(0, UInt64View.fromLong(0x11111));
+          w.getList1().append(SszUInt64.fromLong(0x44444));
+          w.getList1().set(0, SszUInt64.fromLong(0x11111));
           SubContainerWrite sc = w.getList2().append();
           sc.setLong1(UInt64.valueOf(0x77777));
           sc.setLong2(UInt64.valueOf(0x88888));

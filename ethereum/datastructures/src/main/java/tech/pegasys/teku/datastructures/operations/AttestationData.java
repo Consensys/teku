@@ -20,25 +20,25 @@ import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class AttestationData
     extends Container5<
-        AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
+        AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
   public static class AttestationDataType
       extends ContainerType5<
-          AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
+          AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
     public AttestationDataType() {
       super(
           "AttestationData",
-          namedType("slot", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("index", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("beacon_block_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("source", Checkpoint.TYPE),
-          namedType("target", Checkpoint.TYPE));
+          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("source", Checkpoint.TYPE),
+          namedSchema("target", Checkpoint.TYPE));
     }
 
     @Override
@@ -57,9 +57,9 @@ public class AttestationData
       UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
     super(
         TYPE,
-        new UInt64View(slot),
-        new UInt64View(index),
-        new Bytes32View(beacon_block_root),
+        new SszUInt64(slot),
+        new SszUInt64(index),
+        new SszBytes32(beacon_block_root),
         source,
         target);
   }

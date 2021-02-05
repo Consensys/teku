@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 @State(Scope.Thread)
 public class ListBenchmark {
@@ -40,16 +40,16 @@ public class ListBenchmark {
     return listMaxSizeM * 1024 * 1024;
   }
 
-  SszMutableList<UInt64View> l1w;
-  SszList<UInt64View> l2r;
+  SszMutableList<SszUInt64> l1w;
+  SszList<SszUInt64> l2r;
 
   public ListBenchmark() {
-    SszListSchema<UInt64View> type = new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, 100_000_000);
-    SszList<UInt64View> l1 = type.getDefault();
+    SszListSchema<SszUInt64> type = new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 100_000_000);
+    SszList<SszUInt64> l1 = type.getDefault();
 
-    SszMutableList<UInt64View> l2w = l1.createWritableCopy();
+    SszMutableList<SszUInt64> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
-      l2w.append(new UInt64View(UInt64.valueOf(1121212)));
+      l2w.append(new SszUInt64(UInt64.valueOf(1121212)));
     }
     l2r = l2w.commitChanges();
 
@@ -60,9 +60,9 @@ public class ListBenchmark {
 
   @Setup(Level.Iteration)
   public void init() throws Exception {
-    SszListSchema<UInt64View> type =
-        new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
-    SszList<UInt64View> l1 = type.getDefault();
+    SszListSchema<SszUInt64> type =
+        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
+    SszList<SszUInt64> l1 = type.getDefault();
     l1w = l1.createWritableCopy();
   }
 
@@ -70,9 +70,9 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    SszListSchema<UInt64View> type =
-        new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
-    SszList<UInt64View> l1 = type.getDefault();
+    SszListSchema<SszUInt64> type =
+        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
+    SszList<SszUInt64> l1 = type.getDefault();
     bh.consume(l1);
   }
 
@@ -80,16 +80,16 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void append(Blackhole bh) {
-    l1w.append(new UInt64View(UInt64.valueOf(1121212)));
+    l1w.append(new SszUInt64(UInt64.valueOf(1121212)));
   }
 
   @Benchmark
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
-    SszMutableList<UInt64View> l2w = l2r.createWritableCopy();
-    l2w.set(12345, new UInt64View(UInt64.valueOf(77777)));
-    SszList<UInt64View> l2r_ = l2w.commitChanges();
+    SszMutableList<SszUInt64> l2w = l2r.createWritableCopy();
+    l2w.set(12345, new SszUInt64(UInt64.valueOf(77777)));
+    SszList<SszUInt64> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }
 }

@@ -21,16 +21,16 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateSszSchema;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class RpcErrorMessage extends SszListImpl<ByteView> implements SszList<ByteView> {
+public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<SszByte> {
 
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;
-  private static final SszListSchema<ByteView> LIST_VIEW_TYPE =
-      new SszListSchema<>(SszPrimitiveSchemas.BYTE_TYPE, MAX_ERROR_MESSAGE_LENGTH);
+  private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, MAX_ERROR_MESSAGE_LENGTH);
 
   public static class RpcErrorMessageType extends AbstractDelegateSszSchema<RpcErrorMessage> {
     private RpcErrorMessageType() {

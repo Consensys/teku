@@ -32,8 +32,8 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -41,9 +41,9 @@ import tech.pegasys.teku.util.config.Constants;
 public class BeaconBlockBody
     extends Container8<
         BeaconBlockBody,
-    SszVector<ByteView>,
+    SszVector<SszByte>,
         Eth1Data,
-        Bytes32View,
+    SszBytes32,
     SszList<ProposerSlashing>,
     SszList<AttesterSlashing>,
     SszList<Attestation>,
@@ -53,9 +53,9 @@ public class BeaconBlockBody
   public static class BeaconBlockBodyType
       extends ContainerType8<
           BeaconBlockBody,
-      SszVector<ByteView>,
+      SszVector<SszByte>,
           Eth1Data,
-          Bytes32View,
+      SszBytes32,
       SszList<ProposerSlashing>,
       SszList<AttesterSlashing>,
       SszList<Attestation>,
@@ -65,19 +65,19 @@ public class BeaconBlockBody
     public BeaconBlockBodyType() {
       super(
           "BeaconBlockBody",
-          namedType("randao_reveal", SszComplexSchemas.BYTES_96_TYPE),
-          namedType("eth1_data", Eth1Data.TYPE),
-          namedType("graffiti", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType(
+          namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
+          namedSchema("eth1_data", Eth1Data.TYPE),
+          namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema(
               "proposer_slashings",
               new SszListSchema<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
-          namedType(
+          namedSchema(
               "attester_slashings",
               new SszListSchema<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
-          namedType(
+          namedSchema(
               "attestations", new SszListSchema<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
-          namedType("deposits", new SszListSchema<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
-          namedType(
+          namedSchema("deposits", new SszListSchema<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
+          namedSchema(
               "voluntary_exits",
               new SszListSchema<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
     }
@@ -158,7 +158,7 @@ public class BeaconBlockBody
         type,
         SszUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
         eth1_data,
-        new Bytes32View(graffiti),
+        new SszBytes32(graffiti),
         SszUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
         SszUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
         SszUtils.toListView(type.getAttestationsType(), attestations),

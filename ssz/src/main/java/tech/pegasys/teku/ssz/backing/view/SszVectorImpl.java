@@ -40,7 +40,7 @@ public class SszVectorImpl<ElementReadType extends SszData>
   @Override
   protected ElementReadType getImpl(int index) {
     SszVectorSchema<ElementReadType> type = getType();
-    SszSchema<?> elementType = type.getElementType();
+    SszSchema<?> elementType = type.getElementSchema();
     TreeNode node =
         getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
     return (ElementReadType)

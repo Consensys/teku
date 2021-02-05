@@ -94,7 +94,7 @@ public class ContainersGenerator {
             Map.entry(
                 "NamedFieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "NamedType<V" + i + "> fieldNamedType" + i)
+                    .mapToObj(i -> "NamedSchema<V" + i + "> fieldNamedType" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "Fields",

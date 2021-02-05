@@ -33,8 +33,8 @@ public class AttesterSlashing
     public AttesterSlashingType() {
       super(
           "AttesterSlashing",
-          namedType("attestation_1", IndexedAttestation.TYPE),
-          namedType("attestation_2", IndexedAttestation.TYPE));
+          namedSchema("attestation_1", IndexedAttestation.TYPE),
+          namedSchema("attestation_2", IndexedAttestation.TYPE));
     }
 
     @Override

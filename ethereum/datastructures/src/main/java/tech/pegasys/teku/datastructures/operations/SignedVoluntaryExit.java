@@ -20,20 +20,20 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedVoluntaryExit
-    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<ByteView>> {
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
   public static class SignedVoluntaryExitType
-      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, SszVector<ByteView>> {
+      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
     public SignedVoluntaryExitType() {
       super(
           "SignedVoluntaryExit",
-          namedType("message", VoluntaryExit.TYPE),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("message", VoluntaryExit.TYPE),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override

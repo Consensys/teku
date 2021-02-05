@@ -22,27 +22,27 @@ import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StatusMessage
-    extends Container5<StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View>
+    extends Container5<StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64>
     implements RpcRequest {
 
   public static class StatusMessageType
       extends ContainerType5<
-          StatusMessage, Bytes4View, Bytes32View, UInt64View, Bytes32View, UInt64View> {
+          StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
 
     public StatusMessageType() {
       super(
           "StatusMessage",
-          namedType("forkDigest", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("finalizedRoot", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("finalizedEpoch", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("headRoot", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("headSlot", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("finalizedRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("finalizedEpoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("headRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("headSlot", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -65,11 +65,11 @@ public class StatusMessage
       UInt64 headSlot) {
     super(
         TYPE,
-        new Bytes4View(forkDigest),
-        new Bytes32View(finalizedRoot),
-        new UInt64View(finalizedEpoch),
-        new Bytes32View(headRoot),
-        new UInt64View(headSlot));
+        new SszBytes4(forkDigest),
+        new SszBytes32(finalizedRoot),
+        new SszUInt64(finalizedEpoch),
+        new SszBytes32(headRoot),
+        new SszUInt64(headSlot));
   }
 
   public static StatusMessage createPreGenesisStatus() {

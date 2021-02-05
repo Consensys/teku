@@ -17,21 +17,21 @@ import com.google.common.base.Preconditions;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SszComplexSchemas {
 
-  public static final ByteVectorType BYTES_48_TYPE = new ByteVectorType(48);
-  public static final ByteVectorType BYTES_96_TYPE = new ByteVectorType(96);
+  public static final SszByteVectorSchema BYTES_48_SCHEMA = new SszByteVectorSchema(48);
+  public static final SszByteVectorSchema BYTES_96_SCHEMA = new SszByteVectorSchema(96);
 
-  public static class ByteListType extends SszListSchema<ByteView> {
-    public ByteListType(long maxLength) {
-      super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
+  public static class SszByteListSchema extends SszListSchema<SszByte> {
+    public SszByteListSchema(long maxLength) {
+      super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
 
-    public SszList<ByteView> createList(Bytes bytes) {
+    public SszList<SszByte> createList(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() > getMaxLength(), "Bytes length exceeds List type maximum length ");
       return SszUtils.createListFromBytes(this, bytes);
@@ -43,12 +43,12 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class ByteVectorType extends SszVectorSchema<ByteView> {
-    public ByteVectorType(long maxLength) {
-      super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
+  public static class SszByteVectorSchema extends SszVectorSchema<SszByte> {
+    public SszByteVectorSchema(long maxLength) {
+      super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
 
-    public SszVector<ByteView> createVector(Bytes bytes) {
+    public SszVector<SszByte> createVector(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() == getLength(), "Bytes length doesn't match Vector type length ");
       return SszUtils.createVectorFromBytes(this, bytes);
@@ -60,9 +60,9 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class BitListType extends SszListSchema<BitView> {
-    public BitListType(long maxLength) {
-      super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
+  public static class SszBitListSchema extends SszListSchema<SszBit> {
+    public SszBitListSchema(long maxLength) {
+      super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }
 
     @Override
@@ -71,9 +71,9 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class BitVectorType extends SszVectorSchema<BitView> {
-    public BitVectorType(long maxLength) {
-      super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
+  public static class SszBitVectorSchema extends SszVectorSchema<SszBit> {
+    public SszBitVectorSchema(long maxLength) {
+      super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }
 
     @Override

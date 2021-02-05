@@ -22,18 +22,18 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistBenchmark {
 
-  static SszListSchema<BitView> type = new SszListSchema<>(SszPrimitiveSchemas.BIT_TYPE, 4096);
-  static SszList<BitView> bitlist;
+  static SszListSchema<SszBit> type = new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 4096);
+  static SszList<SszBit> bitlist;
 
   static {
-    SszMutableList<BitView> wBitlist = type.getDefault().createWritableCopy();
+    SszMutableList<SszBit> wBitlist = type.getDefault().createWritableCopy();
     for (int i = 0; i < type.getMaxLength(); i++) {
-      wBitlist.append(BitView.viewOf(true));
+      wBitlist.append(SszBit.viewOf(true));
     }
     bitlist = wBitlist.commitChanges();
   }
@@ -49,7 +49,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void fromNewListView(Blackhole bh) {
-    SszList<BitView> freshListView = type.createFromBackingNode(bitlist.getBackingNode());
+    SszList<SszBit> freshListView = type.createFromBackingNode(bitlist.getBackingNode());
     bh.consume(SszUtils.getBitlist(freshListView));
   }
 }

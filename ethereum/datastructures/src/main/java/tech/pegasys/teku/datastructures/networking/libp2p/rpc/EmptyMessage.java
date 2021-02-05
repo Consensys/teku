@@ -18,13 +18,13 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateSszSchema;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class EmptyMessage extends SszListImpl<ByteView> implements RpcRequest {
-  private static final SszListSchema<ByteView> LIST_VIEW_TYPE =
-      new SszListSchema<>(SszPrimitiveSchemas.BYTE_TYPE, 0);
+public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
+  private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, 0);
 
   public static class EmptyMessageType extends AbstractDelegateSszSchema<EmptyMessage> {
     private EmptyMessageType() {

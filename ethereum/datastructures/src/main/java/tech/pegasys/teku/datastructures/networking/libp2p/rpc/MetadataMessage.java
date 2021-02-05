@@ -22,24 +22,24 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitVectorSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class MetadataMessage
-    extends Container2<MetadataMessage, UInt64View, SszVector<BitView>> implements RpcRequest {
+    extends Container2<MetadataMessage, SszUInt64, SszVector<SszBit>> implements RpcRequest {
 
   public static class MetadataMessageType
-      extends ContainerType2<MetadataMessage, UInt64View, SszVector<BitView>> {
+      extends ContainerType2<MetadataMessage, SszUInt64, SszVector<SszBit>> {
 
     public MetadataMessageType() {
       super(
           "MetadataMessage",
-          namedType("seqNumber", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("attnets", new BitVectorType(Constants.ATTESTATION_SUBNET_COUNT)));
+          namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("attnets", new SszBitVectorSchema(Constants.ATTESTATION_SUBNET_COUNT)));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class MetadataMessage
   }
 
   public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
-    super(TYPE, new UInt64View(seqNumber), SszUtils.createBitvectorView(attnets));
+    super(TYPE, new SszUInt64(seqNumber), SszUtils.createBitvectorView(attnets));
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
     this.attnetsCache = attnets;
   }

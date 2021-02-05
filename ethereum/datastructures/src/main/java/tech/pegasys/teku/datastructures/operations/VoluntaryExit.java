@@ -18,18 +18,18 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View> {
+public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
   public static class VoluntaryExitType
-      extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
+      extends ContainerType2<VoluntaryExit, SszUInt64, SszUInt64> {
 
     public VoluntaryExitType() {
       super(
           "VoluntaryExit",
-          namedType("epoch", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("validator_index", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
   }
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    super(TYPE, new UInt64View(epoch), new UInt64View(validator_index));
+    super(TYPE, new SszUInt64(epoch), new SszUInt64(validator_index));
   }
 
   public UInt64 getEpoch() {

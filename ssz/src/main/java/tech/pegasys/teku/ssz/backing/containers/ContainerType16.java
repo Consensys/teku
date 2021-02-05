@@ -148,121 +148,121 @@ public abstract class ContainerType16<
 
   protected ContainerType16(
       String containerName,
-      NamedType<V0> fieldNamedType0,
-      NamedType<V1> fieldNamedType1,
-      NamedType<V2> fieldNamedType2,
-      NamedType<V3> fieldNamedType3,
-      NamedType<V4> fieldNamedType4,
-      NamedType<V5> fieldNamedType5,
-      NamedType<V6> fieldNamedType6,
-      NamedType<V7> fieldNamedType7,
-      NamedType<V8> fieldNamedType8,
-      NamedType<V9> fieldNamedType9,
-      NamedType<V10> fieldNamedType10,
-      NamedType<V11> fieldNamedType11,
-      NamedType<V12> fieldNamedType12,
-      NamedType<V13> fieldNamedType13,
-      NamedType<V14> fieldNamedType14,
-      NamedType<V15> fieldNamedType15) {
+      NamedSchema<V0> fieldNamedSchema0,
+      NamedSchema<V1> fieldNamedSchema1,
+      NamedSchema<V2> fieldNamedSchema2,
+      NamedSchema<V3> fieldNamedSchema3,
+      NamedSchema<V4> fieldNamedSchema4,
+      NamedSchema<V5> fieldNamedSchema5,
+      NamedSchema<V6> fieldNamedSchema6,
+      NamedSchema<V7> fieldNamedSchema7,
+      NamedSchema<V8> fieldNamedSchema8,
+      NamedSchema<V9> fieldNamedSchema9,
+      NamedSchema<V10> fieldNamedSchema10,
+      NamedSchema<V11> fieldNamedSchema11,
+      NamedSchema<V12> fieldNamedSchema12,
+      NamedSchema<V13> fieldNamedSchema13,
+      NamedSchema<V14> fieldNamedSchema14,
+      NamedSchema<V15> fieldNamedSchema15) {
 
     super(
         containerName,
         List.of(
-            fieldNamedType0,
-            fieldNamedType1,
-            fieldNamedType2,
-            fieldNamedType3,
-            fieldNamedType4,
-            fieldNamedType5,
-            fieldNamedType6,
-            fieldNamedType7,
-            fieldNamedType8,
-            fieldNamedType9,
-            fieldNamedType10,
-            fieldNamedType11,
-            fieldNamedType12,
-            fieldNamedType13,
-            fieldNamedType14,
-            fieldNamedType15));
+            fieldNamedSchema0,
+            fieldNamedSchema1,
+            fieldNamedSchema2,
+            fieldNamedSchema3,
+            fieldNamedSchema4,
+            fieldNamedSchema5,
+            fieldNamedSchema6,
+            fieldNamedSchema7,
+            fieldNamedSchema8,
+            fieldNamedSchema9,
+            fieldNamedSchema10,
+            fieldNamedSchema11,
+            fieldNamedSchema12,
+            fieldNamedSchema13,
+            fieldNamedSchema14,
+            fieldNamedSchema15));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldType1() {
-    return (SszSchema<V1>) getChildType(1);
+    return (SszSchema<V1>) getChildSchema(1);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldType2() {
-    return (SszSchema<V2>) getChildType(2);
+    return (SszSchema<V2>) getChildSchema(2);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V3> getFieldType3() {
-    return (SszSchema<V3>) getChildType(3);
+    return (SszSchema<V3>) getChildSchema(3);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V4> getFieldType4() {
-    return (SszSchema<V4>) getChildType(4);
+    return (SszSchema<V4>) getChildSchema(4);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V5> getFieldType5() {
-    return (SszSchema<V5>) getChildType(5);
+    return (SszSchema<V5>) getChildSchema(5);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V6> getFieldType6() {
-    return (SszSchema<V6>) getChildType(6);
+    return (SszSchema<V6>) getChildSchema(6);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V7> getFieldType7() {
-    return (SszSchema<V7>) getChildType(7);
+    return (SszSchema<V7>) getChildSchema(7);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V8> getFieldType8() {
-    return (SszSchema<V8>) getChildType(8);
+    return (SszSchema<V8>) getChildSchema(8);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V9> getFieldType9() {
-    return (SszSchema<V9>) getChildType(9);
+    return (SszSchema<V9>) getChildSchema(9);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V10> getFieldType10() {
-    return (SszSchema<V10>) getChildType(10);
+    return (SszSchema<V10>) getChildSchema(10);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V11> getFieldType11() {
-    return (SszSchema<V11>) getChildType(11);
+    return (SszSchema<V11>) getChildSchema(11);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V12> getFieldType12() {
-    return (SszSchema<V12>) getChildType(12);
+    return (SszSchema<V12>) getChildSchema(12);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V13> getFieldType13() {
-    return (SszSchema<V13>) getChildType(13);
+    return (SszSchema<V13>) getChildSchema(13);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V14> getFieldType14() {
-    return (SszSchema<V14>) getChildType(14);
+    return (SszSchema<V14>) getChildSchema(14);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V15> getFieldType15() {
-    return (SszSchema<V15>) getChildType(15);
+    return (SszSchema<V15>) getChildSchema(15);
   }
 }

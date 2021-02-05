@@ -20,26 +20,26 @@ import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class BeaconBlockHeader
     extends Container5<
-        BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View>
+        BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
     implements BeaconBlockSummary {
 
   public static class BeaconBlockHeaderType
       extends ContainerType5<
-          BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View> {
+          BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32> {
 
     public BeaconBlockHeaderType() {
       super(
           "BeaconBlockHeader",
-          namedType("slot", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("proposer_index", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("parent_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("state_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("body_root", SszPrimitiveSchemas.BYTES32_TYPE));
+          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("body_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -62,11 +62,11 @@ public class BeaconBlockHeader
       Bytes32 body_root) {
     super(
         TYPE,
-        new UInt64View(slot),
-        new UInt64View(proposer_index),
-        new Bytes32View(parent_root),
-        new Bytes32View(state_root),
-        new Bytes32View(body_root));
+        new SszUInt64(slot),
+        new SszUInt64(proposer_index),
+        new SszBytes32(parent_root),
+        new SszBytes32(state_root),
+        new SszBytes32(body_root));
   }
 
   public BeaconBlockHeader(BeaconBlockHeader header) {

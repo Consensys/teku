@@ -19,20 +19,20 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
+public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
   public static class Eth1DataType
-      extends ContainerType3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
+      extends ContainerType3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
     public Eth1DataType() {
       super(
           "Eth1Data",
-          namedType("deposit_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("deposit_count", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("block_hash", SszPrimitiveSchemas.BYTES32_TYPE));
+          namedSchema("deposit_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("deposit_count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -50,9 +50,9 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
   public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
     super(
         TYPE,
-        new Bytes32View(deposit_root),
-        new UInt64View(deposit_count),
-        new Bytes32View(block_hash));
+        new SszBytes32(deposit_root),
+        new SszUInt64(deposit_count),
+        new SszBytes32(block_hash));
   }
 
   public Eth1Data() {

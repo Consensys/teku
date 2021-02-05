@@ -18,18 +18,18 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
-public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> {
+public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {
 
   public static class SigningDataType
-      extends ContainerType2<SigningData, Bytes32View, Bytes32View> {
+      extends ContainerType2<SigningData, SszBytes32, SszBytes32> {
 
     public SigningDataType() {
       super(
           "SigningData",
-          namedType("object_root", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("domain", SszPrimitiveSchemas.BYTES32_TYPE));
+          namedSchema("object_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("domain", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
   }
 
   public SigningData(Bytes32 object_root, Bytes32 domain) {
-    super(TYPE, new Bytes32View(object_root), new Bytes32View(domain));
+    super(TYPE, new SszBytes32(object_root), new SszBytes32(domain));
   }
 
   public Bytes32 getObjectRoot() {

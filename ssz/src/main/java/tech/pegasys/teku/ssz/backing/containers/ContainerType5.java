@@ -65,40 +65,41 @@ public abstract class ContainerType5<
 
   protected ContainerType5(
       String containerName,
-      NamedType<V0> fieldNamedType0,
-      NamedType<V1> fieldNamedType1,
-      NamedType<V2> fieldNamedType2,
-      NamedType<V3> fieldNamedType3,
-      NamedType<V4> fieldNamedType4) {
+      NamedSchema<V0> fieldNamedSchema0,
+      NamedSchema<V1> fieldNamedSchema1,
+      NamedSchema<V2> fieldNamedSchema2,
+      NamedSchema<V3> fieldNamedSchema3,
+      NamedSchema<V4> fieldNamedSchema4) {
 
     super(
         containerName,
         List.of(
-            fieldNamedType0, fieldNamedType1, fieldNamedType2, fieldNamedType3, fieldNamedType4));
+            fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2, fieldNamedSchema3,
+            fieldNamedSchema4));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldType1() {
-    return (SszSchema<V1>) getChildType(1);
+    return (SszSchema<V1>) getChildSchema(1);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldType2() {
-    return (SszSchema<V2>) getChildType(2);
+    return (SszSchema<V2>) getChildSchema(2);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V3> getFieldType3() {
-    return (SszSchema<V3>) getChildType(3);
+    return (SszSchema<V3>) getChildSchema(3);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V4> getFieldType4() {
-    return (SszSchema<V4>) getChildType(4);
+    return (SszSchema<V4>) getChildSchema(4);
   }
 }

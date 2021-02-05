@@ -25,30 +25,30 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitListType;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitListSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
     extends Container3<
-        Attestation, SszList<BitView>, AttestationData, SszVector<ByteView>> {
+        Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
   public static class AttestationType
       extends ContainerType3<
-          Attestation, SszList<BitView>, AttestationData, SszVector<ByteView>> {
+          Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
     public AttestationType() {
       super(
           "Attestation",
-          namedType("aggregation_bits", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("aggregation_bits", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.TYPE),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public BitListType getAggregationBitsType() {
-      return (BitListType) getFieldType0();
+    public SszBitListSchema getAggregationBitsType() {
+      return (SszBitListSchema) getFieldType0();
     }
 
     @Override

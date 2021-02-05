@@ -30,24 +30,24 @@ import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.util.config.Constants;
 
 public interface BeaconState extends SszContainer {
 
-  SszField GENESIS_TIME_FIELD = new SszField(0, "genesis_time", SszPrimitiveSchemas.UINT64_TYPE);
+  SszField GENESIS_TIME_FIELD = new SszField(0, "genesis_time", SszPrimitiveSchemas.UINT64_SCHEMA);
   SszField GENESIS_VALIDATORS_ROOT_FIELD =
-      new SszField(1, "genesis_validators_root", SszPrimitiveSchemas.BYTES32_TYPE);
-  SszField SLOT_FIELD = new SszField(2, "slot", SszPrimitiveSchemas.UINT64_TYPE);
+      new SszField(1, "genesis_validators_root", SszPrimitiveSchemas.BYTES32_SCHEMA);
+  SszField SLOT_FIELD = new SszField(2, "slot", SszPrimitiveSchemas.UINT64_SCHEMA);
   SszField FORK_FIELD = new SszField(3, "fork", Fork.TYPE);
   SszField LATEST_BLOCK_HEADER_FIELD =
       new SszField(4, "latest_block_header", BeaconBlockHeader.TYPE);
@@ -57,19 +57,19 @@ public interface BeaconState extends SszContainer {
           "block_roots",
           () ->
               new SszVectorSchema<>(
-                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField STATE_ROOTS_FIELD =
       new SszField(
           6,
           "state_roots",
           () ->
               new SszVectorSchema<>(
-                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
           "historical_roots",
-          () -> new SszListSchema<>(SszPrimitiveSchemas.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT));
+          () -> new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.TYPE);
   SszField ETH1_DATA_VOTES_FIELD =
       new SszField(
@@ -80,7 +80,7 @@ public interface BeaconState extends SszContainer {
                   Eth1Data.TYPE,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   SszField ETH1_DEPOSIT_INDEX_FIELD =
-      new SszField(10, "eth1_deposit_index", SszPrimitiveSchemas.UINT64_TYPE);
+      new SszField(10, "eth1_deposit_index", SszPrimitiveSchemas.UINT64_SCHEMA);
   SszField VALIDATORS_FIELD =
       new SszField(
           11,
@@ -92,21 +92,21 @@ public interface BeaconState extends SszContainer {
       new SszField(
           12,
           "balances",
-          () -> new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
+          () -> new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
           "randao_mixes",
           () ->
               new SszVectorSchema<>(
-                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField SLASHINGS_FIELD =
       new SszField(
           14,
           "slashings",
           () ->
               new SszVectorSchema<>(
-                  SszPrimitiveSchemas.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
+                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           15,
@@ -123,7 +123,7 @@ public interface BeaconState extends SszContainer {
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
-          17, "justification_bits", () -> new BitVectorType(Constants.JUSTIFICATION_BITS_LENGTH));
+          17, "justification_bits", () -> new SszBitVectorSchema(Constants.JUSTIFICATION_BITS_LENGTH));
   SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
       new SszField(18, "previous_justified_checkpoint", Checkpoint.TYPE);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
@@ -163,7 +163,7 @@ public interface BeaconState extends SszContainer {
                   PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD,
                   CURRENT_JUSTIFIED_CHECKPOINT_FIELD,
                   FINALIZED_CHECKPOINT_FIELD)
-              .map(f -> namedType(f.getName(), f.getViewType().get()))
+              .map(f -> namedSchema(f.getName(), f.getViewType().get()))
               .collect(Collectors.toList()));
     }
 
@@ -246,15 +246,15 @@ public interface BeaconState extends SszContainer {
 
   // Versioning
   default UInt64 getGenesis_time() {
-    return ((UInt64View) get(GENESIS_TIME_FIELD.getIndex())).get();
+    return ((SszUInt64) get(GENESIS_TIME_FIELD.getIndex())).get();
   }
 
   default Bytes32 getGenesis_validators_root() {
-    return ((Bytes32View) get(GENESIS_VALIDATORS_ROOT_FIELD.getIndex())).get();
+    return ((SszBytes32) get(GENESIS_VALIDATORS_ROOT_FIELD.getIndex())).get();
   }
 
   default UInt64 getSlot() {
-    return ((UInt64View) get(SLOT_FIELD.getIndex())).get();
+    return ((SszUInt64) get(SLOT_FIELD.getIndex())).get();
   }
 
   default Fork getFork() {
@@ -274,7 +274,7 @@ public interface BeaconState extends SszContainer {
     return new SSZBackingVector<>(
         Bytes32.class,
         getAny(BLOCK_ROOTS_FIELD.getIndex()),
-        Bytes32View::new,
+        SszBytes32::new,
         AbstractSszPrimitive::get);
   }
 
@@ -282,7 +282,7 @@ public interface BeaconState extends SszContainer {
     return new SSZBackingVector<>(
         Bytes32.class,
         getAny(STATE_ROOTS_FIELD.getIndex()),
-        Bytes32View::new,
+        SszBytes32::new,
         AbstractSszPrimitive::get);
   }
 
@@ -290,7 +290,7 @@ public interface BeaconState extends SszContainer {
     return new SSZBackingList<>(
         Bytes32.class,
         getAny(HISTORICAL_ROOTS_FIELD.getIndex()),
-        Bytes32View::new,
+        SszBytes32::new,
         AbstractSszPrimitive::get);
   }
 
@@ -308,7 +308,7 @@ public interface BeaconState extends SszContainer {
   }
 
   default UInt64 getEth1_deposit_index() {
-    return ((UInt64View) get(ETH1_DEPOSIT_INDEX_FIELD.getIndex())).get();
+    return ((SszUInt64) get(ETH1_DEPOSIT_INDEX_FIELD.getIndex())).get();
   }
 
   // Registry
@@ -322,21 +322,21 @@ public interface BeaconState extends SszContainer {
 
   default SSZList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UInt64.class, getAny(BALANCES_FIELD.getIndex()), UInt64View::new, AbstractSszPrimitive::get);
+        UInt64.class, getAny(BALANCES_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   default SSZVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>(
         Bytes32.class,
         getAny(RANDAO_MIXES_FIELD.getIndex()),
-        Bytes32View::new,
+        SszBytes32::new,
         AbstractSszPrimitive::get);
   }
 
   // Slashings
   default SSZVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), UInt64View::new, AbstractSszPrimitive::get);
+        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   // Attestations

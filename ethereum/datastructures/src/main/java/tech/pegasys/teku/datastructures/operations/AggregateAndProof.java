@@ -21,22 +21,22 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class AggregateAndProof
-    extends Container3<AggregateAndProof, UInt64View, Attestation, SszVector<ByteView>> {
+    extends Container3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
   public static class AggregateAndProofType
-      extends ContainerType3<AggregateAndProof, UInt64View, Attestation, SszVector<ByteView>> {
+      extends ContainerType3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
     public AggregateAndProofType() {
       super(
           "AggregateAndProof",
-          namedType("index", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("aggregate", Attestation.TYPE),
-          namedType("selection_proof", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("aggregate", Attestation.TYPE),
+          namedSchema("selection_proof", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -56,7 +56,7 @@ public class AggregateAndProof
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
     super(
         TYPE,
-        new UInt64View(index),
+        new SszUInt64(index),
         aggregate,
         SszUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
     selectionProofCache = selection_proof;

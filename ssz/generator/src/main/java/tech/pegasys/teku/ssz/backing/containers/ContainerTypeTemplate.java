@@ -59,21 +59,21 @@ public abstract class /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<
 
   protected /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/(
       String containerName,
-      /*$$NamedFieldsDeclarations*/ NamedType<V0> fieldNamedType0,
-      NamedType<V1> fieldNamedType1 /*$$*/) {
+      /*$$NamedFieldsDeclarations*/ NamedSchema<V0> fieldNamedSchema0,
+      NamedSchema<V1> fieldNamedSchema1 /*$$*/) {
 
-    super(containerName, List.of(/*$$NamedFields*/ fieldNamedType0, fieldNamedType1 /*$$*/));
+    super(containerName, List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/));
   }
 
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldType1() {
-    return (SszSchema<V1>) getChildType(1);
+    return (SszSchema<V1>) getChildSchema(1);
   }
   /*$$*/
 }

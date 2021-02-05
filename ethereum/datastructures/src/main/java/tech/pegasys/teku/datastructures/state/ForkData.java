@@ -19,18 +19,18 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 
-public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
+public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
-  public static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
+  public static class ForkDataType extends ContainerType2<ForkData, SszBytes4, SszBytes32> {
 
     public ForkDataType() {
       super(
           "ForkData",
-          namedType("currentVersion", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_TYPE));
+          namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
   }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    super(TYPE, new Bytes4View(currentVersion), new Bytes32View(genesisValidatorsRoot));
+    super(TYPE, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {

@@ -45,18 +45,18 @@ public abstract class ContainerType2<
   }
 
   protected ContainerType2(
-      String containerName, NamedType<V0> fieldNamedType0, NamedType<V1> fieldNamedType1) {
+      String containerName, NamedSchema<V0> fieldNamedSchema0, NamedSchema<V1> fieldNamedSchema1) {
 
-    super(containerName, List.of(fieldNamedType0, fieldNamedType1));
+    super(containerName, List.of(fieldNamedSchema0, fieldNamedSchema1));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldType1() {
-    return (SszSchema<V1>) getChildType(1);
+    return (SszSchema<V1>) getChildSchema(1);
   }
 }

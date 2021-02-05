@@ -22,18 +22,18 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> {
+public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
 
-  public static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
+  public static class CheckpointType extends ContainerType2<Checkpoint, SszUInt64, SszBytes32> {
 
     public CheckpointType() {
       super(
           "Checkpoint",
-          namedType("epoch", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("root", SszPrimitiveSchemas.BYTES32_TYPE));
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -49,7 +49,7 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> 
   }
 
   public Checkpoint(UInt64 epoch, Bytes32 root) {
-    super(TYPE, new UInt64View(epoch), new Bytes32View(root));
+    super(TYPE, new SszUInt64(epoch), new SszBytes32(root));
   }
 
   public UInt64 getEpoch() {

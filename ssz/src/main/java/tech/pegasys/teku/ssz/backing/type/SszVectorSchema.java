@@ -27,35 +27,35 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class SszVectorSchema<ElementViewT extends SszData>
-    extends SszCollectionSchema<ElementViewT, SszVector<ElementViewT>> {
+public class SszVectorSchema<SszElementT extends SszData>
+    extends SszCollectionSchema<SszElementT, SszVector<SszElementT>> {
 
   private final boolean isListBacking;
 
-  public SszVectorSchema(SszSchema<ElementViewT> elementType, long vectorLength) {
+  public SszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  SszVectorSchema(SszSchema<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
+  SszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, SszSchemaHints.none());
   }
 
   SszVectorSchema(
-      SszSchema<ElementViewT> elementType,
+      SszSchema<SszElementT> elementSchema,
       long vectorLength,
       boolean isListBacking,
       SszSchemaHints hints) {
-    super(vectorLength, elementType, hints);
+    super(vectorLength, elementSchema, hints);
     this.isListBacking = isListBacking;
   }
 
   @Override
-  public SszVector<ElementViewT> getDefault() {
+  public SszVector<SszElementT> getDefault() {
     return createFromBackingNode(getDefaultTree());
   }
 
@@ -72,11 +72,11 @@ public class SszVectorSchema<ElementViewT extends SszData>
       } else {
         return TreeUtil.createDefaultTree(maxChunks(), LeafNode.EMPTY_LEAF);
       }
-    } else if (getElementType().getBitsSize() == LeafNode.MAX_BIT_SIZE) {
-      return TreeUtil.createDefaultTree(maxChunks(), getElementType().getDefaultTree());
+    } else if (getElementSchema().getBitsSize() == LeafNode.MAX_BIT_SIZE) {
+      return TreeUtil.createDefaultTree(maxChunks(), getElementSchema().getDefaultTree());
     } else {
       // packed vector
-      int totalBytes = (getLength() * getElementType().getBitsSize() + 7) / 8;
+      int totalBytes = (getLength() * getElementSchema().getBitsSize() + 7) / 8;
       int lastNodeSizeBytes = totalBytes % LeafNode.MAX_BYTE_SIZE;
       int fullZeroNodesCount = totalBytes / LeafNode.MAX_BYTE_SIZE;
       Stream<TreeNode> fullZeroNodes =
@@ -92,7 +92,7 @@ public class SszVectorSchema<ElementViewT extends SszData>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public SszVector<ElementViewT> createFromBackingNode(TreeNode node) {
+  public SszVector<SszElementT> createFromBackingNode(TreeNode node) {
     return new SszVectorImpl(this, node);
   }
 
@@ -114,7 +114,7 @@ public class SszVectorSchema<ElementViewT extends SszData>
 
   @Override
   public boolean isFixedSize() {
-    return getElementType().isFixedSize();
+    return getElementSchema().isFixedSize();
   }
 
   @Override
@@ -124,7 +124,7 @@ public class SszVectorSchema<ElementViewT extends SszData>
 
   @Override
   public int getFixedPartSize() {
-    int bitsPerChild = isFixedSize() ? getElementType().getBitsSize() : SSZ_LENGTH_SIZE * 8;
+    int bitsPerChild = isFixedSize() ? getElementSchema().getBitsSize() : SSZ_LENGTH_SIZE * 8;
     return (getLength() * bitsPerChild + 7) / 8;
   }
 
@@ -136,15 +136,15 @@ public class SszVectorSchema<ElementViewT extends SszData>
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
     DeserializedData data = sszDeserializeVector(reader);
-    if (getElementType() == SszPrimitiveSchemas.BIT_TYPE && getLength() % 8 > 0) {
+    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA && getLength() % 8 > 0) {
       // for BitVector we need to check that all 'unused' bits in the last byte are 0
       int usedBitCount = getLength() % 8;
       if (data.getLastSszByte().orElseThrow() >>> usedBitCount != 0) {
-        throw new SSZDeserializeException("Invalid Bitvector ssz: trailing bits are not 0");
+        throw new SszDeserializeException("Invalid Bitvector ssz: trailing bits are not 0");
       }
     } else {
       if (data.getChildrenCount() != getLength()) {
-        throw new SSZDeserializeException("Invalid Vector ssz");
+        throw new SszDeserializeException("Invalid Vector ssz");
       }
     }
     return data.getDataTree();
@@ -152,10 +152,10 @@ public class SszVectorSchema<ElementViewT extends SszData>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return getElementType()
+    return getElementSchema()
         .getSszLengthBounds()
         // if elements are of dynamic size the offset size should be added for every element
-        .addBytes(getElementType().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
+        .addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
         .mul(getLength())
         .ceilToBytes();
   }
@@ -169,7 +169,7 @@ public class SszVectorSchema<ElementViewT extends SszData>
       return false;
     }
     SszVectorSchema<?> that = (SszVectorSchema<?>) o;
-    return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
+    return getElementSchema().equals(that.getElementSchema()) && getMaxLength() == that.getMaxLength();
   }
 
   @Override
@@ -179,6 +179,6 @@ public class SszVectorSchema<ElementViewT extends SszData>
 
   @Override
   public String toString() {
-    return "Vector[" + getElementType() + ", " + getLength() + "]";
+    return "Vector[" + getElementSchema() + ", " + getLength() + "]";
   }
 }

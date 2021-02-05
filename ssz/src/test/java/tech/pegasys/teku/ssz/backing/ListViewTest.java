@@ -34,7 +34,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewTest {
@@ -112,39 +112,39 @@ public class ListViewTest {
 
   static Stream<Arguments> testListSszDeserializeFailsFastWithTooLongDataParameters() {
     return Stream.of(
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 0),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 1),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 2),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 3),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 4),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 5),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 6),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 7),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 8),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 9),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 10),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 11),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 12),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 13),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 14),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 15),
-        Arguments.of(SszPrimitiveSchemas.BIT_TYPE, 16),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 0),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 1),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 5),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 16),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 31),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 32),
-        Arguments.of(SszPrimitiveSchemas.BYTE_TYPE, 33),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_TYPE, 7),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_TYPE, 8),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_TYPE, 9),
-        Arguments.of(SszPrimitiveSchemas.UINT64_TYPE, 3),
-        Arguments.of(SszPrimitiveSchemas.UINT64_TYPE, 4),
-        Arguments.of(SszPrimitiveSchemas.UINT64_TYPE, 5),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_TYPE, 0),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_TYPE, 1),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_TYPE, 2),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 0),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 1),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 2),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 3),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 4),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 5),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 6),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 7),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 8),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 9),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 10),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 11),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 12),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 13),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 14),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 15),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 16),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 0),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 1),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 5),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 16),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 31),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 32),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 33),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 7),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 8),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 9),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 3),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 4),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 5),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 0),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 1),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 2),
         Arguments.of(TestDoubleSuperContainer.TYPE, 5),
         Arguments.of(VariableSizeContainer.TYPE, 5));
   }
@@ -179,7 +179,7 @@ public class ListViewTest {
 
       SszReader sszReader = SszReader.fromBytes(ssz);
       assertThatThrownBy(() -> sszListSchema.sszDeserialize(sszReader))
-          .isInstanceOf(SSZDeserializeException.class);
+          .isInstanceOf(SszDeserializeException.class);
       if (listElementType.getBitsSize() >= 8 || i > maxLength + 8) {
         assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);
       }

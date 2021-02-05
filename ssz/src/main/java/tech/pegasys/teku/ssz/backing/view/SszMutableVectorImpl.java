@@ -57,7 +57,7 @@ public class SszMutableVectorImpl<
   protected TreeUpdates packChanges(
       List<Map.Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
     SszVectorSchema<ElementReadType> type = getType();
-    SszSchema<?> elementType = type.getElementType();
+    SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
     return newChildValues.stream()

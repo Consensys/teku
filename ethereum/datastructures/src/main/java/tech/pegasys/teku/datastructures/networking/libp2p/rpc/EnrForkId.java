@@ -19,20 +19,20 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
+public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
   public static class EnrForkIdType
-      extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
+      extends ContainerType3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
     public EnrForkIdType() {
       super(
           "EnrForkId",
-          namedType("forkDigest", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("nextForkVersion", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("nextForkEpoch", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -51,9 +51,9 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
     super(
         TYPE,
-        new Bytes4View(forkDigest),
-        new Bytes4View(nextForkVersion),
-        new UInt64View(nextForkEpoch));
+        new SszBytes4(forkDigest),
+        new SszBytes4(nextForkVersion),
+        new SszUInt64(nextForkEpoch));
   }
 
   public Bytes4 getForkDigest() {

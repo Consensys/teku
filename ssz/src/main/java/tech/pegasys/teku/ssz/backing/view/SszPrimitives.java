@@ -21,33 +21,33 @@ import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 /** Collection of basic view classes */
 public class SszPrimitives {
 
-  public static class BitView extends AbstractSszPrimitive<Boolean, BitView> {
-    private static final BitView TRUE_VIEW = new BitView(true);
-    private static final BitView FALSE_VIEW = new BitView(false);
+  public static class SszBit extends AbstractSszPrimitive<Boolean, SszBit> {
+    private static final SszBit TRUE_VIEW = new SszBit(true);
+    private static final SszBit FALSE_VIEW = new SszBit(false);
 
-    public static BitView viewOf(boolean value) {
+    public static SszBit viewOf(boolean value) {
       return value ? TRUE_VIEW : FALSE_VIEW;
     }
 
-    private BitView(Boolean value) {
-      super(value, SszPrimitiveSchemas.BIT_TYPE);
+    private SszBit(Boolean value) {
+      super(value, SszPrimitiveSchemas.BIT_SCHEMA);
     }
   }
 
-  public static class ByteView extends AbstractSszPrimitive<Byte, ByteView> {
-    public ByteView(Byte value) {
-      super(value, SszPrimitiveSchemas.BYTE_TYPE);
+  public static class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
+    public SszByte(Byte value) {
+      super(value, SszPrimitiveSchemas.BYTE_SCHEMA);
     }
   }
 
-  public static class UInt64View extends AbstractSszPrimitive<UInt64, UInt64View> {
+  public static class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
 
-    public static UInt64View fromLong(long val) {
-      return new UInt64View(UInt64.fromLongBits(val));
+    public static SszUInt64 fromLong(long val) {
+      return new SszUInt64(UInt64.fromLongBits(val));
     }
 
-    public UInt64View(UInt64 val) {
-      super(val, SszPrimitiveSchemas.UINT64_TYPE);
+    public SszUInt64(UInt64 val) {
+      super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
     }
 
     public long longValue() {
@@ -55,17 +55,17 @@ public class SszPrimitives {
     }
   }
 
-  public static class Bytes4View extends AbstractSszPrimitive<Bytes4, Bytes4View> {
+  public static class SszBytes4 extends AbstractSszPrimitive<Bytes4, SszBytes4> {
 
-    public Bytes4View(Bytes4 val) {
-      super(val, SszPrimitiveSchemas.BYTES4_TYPE);
+    public SszBytes4(Bytes4 val) {
+      super(val, SszPrimitiveSchemas.BYTES4_SCHEMA);
     }
   }
 
-  public static class Bytes32View extends AbstractSszPrimitive<Bytes32, Bytes32View> {
+  public static class SszBytes32 extends AbstractSszPrimitive<Bytes32, SszBytes32> {
 
-    public Bytes32View(Bytes32 val) {
-      super(val, SszPrimitiveSchemas.BYTES32_TYPE);
+    public SszBytes32(Bytes32 val) {
+      super(val, SszPrimitiveSchemas.BYTES32_SCHEMA);
     }
   }
 }

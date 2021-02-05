@@ -19,20 +19,20 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedAggregateAndProof
-    extends Container2<SignedAggregateAndProof, AggregateAndProof, SszVector<ByteView>> {
+    extends Container2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
   public static class SignedAggregateAndProofType
-      extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, SszVector<ByteView>> {
+      extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
     public SignedAggregateAndProofType() {
       super(
           "SignedAggregateAndProof",
-          namedType("message", AggregateAndProof.TYPE),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("message", AggregateAndProof.TYPE),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override

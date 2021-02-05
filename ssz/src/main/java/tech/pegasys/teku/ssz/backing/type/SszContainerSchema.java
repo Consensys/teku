@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
@@ -33,58 +33,58 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public abstract class SszContainerSchema<C extends SszContainer>
     implements SszCompositeSchema<C> {
 
-  protected static class NamedType<T extends SszData> {
+  protected static class NamedSchema<T extends SszData> {
     private final String name;
-    private final SszSchema<T> type;
+    private final SszSchema<T> schema;
 
-    private NamedType(String name, SszSchema<T> type) {
+    private NamedSchema(String name, SszSchema<T> schema) {
       this.name = name;
-      this.type = type;
+      this.schema = schema;
     }
 
     public String getName() {
       return name;
     }
 
-    public SszSchema<T> getType() {
-      return type;
+    public SszSchema<T> getSchema() {
+      return schema;
     }
   }
 
-  protected static <T extends SszData> NamedType<T> namedType(String fieldName, SszSchema<T> type) {
-    return new NamedType<>(fieldName, type);
+  protected static <T extends SszData> NamedSchema<T> namedSchema(String fieldName, SszSchema<T> schema) {
+    return new NamedSchema<>(fieldName, schema);
   }
 
   private final String containerName;
   private final List<String> childrenNames;
-  private final List<SszSchema<?>> childrenTypes;
+  private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
 
-  protected SszContainerSchema(String name, List<NamedType<?>> childrenTypes) {
+  protected SszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
     this.childrenNames =
-        childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
-    this.childrenTypes =
-        childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
+        childrenSchemas.stream().map(NamedSchema::getName).collect(Collectors.toList());
+    this.childrenSchemas =
+        childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
-  protected SszContainerSchema(List<SszSchema<?>> childrenTypes) {
+  protected SszContainerSchema(List<SszSchema<?>> childrenSchemas) {
     this.containerName = "";
     this.childrenNames =
-        IntStream.range(0, childrenTypes.size())
+        IntStream.range(0, childrenSchemas.size())
             .mapToObj(i -> "field-" + i)
             .collect(Collectors.toList());
-    this.childrenTypes = childrenTypes;
+    this.childrenSchemas = childrenSchemas;
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
   public static <C extends SszContainer> SszContainerSchema<C> create(
-      List<SszSchema<?>> childrenTypes, BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
-    return new SszContainerSchema<C>(childrenTypes) {
+      List<SszSchema<?>> childrenSchemas, BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+    return new SszContainerSchema<C>(childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -110,14 +110,14 @@ public abstract class SszContainerSchema<C extends SszContainer>
   private TreeNode createDefaultTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
     for (int i = 0; i < getChildCount(); i++) {
-      defaultChildren.add(getChildType(i).getDefault().getBackingNode());
+      defaultChildren.add(getChildSchema(i).getDefault().getBackingNode());
     }
     return TreeUtil.createTree(defaultChildren);
   }
 
   @Override
-  public SszSchema<?> getChildType(int index) {
-    return childrenTypes.get(index);
+  public SszSchema<?> getChildSchema(int index) {
+    return childrenSchemas.get(index);
   }
 
   @Override
@@ -125,7 +125,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
 
   @Override
   public long getMaxLength() {
-    return childrenTypes.size();
+    return childrenSchemas.size();
   }
 
   @Override
@@ -137,18 +137,18 @@ public abstract class SszContainerSchema<C extends SszContainer>
       return false;
     }
     SszContainerSchema<?> that = (SszContainerSchema<?>) o;
-    return childrenTypes.equals(that.childrenTypes);
+    return childrenSchemas.equals(that.childrenSchemas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(childrenTypes);
+    return Objects.hash(childrenSchemas);
   }
 
   @Override
   public boolean isFixedSize() {
     for (int i = 0; i < getChildCount(); i++) {
-      if (!getChildType(i).isFixedSize()) {
+      if (!getChildSchema(i).isFixedSize()) {
         return false;
       }
     }
@@ -159,7 +159,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
   public int getFixedPartSize() {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
     return size;
@@ -169,7 +169,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
   public int getVariablePartSize(TreeNode node) {
     int size = 0;
     for (int i = 0; i < getChildCount(); i++) {
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         size += childType.getSszSize(node.get(getGeneralizedIndex(i)));
       }
@@ -181,8 +181,8 @@ public abstract class SszContainerSchema<C extends SszContainer>
     return (int) getMaxLength();
   }
 
-  public List<SszSchema<?>> getChildTypes() {
-    return childrenTypes;
+  public List<SszSchema<?>> getChildSchemas() {
+    return childrenSchemas;
   }
 
   @Override
@@ -191,7 +191,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
     int[] variableSizes = new int[getChildCount()];
     for (int i = 0; i < getChildCount(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
         int size = childType.sszSerializeTree(childSubtree, writer);
         assert size == childType.getFixedPartSize();
@@ -203,7 +203,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
       }
     }
     for (int i = 0; i < getMaxLength(); i++) {
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getGeneralizedIndex(i));
         int size = childType.sszSerializeTree(childSubtree, writer);
@@ -220,7 +220,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
     List<Integer> variableChildrenOffsets = new ArrayList<>(childCount);
     for (int i = 0; i < childCount; i++) {
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
         try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
           TreeNode childNode = childType.sszDeserializeTree(sszReader);
@@ -234,11 +234,11 @@ public abstract class SszContainerSchema<C extends SszContainer>
 
     if (variableChildrenOffsets.isEmpty()) {
       if (reader.getAvailableBytes() > 0) {
-        throw new SSZDeserializeException("Invalid SSZ: unread bytes for fixed size container");
+        throw new SszDeserializeException("Invalid SSZ: unread bytes for fixed size container");
       }
     } else {
       if (variableChildrenOffsets.get(0) != endOffset - reader.getAvailableBytes()) {
-        throw new SSZDeserializeException(
+        throw new SszDeserializeException(
             "First variable element offset doesn't match the end of fixed part");
       }
     }
@@ -253,12 +253,12 @@ public abstract class SszContainerSchema<C extends SszContainer>
     }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {
-      throw new SSZDeserializeException("Invalid SSZ: wrong child offsets");
+      throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
     }
 
     List<TreeNode> childrenSubtrees = new ArrayList<>(childCount);
     for (int i = 0; i < childCount; i++) {
-      SszSchema<?> childType = getChildType(i);
+      SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
         childrenSubtrees.add(fixedChildrenSubtrees.remove());
       } else {
@@ -275,7 +275,7 @@ public abstract class SszContainerSchema<C extends SszContainer>
   @Override
   public SszLengthBounds getSszLengthBounds() {
     return IntStream.range(0, getChildCount())
-        .mapToObj(this::getChildType)
+        .mapToObj(this::getChildSchema)
         // dynamic sized children need 4-byte offset
         .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
         // elements are not packed in containers

@@ -20,15 +20,15 @@ import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
+public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     implements RpcRequest {
 
-  public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, UInt64View> {
+  public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, SszUInt64> {
 
     public GoodbyeMessageType() {
-      super("GoodbyeMessage", namedType("reason", SszPrimitiveSchemas.UINT64_TYPE));
+      super("GoodbyeMessage", namedSchema("reason", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -54,7 +54,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
   }
 
   public GoodbyeMessage(UInt64 reason) {
-    super(TYPE, new UInt64View(reason));
+    super(TYPE, new SszUInt64(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)

@@ -21,32 +21,32 @@ import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitListType;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitListSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
     extends Container4<
-        PendingAttestation, SszList<BitView>, AttestationData, UInt64View, UInt64View> {
+        PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
   public static class PendingAttestationType
       extends ContainerType4<
-          PendingAttestation, SszList<BitView>, AttestationData, UInt64View, UInt64View> {
+          PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
     public PendingAttestationType() {
       super(
           "PendingAttestation",
-          namedType(
-              "aggregation_bitfield", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("inclusion_delay", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("proposer_index", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema(
+              "aggregation_bitfield", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.TYPE),
+          namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
-    public BitListType getAggregationBitfieldType() {
-      return (BitListType) getFieldType0();
+    public SszBitListSchema getAggregationBitfieldType() {
+      return (SszBitListSchema) getFieldType0();
     }
 
     @Override
@@ -70,8 +70,8 @@ public class PendingAttestation
         TYPE,
         SszUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
         data,
-        new UInt64View(inclusion_delay),
-        new UInt64View(proposer_index));
+        new SszUInt64(inclusion_delay),
+        new SszUInt64(proposer_index));
   }
 
   public PendingAttestation() {

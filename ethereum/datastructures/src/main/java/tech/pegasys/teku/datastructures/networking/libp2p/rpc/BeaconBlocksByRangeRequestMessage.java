@@ -18,22 +18,22 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public final class BeaconBlocksByRangeRequestMessage
-    extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>
+    extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>
     implements RpcRequest {
 
   public static class BeaconBlocksByRangeRequestMessageType
       extends ContainerType3<
-          BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> {
+          BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
 
     public BeaconBlocksByRangeRequestMessageType() {
       super(
           "BeaconBlocksByRangeRequestMessage",
-          namedType("startSlot", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("count", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("step", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("step", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class BeaconBlocksByRangeRequestMessage
 
   public BeaconBlocksByRangeRequestMessage(
       final UInt64 startSlot, final UInt64 count, final UInt64 step) {
-    super(TYPE, new UInt64View(startSlot), new UInt64View(count), new UInt64View(step));
+    super(TYPE, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
   }
 
   public UInt64 getStartSlot() {

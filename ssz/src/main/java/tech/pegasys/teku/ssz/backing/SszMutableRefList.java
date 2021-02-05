@@ -40,7 +40,7 @@ public interface SszMutableRefList<
    * Appends a new empty element to the list and returns its writeable reference for modification
    */
   default ElementWriteType append() {
-    ElementReadType newElement = getType().getElementType().getDefault();
+    ElementReadType newElement = getType().getElementSchema().getDefault();
     append(newElement);
     return getByRef(size() - 1);
   }

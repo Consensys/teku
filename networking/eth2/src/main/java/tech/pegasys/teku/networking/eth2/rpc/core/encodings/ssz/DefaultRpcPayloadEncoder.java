@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
 public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,7 +40,7 @@ public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEn
   public T decode(final Bytes message) throws RpcException {
     try {
       return type.sszDeserialize(message);
-    } catch (final SSZDeserializeException e) {
+    } catch (final SszDeserializeException e) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }

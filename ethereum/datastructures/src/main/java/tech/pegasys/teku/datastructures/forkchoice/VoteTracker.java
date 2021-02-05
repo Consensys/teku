@@ -19,20 +19,20 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
+public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
   public static class VoteTrackerType
-      extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
+      extends ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
     public VoteTrackerType() {
       super(
           "VoteTracker",
-          namedType("currentRoot", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("nextRoot", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("nextEpoch", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("currentRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
-      ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> type,
+      ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -55,7 +55,7 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(TYPE, new Bytes32View(currentRoot), new Bytes32View(nextRoot), new UInt64View(nextEpoch));
+    super(TYPE, new SszBytes32(currentRoot), new SszBytes32(nextRoot), new SszUInt64(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

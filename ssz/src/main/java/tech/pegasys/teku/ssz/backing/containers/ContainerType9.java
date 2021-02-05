@@ -101,72 +101,72 @@ public abstract class ContainerType9<
 
   protected ContainerType9(
       String containerName,
-      NamedType<V0> fieldNamedType0,
-      NamedType<V1> fieldNamedType1,
-      NamedType<V2> fieldNamedType2,
-      NamedType<V3> fieldNamedType3,
-      NamedType<V4> fieldNamedType4,
-      NamedType<V5> fieldNamedType5,
-      NamedType<V6> fieldNamedType6,
-      NamedType<V7> fieldNamedType7,
-      NamedType<V8> fieldNamedType8) {
+      NamedSchema<V0> fieldNamedSchema0,
+      NamedSchema<V1> fieldNamedSchema1,
+      NamedSchema<V2> fieldNamedSchema2,
+      NamedSchema<V3> fieldNamedSchema3,
+      NamedSchema<V4> fieldNamedSchema4,
+      NamedSchema<V5> fieldNamedSchema5,
+      NamedSchema<V6> fieldNamedSchema6,
+      NamedSchema<V7> fieldNamedSchema7,
+      NamedSchema<V8> fieldNamedSchema8) {
 
     super(
         containerName,
         List.of(
-            fieldNamedType0,
-            fieldNamedType1,
-            fieldNamedType2,
-            fieldNamedType3,
-            fieldNamedType4,
-            fieldNamedType5,
-            fieldNamedType6,
-            fieldNamedType7,
-            fieldNamedType8));
+            fieldNamedSchema0,
+            fieldNamedSchema1,
+            fieldNamedSchema2,
+            fieldNamedSchema3,
+            fieldNamedSchema4,
+            fieldNamedSchema5,
+            fieldNamedSchema6,
+            fieldNamedSchema7,
+            fieldNamedSchema8));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldType1() {
-    return (SszSchema<V1>) getChildType(1);
+    return (SszSchema<V1>) getChildSchema(1);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldType2() {
-    return (SszSchema<V2>) getChildType(2);
+    return (SszSchema<V2>) getChildSchema(2);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V3> getFieldType3() {
-    return (SszSchema<V3>) getChildType(3);
+    return (SszSchema<V3>) getChildSchema(3);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V4> getFieldType4() {
-    return (SszSchema<V4>) getChildType(4);
+    return (SszSchema<V4>) getChildSchema(4);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V5> getFieldType5() {
-    return (SszSchema<V5>) getChildType(5);
+    return (SszSchema<V5>) getChildSchema(5);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V6> getFieldType6() {
-    return (SszSchema<V6>) getChildType(6);
+    return (SszSchema<V6>) getChildSchema(6);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V7> getFieldType7() {
-    return (SszSchema<V7>) getChildType(7);
+    return (SszSchema<V7>) getChildSchema(7);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V8> getFieldType8() {
-    return (SszSchema<V8>) getChildType(8);
+    return (SszSchema<V8>) getChildSchema(8);
   }
 }

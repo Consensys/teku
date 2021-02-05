@@ -23,23 +23,23 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositMessage
-    extends Container3<DepositMessage, SszVector<ByteView>, Bytes32View, UInt64View> {
+    extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
   public static class DepositMessageType
-      extends ContainerType3<DepositMessage, SszVector<ByteView>, Bytes32View, UInt64View> {
+      extends ContainerType3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
     public DepositMessageType() {
       super(
           "DepositMessage",
-          namedType("pubkey", SszComplexSchemas.BYTES_48_TYPE),
-          namedType("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("amount", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -59,8 +59,8 @@ public class DepositMessage
     super(
         TYPE,
         SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
-        new Bytes32View(withdrawal_credentials),
-        new UInt64View(amount));
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(amount));
   }
 
   public BLSPublicKey getPubkey() {

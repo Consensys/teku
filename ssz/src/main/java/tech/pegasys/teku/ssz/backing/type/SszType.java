@@ -16,13 +16,13 @@ package tech.pegasys.teku.ssz.backing.type;
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszByteArrayWriter;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-/** Collection of SSZ related methods for {@link SszSchema} */
+/** Base class of {@link SszSchema} with SSZ serialization related methods */
 public interface SszType {
 
   // the size of SSZ UIn32 lengths and offsets
@@ -36,11 +36,11 @@ public interface SszType {
   // deserializes int length from SSZ 4 bytes
   static int bytesToLength(Bytes bytes) {
     if (!bytes.slice(SSZ_LENGTH_SIZE).isZero()) {
-      throw new SSZDeserializeException("Invalid length bytes: " + bytes);
+      throw new SszDeserializeException("Invalid length bytes: " + bytes);
     }
     int ret = bytes.slice(0, SSZ_LENGTH_SIZE).toInt(ByteOrder.LITTLE_ENDIAN);
     if (ret < 0) {
-      throw new SSZDeserializeException("Invalid length: " + ret);
+      throw new SszDeserializeException("Invalid length: " + ret);
     }
     return ret;
   }
@@ -72,7 +72,7 @@ public interface SszType {
    */
   int sszSerializeTree(TreeNode node, SszWriter writer);
 
-  TreeNode sszDeserializeTree(SszReader reader) throws SSZDeserializeException;
+  TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException;
 
   SszLengthBounds getSszLengthBounds();
 }

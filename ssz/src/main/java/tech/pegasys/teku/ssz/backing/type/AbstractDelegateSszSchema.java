@@ -16,26 +16,26 @@ package tech.pegasys.teku.ssz.backing.type;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
- * Helper `SszSchema` for making custom parametrized type without complexity of overriding existing
- * types
+ * Helper `SszSchema` for making custom parametrized schemas without complexity of overriding existing
+ * schemas
  */
-public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
-    implements SszSchema<ListTypeT> {
+public abstract class AbstractDelegateSszSchema<SszDataT extends SszData>
+    implements SszSchema<SszDataT> {
 
-  private final SszSchema<? super ListTypeT> delegate;
+  private final SszSchema<? super SszDataT> delegate;
 
-  protected AbstractDelegateSszSchema(SszSchema<? super ListTypeT> delegate) {
+  protected AbstractDelegateSszSchema(SszSchema<? super SszDataT> delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  public abstract ListTypeT createFromBackingNode(TreeNode node);
+  public abstract SszDataT createFromBackingNode(TreeNode node);
 
   @Override
   public TreeNode getDefaultTree() {
@@ -43,7 +43,7 @@ public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
   }
 
   @Override
-  public ListTypeT getDefault() {
+  public SszDataT getDefault() {
     return createFromBackingNode(delegate.getDefaultTree());
   }
 
@@ -53,7 +53,7 @@ public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
   }
 
   @Override
-  public ListTypeT createFromBackingNode(TreeNode node, int internalIndex) {
+  public SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
     return createFromBackingNode(node);
   }
 
@@ -63,22 +63,22 @@ public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
   }
 
   @Override
-  public Bytes sszSerialize(ListTypeT view) {
+  public Bytes sszSerialize(SszDataT view) {
     return delegate.sszSerialize(view);
   }
 
   @Override
-  public int sszSerialize(ListTypeT view, SszWriter writer) {
+  public int sszSerialize(SszDataT view, SszWriter writer) {
     return delegate.sszSerialize(view, writer);
   }
 
   @Override
-  public ListTypeT sszDeserialize(SszReader reader) throws SSZDeserializeException {
+  public SszDataT sszDeserialize(SszReader reader) throws SszDeserializeException {
     return createFromBackingNode(delegate.sszDeserializeTree(reader));
   }
 
   @Override
-  public ListTypeT sszDeserialize(Bytes ssz) throws SSZDeserializeException {
+  public SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
   }
 
@@ -121,7 +121,7 @@ public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) throws SSZDeserializeException {
+  public TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException {
     return delegate.sszDeserializeTree(reader);
   }
 

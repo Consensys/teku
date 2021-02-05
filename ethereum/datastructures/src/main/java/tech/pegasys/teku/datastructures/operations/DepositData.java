@@ -24,30 +24,30 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositData
     extends Container4<
-        DepositData, SszVector<ByteView>, Bytes32View, UInt64View, SszVector<ByteView>> {
+        DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
 
   public static class DepositDataType
       extends ContainerType4<
           DepositData,
-      SszVector<ByteView>,
-          Bytes32View,
-          UInt64View,
-      SszVector<ByteView>> {
+      SszVector<SszByte>,
+      SszBytes32,
+      SszUInt64,
+      SszVector<SszByte>> {
 
     public DepositDataType() {
       super(
           "DepositData",
-          namedType("pubkey", SszComplexSchemas.BYTES_48_TYPE),
-          namedType("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_TYPE),
-          namedType("amount", SszPrimitiveSchemas.UINT64_TYPE),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -70,8 +70,8 @@ public class DepositData
     super(
         TYPE,
         SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
-        new Bytes32View(withdrawal_credentials),
-        new UInt64View(amount),
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(amount),
         SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.pubkeyCache = pubkey;
     this.signatureCache = signature;

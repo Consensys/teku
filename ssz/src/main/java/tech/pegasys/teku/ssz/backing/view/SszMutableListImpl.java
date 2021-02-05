@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import static tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
 
 import java.util.function.Consumer;
@@ -44,11 +44,11 @@ public class SszMutableListImpl<
     }
 
     public int getSize() {
-      return (int) ((UInt64View) get(1)).longValue();
+      return (int) ((SszUInt64) get(1)).longValue();
     }
 
     public void setSize(int size) {
-      set(1, UInt64View.fromLong(size));
+      set(1, SszUInt64.fromLong(size));
     }
 
     public SszMutableRefVector<ElementReadType, ElementWriteType> getData() {

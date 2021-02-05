@@ -24,6 +24,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /**
  * View of SSZ List type. This view is compatible with and implemented as a <code>
@@ -58,7 +59,7 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     }
 
     public int getSize() {
-      return (int) ((SszPrimitives.UInt64View) get(1)).longValue();
+      return (int) ((SszUInt64) get(1)).longValue();
     }
 
     public SszVector<ElementType> getData() {

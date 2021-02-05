@@ -40,13 +40,13 @@ public abstract class ContainerType1<C extends SszContainer, V0 extends SszData>
     super(List.of(fieldType0));
   }
 
-  protected ContainerType1(String containerName, NamedType<V0> fieldNamedType0) {
+  protected ContainerType1(String containerName, NamedSchema<V0> fieldNamedSchema0) {
 
-    super(containerName, List.of(fieldNamedType0));
+    super(containerName, List.of(fieldNamedSchema0));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldType0() {
-    return (SszSchema<V0>) getChildType(0);
+    return (SszSchema<V0>) getChildSchema(0);
   }
 }

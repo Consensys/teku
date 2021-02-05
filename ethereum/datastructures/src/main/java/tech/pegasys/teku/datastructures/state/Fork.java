@@ -19,19 +19,19 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View> {
+public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
+  public static class ForkType extends ContainerType3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
     public ForkType() {
       super(
           "Fork",
-          namedType("previous_version", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("current_version", SszPrimitiveSchemas.BYTES4_TYPE),
-          namedType("epoch", SszPrimitiveSchemas.UINT64_TYPE));
+          namedSchema("previous_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("current_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -49,9 +49,9 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View> {
   public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
         TYPE,
-        new Bytes4View(previous_version),
-        new Bytes4View(current_version),
-        new UInt64View(epoch));
+        new SszBytes4(previous_version),
+        new SszBytes4(current_version),
+        new SszUInt64(epoch));
   }
 
   public Bytes4 getPrevious_version() {

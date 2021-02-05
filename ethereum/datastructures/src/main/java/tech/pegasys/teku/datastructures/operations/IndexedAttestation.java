@@ -26,32 +26,32 @@ import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
     extends Container3<
-        IndexedAttestation, SszList<UInt64View>, AttestationData, SszVector<ByteView>> {
+        IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
   public static class IndexedAttestationType
       extends ContainerType3<
-          IndexedAttestation, SszList<UInt64View>, AttestationData, SszVector<ByteView>> {
+          IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
     public IndexedAttestationType() {
       super(
           "IndexedAttestation",
-          namedType(
+          namedSchema(
               "attesting_indices",
               new SszListSchema<>(
-                  SszPrimitiveSchemas.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
+                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.TYPE),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public SszListSchema<UInt64View> getAttestingIndicesType() {
-      return (SszListSchema<UInt64View>) getFieldType0();
+    public SszListSchema<SszUInt64> getAttestingIndicesType() {
+      return (SszListSchema<SszUInt64>) getFieldType0();
     }
 
     @Override
@@ -72,14 +72,14 @@ public class IndexedAttestation
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        SszUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
+        SszUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
         data,
         SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
   public SSZList<UInt64> getAttesting_indices() {
-    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractSszPrimitive::get);
+    return new SSZBackingList<>(UInt64.class, getField0(), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   public AttestationData getData() {
