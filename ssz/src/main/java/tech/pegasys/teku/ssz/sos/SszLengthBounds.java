@@ -79,7 +79,7 @@ public class SszLengthBounds {
   }
 
   public boolean isWithinBounds(final long lengthBytes) {
-    return lengthBytes >= min && lengthBytes <= max;
+    return lengthBytes >= getMinBytes() && lengthBytes <= getMaxBytes();
   }
 
   @Override

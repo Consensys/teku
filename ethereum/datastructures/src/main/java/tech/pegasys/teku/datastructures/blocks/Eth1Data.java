@@ -14,20 +14,15 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Bytes32View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
 
   public static class Eth1DataType
       extends ContainerType3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
@@ -46,7 +41,7 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
     }
   }
 
-  @SszTypeDescriptor public static final Eth1DataType TYPE = new Eth1DataType();
+  public static final Eth1DataType TYPE = new Eth1DataType();
 
   private Eth1Data(Eth1DataType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -80,10 +75,5 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
   /** @return the block_hash */
   public Bytes32 getBlock_hash() {
     return getField2().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

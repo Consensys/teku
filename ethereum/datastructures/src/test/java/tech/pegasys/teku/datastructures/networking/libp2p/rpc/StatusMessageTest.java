@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
@@ -34,8 +33,8 @@ class StatusMessageTest {
             Bytes32.fromHexStringLenient("0x03"),
             UInt64.valueOf(4));
 
-    final Bytes data = SimpleOffsetSerializer.serialize(message);
-    final StatusMessage result = SimpleOffsetSerializer.deserialize(data, StatusMessage.class);
+    final Bytes data = message.sszSerialize();
+    final StatusMessage result = StatusMessage.TYPE.sszDeserialize(data);
     assertThat(SszTestUtils.equalsByGetters(result, message)).isTrue();
     assertThat(result).isEqualTo(message);
   }

@@ -18,6 +18,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
  * Represents an rpc payload encoding where the header consists of a single protobuf varint holding
@@ -56,12 +58,12 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Bytes encodePayload(final T message) {
+  public <T extends ViewRead> Bytes encodePayload(final T message) {
     if (message instanceof EmptyMessage) {
       return Bytes.EMPTY;
     }
     final RpcPayloadEncoder<T> payloadEncoder =
-        payloadEncoders.getEncoder((Class<T>) message.getClass());
+        payloadEncoders.getEncoder((ViewType<T>) message.getType());
     final Bytes payload = payloadEncoder.encode(message);
     if (payload.isEmpty()) {
       return payload;
@@ -70,8 +72,8 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T> RpcByteBufDecoder<T> createDecoder(Class<T> payloadType) {
-    if (payloadType.equals(EmptyMessage.class)) {
+  public <T extends ViewRead> RpcByteBufDecoder<T> createDecoder(ViewType<T> payloadType) {
+    if (payloadType.equals(EmptyMessage.TYPE)) {
       return getEmptyMessageDecoder();
     } else {
       return new LengthPrefixedPayloadDecoder<>(

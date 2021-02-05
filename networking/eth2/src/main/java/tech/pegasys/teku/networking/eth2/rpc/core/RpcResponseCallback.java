@@ -22,8 +22,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorExcept
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 
-class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
+class RpcResponseCallback<TResponse extends ViewRead> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
   private final RpcEncoder rpcEncoder;
   private final RpcStream rpcStream;

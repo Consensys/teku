@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
@@ -78,7 +76,6 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   private final int cachedSize;
 
   protected ListViewReadImpl(ListViewRead<ElementType> other) {
-    checkArgument(other.getType().equals(getType()), "Argument list has incompatible type");
     if (other instanceof ListViewReadImpl) {
       // optimization to preserve child view caches
       ListViewReadImpl<ElementType> otherImpl = (ListViewReadImpl<ElementType>) other;

@@ -91,7 +91,7 @@ class BlockProductionDutyTest {
 
     verify(validatorApiChannel).sendSignedBlock(signedBlock);
     verify(validatorLogger)
-        .dutyCompleted(duty.getProducedType(), SLOT, 1, Set.of(unsignedBlock.hash_tree_root()));
+        .dutyCompleted(duty.getProducedType(), SLOT, 1, Set.of(unsignedBlock.hashTreeRoot()));
     verifyNoMoreInteractions(validatorLogger);
   }
 

@@ -29,7 +29,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -163,8 +162,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
             GENESIS_FORK_VERSION,
             FAR_FUTURE_EPOCH);
-    discoveryService.updateCustomENRField(
-        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
+    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
     this.enrForkId = Optional.of(enrForkId);
   }
 
@@ -179,7 +177,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
     final Bytes4 forkDigest = currentForkInfo.getForkDigest();
     final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);
-    final Bytes encodedEnrForkId = SimpleOffsetSerializer.serialize(enrForkId);
+    final Bytes encodedEnrForkId = enrForkId.sszSerialize();
 
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
     this.enrForkId = Optional.of(enrForkId);

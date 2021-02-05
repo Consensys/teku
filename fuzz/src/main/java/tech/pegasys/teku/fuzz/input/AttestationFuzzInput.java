@@ -15,21 +15,16 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class AttestationFuzzInput extends Container2<AttestationFuzzInput, BeaconState, Attestation>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class AttestationFuzzInput
+    extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  @SszTypeDescriptor
   public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), Attestation.TYPE, AttestationFuzzInput::new);
+        BeaconState.getSszType(), Attestation.TYPE, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
@@ -37,7 +32,7 @@ public class AttestationFuzzInput extends Container2<AttestationFuzzInput, Beaco
     super(type, backingNode);
   }
 
-  public AttestationFuzzInput(final BeaconStateImpl state, final Attestation attestation) {
+  public AttestationFuzzInput(final BeaconState state, final Attestation attestation) {
     super(createType(), state, attestation);
   }
 

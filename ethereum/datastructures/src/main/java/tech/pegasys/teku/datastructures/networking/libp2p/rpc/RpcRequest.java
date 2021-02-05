@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-public interface RpcRequest {
+import tech.pegasys.teku.ssz.backing.ViewRead;
+
+public interface RpcRequest extends ViewRead {
   int getMaximumRequestChunks();
 }

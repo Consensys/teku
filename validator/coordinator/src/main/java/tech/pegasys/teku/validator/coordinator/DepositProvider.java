@@ -81,7 +81,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
               }
 
               depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.add(deposit.getData().hash_tree_root());
+              depositMerkleTree.add(deposit.getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(

@@ -16,32 +16,31 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.InvalidSSZTypeException;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
+public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private final Class<T> clazz;
+  private final ViewType<T> type;
 
-  public DefaultRpcPayloadEncoder(final Class<T> clazz) {
-    this.clazz = clazz;
+  public DefaultRpcPayloadEncoder(ViewType<T> type) {
+    this.type = type;
   }
 
   @Override
   public Bytes encode(final T message) {
-    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
+    return message.sszSerialize();
   }
 
   @Override
   public T decode(final Bytes message) throws RpcException {
     try {
-      return SimpleOffsetSerializer.deserialize(message, clazz);
-    } catch (final InvalidSSZTypeException | SSZDeserializeException e) {
+      return type.sszDeserialize(message);
+    } catch (final SSZDeserializeException e) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }
@@ -51,6 +50,6 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
 
   @Override
   public boolean isLengthWithinBounds(final long length) {
-    return SimpleOffsetSerializer.getLengthBounds(clazz).orElseThrow().isWithinBounds(length);
+    return type.getSszLengthBounds().isWithinBounds(length);
   }
 }

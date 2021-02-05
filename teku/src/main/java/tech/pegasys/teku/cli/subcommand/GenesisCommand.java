@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.FileOutputStream;
@@ -73,7 +72,7 @@ public class GenesisCommand {
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(params.outputFile, false);
       }
-      fileStream.write(serialize(genesisState).toArrayUnsafe());
+      fileStream.write(genesisState.sszSerialize().toArrayUnsafe());
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(params.outputFile, true);
       }

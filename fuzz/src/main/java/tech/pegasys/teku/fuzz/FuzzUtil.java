@@ -26,7 +26,7 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.util.config.Constants;
 
 public class FuzzUtil {
@@ -73,7 +75,7 @@ public class FuzzUtil {
       Constants.setConstants("minimal");
     }
     // guessing this might be necessary soon?
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
 
     if (disable_bls) {
       BLSConstants.disableBLSVerification();
@@ -81,7 +83,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.class);
+    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createType());
 
     // process and return post state
     try {
@@ -94,7 +96,7 @@ public class FuzzUtil {
                           state,
                           SSZList.singleton(structuredInput.getAttestation()),
                           IndexedAttestationProvider.DIRECT_PROVIDER));
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -103,7 +105,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttesterSlashing(final byte[] input) {
-    AttesterSlashingFuzzInput structuredInput = deserialize(input, AttesterSlashingFuzzInput.class);
+    AttesterSlashingFuzzInput structuredInput =
+        deserialize(input, AttesterSlashingFuzzInput.createType());
 
     // process and return post state
     try {
@@ -115,7 +118,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_attester_slashings(
                         state, SSZList.singleton(structuredInput.getAttester_slashing()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -124,7 +127,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.class);
+    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createType());
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
@@ -134,7 +137,7 @@ public class FuzzUtil {
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
       // "expected error"
@@ -143,7 +146,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlockHeader(final byte[] input) {
-    BlockHeaderFuzzInput structuredInput = deserialize(input, BlockHeaderFuzzInput.class);
+    BlockHeaderFuzzInput structuredInput = deserialize(input, BlockHeaderFuzzInput.createType());
 
     try {
       BeaconState postState =
@@ -153,7 +156,7 @@ public class FuzzUtil {
                   state -> {
                     BlockProcessorUtil.process_block_header(state, structuredInput.getBlock());
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -162,7 +165,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.class);
+    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createType());
 
     try {
       BeaconState postState =
@@ -173,7 +176,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_deposits(
                         state, SSZList.singleton(structuredInput.getDeposit()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -182,7 +185,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzProposerSlashing(final byte[] input) {
-    ProposerSlashingFuzzInput structuredInput = deserialize(input, ProposerSlashingFuzzInput.class);
+    ProposerSlashingFuzzInput structuredInput =
+        deserialize(input, ProposerSlashingFuzzInput.createType());
 
     // process and return post state
     try {
@@ -194,7 +198,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_proposer_slashings(
                         state, SSZList.singleton(structuredInput.getProposer_slashing()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -231,7 +235,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
-    VoluntaryExitFuzzInput structuredInput = deserialize(input, VoluntaryExitFuzzInput.class);
+    VoluntaryExitFuzzInput structuredInput =
+        deserialize(input, VoluntaryExitFuzzInput.createType());
 
     try {
       BeaconState postState =
@@ -242,7 +247,7 @@ public class FuzzUtil {
                     BlockProcessorUtil.process_voluntary_exits(
                         state, SSZList.singleton(structuredInput.getExit()));
                   });
-      Bytes output = SimpleOffsetSerializer.serialize(postState);
+      Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -250,9 +255,9 @@ public class FuzzUtil {
     }
   }
 
-  private <T> T deserialize(byte[] data, Class<T> type) {
+  private <T extends ViewRead> T deserialize(byte[] data, ViewType<T> type) {
     // allow exception to propagate on failure - indicates a preprocessing or deserializing error
-    T structuredInput = SimpleOffsetSerializer.deserialize(Bytes.wrap(data), type);
+    T structuredInput = type.sszDeserialize(Bytes.wrap(data));
     if (structuredInput == null) {
       throw new RuntimeException(
           "Failed to deserialize input. Likely a preprocessing or deserialization bug.");

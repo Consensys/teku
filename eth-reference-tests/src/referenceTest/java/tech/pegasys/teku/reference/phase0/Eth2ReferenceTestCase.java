@@ -15,7 +15,7 @@ package tech.pegasys.teku.reference.phase0;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
@@ -49,7 +49,7 @@ public abstract class Eth2ReferenceTestCase {
   private void setConstants(final String spec) {
     if (!spec.equals("general")) {
       Constants.setConstants(spec);
-      SimpleOffsetSerializer.setConstants();
+      SpecDependent.resetAll();
     }
   }
 

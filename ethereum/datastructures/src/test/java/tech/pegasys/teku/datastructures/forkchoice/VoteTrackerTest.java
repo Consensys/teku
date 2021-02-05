@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class VoteTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -26,8 +25,8 @@ class VoteTrackerTest {
   @Test
   void shouldRoundTripViaSsz() {
     VoteTracker voteTracker = dataStructureUtil.randomVoteTracker();
-    Bytes ser = SimpleOffsetSerializer.serialize(voteTracker);
-    VoteTracker deser = SimpleOffsetSerializer.deserialize(ser, VoteTracker.class);
+    Bytes ser = voteTracker.sszSerialize();
+    VoteTracker deser = VoteTracker.TYPE.sszDeserialize(ser);
     assertEquals(voteTracker, deser);
   }
 }
