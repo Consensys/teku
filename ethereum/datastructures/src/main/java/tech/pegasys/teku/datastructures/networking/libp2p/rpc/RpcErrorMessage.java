@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
+import tech.pegasys.teku.ssz.backing.type.AbstractDelegateSszSchema;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
@@ -32,7 +32,7 @@ public class RpcErrorMessage extends SszListImpl<ByteView> implements SszList<By
   private static final SszListSchema<ByteView> LIST_VIEW_TYPE =
       new SszListSchema<>(SszPrimitiveSchemas.BYTE_TYPE, MAX_ERROR_MESSAGE_LENGTH);
 
-  public static class RpcErrorMessageType extends AbstractDelegateType<RpcErrorMessage> {
+  public static class RpcErrorMessageType extends AbstractDelegateSszSchema<RpcErrorMessage> {
     private RpcErrorMessageType() {
       super(LIST_VIEW_TYPE);
     }

@@ -25,12 +25,12 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * Helper `SszSchema` for making custom parametrized type without complexity of overriding existing
  * types
  */
-public abstract class AbstractDelegateType<ListTypeT extends SszData>
+public abstract class AbstractDelegateSszSchema<ListTypeT extends SszData>
     implements SszSchema<ListTypeT> {
 
   private final SszSchema<? super ListTypeT> delegate;
 
-  protected AbstractDelegateType(SszSchema<? super ListTypeT> delegate) {
+  protected AbstractDelegateSszSchema(SszSchema<? super ListTypeT> delegate) {
     this.delegate = delegate;
   }
 

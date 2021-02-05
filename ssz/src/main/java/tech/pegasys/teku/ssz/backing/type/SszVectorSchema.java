@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
+import tech.pegasys.teku.ssz.backing.type.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
@@ -42,14 +42,14 @@ public class SszVectorSchema<ElementViewT extends SszData>
   }
 
   SszVectorSchema(SszSchema<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
-    this(elementType, vectorLength, isListBacking, TypeHints.none());
+    this(elementType, vectorLength, isListBacking, SszSchemaHints.none());
   }
 
   SszVectorSchema(
       SszSchema<ElementViewT> elementType,
       long vectorLength,
       boolean isListBacking,
-      TypeHints hints) {
+      SszSchemaHints hints) {
     super(vectorLength, elementType, hints);
     this.isListBacking = isListBacking;
   }

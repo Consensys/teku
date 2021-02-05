@@ -39,10 +39,10 @@ public class SszListSchema<ElementViewT extends SszData>
   private final SszContainerSchema<?> sszContainerSchema;
 
   public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength) {
-    this(elementType, maxLength, TypeHints.none());
+    this(elementType, maxLength, SszSchemaHints.none());
   }
 
-  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength, TypeHints hints) {
+  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength, SszSchemaHints hints) {
     super(maxLength, elementType, hints);
     this.compatibleVectorType =
         new SszVectorSchema<>(getElementType(), getMaxLength(), true, getHints());

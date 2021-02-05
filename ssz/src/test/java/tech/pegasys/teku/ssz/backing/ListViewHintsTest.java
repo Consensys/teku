@@ -37,7 +37,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
-import tech.pegasys.teku.ssz.backing.type.TypeHints;
+import tech.pegasys.teku.ssz.backing.type.SszSchemaHints;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
@@ -185,7 +185,7 @@ public class ListViewHintsTest {
             Stream.of(originalType),
             IntStream.of(0, 1, 2, 4, 8, 10)
                 .filter(i -> (1 << i) < originalType.getMaxLength())
-                .mapToObj(TypeHints::sszSuperNode)
+                .mapToObj(SszSchemaHints::sszSuperNode)
                 .map(
                     typeHints ->
                         new SszListSchema<TElement>(

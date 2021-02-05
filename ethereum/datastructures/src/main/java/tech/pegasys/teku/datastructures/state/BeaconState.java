@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.type.TypeHints;
+import tech.pegasys.teku.ssz.backing.type.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
@@ -87,7 +87,7 @@ public interface BeaconState extends SszContainer {
           "validators",
           () ->
               new SszListSchema<>(
-                  Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, TypeHints.sszSuperNode(8)));
+                  Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, SszSchemaHints.sszSuperNode(8)));
   SszField BALANCES_FIELD =
       new SszField(
           12,

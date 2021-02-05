@@ -21,7 +21,7 @@ import java.util.Optional;
  * A set of hints for {@link SszSchema} classes on strategies to use for optimizing memory or/and
  * performance.
  */
-public class TypeHints {
+public class SszSchemaHints {
 
   private static class TypeHint {}
 
@@ -45,21 +45,21 @@ public class TypeHints {
     }
   }
 
-  public static TypeHints of(TypeHint... hints) {
-    return new TypeHints(Arrays.asList(hints));
+  public static SszSchemaHints of(TypeHint... hints) {
+    return new SszSchemaHints(Arrays.asList(hints));
   }
 
-  public static TypeHints none() {
+  public static SszSchemaHints none() {
     return of();
   }
 
-  public static TypeHints sszSuperNode(int superNodeDepth) {
+  public static SszSchemaHints sszSuperNode(int superNodeDepth) {
     return of(new SszSuperNodeHint(superNodeDepth));
   }
 
   private final List<TypeHint> hints;
 
-  private TypeHints(List<TypeHint> hints) {
+  private SszSchemaHints(List<TypeHint> hints) {
     this.hints = hints;
   }
 

@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.TypeHints.SszSuperNodeHint;
+import tech.pegasys.teku.ssz.backing.type.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
@@ -41,13 +41,13 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
 
   private final long maxLength;
   private final SszSchema<ElementViewT> elementType;
-  private final TypeHints hints;
+  private final SszSchemaHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
   protected SszCollectionSchema(
-      long maxLength, SszSchema<ElementViewT> elementType, TypeHints hints) {
+      long maxLength, SszSchema<ElementViewT> elementType, SszSchemaHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
@@ -270,7 +270,7 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
     }
   }
 
-  public TypeHints getHints() {
+  public SszSchemaHints getHints() {
     return hints;
   }
 
