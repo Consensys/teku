@@ -36,8 +36,8 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
@@ -125,7 +125,7 @@ public class ListViewHintsTest {
 
   static Stream<Arguments> listTypesTestParameters() {
     Random random = new Random(1);
-    ViewType<?> listElementType1 = TestContainer.TYPE;
+    SszSchema<?> listElementType1 = TestContainer.TYPE;
     Supplier<TestContainer> elementSupplier1 =
         () -> {
           Bytes32 bytes32 = Bytes32.random();
@@ -134,15 +134,15 @@ public class ListViewHintsTest {
           return new TestContainer(subContainer, UInt64.fromLongBits(random.nextLong()));
         };
 
-    ViewType<?> listElementType2 = TestSmallContainer.TYPE;
+    SszSchema<?> listElementType2 = TestSmallContainer.TYPE;
     Supplier<TestSmallContainer> elementSupplier2 =
         () -> new TestSmallContainer(random.nextBoolean());
 
-    ViewType<?> listElementType3 = TestByteVectorContainer.TYPE;
+    SszSchema<?> listElementType3 = TestByteVectorContainer.TYPE;
     Supplier<TestByteVectorContainer> elementSupplier3 =
         () -> TestByteVectorContainer.random(random);
 
-    ViewType<?> listElementType4 = TestDoubleSuperContainer.TYPE;
+    SszSchema<?> listElementType4 = TestDoubleSuperContainer.TYPE;
     Supplier<TestDoubleSuperContainer> elementSupplier4 =
         () ->
             new TestDoubleSuperContainer(
@@ -196,7 +196,7 @@ public class ListViewHintsTest {
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
   <TElement extends SszData> void testIdenticalTypes(
-      ViewType<TElement> listElementType,
+      SszSchema<TElement> listElementType,
       long maxListSize,
       Supplier<TElement> listElementsFactory) {
 

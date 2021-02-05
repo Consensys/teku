@@ -27,7 +27,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 /**
  * Responsible for decoding a stream of responses to a single rpc request
@@ -38,10 +38,10 @@ public class RpcResponseDecoder<T extends SszData> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
-  private final ViewType<T> responseType;
+  private final SszSchema<T> responseType;
   private final RpcEncoding encoding;
 
-  public RpcResponseDecoder(ViewType<T> responseType, RpcEncoding encoding) {
+  public RpcResponseDecoder(SszSchema<T> responseType, RpcEncoding encoding) {
     this.responseType = responseType;
     this.encoding = encoding;
   }

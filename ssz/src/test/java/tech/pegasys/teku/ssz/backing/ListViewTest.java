@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
@@ -152,7 +152,7 @@ public class ListViewTest {
   @ParameterizedTest
   @MethodSource("testListSszDeserializeFailsFastWithTooLongDataParameters")
   <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
-      ViewType<T> listElementType, int maxLength) {
+      SszSchema<T> listElementType, int maxLength) {
 
     ListViewType<T> listViewType = new ListViewType<>(listElementType, maxLength);
     ListViewType<T> largerListViewType = new ListViewType<>(listElementType, maxLength + 10);

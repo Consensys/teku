@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to
@@ -35,7 +35,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   public static final Bytes MESSAGE_DOMAIN_VALID_SNAPPY = Bytes.fromHexString("0x01000000");
 
   private final Bytes compressedData;
-  private final ViewType<?> valueType;
+  private final SszSchema<?> valueType;
   private final SnappyBlockCompressor snappyCompressor;
   private final Supplier<Optional<Bytes>> uncompressed =
       Suppliers.memoize(this::maybeUncompressPayload);
@@ -46,12 +46,12 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   }
 
   static SnappyPreparedGossipMessage create(
-      Bytes compressedData, ViewType<?> valueType, SnappyBlockCompressor snappyCompressor) {
+      Bytes compressedData, SszSchema<?> valueType, SnappyBlockCompressor snappyCompressor) {
     return new SnappyPreparedGossipMessage(compressedData, valueType, snappyCompressor);
   }
 
   private SnappyPreparedGossipMessage(
-      Bytes compressedData, ViewType<?> valueType, SnappyBlockCompressor snappyCompressor) {
+      Bytes compressedData, SszSchema<?> valueType, SnappyBlockCompressor snappyCompressor) {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;

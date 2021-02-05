@@ -20,14 +20,14 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
 public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private final ViewType<T> type;
+  private final SszSchema<T> type;
 
-  public DefaultRpcPayloadEncoder(ViewType<T> type) {
+  public DefaultRpcPayloadEncoder(SszSchema<T> type) {
     this.type = type;
   }
 

@@ -40,7 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @Command(
@@ -171,7 +171,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private <T extends SszData> T deserialize(
-      final Bytes data, final ViewType<T> type, final String descriptor) {
+      final Bytes data, final SszSchema<T> type, final String descriptor) {
     try {
       return type.sszDeserialize(data);
     } catch (final IllegalArgumentException e) {

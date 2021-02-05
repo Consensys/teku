@@ -38,11 +38,11 @@ public class ListViewType<ElementViewT extends SszData>
   private final VectorViewType<ElementViewT> compatibleVectorType;
   private final ContainerViewType<?> containerViewType;
 
-  public ListViewType(ViewType<ElementViewT> elementType, long maxLength) {
+  public ListViewType(SszSchema<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }
 
-  public ListViewType(ViewType<ElementViewT> elementType, long maxLength, TypeHints hints) {
+  public ListViewType(SszSchema<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
     this.compatibleVectorType =
         new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
@@ -87,7 +87,7 @@ public class ListViewType<ElementViewT extends SszData>
   @Override
   public int getVariablePartSize(TreeNode node) {
     int length = getLength(node);
-    ViewType<?> elementType = getElementType();
+    SszSchema<?> elementType = getElementType();
     if (elementType.isFixedSize()) {
       if (elementType.getBitsSize() == 1) {
         // Bitlist is handled specially

@@ -53,10 +53,10 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
-  private final Supplier<ViewType<T>> sszType;
+  private final Supplier<SszSchema<T>> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
@@ -103,11 +103,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
-  public SszTestExecutor(final SpecDependent<? extends ViewType<T>> sszType) {
+  public SszTestExecutor(final SpecDependent<? extends SszSchema<T>> sszType) {
     this.sszType = sszType::get;
   }
 
-  public SszTestExecutor(final ViewType<T> sszType) {
+  public SszTestExecutor(final SszSchema<T> sszType) {
     this.sszType = () -> sszType;
   }
 

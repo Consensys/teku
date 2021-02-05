@@ -22,15 +22,15 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
- * Helper `ViewType` for making custom parametrized type without complexity of overriding existing
+ * Helper `SszSchema` for making custom parametrized type without complexity of overriding existing
  * types
  */
 public abstract class AbstractDelegateType<ListTypeT extends SszData>
-    implements ViewType<ListTypeT> {
+    implements SszSchema<ListTypeT> {
 
-  private final ViewType<? super ListTypeT> delegate;
+  private final SszSchema<? super ListTypeT> delegate;
 
-  protected AbstractDelegateType(ViewType<? super ListTypeT> delegate) {
+  protected AbstractDelegateType(SszSchema<? super ListTypeT> delegate) {
     this.delegate = delegate;
   }
 

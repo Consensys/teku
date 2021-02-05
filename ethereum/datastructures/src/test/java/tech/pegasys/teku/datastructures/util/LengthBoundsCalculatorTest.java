@@ -50,7 +50,7 @@ import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -74,7 +74,7 @@ public class LengthBoundsCalculatorTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateParameters")
-  void shouldCalculateCorrectLengthBounds(final ViewType<?> type, final SszLengthBounds expected) {
+  void shouldCalculateCorrectLengthBounds(final SszSchema<?> type, final SszLengthBounds expected) {
     assertThat(type.getSszLengthBounds()).isEqualTo(expected);
   }
 

@@ -24,15 +24,15 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class CompositeListViewTest {
 
-  static ViewType<TestView> testType =
-      new ViewType<>() {
+  static SszSchema<TestView> testType =
+      new SszSchema<>() {
 
         @Override
         public TreeNode getDefaultTree() {
@@ -99,7 +99,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewType<?> getType() {
+    public SszSchema<?> getType() {
       return testType;
     }
 

@@ -49,7 +49,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -134,7 +134,7 @@ public class ForkChoiceTestExecutor {
   }
 
   private static <T extends SszData> T resolvePart(
-      Class<T> clazz, ViewType<T> type, File testFile, Object value) {
+      Class<T> clazz, SszSchema<T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {

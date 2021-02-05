@@ -23,7 +23,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public abstract class AbstractGossipManager<T extends SszData> {
 
@@ -57,7 +57,7 @@ public abstract class AbstractGossipManager<T extends SszData> {
     this.subscriberId = publisher.subscribe(this::publishMessage);
   }
 
-  protected abstract ViewType<T> getGossipType();
+  protected abstract SszSchema<T> getGossipType();
 
   protected void publishMessage(T message) {
     final Bytes data = gossipEncoding.encode(message);

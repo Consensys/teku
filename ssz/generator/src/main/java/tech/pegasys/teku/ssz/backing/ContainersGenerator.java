@@ -89,7 +89,7 @@ public class ContainersGenerator {
             Map.entry(
                 "FieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "ViewType<V" + i + "> fieldType" + i)
+                    .mapToObj(i -> "SszSchema<V" + i + "> fieldType" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "NamedFieldsDeclarations",
@@ -133,8 +133,8 @@ public class ContainersGenerator {
                     .mapToObj(
                         i ->
                             ("  @SuppressWarnings(\"unchecked\")\n"
-                                    + "  public ViewType<V$> getFieldType$() {\n"
-                                    + "    return (ViewType<V$>) getChildType($);\n"
+                                    + "  public SszSchema<V$> getFieldType$() {\n"
+                                    + "    return (SszSchema<V$>) getChildType($);\n"
                                     + "  }\n")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));

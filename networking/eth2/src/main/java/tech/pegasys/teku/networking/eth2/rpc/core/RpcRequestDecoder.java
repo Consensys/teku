@@ -22,7 +22,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedE
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 /**
  * A decoder responsible for handling a single rpc request
@@ -33,7 +33,7 @@ public class RpcRequestDecoder<T extends RpcRequest & SszData> {
   private final RpcByteBufDecoder<T> decoder;
   private boolean complete;
 
-  public RpcRequestDecoder(final ViewType<T> requestType, final RpcEncoding encoding) {
+  public RpcRequestDecoder(final SszSchema<T> requestType, final RpcEncoding encoding) {
     this.decoder = encoding.createDecoder(requestType);
   }
 

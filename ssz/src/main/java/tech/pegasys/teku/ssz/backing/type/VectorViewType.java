@@ -37,16 +37,16 @@ public class VectorViewType<ElementViewT extends SszData>
 
   private final boolean isListBacking;
 
-  public VectorViewType(ViewType<ElementViewT> elementType, long vectorLength) {
+  public VectorViewType(SszSchema<ElementViewT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  VectorViewType(ViewType<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
+  VectorViewType(SszSchema<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
   VectorViewType(
-      ViewType<ElementViewT> elementType,
+      SszSchema<ElementViewT> elementType,
       long vectorLength,
       boolean isListBacking,
       TypeHints hints) {

@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A set of hints for {@link ViewType} classes on strategies to use for optimizing memory or/and
+ * A set of hints for {@link SszSchema} classes on strategies to use for optimizing memory or/and
  * performance.
  */
 public class TypeHints {

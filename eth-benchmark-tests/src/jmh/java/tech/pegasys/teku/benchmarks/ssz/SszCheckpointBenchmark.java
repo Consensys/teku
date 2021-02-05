@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszCheckpointBenchmark extends SszAbstractContainerBenchmark<Checkpoint> {
 
@@ -29,7 +29,7 @@ public class SszCheckpointBenchmark extends SszAbstractContainerBenchmark<Checkp
   }
 
   @Override
-  protected ViewType<Checkpoint> getContainerType() {
+  protected SszSchema<Checkpoint> getContainerType() {
     return Checkpoint.TYPE;
   }
 

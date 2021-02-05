@@ -34,7 +34,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
@@ -88,11 +88,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .build();
 
   private final String dataFileName;
-  private final ViewType<T> dataType;
+  private final SszSchema<T> dataType;
   private final StateOperation<T> operation;
 
   public OperationsTestExecutor(
-      final String dataFileName, final ViewType<T> dataType, final StateOperation<T> operation) {
+      final String dataFileName, final SszSchema<T> dataType, final StateOperation<T> operation) {
     this.dataFileName = dataFileName;
     this.dataType = dataType;
     this.operation = operation;

@@ -40,7 +40,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class IsVariableTest {
 
@@ -74,13 +74,13 @@ public class IsVariableTest {
 
   @ParameterizedTest
   @MethodSource("variableSizeTypes")
-  void testTheTypeIsVariableSize(ViewType<?> type) {
+  void testTheTypeIsVariableSize(SszSchema<?> type) {
     assertFalse(type.isFixedSize());
   }
 
   @ParameterizedTest
   @MethodSource("fixedSizeTypes")
-  void testTheTypeIsFixedSize(ViewType<?> type) {
+  void testTheTypeIsFixedSize(SszSchema<?> type) {
     assertTrue(type.isFixedSize());
   }
 }

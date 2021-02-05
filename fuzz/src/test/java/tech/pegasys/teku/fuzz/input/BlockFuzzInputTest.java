@@ -15,12 +15,12 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class BlockFuzzInputTest extends AbstractFuzzInputTest<BlockFuzzInput> {
 
   @Override
-  protected ViewType<BlockFuzzInput> getInputType() {
+  protected SszSchema<BlockFuzzInput> getInputType() {
     return BlockFuzzInput.createType();
   }
 

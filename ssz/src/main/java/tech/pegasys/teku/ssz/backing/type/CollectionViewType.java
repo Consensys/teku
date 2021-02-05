@@ -40,14 +40,14 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
     implements CompositeViewType<ViewT> {
 
   private final long maxLength;
-  private final ViewType<ElementViewT> elementType;
+  private final SszSchema<ElementViewT> elementType;
   private final TypeHints hints;
   protected final Supplier<SszNodeTemplate> elementSszSupernodeTemplate =
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
   protected CollectionViewType(
-      long maxLength, ViewType<ElementViewT> elementType, TypeHints hints) {
+      long maxLength, SszSchema<ElementViewT> elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
     this.hints = hints;
@@ -68,12 +68,12 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
     return maxLength;
   }
 
-  public ViewType<ElementViewT> getElementType() {
+  public SszSchema<ElementViewT> getElementType() {
     return elementType;
   }
 
   @Override
-  public ViewType<?> getChildType(int index) {
+  public SszSchema<?> getChildType(int index) {
     return getElementType();
   }
 
@@ -127,7 +127,7 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
   }
 
   private int sszSerializeVariableVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
-    ViewType<?> elementType = getElementType();
+    SszSchema<?> elementType = getElementType();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));

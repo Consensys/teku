@@ -16,7 +16,7 @@ package tech.pegasys.teku.ssz.backing;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
@@ -33,7 +33,7 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
   SszMutableData createWritableCopy();
 
   /** Gets the type of this structure */
-  ViewType<? extends SszData> getType();
+  SszSchema<? extends SszData> getType();
 
   /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();

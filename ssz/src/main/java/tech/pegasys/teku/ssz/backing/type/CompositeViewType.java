@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Abstract type of {@link SszComposite} views */
-public interface CompositeViewType<ViewT extends SszData> extends ViewType<ViewT> {
+public interface CompositeViewType<ViewT extends SszData> extends SszSchema<ViewT> {
 
   /**
    * Returns the maximum number of elements in views of this type. For views with fixed number of
@@ -34,7 +34,7 @@ public interface CompositeViewType<ViewT extends SszData> extends ViewType<ViewT
    *
    * @throws IndexOutOfBoundsException if index >= getMaxLength
    */
-  ViewType<?> getChildType(int index);
+  SszSchema<?> getChildType(int index);
 
   /**
    * Return the number of elements that may be stored in a single tree node This value is 1 for all

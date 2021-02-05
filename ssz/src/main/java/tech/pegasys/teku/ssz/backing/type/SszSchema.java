@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface ViewType<V extends SszData> extends SszType {
+public interface SszSchema<V extends SszData> extends SszType {
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally

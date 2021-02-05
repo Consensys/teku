@@ -27,7 +27,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszSnappyGossipEncodingTest {
 
@@ -38,7 +38,7 @@ public class SszSnappyGossipEncodingTest {
     return GossipEncoding.SSZ_SNAPPY;
   }
 
-  private <T extends SszData> T decode(GossipEncoding encoding, Bytes data, ViewType<T> valueType)
+  private <T extends SszData> T decode(GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
       throws DecodingException {
     return encoding.decodeMessage(encoding.prepareMessage(data, valueType), valueType);
   }

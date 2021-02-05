@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-/** Collection of SSZ related methods for {@link ViewType} */
+/** Collection of SSZ related methods for {@link SszSchema} */
 public interface SszType {
 
   // the size of SSZ UIn32 lengths and offsets

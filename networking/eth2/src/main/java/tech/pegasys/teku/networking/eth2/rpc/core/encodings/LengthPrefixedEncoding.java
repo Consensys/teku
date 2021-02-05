@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 /**
  * Represents an rpc payload encoding where the header consists of a single protobuf varint holding
@@ -63,7 +63,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
       return Bytes.EMPTY;
     }
     final RpcPayloadEncoder<T> payloadEncoder =
-        payloadEncoders.getEncoder((ViewType<T>) message.getType());
+        payloadEncoders.getEncoder((SszSchema<T>) message.getType());
     final Bytes payload = payloadEncoder.encode(message);
     if (payload.isEmpty()) {
       return payload;
@@ -72,7 +72,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T extends SszData> RpcByteBufDecoder<T> createDecoder(ViewType<T> payloadType) {
+  public <T extends SszData> RpcByteBufDecoder<T> createDecoder(SszSchema<T> payloadType) {
     if (payloadType.equals(EmptyMessage.TYPE)) {
       return getEmptyMessageDecoder();
     } else {

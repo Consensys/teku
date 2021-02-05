@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  *
  * @param <C> Class of the basic view of this type
  */
-public abstract class BasicViewType<C extends SszData> implements ViewType<C> {
+public abstract class BasicViewType<C extends SszData> implements SszSchema<C> {
 
   private final int bitsSize;
 

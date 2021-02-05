@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public interface GossipEncoding {
 
@@ -39,19 +39,19 @@ public interface GossipEncoding {
 
   /**
    * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
-   * {@link #decodeMessage(PreparedGossipMessage, ViewType)}
+   * {@link #decodeMessage(PreparedGossipMessage, SszSchema)}
    *
    * <p>If there is a problem while preprocessing a message the error should be memorized and later
    * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
-   * ViewType)}
+   * SszSchema)}
    *
    * @param data Data received over gossip to be deserialized
    * @param valueType The concrete type to deserialize to
    */
-  <T extends SszData> PreparedGossipMessage prepareMessage(Bytes data, ViewType<T> valueType);
+  <T extends SszData> PreparedGossipMessage prepareMessage(Bytes data, SszSchema<T> valueType);
 
   /**
-   * Fallback for {@link #prepareMessage(Bytes, ViewType)} for the case when decoded {@code
+   * Fallback for {@link #prepareMessage(Bytes, SszSchema)} for the case when decoded {@code
    * valueType} is unknown
    *
    * @param data raw Gossip message data
@@ -62,11 +62,11 @@ public interface GossipEncoding {
    * Decodes preprocessed message
    *
    * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
-   *     ViewType)}
+   *     SszSchema)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T extends SszData> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
+  <T extends SszData> T decodeMessage(PreparedGossipMessage message, SszSchema<T> valueType)
       throws DecodingException;
 }

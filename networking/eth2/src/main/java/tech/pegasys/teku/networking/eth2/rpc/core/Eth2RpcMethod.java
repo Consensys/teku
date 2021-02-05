@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcMethod {
@@ -30,8 +30,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
 
   private final String methodMultistreamId;
   private final RpcEncoding encoding;
-  private final ViewType<TRequest> requestType;
-  private final ViewType<TResponse> responseType;
+  private final SszSchema<TRequest> requestType;
+  private final SszSchema<TResponse> responseType;
   private final boolean expectResponseToRequest;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
@@ -43,8 +43,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
       final AsyncRunner asyncRunner,
       final String methodMultistreamId,
       final RpcEncoding encoding,
-      final ViewType<TRequest> requestType,
-      final ViewType<TResponse> responseType,
+      final SszSchema<TRequest> requestType,
+      final SszSchema<TResponse> responseType,
       final boolean expectResponseToRequest,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
@@ -64,11 +64,11 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
     return methodMultistreamId;
   }
 
-  public ViewType<TRequest> getRequestType() {
+  public SszSchema<TRequest> getRequestType() {
     return requestType;
   }
 
-  public ViewType<TResponse> getResponseType() {
+  public SszSchema<TResponse> getResponseType() {
     return responseType;
   }
 

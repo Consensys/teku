@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.fuzz.FuzzUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public abstract class AbstractFuzzInputTest<T extends SszData> {
 
@@ -41,7 +41,7 @@ public abstract class AbstractFuzzInputTest<T extends SszData> {
     assertThat(deserialized).isEqualTo(original);
   }
 
-  protected abstract ViewType<T> getInputType();
+  protected abstract SszSchema<T> getInputType();
 
   protected abstract T createInput();
 }
