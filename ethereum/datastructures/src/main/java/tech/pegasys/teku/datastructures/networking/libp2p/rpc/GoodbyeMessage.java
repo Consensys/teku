@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema1;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     implements RpcRequest {
 
-  public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, SszUInt64> {
+  public static class GoodbyeMessageType extends ContainerSchema1<GoodbyeMessage, SszUInt64> {
 
     public GoodbyeMessageType() {
       super("GoodbyeMessage", namedSchema("reason", SszPrimitiveSchemas.UINT64_SCHEMA));

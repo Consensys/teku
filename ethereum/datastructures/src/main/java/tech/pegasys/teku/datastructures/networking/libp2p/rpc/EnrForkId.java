@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
   public static class EnrForkIdType
-      extends ContainerType3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
+      extends ContainerSchema3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
     public EnrForkIdType() {
       super(

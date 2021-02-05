@@ -16,7 +16,7 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
@@ -26,13 +26,13 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class BlockHeaderFuzzInput
     extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> {
 
-  public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
-    return ContainerType2.create(
+  public static ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
+    return ContainerSchema2.create(
         BeaconState.getSszType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
   }
 
   private BlockHeaderFuzzInput(
-      ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
+      ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

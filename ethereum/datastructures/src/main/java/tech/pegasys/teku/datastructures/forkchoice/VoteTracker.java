@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.forkchoice;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
   public static class VoteTrackerType
-      extends ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
+      extends ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
     public VoteTrackerType() {
       super(
@@ -45,7 +45,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
-      ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
+      ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

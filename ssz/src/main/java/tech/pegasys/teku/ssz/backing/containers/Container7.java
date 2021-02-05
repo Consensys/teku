@@ -29,16 +29,17 @@ public class Container7<
         V6 extends SszData>
     extends AbstractSszImmutableContainer {
 
-  protected Container7(ContainerType7<C, V0, V1, V2, V3, V4, V5, V6> type) {
-    super(type);
-  }
-
-  protected Container7(ContainerType7<C, V0, V1, V2, V3, V4, V5, V6> type, TreeNode backingNode) {
-    super(type, backingNode);
+  protected Container7(ContainerSchema7<C, V0, V1, V2, V3, V4, V5, V6> schema) {
+    super(schema);
   }
 
   protected Container7(
-      ContainerType7<C, V0, V1, V2, V3, V4, V5, V6> type,
+      ContainerSchema7<C, V0, V1, V2, V3, V4, V5, V6> schema, TreeNode backingNode) {
+    super(schema, backingNode);
+  }
+
+  protected Container7(
+      ContainerSchema7<C, V0, V1, V2, V3, V4, V5, V6> schema,
       V0 arg0,
       V1 arg1,
       V2 arg2,
@@ -46,7 +47,7 @@ public class Container7<
       V4 arg4,
       V5 arg5,
       V6 arg6) {
-    super(type, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    super(schema, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
   }
 
   protected V0 getField0() {

@@ -20,7 +20,7 @@ import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
@@ -31,7 +31,7 @@ public class SignedBeaconBlock
     implements BeaconBlockSummary {
 
   public static class SignedBeaconBlockType
-      extends ContainerType2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
+      extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
 
     public SignedBeaconBlockType() {
       super(

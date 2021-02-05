@@ -47,7 +47,7 @@ public interface SszMutableComposite<SszChildT extends SszData>
   void set(int index, SszChildT value);
 
   /**
-   * Similar to {@link #set(int, SszChildT)} but using modifier function which may consider old
+   * Similar to {@link #set(int, SszData)} but using modifier function which may consider old
    * value to calculate new value. The implementation may potentially optimize this case.
    */
   default void update(int index, Function<SszChildT, SszChildT> mutator) {

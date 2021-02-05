@@ -16,18 +16,18 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
 
-  public static ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
-    return ContainerType2.create(
+  public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
+    return ContainerSchema2.create(
         BeaconState.getSszType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(
-      ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type, TreeNode backingNode) {
+      ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

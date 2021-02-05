@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -36,7 +36,7 @@ public class IndexedAttestation
         IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
   public static class IndexedAttestationType
-      extends ContainerType3<
+      extends ContainerSchema3<
           IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
     public IndexedAttestationType() {
@@ -51,7 +51,7 @@ public class IndexedAttestation
     }
 
     public SszListSchema<SszUInt64> getAttestingIndicesType() {
-      return (SszListSchema<SszUInt64>) getFieldType0();
+      return (SszListSchema<SszUInt64>) getFieldSchema0();
     }
 
     @Override

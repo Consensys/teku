@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -146,17 +146,18 @@ public class TestContainers {
   public static class VariableSizeContainer
       extends Container3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64> {
 
-    public static final ContainerType3<
+    public static final ContainerSchema3<
             VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
         TYPE =
-            ContainerType3.create(
+            ContainerSchema3.create(
                 TestSubContainer.TYPE,
                 new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 VariableSizeContainer::new);
 
     private VariableSizeContainer(
-        ContainerType3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64> type,
+        ContainerSchema3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
+            type,
         TreeNode backingNode) {
       super(type, backingNode);
     }

@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -32,7 +32,7 @@ public class HistoricalBatch
     extends Container2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
 
   public static class HistoricalBatchType
-      extends ContainerType2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
+      extends ContainerSchema2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
 
     public HistoricalBatchType() {
       super(
@@ -57,11 +57,11 @@ public class HistoricalBatch
     }
 
     public SszVectorSchema<SszBytes32> getBlockRootsType() {
-      return (SszVectorSchema<SszBytes32>) getFieldType0();
+      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
     }
 
     public SszVectorSchema<SszBytes32> getStateRootsType() {
-      return (SszVectorSchema<SszBytes32>) getFieldType1();
+      return (SszVectorSchema<SszBytes32>) getFieldSchema1();
     }
   }
 

@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,7 +33,7 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
     implements RpcRequest {
 
   public static class MetadataMessageType
-      extends ContainerType2<MetadataMessage, SszUInt64, SszVector<SszBit>> {
+      extends ContainerSchema2<MetadataMessage, SszUInt64, SszVector<SszBit>> {
 
     public MetadataMessageType() {
       super(

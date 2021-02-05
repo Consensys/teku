@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -28,7 +28,7 @@ public class BeaconBlockHeader
     implements BeaconBlockSummary {
 
   public static class BeaconBlockHeaderType
-      extends ContainerType5<
+      extends ContainerSchema5<
           BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32> {
 
     public BeaconBlockHeaderType() {

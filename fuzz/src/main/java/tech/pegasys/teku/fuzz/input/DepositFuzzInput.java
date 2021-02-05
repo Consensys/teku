@@ -16,17 +16,17 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  public static ContainerType2<DepositFuzzInput, BeaconState, Deposit> createType() {
-    return ContainerType2.create(BeaconState.getSszType(), Deposit.TYPE, DepositFuzzInput::new);
+  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createType() {
+    return ContainerSchema2.create(BeaconState.getSszType(), Deposit.TYPE, DepositFuzzInput::new);
   }
 
   public DepositFuzzInput(
-      ContainerType2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
+      ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

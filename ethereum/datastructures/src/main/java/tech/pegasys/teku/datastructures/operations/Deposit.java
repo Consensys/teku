@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositData> {
 
   public static class DepositType
-      extends ContainerType2<Deposit, SszVector<SszBytes32>, DepositData> {
+      extends ContainerSchema2<Deposit, SszVector<SszBytes32>, DepositData> {
 
     public DepositType() {
       super(
@@ -43,7 +43,7 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
     }
 
     public SszVectorSchema<SszBytes32> getProofType() {
-      return (SszVectorSchema<SszBytes32>) getFieldType0();
+      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
     }
 
     @Override

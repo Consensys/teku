@@ -19,7 +19,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -42,7 +42,7 @@ public class Validator
         SszUInt64> {
 
   public static class ValidatorType
-      extends ContainerType8<
+      extends ContainerSchema8<
           Validator,
           SszVector<SszByte>,
           SszBytes32,

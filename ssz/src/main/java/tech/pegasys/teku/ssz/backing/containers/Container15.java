@@ -38,18 +38,19 @@ public class Container15<
     extends AbstractSszImmutableContainer {
 
   protected Container15(
-      ContainerType15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> type) {
-    super(type);
+      ContainerSchema15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14>
+          schema) {
+    super(schema);
   }
 
   protected Container15(
-      ContainerType15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> type,
+      ContainerSchema15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> schema,
       TreeNode backingNode) {
-    super(type, backingNode);
+    super(schema, backingNode);
   }
 
   protected Container15(
-      ContainerType15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> type,
+      ContainerSchema15<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> schema,
       V0 arg0,
       V1 arg1,
       V2 arg2,
@@ -66,7 +67,7 @@ public class Container15<
       V13 arg13,
       V14 arg14) {
     super(
-        type, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12,
+        schema, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12,
         arg13, arg14);
   }
 

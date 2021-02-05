@@ -15,7 +15,7 @@ package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
   public static class VoluntaryExitType
-      extends ContainerType2<VoluntaryExit, SszUInt64, SszUInt64> {
+      extends ContainerSchema2<VoluntaryExit, SszUInt64, SszUInt64> {
 
     public VoluntaryExitType() {
       super(

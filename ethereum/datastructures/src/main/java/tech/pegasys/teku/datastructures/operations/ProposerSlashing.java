@@ -15,14 +15,14 @@ package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
   public static class ProposerSlashingType
-      extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
+      extends ContainerSchema2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
     public ProposerSlashingType() {
       super(

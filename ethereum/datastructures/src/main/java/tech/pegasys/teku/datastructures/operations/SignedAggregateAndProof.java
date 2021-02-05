@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.operations;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
@@ -26,7 +26,7 @@ public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
   public static class SignedAggregateAndProofType
-      extends ContainerType2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
+      extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
     public SignedAggregateAndProofType() {
       super(

@@ -21,16 +21,16 @@ import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 public class Container2<C extends Container2<C, V0, V1>, V0 extends SszData, V1 extends SszData>
     extends AbstractSszImmutableContainer {
 
-  protected Container2(ContainerType2<C, V0, V1> type) {
-    super(type);
+  protected Container2(ContainerSchema2<C, V0, V1> schema) {
+    super(schema);
   }
 
-  protected Container2(ContainerType2<C, V0, V1> type, TreeNode backingNode) {
-    super(type, backingNode);
+  protected Container2(ContainerSchema2<C, V0, V1> schema, TreeNode backingNode) {
+    super(schema, backingNode);
   }
 
-  protected Container2(ContainerType2<C, V0, V1> type, V0 arg0, V1 arg1) {
-    super(type, arg0, arg1);
+  protected Container2(ContainerSchema2<C, V0, V1> schema, V0 arg0, V1 arg1) {
+    super(schema, arg0, arg1);
   }
 
   protected V0 getField0() {

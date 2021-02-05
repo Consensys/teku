@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -32,7 +32,7 @@ public class StatusMessage
     implements RpcRequest {
 
   public static class StatusMessageType
-      extends ContainerType5<
+      extends ContainerSchema5<
           StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
 
     public StatusMessageType() {

@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -51,7 +51,7 @@ public class BeaconBlockBody
         SszList<SignedVoluntaryExit>> {
 
   public static class BeaconBlockBodyType
-      extends ContainerType8<
+      extends ContainerSchema8<
           BeaconBlockBody,
           SszVector<SszByte>,
           Eth1Data,
@@ -83,23 +83,23 @@ public class BeaconBlockBody
     }
 
     public SszListSchema<ProposerSlashing> getProposerSlashingsType() {
-      return (SszListSchema<ProposerSlashing>) getFieldType3();
+      return (SszListSchema<ProposerSlashing>) getFieldSchema3();
     }
 
     public SszListSchema<AttesterSlashing> getAttesterSlashingsType() {
-      return (SszListSchema<AttesterSlashing>) getFieldType4();
+      return (SszListSchema<AttesterSlashing>) getFieldSchema4();
     }
 
     public SszListSchema<Attestation> getAttestationsType() {
-      return (SszListSchema<Attestation>) getFieldType5();
+      return (SszListSchema<Attestation>) getFieldSchema5();
     }
 
     public SszListSchema<Deposit> getDepositsType() {
-      return (SszListSchema<Deposit>) getFieldType6();
+      return (SszListSchema<Deposit>) getFieldSchema6();
     }
 
     public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsType() {
-      return (SszListSchema<SignedVoluntaryExit>) getFieldType7();
+      return (SszListSchema<SignedVoluntaryExit>) getFieldSchema7();
     }
 
     @Override

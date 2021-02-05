@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.state;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static class ForkType extends ContainerType3<Fork, SszBytes4, SszBytes4, SszUInt64> {
+  public static class ForkType extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
     public ForkType() {
       super(

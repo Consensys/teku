@@ -19,7 +19,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -32,7 +32,7 @@ public class DepositMessage
     extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
   public static class DepositMessageType
-      extends ContainerType3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
+      extends ContainerSchema3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
     public DepositMessageType() {
       super(

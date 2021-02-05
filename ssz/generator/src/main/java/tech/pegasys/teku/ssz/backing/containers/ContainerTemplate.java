@@ -26,22 +26,24 @@ public class /*$$ViewClassName*/ ContainerTemplate /*$$*/<
     extends AbstractSszImmutableContainer {
 
   protected /*$$ViewClassName*/ ContainerTemplate /*$$*/(
-      /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/> type) {
-    super(type);
+      /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
+          schema) {
+    super(schema);
   }
 
   protected /*$$ViewClassName*/ ContainerTemplate /*$$*/(
-      /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/> type,
+      /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
+          schema,
       TreeNode backingNode) {
-    super(type, backingNode);
+    super(schema, backingNode);
   }
 
   protected /*$$ViewClassName*/ ContainerTemplate /*$$*/(
-      /*$$TypeClassName*/ ContainerTypeTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
-          type, /*$$ViewParams*/
+      /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
+          schema, /*$$ViewParams*/
       V0 arg1,
       V1 arg2 /*$$*/) {
-    super(type, /*$$ViewArgs*/ arg1, arg2 /*$$*/);
+    super(schema, /*$$ViewArgs*/ arg1, arg2 /*$$*/);
   }
 
   /*$$Getters*/

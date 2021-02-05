@@ -21,14 +21,14 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
   public static class AttesterSlashingType
-      extends ContainerType2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+      extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
     public AttesterSlashingType() {
       super(

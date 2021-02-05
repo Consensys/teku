@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema4;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -31,7 +31,7 @@ public class PendingAttestation
     extends Container4<PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
   public static class PendingAttestationType
-      extends ContainerType4<
+      extends ContainerSchema4<
           PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
     public PendingAttestationType() {
@@ -45,7 +45,7 @@ public class PendingAttestation
     }
 
     public SszBitListSchema getAggregationBitfieldType() {
-      return (SszBitListSchema) getFieldType0();
+      return (SszBitListSchema) getFieldSchema0();
     }
 
     @Override

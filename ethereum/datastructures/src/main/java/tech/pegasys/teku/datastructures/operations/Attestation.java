@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -35,7 +35,7 @@ public class Attestation
     extends Container3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
   public static class AttestationType
-      extends ContainerType3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
+      extends ContainerSchema3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
     public AttestationType() {
       super(
@@ -47,7 +47,7 @@ public class Attestation
     }
 
     public SszBitListSchema getAggregationBitsType() {
-      return (SszBitListSchema) getFieldType0();
+      return (SszBitListSchema) getFieldSchema0();
     }
 
     @Override

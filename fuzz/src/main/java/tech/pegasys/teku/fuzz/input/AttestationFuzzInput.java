@@ -16,19 +16,19 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  public static ContainerType2<AttestationFuzzInput, BeaconState, Attestation> createType() {
-    return ContainerType2.create(
+  public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createType() {
+    return ContainerSchema2.create(
         BeaconState.getSszType(), Attestation.TYPE, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
-      ContainerType2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
+      ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

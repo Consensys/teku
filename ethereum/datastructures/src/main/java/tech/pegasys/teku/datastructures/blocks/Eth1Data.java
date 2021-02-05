@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.blocks;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
   public static class Eth1DataType
-      extends ContainerType3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
+      extends ContainerSchema3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
     public Eth1DataType() {
       super(
