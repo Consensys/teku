@@ -19,36 +19,35 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
-    extends Container3<
-        Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+    extends Container3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
-  public static class AttestationType
-      extends ContainerType3<
-          Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+  public static class AttestationSchema
+      extends ContainerSchema3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
-    public AttestationType() {
+    public AttestationSchema() {
       super(
           "Attestation",
-          namedType("aggregation_bits", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedSchema(
+              "aggregation_bits", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public BitListType getAggregationBitsType() {
-      return (BitListType) getFieldType0();
+    public SszBitListSchema getAggregationBitsSchema() {
+      return (SszBitListSchema) getFieldSchema0();
     }
 
     @Override
@@ -57,27 +56,27 @@ public class Attestation
     }
   }
 
-  public static final AttestationType TYPE = new AttestationType();
+  public static final AttestationSchema SSZ_SCHEMA = new AttestationSchema();
 
   private Bitlist aggregationBitsCache;
   private BLSSignature signatureCache;
 
-  private Attestation(AttestationType type, TreeNode backingNode) {
+  private Attestation(AttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
-        TYPE,
-        ViewUtils.createBitlistView(TYPE.getAggregationBitsType(), aggregation_bits),
+        SSZ_SCHEMA,
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitsSchema(), aggregation_bits),
         data,
-        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;
     signatureCache = signature;
   }
 
   public Attestation() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public static Bitlist createEmptyAggregationBits() {
@@ -95,7 +94,7 @@ public class Attestation
 
   public Bitlist getAggregation_bits() {
     if (aggregationBitsCache == null) {
-      aggregationBitsCache = ViewUtils.getBitlist(getField0());
+      aggregationBitsCache = SszUtils.getBitlist(getField0());
     }
     return aggregationBitsCache;
   }
@@ -106,7 +105,7 @@ public class Attestation
 
   public BLSSignature getAggregate_signature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return signatureCache;
   }

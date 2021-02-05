@@ -34,7 +34,7 @@ class GoodbyeMessageTest {
 
   @Test
   public void shouldDeserializeFromSsz() {
-    final GoodbyeMessage result = GoodbyeMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
+    final GoodbyeMessage result = GoodbyeMessage.SSZ_SCHEMA.sszDeserialize(EXPECTED_SSZ);
     assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }

@@ -18,26 +18,26 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedBeaconBlock
-    extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
+    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
     implements BeaconBlockSummary {
 
-  public static class SignedBeaconBlockType
-      extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
+  public static class SignedBeaconBlockSchema
+      extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
 
-    public SignedBeaconBlockType() {
+    public SignedBeaconBlockSchema() {
       super(
           "SignedBeaconBlock",
-          namedType("message", BeaconBlock.TYPE.get()),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -46,27 +46,27 @@ public class SignedBeaconBlock
     }
   }
 
-  public static SignedBeaconBlockType getSszType() {
-    return TYPE.get();
+  public static SignedBeaconBlockSchema getSszSchema() {
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<SignedBeaconBlockType> TYPE =
-      SpecDependent.of(SignedBeaconBlockType::new);
+  public static final SpecDependent<SignedBeaconBlockSchema> SSZ_SCHEMA =
+      SpecDependent.of(SignedBeaconBlockSchema::new);
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlock(SignedBeaconBlockType type, TreeNode backingNode) {
+  private SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   @Deprecated
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    this(TYPE.get(), message, signature);
+    this(SSZ_SCHEMA.get(), message, signature);
   }
 
   public SignedBeaconBlock(
-      final SignedBeaconBlockType type, final BeaconBlock message, final BLSSignature signature) {
-    super(type, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+      final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
+    super(type, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
@@ -76,7 +76,7 @@ public class SignedBeaconBlock
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
     return signatureCache;
   }

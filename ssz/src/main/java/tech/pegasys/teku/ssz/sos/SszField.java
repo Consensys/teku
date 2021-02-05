@@ -14,26 +14,26 @@
 package tech.pegasys.teku.ssz.sos;
 
 import java.util.function.Supplier;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszField {
   private final int index;
   private final String name;
-  private final Supplier<ViewType<?>> viewType;
+  private final Supplier<SszSchema<?>> viewType;
 
-  public SszField(int index, ViewType<?> viewType) {
-    this(index, () -> viewType);
+  public SszField(int index, SszSchema<?> sszSchema) {
+    this(index, () -> sszSchema);
   }
 
-  public SszField(int index, Supplier<ViewType<?>> viewType) {
+  public SszField(int index, Supplier<SszSchema<?>> viewType) {
     this(index, "field-" + index, viewType);
   }
 
-  public SszField(int index, String name, ViewType<?> viewType) {
-    this(index, name, () -> viewType);
+  public SszField(int index, String name, SszSchema<?> sszSchema) {
+    this(index, name, () -> sszSchema);
   }
 
-  public SszField(int index, String name, Supplier<ViewType<?>> viewType) {
+  public SszField(int index, String name, Supplier<SszSchema<?>> viewType) {
     this.index = index;
     this.name = name;
     this.viewType = viewType;
@@ -47,7 +47,7 @@ public class SszField {
     return name;
   }
 
-  public Supplier<ViewType<?>> getViewType() {
+  public Supplier<SszSchema<?>> getSchema() {
     return viewType;
   }
 }

@@ -172,6 +172,6 @@ class ValidatorTest {
   @Test
   void roundtripSSZ() {
     Bytes sszValidatorBytes = validator.sszSerialize();
-    assertEquals(validator, Validator.TYPE.sszDeserialize(sszValidatorBytes));
+    assertEquals(validator, Validator.SSZ_SCHEMA.sszDeserialize(sszValidatorBytes));
   }
 }

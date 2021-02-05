@@ -24,7 +24,7 @@ class SignedBeaconBlockTest {
   public void shouldRoundTripViaSsz() {
     final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
     final Bytes ssz = block.sszSerialize();
-    final SignedBeaconBlock result = SignedBeaconBlock.getSszType().sszDeserialize(ssz);
+    final SignedBeaconBlock result = SignedBeaconBlock.getSszSchema().sszDeserialize(ssz);
     assertThat(result).isEqualTo(block);
   }
 }

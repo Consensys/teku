@@ -15,13 +15,13 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class VoluntaryExitFuzzInputTest extends AbstractFuzzInputTest<VoluntaryExitFuzzInput> {
 
   @Override
-  protected ViewType<VoluntaryExitFuzzInput> getInputType() {
-    return VoluntaryExitFuzzInput.createType();
+  protected SszSchema<VoluntaryExitFuzzInput> getInputType() {
+    return VoluntaryExitFuzzInput.createSchema();
   }
 
   @Override

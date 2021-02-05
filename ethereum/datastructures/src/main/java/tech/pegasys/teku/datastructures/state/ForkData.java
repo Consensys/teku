@@ -16,21 +16,21 @@ package tech.pegasys.teku.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 
-public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
+public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
-  public static class ForkDataType extends ContainerType2<ForkData, Bytes4View, Bytes32View> {
+  public static class ForkDataSchema extends ContainerSchema2<ForkData, SszBytes4, SszBytes32> {
 
-    public ForkDataType() {
+    public ForkDataSchema() {
       super(
           "ForkData",
-          namedType("currentVersion", BasicViewTypes.BYTES4_TYPE),
-          namedType("genesisValidatorsRoot", BasicViewTypes.BYTES32_TYPE));
+          namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -39,14 +39,14 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
     }
   }
 
-  public static final ForkDataType TYPE = new ForkDataType();
+  public static final ForkDataSchema SSZ_SCHEMA = new ForkDataSchema();
 
-  private ForkData(ForkDataType type, TreeNode backingNode) {
+  private ForkData(ForkDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    super(TYPE, new Bytes4View(currentVersion), new Bytes32View(genesisValidatorsRoot));
+    super(SSZ_SCHEMA, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {

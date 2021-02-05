@@ -29,7 +29,7 @@ class BeaconBlocksByRangeRequestMessageTest {
             UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
     final Bytes data = request.sszSerialize();
     final BeaconBlocksByRangeRequestMessage result =
-        BeaconBlocksByRangeRequestMessage.TYPE.sszDeserialize(data);
+        BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
 
     assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
     assertThat(result).isEqualTo(request);

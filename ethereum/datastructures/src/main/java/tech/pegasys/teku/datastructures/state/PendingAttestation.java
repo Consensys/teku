@@ -16,37 +16,36 @@ package tech.pegasys.teku.datastructures.state;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema4;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
-    extends Container4<
-        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
+    extends Container4<PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
-  public static class PendingAttestationType
-      extends ContainerType4<
-          PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
+  public static class PendingAttestationSchema
+      extends ContainerSchema4<
+          PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
-    public PendingAttestationType() {
+    public PendingAttestationSchema() {
       super(
           "PendingAttestation",
-          namedType(
-              "aggregation_bitfield", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("inclusion_delay", BasicViewTypes.UINT64_TYPE),
-          namedType("proposer_index", BasicViewTypes.UINT64_TYPE));
+          namedSchema(
+              "aggregation_bitfield", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
+          namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
-    public BitListType getAggregationBitfieldType() {
-      return (BitListType) getFieldType0();
+    public SszBitListSchema getAggregationBitfieldSchema() {
+      return (SszBitListSchema) getFieldSchema0();
     }
 
     @Override
@@ -55,9 +54,9 @@ public class PendingAttestation
     }
   }
 
-  public static final PendingAttestationType TYPE = new PendingAttestationType();
+  public static final PendingAttestationSchema SSZ_SCHEMA = new PendingAttestationSchema();
 
-  private PendingAttestation(PendingAttestationType type, TreeNode backingNode) {
+  private PendingAttestation(PendingAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -67,23 +66,23 @@ public class PendingAttestation
       UInt64 inclusion_delay,
       UInt64 proposer_index) {
     super(
-        TYPE,
-        ViewUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
+        SSZ_SCHEMA,
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitfieldSchema(), aggregation_bitfield),
         data,
-        new UInt64View(inclusion_delay),
-        new UInt64View(proposer_index));
+        new SszUInt64(inclusion_delay),
+        new SszUInt64(proposer_index));
   }
 
   public PendingAttestation() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
-    super(TYPE, pendingAttestation.getBackingNode());
+    super(SSZ_SCHEMA, pendingAttestation.getBackingNode());
   }
 
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitlist(getField0());
+    return SszUtils.getBitlist(getField0());
   }
 
   public AttestationData getData() {

@@ -23,8 +23,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ChainHeadTest {
@@ -128,14 +128,14 @@ public class ChainHeadTest {
 
   private ChainHead copy(ChainHead original) {
     final SignedBeaconBlock blockCopy =
-        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.TYPE.get());
-    final BeaconState stateCopy = copy(original.getState(), BeaconState.getSszType());
+        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
+    final BeaconState stateCopy = copy(original.getState(), BeaconState.getSszSchema());
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy);
   }
 
-  private <T extends ViewRead> T copy(final T original, final ViewType<T> objType) {
+  private <T extends SszData> T copy(final T original, final SszSchema<T> objType) {
     final Bytes serialized = original.sszSerialize();
     return objType.sszDeserialize(serialized);
   }

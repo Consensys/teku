@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public interface RpcEncoding {
 
@@ -31,7 +31,7 @@ public interface RpcEncoding {
    * @param <T> The type of payload
    * @return The encoded header and payload bytes
    */
-  <T extends ViewRead> Bytes encodePayload(T payload);
+  <T extends SszData> Bytes encodePayload(T payload);
 
   /**
    * Creates a brand new disposable {@link RpcByteBufDecoder} instance
@@ -39,7 +39,7 @@ public interface RpcEncoding {
    * @param <T> The type of payload to decode
    * @param payloadType The type of payload to decode
    */
-  <T extends ViewRead> RpcByteBufDecoder<T> createDecoder(final ViewType<T> payloadType);
+  <T extends SszData> RpcByteBufDecoder<T> createDecoder(final SszSchema<T> payloadType);
 
   String getName();
 }

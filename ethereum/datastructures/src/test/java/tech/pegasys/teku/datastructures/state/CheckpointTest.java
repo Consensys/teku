@@ -26,7 +26,7 @@ class CheckpointTest {
   void roundTripViaSsz() {
     Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     Bytes checkpointSerialized = checkpoint.sszSerialize();
-    Checkpoint newCheckpoint = Checkpoint.TYPE.sszDeserialize(checkpointSerialized);
+    Checkpoint newCheckpoint = Checkpoint.SSZ_SCHEMA.sszDeserialize(checkpointSerialized);
     assertEquals(checkpoint, newCheckpoint);
   }
 }

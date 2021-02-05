@@ -14,20 +14,20 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import java.util.Collections;
+import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcRequest {
-  private static final ListViewType<ByteView> LIST_VIEW_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTE_TYPE, 0);
+public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
+  private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, 0);
 
-  public static class EmptyMessageType extends AbstractDelegateType<EmptyMessage> {
-    private EmptyMessageType() {
+  public static class EmptyMessageSchema extends AbstractDelegateSszSchema<EmptyMessage> {
+    private EmptyMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -37,11 +37,11 @@ public class EmptyMessage extends ListViewReadImpl<ByteView> implements RpcReque
     }
   }
 
-  public static final EmptyMessageType TYPE = new EmptyMessageType();
+  public static final EmptyMessageSchema SSZ_SCHEMA = new EmptyMessageSchema();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {
-    super(ViewUtils.toListView(LIST_VIEW_TYPE, Collections.emptyList()));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, Collections.emptyList()));
   }
 
   @Override

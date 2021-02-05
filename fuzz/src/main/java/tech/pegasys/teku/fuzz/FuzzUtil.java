@@ -40,8 +40,8 @@ import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class FuzzUtil {
@@ -83,7 +83,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createType());
+    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createSchema());
 
     // process and return post state
     try {
@@ -127,7 +127,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createType());
+    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createSchema());
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
@@ -165,7 +165,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createType());
+    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createSchema());
 
     try {
       BeaconState postState =
@@ -236,7 +236,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
     VoluntaryExitFuzzInput structuredInput =
-        deserialize(input, VoluntaryExitFuzzInput.createType());
+        deserialize(input, VoluntaryExitFuzzInput.createSchema());
 
     try {
       BeaconState postState =
@@ -255,7 +255,7 @@ public class FuzzUtil {
     }
   }
 
-  private <T extends ViewRead> T deserialize(byte[] data, ViewType<T> type) {
+  private <T extends SszData> T deserialize(byte[] data, SszSchema<T> type) {
     // allow exception to propagate on failure - indicates a preprocessing or deserializing error
     T structuredInput = type.sszDeserialize(Bytes.wrap(data));
     if (structuredInput == null) {

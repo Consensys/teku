@@ -107,7 +107,7 @@ class PendingAttestationTest {
             inclusionDelay,
             proposerIndex.plus(dataStructureUtil.randomUInt64()));
     Bytes ssz = testPendingAttestation.sszSerialize();
-    PendingAttestation attestation = PendingAttestation.TYPE.sszDeserialize(ssz);
+    PendingAttestation attestation = PendingAttestation.SSZ_SCHEMA.sszDeserialize(ssz);
     assertEquals(testPendingAttestation, attestation);
   }
 }

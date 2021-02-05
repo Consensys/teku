@@ -17,29 +17,28 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class BeaconBlockHeader
-    extends Container5<
-        BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View>
+    extends Container5<BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
     implements BeaconBlockSummary {
 
-  public static class BeaconBlockHeaderType
-      extends ContainerType5<
-          BeaconBlockHeader, UInt64View, UInt64View, Bytes32View, Bytes32View, Bytes32View> {
+  public static class BeaconBlockHeaderSchema
+      extends ContainerSchema5<
+          BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32> {
 
-    public BeaconBlockHeaderType() {
+    public BeaconBlockHeaderSchema() {
       super(
           "BeaconBlockHeader",
-          namedType("slot", BasicViewTypes.UINT64_TYPE),
-          namedType("proposer_index", BasicViewTypes.UINT64_TYPE),
-          namedType("parent_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("state_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("body_root", BasicViewTypes.BYTES32_TYPE));
+          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("body_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -48,9 +47,9 @@ public class BeaconBlockHeader
     }
   }
 
-  public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
+  public static final BeaconBlockHeaderSchema SSZ_SCHEMA = new BeaconBlockHeaderSchema();
 
-  private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
+  private BeaconBlockHeader(BeaconBlockHeaderSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -61,20 +60,20 @@ public class BeaconBlockHeader
       Bytes32 state_root,
       Bytes32 body_root) {
     super(
-        TYPE,
-        new UInt64View(slot),
-        new UInt64View(proposer_index),
-        new Bytes32View(parent_root),
-        new Bytes32View(state_root),
-        new Bytes32View(body_root));
+        SSZ_SCHEMA,
+        new SszUInt64(slot),
+        new SszUInt64(proposer_index),
+        new SszBytes32(parent_root),
+        new SszBytes32(state_root),
+        new SszBytes32(body_root));
   }
 
   public BeaconBlockHeader(BeaconBlockHeader header) {
-    super(TYPE, header.getBackingNode());
+    super(SSZ_SCHEMA, header.getBackingNode());
   }
 
   public BeaconBlockHeader() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   /**

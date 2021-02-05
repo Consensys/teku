@@ -39,8 +39,8 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @Command(
@@ -162,16 +162,16 @@ public class TransitionCommand implements Runnable {
   }
 
   private BeaconState readState(final Bytes inData) {
-    return deserialize(inData, BeaconState.getSszType(), "pre state");
+    return deserialize(inData, BeaconState.getSszSchema(), "pre state");
   }
 
   private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return deserialize(blockData, SignedBeaconBlock.getSszType(), path);
+    return deserialize(blockData, SignedBeaconBlock.getSszSchema(), path);
   }
 
-  private <T extends ViewRead> T deserialize(
-      final Bytes data, final ViewType<T> type, final String descriptor) {
+  private <T extends SszData> T deserialize(
+      final Bytes data, final SszSchema<T> type, final String descriptor) {
     try {
       return type.sszDeserialize(data);
     } catch (final IllegalArgumentException e) {

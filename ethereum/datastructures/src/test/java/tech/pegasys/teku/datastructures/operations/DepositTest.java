@@ -83,14 +83,14 @@ class DepositTest {
   void roundtripSSZ() {
     Deposit deposit = dataStructureUtil.randomDeposit();
     Bytes serialized = deposit.sszSerialize();
-    Deposit newDeposit = Deposit.TYPE.sszDeserialize(serialized);
+    Deposit newDeposit = Deposit.SSZ_SCHEMA.sszDeserialize(serialized);
     assertEquals(deposit, newDeposit);
   }
 
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.TYPE));
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.SSZ_SCHEMA));
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {

@@ -22,34 +22,34 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewReadImpl;
+import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 
-class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, BeaconStateCache {
+class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
 
   public BeaconStateImpl() {
-    super(BeaconState.getSszType());
+    super(BeaconState.getSszSchema());
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(
-      CompositeViewType<?> type,
+      SszCompositeSchema<?> type,
       TreeNode backingNode,
-      IntCache<ViewRead> cache,
+      IntCache<SszData> cache,
       TransitionCaches transitionCaches) {
     super(type, backingNode, cache);
     this.transitionCaches = transitionCaches;
   }
 
-  BeaconStateImpl(ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
+  BeaconStateImpl(SszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -93,7 +93,7 @@ class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, Beac
       Checkpoint finalized_checkpoint) {
 
     super(
-        BeaconState.getSszType(),
+        BeaconState.getSszSchema(),
         BeaconState.create(
                 genesis_time,
                 genesis_validators_root,
@@ -192,7 +192,7 @@ class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, Beac
   }
 
   @Override
-  protected IntCache<ViewRead> createCache() {
+  protected IntCache<SszData> createCache() {
     return new SoftRefIntCache<>(super::createCache);
   }
 

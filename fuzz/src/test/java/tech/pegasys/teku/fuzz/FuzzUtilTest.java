@@ -41,8 +41,8 @@ import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -69,10 +69,12 @@ class FuzzUtilTest {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
-    final Attestation data = loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.TYPE);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+    final Attestation data =
+        loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.SSZ_SCHEMA);
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     AttestationFuzzInput input = new AttestationFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -90,10 +92,11 @@ class FuzzUtilTest {
     final Path testCaseDir =
         Path.of("minimal/operations/attester_slashing/pyspec_tests/success_surround");
     final AttesterSlashing data =
-        loadSsz(testCaseDir.resolve("attester_slashing.ssz"), AttesterSlashing.TYPE);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("attester_slashing.ssz"), AttesterSlashing.SSZ_SCHEMA);
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     AttesterSlashingFuzzInput input = new AttesterSlashingFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -110,13 +113,14 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/sanity/blocks/pyspec_tests/attestation");
     final SignedBeaconBlock block0 =
-        loadSsz(testCaseDir.resolve("blocks_0.ssz"), SignedBeaconBlock.getSszType());
+        loadSsz(testCaseDir.resolve("blocks_0.ssz"), SignedBeaconBlock.getSszSchema());
     final SignedBeaconBlock block1 =
-        loadSsz(testCaseDir.resolve("blocks_1.ssz"), SignedBeaconBlock.getSszType());
+        loadSsz(testCaseDir.resolve("blocks_1.ssz"), SignedBeaconBlock.getSszSchema());
     final List<SignedBeaconBlock> blocks = List.of(block0, block1);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     BeaconState currentState = preState;
     for (SignedBeaconBlock block : blocks) {
@@ -124,7 +128,7 @@ class FuzzUtilTest {
       byte[] rawInput = input.sszSerialize().toArrayUnsafe();
       Optional<Bytes> result = fuzzUtil.fuzzBlock(rawInput).map(Bytes::wrap);
       assertThat(result).isNotEmpty();
-      currentState = BeaconState.getSszType().sszDeserialize(result.get());
+      currentState = BeaconState.getSszSchema().sszDeserialize(result.get());
     }
 
     assertThat(currentState).isNotNull();
@@ -137,10 +141,11 @@ class FuzzUtilTest {
 
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/success_block_header");
-    final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), BeaconBlock.getSszType());
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+    final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), BeaconBlock.getSszSchema());
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -156,10 +161,11 @@ class FuzzUtilTest {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir = Path.of("minimal/operations/deposit/pyspec_tests/success_top_up");
-    final Deposit data = loadSsz(testCaseDir.resolve("deposit.ssz"), Deposit.TYPE);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+    final Deposit data = loadSsz(testCaseDir.resolve("deposit.ssz"), Deposit.SSZ_SCHEMA);
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     DepositFuzzInput input = new DepositFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -176,10 +182,11 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/success");
     final ProposerSlashing data =
-        loadSsz(testCaseDir.resolve("proposer_slashing.ssz"), ProposerSlashing.TYPE);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("proposer_slashing.ssz"), ProposerSlashing.SSZ_SCHEMA);
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     ProposerSlashingFuzzInput input = new ProposerSlashingFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -196,10 +203,11 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/success");
     final SignedVoluntaryExit data =
-        loadSsz(testCaseDir.resolve("voluntary_exit.ssz"), SignedVoluntaryExit.TYPE);
-    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("voluntary_exit.ssz"), SignedVoluntaryExit.SSZ_SCHEMA);
+    final BeaconState preState =
+        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszType());
+        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
 
     VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -242,7 +250,7 @@ class FuzzUtilTest {
             });
   }
 
-  public <T extends ViewRead> T loadSsz(final Path path, final ViewType<T> type) {
+  public <T extends SszData> T loadSsz(final Path path, final SszSchema<T> type) {
     try {
       final byte[] data =
           getClass().getClassLoader().getResourceAsStream(path.toString()).readAllBytes();

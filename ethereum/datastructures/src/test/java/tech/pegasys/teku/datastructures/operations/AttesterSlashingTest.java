@@ -78,7 +78,7 @@ class AttesterSlashingTest {
   void roundtripSsz() {
     AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
-        AttesterSlashing.TYPE.sszDeserialize(attesterSlashing.sszSerialize());
+        AttesterSlashing.SSZ_SCHEMA.sszDeserialize(attesterSlashing.sszSerialize());
     assertEquals(attesterSlashing, newAttesterSlashing);
   }
 }

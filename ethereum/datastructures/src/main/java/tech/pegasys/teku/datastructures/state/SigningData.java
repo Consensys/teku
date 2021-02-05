@@ -15,21 +15,21 @@ package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
-public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> {
+public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {
 
-  public static class SigningDataType
-      extends ContainerType2<SigningData, Bytes32View, Bytes32View> {
+  public static class SigningDataSchema
+      extends ContainerSchema2<SigningData, SszBytes32, SszBytes32> {
 
-    public SigningDataType() {
+    public SigningDataSchema() {
       super(
           "SigningData",
-          namedType("object_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("domain", BasicViewTypes.BYTES32_TYPE));
+          namedSchema("object_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("domain", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -38,14 +38,14 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
     }
   }
 
-  public static final SigningDataType TYPE = new SigningDataType();
+  public static final SigningDataSchema SSZ_SCHEMA = new SigningDataSchema();
 
-  private SigningData(SigningDataType type, TreeNode backingNode) {
+  private SigningData(SigningDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SigningData(Bytes32 object_root, Bytes32 domain) {
-    super(TYPE, new Bytes32View(object_root), new Bytes32View(domain));
+    super(SSZ_SCHEMA, new SszBytes32(object_root), new SszBytes32(domain));
   }
 
   public Bytes32 getObjectRoot() {

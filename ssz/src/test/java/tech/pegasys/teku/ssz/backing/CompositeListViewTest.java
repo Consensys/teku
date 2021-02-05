@@ -21,18 +21,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class CompositeListViewTest {
 
-  static ViewType<TestView> testType =
-      new ViewType<>() {
+  static SszSchema<TestView> testType =
+      new SszSchema<>() {
 
         @Override
         public TreeNode getDefaultTree() {
@@ -85,7 +85,7 @@ public class CompositeListViewTest {
         }
       };
 
-  static class TestView implements ViewRead {
+  static class TestView implements SszData {
     TreeNode node;
     public final int v;
 
@@ -99,7 +99,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewType<?> getType() {
+    public SszSchema<?> getSchema() {
       return testType;
     }
 
@@ -112,15 +112,15 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewWrite createWritableCopy() {
+    public SszMutableData createWritableCopy() {
       throw new UnsupportedOperationException();
     }
   }
 
   @Test
   public void simpleTest1() {
-    ListViewType<TestView> listType = new ListViewType<>(testType, 3);
-    ListViewWrite<TestView> list = listType.getDefault().createWritableCopy();
+    SszListSchema<TestView> listType = new SszListSchema<>(testType, 3);
+    SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.commitChanges().getBackingNode();

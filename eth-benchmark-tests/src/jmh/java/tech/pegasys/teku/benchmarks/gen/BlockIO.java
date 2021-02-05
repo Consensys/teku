@@ -54,7 +54,7 @@ public class BlockIO {
         int size = inputStream.readInt();
         byte[] bytes = new byte[size];
         inputStream.readFully(bytes);
-        return SignedBeaconBlock.TYPE.get().sszDeserialize(Bytes.wrap(bytes));
+        return SignedBeaconBlock.SSZ_SCHEMA.get().sszDeserialize(Bytes.wrap(bytes));
       } catch (Exception e) {
         return null;
       }

@@ -15,28 +15,28 @@ package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class AggregateAndProof
-    extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
+    extends Container3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-  public static class AggregateAndProofType
-      extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
+  public static class AggregateAndProofSchema
+      extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-    public AggregateAndProofType() {
+    public AggregateAndProofSchema() {
       super(
           "AggregateAndProof",
-          namedType("index", BasicViewTypes.UINT64_TYPE),
-          namedType("aggregate", Attestation.TYPE),
-          namedType("selection_proof", ComplexViewTypes.BYTES_96_TYPE));
+          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("aggregate", Attestation.SSZ_SCHEMA),
+          namedSchema("selection_proof", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -45,20 +45,20 @@ public class AggregateAndProof
     }
   }
 
-  public static final AggregateAndProofType TYPE = new AggregateAndProofType();
+  public static final AggregateAndProofSchema SSZ_SCHEMA = new AggregateAndProofSchema();
 
   private BLSSignature selectionProofCache;
 
-  private AggregateAndProof(AggregateAndProofType type, TreeNode backingNode) {
+  private AggregateAndProof(AggregateAndProofSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
     super(
-        TYPE,
-        new UInt64View(index),
+        SSZ_SCHEMA,
+        new SszUInt64(index),
         aggregate,
-        ViewUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
+        SszUtils.toSszByteVector(selection_proof.toBytesCompressed()));
     selectionProofCache = selection_proof;
   }
 
@@ -72,7 +72,7 @@ public class AggregateAndProof
 
   public BLSSignature getSelection_proof() {
     if (selectionProofCache == null) {
-      selectionProofCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      selectionProofCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return selectionProofCache;
   }
