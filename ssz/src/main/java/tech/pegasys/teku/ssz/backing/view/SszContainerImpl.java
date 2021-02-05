@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
 public class SszContainerImpl extends AbstractSszComposite<SszData>
@@ -36,13 +36,13 @@ public class SszContainerImpl extends AbstractSszComposite<SszData>
   }
 
   public SszContainerImpl(
-      CompositeViewType<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
   @Override
   protected SszData getImpl(int index) {
-    CompositeViewType<?> type = getType();
+    SszCompositeSchema<?> type = getType();
     TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
     return type.getChildType(index).createFromBackingNode(node);
   }

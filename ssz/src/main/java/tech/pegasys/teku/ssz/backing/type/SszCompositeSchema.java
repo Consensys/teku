@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Abstract type of {@link SszComposite} views */
-public interface CompositeViewType<ViewT extends SszData> extends SszSchema<ViewT> {
+public interface SszCompositeSchema<ViewT extends SszData> extends SszSchema<ViewT> {
 
   /**
    * Returns the maximum number of elements in views of this type. For views with fixed number of

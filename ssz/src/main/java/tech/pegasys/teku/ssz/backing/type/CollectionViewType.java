@@ -37,7 +37,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType<ElementViewT extends SszData, ViewT extends SszData>
-    implements CompositeViewType<ViewT> {
+    implements SszCompositeSchema<ViewT> {
 
   private final long maxLength;
   private final SszSchema<ElementViewT> elementType;

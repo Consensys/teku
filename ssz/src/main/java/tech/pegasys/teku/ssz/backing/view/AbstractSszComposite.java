@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 
 /**
  * Base backing view class for immutable composite views (lists, vectors, containers)
@@ -38,11 +38,11 @@ public abstract class AbstractSszComposite<ChildType extends SszData>
 
   private final IntCache<ChildType> childrenViewCache;
   private final int sizeCache;
-  private final CompositeViewType<?> type;
+  private final SszCompositeSchema<?> type;
   private final TreeNode backingNode;
 
   /** Creates an instance from a type and a backing node */
-  protected AbstractSszComposite(CompositeViewType<?> type, TreeNode backingNode) {
+  protected AbstractSszComposite(SszCompositeSchema<?> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
     this.sizeCache = sizeImpl();
@@ -56,7 +56,7 @@ public abstract class AbstractSszComposite<ChildType extends SszData>
    * backing nodes. The cache should correspond to the supplied backing tree.
    */
   protected AbstractSszComposite(
-      CompositeViewType<?> type, TreeNode backingNode, IntCache<ChildType> cache) {
+      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<ChildType> cache) {
     this.type = type;
     this.backingNode = backingNode;
     this.sizeCache = sizeImpl();
@@ -91,7 +91,7 @@ public abstract class AbstractSszComposite<ChildType extends SszData>
   protected abstract ChildType getImpl(int index);
 
   @Override
-  public CompositeViewType<?> getType() {
+  public SszCompositeSchema<?> getType() {
     return type;
   }
 

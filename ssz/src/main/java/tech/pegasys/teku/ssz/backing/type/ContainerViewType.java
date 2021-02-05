@@ -31,7 +31,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public abstract class ContainerViewType<C extends SszContainer>
-    implements CompositeViewType<C> {
+    implements SszCompositeSchema<C> {
 
   protected static class NamedType<T extends SszData> {
     private final String name;
@@ -68,7 +68,7 @@ public abstract class ContainerViewType<C extends SszContainer>
     this.childrenTypes =
         childrenTypes.stream().map(NamedType::getType).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
-    this.treeWidth = CompositeViewType.super.treeWidth();
+    this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
   protected ContainerViewType(List<SszSchema<?>> childrenTypes) {
@@ -79,7 +79,7 @@ public abstract class ContainerViewType<C extends SszContainer>
             .collect(Collectors.toList());
     this.childrenTypes = childrenTypes;
     this.defaultTree = createDefaultTree();
-    this.treeWidth = CompositeViewType.super.treeWidth();
+    this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
   public static <C extends SszContainer> ContainerViewType<C> create(

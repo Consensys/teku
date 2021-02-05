@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 
 /**
  * Represents composite immutable view which has descendant views
@@ -35,5 +35,5 @@ public interface SszComposite<ChildType> extends SszData {
   ChildType get(int index);
 
   @Override
-  CompositeViewType<?> getType();
+  SszCompositeSchema<?> getType();
 }

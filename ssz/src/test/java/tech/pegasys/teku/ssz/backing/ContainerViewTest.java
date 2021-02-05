@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
@@ -215,7 +215,7 @@ public class ContainerViewTest {
     }
 
     public ContainerReadImpl(
-        CompositeViewType<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+        SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
       super(type, backingNode, cache);
     }
 

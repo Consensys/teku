@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 
 /**
  * Base backing view class for mutable composite views (lists, vectors, containers)
@@ -110,7 +110,7 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
-  public CompositeViewType<?> getType() {
+  public SszCompositeSchema<?> getType() {
     return backingImmutableView.getType();
   }
 
@@ -161,7 +161,7 @@ public abstract class AbstractSszMutableComposite<
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
       List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
-    CompositeViewType<?> type = getType();
+    SszCompositeSchema<?> type = getType();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
       return newChildValues.stream()

@@ -20,19 +20,19 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszVectorImpl<ElementReadType extends SszData>
     extends AbstractSszComposite<ElementReadType> implements SszVector<ElementReadType> {
 
-  public SszVectorImpl(CompositeViewType<?> type, TreeNode backingNode) {
+  public SszVectorImpl(SszCompositeSchema<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SszVectorImpl(
-      CompositeViewType<?> type, TreeNode backingNode, IntCache<ElementReadType> cache) {
+      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<ElementReadType> cache) {
     super(type, backingNode, cache);
   }
 
