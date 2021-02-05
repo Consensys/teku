@@ -21,7 +21,7 @@ import java.util.function.Function;
  *
  * @param <ChildType> the type of children
  */
-public interface CompositeViewWrite<ChildType> extends SszMutableData, CompositeViewRead<ChildType> {
+public interface SszMutableComposite<ChildType> extends SszMutableData, SszComposite<ChildType> {
 
   /**
    * Sets the function which should called by the implementation on any changes in this view or its

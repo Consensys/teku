@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
  * Base class for immutable containers. Since containers are heterogeneous their generic child view
  * is SszData
  */
-public interface ContainerViewRead extends CompositeViewRead<SszData> {
+public interface ContainerViewRead extends SszComposite<SszData> {
 
   @Override
   ContainerViewType<?> getType();

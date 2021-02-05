@@ -22,7 +22,7 @@ import java.util.Collection;
  * @param <ElementType> Type of list elements
  */
 public interface ListViewWrite<ElementType extends SszData>
-    extends CompositeViewWrite<ElementType>, ListViewRead<ElementType> {
+    extends SszMutableComposite<ElementType>, ListViewRead<ElementType> {
 
   @Override
   void set(int index, ElementType value);

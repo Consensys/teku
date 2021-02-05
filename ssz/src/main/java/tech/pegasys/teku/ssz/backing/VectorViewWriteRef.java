@@ -22,7 +22,7 @@ package tech.pegasys.teku.ssz.backing;
  */
 public interface VectorViewWriteRef<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends CompositeViewWriteRef<ElementReadType, ElementWriteType>,
+    extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
         VectorViewWrite<ElementReadType> {
 
   /**

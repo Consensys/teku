@@ -33,9 +33,9 @@ public class SszTestUtils {
     if (!v1.getType().equals(v2.getType())) {
       return false;
     }
-    if (v1 instanceof CompositeViewRead) {
-      CompositeViewRead<?> c1 = (CompositeViewRead<?>) v1;
-      CompositeViewRead<?> c2 = (CompositeViewRead<?>) v2;
+    if (v1 instanceof SszComposite) {
+      SszComposite<?> c1 = (SszComposite<?>) v1;
+      SszComposite<?> c2 = (SszComposite<?>) v2;
       if (c1.size() != c2.size()) {
         return false;
       }

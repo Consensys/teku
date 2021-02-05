@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
-import tech.pegasys.teku.ssz.backing.CompositeViewRead;
+import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
-/** Abstract type of {@link CompositeViewRead} views */
+/** Abstract type of {@link SszComposite} views */
 public interface CompositeViewType<ViewT extends SszData> extends ViewType<ViewT> {
 
   /**

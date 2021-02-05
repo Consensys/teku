@@ -13,19 +13,27 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
+
 /**
- * Represents a mutable composite view which is able to return a mutable child 'by reference' Any
- * modifications made to such child are reflected in this structure and its backing tree
+ * Represents composite immutable view which has descendant views
+ *
+ * @param <ChildType> the type of children
  */
-public interface CompositeViewWriteRef<
-        ChildReadType extends SszData, ChildWriteType extends ChildReadType>
-    extends CompositeViewWrite<ChildReadType> {
+public interface SszComposite<ChildType> extends SszData {
+
+  /** Returns number of children in this view */
+  default int size() {
+    return (int) getType().getMaxLength();
+  }
 
   /**
-   * Returns a mutable child at index 'by reference' Any modifications made to such child are
-   * reflected in this structure and its backing tree
+   * Returns the child at index
    *
    * @throws IndexOutOfBoundsException if index >= size()
    */
-  ChildWriteType getByRef(int index);
+  ChildType get(int index);
+
+  @Override
+  CompositeViewType<?> getType();
 }

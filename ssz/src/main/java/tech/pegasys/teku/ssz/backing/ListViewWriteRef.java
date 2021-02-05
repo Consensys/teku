@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  */
 public interface ListViewWriteRef<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends CompositeViewWriteRef<ElementReadType, ElementWriteType>,
+    extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
         ListViewWrite<ElementReadType> {
 
   /**

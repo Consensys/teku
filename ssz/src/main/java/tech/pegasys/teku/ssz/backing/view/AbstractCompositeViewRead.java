@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import tech.pegasys.teku.ssz.backing.CompositeViewRead;
+import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  *     would be just generic {@link SszData}
  */
 public abstract class AbstractCompositeViewRead<ChildType extends SszData>
-    implements CompositeViewRead<ChildType> {
+    implements SszComposite<ChildType> {
 
   private final IntCache<ChildType> childrenViewCache;
   private final int sizeCache;

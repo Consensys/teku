@@ -22,8 +22,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.CompositeViewWrite;
-import tech.pegasys.teku.ssz.backing.CompositeViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszMutableComposite;
+import tech.pegasys.teku.ssz.backing.SszMutableRefComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -39,14 +39,14 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  * instance are merged with cached backing view instance which weren't changed.
  *
  * <p>If this view is get by reference from its parent composite view ({@link
- * CompositeViewWriteRef#getByRef(int)} then all the changes are notified to the parent view (see
- * {@link CompositeViewWrite#setInvalidator(Consumer)}
+ * SszMutableRefComposite#getByRef(int)} then all the changes are notified to the parent view (see
+ * {@link SszMutableComposite#setInvalidator(Consumer)}
  *
  * <p>The mutable views based on this class are inherently NOT thread safe
  */
 public abstract class AbstractCompositeViewWrite<
         ChildReadType extends SszData, ChildWriteType extends ChildReadType>
-    implements CompositeViewWriteRef<ChildReadType, ChildWriteType> {
+    implements SszMutableRefComposite<ChildReadType, ChildWriteType> {
 
   protected AbstractCompositeViewRead<ChildReadType> backingImmutableView;
   private Consumer<SszMutableData> invalidator;
@@ -95,8 +95,8 @@ public abstract class AbstractCompositeViewWrite<
       childrenChanges.remove(index);
       @SuppressWarnings("unchecked")
       ChildWriteType w = (ChildWriteType) readView.createWritableCopy();
-      if (w instanceof CompositeViewWrite) {
-        ((CompositeViewWrite<?>) w)
+      if (w instanceof SszMutableComposite) {
+        ((SszMutableComposite<?>) w)
             .setInvalidator(
                 viewWrite -> {
                   childrenRefsChanged.add(index);

@@ -19,7 +19,7 @@ import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.NotNull;
 
 public interface CollectionViewRead<ElementT extends SszData>
-    extends CompositeViewRead<ElementT>, Iterable<ElementT> {
+    extends SszComposite<ElementT>, Iterable<ElementT> {
 
   default boolean isEmpty() {
     return size() == 0;
