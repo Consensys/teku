@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import static tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
+import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefList;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -56,8 +56,7 @@ public class SszMutableListImpl<
     }
 
     @Override
-    protected SszContainerImpl createViewRead(
-        TreeNode backingNode, IntCache<SszData> viewCache) {
+    protected SszContainerImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ListContainerRead<>(listType, backingNode, viewCache);
     }
 

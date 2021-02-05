@@ -21,8 +21,8 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -32,26 +32,26 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class Validator
     extends Container8<
         Validator,
-    SszVector<SszByte>,
-    SszBytes32,
-    SszUInt64,
-    SszBit,
-    SszUInt64,
-    SszUInt64,
-    SszUInt64,
-    SszUInt64> {
+        SszVector<SszByte>,
+        SszBytes32,
+        SszUInt64,
+        SszBit,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64> {
 
   public static class ValidatorType
       extends ContainerType8<
           Validator,
-      SszVector<SszByte>,
-      SszBytes32,
-      SszUInt64,
-      SszBit,
-      SszUInt64,
-      SszUInt64,
-      SszUInt64,
-      SszUInt64> {
+          SszVector<SszByte>,
+          SszBytes32,
+          SszUInt64,
+          SszBit,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64> {
 
     public ValidatorType() {
       super(

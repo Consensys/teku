@@ -16,9 +16,9 @@ package tech.pegasys.teku.ssz.backing.view;
 import java.util.List;
 import java.util.Map;
 import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
+import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
@@ -32,8 +32,7 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  protected SszContainerImpl createViewRead(
-      TreeNode backingNode, IntCache<SszData> viewCache) {
+  protected SszContainerImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
     return new SszContainerImpl(getType(), backingNode, viewCache);
   }
 

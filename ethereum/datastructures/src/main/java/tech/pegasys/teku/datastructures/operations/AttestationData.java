@@ -24,8 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class AttestationData
-    extends Container5<
-        AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
+    extends Container5<AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
   public static class AttestationDataType
       extends ContainerType5<

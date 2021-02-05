@@ -20,16 +20,15 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
-    extends Container4<
-        PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
+    extends Container4<PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
   public static class PendingAttestationType
       extends ContainerType4<

@@ -22,8 +22,8 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /**
- * Helper `SszSchema` for making custom parametrized schemas without complexity of overriding existing
- * schemas
+ * Helper `SszSchema` for making custom parametrized schemas without complexity of overriding
+ * existing schemas
  */
 public abstract class AbstractDelegateSszSchema<SszDataT extends SszData>
     implements SszSchema<SszDataT> {

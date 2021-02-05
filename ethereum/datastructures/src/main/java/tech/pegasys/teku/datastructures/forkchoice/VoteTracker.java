@@ -45,8 +45,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
-      ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type,
-      TreeNode backingNode) {
+      ContainerType3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

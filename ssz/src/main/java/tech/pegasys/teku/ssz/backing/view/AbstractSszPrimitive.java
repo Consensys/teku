@@ -16,8 +16,8 @@ package tech.pegasys.teku.ssz.backing.view;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Objects;
-import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
+import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchema;
 

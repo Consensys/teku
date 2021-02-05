@@ -74,7 +74,10 @@ public abstract class ContainerType5<
     super(
         containerName,
         List.of(
-            fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2, fieldNamedSchema3,
+            fieldNamedSchema0,
+            fieldNamedSchema1,
+            fieldNamedSchema2,
+            fieldNamedSchema3,
             fieldNamedSchema4));
   }
 

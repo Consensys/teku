@@ -37,7 +37,8 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class SszCollectionSchema<SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
+public abstract class SszCollectionSchema<
+        SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
     implements SszCompositeSchema<SszCollectionT> {
 
   private final long maxLength;

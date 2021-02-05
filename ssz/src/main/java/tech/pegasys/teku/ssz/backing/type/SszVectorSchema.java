@@ -169,7 +169,8 @@ public class SszVectorSchema<SszElementT extends SszData>
       return false;
     }
     SszVectorSchema<?> that = (SszVectorSchema<?>) o;
-    return getElementSchema().equals(that.getElementSchema()) && getMaxLength() == that.getMaxLength();
+    return getElementSchema().equals(that.getElementSchema())
+        && getMaxLength() == that.getMaxLength();
   }
 
   @Override

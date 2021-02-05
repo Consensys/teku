@@ -189,7 +189,9 @@ public class ListViewHintsTest {
                 .map(
                     typeHints ->
                         new SszListSchema<TElement>(
-                            originalType.getElementSchema(), originalType.getMaxLength(), typeHints)))
+                            originalType.getElementSchema(),
+                            originalType.getMaxLength(),
+                            typeHints)))
         .collect(Collectors.toList());
   }
 

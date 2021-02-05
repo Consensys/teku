@@ -26,11 +26,7 @@ public abstract class ContainerType3<
         C extends SszContainer, V0 extends SszData, V1 extends SszData, V2 extends SszData>
     extends SszContainerSchema<C> {
 
-  public static <
-          C extends SszContainer,
-          V0 extends SszData,
-          V1 extends SszData,
-          V2 extends SszData>
+  public static <C extends SszContainer, V0 extends SszData, V1 extends SszData, V2 extends SszData>
       ContainerType3<C, V0, V1, V2> create(
           SszSchema<V0> fieldType0,
           SszSchema<V1> fieldType1,

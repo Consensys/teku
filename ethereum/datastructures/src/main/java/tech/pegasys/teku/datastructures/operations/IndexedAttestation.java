@@ -22,9 +22,9 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -79,7 +79,8 @@ public class IndexedAttestation
   }
 
   public SSZList<UInt64> getAttesting_indices() {
-    return new SSZBackingList<>(UInt64.class, getField0(), SszUInt64::new, AbstractSszPrimitive::get);
+    return new SSZBackingList<>(
+        UInt64.class, getField0(), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   public AttestationData getData() {

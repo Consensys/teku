@@ -29,10 +29,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -69,7 +69,9 @@ public interface BeaconState extends SszContainer {
       new SszField(
           7,
           "historical_roots",
-          () -> new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
+          () ->
+              new SszListSchema<>(
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.TYPE);
   SszField ETH1_DATA_VOTES_FIELD =
       new SszField(
@@ -87,12 +89,16 @@ public interface BeaconState extends SszContainer {
           "validators",
           () ->
               new SszListSchema<>(
-                  Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, SszSchemaHints.sszSuperNode(8)));
+                  Validator.TYPE,
+                  Constants.VALIDATOR_REGISTRY_LIMIT,
+                  SszSchemaHints.sszSuperNode(8)));
   SszField BALANCES_FIELD =
       new SszField(
           12,
           "balances",
-          () -> new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
+          () ->
+              new SszListSchema<>(
+                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
@@ -123,7 +129,9 @@ public interface BeaconState extends SszContainer {
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
-          17, "justification_bits", () -> new SszBitVectorSchema(Constants.JUSTIFICATION_BITS_LENGTH));
+          17,
+          "justification_bits",
+          () -> new SszBitVectorSchema(Constants.JUSTIFICATION_BITS_LENGTH));
   SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
       new SszField(18, "previous_justified_checkpoint", Checkpoint.TYPE);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
@@ -336,7 +344,10 @@ public interface BeaconState extends SszContainer {
   // Slashings
   default SSZVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
+        UInt64.class,
+        getAny(SLASHINGS_FIELD.getIndex()),
+        SszUInt64::new,
+        AbstractSszPrimitive::get);
   }
 
   // Attestations

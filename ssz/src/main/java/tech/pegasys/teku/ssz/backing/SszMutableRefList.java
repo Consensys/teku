@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 public interface SszMutableRefList<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-    SszMutableList<ElementReadType> {
+        SszMutableList<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

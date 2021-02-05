@@ -21,11 +21,11 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszCollection;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.SszByteVectorSchema;
@@ -43,8 +43,7 @@ public class SszUtils {
     return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszList<V> toListView(
-      SszListSchema<V> type, Iterable<V> list) {
+  public static <V extends SszData> SszList<V> toListView(SszListSchema<V> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
@@ -80,8 +79,7 @@ public class SszUtils {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszList<SszByte> createListFromBytes(
-      SszListSchema<SszByte> type, Bytes bytes) {
+  public static SszList<SszByte> createListFromBytes(SszListSchema<SszByte> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
@@ -98,8 +96,7 @@ public class SszUtils {
     return createBitlistView(new SszBitListSchema(bitlist.getMaxSize()), bitlist);
   }
 
-  public static SszList<SszBit> createBitlistView(
-      SszListSchema<SszBit> type, Bitlist bitlist) {
+  public static SszList<SszBit> createBitlistView(SszListSchema<SszBit> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 

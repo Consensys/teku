@@ -19,10 +19,10 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateSszSchema;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<SszByte> {
@@ -46,8 +46,7 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
   public static final RpcErrorMessageType TYPE = new RpcErrorMessageType();
 
   public RpcErrorMessage(Bytes bytes) {
-    super(
-        SszUtils.toListView(LIST_VIEW_TYPE, SszUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
+    super(SszUtils.toListView(LIST_VIEW_TYPE, SszUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
   }
 
   private RpcErrorMessage(TreeNode node) {

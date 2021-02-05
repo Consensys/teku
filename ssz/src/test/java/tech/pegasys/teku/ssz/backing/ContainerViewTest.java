@@ -29,16 +29,16 @@ import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -172,8 +172,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerReadImpl extends SszContainerImpl
-      implements SubContainerRead {
+  public static class SubContainerReadImpl extends SszContainerImpl implements SubContainerRead {
 
     public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
       super(TYPE, backingNode, cache);

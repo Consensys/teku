@@ -15,9 +15,9 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -32,8 +32,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
  */
 public class SszListImpl<ElementType extends SszData> implements SszList<ElementType> {
 
-  public static class ListContainerRead<ElementType extends SszData>
-      extends SszContainerImpl {
+  public static class ListContainerRead<ElementType extends SszData> extends SszContainerImpl {
     private final SszListSchema<ElementType> type;
 
     private ListContainerRead(SszListSchema<ElementType> type) {
@@ -42,7 +41,9 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     }
 
     public ListContainerRead(
-        SszListSchema<ElementType> type, SszContainerSchema<?> containerType, TreeNode backingNode) {
+        SszListSchema<ElementType> type,
+        SszContainerSchema<?> containerType,
+        TreeNode backingNode) {
       super(containerType, backingNode);
       this.type = type;
     }
@@ -96,8 +97,7 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     this.cachedSize = container.getSize();
   }
 
-  public SszListImpl(
-      SszListSchema<ElementType> type, ListContainerRead<ElementType> container) {
+  public SszListImpl(SszListSchema<ElementType> type, ListContainerRead<ElementType> container) {
     this.type = type;
     this.container = container;
     this.cachedSize = container.getSize();

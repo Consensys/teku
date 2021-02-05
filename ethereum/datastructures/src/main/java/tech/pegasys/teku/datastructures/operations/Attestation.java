@@ -32,17 +32,16 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
-    extends Container3<
-        Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
+    extends Container3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
   public static class AttestationType
-      extends ContainerType3<
-          Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
+      extends ContainerType3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
     public AttestationType() {
       super(
           "Attestation",
-          namedSchema("aggregation_bits", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema(
+              "aggregation_bits", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedSchema("data", AttestationData.TYPE),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }

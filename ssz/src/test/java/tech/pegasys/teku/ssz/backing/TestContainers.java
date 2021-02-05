@@ -21,9 +21,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
@@ -117,10 +117,7 @@ public class TestContainers {
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
       super(
-          TYPE,
-          SszUInt64.fromLong(l1),
-          SszUtils.createVectorFromBytes(b1),
-          SszUInt64.fromLong(l2));
+          TYPE, SszUInt64.fromLong(l1), SszUtils.createVectorFromBytes(b1), SszUInt64.fromLong(l2));
     }
   }
 
@@ -143,14 +140,12 @@ public class TestContainers {
 
     public TestDoubleSuperContainer(
         long l1, TestByteVectorContainer c1, long l2, TestByteVectorContainer c2, long l3) {
-      super(
-          TYPE, SszUInt64.fromLong(l1), c1, SszUInt64.fromLong(l2), c2, SszUInt64.fromLong(l3));
+      super(TYPE, SszUInt64.fromLong(l1), c1, SszUInt64.fromLong(l2), c2, SszUInt64.fromLong(l3));
     }
   }
 
   public static class VariableSizeContainer
-      extends Container3<
-          VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64> {
+      extends Container3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64> {
 
     public static final ContainerType3<
             VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
@@ -162,9 +157,7 @@ public class TestContainers {
                 VariableSizeContainer::new);
 
     private VariableSizeContainer(
-        ContainerType3<
-                VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
-            type,
+        ContainerType3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64> type,
         TreeNode backingNode) {
       super(type, backingNode);
     }

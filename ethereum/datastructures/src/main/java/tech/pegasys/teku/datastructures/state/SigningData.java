@@ -22,8 +22,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
 public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {
 
-  public static class SigningDataType
-      extends ContainerType2<SigningData, SszBytes32, SszBytes32> {
+  public static class SigningDataType extends ContainerType2<SigningData, SszBytes32, SszBytes32> {
 
     public SigningDataType() {
       super(

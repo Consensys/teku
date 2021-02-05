@@ -67,8 +67,8 @@ public abstract class ContainerType4<
       NamedSchema<V3> fieldNamedSchema3) {
 
     super(
-        containerName, List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2,
-            fieldNamedSchema3));
+        containerName,
+        List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2, fieldNamedSchema3));
   }
 
   @SuppressWarnings("unchecked")

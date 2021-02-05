@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -42,7 +42,8 @@ public class SszListSchema<ElementDataT extends SszData>
     this(elementSchema, maxLength, SszSchemaHints.none());
   }
 
-  public SszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+  public SszListSchema(
+      SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
     this.compatibleVectorSchema =
         new SszVectorSchema<>(getElementSchema(), getMaxLength(), true, getHints());
@@ -242,7 +243,8 @@ public class SszListSchema<ElementDataT extends SszData>
       return false;
     }
     SszListSchema<?> that = (SszListSchema<?>) o;
-    return getElementSchema().equals(that.getElementSchema()) && getMaxLength() == that.getMaxLength();
+    return getElementSchema().equals(that.getElementSchema())
+        && getMaxLength() == that.getMaxLength();
   }
 
   @Override

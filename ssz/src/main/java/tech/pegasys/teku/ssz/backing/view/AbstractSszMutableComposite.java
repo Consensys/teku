@@ -22,10 +22,10 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.SszMutableComposite;
-import tech.pegasys.teku.ssz.backing.SszMutableRefComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableComposite;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
+import tech.pegasys.teku.ssz.backing.SszMutableRefComposite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
@@ -56,8 +56,7 @@ public abstract class AbstractSszMutableComposite<
   private Integer sizeCache;
 
   /** Creates a new mutable instance with backing immutable view */
-  protected AbstractSszMutableComposite(
-      AbstractSszComposite<ChildReadType> backingImmutableView) {
+  protected AbstractSszMutableComposite(AbstractSszComposite<ChildReadType> backingImmutableView) {
     this.backingImmutableView = backingImmutableView;
     sizeCache = backingImmutableView.size();
   }

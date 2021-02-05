@@ -29,9 +29,9 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
@@ -41,26 +41,26 @@ import tech.pegasys.teku.util.config.Constants;
 public class BeaconBlockBody
     extends Container8<
         BeaconBlockBody,
-    SszVector<SszByte>,
+        SszVector<SszByte>,
         Eth1Data,
-    SszBytes32,
-    SszList<ProposerSlashing>,
-    SszList<AttesterSlashing>,
-    SszList<Attestation>,
-    SszList<Deposit>,
-    SszList<SignedVoluntaryExit>> {
+        SszBytes32,
+        SszList<ProposerSlashing>,
+        SszList<AttesterSlashing>,
+        SszList<Attestation>,
+        SszList<Deposit>,
+        SszList<SignedVoluntaryExit>> {
 
   public static class BeaconBlockBodyType
       extends ContainerType8<
           BeaconBlockBody,
-      SszVector<SszByte>,
+          SszVector<SszByte>,
           Eth1Data,
-      SszBytes32,
-      SszList<ProposerSlashing>,
-      SszList<AttesterSlashing>,
-      SszList<Attestation>,
-      SszList<Deposit>,
-      SszList<SignedVoluntaryExit>> {
+          SszBytes32,
+          SszList<ProposerSlashing>,
+          SszList<AttesterSlashing>,
+          SszList<Attestation>,
+          SszList<Deposit>,
+          SszList<SignedVoluntaryExit>> {
 
     public BeaconBlockBodyType() {
       super(

@@ -25,8 +25,7 @@ public final class BeaconBlocksByRangeRequestMessage
     implements RpcRequest {
 
   public static class BeaconBlocksByRangeRequestMessageType
-      extends ContainerType3<
-          BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
+      extends ContainerType3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
 
     public BeaconBlocksByRangeRequestMessageType() {
       super(

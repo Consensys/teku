@@ -20,8 +20,7 @@ import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
  *
  * @param <ElementType> Type of vector elements
  */
-public interface SszVector<ElementType extends SszData>
-    extends SszCollection<ElementType> {
+public interface SszVector<ElementType extends SszData> extends SszCollection<ElementType> {
 
   @Override
   SszMutableVector<ElementType> createWritableCopy();

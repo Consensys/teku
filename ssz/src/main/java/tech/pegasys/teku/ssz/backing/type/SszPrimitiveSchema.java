@@ -62,8 +62,7 @@ public abstract class SszPrimitiveSchema<C extends SszData> implements SszSchema
   }
 
   @Override
-  public abstract TreeNode updateBackingNode(
-      TreeNode srcNode, int internalIndex, SszData newValue);
+  public abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
     return (getBitsSize() + 7) / 8;

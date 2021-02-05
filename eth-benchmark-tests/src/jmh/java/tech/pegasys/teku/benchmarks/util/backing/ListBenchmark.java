@@ -26,8 +26,8 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 @State(Scope.Thread)
@@ -44,7 +44,8 @@ public class ListBenchmark {
   SszList<SszUInt64> l2r;
 
   public ListBenchmark() {
-    SszListSchema<SszUInt64> type = new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 100_000_000);
+    SszListSchema<SszUInt64> type =
+        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 100_000_000);
     SszList<SszUInt64> l1 = type.getDefault();
 
     SszMutableList<SszUInt64> l2w = l1.createWritableCopy();

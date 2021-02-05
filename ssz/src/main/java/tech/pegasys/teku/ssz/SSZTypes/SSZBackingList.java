@@ -15,9 +15,9 @@ package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.SszData;
 
 public class SSZBackingList<C, R extends SszData> extends SSZAbstractCollection<C>
     implements SSZMutableList<C> {

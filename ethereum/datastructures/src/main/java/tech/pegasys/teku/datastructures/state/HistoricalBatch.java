@@ -32,8 +32,7 @@ public class HistoricalBatch
     extends Container2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
 
   public static class HistoricalBatchType
-      extends ContainerType2<
-          HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
+      extends ContainerType2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
 
     public HistoricalBatchType() {
       super(

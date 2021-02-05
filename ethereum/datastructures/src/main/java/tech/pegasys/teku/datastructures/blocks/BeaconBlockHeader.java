@@ -24,8 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class BeaconBlockHeader
-    extends Container5<
-        BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
+    extends Container5<BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
     implements BeaconBlockSummary {
 
   public static class BeaconBlockHeaderType

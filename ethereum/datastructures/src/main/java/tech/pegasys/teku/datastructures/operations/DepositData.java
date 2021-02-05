@@ -22,24 +22,19 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositData
-    extends Container4<
-        DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
+    extends Container4<DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
 
   public static class DepositDataType
       extends ContainerType4<
-          DepositData,
-      SszVector<SszByte>,
-      SszBytes32,
-      SszUInt64,
-      SszVector<SszByte>> {
+          DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
 
     public DepositDataType() {
       super(

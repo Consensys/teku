@@ -18,18 +18,20 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Abstract schema of {@link tech.pegasys.teku.ssz.backing.SszComposite} subclasses */
-public interface SszCompositeSchema<SszCompositeT extends SszData> extends SszSchema<SszCompositeT> {
+public interface SszCompositeSchema<SszCompositeT extends SszData>
+    extends SszSchema<SszCompositeT> {
 
   /**
-   * Returns the maximum number of elements in ssz structures of this scheme. For structures with fixed number of
-   * children (like Containers and Vectors) their size should always be equal to maxLength
+   * Returns the maximum number of elements in ssz structures of this scheme. For structures with
+   * fixed number of children (like Containers and Vectors) their size should always be equal to
+   * maxLength
    */
   long getMaxLength();
 
   /**
-   * Returns the child schema at index. For homogeneous structures (like Vector, List) the
-   * returned schema is the same for any index For heterogeneous structures (like Container) each
-   * child has individual schema
+   * Returns the child schema at index. For homogeneous structures (like Vector, List) the returned
+   * schema is the same for any index For heterogeneous structures (like Container) each child has
+   * individual schema
    *
    * @throws IndexOutOfBoundsException if index >= getMaxLength
    */
@@ -44,8 +46,8 @@ public interface SszCompositeSchema<SszCompositeT extends SszData> extends SszSc
   }
 
   /**
-   * Returns the maximum number of this ssz structure backed subtree 'leaf' nodes required to store maxLength
-   * elements
+   * Returns the maximum number of this ssz structure backed subtree 'leaf' nodes required to store
+   * maxLength elements
    */
   default long maxChunks() {
     return (getMaxLength() - 1) / getElementsPerChunk() + 1;

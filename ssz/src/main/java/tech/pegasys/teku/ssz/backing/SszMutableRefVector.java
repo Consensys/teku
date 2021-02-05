@@ -23,7 +23,7 @@ package tech.pegasys.teku.ssz.backing;
 public interface SszMutableRefVector<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-    SszMutableVector<ElementReadType> {
+        SszMutableVector<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

@@ -30,8 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class SszContainerSchema<C extends SszContainer>
-    implements SszCompositeSchema<C> {
+public abstract class SszContainerSchema<C extends SszContainer> implements SszCompositeSchema<C> {
 
   protected static class NamedSchema<T extends SszData> {
     private final String name;
@@ -51,7 +50,8 @@ public abstract class SszContainerSchema<C extends SszContainer>
     }
   }
 
-  protected static <T extends SszData> NamedSchema<T> namedSchema(String fieldName, SszSchema<T> schema) {
+  protected static <T extends SszData> NamedSchema<T> namedSchema(
+      String fieldName, SszSchema<T> schema) {
     return new NamedSchema<>(fieldName, schema);
   }
 
@@ -83,7 +83,8 @@ public abstract class SszContainerSchema<C extends SszContainer>
   }
 
   public static <C extends SszContainer> SszContainerSchema<C> create(
-      List<SszSchema<?>> childrenSchemas, BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+      List<SszSchema<?>> childrenSchemas,
+      BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
     return new SszContainerSchema<C>(childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {

@@ -17,14 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
+import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 
 public class SszMutableVectorImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>

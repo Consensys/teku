@@ -20,8 +20,7 @@ import tech.pegasys.teku.ssz.backing.type.SszListSchema;
  *
  * @param <ElementType> Type of list elements
  */
-public interface SszList<ElementType extends SszData>
-    extends SszCollection<ElementType> {
+public interface SszList<ElementType extends SszData> extends SszCollection<ElementType> {
 
   @Override
   SszMutableList<ElementType> createWritableCopy();

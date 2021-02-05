@@ -29,21 +29,18 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   /**
    * Creates a default backing binary tree for this schema
    *
-   * E.g. if the schema is primitive then normally
-   * just a single leaf node is created
+   * <p>E.g. if the schema is primitive then normally just a single leaf node is created
    *
-   * E.g. if the schema is a complex structure with multi-level
-   * nested vectors and containers then the complete tree including all descendant members subtrees
-   * is created
+   * <p>E.g. if the schema is a complex structure with multi-level nested vectors and containers
+   * then the complete tree including all descendant members subtrees is created
    */
   TreeNode getDefaultTree();
 
   /**
    * Creates immutable ssz structure over the tree which should correspond to this schema.
    *
-   * Note: if the tree structure
-   * doesn't correspond this schema that fact could only be detected later during access to structure
-   * members
+   * <p>Note: if the tree structure doesn't correspond this schema that fact could only be detected
+   * later during access to structure members
    */
   SszDataT createFromBackingNode(TreeNode node);
 
@@ -55,27 +52,27 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   /**
    * Returns the number of bits the element of this schema occupies in a tree node.
    *
-   * More strict definition is: how many elements of this type one tree node may contain.
+   * <p>More strict definition is: how many elements of this type one tree node may contain.
    *
-   * Any structure of a complex schema
-   * occupies the whole tree node and their bitsize assumed to be 256 Normally the bitsize < 256 is
-   * for primitive schemas that can be packed into a single leaf node
+   * <p>Any structure of a complex schema occupies the whole tree node and their bitsize assumed to
+   * be 256 Normally the bitsize < 256 is for primitive schemas that can be packed into a single
+   * leaf node
    */
   int getBitsSize();
 
   /**
-   * For packed primitive values. Extracts a packed value from the tree node by its 'internal index'.
-   * For example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node
-   * and it's 'internal index' in this node would be `45`
+   * For packed primitive values. Extracts a packed value from the tree node by its 'internal
+   * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
+   * leaf node and it's 'internal index' in this node would be `45`
    */
   default SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
     return createFromBackingNode(node);
   }
 
   /**
-   * For packed primitive values. Packs the value to the existing node at 'internal index' For example
-   * in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and it's
-   * 'internal index' in this node would be `45`
+   * For packed primitive values. Packs the value to the existing node at 'internal index' For
+   * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
+   * it's 'internal index' in this node would be `45`
    */
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
     return newValue.getBackingNode();
