@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.containers.state;
+package tech.pegasys.teku.spec.datastructures.state;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -26,16 +26,14 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
-public class DelegatingMutableBeaconState implements MutableBeaconState {
+public class DelegatingBeaconState implements BeaconState {
 
-  protected final MutableBeaconState state;
+  protected final BeaconState state;
 
-  public DelegatingMutableBeaconState(final MutableBeaconState state) {
+  public DelegatingBeaconState(final BeaconState state) {
     this.state = state;
   }
 
@@ -162,124 +160,5 @@ public class DelegatingMutableBeaconState implements MutableBeaconState {
   @Override
   public BeaconState update(final Consumer<MutableBeaconState> updater) {
     return state.update(updater);
-  }
-
-  @Override
-  public void setGenesis_time(final UInt64 genesis_time) {
-    state.setGenesis_time(genesis_time);
-  }
-
-  @Override
-  public void setGenesis_validators_root(final Bytes32 genesis_validators_root) {
-    state.setGenesis_validators_root(genesis_validators_root);
-  }
-
-  @Override
-  public void setSlot(final UInt64 slot) {
-    state.setSlot(slot);
-  }
-
-  @Override
-  public void setFork(final Fork fork) {
-    state.setFork(fork);
-  }
-
-  @Override
-  public void setLatest_block_header(final BeaconBlockHeader latest_block_header) {
-    state.setLatest_block_header(latest_block_header);
-  }
-
-  @Override
-  public void updateBlock_roots(final Consumer<SSZMutableVector<Bytes32>> updater) {
-    state.updateBlock_roots(updater);
-  }
-
-  @Override
-  public void updateState_roots(final Consumer<SSZMutableVector<Bytes32>> updater) {
-    state.updateState_roots(updater);
-  }
-
-  @Override
-  public void updateHistorical_roots(final Consumer<SSZMutableList<Bytes32>> updater) {
-    state.updateHistorical_roots(updater);
-  }
-
-  @Override
-  public void setEth1_data(final Eth1Data eth1_data) {
-    state.setEth1_data(eth1_data);
-  }
-
-  @Override
-  public void updateEth1_data_votes(final Consumer<SSZMutableList<Eth1Data>> updater) {
-    state.updateEth1_data_votes(updater);
-  }
-
-  @Override
-  public void setEth1_deposit_index(final UInt64 eth1_deposit_index) {
-    state.setEth1_deposit_index(eth1_deposit_index);
-  }
-
-  @Override
-  public void updateValidators(final Consumer<SSZMutableList<Validator>> updater) {
-    state.updateValidators(updater);
-  }
-
-  @Override
-  public void updateBalances(final Consumer<SSZMutableList<UInt64>> updater) {
-    state.updateBalances(updater);
-  }
-
-  @Override
-  public void updateRandao_mixes(final Consumer<SSZMutableVector<Bytes32>> updater) {
-    state.updateRandao_mixes(updater);
-  }
-
-  @Override
-  public void updateSlashings(final Consumer<SSZMutableVector<UInt64>> updater) {
-    state.updateSlashings(updater);
-  }
-
-  @Override
-  public void setJustification_bits(final Bitvector justification_bits) {
-    state.setJustification_bits(justification_bits);
-  }
-
-  @Override
-  public void setPrevious_justified_checkpoint(final Checkpoint previous_justified_checkpoint) {
-    state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
-  }
-
-  @Override
-  public void setCurrent_justified_checkpoint(final Checkpoint current_justified_checkpoint) {
-    state.setCurrent_justified_checkpoint(current_justified_checkpoint);
-  }
-
-  @Override
-  public void setFinalized_checkpoint(final Checkpoint finalized_checkpoint) {
-    state.setFinalized_checkpoint(finalized_checkpoint);
-  }
-
-  @Override
-  public void maybeUpdatePrevious_epoch_attestations(
-      final Consumer<Optional<SSZMutableList<PendingAttestation>>> updater) {
-    state.maybeUpdatePrevious_epoch_attestations(updater);
-  }
-
-  @Override
-  public void maybeUpdateCurrent_epoch_attestations(
-      final Consumer<Optional<SSZMutableList<PendingAttestation>>> updater) {
-    state.maybeUpdateCurrent_epoch_attestations(updater);
-  }
-
-  @Override
-  public void maybeUpdatePreviousEpochParticipation(
-      final Consumer<Optional<SSZMutableList<SSZVector<SszPrimitives.SszBit>>>> updater) {
-    state.maybeUpdatePreviousEpochParticipation(updater);
-  }
-
-  @Override
-  public void maybeUpdateCurrentEpochParticipation(
-      final Consumer<Optional<SSZMutableList<SSZVector<SszPrimitives.SszBit>>>> updater) {
-    state.maybeUpdateCurrentEpochParticipation(updater);
   }
 }

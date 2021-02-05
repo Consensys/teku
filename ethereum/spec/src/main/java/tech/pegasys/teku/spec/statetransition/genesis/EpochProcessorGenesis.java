@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.statetransition.genesis;
 
-import tech.pegasys.teku.spec.containers.state.BeaconState;
-import tech.pegasys.teku.spec.containers.state.MutableBeaconState;
-import tech.pegasys.teku.spec.containers.state.genesis.BeaconStateGenesis;
-import tech.pegasys.teku.spec.containers.state.genesis.MutableBeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.genesis.BeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.genesis.MutableBeaconStateGenesis;
 import tech.pegasys.teku.spec.statetransition.EpochProcessor;
 
 public class EpochProcessorGenesis implements EpochProcessor {

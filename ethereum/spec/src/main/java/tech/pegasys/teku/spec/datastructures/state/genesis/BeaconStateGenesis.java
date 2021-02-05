@@ -11,12 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.datastructures.state.genesis;
 
+import java.util.function.Consumer;
+import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface SchemaDefinitions {
+public interface BeaconStateGenesis extends BeaconState {
 
-  SszContainerSchema<BeaconState> getBeaconStateSchema();
+  static BeaconStateGenesis toGenesisState(BeaconState state) {
+    return new DelegatingBeaconStateGenesis(state);
+  }
+
+  SSZList<PendingAttestation> getPrevious_epoch_attestations();
+
+  SSZList<PendingAttestation> getCurrent_epoch_attestations();
+
+  BeaconState updateGenesis(final Consumer<MutableBeaconStateGenesis> updater);
 }

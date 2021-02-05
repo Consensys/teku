@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.statetransition;
 
-import tech.pegasys.teku.spec.containers.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public interface EpochProcessor {
 

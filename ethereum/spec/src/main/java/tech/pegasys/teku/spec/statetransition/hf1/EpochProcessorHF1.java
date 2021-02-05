@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.spec.statetransition.hf1;
 
-import tech.pegasys.teku.spec.containers.state.BeaconState;
-import tech.pegasys.teku.spec.containers.state.hf1.BeaconStateHF1;
-import tech.pegasys.teku.spec.containers.state.hf1.MutableBeaconStateHF1;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.hf1.BeaconStateHF1;
+import tech.pegasys.teku.spec.datastructures.state.hf1.MutableBeaconStateHF1;
 import tech.pegasys.teku.spec.statetransition.EpochProcessor;
 import tech.pegasys.teku.spec.statetransition.genesis.EpochProcessorGenesis;
 

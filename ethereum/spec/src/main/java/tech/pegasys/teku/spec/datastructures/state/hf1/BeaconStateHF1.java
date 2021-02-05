@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.containers.state.hf1;
+package tech.pegasys.teku.spec.datastructures.state.hf1;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.spec.containers.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;

@@ -11,22 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.containers.state.genesis;
+package tech.pegasys.teku.spec.datastructures.state.hf1;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.containers.state.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
-public interface BeaconStateGenesis extends BeaconState {
+public interface MutableBeaconStateHF1 extends MutableBeaconState {
 
-  static BeaconStateGenesis toGenesisState(BeaconState state) {
-    return new DelegatingBeaconStateGenesis(state);
-  }
+  void updatePreviousEpochParticipation(
+      Consumer<SSZMutableList<SSZVector<SszPrimitives.SszBit>>> updater);
 
-  SSZList<PendingAttestation> getPrevious_epoch_attestations();
-
-  SSZList<PendingAttestation> getCurrent_epoch_attestations();
-
-  BeaconState updateGenesis(final Consumer<MutableBeaconStateGenesis> updater);
+  void updateCurrentEpochParticipation(
+      Consumer<SSZMutableList<SSZVector<SszPrimitives.SszBit>>> updater);
 }

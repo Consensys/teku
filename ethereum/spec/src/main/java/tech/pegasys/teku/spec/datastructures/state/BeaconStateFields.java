@@ -11,16 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.containers.state.genesis;
+package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.containers.state.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-
-public interface MutableBeaconStateGenesis extends MutableBeaconState {
-
-  void updatePrevious_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
-
-  void updateCurrent_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
+public enum BeaconStateFields {
+  GENESIS_TIME,
+  GENESIS_VALIDATORS_ROOT,
+  SLOT,
+  FORK,
+  LATEST_BLOCK_HEADER,
+  BLOCK_ROOTS,
+  STATE_ROOTS,
+  HISTORICAL_ROOTS,
+  ETH1_DATA,
+  ETH1_DATA_VOTES,
+  ETH1_DEPOSIT_INDEX,
+  VALIDATORS,
+  BALANCES,
+  RANDAO_MIXES,
+  SLASHINGS,
+  PREVIOUS_EPOCH_ATTESTATIONS,
+  CURRENT_EPOCH_ATTESTATIONS,
+  JUSTIFICATION_BITS,
+  PREVIOUS_JUSTIFIED_CHECKPOINT,
+  CURRENT_JUSTIFIED_CHECKPOINT,
+  FINALIZED_CHECKPOINT,
+  // HF1
+  PREVIOUS_EPOCH_PARTICIPATION,
+  CURRENT_EPOCH_PARTICIPATION
 }

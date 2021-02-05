@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.containers.state.genesis;
+package tech.pegasys.teku.spec.datastructures.state.genesis;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.containers.state.DelegatingMutableBeaconState;
-import tech.pegasys.teku.spec.containers.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.DelegatingMutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 public class DelegatingMutableBeaconStateGenesis extends DelegatingMutableBeaconState
