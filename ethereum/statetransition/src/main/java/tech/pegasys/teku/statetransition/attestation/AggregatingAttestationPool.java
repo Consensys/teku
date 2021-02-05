@@ -73,7 +73,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidateableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final Bytes32 dataRoot = attestationData.hash_tree_root();
+    final Bytes32 dataRoot = attestationData.hashTreeRoot();
     final boolean add =
         attestationGroupByDataHash
             .computeIfAbsent(
@@ -123,7 +123,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void remove(final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
-    final Bytes32 dataRoot = attestationData.hash_tree_root();
+    final Bytes32 dataRoot = attestationData.hashTreeRoot();
     final MatchingDataAttestationGroup attestations = attestationGroupByDataHash.get(dataRoot);
     if (attestations == null) {
       return;

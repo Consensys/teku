@@ -195,7 +195,7 @@ class BlockProcessorUtilTest {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
     MerkleTree depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositMerkleTree.add(depositData.hash_tree_root());
+    depositMerkleTree.add(depositData.hashTreeRoot());
 
     beaconState =
         beaconState.updated(

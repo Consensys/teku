@@ -86,11 +86,11 @@ public class StateSelectorFactoryTest {
   @Test
   public void forStateRoot_shouldGetStateAtSlotExact()
       throws ExecutionException, InterruptedException {
-    when(client.getStateByStateRoot(state.hash_tree_root()))
+    when(client.getStateByStateRoot(state.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<BeaconState> result = factory.forStateRoot(state.hash_tree_root()).getState().get();
+    Optional<BeaconState> result = factory.forStateRoot(state.hashTreeRoot()).getState().get();
     assertThat(result).isEqualTo(Optional.of(state));
-    verify(client).getStateByStateRoot(state.hash_tree_root());
+    verify(client).getStateByStateRoot(state.hashTreeRoot());
   }
 
   @Test

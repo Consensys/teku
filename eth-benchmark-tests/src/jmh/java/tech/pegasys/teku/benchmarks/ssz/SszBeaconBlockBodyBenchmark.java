@@ -16,6 +16,7 @@ package tech.pegasys.teku.benchmarks.ssz;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {
 
@@ -36,8 +37,8 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
   }
 
   @Override
-  protected Class<BeaconBlockBody> getContainerClass() {
-    return BeaconBlockBody.class;
+  protected ViewType<BeaconBlockBody> getContainerType() {
+    return BeaconBlockBody.getSszType();
   }
 
   @Override

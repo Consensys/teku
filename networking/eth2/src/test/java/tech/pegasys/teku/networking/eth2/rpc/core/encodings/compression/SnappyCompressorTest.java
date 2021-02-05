@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
@@ -48,8 +47,7 @@ public class SnappyCompressorTest {
   @Test
   public void roundTrip() throws Exception {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
-    final Bytes serializedState =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+    final Bytes serializedState = state.sszSerialize();
 
     final Bytes compressed = compressor.compress(serializedState);
     assertThat(compressed).isNotEqualTo(serializedState);
@@ -76,8 +74,7 @@ public class SnappyCompressorTest {
   @Test
   public void uncompress_invalidData() {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
-    final Bytes serializedState =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+    final Bytes serializedState = state.sszSerialize();
 
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(serializedState);
 
@@ -106,10 +103,8 @@ public class SnappyCompressorTest {
   public void uncompress_seriesOfValues() throws Exception {
     final BeaconState stateA = dataStructureUtil.randomBeaconState(0);
     final BeaconState stateB = dataStructureUtil.randomBeaconState(1);
-    final Bytes serializedStateA =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(stateA).toArrayUnsafe());
-    final Bytes serializedStateB =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(stateB).toArrayUnsafe());
+    final Bytes serializedStateA = stateA.sszSerialize();
+    final Bytes serializedStateB = stateB.sszSerialize();
 
     final Bytes compressedA = compressor.compress(serializedStateA);
     final Bytes compressedB = compressor.compress(serializedStateB);
@@ -147,8 +142,7 @@ public class SnappyCompressorTest {
   @Test
   public void uncompress_truncatedPayload() throws CompressionException {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
-    final Bytes serializedState =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+    final Bytes serializedState = state.sszSerialize();
 
     // Compress and deliver only part of the payload
     final int payloadSize = serializedState.size();
@@ -235,8 +229,7 @@ public class SnappyCompressorTest {
   @Test
   public void uncompress_partialValueWhenFullFrameUnavailable() throws Exception {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final Bytes serializedState =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+    final Bytes serializedState = state.sszSerialize();
 
     final Bytes compressed = compressor.compress(serializedState);
     final int partialPayloadSize = MAX_FRAME_CONTENT_SIZE / 2;

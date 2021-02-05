@@ -74,7 +74,7 @@ public class AnchorPoint extends StateAndBlockSummary {
     final SignedBeaconBlock signedGenesisBlock =
         new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
-    final Bytes32 genesisBlockRoot = genesisBlock.hash_tree_root();
+    final Bytes32 genesisBlockRoot = genesisBlock.hashTreeRoot();
     final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 
@@ -106,7 +106,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   public static AnchorPoint fromInitialBlockAndState(
       final SignedBeaconBlock block, final BeaconState state) {
     checkArgument(
-        Objects.equals(block.getStateRoot(), state.hash_tree_root()),
+        Objects.equals(block.getStateRoot(), state.hashTreeRoot()),
         "State must belong to the given block");
 
     // Calculate closest epoch boundary to use for the checkpoint

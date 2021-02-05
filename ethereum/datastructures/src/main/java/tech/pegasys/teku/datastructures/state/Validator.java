@@ -16,9 +16,7 @@ package tech.pegasys.teku.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
@@ -30,8 +28,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class Validator
     extends Container8<
@@ -43,8 +39,7 @@ public class Validator
         UInt64View,
         UInt64View,
         UInt64View,
-        UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+        UInt64View> {
 
   public static class ValidatorType
       extends ContainerType8<
@@ -77,7 +72,7 @@ public class Validator
     }
   }
 
-  @SszTypeDescriptor public static final ValidatorType TYPE = new ValidatorType();
+  public static final ValidatorType TYPE = new ValidatorType();
 
   private Validator(ValidatorType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -215,10 +210,5 @@ public class Validator
         getActivation_epoch(),
         getExit_epoch(),
         withdrawable_epoch);
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

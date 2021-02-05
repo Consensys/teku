@@ -13,43 +13,32 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class AggregateAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
+public class AggregateAttestationTopicHandler {
+
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
 
-  public AggregateAttestationTopicHandler(
+  public static Eth2TopicHandler<?> createHandler(
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableAttestation> operationProcessor,
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest) {
-    super(
+
+    OperationProcessor<SignedAggregateAndProof> convertingProcessor =
+        proofMessage ->
+            operationProcessor.process(ValidateableAttestation.aggregateFromNetwork(proofMessage));
+    return new Eth2TopicHandler<>(
         asyncRunner,
-        operationProcessor,
+        convertingProcessor,
         gossipEncoding,
         forkDigest,
         TOPIC_NAME,
-        ValidateableAttestation.class);
-  }
-
-  @Override
-  public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(payload, SignedAggregateAndProof.class);
-  }
-
-  @Override
-  public ValidateableAttestation deserialize(PreparedGossipMessage message)
-      throws DecodingException {
-    SignedAggregateAndProof aggregate =
-        getGossipEncoding().decodeMessage(message, SignedAggregateAndProof.class);
-    return ValidateableAttestation.aggregateFromValidator(aggregate);
+        SignedAggregateAndProof.TYPE);
   }
 }

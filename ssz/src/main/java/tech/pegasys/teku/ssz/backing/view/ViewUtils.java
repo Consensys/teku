@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.CollectionViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
@@ -85,7 +86,7 @@ public class ViewUtils {
   }
 
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
-  public static Bytes getAllBytes(VectorViewRead<ByteView> vector) {
+  public static Bytes getAllBytes(CollectionViewRead<ByteView> vector) {
     return vector.sszSerialize();
   }
 

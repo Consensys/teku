@@ -83,7 +83,7 @@ public class ValidateableAttestation {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
-    this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
+    this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
   }
 

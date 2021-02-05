@@ -58,8 +58,8 @@ public class RpcDecoderTestBase {
               asyncRunner,
               "",
               ENCODING,
-              BeaconBlocksByRootRequestMessage.class,
-              BeaconBlocksByRootRequestMessage.class,
+              BeaconBlocksByRootRequestMessage.TYPE,
+              BeaconBlocksByRootRequestMessage.TYPE,
               false,
               mock(LocalMessageHandler.class),
               peerLookup);

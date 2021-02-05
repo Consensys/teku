@@ -83,7 +83,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void putBlockAndState(final SignedBlockAndState blockAndState) {
     blockAndStates.put(blockAndState.getRoot(), blockAndState);
     putStateRoot(
-        blockAndState.getState().hash_tree_root(),
+        blockAndState.getState().hashTreeRoot(),
         new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot()));
   }
 

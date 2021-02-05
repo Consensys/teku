@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
@@ -24,12 +21,9 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class SignedBeaconBlockHeader
-    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
 
   public static class SignedBeaconBlockHeaderType
       extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
@@ -47,7 +41,6 @@ public class SignedBeaconBlockHeader
     }
   }
 
-  @SszTypeDescriptor
   public static final SignedBeaconBlockHeaderType TYPE = new SignedBeaconBlockHeaderType();
 
   private BLSSignature signatureCache;
@@ -70,10 +63,5 @@ public class SignedBeaconBlockHeader
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

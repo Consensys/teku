@@ -56,7 +56,7 @@ public class GenesisGenerator {
 
   public GenesisGenerator() {
 
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
+    Bytes32 latestBlockRoot = new BeaconBlockBody().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(

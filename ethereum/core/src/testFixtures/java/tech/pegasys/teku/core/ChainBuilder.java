@@ -217,7 +217,7 @@ public class ChainBuilder {
   public Checkpoint getCurrentCheckpointForEpoch(final UInt64 epoch) {
     assertChainIsNotEmpty();
     final SignedBeaconBlock block = getLatestBlockAndStateAtEpochBoundary(epoch).getBlock();
-    return new Checkpoint(epoch, block.getMessage().hash_tree_root());
+    return new Checkpoint(epoch, block.getMessage().hashTreeRoot());
   }
 
   public SignedBlockAndState generateGenesis() {
@@ -375,7 +375,7 @@ public class ChainBuilder {
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState = latestBlockAndState.getState();
-    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
+    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final Signer signer = getSigner(proposerIndex);

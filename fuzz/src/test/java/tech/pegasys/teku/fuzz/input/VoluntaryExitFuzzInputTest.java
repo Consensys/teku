@@ -14,18 +14,19 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class VoluntaryExitFuzzInputTest extends AbstractFuzzInputTest<VoluntaryExitFuzzInput> {
 
   @Override
-  protected Class<VoluntaryExitFuzzInput> getInputType() {
-    return VoluntaryExitFuzzInput.class;
+  protected ViewType<VoluntaryExitFuzzInput> getInputType() {
+    return VoluntaryExitFuzzInput.createType();
   }
 
   @Override
   protected VoluntaryExitFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     return new VoluntaryExitFuzzInput(state, exit);
   }

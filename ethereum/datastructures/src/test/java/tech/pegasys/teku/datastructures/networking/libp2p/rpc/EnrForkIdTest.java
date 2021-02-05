@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class EnrForkIdTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -26,8 +25,8 @@ class EnrForkIdTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final EnrForkId original = dataStructureUtil.randomEnrForkId();
-    final Bytes encoded = SimpleOffsetSerializer.serialize(original);
-    final EnrForkId result = SimpleOffsetSerializer.deserialize(encoded, EnrForkId.class);
+    final Bytes encoded = original.sszSerialize();
+    final EnrForkId result = EnrForkId.TYPE.sszDeserialize(encoded);
     assertThat(result).isEqualTo(original);
   }
 }

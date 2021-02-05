@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorTest {
@@ -172,7 +171,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = SimpleOffsetSerializer.serialize(validator);
-    assertEquals(validator, SimpleOffsetSerializer.deserialize(sszValidatorBytes, Validator.class));
+    Bytes sszValidatorBytes = validator.sszSerialize();
+    assertEquals(validator, Validator.TYPE.sszDeserialize(sszValidatorBytes));
   }
 }

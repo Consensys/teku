@@ -145,7 +145,7 @@ class AttestationManagerTest {
   @Test
   public void shouldDeferProcessingForAttestationsThatAreMissingBlockDependencies() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 requiredBlockRoot = block.getMessage().hashTreeRoot();
     final ValidateableAttestation attestation =
         ValidateableAttestation.from(attestationFromSlot(1, requiredBlockRoot));
     when(forkChoice.onAttestation(any()))

@@ -172,7 +172,7 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(event);
 
     depositMerkleTree.add(
-        DepositUtil.convertDepositEventToOperationDeposit(deposit).getData().hash_tree_root());
+        DepositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockTimestamp(),
@@ -243,7 +243,7 @@ public class DepositProviderTest {
         deposit ->
             assertThat(
                     is_valid_merkle_branch(
-                        deposit.getData().hash_tree_root(),
+                        deposit.getData().hashTreeRoot(),
                         deposit.getProof(),
                         Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
                         ((DepositWithIndex) deposit).getIndex().intValue(),
@@ -262,7 +262,7 @@ public class DepositProviderTest {
     allSeenDepositsList.subList(startIndex, n).stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
         .map(Deposit::getData)
-        .map(DepositData::hash_tree_root)
+        .map(DepositData::hashTreeRoot)
         .forEachOrdered(depositMerkleTree::add);
 
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);

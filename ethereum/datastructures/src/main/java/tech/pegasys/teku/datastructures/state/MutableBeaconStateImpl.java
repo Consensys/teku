@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,10 +30,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
     return new MutableBeaconStateImpl(new BeaconStateImpl(), true);
   }
 
-  @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
-
-  @Label("sos-ignore")
   private final boolean builder;
 
   private SSZMutableList<Validator> validators;
@@ -78,18 +74,8 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public Bytes32 hashTreeRoot() {
     return commitChanges().hashTreeRoot();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    throw new UnsupportedOperationException();
   }
 
   @Override

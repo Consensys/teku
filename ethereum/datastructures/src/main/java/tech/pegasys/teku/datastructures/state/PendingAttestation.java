@@ -13,13 +13,9 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.Copyable;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
@@ -29,14 +25,11 @@ import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PendingAttestation
     extends Container4<
-        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View>
-    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+        PendingAttestation, ListViewRead<BitView>, AttestationData, UInt64View, UInt64View> {
 
   public static class PendingAttestationType
       extends ContainerType4<
@@ -62,7 +55,7 @@ public class PendingAttestation
     }
   }
 
-  @SszTypeDescriptor public static final PendingAttestationType TYPE = new PendingAttestationType();
+  public static final PendingAttestationType TYPE = new PendingAttestationType();
 
   private PendingAttestation(PendingAttestationType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -89,11 +82,6 @@ public class PendingAttestation
     super(TYPE, pendingAttestation.getBackingNode());
   }
 
-  @Override
-  public PendingAttestation copy() {
-    return new PendingAttestation(this);
-  }
-
   public Bitlist getAggregation_bits() {
     return ViewUtils.getBitlist(getField0());
   }
@@ -108,10 +96,5 @@ public class PendingAttestation
 
   public UInt64 getProposer_index() {
     return getField3().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -96,8 +97,8 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private TopicChannel createChannelForSubnetId(final int subnetId) {
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     final String topicName = TopicNames.getAttestationSubnetTopicName(subnetId);
-    final SingleAttestationTopicHandler topicHandler =
-        new SingleAttestationTopicHandler(
+    final Eth2TopicHandler<?> topicHandler =
+        SingleAttestationTopicHandler.createHandler(
             asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }

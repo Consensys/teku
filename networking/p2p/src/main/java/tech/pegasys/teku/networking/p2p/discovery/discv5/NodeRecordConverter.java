@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
@@ -43,10 +42,7 @@ public class NodeRecordConverter {
       final NodeRecord nodeRecord, final InetSocketAddress address) {
 
     final Optional<EnrForkId> enrForkId =
-        parseField(
-            nodeRecord,
-            ETH2_ENR_FIELD,
-            enrField -> SimpleOffsetSerializer.deserialize(enrField, EnrForkId.class));
+        parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.TYPE::sszDeserialize);
 
     final Bitvector persistentSubnets =
         parseField(

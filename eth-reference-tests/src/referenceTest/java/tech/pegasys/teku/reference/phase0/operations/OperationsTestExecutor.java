@@ -33,8 +33,10 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class OperationsTestExecutor<T> implements TestExecutor {
+public class OperationsTestExecutor<T extends ViewRead> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz";
   public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -43,7 +45,7 @@ public class OperationsTestExecutor<T> implements TestExecutor {
               "operations/attester_slashing",
               new OperationsTestExecutor<>(
                   "attester_slashing.ssz",
-                  AttesterSlashing.class,
+                  AttesterSlashing.TYPE,
                   (state, data) ->
                       BlockProcessorUtil.process_attester_slashings(
                           state, SSZList.singleton(data))))
@@ -51,33 +53,33 @@ public class OperationsTestExecutor<T> implements TestExecutor {
               "operations/proposer_slashing",
               new OperationsTestExecutor<>(
                   "proposer_slashing.ssz",
-                  ProposerSlashing.class,
+                  ProposerSlashing.TYPE,
                   (state, data) ->
                       BlockProcessorUtil.process_proposer_slashings(
                           state, SSZList.singleton(data))))
           .put(
               "operations/block_header",
               new OperationsTestExecutor<>(
-                  "block.ssz", BeaconBlock.class, BlockProcessorUtil::process_block_header))
+                  "block.ssz", BeaconBlock.getSszType(), BlockProcessorUtil::process_block_header))
           .put(
               "operations/deposit",
               new OperationsTestExecutor<>(
                   "deposit.ssz",
-                  Deposit.class,
+                  Deposit.TYPE,
                   (state, data) ->
                       BlockProcessorUtil.process_deposits(state, SSZList.singleton(data))))
           .put(
               "operations/voluntary_exit",
               new OperationsTestExecutor<>(
                   "voluntary_exit.ssz",
-                  SignedVoluntaryExit.class,
+                  SignedVoluntaryExit.TYPE,
                   (state, data) ->
                       BlockProcessorUtil.process_voluntary_exits(state, SSZList.singleton(data))))
           .put(
               "operations/attestation",
               new OperationsTestExecutor<>(
                   "attestation.ssz",
-                  Attestation.class,
+                  Attestation.TYPE,
                   (state, data) ->
                       BlockProcessorUtil.process_attestations(
                           state,
@@ -86,11 +88,11 @@ public class OperationsTestExecutor<T> implements TestExecutor {
           .build();
 
   private final String dataFileName;
-  private final Class<T> dataType;
+  private final ViewType<T> dataType;
   private final StateOperation<T> operation;
 
   public OperationsTestExecutor(
-      final String dataFileName, final Class<T> dataType, final StateOperation<T> operation) {
+      final String dataFileName, final ViewType<T> dataType, final StateOperation<T> operation) {
     this.dataFileName = dataFileName;
     this.dataType = dataType;
     this.operation = operation;

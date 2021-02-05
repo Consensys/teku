@@ -19,11 +19,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.fuzz.FuzzUtil;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public abstract class AbstractFuzzInputTest<T extends SimpleOffsetSerializable> {
+public abstract class AbstractFuzzInputTest<T extends ViewRead> {
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
@@ -36,12 +36,12 @@ public abstract class AbstractFuzzInputTest<T extends SimpleOffsetSerializable> 
   public void serialize_roundTrip() {
     T original = createInput();
 
-    final Bytes serialized = SimpleOffsetSerializer.serialize(original);
-    T deserialized = SimpleOffsetSerializer.deserialize(serialized, getInputType());
+    final Bytes serialized = original.sszSerialize();
+    T deserialized = getInputType().sszDeserialize(serialized);
     assertThat(deserialized).isEqualTo(original);
   }
 
-  protected abstract Class<T> getInputType();
+  protected abstract ViewType<T> getInputType();
 
   protected abstract T createInput();
 }
