@@ -21,14 +21,14 @@ import java.util.Collection;
  *
  * @param <ElementType> Type of list elements
  */
-public interface ListViewWrite<ElementType extends SszData>
-    extends SszMutableComposite<ElementType>, ListViewRead<ElementType> {
+public interface SszMutableList<ElementType extends SszData>
+    extends SszMutableComposite<ElementType>, SszList<ElementType> {
 
   @Override
   void set(int index, ElementType value);
 
   @Override
-  ListViewRead<ElementType> commitChanges();
+  SszList<ElementType> commitChanges();
 
   /**
    * Appends a new immutable value to the end of the list. Size is incremented

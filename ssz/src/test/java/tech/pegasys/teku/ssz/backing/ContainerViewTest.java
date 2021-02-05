@@ -106,11 +106,11 @@ public class ContainerViewTest {
       return (SubContainerRead) get(2);
     }
 
-    default ListViewRead<UInt64View> getList1() {
+    default SszList<UInt64View> getList1() {
       return getAny(3);
     }
 
-    default ListViewRead<SubContainerRead> getList2() {
+    default SszList<SubContainerRead> getList2() {
       return getAny(4);
     }
 
@@ -132,10 +132,10 @@ public class ContainerViewTest {
     SubContainerWrite getSub1();
 
     @Override
-    ListViewWrite<UInt64View> getList1();
+    SszMutableList<UInt64View> getList1();
 
     @Override
-    ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2();
+    SszMutableRefList<SubContainerRead, SubContainerWrite> getList2();
 
     @Override
     SszMutableVector<ImmutableSubContainer> getList3();
@@ -253,14 +253,14 @@ public class ContainerViewTest {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewWrite<UInt64View> getList1() {
-      return (ListViewWrite<UInt64View>) getByRef(3);
+    public SszMutableList<UInt64View> getList1() {
+      return (SszMutableList<UInt64View>) getByRef(3);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2() {
-      return (ListViewWriteRef<SubContainerRead, SubContainerWrite>) getByRef(4);
+    public SszMutableRefList<SubContainerRead, SubContainerWrite> getList2() {
+      return (SszMutableRefList<SubContainerRead, SubContainerWrite>) getByRef(4);
     }
 
     @Override

@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
-public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements ListViewRead<ByteView> {
+public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements SszList<ByteView> {
 
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;

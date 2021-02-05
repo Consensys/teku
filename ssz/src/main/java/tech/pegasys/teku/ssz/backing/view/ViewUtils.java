@@ -21,8 +21,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszCollection;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -38,14 +38,14 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 /** Handy view tool methods */
 public class ViewUtils {
 
-  public static <C, V extends SszData> ListViewRead<V> toListView(
+  public static <C, V extends SszData> SszList<V> toListView(
       ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> ListViewRead<V> toListView(
+  public static <V extends SszData> SszList<V> toListView(
       ListViewType<V> type, Iterable<V> list) {
-    ListViewWrite<V> ret = type.getDefault().createWritableCopy();
+    SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
@@ -80,7 +80,7 @@ public class ViewUtils {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static ListViewRead<ByteView> createListFromBytes(
+  public static SszList<ByteView> createListFromBytes(
       ListViewType<ByteView> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
@@ -94,17 +94,17 @@ public class ViewUtils {
    * Creates immutable list of bits with size `bitlist.size()` and maxSize = `bitlist.getMaxSize()`
    * from {@link Bitlist} value
    */
-  public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
+  public static SszList<BitView> createBitlistView(Bitlist bitlist) {
     return createBitlistView(new BitListType(bitlist.getMaxSize()), bitlist);
   }
 
-  public static ListViewRead<BitView> createBitlistView(
+  public static SszList<BitView> createBitlistView(
       ListViewType<BitView> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 
   /** Converts list of bits to {@link Bitlist} value */
-  public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
+  public static Bitlist getBitlist(SszList<BitView> bitlistView) {
     return Bitlist.fromSszBytes(bitlistView.sszSerialize(), bitlistView.getType().getMaxLength());
   }
 

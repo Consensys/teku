@@ -20,11 +20,11 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
  *
  * @param <ElementType> Type of list elements
  */
-public interface ListViewRead<ElementType extends SszData>
+public interface SszList<ElementType extends SszData>
     extends SszCollection<ElementType> {
 
   @Override
-  ListViewWrite<ElementType> createWritableCopy();
+  SszMutableList<ElementType> createWritableCopy();
 
   @Override
   ListViewType<ElementType> getType();

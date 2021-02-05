@@ -37,7 +37,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -49,7 +49,7 @@ public class GenesisGenerator {
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final ListViewType<DepositData> depositDataListType =
       new ListViewType<>(DepositData.TYPE, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
-  private final ListViewWrite<DepositData> depositDataList =
+  private final SszMutableList<DepositData> depositDataList =
       depositDataListType.getDefault().createWritableCopy();
 
   private int activeValidatorCount = 0;

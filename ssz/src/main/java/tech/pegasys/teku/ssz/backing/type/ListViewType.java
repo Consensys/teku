@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class ListViewType<ElementViewT extends SszData>
-    extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
+    extends CollectionViewType<ElementViewT, SszList<ElementViewT>> {
   private final VectorViewType<ElementViewT> compatibleVectorType;
   private final ContainerViewType<?> containerViewType;
 
@@ -62,12 +62,12 @@ public class ListViewType<ElementViewT extends SszData>
   }
 
   @Override
-  public ListViewRead<ElementViewT> getDefault() {
+  public SszList<ElementViewT> getDefault() {
     return new ListViewReadImpl<>(this, createDefaultTree());
   }
 
   @Override
-  public ListViewRead<ElementViewT> createFromBackingNode(TreeNode node) {
+  public SszList<ElementViewT> createFromBackingNode(TreeNode node) {
     return new ListViewReadImpl<>(this, node);
   }
 

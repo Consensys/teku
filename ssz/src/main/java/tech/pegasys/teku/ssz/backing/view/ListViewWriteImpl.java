@@ -17,9 +17,9 @@ import static tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import static tech.pegasys.teku.ssz.backing.view.ListViewReadImpl.ListContainerRead;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
-import tech.pegasys.teku.ssz.backing.ListViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
+import tech.pegasys.teku.ssz.backing.SszMutableRefList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
 
 public class ListViewWriteImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    implements ListViewWriteRef<ElementReadType, ElementWriteType> {
+    implements SszMutableRefList<ElementReadType, ElementWriteType> {
 
   static class ListContainerWrite<
           ElementReadType extends SszData, ElementWriteType extends ElementReadType>
@@ -103,7 +103,7 @@ public class ListViewWriteImpl<
   }
 
   @Override
-  public ListViewRead<ElementReadType> commitChanges() {
+  public SszList<ElementReadType> commitChanges() {
     return new ListViewReadImpl<>(getType(), container.commitChanges());
   }
 
@@ -137,7 +137,7 @@ public class ListViewWriteImpl<
   }
 
   @Override
-  public ListViewWrite<ElementReadType> createWritableCopy() {
+  public SszMutableList<ElementReadType> createWritableCopy() {
     throw new UnsupportedOperationException("Creating a copy from writable list is not supported");
   }
 }

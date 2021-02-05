@@ -22,10 +22,10 @@ import java.util.function.Consumer;
  * @param <ElementReadType> Class of immutable child views
  * @param <ElementWriteType> Class of the corresponding mutable child views
  */
-public interface ListViewWriteRef<
+public interface SszMutableRefList<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-        ListViewWrite<ElementReadType> {
+    SszMutableList<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

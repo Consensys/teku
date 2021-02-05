@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
  * View of SSZ List type. This view is compatible with and implemented as a <code>
  * Container[Vector(maxLength), size]</code> under the cover.
  */
-public class ListViewReadImpl<ElementType extends SszData> implements ListViewRead<ElementType> {
+public class ListViewReadImpl<ElementType extends SszData> implements SszList<ElementType> {
 
   public static class ListContainerRead<ElementType extends SszData>
       extends ContainerViewReadImpl {
@@ -75,7 +75,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements ListViewRe
   private final ListContainerRead<ElementType> container;
   private final int cachedSize;
 
-  protected ListViewReadImpl(ListViewRead<ElementType> other) {
+  protected ListViewReadImpl(SszList<ElementType> other) {
     if (other instanceof ListViewReadImpl) {
       // optimization to preserve child view caches
       ListViewReadImpl<ElementType> otherImpl = (ListViewReadImpl<ElementType>) other;
@@ -109,7 +109,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements ListViewRe
   }
 
   @Override
-  public ListViewWrite<ElementType> createWritableCopy() {
+  public SszMutableList<ElementType> createWritableCopy() {
     return new ListViewWriteImpl<>(getType(), container.createWritableCopy());
   }
 
@@ -140,7 +140,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements ListViewRe
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ListViewRead)) {
+    if (!(o instanceof SszList)) {
       return false;
     }
     return hashTreeRoot().equals(((SszData) o).hashTreeRoot());
@@ -159,6 +159,6 @@ public class ListViewReadImpl<ElementType extends SszData> implements ListViewRe
     if (size() > maxToDisplay) {
       elements += " ... more " + (size() - maxToDisplay) + " elements";
     }
-    return "ListViewRead{size=" + size() + ": " + elements + "}";
+    return "SszList{size=" + size() + ": " + elements + "}";
   }
 }

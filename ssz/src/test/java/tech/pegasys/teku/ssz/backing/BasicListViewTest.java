@@ -28,7 +28,7 @@ public class BasicListViewTest {
   @Test
   public void simpleUInt64ListTest() {
     ListViewType<UInt64View> listType = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 7);
-    ListViewWrite<UInt64View> listView = listType.getDefault().createWritableCopy();
+    SszMutableList<UInt64View> listView = listType.getDefault().createWritableCopy();
     TreeNode n0 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UInt64.valueOf(0x111)));
     TreeNode n1 = listView.commitChanges().getBackingNode();

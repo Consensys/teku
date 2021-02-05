@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
@@ -96,7 +96,7 @@ class BitvectorTest {
     Bytes32 hashOld =
         Bytes32.fromHexString("0x447ac4def72d4aa09ded8e1130cbe013511d4881c3393903ada630f034e985d7");
 
-    ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
+    SszList<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
     Bytes32 hashNew = bitlistView.hashTreeRoot();
 
     Assertions.assertEquals(hashOld, hashNew);

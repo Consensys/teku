@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import com.google.common.base.Preconditions;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
@@ -31,7 +31,7 @@ public class ComplexViewTypes {
       super(BasicViewTypes.BYTE_TYPE, maxLength);
     }
 
-    public ListViewRead<ByteView> createList(Bytes bytes) {
+    public SszList<ByteView> createList(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() > getMaxLength(), "Bytes length exceeds List type maximum length ");
       return ViewUtils.createListFromBytes(this, bytes);

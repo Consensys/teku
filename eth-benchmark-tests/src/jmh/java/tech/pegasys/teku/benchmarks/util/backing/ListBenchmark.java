@@ -24,8 +24,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
@@ -40,14 +40,14 @@ public class ListBenchmark {
     return listMaxSizeM * 1024 * 1024;
   }
 
-  ListViewWrite<UInt64View> l1w;
-  ListViewRead<UInt64View> l2r;
+  SszMutableList<UInt64View> l1w;
+  SszList<UInt64View> l2r;
 
   public ListBenchmark() {
     ListViewType<UInt64View> type = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 100_000_000);
-    ListViewRead<UInt64View> l1 = type.getDefault();
+    SszList<UInt64View> l1 = type.getDefault();
 
-    ListViewWrite<UInt64View> l2w = l1.createWritableCopy();
+    SszMutableList<UInt64View> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
       l2w.append(new UInt64View(UInt64.valueOf(1121212)));
     }
@@ -62,7 +62,7 @@ public class ListBenchmark {
   public void init() throws Exception {
     ListViewType<UInt64View> type =
         new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
-    ListViewRead<UInt64View> l1 = type.getDefault();
+    SszList<UInt64View> l1 = type.getDefault();
     l1w = l1.createWritableCopy();
   }
 
@@ -72,7 +72,7 @@ public class ListBenchmark {
   public void createDefaultUIntList(Blackhole bh) {
     ListViewType<UInt64View> type =
         new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
-    ListViewRead<UInt64View> l1 = type.getDefault();
+    SszList<UInt64View> l1 = type.getDefault();
     bh.consume(l1);
   }
 
@@ -87,9 +87,9 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
-    ListViewWrite<UInt64View> l2w = l2r.createWritableCopy();
+    SszMutableList<UInt64View> l2w = l2r.createWritableCopy();
     l2w.set(12345, new UInt64View(UInt64.valueOf(77777)));
-    ListViewRead<UInt64View> l2r_ = l2w.commitChanges();
+    SszList<UInt64View> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }
 }

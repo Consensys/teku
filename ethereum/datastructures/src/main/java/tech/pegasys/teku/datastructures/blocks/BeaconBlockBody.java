@@ -24,7 +24,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
@@ -44,11 +44,11 @@ public class BeaconBlockBody
     SszVector<ByteView>,
         Eth1Data,
         Bytes32View,
-        ListViewRead<ProposerSlashing>,
-        ListViewRead<AttesterSlashing>,
-        ListViewRead<Attestation>,
-        ListViewRead<Deposit>,
-        ListViewRead<SignedVoluntaryExit>> {
+    SszList<ProposerSlashing>,
+    SszList<AttesterSlashing>,
+    SszList<Attestation>,
+    SszList<Deposit>,
+    SszList<SignedVoluntaryExit>> {
 
   public static class BeaconBlockBodyType
       extends ContainerType8<
@@ -56,11 +56,11 @@ public class BeaconBlockBody
       SszVector<ByteView>,
           Eth1Data,
           Bytes32View,
-          ListViewRead<ProposerSlashing>,
-          ListViewRead<AttesterSlashing>,
-          ListViewRead<Attestation>,
-          ListViewRead<Deposit>,
-          ListViewRead<SignedVoluntaryExit>> {
+      SszList<ProposerSlashing>,
+      SszList<AttesterSlashing>,
+      SszList<Attestation>,
+      SszList<Deposit>,
+      SszList<SignedVoluntaryExit>> {
 
     public BeaconBlockBodyType() {
       super(

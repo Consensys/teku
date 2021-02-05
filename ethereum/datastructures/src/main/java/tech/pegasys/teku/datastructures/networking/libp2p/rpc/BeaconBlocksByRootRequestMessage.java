@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
-    implements ListViewRead<Bytes32View>, RpcRequest {
+    implements SszList<Bytes32View>, RpcRequest {
 
   private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
       new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);

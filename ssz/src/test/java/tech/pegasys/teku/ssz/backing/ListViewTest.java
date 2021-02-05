@@ -43,19 +43,19 @@ public class ListViewTest {
   void clearTest() {
     ListViewType<TestSubContainer> type =
         new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
-    ListViewRead<TestSubContainer> lr1 = type.getDefault();
-    ListViewWrite<TestSubContainer> lw1 = lr1.createWritableCopy();
+    SszList<TestSubContainer> lr1 = type.getDefault();
+    SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
     lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    ListViewWrite<TestSubContainer> lw2 = lw1.commitChanges().createWritableCopy();
+    SszMutableList<TestSubContainer> lw2 = lw1.commitChanges().createWritableCopy();
     lw2.clear();
-    ListViewRead<TestSubContainer> lr2 = lw2.commitChanges();
+    SszList<TestSubContainer> lr2 = lw2.commitChanges();
     assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
 
-    ListViewWrite<TestSubContainer> lw3 = lw1.commitChanges().createWritableCopy();
+    SszMutableList<TestSubContainer> lw3 = lw1.commitChanges().createWritableCopy();
     lw3.clear();
     lw3.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    ListViewRead<TestSubContainer> lr3 = lw3.commitChanges();
+    SszList<TestSubContainer> lr3 = lw3.commitChanges();
     assertThat(lr3.size()).isEqualTo(1);
   }
 
@@ -68,24 +68,24 @@ public class ListViewTest {
 
     ListViewType<TestSubContainer> type =
         new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
-    ListViewRead<TestSubContainer> lr1 = type.getDefault();
-    ListViewWrite<TestSubContainer> lw1 = lr1.createWritableCopy();
+    SszList<TestSubContainer> lr1 = type.getDefault();
+    SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr1.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr1.hashTreeRoot());
 
     lw1.append(elements.get(0));
-    ListViewWrite<TestSubContainer> lw2 = type.getDefault().createWritableCopy();
+    SszMutableList<TestSubContainer> lw2 = type.getDefault().createWritableCopy();
     lw2.append(elements.get(0));
-    ListViewRead<TestSubContainer> lr2 = lw2.commitChanges();
+    SszList<TestSubContainer> lr2 = lw2.commitChanges();
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr2.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
 
     lw1.appendAll(elements.subList(1, 5));
-    ListViewWrite<TestSubContainer> lw3 = type.getDefault().createWritableCopy();
+    SszMutableList<TestSubContainer> lw3 = type.getDefault().createWritableCopy();
     lw3.appendAll(elements);
-    ListViewRead<TestSubContainer> lr3 = lw3.commitChanges();
+    SszList<TestSubContainer> lr3 = lw3.commitChanges();
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr3.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr3.hashTreeRoot());
@@ -96,9 +96,9 @@ public class ListViewTest {
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr1.hashTreeRoot());
 
     lw1.appendAll(elements.subList(0, 5));
-    ListViewWrite<TestSubContainer> lw4 = type.getDefault().createWritableCopy();
+    SszMutableList<TestSubContainer> lw4 = type.getDefault().createWritableCopy();
     lw4.appendAll(elements);
-    ListViewRead<TestSubContainer> lr4 = lw3.commitChanges();
+    SszList<TestSubContainer> lr4 = lw3.commitChanges();
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr4.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr4.hashTreeRoot());
@@ -159,19 +159,19 @@ public class ListViewTest {
 
     // should normally deserialize smaller lists
     for (int i = max(0, maxLength - 8); i <= maxLength; i++) {
-      ListViewWrite<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
+      SszMutableList<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
       for (int j = 0; j < i; j++) {
         writableCopy.append(listElementType.getDefault());
       }
       Bytes ssz = writableCopy.commitChanges().sszSerialize();
-      ListViewRead<T> resList = listViewType.sszDeserialize(ssz);
+      SszList<T> resList = listViewType.sszDeserialize(ssz);
 
       assertThat(resList.size()).isEqualTo(i);
     }
 
     // should fail fast when ssz is longer than max
     for (int i = maxLength + 1; i < maxLength + 10; i++) {
-      ListViewWrite<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
+      SszMutableList<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
       for (int j = 0; j < i; j++) {
         writableCopy.append(listElementType.getDefault());
       }

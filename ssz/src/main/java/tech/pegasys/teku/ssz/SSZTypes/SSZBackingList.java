@@ -15,20 +15,20 @@ package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 
 public class SSZBackingList<C, R extends SszData> extends SSZAbstractCollection<C>
     implements SSZMutableList<C> {
 
-  private final ListViewRead<R> delegate;
+  private final SszList<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
 
   public SSZBackingList(
       Class<? extends C> classInfo,
-      ListViewRead<R> delegate,
+      SszList<R> delegate,
       Function<C, R> wrapper,
       Function<R, C> unwrapper) {
     super(classInfo);
@@ -37,9 +37,9 @@ public class SSZBackingList<C, R extends SszData> extends SSZAbstractCollection<
     this.unwrapper = unwrapper;
   }
 
-  private ListViewWrite<R> getWriteDelegate() {
+  private SszMutableList<R> getWriteDelegate() {
     // temporary workaround to have a single implementation class
-    return (ListViewWrite<R>) delegate;
+    return (SszMutableList<R>) delegate;
   }
 
   @Override

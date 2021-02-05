@@ -42,9 +42,9 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
 
-  <TElement extends SszData> List<ListViewRead<TElement>> createListVariants(
-      ListViewType<TElement> type, ListViewRead<TElement> list0) {
-    List<ListViewRead<TElement>> ret = new ArrayList<>();
+  <TElement extends SszData> List<SszList<TElement>> createListVariants(
+      ListViewType<TElement> type, SszList<TElement> list0) {
+    List<SszList<TElement>> ret = new ArrayList<>();
     ret.add(list0);
     if (!(list0 instanceof SszMutableData)) {
       ret.add(type.createFromBackingNode(list0.getBackingNode()));
@@ -54,12 +54,12 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertEmptyListVariants(
-      ListViewType<TElement> type, ListViewRead<TElement> list0) {
+      ListViewType<TElement> type, SszList<TElement> list0) {
     createListVariants(type, list0).forEach(l -> assertEmptyList(type, l));
   }
 
   <TElement extends SszData> void assertEmptyList(
-      ListViewType<TElement> type, ListViewRead<TElement> list) {
+      ListViewType<TElement> type, SszList<TElement> list) {
 
     if (!(list instanceof SszMutableData)) {
       assertThat(list.hashTreeRoot()).isEqualTo(type.getDefaultTree().hashTreeRoot());
@@ -74,12 +74,12 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListElementsVariants(
-      ListViewType<TElement> type, ListViewRead<TElement> list0, List<TElement> expectedElements) {
+      ListViewType<TElement> type, SszList<TElement> list0, List<TElement> expectedElements) {
     createListVariants(type, list0).forEach(l -> assertListElements(type, l, expectedElements));
   }
 
   <TElement extends SszData> void assertListElements(
-      ListViewType<TElement> type, ListViewRead<TElement> list, List<TElement> expectedElements) {
+      ListViewType<TElement> type, SszList<TElement> list, List<TElement> expectedElements) {
 
     assertThat(list.isEmpty()).isFalse();
     assertThat(list.size()).isEqualTo(expectedElements.size());
@@ -93,9 +93,9 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListEqualsVariants(
-      ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
-    List<ListViewRead<TElement>> listVariants1 = createListVariants(type, list1);
-    List<ListViewRead<TElement>> listVariants2 = createListVariants(type, list2);
+      ListViewType<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
+    List<SszList<TElement>> listVariants1 = createListVariants(type, list1);
+    List<SszList<TElement>> listVariants2 = createListVariants(type, list2);
 
     listVariants1.forEach(
         listVariant1 ->
@@ -104,7 +104,7 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListEquals(
-      ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
+      ListViewType<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
     assertThat(list1).isEqualTo(list2);
@@ -204,18 +204,18 @@ public class ListViewHintsTest {
         generateTypesWithHints(new ListViewType<>(listElementType, maxListSize));
 
     RewindingSupplier<TElement> rewindingSupplier = new RewindingSupplier<>(listElementsFactory);
-    ArrayList<ListViewRead<TElement>> resultsToCompare = new ArrayList<>();
+    ArrayList<SszList<TElement>> resultsToCompare = new ArrayList<>();
     testList(types.get(0), rewindingSupplier, resultsToCompare::add);
 
     for (int i = 1; i < types.size(); i++) {
       ListViewType<TElement> type = types.get(i);
       rewindingSupplier.rewind();
-      ArrayDeque<ListViewRead<TElement>> resQueue = new ArrayDeque<>(resultsToCompare);
+      ArrayDeque<SszList<TElement>> resQueue = new ArrayDeque<>(resultsToCompare);
       testList(
           type,
           rewindingSupplier,
           r -> {
-            ListViewRead<TElement> compareToList = resQueue.removeFirst();
+            SszList<TElement> compareToList = resQueue.removeFirst();
             assertListEqualsVariants(type, r, compareToList);
             assertThat(r.sszSerialize()).isEqualTo(compareToList.sszSerialize());
           });
@@ -225,55 +225,55 @@ public class ListViewHintsTest {
   <TElement extends SszData> void testList(
       ListViewType<TElement> type,
       Supplier<TElement> listElementsFactory,
-      Consumer<ListViewRead<TElement>> results) {
+      Consumer<SszList<TElement>> results) {
 
-    ListViewRead<TElement> def = type.getDefault();
+    SszList<TElement> def = type.getDefault();
     assertEmptyListVariants(type, def);
     results.accept(def);
 
-    ListViewWrite<TElement> w0 = def.createWritableCopy();
+    SszMutableList<TElement> w0 = def.createWritableCopy();
     assertEmptyListVariants(type, w0);
 
-    ListViewRead<TElement> r0 = w0.commitChanges();
+    SszList<TElement> r0 = w0.commitChanges();
     assertEmptyListVariants(type, r0);
     results.accept(r0);
 
-    ListViewWrite<TElement> w1 = r0.createWritableCopy();
+    SszMutableList<TElement> w1 = r0.createWritableCopy();
     assertEmptyListVariants(type, w1);
 
     TElement elem1 = listElementsFactory.get();
     w1.append(elem1);
     assertListElementsVariants(type, w1, List.of(elem1));
 
-    ListViewRead<TElement> r1 = w1.commitChanges();
+    SszList<TElement> r1 = w1.commitChanges();
     assertListElementsVariants(type, r1, List.of(elem1));
     results.accept(r1);
 
-    ListViewWrite<TElement> w2 = r1.createWritableCopy();
+    SszMutableList<TElement> w2 = r1.createWritableCopy();
     assertListElementsVariants(type, r1, List.of(elem1));
 
     TElement elem2 = listElementsFactory.get();
     w2.append(elem2);
     assertListElementsVariants(type, w2, List.of(elem1, elem2));
 
-    ListViewRead<TElement> r2 = w2.commitChanges();
+    SszList<TElement> r2 = w2.commitChanges();
     assertListElementsVariants(type, r2, List.of(elem1, elem2));
     results.accept(r2);
 
-    ListViewWrite<TElement> w3 = r2.createWritableCopy();
+    SszMutableList<TElement> w3 = r2.createWritableCopy();
     assertListElementsVariants(type, w3, List.of(elem1, elem2));
 
     TElement elem3 = listElementsFactory.get();
     w3.set(0, elem3);
     assertListElementsVariants(type, w3, List.of(elem3, elem2));
 
-    ListViewRead<TElement> r3 = w3.commitChanges();
+    SszList<TElement> r3 = w3.commitChanges();
     assertListElementsVariants(type, r3, List.of(elem3, elem2));
     results.accept(r3);
 
-    ListViewWrite<TElement> w4 = r2.createWritableCopy();
+    SszMutableList<TElement> w4 = r2.createWritableCopy();
     w3.set(0, elem1);
-    ListViewRead<TElement> r4 = w4.commitChanges();
+    SszList<TElement> r4 = w4.commitChanges();
     assertListElementsVariants(type, r4, List.of(elem1, elem2));
     assertListEqualsVariants(type, r4, r2);
     results.accept(r4);
@@ -294,34 +294,34 @@ public class ListViewHintsTest {
         .filter(s -> s <= type.getMaxLength())
         .forEach(
             size -> {
-              ListViewWrite<TElement> w1_0 = def.createWritableCopy();
+              SszMutableList<TElement> w1_0 = def.createWritableCopy();
               List<TElement> elements = new ArrayList<>();
               for (int i = 0; i < size; i++) {
                 TElement el = listElementsFactory.get();
                 elements.add(el);
                 w1_0.append(el);
               }
-              ListViewRead<TElement> r1_0 = w1_0.commitChanges();
+              SszList<TElement> r1_0 = w1_0.commitChanges();
               results.accept(r1_0);
               assertListElementsVariants(type, r1_0, elements);
 
               IntStream changeIndexes =
                   IntStream.of(0, 1, 2, 3, 4, 7, 8, size - 1, size - 2).filter(i -> i < size);
-              ListViewWrite<TElement> w1_1 = r1_0.createWritableCopy();
+              SszMutableList<TElement> w1_1 = r1_0.createWritableCopy();
               changeIndexes.forEach(
                   chIdx -> {
                     TElement newElem = listElementsFactory.get();
                     elements.set(chIdx, newElem);
                     w1_1.set(chIdx, newElem);
                   });
-              ListViewRead<TElement> r1_1 = w1_1.commitChanges();
+              SszList<TElement> r1_1 = w1_1.commitChanges();
               assertListElementsVariants(type, r1_1, elements);
               results.accept(r1_0);
             });
 
     if (type.getMaxLength() <= (1 << 10)) {
       // check max capacity if the max len is not too huge
-      ListViewWrite<TElement> w5 = def.createWritableCopy();
+      SszMutableList<TElement> w5 = def.createWritableCopy();
       for (long i = 0; i < type.getMaxLength(); i++) {
         w5.append(listElementsFactory.get());
       }

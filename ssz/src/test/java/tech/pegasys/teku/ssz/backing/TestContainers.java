@@ -150,10 +150,10 @@ public class TestContainers {
 
   public static class VariableSizeContainer
       extends Container3<
-          VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View> {
+          VariableSizeContainer, TestSubContainer, SszList<UInt64View>, UInt64View> {
 
     public static final ContainerType3<
-            VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
+            VariableSizeContainer, TestSubContainer, SszList<UInt64View>, UInt64View>
         TYPE =
             ContainerType3.create(
                 TestSubContainer.TYPE,
@@ -163,7 +163,7 @@ public class TestContainers {
 
     private VariableSizeContainer(
         ContainerType3<
-                VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
+                VariableSizeContainer, TestSubContainer, SszList<UInt64View>, UInt64View>
             type,
         TreeNode backingNode) {
       super(type, backingNode);
