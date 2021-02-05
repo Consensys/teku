@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -31,15 +31,15 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class DepositData
     extends Container4<
-        DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>> {
+        DepositData, SszVector<ByteView>, Bytes32View, UInt64View, SszVector<ByteView>> {
 
   public static class DepositDataType
       extends ContainerType4<
           DepositData,
-          VectorViewRead<ByteView>,
+      SszVector<ByteView>,
           Bytes32View,
           UInt64View,
-          VectorViewRead<ByteView>> {
+      SszVector<ByteView>> {
 
     public DepositDataType() {
       super(

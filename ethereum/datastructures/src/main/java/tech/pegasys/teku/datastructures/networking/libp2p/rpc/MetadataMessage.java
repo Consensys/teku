@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -30,10 +30,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class MetadataMessage
-    extends Container2<MetadataMessage, UInt64View, VectorViewRead<BitView>> implements RpcRequest {
+    extends Container2<MetadataMessage, UInt64View, SszVector<BitView>> implements RpcRequest {
 
   public static class MetadataMessageType
-      extends ContainerType2<MetadataMessage, UInt64View, VectorViewRead<BitView>> {
+      extends ContainerType2<MetadataMessage, UInt64View, SszVector<BitView>> {
 
     public MetadataMessageType() {
       super(

@@ -20,7 +20,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,11 +33,11 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
     extends Container3<
-        Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+        Attestation, ListViewRead<BitView>, AttestationData, SszVector<ByteView>> {
 
   public static class AttestationType
       extends ContainerType3<
-          Attestation, ListViewRead<BitView>, AttestationData, VectorViewRead<ByteView>> {
+          Attestation, ListViewRead<BitView>, AttestationData, SszVector<ByteView>> {
 
     public AttestationType() {
       super(

@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 public class Validator
     extends Container8<
         Validator,
-        VectorViewRead<ByteView>,
+    SszVector<ByteView>,
         Bytes32View,
         UInt64View,
         BitView,
@@ -44,7 +44,7 @@ public class Validator
   public static class ValidatorType
       extends ContainerType8<
           Validator,
-          VectorViewRead<ByteView>,
+      SszVector<ByteView>,
           Bytes32View,
           UInt64View,
           BitView,

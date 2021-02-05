@@ -14,7 +14,7 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -23,10 +23,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class SignedBeaconBlockHeader
-    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
+    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<ByteView>> {
 
   public static class SignedBeaconBlockHeaderType
-      extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
+      extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<ByteView>> {
 
     public SignedBeaconBlockHeaderType() {
       super(

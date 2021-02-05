@@ -15,7 +15,7 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class SignedVoluntaryExit
-    extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<ByteView>> {
 
   public static class SignedVoluntaryExitType
-      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
+      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, SszVector<ByteView>> {
 
     public SignedVoluntaryExitType() {
       super(

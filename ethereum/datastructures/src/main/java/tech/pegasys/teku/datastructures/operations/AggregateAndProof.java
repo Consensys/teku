@@ -15,7 +15,7 @@ package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -26,10 +26,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class AggregateAndProof
-    extends Container3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
+    extends Container3<AggregateAndProof, UInt64View, Attestation, SszVector<ByteView>> {
 
   public static class AggregateAndProofType
-      extends ContainerType3<AggregateAndProof, UInt64View, Attestation, VectorViewRead<ByteView>> {
+      extends ContainerType3<AggregateAndProof, UInt64View, Attestation, SszVector<ByteView>> {
 
     public AggregateAndProofType() {
       super(

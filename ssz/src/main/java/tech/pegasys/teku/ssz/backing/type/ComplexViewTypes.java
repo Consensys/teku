@@ -16,7 +16,7 @@ package tech.pegasys.teku.ssz.backing.type;
 import com.google.common.base.Preconditions;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
@@ -48,7 +48,7 @@ public class ComplexViewTypes {
       super(BasicViewTypes.BYTE_TYPE, maxLength);
     }
 
-    public VectorViewRead<ByteView> createVector(Bytes bytes) {
+    public SszVector<ByteView> createVector(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() == getLength(), "Bytes length doesn't match Vector type length ");
       return ViewUtils.createVectorFromBytes(this, bytes);

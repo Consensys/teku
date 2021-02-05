@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.VectorViewWrite;
-import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszMutableVector;
+import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 public class VectorViewWriteImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends AbstractCompositeViewWrite<ElementReadType, ElementWriteType>
-    implements VectorViewWriteRef<ElementReadType, ElementWriteType> {
+    implements SszMutableRefVector<ElementReadType, ElementWriteType> {
 
   public VectorViewWriteImpl(AbstractCompositeViewRead<ElementReadType> backingImmutableView) {
     super(backingImmutableView);
@@ -93,7 +93,7 @@ public class VectorViewWriteImpl<
   }
 
   @Override
-  public VectorViewWrite<ElementReadType> createWritableCopy() {
+  public SszMutableVector<ElementReadType> createWritableCopy() {
     throw new UnsupportedOperationException();
   }
 }

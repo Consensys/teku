@@ -20,10 +20,10 @@ package tech.pegasys.teku.ssz.backing;
  * @param <ElementReadType> Class of immutable child views
  * @param <ElementWriteType> Class of the corresponding mutable child views
  */
-public interface VectorViewWriteRef<
+public interface SszMutableRefVector<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-        VectorViewWrite<ElementReadType> {
+    SszMutableVector<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

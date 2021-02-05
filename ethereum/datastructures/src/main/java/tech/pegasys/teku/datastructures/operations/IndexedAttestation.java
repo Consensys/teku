@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,11 +33,11 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
     extends Container3<
-        IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
+        IndexedAttestation, ListViewRead<UInt64View>, AttestationData, SszVector<ByteView>> {
 
   public static class IndexedAttestationType
       extends ContainerType3<
-          IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
+          IndexedAttestation, ListViewRead<UInt64View>, AttestationData, SszVector<ByteView>> {
 
     public IndexedAttestationType() {
       super(

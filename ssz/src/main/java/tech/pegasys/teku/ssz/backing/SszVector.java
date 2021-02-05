@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+
 /**
- * Mutable Vector view with immutable elements This type of vector can be modified by setting
- * immutable elements
+ * Immutable Vector view
  *
- * @param <ElementType> Type of elements
+ * @param <ElementType> Type of vector elements
  */
-public interface VectorViewWrite<ElementType extends SszData>
-    extends SszMutableComposite<ElementType>, VectorViewRead<ElementType> {
+public interface SszVector<ElementType extends SszData>
+    extends SszCollection<ElementType> {
 
   @Override
-  VectorViewRead<ElementType> commitChanges();
+  SszMutableVector<ElementType> createWritableCopy();
+
+  @Override
+  VectorViewType<ElementType> getType();
 }

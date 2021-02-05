@@ -16,7 +16,7 @@ package tech.pegasys.teku.ssz.backing.view;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class VectorViewReadImpl<ElementReadType extends SszData>
-    extends AbstractCompositeViewRead<ElementReadType> implements VectorViewRead<ElementReadType> {
+    extends AbstractCompositeViewRead<ElementReadType> implements SszVector<ElementReadType> {
 
   public VectorViewReadImpl(CompositeViewType<?> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -81,7 +81,7 @@ public class VectorViewReadImpl<ElementReadType extends SszData>
     if (this == o) {
       return true;
     }
-    if (!(o instanceof VectorViewRead)) {
+    if (!(o instanceof SszVector)) {
       return false;
     }
     return hashTreeRoot().equals(((SszData) o).hashTreeRoot());
@@ -94,6 +94,6 @@ public class VectorViewReadImpl<ElementReadType extends SszData>
 
   @Override
   public String toString() {
-    return "VectorViewRead{" + stream().map(Object::toString).collect(Collectors.joining()) + "}";
+    return "SszVector{" + stream().map(Object::toString).collect(Collectors.joining()) + "}";
   }
 }

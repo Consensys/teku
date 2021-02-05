@@ -114,7 +114,7 @@ public class ContainerViewTest {
       return getAny(4);
     }
 
-    default VectorViewRead<ImmutableSubContainer> getList3() {
+    default SszVector<ImmutableSubContainer> getList3() {
       return getAny(5);
     }
 
@@ -138,7 +138,7 @@ public class ContainerViewTest {
     ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2();
 
     @Override
-    VectorViewWrite<ImmutableSubContainer> getList3();
+    SszMutableVector<ImmutableSubContainer> getList3();
 
     @Override
     ContainerRead commitChanges();
@@ -265,8 +265,8 @@ public class ContainerViewTest {
 
     @Override
     @SuppressWarnings("unchecked")
-    public VectorViewWrite<ImmutableSubContainer> getList3() {
-      return (VectorViewWrite<ImmutableSubContainer>) getByRef(5);
+    public SszMutableVector<ImmutableSubContainer> getList3() {
+      return (SszMutableVector<ImmutableSubContainer>) getByRef(5);
     }
 
     @Override

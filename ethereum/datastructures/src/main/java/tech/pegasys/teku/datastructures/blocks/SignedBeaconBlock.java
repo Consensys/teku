@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -27,11 +27,11 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public class SignedBeaconBlock
-    extends Container2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>>
+    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<ByteView>>
     implements BeaconBlockSummary {
 
   public static class SignedBeaconBlockType
-      extends ContainerType2<SignedBeaconBlock, BeaconBlock, VectorViewRead<ByteView>> {
+      extends ContainerType2<SignedBeaconBlock, BeaconBlock, SszVector<ByteView>> {
 
     public SignedBeaconBlockType() {
       super(

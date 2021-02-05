@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class VectorViewType<ElementViewT extends SszData>
-    extends CollectionViewType<ElementViewT, VectorViewRead<ElementViewT>> {
+    extends CollectionViewType<ElementViewT, SszVector<ElementViewT>> {
 
   private final boolean isListBacking;
 
@@ -55,7 +55,7 @@ public class VectorViewType<ElementViewT extends SszData>
   }
 
   @Override
-  public VectorViewRead<ElementViewT> getDefault() {
+  public SszVector<ElementViewT> getDefault() {
     return createFromBackingNode(getDefaultTree());
   }
 
@@ -92,7 +92,7 @@ public class VectorViewType<ElementViewT extends SszData>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public VectorViewRead<ElementViewT> createFromBackingNode(TreeNode node) {
+  public SszVector<ElementViewT> createFromBackingNode(TreeNode node) {
     return new VectorViewReadImpl(this, node);
   }
 

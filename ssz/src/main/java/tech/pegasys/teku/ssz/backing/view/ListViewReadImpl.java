@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
@@ -61,7 +61,7 @@ public class ListViewReadImpl<ElementType extends SszData> implements ListViewRe
       return (int) ((BasicViews.UInt64View) get(1)).longValue();
     }
 
-    public VectorViewRead<ElementType> getData() {
+    public SszVector<ElementType> getData() {
       return getAny(0);
     }
 

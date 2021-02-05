@@ -25,7 +25,7 @@ import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -41,7 +41,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class BeaconBlockBody
     extends Container8<
         BeaconBlockBody,
-        VectorViewRead<ByteView>,
+    SszVector<ByteView>,
         Eth1Data,
         Bytes32View,
         ListViewRead<ProposerSlashing>,
@@ -53,7 +53,7 @@ public class BeaconBlockBody
   public static class BeaconBlockBodyType
       extends ContainerType8<
           BeaconBlockBody,
-          VectorViewRead<ByteView>,
+      SszVector<ByteView>,
           Eth1Data,
           Bytes32View,
           ListViewRead<ProposerSlashing>,

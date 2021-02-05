@@ -23,8 +23,8 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewWrite;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
@@ -50,14 +50,14 @@ public class ViewUtils {
     return ret.commitChanges();
   }
 
-  public static <C, V extends SszData> VectorViewRead<V> toVectorView(
+  public static <C, V extends SszData> SszVector<V> toVectorView(
       VectorViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toVectorView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> VectorViewRead<V> toVectorView(
+  public static <V extends SszData> SszVector<V> toVectorView(
       VectorViewType<V> type, Iterable<V> list) {
-    VectorViewWrite<V> ret = type.getDefault().createWritableCopy();
+    SszMutableVector<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
     for (V v : list) {
       if (idx >= type.getLength()) {
@@ -70,12 +70,12 @@ public class ViewUtils {
   }
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
-  public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
+  public static SszVector<ByteView> createVectorFromBytes(Bytes bytes) {
     VectorViewType<ByteView> type = new ByteVectorType(bytes.size());
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static VectorViewRead<ByteView> createVectorFromBytes(
+  public static SszVector<ByteView> createVectorFromBytes(
       VectorViewType<ByteView> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
@@ -109,8 +109,8 @@ public class ViewUtils {
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
-  public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
-    VectorViewWrite<BitView> viewWrite =
+  public static SszVector<BitView> createBitvectorView(Bitvector bitvector) {
+    SszMutableVector<BitView> viewWrite =
         new BitVectorType(bitvector.getSize()).getDefault().createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
       viewWrite.set(i, BitView.viewOf(bitvector.getBit(i)));
@@ -119,7 +119,7 @@ public class ViewUtils {
   }
 
   /** Converts vector of bits to {@link Bitvector} value */
-  public static Bitvector getBitvector(VectorViewRead<BitView> vectorView) {
+  public static Bitvector getBitvector(SszVector<BitView> vectorView) {
     int[] bitIndexes =
         IntStream.range(0, vectorView.size()).filter(i -> vectorView.get(i).get()).toArray();
     return new Bitvector(vectorView.size(), bitIndexes);

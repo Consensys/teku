@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.operations;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -27,10 +27,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
+public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, DepositData> {
 
   public static class DepositType
-      extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
+      extends ContainerType2<Deposit, SszVector<Bytes32View>, DepositData> {
 
     public DepositType() {
       super(

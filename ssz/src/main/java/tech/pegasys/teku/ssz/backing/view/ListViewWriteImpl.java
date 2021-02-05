@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.ListViewWriteRef;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
-import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
@@ -51,7 +51,7 @@ public class ListViewWriteImpl<
       set(1, UInt64View.fromLong(size));
     }
 
-    public VectorViewWriteRef<ElementReadType, ElementWriteType> getData() {
+    public SszMutableRefVector<ElementReadType, ElementWriteType> getData() {
       return getAnyByRef(0);
     }
 
