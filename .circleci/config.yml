@@ -200,7 +200,7 @@ jobs:
       - capture_test_artifacts
 
   referenceTests:
-    parallelism: 5
+    parallelism: 7
     executor: large_executor
     steps:
       - prepare
@@ -218,11 +218,8 @@ jobs:
               ./gradlew --no-daemon expandRefTests
             fi
       - run:
-          name: CompileReferenceTests
-          command: |
-            ./gradlew --no-daemon --parallel compileReferenceTestJava
-      - run:
           name: ReferenceTests
+          no_output_timeout: 30m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/referenceTest/generated/**/*Test.java" \
               | sed 's@.*/src/referenceTest/generated/@@' \
