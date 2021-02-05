@@ -253,7 +253,7 @@ jobs:
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources referenceTest $GRADLE_ARGS
+            ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
       - capture_test_results
 
   compatibilityTests:
