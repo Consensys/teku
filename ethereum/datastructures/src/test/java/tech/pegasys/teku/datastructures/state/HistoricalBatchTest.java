@@ -51,7 +51,7 @@ public class HistoricalBatchTest {
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.TYPE.get()));
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.SSZ_SCHEMA.get()));
   }
 
   @Test
@@ -68,7 +68,7 @@ public class HistoricalBatchTest {
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = batch.sszSerialize();
-    HistoricalBatch result = HistoricalBatch.TYPE.get().sszDeserialize(serialized);
+    HistoricalBatch result = HistoricalBatch.SSZ_SCHEMA.get().sszDeserialize(serialized);
     assertEquals(batch, result);
   }
 }

@@ -197,7 +197,7 @@ class BeaconBlockBodyTest {
   void roundTripsViaSsz() {
     BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
     BeaconBlockBody newBeaconBlockBody =
-        BeaconBlockBody.TYPE.get().sszDeserialize(beaconBlockBody.sszSerialize());
+        BeaconBlockBody.SSZ_SCHEMA.get().sszDeserialize(beaconBlockBody.sszSerialize());
     assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 }

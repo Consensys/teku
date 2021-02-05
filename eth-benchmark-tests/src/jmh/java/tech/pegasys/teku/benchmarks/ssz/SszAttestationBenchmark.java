@@ -19,7 +19,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
 
@@ -36,8 +36,8 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
   }
 
   @Override
-  protected ViewType<Attestation> getContainerType() {
-    return Attestation.TYPE;
+  protected SszSchema<Attestation> getContainerType() {
+    return Attestation.SSZ_SCHEMA;
   }
 
   @Override

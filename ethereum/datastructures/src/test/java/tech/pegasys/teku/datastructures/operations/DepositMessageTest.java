@@ -32,7 +32,7 @@ class DepositMessageTest {
   public void shouldRoundTripViaSsz() {
     final DepositMessage message = new DepositMessage(pubkey, withdrawalCredentials, amount);
     final Bytes ssz = message.sszSerialize();
-    final DepositMessage result = DepositMessage.TYPE.sszDeserialize(ssz);
+    final DepositMessage result = DepositMessage.SSZ_SCHEMA.sszDeserialize(ssz);
 
     assertThat(result).isEqualTo(message);
   }

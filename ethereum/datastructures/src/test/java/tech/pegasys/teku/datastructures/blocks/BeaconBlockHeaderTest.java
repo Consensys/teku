@@ -107,7 +107,7 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader beaconBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     Bytes beaconBlockSerialized = beaconBlockHeader.sszSerialize();
     BeaconBlockHeader newBeaconBlockHeader =
-        BeaconBlockHeader.TYPE.sszDeserialize(beaconBlockSerialized);
+        BeaconBlockHeader.SSZ_SCHEMA.sszDeserialize(beaconBlockSerialized);
     assertEquals(beaconBlockHeader, newBeaconBlockHeader);
   }
 

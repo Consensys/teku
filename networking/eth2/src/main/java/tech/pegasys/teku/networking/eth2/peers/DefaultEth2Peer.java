@@ -53,7 +53,7 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -270,7 +270,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return outstandingPings.get();
   }
 
-  private <I extends RpcRequest, O extends ViewRead> SafeFuture<Void> sendMessage(
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendMessage(
       final Eth2RpcMethod<I, O> method, final I request) {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
@@ -279,7 +279,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public <I extends RpcRequest, O extends ViewRead> SafeFuture<O> requestSingleItem(
+  public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request) {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
@@ -287,7 +287,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
-  private <I extends RpcRequest, O extends ViewRead> SafeFuture<Optional<O>> requestOptionalItem(
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(
       final Eth2RpcMethod<I, O> method, final I request) {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
@@ -295,7 +295,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
-  private <I extends RpcRequest, O extends ViewRead> SafeFuture<Void> requestStream(
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> requestStream(
       final Eth2RpcMethod<I, O> method, final I request, final ResponseStreamListener<O> listener) {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
@@ -303,7 +303,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
-  private <I extends RpcRequest, O extends ViewRead> SafeFuture<ResponseStream<O>> sendRequest(
+  private <I extends RpcRequest, O extends SszData> SafeFuture<ResponseStream<O>> sendRequest(
       final Eth2RpcMethod<I, O> method, final I request, Eth2OutgoingRequestHandler<I, O> handler) {
     Bytes payload = method.encodeRequest(request);
     return this.sendRequest(method, payload, handler)

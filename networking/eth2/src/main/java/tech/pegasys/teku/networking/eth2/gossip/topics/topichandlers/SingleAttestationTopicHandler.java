@@ -34,6 +34,11 @@ public class SingleAttestationTopicHandler {
         attMessage ->
             operationProcessor.process(ValidateableAttestation.fromNetwork(attMessage, subnetId));
     return new Eth2TopicHandler<>(
-        asyncRunner, convertingProcessor, gossipEncoding, forkDigest, topicName, Attestation.TYPE);
+        asyncRunner,
+        convertingProcessor,
+        gossipEncoding,
+        forkDigest,
+        topicName,
+        Attestation.SSZ_SCHEMA);
   }
 }

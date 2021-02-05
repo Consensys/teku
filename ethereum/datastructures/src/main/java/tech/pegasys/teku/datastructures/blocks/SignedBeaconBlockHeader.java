@@ -14,25 +14,25 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedBeaconBlockHeader
-    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
+    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
 
-  public static class SignedBeaconBlockHeaderType
-      extends ContainerType2<SignedBeaconBlockHeader, BeaconBlockHeader, VectorViewRead<ByteView>> {
+  public static class SignedBeaconBlockHeaderSchema
+      extends ContainerSchema2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
 
-    public SignedBeaconBlockHeaderType() {
+    public SignedBeaconBlockHeaderSchema() {
       super(
           "SignedBeaconBlockHeader",
-          namedType("message", BeaconBlockHeader.TYPE),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedSchema("message", BeaconBlockHeader.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -41,16 +41,17 @@ public class SignedBeaconBlockHeader
     }
   }
 
-  public static final SignedBeaconBlockHeaderType TYPE = new SignedBeaconBlockHeaderType();
+  public static final SignedBeaconBlockHeaderSchema SSZ_SCHEMA =
+      new SignedBeaconBlockHeaderSchema();
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlockHeader(SignedBeaconBlockHeaderType type, TreeNode backingNode) {
+  private SignedBeaconBlockHeader(SignedBeaconBlockHeaderSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedBeaconBlockHeader(final BeaconBlockHeader message, final BLSSignature signature) {
-    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     signatureCache = signature;
   }
 
@@ -60,7 +61,7 @@ public class SignedBeaconBlockHeader
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
     return signatureCache;
   }

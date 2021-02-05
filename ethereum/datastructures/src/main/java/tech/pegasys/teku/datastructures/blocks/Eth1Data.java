@@ -16,23 +16,23 @@ package tech.pegasys.teku.datastructures.blocks;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
+public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
-  public static class Eth1DataType
-      extends ContainerType3<Eth1Data, Bytes32View, UInt64View, Bytes32View> {
+  public static class Eth1DataSchema
+      extends ContainerSchema3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
-    public Eth1DataType() {
+    public Eth1DataSchema() {
       super(
           "Eth1Data",
-          namedType("deposit_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("deposit_count", BasicViewTypes.UINT64_TYPE),
-          namedType("block_hash", BasicViewTypes.BYTES32_TYPE));
+          namedSchema("deposit_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("deposit_count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -41,22 +41,22 @@ public class Eth1Data extends Container3<Eth1Data, Bytes32View, UInt64View, Byte
     }
   }
 
-  public static final Eth1DataType TYPE = new Eth1DataType();
+  public static final Eth1DataSchema SSZ_SCHEMA = new Eth1DataSchema();
 
-  private Eth1Data(Eth1DataType type, TreeNode backingNode) {
+  private Eth1Data(Eth1DataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
     super(
-        TYPE,
-        new Bytes32View(deposit_root),
-        new UInt64View(deposit_count),
-        new Bytes32View(block_hash));
+        SSZ_SCHEMA,
+        new SszBytes32(deposit_root),
+        new SszUInt64(deposit_count),
+        new SszBytes32(block_hash));
   }
 
   public Eth1Data() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public Eth1Data withBlockHash(final Bytes32 blockHash) {

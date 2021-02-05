@@ -16,24 +16,24 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements ListViewRead<ByteView> {
+public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<SszByte> {
 
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;
-  private static final ListViewType<ByteView> LIST_VIEW_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTE_TYPE, MAX_ERROR_MESSAGE_LENGTH);
+  private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, MAX_ERROR_MESSAGE_LENGTH);
 
-  public static class RpcErrorMessageType extends AbstractDelegateType<RpcErrorMessage> {
-    private RpcErrorMessageType() {
+  public static class RpcErrorMessageSchema extends AbstractDelegateSszSchema<RpcErrorMessage> {
+    private RpcErrorMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -43,11 +43,10 @@ public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements ListV
     }
   }
 
-  public static final RpcErrorMessageType TYPE = new RpcErrorMessageType();
+  public static final RpcErrorMessageSchema SSZ_SCHEMA = new RpcErrorMessageSchema();
 
   public RpcErrorMessage(Bytes bytes) {
-    super(
-        ViewUtils.toListView(LIST_VIEW_TYPE, ViewUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, SszUtils.toSszByteList(LIST_VIEW_TYPE, bytes)));
   }
 
   private RpcErrorMessage(TreeNode node) {
@@ -55,7 +54,7 @@ public class RpcErrorMessage extends ListViewReadImpl<ByteView> implements ListV
   }
 
   public Bytes getData() {
-    return ViewUtils.getAllBytes(this);
+    return SszUtils.getAllBytes(this);
   }
 
   @Override

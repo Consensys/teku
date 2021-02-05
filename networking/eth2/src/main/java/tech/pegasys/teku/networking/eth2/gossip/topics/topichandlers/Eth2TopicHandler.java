@@ -29,18 +29,18 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler {
+public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
   private final String topicName;
-  private final ViewType<MessageT> messageType;
+  private final SszSchema<MessageT> messageType;
 
   public Eth2TopicHandler(
       AsyncRunner asyncRunner,
@@ -48,7 +48,7 @@ public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler
       GossipEncoding gossipEncoding,
       Bytes4 forkDigest,
       String topicName,
-      ViewType<MessageT> messageType) {
+      SszSchema<MessageT> messageType) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
@@ -96,7 +96,7 @@ public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler
     return topicName;
   }
 
-  private ViewType<MessageT> getMessageType() {
+  private SszSchema<MessageT> getMessageType() {
     return messageType;
   }
 

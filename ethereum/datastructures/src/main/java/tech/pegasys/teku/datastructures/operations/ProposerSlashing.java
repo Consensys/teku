@@ -15,20 +15,20 @@ package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
-  public static class ProposerSlashingType
-      extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
+  public static class ProposerSlashingSchema
+      extends ContainerSchema2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
-    public ProposerSlashingType() {
+    public ProposerSlashingSchema() {
       super(
           "ProposerSlashing",
-          namedType("header_1", SignedBeaconBlockHeader.TYPE),
-          namedType("header_2", SignedBeaconBlockHeader.TYPE));
+          namedSchema("header_1", SignedBeaconBlockHeader.SSZ_SCHEMA),
+          namedSchema("header_2", SignedBeaconBlockHeader.SSZ_SCHEMA));
     }
 
     @Override
@@ -37,14 +37,14 @@ public class ProposerSlashing
     }
   }
 
-  public static final ProposerSlashingType TYPE = new ProposerSlashingType();
+  public static final ProposerSlashingSchema SSZ_SCHEMA = new ProposerSlashingSchema();
 
-  private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
+  private ProposerSlashing(ProposerSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ProposerSlashing(SignedBeaconBlockHeader header_1, SignedBeaconBlockHeader header_2) {
-    super(TYPE, header_1, header_2);
+    super(SSZ_SCHEMA, header_1, header_2);
   }
 
   public SignedBeaconBlockHeader getHeader_1() {

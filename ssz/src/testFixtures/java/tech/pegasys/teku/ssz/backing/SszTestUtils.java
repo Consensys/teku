@@ -15,39 +15,33 @@ package tech.pegasys.teku.ssz.backing;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszTestUtils {
 
-  public static List<Integer> getVectorLengths(ContainerViewType<?> containerViewType) {
-    return containerViewType.getChildTypes().stream()
-        .filter(t -> t instanceof VectorViewType)
-        .map(t -> (VectorViewType<?>) t)
-        .map(VectorViewType::getLength)
+  public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
+    return sszContainerSchema.getChildSchemas().stream()
+        .filter(t -> t instanceof SszVectorSchema)
+        .map(t -> (SszVectorSchema<?>) t)
+        .map(SszVectorSchema::getLength)
         .collect(Collectors.toList());
   }
 
   /** Compares two views by their getters recursively (if views are composite) */
-  public static boolean equalsByGetters(ViewRead v1, ViewRead v2) {
-    if (!v1.getType().equals(v2.getType())) {
+  public static boolean equalsByGetters(SszData v1, SszData v2) {
+    if (!v1.getSchema().equals(v2.getSchema())) {
       return false;
     }
-    if (v1 instanceof CompositeViewRead) {
-      CompositeViewRead<?> c1 = (CompositeViewRead<?>) v1;
-      CompositeViewRead<?> c2 = (CompositeViewRead<?>) v2;
+    if (v1 instanceof SszComposite) {
+      SszComposite<?> c1 = (SszComposite<?>) v1;
+      SszComposite<?> c2 = (SszComposite<?>) v2;
       if (c1.size() != c2.size()) {
         return false;
       }
       for (int i = 0; i < c1.size(); i++) {
-        if (c1.get(i) instanceof ViewRead) {
-          if (!equalsByGetters((ViewRead) c1.get(i), (ViewRead) c2.get(i))) {
-            return false;
-          }
-        } else {
-          if (!c1.equals(c2)) {
-            return false;
-          }
+        if (!equalsByGetters((SszData) c1.get(i), (SszData) c2.get(i))) {
+          return false;
         }
       }
       return true;

@@ -20,17 +20,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class RpcPayloadEncoders {
 
-  private final Map<ViewType<?>, RpcPayloadEncoder<?>> encoders;
-  private final Function<ViewType<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
+  private final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders;
+  private final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
 
   private RpcPayloadEncoders(
-      final Map<ViewType<?>, RpcPayloadEncoder<?>> encoders,
-      final Function<ViewType<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
+      final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders,
+      final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
     this.encoders = encoders;
     this.defaultEncoderProvider = defaultEncoderProvider;
   }
@@ -46,24 +46,24 @@ public class RpcPayloadEncoders {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends ViewRead> RpcPayloadEncoder<T> getEncoder(final ViewType<T> clazz) {
+  public <T extends SszData> RpcPayloadEncoder<T> getEncoder(final SszSchema<T> clazz) {
     RpcPayloadEncoder<?> encoder = encoders.get(clazz);
     return (RpcPayloadEncoder<T>) (encoder != null ? encoder : defaultEncoderProvider.apply(clazz));
   }
 
   public static class Builder {
-    private final Map<ViewType<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
-    private Function<ViewType<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
+    private final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
+    private Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
 
     private Builder() {}
 
-    public <T> Builder withEncoder(final ViewType<?> type, final RpcPayloadEncoder<T> encoder) {
+    public <T> Builder withEncoder(final SszSchema<?> type, final RpcPayloadEncoder<T> encoder) {
       encoders.put(type, encoder);
       return this;
     }
 
     public Builder defaultEncoderProvider(
-        final Function<ViewType<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
+        final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
       this.defaultEncoderProvider = defaultEncoderProvider;
       return this;
     }

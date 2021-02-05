@@ -56,7 +56,7 @@ public class AttesterSlashingTopicHandlerTest {
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
           AttesterSlashingGossipManager.TOPIC_NAME,
-          AttesterSlashing.TYPE);
+          AttesterSlashing.SSZ_SCHEMA);
 
   @BeforeEach
   public void setup() {
@@ -117,7 +117,7 @@ public class AttesterSlashingTopicHandlerTest {
             gossipEncoding,
             forkDigest,
             AttesterSlashingGossipManager.TOPIC_NAME,
-            AttesterSlashing.TYPE);
+            AttesterSlashing.SSZ_SCHEMA);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }
 }

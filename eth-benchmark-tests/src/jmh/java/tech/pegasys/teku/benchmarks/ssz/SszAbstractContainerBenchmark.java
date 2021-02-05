@@ -29,8 +29,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 @Threads(1)
 @State(Scope.Thread)
@@ -39,7 +39,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-public abstract class SszAbstractContainerBenchmark<TView extends ViewRead> {
+public abstract class SszAbstractContainerBenchmark<TView extends SszData> {
   protected final Blackhole blackhole =
       new Blackhole(
           "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
@@ -49,7 +49,7 @@ public abstract class SszAbstractContainerBenchmark<TView extends ViewRead> {
 
   protected abstract TView createContainer();
 
-  protected abstract ViewType<TView> getContainerType();
+  protected abstract SszSchema<TView> getContainerType();
 
   protected abstract void iterateData(TView container, Blackhole bh);
 

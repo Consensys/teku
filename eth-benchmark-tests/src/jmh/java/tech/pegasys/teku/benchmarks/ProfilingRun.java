@@ -226,7 +226,7 @@ public class ProfilingRun {
       long s = System.currentTimeMillis();
       long sum = 0;
       for (int i = 0; i < 1; i++) {
-        BeaconState state = BeaconState.getSszType().sszDeserialize(bytes);
+        BeaconState state = BeaconState.getSszSchema().sszDeserialize(bytes);
         blackHole.accept(state);
         for (Validator validator : state.getValidators()) {
           sum += validator.getEffective_balance().longValue();

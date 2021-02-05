@@ -15,16 +15,16 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 class SszGossipCodec {
 
-  public <T extends ViewRead> Bytes encode(final T value) {
+  public <T extends SszData> Bytes encode(final T value) {
     return value.sszSerialize();
   }
 
-  public <T extends ViewRead> T decode(final Bytes data, final ViewType<T> valueType)
+  public <T extends SszData> T decode(final Bytes data, final SszSchema<T> valueType)
       throws DecodingException {
     try {
       if (!valueType.getSszLengthBounds().isWithinBounds(data.size())) {

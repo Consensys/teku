@@ -15,13 +15,13 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput> {
 
   @Override
-  protected ViewType<DepositFuzzInput> getInputType() {
-    return DepositFuzzInput.createType();
+  protected SszSchema<DepositFuzzInput> getInputType() {
+    return DepositFuzzInput.createSchema();
   }
 
   @Override

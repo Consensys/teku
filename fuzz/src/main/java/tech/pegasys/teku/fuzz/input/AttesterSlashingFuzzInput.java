@@ -16,20 +16,20 @@ package tech.pegasys.teku.fuzz.input;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttesterSlashingFuzzInput
     extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> {
 
-  public static ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
+  public static ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
       createType() {
-    return ContainerType2.create(
-        BeaconState.getSszType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), AttesterSlashing.SSZ_SCHEMA, AttesterSlashingFuzzInput::new);
   }
 
   private AttesterSlashingFuzzInput(
-      ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
+      ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
