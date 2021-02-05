@@ -39,6 +39,7 @@ public class Eth2NetworkConfiguration {
   private final SpecConfiguration specConfig;
   private final String constants;
   private final Optional<String> initialState;
+  private final boolean usingCustomInitialState;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -49,6 +50,7 @@ public class Eth2NetworkConfiguration {
       final SpecConfiguration specConfig,
       final String constants,
       final Optional<String> initialState,
+      final boolean usingCustomInitialState,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
@@ -57,6 +59,7 @@ public class Eth2NetworkConfiguration {
     this.specConfig = specConfig;
     this.constants = constants;
     this.initialState = initialState;
+    this.usingCustomInitialState = usingCustomInitialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -89,6 +92,10 @@ public class Eth2NetworkConfiguration {
     return initialState;
   }
 
+  public boolean isUsingCustomInitialState() {
+    return usingCustomInitialState;
+  }
+
   public Integer getStartupTargetPeerCount() {
     return startupTargetPeerCount;
   }
@@ -117,6 +124,7 @@ public class Eth2NetworkConfiguration {
   public static class Builder {
     private String constants;
     private Optional<String> initialState = Optional.empty();
+    private boolean usingCustomInitialState = false;
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
@@ -134,6 +142,7 @@ public class Eth2NetworkConfiguration {
           specConfig,
           constants,
           initialState,
+          usingCustomInitialState,
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
@@ -148,6 +157,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder initialState(final String initialState) {
       this.initialState = Optional.of(initialState);
+      this.usingCustomInitialState = true;
       return this;
     }
 
