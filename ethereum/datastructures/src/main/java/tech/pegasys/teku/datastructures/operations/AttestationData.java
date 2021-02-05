@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
@@ -34,9 +34,9 @@ public class AttestationData
     public AttestationDataType() {
       super(
           "AttestationData",
-          namedType("slot", BasicViewTypes.UINT64_TYPE),
-          namedType("index", BasicViewTypes.UINT64_TYPE),
-          namedType("beacon_block_root", BasicViewTypes.BYTES32_TYPE),
+          namedType("slot", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("index", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("beacon_block_root", SszPrimitiveSchemas.BYTES32_TYPE),
           namedType("source", Checkpoint.TYPE),
           namedType("target", Checkpoint.TYPE));
     }

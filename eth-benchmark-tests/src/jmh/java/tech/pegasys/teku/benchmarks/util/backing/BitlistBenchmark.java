@@ -20,14 +20,14 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistBenchmark {
 
-  static ListViewType<BitView> type = new ListViewType<>(BasicViewTypes.BIT_TYPE, 4096);
+  static ListViewType<BitView> type = new ListViewType<>(SszPrimitiveSchemas.BIT_TYPE, 4096);
   static SszList<BitView> bitlist;
 
   static {

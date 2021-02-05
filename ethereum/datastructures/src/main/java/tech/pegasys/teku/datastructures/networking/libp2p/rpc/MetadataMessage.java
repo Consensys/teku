@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -38,7 +38,7 @@ public class MetadataMessage
     public MetadataMessageType() {
       super(
           "MetadataMessage",
-          namedType("seqNumber", BasicViewTypes.UINT64_TYPE),
+          namedType("seqNumber", SszPrimitiveSchemas.UINT64_TYPE),
           namedType("attnets", new BitVectorType(Constants.ATTESTATION_SUBNET_COUNT)));
     }
 

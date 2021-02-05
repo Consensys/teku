@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
@@ -38,7 +38,7 @@ public class Deposit extends Container2<Deposit, SszVector<Bytes32View>, Deposit
           namedType(
               "proof",
               new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
           namedType("data", DepositData.TYPE));
     }
 

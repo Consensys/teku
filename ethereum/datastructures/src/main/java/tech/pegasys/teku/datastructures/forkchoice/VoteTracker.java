@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
@@ -30,9 +30,9 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
     public VoteTrackerType() {
       super(
           "VoteTracker",
-          namedType("currentRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("nextRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("nextEpoch", BasicViewTypes.UINT64_TYPE));
+          namedType("currentRoot", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("nextRoot", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("nextEpoch", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

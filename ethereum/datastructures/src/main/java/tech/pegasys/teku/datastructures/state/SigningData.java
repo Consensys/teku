@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 
 public class SigningData extends Container2<SigningData, Bytes32View, Bytes32View> {
@@ -28,8 +28,8 @@ public class SigningData extends Container2<SigningData, Bytes32View, Bytes32Vie
     public SigningDataType() {
       super(
           "SigningData",
-          namedType("object_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("domain", BasicViewTypes.BYTES32_TYPE));
+          namedType("object_root", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("domain", SszPrimitiveSchemas.BYTES32_TYPE));
     }
 
     @Override

@@ -136,7 +136,7 @@ public class VectorViewType<ElementViewT extends SszData>
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
     DeserializedData data = sszDeserializeVector(reader);
-    if (getElementType() == BasicViewTypes.BIT_TYPE && getLength() % 8 > 0) {
+    if (getElementType() == SszPrimitiveSchemas.BIT_TYPE && getLength() % 8 > 0) {
       // for BitVector we need to check that all 'unused' bits in the last byte are 0
       int usedBitCount = getLength() % 8;
       if (data.getLastSszByte().orElseThrow() >>> usedBitCount != 0) {

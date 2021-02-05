@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -34,7 +34,7 @@ public class AggregateAndProof
     public AggregateAndProofType() {
       super(
           "AggregateAndProof",
-          namedType("index", BasicViewTypes.UINT64_TYPE),
+          namedType("index", SszPrimitiveSchemas.UINT64_TYPE),
           namedType("aggregate", Attestation.TYPE),
           namedType("selection_proof", ComplexViewTypes.BYTES_96_TYPE));
     }

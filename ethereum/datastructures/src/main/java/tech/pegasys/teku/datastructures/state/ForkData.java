@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
 
@@ -29,8 +29,8 @@ public class ForkData extends Container2<ForkData, Bytes4View, Bytes32View> {
     public ForkDataType() {
       super(
           "ForkData",
-          namedType("currentVersion", BasicViewTypes.BYTES4_TYPE),
-          namedType("genesisValidatorsRoot", BasicViewTypes.BYTES32_TYPE));
+          namedType("currentVersion", SszPrimitiveSchemas.BYTES4_TYPE),
+          namedType("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_TYPE));
     }
 
     @Override

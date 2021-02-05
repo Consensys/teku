@@ -16,7 +16,7 @@ package tech.pegasys.teku.ssz.backing.view;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 
 /** Collection of basic view classes */
 public class SszPrimitives {
@@ -30,13 +30,13 @@ public class SszPrimitives {
     }
 
     private BitView(Boolean value) {
-      super(value, BasicViewTypes.BIT_TYPE);
+      super(value, SszPrimitiveSchemas.BIT_TYPE);
     }
   }
 
   public static class ByteView extends AbstractSszPrimitive<Byte, ByteView> {
     public ByteView(Byte value) {
-      super(value, BasicViewTypes.BYTE_TYPE);
+      super(value, SszPrimitiveSchemas.BYTE_TYPE);
     }
   }
 
@@ -47,7 +47,7 @@ public class SszPrimitives {
     }
 
     public UInt64View(UInt64 val) {
-      super(val, BasicViewTypes.UINT64_TYPE);
+      super(val, SszPrimitiveSchemas.UINT64_TYPE);
     }
 
     public long longValue() {
@@ -58,14 +58,14 @@ public class SszPrimitives {
   public static class Bytes4View extends AbstractSszPrimitive<Bytes4, Bytes4View> {
 
     public Bytes4View(Bytes4 val) {
-      super(val, BasicViewTypes.BYTES4_TYPE);
+      super(val, SszPrimitiveSchemas.BYTES4_TYPE);
     }
   }
 
   public static class Bytes32View extends AbstractSszPrimitive<Bytes32, Bytes32View> {
 
     public Bytes32View(Bytes32 val) {
-      super(val, BasicViewTypes.BYTES32_TYPE);
+      super(val, SszPrimitiveSchemas.BYTES32_TYPE);
     }
   }
 }

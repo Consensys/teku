@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
@@ -54,7 +54,7 @@ public class ContainerViewTest {
 
     ContainerViewType<SubContainerRead> TYPE =
         ContainerViewType.create(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
+            List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.UINT64_TYPE),
             SubContainerReadImpl::new);
 
     default UInt64 getLong1() {
@@ -82,10 +82,10 @@ public class ContainerViewTest {
     ContainerViewType<ContainerReadImpl> TYPE =
         ContainerViewType.create(
             List.of(
-                BasicViewTypes.UINT64_TYPE,
-                BasicViewTypes.UINT64_TYPE,
+                SszPrimitiveSchemas.UINT64_TYPE,
+                SszPrimitiveSchemas.UINT64_TYPE,
                 SubContainerRead.TYPE,
-                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
+                new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, 10),
                 new ListViewType<>(SubContainerRead.TYPE, 2),
                 new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
             ContainerReadImpl::new);
@@ -149,7 +149,7 @@ public class ContainerViewTest {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
         ContainerViewType.create(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
+            List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.BYTES32_TYPE),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(

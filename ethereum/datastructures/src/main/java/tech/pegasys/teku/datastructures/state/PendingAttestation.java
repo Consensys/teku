@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -41,8 +41,8 @@ public class PendingAttestation
           namedType(
               "aggregation_bitfield", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedType("data", AttestationData.TYPE),
-          namedType("inclusion_delay", BasicViewTypes.UINT64_TYPE),
-          namedType("proposer_index", BasicViewTypes.UINT64_TYPE));
+          namedType("inclusion_delay", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("proposer_index", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     public BitListType getAggregationBitfieldType() {

@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
@@ -29,9 +29,9 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View> {
     public ForkType() {
       super(
           "Fork",
-          namedType("previous_version", BasicViewTypes.BYTES4_TYPE),
-          namedType("current_version", BasicViewTypes.BYTES4_TYPE),
-          namedType("epoch", BasicViewTypes.UINT64_TYPE));
+          namedType("previous_version", SszPrimitiveSchemas.BYTES4_TYPE),
+          namedType("current_version", SszPrimitiveSchemas.BYTES4_TYPE),
+          namedType("epoch", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

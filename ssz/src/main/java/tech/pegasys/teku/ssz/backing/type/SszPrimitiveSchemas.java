@@ -31,9 +31,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 /** The collection of commonly used basic types */
-public class BasicViewTypes {
-  public static final BasicViewType<BitView> BIT_TYPE =
-      new BasicViewType<>(1) {
+public class SszPrimitiveSchemas {
+  public static final SszPrimitiveSchema<BitView> BIT_TYPE =
+      new SszPrimitiveSchema<>(1) {
         @Override
         public BitView createFromLeafBackingNode(LeafDataNode node, int idx) {
           return BitView.viewOf((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
@@ -66,8 +66,8 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<ByteView> BYTE_TYPE =
-      new BasicViewType<>(8) {
+  public static final SszPrimitiveSchema<ByteView> BYTE_TYPE =
+      new SszPrimitiveSchema<>(8) {
         @Override
         public ByteView createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new ByteView(node.getData().get(internalIndex));
@@ -92,8 +92,8 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<UInt64View> UINT64_TYPE =
-      new BasicViewType<>(64) {
+  public static final SszPrimitiveSchema<UInt64View> UINT64_TYPE =
+      new SszPrimitiveSchema<>(64) {
         @Override
         public UInt64View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           Bytes leafNodeBytes = node.getData();
@@ -140,8 +140,8 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<Bytes4View> BYTES4_TYPE =
-      new BasicViewType<>(32) {
+  public static final SszPrimitiveSchema<Bytes4View> BYTES4_TYPE =
+      new SszPrimitiveSchema<>(32) {
         @Override
         public Bytes4View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new Bytes4View(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
@@ -168,8 +168,8 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<Bytes32View> BYTES32_TYPE =
-      new BasicViewType<>(256) {
+  public static final SszPrimitiveSchema<Bytes32View> BYTES32_TYPE =
+      new SszPrimitiveSchema<>(256) {
         @Override
         public Bytes32View createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new Bytes32View(node.hashTreeRoot());

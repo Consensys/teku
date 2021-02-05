@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
@@ -32,8 +32,8 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View> 
     public CheckpointType() {
       super(
           "Checkpoint",
-          namedType("epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("root", BasicViewTypes.BYTES32_TYPE));
+          namedType("epoch", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("root", SszPrimitiveSchemas.BYTES32_TYPE));
     }
 
     @Override

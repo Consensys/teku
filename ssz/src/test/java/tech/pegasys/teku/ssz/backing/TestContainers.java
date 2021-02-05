@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
@@ -38,7 +38,7 @@ public class TestContainers {
 
     public static final ContainerViewType<TestSubContainer> TYPE =
         ContainerViewType.create(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
+            List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.BYTES32_TYPE),
             TestSubContainer::new);
 
     private TestSubContainer(ContainerViewType<TestSubContainer> type, TreeNode backingNode) {
@@ -62,7 +62,7 @@ public class TestContainers {
 
     public static final ContainerViewType<TestContainer> TYPE =
         ContainerViewType.create(
-            List.of(TestSubContainer.TYPE, BasicViewTypes.UINT64_TYPE), TestContainer::new);
+            List.of(TestSubContainer.TYPE, SszPrimitiveSchemas.UINT64_TYPE), TestContainer::new);
 
     private TestContainer(ContainerViewType<TestContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -84,7 +84,7 @@ public class TestContainers {
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
     public static final ContainerViewType<TestSmallContainer> TYPE =
-        ContainerViewType.create(List.of(BasicViewTypes.BIT_TYPE), TestSmallContainer::new);
+        ContainerViewType.create(List.of(SszPrimitiveSchemas.BIT_TYPE), TestSmallContainer::new);
 
     private TestSmallContainer(ContainerViewType<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -100,9 +100,9 @@ public class TestContainers {
     public static final ContainerViewType<TestByteVectorContainer> TYPE =
         ContainerViewType.create(
             List.of(
-                BasicViewTypes.UINT64_TYPE,
-                new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 64),
-                BasicViewTypes.UINT64_TYPE),
+                SszPrimitiveSchemas.UINT64_TYPE,
+                new VectorViewType<ByteView>(SszPrimitiveSchemas.BYTE_TYPE, 64),
+                SszPrimitiveSchemas.UINT64_TYPE),
             TestByteVectorContainer::new);
 
     public static TestByteVectorContainer random(Random random) {
@@ -129,11 +129,11 @@ public class TestContainers {
     public static final ContainerViewType<TestDoubleSuperContainer> TYPE =
         ContainerViewType.create(
             List.of(
-                BasicViewTypes.UINT64_TYPE,
+                SszPrimitiveSchemas.UINT64_TYPE,
                 TestByteVectorContainer.TYPE,
-                BasicViewTypes.UINT64_TYPE,
+                SszPrimitiveSchemas.UINT64_TYPE,
                 TestByteVectorContainer.TYPE,
-                BasicViewTypes.UINT64_TYPE),
+                SszPrimitiveSchemas.UINT64_TYPE),
             TestDoubleSuperContainer::new);
 
     private TestDoubleSuperContainer(
@@ -157,8 +157,8 @@ public class TestContainers {
         TYPE =
             ContainerType3.create(
                 TestSubContainer.TYPE,
-                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
-                BasicViewTypes.UINT64_TYPE,
+                new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, 10),
+                SszPrimitiveSchemas.UINT64_TYPE,
                 VariableSizeContainer::new);
 
     private VariableSizeContainer(

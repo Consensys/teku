@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
@@ -67,7 +67,7 @@ public class BeaconBlockBody
           "BeaconBlockBody",
           namedType("randao_reveal", ComplexViewTypes.BYTES_96_TYPE),
           namedType("eth1_data", Eth1Data.TYPE),
-          namedType("graffiti", BasicViewTypes.BYTES32_TYPE),
+          namedType("graffiti", SszPrimitiveSchemas.BYTES32_TYPE),
           namedType(
               "proposer_slashings",
               new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),

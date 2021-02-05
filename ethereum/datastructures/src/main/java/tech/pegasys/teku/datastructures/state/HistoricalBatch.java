@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
@@ -41,11 +41,11 @@ public class HistoricalBatch
           namedType(
               "block_roots",
               new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)),
+                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)),
           namedType(
               "state_roots",
               new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
+                  SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
     }
 
     @Override

@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import java.util.Collections;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class EmptyMessage extends SszListImpl<ByteView> implements RpcRequest {
   private static final ListViewType<ByteView> LIST_VIEW_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTE_TYPE, 0);
+      new ListViewType<>(SszPrimitiveSchemas.BYTE_TYPE, 0);
 
   public static class EmptyMessageType extends AbstractDelegateType<EmptyMessage> {
     private EmptyMessageType() {

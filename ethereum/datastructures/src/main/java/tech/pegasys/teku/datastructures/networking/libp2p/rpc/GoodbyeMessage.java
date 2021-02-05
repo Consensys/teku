@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
@@ -28,7 +28,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
   public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, UInt64View> {
 
     public GoodbyeMessageType() {
-      super("GoodbyeMessage", namedType("reason", BasicViewTypes.UINT64_TYPE));
+      super("GoodbyeMessage", namedType("reason", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

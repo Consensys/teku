@@ -28,7 +28,7 @@ public class ComplexViewTypes {
 
   public static class ByteListType extends ListViewType<ByteView> {
     public ByteListType(long maxLength) {
-      super(BasicViewTypes.BYTE_TYPE, maxLength);
+      super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
     }
 
     public SszList<ByteView> createList(Bytes bytes) {
@@ -45,7 +45,7 @@ public class ComplexViewTypes {
 
   public static class ByteVectorType extends VectorViewType<ByteView> {
     public ByteVectorType(long maxLength) {
-      super(BasicViewTypes.BYTE_TYPE, maxLength);
+      super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
     }
 
     public SszVector<ByteView> createVector(Bytes bytes) {
@@ -62,7 +62,7 @@ public class ComplexViewTypes {
 
   public static class BitListType extends ListViewType<BitView> {
     public BitListType(long maxLength) {
-      super(BasicViewTypes.BIT_TYPE, maxLength);
+      super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ComplexViewTypes {
 
   public static class BitVectorType extends VectorViewType<BitView> {
     public BitVectorType(long maxLength) {
-      super(BasicViewTypes.BIT_TYPE, maxLength);
+      super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
     }
 
     @Override

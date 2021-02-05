@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -45,7 +45,7 @@ public class IndexedAttestation
           namedType(
               "attesting_indices",
               new ListViewType<>(
-                  BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+                  SszPrimitiveSchemas.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedType("data", AttestationData.TYPE),
           namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
     }

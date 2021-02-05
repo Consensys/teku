@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
@@ -29,7 +29,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<Bytes32View>
     implements SszList<Bytes32View>, RpcRequest {
 
   private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+      new ListViewType<>(SszPrimitiveSchemas.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
 
   public static class BeaconBlocksByRootRequestMessageType
       extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {

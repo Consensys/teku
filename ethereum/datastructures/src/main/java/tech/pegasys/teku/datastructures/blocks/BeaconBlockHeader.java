@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
@@ -35,11 +35,11 @@ public class BeaconBlockHeader
     public BeaconBlockHeaderType() {
       super(
           "BeaconBlockHeader",
-          namedType("slot", BasicViewTypes.UINT64_TYPE),
-          namedType("proposer_index", BasicViewTypes.UINT64_TYPE),
-          namedType("parent_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("state_root", BasicViewTypes.BYTES32_TYPE),
-          namedType("body_root", BasicViewTypes.BYTES32_TYPE));
+          namedType("slot", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("proposer_index", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("parent_root", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("state_root", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("body_root", SszPrimitiveSchemas.BYTES32_TYPE));
     }
 
     @Override

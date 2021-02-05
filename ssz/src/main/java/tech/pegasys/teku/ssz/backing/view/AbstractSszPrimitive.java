@@ -19,14 +19,14 @@ import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewType;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchema;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
     implements SszPrimitive<C> {
-  private final BasicViewType<V> type;
+  private final SszPrimitiveSchema<V> type;
   private final C value;
 
-  protected AbstractSszPrimitive(C value, BasicViewType<V> type) {
+  protected AbstractSszPrimitive(C value, SszPrimitiveSchema<V> type) {
     checkNotNull(value);
     this.type = type;
     this.value = value;
@@ -38,7 +38,7 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   }
 
   @Override
-  public BasicViewType<V> getType() {
+  public SszPrimitiveSchema<V> getType() {
     return type;
   }
 

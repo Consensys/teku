@@ -29,11 +29,11 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  *
  * @param <C> Class of the basic view of this type
  */
-public abstract class BasicViewType<C extends SszData> implements SszSchema<C> {
+public abstract class SszPrimitiveSchema<C extends SszData> implements SszSchema<C> {
 
   private final int bitsSize;
 
-  BasicViewType(int bitsSize) {
+  SszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;

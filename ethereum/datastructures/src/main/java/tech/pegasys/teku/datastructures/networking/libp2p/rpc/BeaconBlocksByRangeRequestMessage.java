@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public final class BeaconBlocksByRangeRequestMessage
@@ -31,9 +31,9 @@ public final class BeaconBlocksByRangeRequestMessage
     public BeaconBlocksByRangeRequestMessageType() {
       super(
           "BeaconBlocksByRangeRequestMessage",
-          namedType("startSlot", BasicViewTypes.UINT64_TYPE),
-          namedType("count", BasicViewTypes.UINT64_TYPE),
-          namedType("step", BasicViewTypes.UINT64_TYPE));
+          namedType("startSlot", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("count", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("step", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

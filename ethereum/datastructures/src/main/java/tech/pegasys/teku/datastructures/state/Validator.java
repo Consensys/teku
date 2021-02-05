@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
@@ -57,13 +57,13 @@ public class Validator
       super(
           "Validator",
           namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
-          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
-          namedType("effective_balance", BasicViewTypes.UINT64_TYPE),
-          namedType("slashed", BasicViewTypes.BIT_TYPE),
-          namedType("activation_eligibility_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("activation_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("exit_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("withdrawable_epoch", BasicViewTypes.UINT64_TYPE));
+          namedType("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("effective_balance", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("slashed", SszPrimitiveSchemas.BIT_TYPE),
+          namedType("activation_eligibility_epoch", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("activation_epoch", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("exit_epoch", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("withdrawable_epoch", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

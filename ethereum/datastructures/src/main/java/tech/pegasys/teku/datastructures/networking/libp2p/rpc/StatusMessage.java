@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes4View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -38,11 +38,11 @@ public class StatusMessage
     public StatusMessageType() {
       super(
           "StatusMessage",
-          namedType("forkDigest", BasicViewTypes.BYTES4_TYPE),
-          namedType("finalizedRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("finalizedEpoch", BasicViewTypes.UINT64_TYPE),
-          namedType("headRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("headSlot", BasicViewTypes.UINT64_TYPE));
+          namedType("forkDigest", SszPrimitiveSchemas.BYTES4_TYPE),
+          namedType("finalizedRoot", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("finalizedEpoch", SszPrimitiveSchemas.UINT64_TYPE),
+          namedType("headRoot", SszPrimitiveSchemas.BYTES32_TYPE),
+          namedType("headSlot", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override

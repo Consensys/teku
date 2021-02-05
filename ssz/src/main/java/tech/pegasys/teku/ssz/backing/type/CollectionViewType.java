@@ -196,7 +196,7 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
           (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     }
-    if (getElementType() instanceof BasicViewType) {
+    if (getElementType() instanceof SszPrimitiveSchema) {
       int bytesRemain = bytesSize;
       List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {

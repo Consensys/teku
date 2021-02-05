@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
@@ -26,7 +26,7 @@ public class PingMessage extends Container1<PingMessage, UInt64View> implements 
   static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
 
     public PingMessageType() {
-      super("PingMessage", namedType("seqNumber", BasicViewTypes.UINT64_TYPE));
+      super("PingMessage", namedType("seqNumber", SszPrimitiveSchemas.UINT64_TYPE));
     }
 
     @Override
