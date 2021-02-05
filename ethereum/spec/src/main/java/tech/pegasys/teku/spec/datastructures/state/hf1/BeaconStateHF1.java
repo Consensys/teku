@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.hf1;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -21,13 +22,14 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 public interface BeaconStateHF1 extends BeaconState {
 
-  static BeaconStateHF1 toHF1(final BeaconState state) {
-    return new DelegatingBeaconStateHF1(state);
-  }
-
   SSZList<SSZVector<SszPrimitives.SszBit>> getPreviousEpochParticipation();
 
   SSZList<SSZVector<SszPrimitives.SszBit>> getCurrentEpochParticipation();
 
-  BeaconState updateHF1(final Consumer<MutableBeaconStateHF1> updater);
+  BeaconState updatedHF1(final Consumer<MutableBeaconStateHF1> updater);
+
+  @Override
+  default Optional<BeaconStateHF1> toHF1Version() {
+    return Optional.of(this);
+  }
 }

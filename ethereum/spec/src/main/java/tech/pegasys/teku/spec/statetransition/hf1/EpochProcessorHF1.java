@@ -23,11 +23,15 @@ public class EpochProcessorHF1 extends EpochProcessorGenesis implements EpochPro
 
   @Override
   public BeaconState processEpoch(final BeaconState preState) {
-    return processEpoch(BeaconStateHF1.toHF1(preState));
+    final BeaconStateHF1 versionedPreState =
+        preState
+            .toHF1Version()
+            .orElseThrow(() -> new IllegalArgumentException("Unexpected BeaconState version"));
+    return processEpoch(versionedPreState);
   }
 
   protected BeaconState processEpoch(final BeaconStateHF1 preState) {
-    return preState.updateHF1(
+    return preState.updatedHF1(
         state -> {
           // TODO other methods etc
           processRewardsAndPenalties(state);

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema;
 
 import static java.util.Collections.emptyList;
+import static tech.pegasys.teku.ssz.backing.schema.SszContainerSchema.DEFAULT_FIELD_NAME_PREFIX;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -181,5 +182,10 @@ public class SszVectorSchema<SszElementT extends SszData>
   @Override
   public String toString() {
     return "Vector[" + getElementSchema() + ", " + getLength() + "]";
+  }
+
+  @Override
+  public int getFieldIndex(final String fieldName) {
+    return Integer.parseInt(fieldName.substring(DEFAULT_FIELD_NAME_PREFIX.length()), 10);
   }
 }

@@ -21,14 +21,14 @@ import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.genesis.BeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.hf1.BeaconStateHF1;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 public interface BeaconState extends SszContainer {
 
@@ -78,18 +78,15 @@ public interface BeaconState extends SszContainer {
 
   Checkpoint getFinalized_checkpoint();
 
-  /* Variable Fields */
-
-  // Attestations
-  Optional<SSZList<PendingAttestation>> maybeGetPrevious_epoch_attestations();
-
-  Optional<SSZList<PendingAttestation>> maybeGetCurrent_epoch_attestations();
-
-  // Participation
-  Optional<SSZList<SSZVector<SszPrimitives.SszBit>>> maybeGetPreviousEpochParticipation();
-
-  Optional<SSZList<SSZVector<SszPrimitives.SszBit>>> maybeGetCurrentEpochParticipation();
-
   // Update
-  BeaconState update(Consumer<MutableBeaconState> updater);
+  BeaconState updated(Consumer<MutableBeaconState> updater);
+
+  // Version-specific casting
+  default Optional<BeaconStateGenesis> toGenesisVersion() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconStateHF1> toHF1Version() {
+    return Optional.empty();
+  }
 }

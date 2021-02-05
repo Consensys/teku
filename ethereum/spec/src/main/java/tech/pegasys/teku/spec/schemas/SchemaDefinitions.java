@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateSchema;
 
 public interface SchemaDefinitions {
 
-  SszContainerSchema<BeaconState> getBeaconStateSchema();
+  BeaconStateSchema<?> getBeaconStateSchema();
 }

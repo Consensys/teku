@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.genesis;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
@@ -20,13 +21,14 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public interface BeaconStateGenesis extends BeaconState {
 
-  static BeaconStateGenesis toGenesisState(BeaconState state) {
-    return new DelegatingBeaconStateGenesis(state);
-  }
-
   SSZList<PendingAttestation> getPrevious_epoch_attestations();
 
   SSZList<PendingAttestation> getCurrent_epoch_attestations();
 
-  BeaconState updateGenesis(final Consumer<MutableBeaconStateGenesis> updater);
+  BeaconState updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater);
+
+  @Override
+  default Optional<BeaconStateGenesis> toGenesisVersion() {
+    return Optional.of(this);
+  }
 }

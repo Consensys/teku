@@ -13,21 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.Optional;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 public interface MutableBeaconState extends BeaconState {
 
@@ -43,28 +38,36 @@ public interface MutableBeaconState extends BeaconState {
   // History
   void setLatest_block_header(BeaconBlockHeader latest_block_header);
 
-  void updateBlock_roots(Consumer<SSZMutableVector<Bytes32>> updater);
+  @Override
+  SSZMutableVector<Bytes32> getBlock_roots();
 
-  void updateState_roots(Consumer<SSZMutableVector<Bytes32>> updater);
+  @Override
+  SSZMutableVector<Bytes32> getState_roots();
 
-  void updateHistorical_roots(Consumer<SSZMutableList<Bytes32>> updater);
+  @Override
+  SSZMutableList<Bytes32> getHistorical_roots();
 
   // Eth1
   void setEth1_data(Eth1Data eth1_data);
 
-  void updateEth1_data_votes(Consumer<SSZMutableList<Eth1Data>> updater);
+  @Override
+  SSZMutableList<Eth1Data> getEth1_data_votes();
 
   void setEth1_deposit_index(UInt64 eth1_deposit_index);
 
   // Registry
-  void updateValidators(Consumer<SSZMutableList<Validator>> updater);
+  @Override
+  SSZMutableList<Validator> getValidators();
 
-  void updateBalances(Consumer<SSZMutableList<UInt64>> updater);
+  @Override
+  SSZMutableList<UInt64> getBalances();
 
-  void updateRandao_mixes(Consumer<SSZMutableVector<Bytes32>> updater);
+  @Override
+  SSZMutableVector<Bytes32> getRandao_mixes();
 
   // Slashings
-  void updateSlashings(Consumer<SSZMutableVector<UInt64>> updater);
+  @Override
+  SSZMutableVector<UInt64> getSlashings();
 
   // Finality
   void setJustification_bits(Bitvector justification_bits);
@@ -74,20 +77,4 @@ public interface MutableBeaconState extends BeaconState {
   void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint);
 
   void setFinalized_checkpoint(Checkpoint finalized_checkpoint);
-
-  /* Variable Fields */
-
-  // Attestations
-  void maybeUpdatePrevious_epoch_attestations(
-      Consumer<Optional<SSZMutableList<PendingAttestation>>> updater);
-
-  void maybeUpdateCurrent_epoch_attestations(
-      Consumer<Optional<SSZMutableList<PendingAttestation>>> updater);
-
-  // Participation
-  void maybeUpdatePreviousEpochParticipation(
-      Consumer<Optional<SSZMutableList<SSZVector<SszPrimitives.SszBit>>>> updater);
-
-  void maybeUpdateCurrentEpochParticipation(
-      Consumer<Optional<SSZMutableList<SSZVector<SszPrimitives.SszBit>>>> updater);
 }

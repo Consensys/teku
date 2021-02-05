@@ -13,28 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SszField;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
-public class BeaconStateSchema extends SszContainerSchema<BeaconState> {
-
-  BeaconStateSchema(final List<NamedSchema<?>> fieldSchemas) {
-    super("BeaconState", fieldSchemas);
-  }
-
-  public static BeaconStateSchema create(List<SszField> fields) {
-    final List<NamedSchema<?>> namedFields =
-        fields.stream()
-            .map(f -> namedSchema(f.getName(), f.getSchema().get()))
-            .collect(Collectors.toList());
-    return new BeaconStateSchema(namedFields);
-  }
-
-  @Override
-  public BeaconState createFromBackingNode(final TreeNode node) {
-    return new BeaconStateImpl(this, node);
-  }
-}
+public interface BeaconStateSchema<T extends BeaconState> extends SszCompositeSchema<T> {}

@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.state.genesis;
 
-import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 public interface MutableBeaconStateGenesis extends MutableBeaconState {
 
-  void updatePrevious_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
+  SSZMutableList<PendingAttestation> getPrevious_epoch_attestations();
 
-  void updateCurrent_epoch_attestations(Consumer<SSZMutableList<PendingAttestation>> updater);
+  SSZMutableList<PendingAttestation> getCurrent_epoch_attestations();
 }

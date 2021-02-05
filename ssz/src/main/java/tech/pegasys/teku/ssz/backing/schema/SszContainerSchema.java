@@ -15,9 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.function.BiFunction;
@@ -28,14 +26,15 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
-import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public abstract class SszContainerSchema<C extends SszContainer> implements SszCompositeSchema<C> {
+  static String DEFAULT_FIELD_NAME_PREFIX = "field-";
 
   protected static class NamedSchema<T extends SszData> {
+
     private final String name;
     private final SszSchema<T> schema;
 
@@ -59,7 +58,6 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
   }
 
   private final String containerName;
-  private final Map<String, SszField> fieldsByName = new HashMap<>();
   private final List<String> childrenNames;
   private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
@@ -71,11 +69,6 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
         childrenSchemas.stream().map(NamedSchema::getName).collect(Collectors.toList());
     this.childrenSchemas =
         childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
-    for (int i = 0; i < childrenSchemas.size(); i++) {
-      final NamedSchema<?> curSchema = childrenSchemas.get(i);
-      fieldsByName.put(
-          curSchema.getName(), new SszField(i, curSchema.getName(), curSchema::getSchema));
-    }
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
@@ -84,14 +77,9 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
     this.containerName = "";
     this.childrenNames =
         IntStream.range(0, childrenSchemas.size())
-            .mapToObj(i -> "field-" + i)
+            .mapToObj(i -> DEFAULT_FIELD_NAME_PREFIX + i)
             .collect(Collectors.toList());
     this.childrenSchemas = childrenSchemas;
-    for (int i = 0; i < childrenSchemas.size(); i++) {
-      final SszSchema<?> curSchema = childrenSchemas.get(i);
-      final String name = childrenNames.get(i);
-      fieldsByName.put(name, new SszField(i, name, () -> curSchema));
-    }
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
@@ -136,12 +124,8 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
   }
 
   @Override
-  public SszField getField(String fieldName) {
-    return fieldsByName.get(fieldName);
-  }
-
-  @Override
   public int getFieldIndex(String fieldName) {
+    // TODO - optimize lookup
     return childrenNames.indexOf(fieldName);
   }
 

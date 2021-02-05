@@ -21,12 +21,11 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.genesis.BeaconStateSchemaGenesis;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
@@ -42,9 +41,9 @@ public class SchemaDefinitionsGenesis implements SchemaDefinitions {
   }
 
   @Override
-  public SszContainerSchema<BeaconState> getBeaconStateSchema() {
+  public BeaconStateSchema<?> getBeaconStateSchema() {
     // TODO - use specConstants throughout rather than deprecated CONSTANTS
-    // TODO - add methods to retrieve other schemas to ContainerDefinitions
+    // TODO - add methods to retrieve other schemas
     SszField genesis_time_field =
         new SszField(0, BeaconStateFields.GENESIS_TIME.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
     SszField genesis_validators_root_field =
@@ -151,7 +150,7 @@ public class SchemaDefinitionsGenesis implements SchemaDefinitions {
     SszField finalized_checkpoint_field =
         new SszField(20, BeaconStateFields.FINALIZED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
 
-    return BeaconStateSchema.create(
+    return BeaconStateSchemaGenesis.create(
         List.of(
             genesis_time_field,
             genesis_validators_root_field,

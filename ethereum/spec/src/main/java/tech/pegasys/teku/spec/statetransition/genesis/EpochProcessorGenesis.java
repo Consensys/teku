@@ -23,12 +23,15 @@ public class EpochProcessorGenesis implements EpochProcessor {
 
   @Override
   public BeaconState processEpoch(final BeaconState preState) {
-    final BeaconStateGenesis genesisState = BeaconStateGenesis.toGenesisState(preState);
-    return processEpoch(genesisState);
+    final BeaconStateGenesis versionedPreState =
+        preState
+            .toGenesisVersion()
+            .orElseThrow(() -> new IllegalArgumentException("Unexpected BeaconState version"));
+    return processEpoch(versionedPreState);
   }
 
   protected BeaconState processEpoch(final BeaconStateGenesis preState) {
-    return preState.updateGenesis(
+    return preState.updatedGenesis(
         state -> {
           // TODO other methods etc
           processRewardsAndPenalties(state);

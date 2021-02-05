@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.state.hf1;
 
-import java.util.function.Consumer;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -21,9 +20,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 public interface MutableBeaconStateHF1 extends MutableBeaconState {
 
-  void updatePreviousEpochParticipation(
-      Consumer<SSZMutableList<SSZVector<SszPrimitives.SszBit>>> updater);
+  SSZMutableList<SSZVector<SszPrimitives.SszBit>> getPreviousEpochParticipation();
 
-  void updateCurrentEpochParticipation(
-      Consumer<SSZMutableList<SSZVector<SszPrimitives.SszBit>>> updater);
+  SSZMutableList<SSZVector<SszPrimitives.SszBit>> getCurrentEpochParticipation();
 }

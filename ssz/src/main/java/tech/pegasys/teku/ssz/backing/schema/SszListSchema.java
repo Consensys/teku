@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.backing.schema.SszContainerSchema.DEFAULT_FIELD_NAME_PREFIX;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -181,6 +182,11 @@ public class SszListSchema<ElementDataT extends SszData>
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
     // adding 1 boundary bit for Bitlist
     return maxLenBounds.addBits(getElementSchema().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
+  }
+
+  @Override
+  public int getFieldIndex(final String fieldName) {
+    return Integer.parseInt(fieldName.substring(DEFAULT_FIELD_NAME_PREFIX.length()), 10);
   }
 
   private static class BytesCollector implements SszWriter {

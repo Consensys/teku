@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state;
+package tech.pegasys.teku.spec.datastructures.state.genesis;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,30 +24,37 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
-class BeaconStateImpl extends SszContainerImpl implements BeaconState {
-  public BeaconStateImpl(BeaconStateSchema schema) {
+class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconStateGenesis {
+  private final SszContainerSchema<BeaconStateGenesis> schema;
+
+  public BeaconStateGenesisImpl(SszContainerSchema<BeaconStateGenesis> schema) {
     super(schema);
+    this.schema = schema;
   }
 
-  BeaconStateImpl(SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+  BeaconStateGenesisImpl(
+      SszContainerSchema<BeaconStateGenesis> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
+    this.schema = type;
   }
 
-  BeaconStateImpl(SszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+  BeaconStateGenesisImpl(SszContainerSchema<BeaconStateGenesis> type, TreeNode backingNode) {
     super(type, backingNode);
+    this.schema = type;
   }
 
   // Example getters
@@ -60,16 +66,21 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState {
   }
 
   @Override
-  public Optional<SSZList<PendingAttestation>> maybeGetPrevious_epoch_attestations() {
-    return Optional.ofNullable(
-            schema.getField(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name()))
-        .map(
-            field ->
-                new SSZBackingList<>(
-                    PendingAttestation.class,
-                    getAny(field.getIndex()),
-                    Function.identity(),
-                    Function.identity()));
+  public SSZList<PendingAttestation> getPrevious_epoch_attestations() {
+    final int fieldIndex =
+        schema.getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+    return new SSZBackingList<>(
+        PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
+  }
+
+  @Override
+  public SSZList<PendingAttestation> getCurrent_epoch_attestations() {
+    return null;
+  }
+
+  @Override
+  public BeaconState updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater) {
+    return null;
   }
 
   // TODO implement other methods below
@@ -170,22 +181,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState {
   }
 
   @Override
-  public Optional<SSZList<PendingAttestation>> maybeGetCurrent_epoch_attestations() {
-    return Optional.empty();
-  }
-
-  @Override
-  public Optional<SSZList<SSZVector<SszPrimitives.SszBit>>> maybeGetPreviousEpochParticipation() {
-    return Optional.empty();
-  }
-
-  @Override
-  public Optional<SSZList<SSZVector<SszPrimitives.SszBit>>> maybeGetCurrentEpochParticipation() {
-    return Optional.empty();
-  }
-
-  @Override
-  public BeaconState update(final Consumer<MutableBeaconState> updater) {
+  public BeaconState updated(final Consumer<MutableBeaconState> updater) {
     return null;
   }
 }
