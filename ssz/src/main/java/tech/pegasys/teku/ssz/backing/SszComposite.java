@@ -16,13 +16,13 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
- * Represents composite immutable view which has descendant views
+ * Represents composite immutable ssz structure which has descendant ssz structures
  *
- * @param <ChildType> the type of children
+ * @param <SszChildT> the type of children {@link SszData}
  */
-public interface SszComposite<ChildType> extends SszData {
+public interface SszComposite<SszChildT extends SszData> extends SszData {
 
-  /** Returns number of children in this view */
+  /** Returns number of children in this structure */
   default int size() {
     return (int) getSchema().getMaxLength();
   }
@@ -32,7 +32,7 @@ public interface SszComposite<ChildType> extends SszData {
    *
    * @throws IndexOutOfBoundsException if index >= size()
    */
-  ChildType get(int index);
+  SszChildT get(int index);
 
   @Override
   SszCompositeSchema<?> getSchema();

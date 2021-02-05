@@ -16,21 +16,24 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
- * Base class of mutable views over Binary Backing Tree ({@link TreeNode}) Each mutable View class
+ * Base class of mutable structures over Binary Backing Tree ({@link TreeNode}) Each {@link SszMutableData}
+ * subclass class
  * normally inherits from the corresponding immutable class to have both get/set methods however
- * SszMutableData instance shouldn't be leaked as SszData instance, the {@link #commitChanges()}
- * should be used instead to get immutable view
+ * {@link SszMutableData} instance shouldn't be leaked as {@link SszData} instance, the {@link #commitChanges()}
+ * should be used instead to get immutable structure
  */
 public interface SszMutableData extends SszData {
 
-  /** Resets this view to its default value */
+  /** Resets this ssz structure to its default value */
   void clear();
 
   /** Creates the corresponding immutable structure with all the changes */
   SszData commitChanges();
 
   /**
-   * Returns the backing tree of this modified view Note that calling this method on {@link
+   * Returns the backing tree of this modified structure.
+   *
+   * Note that calling this method on {@link
    * SszMutableData} could be suboptimal from performance perspective as it internally needs to
    * create an immutable {@link SszData} via {@link #commitChanges()} which is then discarded. It's
    * normally better to make all modifications on {@link SszMutableData}, commit the changes and

@@ -14,16 +14,16 @@
 package tech.pegasys.teku.ssz.backing;
 
 /**
- * Represents a mutable Vector view which is able to return a mutable child 'by reference' Any
+ * Represents a mutable {@link SszVector} which is able to return a mutable child 'by reference' Any
  * modifications made to such child are reflected in this vector and its backing tree
  *
- * @param <ElementReadType> Class of immutable child views
- * @param <ElementWriteType> Class of the corresponding mutable child views
+ * @param <SszElementT> Class of immutable child views
+ * @param <SszMutableElementT> Class of the corresponding mutable child views
  */
 public interface SszMutableRefVector<
-        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-        SszMutableVector<ElementReadType> {
+        SszElementT extends SszData, SszMutableElementT extends SszElementT>
+    extends SszMutableRefComposite<SszElementT, SszMutableElementT>,
+        SszMutableVector<SszElementT> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
@@ -32,5 +32,5 @@ public interface SszMutableRefVector<
    * @throws IndexOutOfBoundsException if index >= size()
    */
   @Override
-  ElementWriteType getByRef(int index);
+  SszMutableElementT getByRef(int index);
 }

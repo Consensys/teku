@@ -16,17 +16,17 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
 /**
- * Immutable List view
+ * Immutable SSZ List structure
  *
- * @param <ElementType> Type of list elements
+ * @param <SszElementT> Type of list elements
  */
-public interface SszList<ElementType extends SszData> extends SszCollection<ElementType> {
+public interface SszList<SszElementT extends SszData> extends SszCollection<SszElementT> {
 
   @Override
-  SszMutableList<ElementType> createWritableCopy();
+  SszMutableList<SszElementT> createWritableCopy();
 
   @Override
-  SszListSchema<ElementType> getSchema();
+  SszListSchema<SszElementT> getSchema();
 
   /** Returns the number of elements in this list */
   @Override

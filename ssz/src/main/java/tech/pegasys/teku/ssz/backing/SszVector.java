@@ -16,15 +16,15 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 /**
- * Immutable Vector view
+ * Immutable SSZ Vector
  *
- * @param <ElementType> Type of vector elements
+ * @param <SszElementT> Type of vector elements
  */
-public interface SszVector<ElementType extends SszData> extends SszCollection<ElementType> {
+public interface SszVector<SszElementT extends SszData> extends SszCollection<SszElementT> {
 
   @Override
-  SszMutableVector<ElementType> createWritableCopy();
+  SszMutableVector<SszElementT> createWritableCopy();
 
   @Override
-  SszVectorSchema<ElementType> getSchema();
+  SszVectorSchema<SszElementT> getSchema();
 }

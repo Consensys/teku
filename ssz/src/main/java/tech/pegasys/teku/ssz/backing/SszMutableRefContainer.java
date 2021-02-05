@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-/** Base class for mutable containers which are able to return mutable children by reference */
+/** Base class for mutable {@link SszContainer} which is able to return mutable children by reference */
 public interface SszMutableRefContainer
     extends SszMutableRefComposite<SszData, SszMutableData>, SszMutableContainer {
 

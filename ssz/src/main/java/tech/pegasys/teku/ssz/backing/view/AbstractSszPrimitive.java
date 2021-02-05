@@ -53,11 +53,6 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   }
 
   @Override
-  public SszMutableData createWritableCopy() {
-    throw new UnsupportedOperationException("Basic view instances are immutable");
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

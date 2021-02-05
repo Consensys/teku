@@ -16,8 +16,8 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 
 /**
- * Base class for immutable containers. Since containers are heterogeneous their generic child view
- * is SszData
+ * Base class for immutable containers. Since containers are heterogeneous their generic child type
+ * is {@link SszData}
  */
 public interface SszContainer extends SszComposite<SszData> {
 

@@ -16,16 +16,16 @@ package tech.pegasys.teku.ssz.backing;
 import java.util.function.Consumer;
 
 /**
- * Represents a mutable List view which is able to return a mutable child 'by reference' Any
+ * Represents a mutable {@link SszList} which is able to return a mutable child 'by reference' Any
  * modifications made to such child are reflected in this list and its backing tree
  *
- * @param <ElementReadType> Class of immutable child views
- * @param <ElementWriteType> Class of the corresponding mutable child views
+ * @param <SszElementT> Class of immutable child views
+ * @param <SszMutableElementT> Class of the corresponding mutable child views
  */
 public interface SszMutableRefList<
-        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends SszMutableRefComposite<ElementReadType, ElementWriteType>,
-        SszMutableList<ElementReadType> {
+        SszElementT extends SszData, SszMutableElementT extends SszElementT>
+    extends SszMutableRefComposite<SszElementT, SszMutableElementT>,
+        SszMutableList<SszElementT> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
@@ -34,19 +34,19 @@ public interface SszMutableRefList<
    * @throws IndexOutOfBoundsException if index >= size()
    */
   @Override
-  ElementWriteType getByRef(int index);
+  SszMutableElementT getByRef(int index);
 
   /**
    * Appends a new empty element to the list and returns its writeable reference for modification
    */
-  default ElementWriteType append() {
-    ElementReadType newElement = getSchema().getElementSchema().getDefault();
+  default SszMutableElementT append() {
+    SszElementT newElement = getSchema().getElementSchema().getDefault();
     append(newElement);
     return getByRef(size() - 1);
   }
 
   /** Just a functional style helper for {@link #append()} */
-  default void append(Consumer<ElementWriteType> mutator) {
+  default void append(Consumer<SszMutableElementT> mutator) {
     mutator.accept(append());
   }
 }

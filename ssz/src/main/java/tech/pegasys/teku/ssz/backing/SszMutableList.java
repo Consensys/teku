@@ -16,30 +16,30 @@ package tech.pegasys.teku.ssz.backing;
 import java.util.Collection;
 
 /**
- * Mutable List view with immutable elements This type of list can be modified by setting or
+ * Mutable SSZ List with immutable elements. This type of list can be modified by setting or
  * appending immutable elements
  *
- * @param <ElementType> Type of list elements
+ * @param <SszElementT> Type of list elements
  */
-public interface SszMutableList<ElementType extends SszData>
-    extends SszMutableComposite<ElementType>, SszList<ElementType> {
+public interface SszMutableList<SszElementT extends SszData>
+    extends SszMutableComposite<SszElementT>, SszList<SszElementT> {
 
   @Override
-  void set(int index, ElementType value);
+  void set(int index, SszElementT value);
 
   @Override
-  SszList<ElementType> commitChanges();
+  SszList<SszElementT> commitChanges();
 
   /**
    * Appends a new immutable value to the end of the list. Size is incremented
    *
    * @throws IndexOutOfBoundsException if size would exceed maxLength
    */
-  default void append(ElementType value) {
+  default void append(SszElementT value) {
     set(size(), value);
   }
 
-  default void appendAll(Collection<ElementType> elements) {
+  default void appendAll(Collection<SszElementT> elements) {
     elements.forEach(this::append);
   }
 }

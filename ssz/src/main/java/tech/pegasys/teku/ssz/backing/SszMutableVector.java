@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing;
 
 /**
- * Mutable Vector view with immutable elements This type of vector can be modified by setting
+ * Mutable {@link SszVector} with immutable elements. This type of vector can be modified by setting
  * immutable elements
  *
  * @param <ElementType> Type of elements
