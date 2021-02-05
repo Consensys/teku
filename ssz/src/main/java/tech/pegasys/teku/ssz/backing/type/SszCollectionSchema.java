@@ -36,7 +36,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class CollectionViewType<ElementViewT extends SszData, ViewT extends SszData>
+public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT extends SszData>
     implements SszCompositeSchema<ViewT> {
 
   private final long maxLength;
@@ -46,7 +46,7 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
       Suppliers.memoize(() -> SszNodeTemplate.createFromType(getElementType()));
   private volatile TreeNode defaultTree;
 
-  protected CollectionViewType(
+  protected SszCollectionSchema(
       long maxLength, SszSchema<ElementViewT> elementType, TypeHints hints) {
     this.maxLength = maxLength;
     this.elementType = elementType;
@@ -282,7 +282,7 @@ public abstract class CollectionViewType<ElementViewT extends SszData, ViewT ext
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CollectionViewType<?, ?> that = (CollectionViewType<?, ?>) o;
+    SszCollectionSchema<?, ?> that = (SszCollectionSchema<?, ?>) o;
     return maxLength == that.maxLength && elementType.equals(that.elementType);
   }
 

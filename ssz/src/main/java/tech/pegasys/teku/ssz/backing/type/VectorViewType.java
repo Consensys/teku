@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class VectorViewType<ElementViewT extends SszData>
-    extends CollectionViewType<ElementViewT, SszVector<ElementViewT>> {
+    extends SszCollectionSchema<ElementViewT, SszVector<ElementViewT>> {
 
   private final boolean isListBacking;
 

@@ -30,8 +30,8 @@ import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
@@ -136,7 +136,7 @@ public interface BeaconState extends SszContainer {
     return TYPE.get();
   }
 
-  class BeaconStateType extends ContainerViewType<BeaconState> {
+  class BeaconStateType extends SszContainerSchema<BeaconState> {
 
     public BeaconStateType() {
       super(

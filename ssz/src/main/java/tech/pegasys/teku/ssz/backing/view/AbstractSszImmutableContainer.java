@@ -23,23 +23,23 @@ import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 
 /** Handy base class for immutable containers */
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
   protected AbstractSszImmutableContainer(
-      ContainerViewType<? extends AbstractSszImmutableContainer> type) {
+      SszContainerSchema<? extends AbstractSszImmutableContainer> type) {
     this(type, type.getDefaultTree());
   }
 
   protected AbstractSszImmutableContainer(
-      ContainerViewType<? extends AbstractSszImmutableContainer> type, TreeNode backingNode) {
+      SszContainerSchema<? extends AbstractSszImmutableContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   protected AbstractSszImmutableContainer(
-      ContainerViewType<? extends AbstractSszImmutableContainer> type, SszData... memberValues) {
+      SszContainerSchema<? extends AbstractSszImmutableContainer> type, SszData... memberValues) {
     super(type, createBackingTree(type, memberValues), createCache(memberValues));
     checkArgument(
         memberValues.length == getType().getMaxLength(),
@@ -63,7 +63,7 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
     return cache;
   }
 
-  private static TreeNode createBackingTree(ContainerViewType<?> type, SszData... memberValues) {
+  private static TreeNode createBackingTree(SszContainerSchema<?> type, SszData... memberValues) {
     TreeUpdates nodes =
         IntStream.range(0, memberValues.length)
             .mapToObj(

@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class ComplexViewTypes {
+public class SszComplexSchemas {
 
   public static final ByteVectorType BYTES_48_TYPE = new ByteVectorType(48);
   public static final ByteVectorType BYTES_96_TYPE = new ByteVectorType(96);

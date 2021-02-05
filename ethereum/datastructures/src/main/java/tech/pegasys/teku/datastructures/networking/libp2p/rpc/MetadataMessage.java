@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;

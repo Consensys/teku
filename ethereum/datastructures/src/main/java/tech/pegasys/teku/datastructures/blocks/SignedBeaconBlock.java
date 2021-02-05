@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
@@ -37,7 +37,7 @@ public class SignedBeaconBlock
       super(
           "SignedBeaconBlock",
           namedType("message", BeaconBlock.TYPE.get()),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
     }
 
     @Override

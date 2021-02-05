@@ -77,7 +77,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.ByteVectorType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 import tech.pegasys.teku.util.config.Constants;
 

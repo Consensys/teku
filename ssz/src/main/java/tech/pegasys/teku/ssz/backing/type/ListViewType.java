@@ -34,9 +34,9 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class ListViewType<ElementViewT extends SszData>
-    extends CollectionViewType<ElementViewT, SszList<ElementViewT>> {
+    extends SszCollectionSchema<ElementViewT, SszList<ElementViewT>> {
   private final VectorViewType<ElementViewT> compatibleVectorType;
-  private final ContainerViewType<?> containerViewType;
+  private final SszContainerSchema<?> sszContainerSchema;
 
   public ListViewType(SszSchema<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
@@ -46,8 +46,8 @@ public class ListViewType<ElementViewT extends SszData>
     super(maxLength, elementType, hints);
     this.compatibleVectorType =
         new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
-    this.containerViewType =
-        ContainerViewType.create(
+    this.sszContainerSchema =
+        SszContainerSchema.create(
             Arrays.asList(getCompatibleVectorType(), SszPrimitiveSchemas.UINT64_TYPE),
             (type, node) -> new ListContainerRead<>(this, type, node));
   }
@@ -75,8 +75,8 @@ public class ListViewType<ElementViewT extends SszData>
     return compatibleVectorType;
   }
 
-  public ContainerViewType<?> getCompatibleListContainerType() {
-    return containerViewType;
+  public SszContainerSchema<?> getCompatibleListContainerType() {
+    return sszContainerSchema;
   }
 
   @Override

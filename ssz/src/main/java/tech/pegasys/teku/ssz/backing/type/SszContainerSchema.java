@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class ContainerViewType<C extends SszContainer>
+public abstract class SszContainerSchema<C extends SszContainer>
     implements SszCompositeSchema<C> {
 
   protected static class NamedType<T extends SszData> {
@@ -61,7 +61,7 @@ public abstract class ContainerViewType<C extends SszContainer>
   private final TreeNode defaultTree;
   private final long treeWidth;
 
-  protected ContainerViewType(String name, List<NamedType<?>> childrenTypes) {
+  protected SszContainerSchema(String name, List<NamedType<?>> childrenTypes) {
     this.containerName = name;
     this.childrenNames =
         childrenTypes.stream().map(NamedType::getName).collect(Collectors.toList());
@@ -71,7 +71,7 @@ public abstract class ContainerViewType<C extends SszContainer>
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
-  protected ContainerViewType(List<SszSchema<?>> childrenTypes) {
+  protected SszContainerSchema(List<SszSchema<?>> childrenTypes) {
     this.containerName = "";
     this.childrenNames =
         IntStream.range(0, childrenTypes.size())
@@ -82,9 +82,9 @@ public abstract class ContainerViewType<C extends SszContainer>
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
-  public static <C extends SszContainer> ContainerViewType<C> create(
-      List<SszSchema<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
-    return new ContainerViewType<C>(childrenTypes) {
+  public static <C extends SszContainer> SszContainerSchema<C> create(
+      List<SszSchema<?>> childrenTypes, BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+    return new SszContainerSchema<C>(childrenTypes) {
       @Override
       public C createFromBackingNode(TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -136,7 +136,7 @@ public abstract class ContainerViewType<C extends SszContainer>
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ContainerViewType<?> that = (ContainerViewType<?>) o;
+    SszContainerSchema<?> that = (SszContainerSchema<?>) o;
     return childrenTypes.equals(that.childrenTypes);
   }
 

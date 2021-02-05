@@ -31,7 +31,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
@@ -52,8 +52,8 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends SszContainer {
 
-    ContainerViewType<SubContainerRead> TYPE =
-        ContainerViewType.create(
+    SszContainerSchema<SubContainerRead> TYPE =
+        SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.UINT64_TYPE),
             SubContainerReadImpl::new);
 
@@ -79,8 +79,8 @@ public class ContainerViewTest {
 
   public interface ContainerRead extends SszContainer {
 
-    ContainerViewType<ContainerReadImpl> TYPE =
-        ContainerViewType.create(
+    SszContainerSchema<ContainerReadImpl> TYPE =
+        SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_TYPE,
                 SszPrimitiveSchemas.UINT64_TYPE,
@@ -147,13 +147,13 @@ public class ContainerViewTest {
   public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
-    public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
-        ContainerViewType.create(
+    public static final SszContainerSchema<ImmutableSubContainerImpl> TYPE =
+        SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.BYTES32_TYPE),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(
-        ContainerViewType<ImmutableSubContainerImpl> type, TreeNode backingNode) {
+        SszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -179,7 +179,7 @@ public class ContainerViewTest {
       super(TYPE, backingNode, cache);
     }
 
-    private SubContainerReadImpl(ContainerViewType<SubContainerRead> type, TreeNode backingNode) {
+    private SubContainerReadImpl(SszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -210,7 +210,7 @@ public class ContainerViewTest {
 
   public static class ContainerReadImpl extends SszContainerImpl implements ContainerRead {
 
-    public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
+    public ContainerReadImpl(SszContainerSchema<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

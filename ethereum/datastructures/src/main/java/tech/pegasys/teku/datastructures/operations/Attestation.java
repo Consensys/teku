@@ -24,8 +24,8 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitListType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
@@ -44,7 +44,7 @@ public class Attestation
           "Attestation",
           namedType("aggregation_bits", new BitListType(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedType("data", AttestationData.TYPE),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
     }
 
     public BitListType getAggregationBitsType() {

@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
 
@@ -41,7 +41,7 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     }
 
     public ListContainerRead(
-        ListViewType<ElementType> type, ContainerViewType<?> containerType, TreeNode backingNode) {
+        ListViewType<ElementType> type, SszContainerSchema<?> containerType, TreeNode backingNode) {
       super(containerType, backingNode);
       this.type = type;
     }

@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
@@ -65,7 +65,7 @@ public class BeaconBlockBody
     public BeaconBlockBodyType() {
       super(
           "BeaconBlockBody",
-          namedType("randao_reveal", ComplexViewTypes.BYTES_96_TYPE),
+          namedType("randao_reveal", SszComplexSchemas.BYTES_96_TYPE),
           namedType("eth1_data", Eth1Data.TYPE),
           namedType("graffiti", SszPrimitiveSchemas.BYTES32_TYPE),
           namedType(

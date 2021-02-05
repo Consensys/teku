@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
@@ -36,12 +36,12 @@ public class TestContainers {
 
   public static class TestSubContainer extends AbstractSszImmutableContainer {
 
-    public static final ContainerViewType<TestSubContainer> TYPE =
-        ContainerViewType.create(
+    public static final SszContainerSchema<TestSubContainer> TYPE =
+        SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_TYPE, SszPrimitiveSchemas.BYTES32_TYPE),
             TestSubContainer::new);
 
-    private TestSubContainer(ContainerViewType<TestSubContainer> type, TreeNode backingNode) {
+    private TestSubContainer(SszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -60,11 +60,11 @@ public class TestContainers {
 
   public static class TestContainer extends AbstractSszImmutableContainer {
 
-    public static final ContainerViewType<TestContainer> TYPE =
-        ContainerViewType.create(
+    public static final SszContainerSchema<TestContainer> TYPE =
+        SszContainerSchema.create(
             List.of(TestSubContainer.TYPE, SszPrimitiveSchemas.UINT64_TYPE), TestContainer::new);
 
-    private TestContainer(ContainerViewType<TestContainer> type, TreeNode backingNode) {
+    private TestContainer(SszContainerSchema<TestContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -83,10 +83,10 @@ public class TestContainers {
 
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
-    public static final ContainerViewType<TestSmallContainer> TYPE =
-        ContainerViewType.create(List.of(SszPrimitiveSchemas.BIT_TYPE), TestSmallContainer::new);
+    public static final SszContainerSchema<TestSmallContainer> TYPE =
+        SszContainerSchema.create(List.of(SszPrimitiveSchemas.BIT_TYPE), TestSmallContainer::new);
 
-    private TestSmallContainer(ContainerViewType<TestSmallContainer> type, TreeNode backingNode) {
+    private TestSmallContainer(SszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -97,8 +97,8 @@ public class TestContainers {
 
   public static class TestByteVectorContainer extends AbstractSszImmutableContainer {
 
-    public static final ContainerViewType<TestByteVectorContainer> TYPE =
-        ContainerViewType.create(
+    public static final SszContainerSchema<TestByteVectorContainer> TYPE =
+        SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_TYPE,
                 new VectorViewType<ByteView>(SszPrimitiveSchemas.BYTE_TYPE, 64),
@@ -111,7 +111,7 @@ public class TestContainers {
     }
 
     private TestByteVectorContainer(
-        ContainerViewType<TestByteVectorContainer> type, TreeNode backingNode) {
+        SszContainerSchema<TestByteVectorContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -126,8 +126,8 @@ public class TestContainers {
 
   public static class TestDoubleSuperContainer extends AbstractSszImmutableContainer {
 
-    public static final ContainerViewType<TestDoubleSuperContainer> TYPE =
-        ContainerViewType.create(
+    public static final SszContainerSchema<TestDoubleSuperContainer> TYPE =
+        SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_TYPE,
                 TestByteVectorContainer.TYPE,
@@ -137,7 +137,7 @@ public class TestContainers {
             TestDoubleSuperContainer::new);
 
     private TestDoubleSuperContainer(
-        ContainerViewType<TestDoubleSuperContainer> type, TreeNode backingNode) {
+        SszContainerSchema<TestDoubleSuperContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

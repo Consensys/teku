@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -37,7 +37,7 @@ public class DepositMessage
     public DepositMessageType() {
       super(
           "DepositMessage",
-          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
+          namedType("pubkey", SszComplexSchemas.BYTES_48_TYPE),
           namedType("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_TYPE),
           namedType("amount", SszPrimitiveSchemas.UINT64_TYPE));
     }

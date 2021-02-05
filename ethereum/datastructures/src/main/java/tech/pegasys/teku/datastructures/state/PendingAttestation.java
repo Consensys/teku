@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
+import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitListType;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;

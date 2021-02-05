@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 
 class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
@@ -49,7 +49,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
     this.transitionCaches = transitionCaches;
   }
 
-  BeaconStateImpl(ContainerViewType<? extends SszContainer> type, TreeNode backingNode) {
+  BeaconStateImpl(SszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
