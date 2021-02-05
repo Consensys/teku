@@ -108,12 +108,12 @@ public final class BeaconBlock
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
     return new BeaconBlock(
-        getType(), getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
+        this.getSchema(), getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
   }
 
   @Override
-  public BeaconBlockType getType() {
-    return (BeaconBlockType) super.getType();
+  public BeaconBlockType getSchema() {
+    return (BeaconBlockType) super.getSchema();
   }
 
   @Override

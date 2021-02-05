@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 public interface SszContainer extends SszComposite<SszData> {
 
   @Override
-  SszContainerSchema<?> getType();
+  SszContainerSchema<?> getSchema();
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here

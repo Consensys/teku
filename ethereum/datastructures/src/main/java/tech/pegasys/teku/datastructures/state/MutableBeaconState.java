@@ -132,7 +132,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   // Finality
   default void setJustification_bits(Bitvector justification_bits) {
-    set(17, SszUtils.createBitvectorView(justification_bits));
+    set(17, SszUtils.toSszBitVector(justification_bits));
   }
 
   default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {

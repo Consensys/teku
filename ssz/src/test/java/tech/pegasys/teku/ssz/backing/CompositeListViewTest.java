@@ -99,7 +99,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public SszSchema<?> getType() {
+    public SszSchema<?> getSchema() {
       return testType;
     }
 

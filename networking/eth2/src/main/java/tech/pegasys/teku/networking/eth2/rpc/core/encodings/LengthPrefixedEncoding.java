@@ -63,7 +63,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
       return Bytes.EMPTY;
     }
     final RpcPayloadEncoder<T> payloadEncoder =
-        payloadEncoders.getEncoder((SszSchema<T>) message.getType());
+        payloadEncoders.getEncoder((SszSchema<T>) message.getSchema());
     final Bytes payload = payloadEncoder.encode(message);
     if (payload.isEmpty()) {
       return payload;

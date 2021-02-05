@@ -27,36 +27,36 @@ import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszMutableVectorImpl<
-        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    extends AbstractSszMutableComposite<ElementReadType, ElementWriteType>
-    implements SszMutableRefVector<ElementReadType, ElementWriteType> {
+        SszElementT extends SszData, SszMutableElementT extends SszElementT>
+    extends AbstractSszMutableComposite<SszElementT, SszMutableElementT>
+    implements SszMutableRefVector<SszElementT, SszMutableElementT> {
 
-  public SszMutableVectorImpl(AbstractSszComposite<ElementReadType> backingImmutableView) {
-    super(backingImmutableView);
+  public SszMutableVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
+    super(backingImmutableData);
   }
 
   @Override
-  protected AbstractSszComposite<ElementReadType> createViewRead(
-      TreeNode backingNode, IntCache<ElementReadType> viewCache) {
-    return new SszVectorImpl<>(getType(), backingNode, viewCache);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public SszVectorSchema<ElementReadType> getType() {
-    return (SszVectorSchema<ElementReadType>) super.getType();
+  protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
+      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+    return new SszVectorImpl<>(getSchema(), backingNode, childrenCache);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorImpl<ElementReadType> commitChanges() {
-    return (SszVectorImpl<ElementReadType>) super.commitChanges();
+  public SszVectorSchema<SszElementT> getSchema() {
+    return (SszVectorSchema<SszElementT>) super.getSchema();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public SszVectorImpl<SszElementT> commitChanges() {
+    return (SszVectorImpl<SszElementT>) super.commitChanges();
   }
 
   @Override
   protected TreeUpdates packChanges(
-      List<Map.Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
-    SszVectorSchema<ElementReadType> type = getType();
+      List<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
+    SszVectorSchema<SszElementT> type = getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
@@ -68,13 +68,13 @@ public class SszMutableVectorImpl<
         .map(
             e -> {
               int nodeIndex = e.getKey();
-              List<Map.Entry<Integer, ElementReadType>> nodeVals = e.getValue();
+              List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
               long gIndex = type.getGeneralizedIndex(nodeIndex);
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =
                   nodeVals.size() == elementsPerChunk ? LeafNode.EMPTY_LEAF : original.get(gIndex);
-              for (Map.Entry<Integer, ElementReadType> entry : nodeVals) {
+              for (Map.Entry<Integer, SszElementT> entry : nodeVals) {
                 node =
                     elementType.updateBackingNode(
                         node, entry.getKey() % elementsPerChunk, entry.getValue());
@@ -93,7 +93,7 @@ public class SszMutableVectorImpl<
   }
 
   @Override
-  public SszMutableVector<ElementReadType> createWritableCopy() {
+  public SszMutableVector<SszElementT> createWritableCopy() {
     throw new UnsupportedOperationException();
   }
 }

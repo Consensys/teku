@@ -32,37 +32,37 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
- * Base backing view class for mutable composite views (lists, vectors, containers)
+ * Base backing {@link SszMutableData} class for mutable composite ssz structures (lists, vectors, containers)
  *
- * <p>It has corresponding backing immutable view and the set of changed children. When the {@link
- * #commitChanges()} is called a new immutable view is created where changes accumulated in this
- * instance are merged with cached backing view instance which weren't changed.
+ * <p>It has corresponding backing immutable {@link SszData} and the set of changed children. When the {@link
+ * #commitChanges()} is called a new immutable {@link SszData} instance is created where changes accumulated in this
+ * instance are merged with cached backing {@link SszData} instance which weren't changed.
  *
- * <p>If this view is get by reference from its parent composite view ({@link
+ * <p>If this ssz data is get by reference from its parent composite view ({@link
  * SszMutableRefComposite#getByRef(int)} then all the changes are notified to the parent view (see
  * {@link SszMutableComposite#setInvalidator(Consumer)}
  *
- * <p>The mutable views based on this class are inherently NOT thread safe
+ * <p>The mutable structures based on this class are inherently NOT thread safe
  */
 public abstract class AbstractSszMutableComposite<
-        ChildReadType extends SszData, ChildWriteType extends ChildReadType>
-    implements SszMutableRefComposite<ChildReadType, ChildWriteType> {
+        SszChildT extends SszData, SszMutableChildT extends SszChildT>
+    implements SszMutableRefComposite<SszChildT, SszMutableChildT> {
 
-  protected AbstractSszComposite<ChildReadType> backingImmutableView;
+  protected AbstractSszComposite<SszChildT> backingImmutableData;
   private Consumer<SszMutableData> invalidator;
-  private final Map<Integer, ChildReadType> childrenChanges = new HashMap<>();
-  private final Map<Integer, ChildWriteType> childrenRefs = new HashMap<>();
+  private final Map<Integer, SszChildT> childrenChanges = new HashMap<>();
+  private final Map<Integer, SszMutableChildT> childrenRefs = new HashMap<>();
   private final Set<Integer> childrenRefsChanged = new HashSet<>();
   private Integer sizeCache;
 
-  /** Creates a new mutable instance with backing immutable view */
-  protected AbstractSszMutableComposite(AbstractSszComposite<ChildReadType> backingImmutableView) {
-    this.backingImmutableView = backingImmutableView;
-    sizeCache = backingImmutableView.size();
+  /** Creates a new mutable instance with backing immutable data */
+  protected AbstractSszMutableComposite(AbstractSszComposite<SszChildT> backingImmutableData) {
+    this.backingImmutableData = backingImmutableData;
+    sizeCache = backingImmutableData.size();
   }
 
   @Override
-  public void set(int index, ChildReadType value) {
+  public void set(int index, SszChildT value) {
     checkIndex(index, true);
     if (childrenRefs.containsKey(index)) {
       throw new IllegalStateException(
@@ -74,26 +74,26 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
-  public ChildReadType get(int index) {
+  public SszChildT get(int index) {
     checkIndex(index, false);
-    ChildReadType ret = childrenChanges.get(index);
+    SszChildT ret = childrenChanges.get(index);
     if (ret != null) {
       return ret;
     } else if (childrenRefs.containsKey(index)) {
       return childrenRefs.get(index);
     } else {
-      return backingImmutableView.get(index);
+      return backingImmutableData.get(index);
     }
   }
 
   @Override
-  public ChildWriteType getByRef(int index) {
-    ChildWriteType ret = childrenRefs.get(index);
+  public SszMutableChildT getByRef(int index) {
+    SszMutableChildT ret = childrenRefs.get(index);
     if (ret == null) {
-      ChildReadType readView = get(index);
+      SszChildT readView = get(index);
       childrenChanges.remove(index);
       @SuppressWarnings("unchecked")
-      ChildWriteType w = (ChildWriteType) readView.createWritableCopy();
+      SszMutableChildT w = (SszMutableChildT) readView.createWritableCopy();
       if (w instanceof SszMutableComposite) {
         ((SszMutableComposite<?>) w)
             .setInvalidator(
@@ -109,18 +109,18 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
-  public SszCompositeSchema<?> getType() {
-    return backingImmutableView.getType();
+  public SszCompositeSchema<?> getSchema() {
+    return backingImmutableData.getSchema();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void clear() {
-    backingImmutableView = (AbstractSszComposite<ChildReadType>) getType().getDefault();
+    backingImmutableData = (AbstractSszComposite<SszChildT>) getSchema().getDefault();
     childrenChanges.clear();
     childrenRefs.clear();
     childrenRefsChanged.clear();
-    sizeCache = backingImmutableView.size();
+    sizeCache = backingImmutableData.size();
     invalidate();
   }
 
@@ -133,10 +133,10 @@ public abstract class AbstractSszMutableComposite<
   @SuppressWarnings("unchecked")
   public SszData commitChanges() {
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
-      return backingImmutableView;
+      return backingImmutableData;
     } else {
-      IntCache<ChildReadType> cache = backingImmutableView.transferCache();
-      List<Map.Entry<Integer, ChildReadType>> changesList =
+      IntCache<SszChildT> cache = backingImmutableData.transferCache();
+      List<Map.Entry<Integer, SszChildT>> changesList =
           Stream.concat(
                   childrenChanges.entrySet().stream(),
                   childrenRefsChanged.stream()
@@ -144,23 +144,23 @@ public abstract class AbstractSszMutableComposite<
                           idx ->
                               new SimpleImmutableEntry<>(
                                   idx,
-                                  (ChildReadType)
+                                  (SszChildT)
                                       ((SszMutableData) childrenRefs.get(idx)).commitChanges())))
               .sorted(Map.Entry.comparingByKey())
               .collect(Collectors.toList());
       // pre-fill the read cache with changed values
       changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
-      TreeNode originalBackingTree = backingImmutableView.getBackingNode();
+      TreeNode originalBackingTree = backingImmutableData.getBackingNode();
       TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
-      return createViewRead(newBackingTree, cache);
+      return createImmutableSszComposite(newBackingTree, cache);
     }
   }
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
-      List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
-    SszCompositeSchema<?> type = getType();
+      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
+    SszCompositeSchema<?> type = getSchema();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
       return newChildValues.stream()
@@ -179,14 +179,14 @@ public abstract class AbstractSszMutableComposite<
    * which support packed values (i.e. several child views per backing tree node)
    */
   protected abstract TreeUpdates packChanges(
-      List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original);
+      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original);
 
   /**
    * Should be implemented by subclasses to create respectful immutable view with backing tree and
    * views cache
    */
-  protected abstract AbstractSszComposite<ChildReadType> createViewRead(
-      TreeNode backingNode, IntCache<ChildReadType> viewCache);
+  protected abstract AbstractSszComposite<SszChildT> createImmutableSszComposite(
+      TreeNode backingNode, IntCache<SszChildT> viewCache);
 
   @Override
   public void setInvalidator(Consumer<SszMutableData> listener) {
@@ -212,7 +212,7 @@ public abstract class AbstractSszMutableComposite<
   @Override
   public SszMutableData createWritableCopy() {
     throw new UnsupportedOperationException(
-        "createWritableCopy() is now implemented for immutable views only");
+        "createWritableCopy() is now implemented for immutable SszData only");
   }
 
   /**

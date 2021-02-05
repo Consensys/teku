@@ -27,36 +27,31 @@ import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /**
- * View of SSZ List type. This view is compatible with and implemented as a <code>
+ * Generic {@link SszList} implementation. This ssz structure is compatible with and implemented as a <code>
  * Container[Vector(maxLength), size]</code> under the cover.
  */
-public class SszListImpl<ElementType extends SszData> implements SszList<ElementType> {
+public class SszListImpl<SszElementT extends SszData> implements SszList<SszElementT> {
 
   public static class ListContainerRead<ElementType extends SszData> extends SszContainerImpl {
-    private final SszListSchema<ElementType> type;
-
-    private ListContainerRead(SszListSchema<ElementType> type) {
-      super(type.getCompatibleListContainerType());
-      this.type = type;
-    }
+    private final SszListSchema<ElementType> schema;
 
     public ListContainerRead(
-        SszListSchema<ElementType> type,
+        SszListSchema<ElementType> schema,
         SszContainerSchema<?> containerType,
         TreeNode backingNode) {
       super(containerType, backingNode);
-      this.type = type;
+      this.schema = schema;
     }
 
-    public ListContainerRead(SszListSchema<ElementType> type, TreeNode backingNode) {
-      super(type.getCompatibleListContainerType(), backingNode);
-      this.type = type;
+    public ListContainerRead(SszListSchema<ElementType> schema, TreeNode backingNode) {
+      super(schema.getCompatibleListContainerType(), backingNode);
+      this.schema = schema;
     }
 
     public ListContainerRead(
-        SszListSchema<ElementType> type, TreeNode backingNode, IntCache<SszData> cache) {
-      super(type.getCompatibleListContainerType(), backingNode, cache);
-      this.type = type;
+        SszListSchema<ElementType> schema, TreeNode backingNode, IntCache<SszData> cache) {
+      super(schema.getCompatibleListContainerType(), backingNode, cache);
+      this.schema = schema;
     }
 
     public int getSize() {
@@ -69,54 +64,54 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
 
     @Override
     public ListContainerWrite<ElementType, ?> createWritableCopy() {
-      return new ListContainerWrite<>(this, type);
+      return new ListContainerWrite<>(this, schema);
     }
   }
 
-  private final SszListSchema<ElementType> type;
-  private final ListContainerRead<ElementType> container;
+  private final SszListSchema<SszElementT> schema;
+  private final ListContainerRead<SszElementT> container;
   private final int cachedSize;
 
-  protected SszListImpl(SszList<ElementType> other) {
+  protected SszListImpl(SszList<SszElementT> other) {
     if (other instanceof SszListImpl) {
       // optimization to preserve child view caches
-      SszListImpl<ElementType> otherImpl = (SszListImpl<ElementType>) other;
-      this.type = otherImpl.type;
+      SszListImpl<SszElementT> otherImpl = (SszListImpl<SszElementT>) other;
+      this.schema = otherImpl.schema;
       this.container = otherImpl.container;
       this.cachedSize = otherImpl.cachedSize;
     } else {
-      this.type = other.getType();
-      this.container = new ListContainerRead<>(type, other.getBackingNode());
+      this.schema = other.getSchema();
+      this.container = new ListContainerRead<>(schema, other.getBackingNode());
       this.cachedSize = container.getSize();
     }
   }
 
-  public SszListImpl(SszListSchema<ElementType> type, TreeNode node) {
-    this.type = type;
-    this.container = new ListContainerRead<>(type, node);
+  public SszListImpl(SszListSchema<SszElementT> schema, TreeNode node) {
+    this.schema = schema;
+    this.container = new ListContainerRead<>(schema, node);
     this.cachedSize = container.getSize();
   }
 
-  public SszListImpl(SszListSchema<ElementType> type, ListContainerRead<ElementType> container) {
-    this.type = type;
+  public SszListImpl(SszListSchema<SszElementT> schema, ListContainerRead<SszElementT> container) {
+    this.schema = schema;
     this.container = container;
     this.cachedSize = container.getSize();
   }
 
   @Override
-  public ElementType get(int index) {
+  public SszElementT get(int index) {
     checkIndex(index);
     return container.getData().get(index);
   }
 
   @Override
-  public SszMutableList<ElementType> createWritableCopy() {
-    return new SszMutableListImpl<>(getType(), container.createWritableCopy());
+  public SszMutableList<SszElementT> createWritableCopy() {
+    return new SszMutableListImpl<>(getSchema(), container.createWritableCopy());
   }
 
   @Override
-  public SszListSchema<ElementType> getType() {
-    return type;
+  public SszListSchema<SszElementT> getSchema() {
+    return schema;
   }
 
   @Override

@@ -29,29 +29,29 @@ import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> type) {
-    this(type, type.getDefaultTree());
+      SszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
+    this(schema, schema.getDefaultTree());
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> type, TreeNode backingNode) {
-    super(type, backingNode);
+      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, TreeNode backingNode) {
+    super(schema, backingNode);
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> type, SszData... memberValues) {
-    super(type, createBackingTree(type, memberValues), createCache(memberValues));
+      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, SszData... memberValues) {
+    super(schema, createBackingTree(schema, memberValues), createCache(memberValues));
     checkArgument(
-        memberValues.length == getType().getMaxLength(),
+        memberValues.length == this.getSchema().getMaxLength(),
         "Wrong number of member values: %s",
         memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       checkArgument(
-          memberValues[i].getType().equals(type.getChildSchema(i)),
-          "Wrong child type at index %s. Expected: %s, was %s",
+          memberValues[i].getSchema().equals(schema.getChildSchema(i)),
+          "Wrong child schema at index %s. Expected: %s, was %s",
           i,
-          type.getChildSchema(i),
-          memberValues[i].getType());
+          schema.getChildSchema(i),
+          memberValues[i].getSchema());
     }
   }
 
@@ -63,20 +63,20 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
     return cache;
   }
 
-  private static TreeNode createBackingTree(SszContainerSchema<?> type, SszData... memberValues) {
+  private static TreeNode createBackingTree(SszContainerSchema<?> schema, SszData... memberValues) {
     TreeUpdates nodes =
         IntStream.range(0, memberValues.length)
             .mapToObj(
                 i ->
                     new TreeUpdates.Update(
-                        type.getGeneralizedIndex(i), memberValues[i].getBackingNode()))
+                        schema.getGeneralizedIndex(i), memberValues[i].getBackingNode()))
             .collect(TreeUpdates.collector());
-    return type.getDefaultTree().updated(nodes);
+    return schema.getDefaultTree().updated(nodes);
   }
 
   @Override
   public SszMutableContainer createWritableCopy() {
-    throw new UnsupportedOperationException("This container doesn't support mutable View");
+    throw new UnsupportedOperationException("This container doesn't support mutable structure");
   }
 
   @Override

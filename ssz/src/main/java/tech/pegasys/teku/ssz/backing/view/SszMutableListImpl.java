@@ -28,19 +28,19 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
 public class SszMutableListImpl<
-        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-    implements SszMutableRefList<ElementReadType, ElementWriteType> {
+        SszElementT extends SszData, SszMutableElementT extends SszElementT>
+    implements SszMutableRefList<SszElementT, SszMutableElementT> {
 
   static class ListContainerWrite<
           ElementReadType extends SszData, ElementWriteType extends ElementReadType>
       extends SszMutableContainerImpl {
-    private final SszListSchema<ElementReadType> listType;
+    private final SszListSchema<ElementReadType> listSchema;
 
     public ListContainerWrite(
         ListContainerRead<ElementReadType> backingImmutableView,
-        SszListSchema<ElementReadType> type) {
+        SszListSchema<ElementReadType> listSchema) {
       super(backingImmutableView);
-      listType = type;
+      this.listSchema = listSchema;
     }
 
     public int getSize() {
@@ -56,8 +56,8 @@ public class SszMutableListImpl<
     }
 
     @Override
-    protected SszContainerImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
-      return new ListContainerRead<>(listType, backingNode, viewCache);
+    protected SszContainerImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+      return new ListContainerRead<>(listSchema, backingNode, viewCache);
     }
 
     @Override
@@ -67,21 +67,21 @@ public class SszMutableListImpl<
     }
   }
 
-  private final SszListSchema<ElementReadType> type;
-  private final ListContainerWrite<ElementReadType, ElementWriteType> container;
+  private final SszListSchema<SszElementT> schema;
+  private final ListContainerWrite<SszElementT, SszMutableElementT> container;
   private int cachedSize;
 
   public SszMutableListImpl(
-      SszListSchema<ElementReadType> type,
-      ListContainerWrite<ElementReadType, ElementWriteType> container) {
-    this.type = type;
+      SszListSchema<SszElementT> schema,
+      ListContainerWrite<SszElementT, SszMutableElementT> container) {
+    this.schema = schema;
     this.container = container;
     this.cachedSize = this.container.getSize();
   }
 
   @Override
-  public SszListSchema<ElementReadType> getType() {
-    return type;
+  public SszListSchema<SszElementT> getSchema() {
+    return schema;
   }
 
   @Override
@@ -90,20 +90,20 @@ public class SszMutableListImpl<
   }
 
   @Override
-  public ElementReadType get(int index) {
+  public SszElementT get(int index) {
     checkIndex(index, false);
     return container.getData().get(index);
   }
 
   @Override
-  public ElementWriteType getByRef(int index) {
+  public SszMutableElementT getByRef(int index) {
     checkIndex(index, false);
     return container.getData().getByRef(index);
   }
 
   @Override
-  public SszList<ElementReadType> commitChanges() {
-    return new SszListImpl<>(getType(), container.commitChanges());
+  public SszList<SszElementT> commitChanges() {
+    return new SszListImpl<>(getSchema(), container.commitChanges());
   }
 
   @Override
@@ -112,7 +112,7 @@ public class SszMutableListImpl<
   }
 
   @Override
-  public void set(int index, ElementReadType value) {
+  public void set(int index, SszElementT value) {
     checkIndex(index, true);
     if (index == size()) {
       cachedSize++;
@@ -129,14 +129,14 @@ public class SszMutableListImpl<
 
   protected void checkIndex(int index, boolean set) {
     if ((!set && index >= size())
-        || (set && (index > size() || index >= getType().getMaxLength()))) {
+        || (set && (index > size() || index >= getSchema().getMaxLength()))) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());
     }
   }
 
   @Override
-  public SszMutableList<ElementReadType> createWritableCopy() {
+  public SszMutableList<SszElementT> createWritableCopy() {
     throw new UnsupportedOperationException("Creating a copy from writable list is not supported");
   }
 }

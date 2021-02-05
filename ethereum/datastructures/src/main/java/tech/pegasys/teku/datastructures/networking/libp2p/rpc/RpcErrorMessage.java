@@ -46,7 +46,7 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
   public static final RpcErrorMessageType TYPE = new RpcErrorMessageType();
 
   public RpcErrorMessage(Bytes bytes) {
-    super(SszUtils.toListView(LIST_VIEW_TYPE, SszUtils.createListFromBytes(LIST_VIEW_TYPE, bytes)));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, SszUtils.toSszByteList(LIST_VIEW_TYPE, bytes)));
   }
 
   private RpcErrorMessage(TreeNode node) {

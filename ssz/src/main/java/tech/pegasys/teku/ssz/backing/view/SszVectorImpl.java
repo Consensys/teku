@@ -24,47 +24,47 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public class SszVectorImpl<ElementReadType extends SszData>
-    extends AbstractSszComposite<ElementReadType> implements SszVector<ElementReadType> {
+public class SszVectorImpl<SszElementT extends SszData>
+    extends AbstractSszComposite<SszElementT> implements SszVector<SszElementT> {
 
-  public SszVectorImpl(SszCompositeSchema<?> type, TreeNode backingNode) {
-    super(type, backingNode);
+  public SszVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
+    super(schema, backingNode);
   }
 
   public SszVectorImpl(
-      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<ElementReadType> cache) {
-    super(type, backingNode, cache);
+      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+    super(schema, backingNode, cache);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  protected ElementReadType getImpl(int index) {
-    SszVectorSchema<ElementReadType> type = getType();
+  protected SszElementT getImpl(int index) {
+    SszVectorSchema<SszElementT> type = this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     TreeNode node =
         getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
-    return (ElementReadType)
+    return (SszElementT)
         elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }
 
   @Override
   protected int sizeImpl() {
-    return (int) Long.min(Integer.MAX_VALUE, getType().getMaxLength());
+    return (int) Long.min(Integer.MAX_VALUE, this.getSchema().getMaxLength());
   }
 
   @Override
-  public SszMutableVectorImpl<ElementReadType, ?> createWritableCopy() {
+  public SszMutableVectorImpl<SszElementT, ?> createWritableCopy() {
     return new SszMutableVectorImpl<>(this);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszVectorSchema<ElementReadType> getType() {
-    return (SszVectorSchema<ElementReadType>) super.getType();
+  public SszVectorSchema<SszElementT> getSchema() {
+    return (SszVectorSchema<SszElementT>) super.getSchema();
   }
 
   @Override
-  protected IntCache<ElementReadType> createCache() {
+  protected IntCache<SszElementT> createCache() {
     return size() > 16384 ? new ArrayIntCache<>() : new ArrayIntCache<>(size());
   }
 

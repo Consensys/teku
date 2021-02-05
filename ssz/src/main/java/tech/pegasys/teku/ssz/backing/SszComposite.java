@@ -24,7 +24,7 @@ public interface SszComposite<ChildType> extends SszData {
 
   /** Returns number of children in this view */
   default int size() {
-    return (int) getType().getMaxLength();
+    return (int) getSchema().getMaxLength();
   }
 
   /**
@@ -35,5 +35,5 @@ public interface SszComposite<ChildType> extends SszData {
   ChildType get(int index);
 
   @Override
-  SszCompositeSchema<?> getType();
+  SszCompositeSchema<?> getSchema();
 }

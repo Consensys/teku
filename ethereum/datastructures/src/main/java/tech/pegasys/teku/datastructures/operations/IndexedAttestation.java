@@ -72,9 +72,9 @@ public class IndexedAttestation
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        SszUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
+        SszUtils.toSszList(TYPE.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
         data,
-        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

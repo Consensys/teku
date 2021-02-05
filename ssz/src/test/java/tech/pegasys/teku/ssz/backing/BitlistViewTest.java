@@ -32,7 +32,7 @@ public class BitlistViewTest {
               .toArray();
       Bitlist bitlist = new Bitlist(size, size, bitIndexes);
 
-      SszList<SszBit> bitlistView = SszUtils.createBitlistView(bitlist);
+      SszList<SszBit> bitlistView = SszUtils.toSszBitList(bitlist);
       Bitlist bitlist1 = SszUtils.getBitlist(bitlistView);
 
       Assertions.assertThat(bitlist1).isEqualTo(bitlist);

@@ -54,7 +54,7 @@ public class SSZBackingList<C, R extends SszData> extends SSZAbstractCollection<
 
   @Override
   public long getMaxSize() {
-    return delegate.getType().getMaxLength();
+    return delegate.getSchema().getMaxLength();
   }
 
   @Override

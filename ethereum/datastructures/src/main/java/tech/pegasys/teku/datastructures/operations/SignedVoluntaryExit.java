@@ -51,7 +51,7 @@ public class SignedVoluntaryExit
   }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    super(TYPE, message, SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(TYPE, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

@@ -33,7 +33,7 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
   SszMutableData createWritableCopy();
 
   /** Gets the type of this structure */
-  SszSchema<? extends SszData> getType();
+  SszSchema<? extends SszData> getSchema();
 
   /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();
@@ -45,11 +45,11 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
 
   @Override
   default Bytes sszSerialize() {
-    return getType().sszSerializeTree(getBackingNode());
+    return getSchema().sszSerializeTree(getBackingNode());
   }
 
   @Override
   default int sszSerialize(SszWriter writer) {
-    return getType().sszSerializeTree(getBackingNode(), writer);
+    return getSchema().sszSerializeTree(getBackingNode(), writer);
   }
 }

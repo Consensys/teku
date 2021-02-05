@@ -85,8 +85,8 @@ public class HistoricalBatch
       HistoricalBatchType type, SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
     super(
         type,
-        SszUtils.toVectorView(type.getBlockRootsType(), block_roots, SszBytes32::new),
-        SszUtils.toVectorView(type.getStateRootsType(), state_roots, SszBytes32::new));
+        SszUtils.toSszVector(type.getBlockRootsType(), block_roots, SszBytes32::new),
+        SszUtils.toSszVector(type.getStateRootsType(), state_roots, SszBytes32::new));
   }
 
   public SSZVector<Bytes32> getBlockRoots() {

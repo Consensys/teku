@@ -34,7 +34,7 @@ public class SszComplexSchemas {
     public SszList<SszByte> createList(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() > getMaxLength(), "Bytes length exceeds List type maximum length ");
-      return SszUtils.createListFromBytes(this, bytes);
+      return SszUtils.toSszByteList(this, bytes);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class SszComplexSchemas {
     public SszVector<SszByte> createVector(Bytes bytes) {
       Preconditions.checkArgument(
           bytes.size() == getLength(), "Bytes length doesn't match Vector type length ");
-      return SszUtils.createVectorFromBytes(this, bytes);
+      return SszUtils.toSszByteVector(this, bytes);
     }
 
     @Override

@@ -58,7 +58,7 @@ public class DepositMessage
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
     super(
         TYPE,
-        SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(amount));
   }

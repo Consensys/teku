@@ -68,9 +68,9 @@ public class Attestation
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
         TYPE,
-        SszUtils.createBitlistView(TYPE.getAggregationBitsType(), aggregation_bits),
+        SszUtils.toSszBitList(TYPE.getAggregationBitsType(), aggregation_bits),
         data,
-        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;
     signatureCache = signature;
   }

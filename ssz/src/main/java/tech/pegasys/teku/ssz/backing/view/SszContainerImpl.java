@@ -41,14 +41,14 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
 
   @Override
   protected SszData getImpl(int index) {
-    SszCompositeSchema<?> type = getType();
+    SszCompositeSchema<?> type = this.getSchema();
     TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
     return type.getChildSchema(index).createFromBackingNode(node);
   }
 
   @Override
-  public SszContainerSchema<?> getType() {
-    return (SszContainerSchema<?>) super.getType();
+  public SszContainerSchema<?> getSchema() {
+    return (SszContainerSchema<?>) super.getSchema();
   }
 
   @Override
@@ -58,7 +58,7 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
 
   @Override
   protected int sizeImpl() {
-    return (int) getType().getMaxLength();
+    return (int) this.getSchema().getMaxLength();
   }
 
   @Override
@@ -76,10 +76,10 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
 
   @Override
   public String toString() {
-    return getType().getContainerName()
+    return this.getSchema().getContainerName()
         + "{"
-        + IntStream.range(0, getType().getChildCount())
-            .mapToObj(idx -> getType().getChildrenNames().get(idx) + "=" + get(idx))
+        + IntStream.range(0, this.getSchema().getChildCount())
+            .mapToObj(idx -> this.getSchema().getChildrenNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
         + "}";
   }

@@ -64,10 +64,10 @@ public class DepositData
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
     super(
         TYPE,
-        SszUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
+        SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(amount),
-        SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.pubkeyCache = pubkey;
     this.signatureCache = signature;
   }

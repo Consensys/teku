@@ -48,7 +48,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(SszUtils.toListView(LIST_VIEW_TYPE, roots, SszBytes32::new));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, roots, SszBytes32::new));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

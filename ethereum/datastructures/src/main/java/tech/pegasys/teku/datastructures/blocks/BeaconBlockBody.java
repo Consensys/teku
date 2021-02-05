@@ -156,14 +156,14 @@ public class BeaconBlockBody
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
-        SszUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
+        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
         eth1_data,
         new SszBytes32(graffiti),
-        SszUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
-        SszUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
-        SszUtils.toListView(type.getAttestationsType(), attestations),
-        SszUtils.toListView(type.getDepositsType(), deposits),
-        SszUtils.toListView(type.getVoluntaryExitsType(), voluntary_exits));
+        SszUtils.toSszList(type.getProposerSlashingsType(), proposer_slashings),
+        SszUtils.toSszList(type.getAttesterSlashingsType(), attester_slashings),
+        SszUtils.toSszList(type.getAttestationsType(), attestations),
+        SszUtils.toSszList(type.getDepositsType(), deposits),
+        SszUtils.toSszList(type.getVoluntaryExitsType(), voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 

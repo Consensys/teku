@@ -41,7 +41,7 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {
-    super(SszUtils.toListView(LIST_VIEW_TYPE, Collections.emptyList()));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, Collections.emptyList()));
   }
 
   @Override

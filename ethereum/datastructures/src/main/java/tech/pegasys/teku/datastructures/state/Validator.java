@@ -89,7 +89,7 @@ public class Validator
       UInt64 withdrawable_epoch) {
     super(
         TYPE,
-        SszUtils.createVectorFromBytes(pubkey),
+        SszUtils.toSszByteVector(pubkey),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(effective_balance),
         SszBit.viewOf(slashed),

@@ -62,7 +62,7 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(TYPE, SszUtils.toVectorView(TYPE.getProofType(), proof, SszBytes32::new), data);
+    super(TYPE, SszUtils.toSszVector(TYPE.getProofType(), proof, SszBytes32::new), data);
   }
 
   public Deposit() {

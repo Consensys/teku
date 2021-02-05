@@ -67,7 +67,7 @@ public class PendingAttestation
       UInt64 proposer_index) {
     super(
         TYPE,
-        SszUtils.createBitlistView(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
+        SszUtils.toSszBitList(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
         data,
         new SszUInt64(inclusion_delay),
         new SszUInt64(proposer_index));

@@ -50,7 +50,7 @@ public class SignedAggregateAndProof
   }
 
   public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
-    super(TYPE, message, SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(TYPE, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     signatureCache = signature;
   }
 

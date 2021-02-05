@@ -38,23 +38,23 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 /** Handy view tool methods */
 public class SszUtils {
 
-  public static <C, V extends SszData> SszList<V> toListView(
+  public static <C, V extends SszData> SszList<V> toSszList(
       SszListSchema<V> type, Iterable<C> list, Function<C, V> converter) {
-    return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+    return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszList<V> toListView(SszListSchema<V> type, Iterable<V> list) {
+  public static <V extends SszData> SszList<V> toSszList(SszListSchema<V> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
 
-  public static <C, V extends SszData> SszVector<V> toVectorView(
+  public static <C, V extends SszData> SszVector<V> toSszVector(
       SszVectorSchema<V> type, Iterable<C> list, Function<C, V> converter) {
-    return toVectorView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+    return toSszVector(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszVector<V> toVectorView(
+  public static <V extends SszData> SszVector<V> toSszVector(
       SszVectorSchema<V> type, Iterable<V> list) {
     SszMutableVector<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
@@ -69,17 +69,17 @@ public class SszUtils {
   }
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
-  public static SszVector<SszByte> createVectorFromBytes(Bytes bytes) {
+  public static SszVector<SszByte> toSszByteVector(Bytes bytes) {
     SszVectorSchema<SszByte> type = new SszByteVectorSchema(bytes.size());
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszVector<SszByte> createVectorFromBytes(
+  public static SszVector<SszByte> toSszByteVector(
       SszVectorSchema<SszByte> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszList<SszByte> createListFromBytes(SszListSchema<SszByte> type, Bytes bytes) {
+  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
@@ -92,21 +92,21 @@ public class SszUtils {
    * Creates immutable list of bits with size `bitlist.size()` and maxSize = `bitlist.getMaxSize()`
    * from {@link Bitlist} value
    */
-  public static SszList<SszBit> createBitlistView(Bitlist bitlist) {
-    return createBitlistView(new SszBitListSchema(bitlist.getMaxSize()), bitlist);
+  public static SszList<SszBit> toSszBitList(Bitlist bitlist) {
+    return toSszBitList(new SszBitListSchema(bitlist.getMaxSize()), bitlist);
   }
 
-  public static SszList<SszBit> createBitlistView(SszListSchema<SszBit> type, Bitlist bitlist) {
+  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 
   /** Converts list of bits to {@link Bitlist} value */
   public static Bitlist getBitlist(SszList<SszBit> bitlistView) {
-    return Bitlist.fromSszBytes(bitlistView.sszSerialize(), bitlistView.getType().getMaxLength());
+    return Bitlist.fromSszBytes(bitlistView.sszSerialize(), bitlistView.getSchema().getMaxLength());
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
-  public static SszVector<SszBit> createBitvectorView(Bitvector bitvector) {
+  public static SszVector<SszBit> toSszBitVector(Bitvector bitvector) {
     SszMutableVector<SszBit> viewWrite =
         new SszBitVectorSchema(bitvector.getSize()).getDefault().createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {

@@ -117,7 +117,7 @@ public class TestContainers {
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
       super(
-          TYPE, SszUInt64.fromLong(l1), SszUtils.createVectorFromBytes(b1), SszUInt64.fromLong(l2));
+          TYPE, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
     }
   }
 

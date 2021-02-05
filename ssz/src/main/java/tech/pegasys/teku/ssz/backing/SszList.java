@@ -26,7 +26,7 @@ public interface SszList<ElementType extends SszData> extends SszCollection<Elem
   SszMutableList<ElementType> createWritableCopy();
 
   @Override
-  SszListSchema<ElementType> getType();
+  SszListSchema<ElementType> getSchema();
 
   /** Returns the number of elements in this list */
   @Override

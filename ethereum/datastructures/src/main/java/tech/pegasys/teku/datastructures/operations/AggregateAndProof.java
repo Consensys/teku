@@ -58,7 +58,7 @@ public class AggregateAndProof
         TYPE,
         new SszUInt64(index),
         aggregate,
-        SszUtils.createVectorFromBytes(selection_proof.toBytesCompressed()));
+        SszUtils.toSszByteVector(selection_proof.toBytesCompressed()));
     selectionProofCache = selection_proof;
   }
 

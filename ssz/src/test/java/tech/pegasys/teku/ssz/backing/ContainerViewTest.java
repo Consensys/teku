@@ -196,7 +196,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected SubContainerReadImpl createViewRead(
+    protected SubContainerReadImpl createImmutableSszComposite(
         TreeNode backingNode, IntCache<SszData> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
@@ -231,8 +231,8 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected ContainerReadImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
-      return new ContainerReadImpl(getType(), backingNode, viewCache);
+    protected ContainerReadImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+      return new ContainerReadImpl(getSchema(), backingNode, viewCache);
     }
 
     @Override

@@ -30,7 +30,7 @@ public class SszTestUtils {
 
   /** Compares two views by their getters recursively (if views are composite) */
   public static boolean equalsByGetters(SszData v1, SszData v2) {
-    if (!v1.getType().equals(v2.getType())) {
+    if (!v1.getSchema().equals(v2.getSchema())) {
       return false;
     }
     if (v1 instanceof SszComposite) {

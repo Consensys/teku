@@ -62,7 +62,7 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
   }
 
   public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
-    super(TYPE, new SszUInt64(seqNumber), SszUtils.createBitvectorView(attnets));
+    super(TYPE, new SszUInt64(seqNumber), SszUtils.toSszBitVector(attnets));
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
     this.attnetsCache = attnets;
   }

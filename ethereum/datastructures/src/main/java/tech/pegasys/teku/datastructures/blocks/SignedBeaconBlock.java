@@ -66,7 +66,7 @@ public class SignedBeaconBlock
 
   public SignedBeaconBlock(
       final SignedBeaconBlockType type, final BeaconBlock message, final BLSSignature signature) {
-    super(type, message, SszUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(type, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

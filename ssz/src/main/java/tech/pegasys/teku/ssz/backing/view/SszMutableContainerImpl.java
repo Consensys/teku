@@ -32,13 +32,13 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  protected SszContainerImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
-    return new SszContainerImpl(getType(), backingNode, viewCache);
+  protected SszContainerImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+    return new SszContainerImpl(getSchema(), backingNode, viewCache);
   }
 
   @Override
-  public SszContainerSchema<?> getType() {
-    return (SszContainerSchema<?>) super.getType();
+  public SszContainerSchema<?> getSchema() {
+    return (SszContainerSchema<?>) super.getSchema();
   }
 
   @Override

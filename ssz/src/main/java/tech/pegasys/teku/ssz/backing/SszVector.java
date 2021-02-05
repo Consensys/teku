@@ -26,5 +26,5 @@ public interface SszVector<ElementType extends SszData> extends SszCollection<El
   SszMutableVector<ElementType> createWritableCopy();
 
   @Override
-  SszVectorSchema<ElementType> getType();
+  SszVectorSchema<ElementType> getSchema();
 }
