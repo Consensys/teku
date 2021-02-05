@@ -33,7 +33,7 @@ public class AggregateAttestationTopicHandler {
     OperationProcessor<SignedAggregateAndProof> convertingProcessor =
         proofMessage ->
             operationProcessor.process(
-                ValidateableAttestation.aggregateFromValidator(proofMessage));
+                ValidateableAttestation.aggregateFromNetwork(proofMessage));
     return new Eth2TopicHandler<>(
         asyncRunner,
         convertingProcessor,
