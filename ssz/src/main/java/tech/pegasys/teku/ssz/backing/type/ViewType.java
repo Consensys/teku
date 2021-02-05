@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * Base class for any SSZ type like Vector, List, Container, basic types
  * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
-public interface ViewType<V extends ViewRead> extends SszType {
+public interface ViewType<V extends SszData> extends SszType {
 
   /**
    * Creates a default backing binary tree for this type E.g. if the type is basic then normally
@@ -68,7 +68,7 @@ public interface ViewType<V extends ViewRead> extends SszType {
    * in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and it's
    * 'internal index' in this node would be `45`
    */
-  default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+  default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
     return newValue.getBackingNode();
   }
 

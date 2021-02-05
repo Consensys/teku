@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  *
  * @param <ChildType> the type of children
  */
-public interface CompositeViewRead<ChildType> extends ViewRead {
+public interface CompositeViewRead<ChildType> extends SszData {
 
   /** Returns number of children in this view */
   default int size() {

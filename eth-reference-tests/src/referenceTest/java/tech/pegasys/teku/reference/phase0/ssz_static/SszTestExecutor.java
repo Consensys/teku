@@ -52,10 +52,10 @@ import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
+public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final Supplier<ViewType<T>> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =

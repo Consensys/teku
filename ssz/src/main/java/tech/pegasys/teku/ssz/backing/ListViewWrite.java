@@ -21,7 +21,7 @@ import java.util.Collection;
  *
  * @param <ElementType> Type of list elements
  */
-public interface ListViewWrite<ElementType extends ViewRead>
+public interface ListViewWrite<ElementType extends SszData>
     extends CompositeViewWrite<ElementType>, ListViewRead<ElementType> {
 
   @Override

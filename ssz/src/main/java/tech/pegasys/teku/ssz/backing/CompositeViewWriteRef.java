@@ -18,7 +18,7 @@ package tech.pegasys.teku.ssz.backing;
  * modifications made to such child are reflected in this structure and its backing tree
  */
 public interface CompositeViewWriteRef<
-        ChildReadType extends ViewRead, ChildWriteType extends ChildReadType>
+        ChildReadType extends SszData, ChildWriteType extends ChildReadType>
     extends CompositeViewWrite<ChildReadType> {
 
   /**

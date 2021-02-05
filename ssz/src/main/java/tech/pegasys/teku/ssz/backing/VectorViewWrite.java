@@ -19,7 +19,7 @@ package tech.pegasys.teku.ssz.backing;
  *
  * @param <ElementType> Type of elements
  */
-public interface VectorViewWrite<ElementType extends ViewRead>
+public interface VectorViewWrite<ElementType extends SszData>
     extends CompositeViewWrite<ElementType>, VectorViewRead<ElementType> {
 
   @Override

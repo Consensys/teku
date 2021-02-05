@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.containers;
 
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 
@@ -21,22 +21,22 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 public class Container16<
         C extends
             Container16<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15>,
-        V0 extends ViewRead,
-        V1 extends ViewRead,
-        V2 extends ViewRead,
-        V3 extends ViewRead,
-        V4 extends ViewRead,
-        V5 extends ViewRead,
-        V6 extends ViewRead,
-        V7 extends ViewRead,
-        V8 extends ViewRead,
-        V9 extends ViewRead,
-        V10 extends ViewRead,
-        V11 extends ViewRead,
-        V12 extends ViewRead,
-        V13 extends ViewRead,
-        V14 extends ViewRead,
-        V15 extends ViewRead>
+        V0 extends SszData,
+        V1 extends SszData,
+        V2 extends SszData,
+        V3 extends SszData,
+        V4 extends SszData,
+        V5 extends SszData,
+        V6 extends SszData,
+        V7 extends SszData,
+        V8 extends SszData,
+        V9 extends SszData,
+        V10 extends SszData,
+        V11 extends SszData,
+        V12 extends SszData,
+        V13 extends SszData,
+        V14 extends SszData,
+        V15 extends SszData>
     extends AbstractImmutableContainer {
 
   protected Container16(

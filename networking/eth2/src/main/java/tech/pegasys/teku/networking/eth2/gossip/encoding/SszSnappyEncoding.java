@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 class SszSnappyEncoding implements GossipEncoding {
@@ -33,12 +33,12 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T extends ViewRead> Bytes encode(final T value) {
+  public <T extends SszData> Bytes encode(final T value) {
     return snappyCompressor.compress(sszCodec.encode(value));
   }
 
   @Override
-  public <T extends ViewRead> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
+  public <T extends SszData> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
       throws DecodingException {
     if (!(message instanceof SnappyPreparedGossipMessage)) {
       throw new DecodingException("Unexpected PreparedMessage subclass: " + message.getClass());
@@ -48,7 +48,7 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T extends ViewRead> PreparedGossipMessage prepareMessage(
+  public <T extends SszData> PreparedGossipMessage prepareMessage(
       Bytes data, ViewType<T> valueType) {
     return SnappyPreparedGossipMessage.create(data, valueType, snappyCompressor);
   }

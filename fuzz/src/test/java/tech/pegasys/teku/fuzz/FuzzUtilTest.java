@@ -41,7 +41,7 @@ import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -242,7 +242,7 @@ class FuzzUtilTest {
             });
   }
 
-  public <T extends ViewRead> T loadSsz(final Path path, final ViewType<T> type) {
+  public <T extends SszData> T loadSsz(final Path path, final ViewType<T> type) {
     try {
       final byte[] data =
           getClass().getClassLoader().getResourceAsStream(path.toString()).readAllBytes();

@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -255,7 +255,7 @@ public class FuzzUtil {
     }
   }
 
-  private <T extends ViewRead> T deserialize(byte[] data, ViewType<T> type) {
+  private <T extends SszData> T deserialize(byte[] data, ViewType<T> type) {
     // allow exception to propagate on failure - indicates a preprocessing or deserializing error
     T structuredInput = type.sszDeserialize(Bytes.wrap(data));
     if (structuredInput == null) {

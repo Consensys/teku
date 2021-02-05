@@ -85,7 +85,7 @@ public class CompositeListViewTest {
         }
       };
 
-  static class TestView implements ViewRead {
+  static class TestView implements SszData {
     TreeNode node;
     public final int v;
 

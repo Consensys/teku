@@ -42,7 +42,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {
 
-  <TElement extends ViewRead> List<ListViewRead<TElement>> createListVariants(
+  <TElement extends SszData> List<ListViewRead<TElement>> createListVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0) {
     List<ListViewRead<TElement>> ret = new ArrayList<>();
     ret.add(list0);
@@ -53,12 +53,12 @@ public class ListViewHintsTest {
     return ret;
   }
 
-  <TElement extends ViewRead> void assertEmptyListVariants(
+  <TElement extends SszData> void assertEmptyListVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0) {
     createListVariants(type, list0).forEach(l -> assertEmptyList(type, l));
   }
 
-  <TElement extends ViewRead> void assertEmptyList(
+  <TElement extends SszData> void assertEmptyList(
       ListViewType<TElement> type, ListViewRead<TElement> list) {
 
     if (!(list instanceof ViewWrite)) {
@@ -73,12 +73,12 @@ public class ListViewHintsTest {
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
 
-  <TElement extends ViewRead> void assertListElementsVariants(
+  <TElement extends SszData> void assertListElementsVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list0, List<TElement> expectedElements) {
     createListVariants(type, list0).forEach(l -> assertListElements(type, l, expectedElements));
   }
 
-  <TElement extends ViewRead> void assertListElements(
+  <TElement extends SszData> void assertListElements(
       ListViewType<TElement> type, ListViewRead<TElement> list, List<TElement> expectedElements) {
 
     assertThat(list.isEmpty()).isFalse();
@@ -92,7 +92,7 @@ public class ListViewHintsTest {
     }
   }
 
-  <TElement extends ViewRead> void assertListEqualsVariants(
+  <TElement extends SszData> void assertListEqualsVariants(
       ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
     List<ListViewRead<TElement>> listVariants1 = createListVariants(type, list1);
     List<ListViewRead<TElement>> listVariants2 = createListVariants(type, list2);
@@ -103,7 +103,7 @@ public class ListViewHintsTest {
                 listVariant2 -> assertListEquals(type, listVariant1, listVariant2)));
   }
 
-  <TElement extends ViewRead> void assertListEquals(
+  <TElement extends SszData> void assertListEquals(
       ListViewType<TElement> type, ListViewRead<TElement> list1, ListViewRead<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
@@ -179,7 +179,7 @@ public class ListViewHintsTest {
         Arguments.of(listElementType4, 17, elementSupplier4));
   }
 
-  static <TElement extends ViewRead> List<ListViewType<TElement>> generateTypesWithHints(
+  static <TElement extends SszData> List<ListViewType<TElement>> generateTypesWithHints(
       ListViewType<TElement> originalType) {
     return Stream.concat(
             Stream.of(originalType),
@@ -195,7 +195,7 @@ public class ListViewHintsTest {
 
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
-  <TElement extends ViewRead> void testIdenticalTypes(
+  <TElement extends SszData> void testIdenticalTypes(
       ViewType<TElement> listElementType,
       long maxListSize,
       Supplier<TElement> listElementsFactory) {
@@ -222,7 +222,7 @@ public class ListViewHintsTest {
     }
   }
 
-  <TElement extends ViewRead> void testList(
+  <TElement extends SszData> void testList(
       ListViewType<TElement> type,
       Supplier<TElement> listElementsFactory,
       Consumer<ListViewRead<TElement>> results) {

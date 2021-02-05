@@ -18,7 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
@@ -58,7 +58,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends ViewRead> Bytes encodePayload(final T message) {
+  public <T extends SszData> Bytes encodePayload(final T message) {
     if (message instanceof EmptyMessage) {
       return Bytes.EMPTY;
     }
@@ -72,7 +72,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T extends ViewRead> RpcByteBufDecoder<T> createDecoder(ViewType<T> payloadType) {
+  public <T extends SszData> RpcByteBufDecoder<T> createDecoder(ViewType<T> payloadType) {
     if (payloadType.equals(EmptyMessage.TYPE)) {
       return getEmptyMessageDecoder();
     } else {

@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class ListViewType<ElementViewT extends ViewRead>
+public class ListViewType<ElementViewT extends SszData>
     extends CollectionViewType<ElementViewT, ListViewRead<ElementViewT>> {
   private final VectorViewType<ElementViewT> compatibleVectorType;
   private final ContainerViewType<?> containerViewType;

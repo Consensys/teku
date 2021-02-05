@@ -17,14 +17,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ContainerViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
-public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
+public class ContainerViewReadImpl extends AbstractCompositeViewRead<SszData>
     implements ContainerViewRead {
 
   public ContainerViewReadImpl(ContainerViewType<?> type) {
@@ -36,12 +36,12 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
   }
 
   public ContainerViewReadImpl(
-      CompositeViewType<?> type, TreeNode backingNode, IntCache<ViewRead> cache) {
+      CompositeViewType<?> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
   @Override
-  protected ViewRead getImpl(int index) {
+  protected SszData getImpl(int index) {
     CompositeViewType<?> type = getType();
     TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
     return type.getChildType(index).createFromBackingNode(node);
@@ -63,7 +63,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
   }
 
   @Override
-  protected IntCache<ViewRead> createCache() {
+  protected IntCache<SszData> createCache() {
     return new ArrayIntCache<>(size());
   }
 

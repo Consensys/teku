@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * Helper `ViewType` for making custom parametrized type without complexity of overriding existing
  * types
  */
-public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
+public abstract class AbstractDelegateType<ListTypeT extends SszData>
     implements ViewType<ListTypeT> {
 
   private final ViewType<? super ListTypeT> delegate;
@@ -58,7 +58,7 @@ public abstract class AbstractDelegateType<ListTypeT extends ViewRead>
   }
 
   @Override
-  public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+  public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
     return delegate.updateBackingNode(srcNode, internalIndex, newValue);
   }
 

@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  * @param <ElementWriteType> Class of the corresponding mutable child views
  */
 public interface ListViewWriteRef<
-        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends CompositeViewWriteRef<ElementReadType, ElementWriteType>,
         ListViewWrite<ElementReadType> {
 

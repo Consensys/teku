@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -43,7 +43,7 @@ class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, Beac
   BeaconStateImpl(
       CompositeViewType<?> type,
       TreeNode backingNode,
-      IntCache<ViewRead> cache,
+      IntCache<SszData> cache,
       TransitionCaches transitionCaches) {
     super(type, backingNode, cache);
     this.transitionCaches = transitionCaches;
@@ -192,7 +192,7 @@ class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, Beac
   }
 
   @Override
-  protected IntCache<ViewRead> createCache() {
+  protected IntCache<SszData> createCache() {
     return new SoftRefIntCache<>(super::createCache);
   }
 

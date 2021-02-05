@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.type.ListViewType;
  *
  * @param <ElementType> Type of list elements
  */
-public interface ListViewRead<ElementType extends ViewRead>
+public interface ListViewRead<ElementType extends SszData>
     extends CollectionViewRead<ElementType> {
 
   @Override

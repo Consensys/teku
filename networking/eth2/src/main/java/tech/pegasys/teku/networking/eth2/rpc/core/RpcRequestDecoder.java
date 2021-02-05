@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppended
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
  *
  * @param <T> The type of request to expect
  */
-public class RpcRequestDecoder<T extends RpcRequest & ViewRead> {
+public class RpcRequestDecoder<T extends RpcRequest & SszData> {
   private final RpcByteBufDecoder<T> decoder;
   private boolean complete;
 

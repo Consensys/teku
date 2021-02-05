@@ -17,8 +17,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
@@ -29,9 +29,9 @@ import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
  * View of SSZ List type. This view is compatible with and implemented as a <code>
  * Container[Vector(maxLength), size]</code> under the cover.
  */
-public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewRead<ElementType> {
+public class ListViewReadImpl<ElementType extends SszData> implements ListViewRead<ElementType> {
 
-  public static class ListContainerRead<ElementType extends ViewRead>
+  public static class ListContainerRead<ElementType extends SszData>
       extends ContainerViewReadImpl {
     private final ListViewType<ElementType> type;
 
@@ -52,7 +52,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
     }
 
     public ListContainerRead(
-        ListViewType<ElementType> type, TreeNode backingNode, IntCache<ViewRead> cache) {
+        ListViewType<ElementType> type, TreeNode backingNode, IntCache<SszData> cache) {
       super(type.getCompatibleListContainerType(), backingNode, cache);
       this.type = type;
     }
@@ -143,7 +143,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
     if (!(o instanceof ListViewRead)) {
       return false;
     }
-    return hashTreeRoot().equals(((ViewRead) o).hashTreeRoot());
+    return hashTreeRoot().equals(((SszData) o).hashTreeRoot());
   }
 
   @Override

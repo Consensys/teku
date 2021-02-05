@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedE
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
@@ -34,7 +34,7 @@ import tech.pegasys.teku.ssz.backing.type.ViewType;
  *
  * @param <T>
  */
-public class RpcResponseDecoder<T extends ViewRead> {
+public class RpcResponseDecoder<T extends SszData> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();

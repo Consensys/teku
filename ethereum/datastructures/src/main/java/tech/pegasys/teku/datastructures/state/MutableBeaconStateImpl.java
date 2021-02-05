@@ -18,7 +18,7 @@ import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
@@ -55,7 +55,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  protected BeaconStateImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
+  protected BeaconStateImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
     return new BeaconStateImpl(
         getType(),
         backingNode,

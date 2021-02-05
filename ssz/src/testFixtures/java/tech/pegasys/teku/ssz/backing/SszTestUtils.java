@@ -29,7 +29,7 @@ public class SszTestUtils {
   }
 
   /** Compares two views by their getters recursively (if views are composite) */
-  public static boolean equalsByGetters(ViewRead v1, ViewRead v2) {
+  public static boolean equalsByGetters(SszData v1, SszData v2) {
     if (!v1.getType().equals(v2.getType())) {
       return false;
     }
@@ -40,8 +40,8 @@ public class SszTestUtils {
         return false;
       }
       for (int i = 0; i < c1.size(); i++) {
-        if (c1.get(i) instanceof ViewRead) {
-          if (!equalsByGetters((ViewRead) c1.get(i), (ViewRead) c2.get(i))) {
+        if (c1.get(i) instanceof SszData) {
+          if (!equalsByGetters((SszData) c1.get(i), (SszData) c2.get(i))) {
             return false;
           }
         } else {

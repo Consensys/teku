@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitListType;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
@@ -38,24 +38,24 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 /** Handy view tool methods */
 public class ViewUtils {
 
-  public static <C, V extends ViewRead> ListViewRead<V> toListView(
+  public static <C, V extends SszData> ListViewRead<V> toListView(
       ListViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toListView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends ViewRead> ListViewRead<V> toListView(
+  public static <V extends SszData> ListViewRead<V> toListView(
       ListViewType<V> type, Iterable<V> list) {
     ListViewWrite<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
 
-  public static <C, V extends ViewRead> VectorViewRead<V> toVectorView(
+  public static <C, V extends SszData> VectorViewRead<V> toVectorView(
       VectorViewType<V> type, Iterable<C> list, Function<C, V> converter) {
     return toVectorView(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends ViewRead> VectorViewRead<V> toVectorView(
+  public static <V extends SszData> VectorViewRead<V> toVectorView(
       VectorViewType<V> type, Iterable<V> list) {
     VectorViewWrite<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;

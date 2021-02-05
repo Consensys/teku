@@ -29,11 +29,11 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class Eth2TopicHandler<MessageT extends ViewRead> implements TopicHandler {
+public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<MessageT> processor;

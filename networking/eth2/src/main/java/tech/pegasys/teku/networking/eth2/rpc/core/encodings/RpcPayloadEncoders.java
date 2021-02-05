@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class RpcPayloadEncoders {
@@ -46,7 +46,7 @@ public class RpcPayloadEncoders {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends ViewRead> RpcPayloadEncoder<T> getEncoder(final ViewType<T> clazz) {
+  public <T extends SszData> RpcPayloadEncoder<T> getEncoder(final ViewType<T> clazz) {
     RpcPayloadEncoder<?> encoder = encoders.get(clazz);
     return (RpcPayloadEncoder<T>) (encoder != null ? encoder : defaultEncoderProvider.apply(clazz));
   }

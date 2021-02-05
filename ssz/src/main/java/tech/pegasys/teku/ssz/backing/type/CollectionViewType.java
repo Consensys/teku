@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-public abstract class CollectionViewType<ElementViewT extends ViewRead, ViewT extends ViewRead>
+public abstract class CollectionViewType<ElementViewT extends SszData, ViewT extends SszData>
     implements CompositeViewType<ViewT> {
 
   private final long maxLength;

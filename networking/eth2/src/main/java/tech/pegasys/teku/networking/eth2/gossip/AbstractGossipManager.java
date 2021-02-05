@@ -22,10 +22,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public abstract class AbstractGossipManager<T extends ViewRead> {
+public abstract class AbstractGossipManager<T extends SszData> {
 
   private final GossipEncoding gossipEncoding;
   private final GossipPublisher<T> publisher;

@@ -25,12 +25,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class TestDataUtils {
 
-  public static <T extends ViewRead> T loadSsz(
+  public static <T extends SszData> T loadSsz(
       final TestDefinition testDefinition, final String fileName, final ViewType<T> type) {
     try {
       final Path path = testDefinition.getTestDirectory().resolve(fileName);

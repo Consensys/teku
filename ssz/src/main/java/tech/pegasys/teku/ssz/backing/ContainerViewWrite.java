@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing;
 
 /** Base class for mutable containers. */
-public interface ContainerViewWrite extends CompositeViewWrite<ViewRead>, ContainerViewRead {
+public interface ContainerViewWrite extends CompositeViewWrite<SszData>, ContainerViewRead {
 
   @Override
   ContainerViewRead commitChanges();

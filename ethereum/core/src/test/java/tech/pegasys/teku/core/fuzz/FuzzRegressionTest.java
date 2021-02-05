@@ -24,7 +24,7 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class FuzzRegressionTest {
@@ -43,7 +43,7 @@ public class FuzzRegressionTest {
         .isInstanceOf(BlockProcessingException.class);
   }
 
-  private <T extends ViewRead> T load(final String resource, final ViewType<T> type)
+  private <T extends SszData> T load(final String resource, final ViewType<T> type)
       throws Exception {
     final URL resourceUrl = FuzzRegressionTest.class.getResource(resource);
     final Bytes data = Bytes.wrap(Resources.toByteArray(resourceUrl));

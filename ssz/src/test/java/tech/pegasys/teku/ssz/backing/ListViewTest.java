@@ -151,7 +151,7 @@ public class ListViewTest {
 
   @ParameterizedTest
   @MethodSource("testListSszDeserializeFailsFastWithTooLongDataParameters")
-  <T extends ViewRead> void testListSszDeserializeFailsFastWithTooLongData(
+  <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
       ViewType<T> listElementType, int maxLength) {
 
     ListViewType<T> listViewType = new ListViewType<>(listElementType, maxLength);

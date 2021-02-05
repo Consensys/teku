@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class VectorViewReadImpl<ElementReadType extends ViewRead>
+public class VectorViewReadImpl<ElementReadType extends SszData>
     extends AbstractCompositeViewRead<ElementReadType> implements VectorViewRead<ElementReadType> {
 
   public VectorViewReadImpl(CompositeViewType<?> type, TreeNode backingNode) {
@@ -84,7 +84,7 @@ public class VectorViewReadImpl<ElementReadType extends ViewRead>
     if (!(o instanceof VectorViewRead)) {
       return false;
     }
-    return hashTreeRoot().equals(((ViewRead) o).hashTreeRoot());
+    return hashTreeRoot().equals(((SszData) o).hashTreeRoot());
   }
 
   @Override

@@ -23,7 +23,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -135,7 +135,7 @@ public class ChainHeadTest {
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy);
   }
 
-  private <T extends ViewRead> T copy(final T original, final ViewType<T> objType) {
+  private <T extends SszData> T copy(final T original, final ViewType<T> objType) {
     final Bytes serialized = original.sszSerialize();
     return objType.sszDeserialize(serialized);
   }

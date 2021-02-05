@@ -20,19 +20,19 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.ListViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 
 public class ListViewWriteImpl<
-        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     implements ListViewWriteRef<ElementReadType, ElementWriteType> {
 
   static class ListContainerWrite<
-          ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+          ElementReadType extends SszData, ElementWriteType extends ElementReadType>
       extends ContainerViewWriteImpl {
     private final ListViewType<ElementReadType> listType;
 
@@ -57,7 +57,7 @@ public class ListViewWriteImpl<
 
     @Override
     protected ContainerViewReadImpl createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+        TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ListContainerRead<>(listType, backingNode, viewCache);
     }
 

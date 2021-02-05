@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.ContainerViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -39,7 +39,7 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   }
 
   protected AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer> type, ViewRead... memberValues) {
+      ContainerViewType<? extends AbstractImmutableContainer> type, SszData... memberValues) {
     super(type, createBackingTree(type, memberValues), createCache(memberValues));
     checkArgument(
         memberValues.length == getType().getMaxLength(),
@@ -55,15 +55,15 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
     }
   }
 
-  private static IntCache<ViewRead> createCache(ViewRead... memberValues) {
-    ArrayIntCache<ViewRead> cache = new ArrayIntCache<>(memberValues.length);
+  private static IntCache<SszData> createCache(SszData... memberValues) {
+    ArrayIntCache<SszData> cache = new ArrayIntCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       cache.invalidateWithNewValue(i, memberValues[i]);
     }
     return cache;
   }
 
-  private static TreeNode createBackingTree(ContainerViewType<?> type, ViewRead... memberValues) {
+  private static TreeNode createBackingTree(ContainerViewType<?> type, SszData... memberValues) {
     TreeUpdates nodes =
         IntStream.range(0, memberValues.length)
             .mapToObj(

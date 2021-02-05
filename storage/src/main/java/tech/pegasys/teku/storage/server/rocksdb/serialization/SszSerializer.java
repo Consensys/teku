@@ -14,10 +14,10 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class SszSerializer<T extends ViewRead> implements RocksDbSerializer<T> {
+public class SszSerializer<T extends SszData> implements RocksDbSerializer<T> {
 
   private final ViewType<T> type;
 

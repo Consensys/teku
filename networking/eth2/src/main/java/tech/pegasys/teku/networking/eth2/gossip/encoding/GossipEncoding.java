@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public interface GossipEncoding {
@@ -35,7 +35,7 @@ public interface GossipEncoding {
    * @param value The value to serialize.
    * @return The serialized bytes.
    */
-  <T extends ViewRead> Bytes encode(T value);
+  <T extends SszData> Bytes encode(T value);
 
   /**
    * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
@@ -48,7 +48,7 @@ public interface GossipEncoding {
    * @param data Data received over gossip to be deserialized
    * @param valueType The concrete type to deserialize to
    */
-  <T extends ViewRead> PreparedGossipMessage prepareMessage(Bytes data, ViewType<T> valueType);
+  <T extends SszData> PreparedGossipMessage prepareMessage(Bytes data, ViewType<T> valueType);
 
   /**
    * Fallback for {@link #prepareMessage(Bytes, ViewType)} for the case when decoded {@code
@@ -67,6 +67,6 @@ public interface GossipEncoding {
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
-  <T extends ViewRead> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
+  <T extends SszData> T decodeMessage(PreparedGossipMessage message, ViewType<T> valueType)
       throws DecodingException;
 }

@@ -33,10 +33,10 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class OperationsTestExecutor<T extends ViewRead> implements TestExecutor {
+public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz";
   public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =

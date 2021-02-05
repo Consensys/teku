@@ -20,7 +20,7 @@ import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -40,7 +40,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int idx, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int idx, SszData newValue) {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
           Bytes originalBytes = ((LeafNode) srcNode).getData();
@@ -74,7 +74,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
           byte aByte = ((ByteView) newValue).get();
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
@@ -121,7 +121,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
           Bytes uintBytes =
               Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
           Bytes curVal = ((LeafNode) srcNode).getData();
@@ -148,7 +148,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes bytes = ((Bytes4View) newValue).get().getWrappedBytes();
@@ -176,7 +176,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
           return LeafNode.create(((Bytes32View) newValue).get());
         }
 

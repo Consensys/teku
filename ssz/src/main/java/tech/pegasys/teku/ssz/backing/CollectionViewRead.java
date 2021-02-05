@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.NotNull;
 
-public interface CollectionViewRead<ElementT extends ViewRead>
+public interface CollectionViewRead<ElementT extends SszData>
     extends CompositeViewRead<ElementT>, Iterable<ElementT> {
 
   default boolean isEmpty() {

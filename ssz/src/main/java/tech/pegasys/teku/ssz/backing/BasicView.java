@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing;
 
 /** A wrapper class for primitive value BasicView classes has no mutable view pair */
-public interface BasicView<ValueType> extends ViewRead {
+public interface BasicView<ValueType> extends SszData {
 
   /** Returns wrapped primitive value */
   ValueType get();

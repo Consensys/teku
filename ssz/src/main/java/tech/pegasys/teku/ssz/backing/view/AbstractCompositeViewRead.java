@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -31,9 +31,9 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  * and used safely across threads
  *
  * @param <ChildType> the type of children. For heterogeneous composites (like container) this type
- *     would be just generic {@link ViewRead}
+ *     would be just generic {@link SszData}
  */
-public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
+public abstract class AbstractCompositeViewRead<ChildType extends SszData>
     implements CompositeViewRead<ChildType> {
 
   private final IntCache<ChildType> childrenViewCache;

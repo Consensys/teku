@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.backing;
 
 /** Base class for mutable containers which are able to return mutable children by reference */
 public interface ContainerViewWriteRef
-    extends CompositeViewWriteRef<ViewRead, ViewWrite>, ContainerViewWrite {
+    extends CompositeViewWriteRef<SszData, ViewWrite>, ContainerViewWrite {
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here

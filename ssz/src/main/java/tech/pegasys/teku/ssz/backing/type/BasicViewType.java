@@ -16,7 +16,7 @@ package tech.pegasys.teku.ssz.backing.type;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  *
  * @param <C> Class of the basic view of this type
  */
-public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
+public abstract class BasicViewType<C extends SszData> implements ViewType<C> {
 
   private final int bitsSize;
 
@@ -63,7 +63,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType<C> {
 
   @Override
   public abstract TreeNode updateBackingNode(
-      TreeNode srcNode, int internalIndex, ViewRead newValue);
+      TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
     return (getBitsSize() + 7) / 8;

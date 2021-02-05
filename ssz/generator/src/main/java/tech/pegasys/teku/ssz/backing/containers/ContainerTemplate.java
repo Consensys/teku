@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.containers;
 
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 
@@ -21,8 +21,8 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 public class /*$$ViewClassName*/ ContainerTemplate /*$$*/<
         C extends
             /*$$ViewClassName*/ ContainerTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>,
-        /*$$ViewTypes*/ V0 extends ViewRead,
-        V1 extends ViewRead /*$$*/>
+        /*$$ViewTypes*/ V0 extends SszData,
+        V1 extends SszData /*$$*/>
     extends AbstractImmutableContainer {
 
   protected /*$$ViewClassName*/ ContainerTemplate /*$$*/(

@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public abstract class ContainerViewType<C extends ContainerViewRead>
     implements CompositeViewType<C> {
 
-  protected static class NamedType<T extends ViewRead> {
+  protected static class NamedType<T extends SszData> {
     private final String name;
     private final ViewType<T> type;
 
@@ -51,7 +51,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     }
   }
 
-  protected static <T extends ViewRead> NamedType<T> namedType(String fieldName, ViewType<T> type) {
+  protected static <T extends SszData> NamedType<T> namedType(String fieldName, ViewType<T> type) {
     return new NamedType<>(fieldName, type);
   }
 

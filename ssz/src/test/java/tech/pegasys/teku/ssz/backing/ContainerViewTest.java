@@ -175,7 +175,7 @@ public class ContainerViewTest {
   public static class SubContainerReadImpl extends ContainerViewReadImpl
       implements SubContainerRead {
 
-    public SubContainerReadImpl(TreeNode backingNode, IntCache<ViewRead> cache) {
+    public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
       super(TYPE, backingNode, cache);
     }
 
@@ -198,7 +198,7 @@ public class ContainerViewTest {
 
     @Override
     protected SubContainerReadImpl createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+        TreeNode backingNode, IntCache<SszData> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
 
@@ -215,7 +215,7 @@ public class ContainerViewTest {
     }
 
     public ContainerReadImpl(
-        CompositeViewType<?> type, TreeNode backingNode, IntCache<ViewRead> cache) {
+        CompositeViewType<?> type, TreeNode backingNode, IntCache<SszData> cache) {
       super(type, backingNode, cache);
     }
 
@@ -232,7 +232,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected ContainerReadImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
+    protected ContainerReadImpl createViewRead(TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 

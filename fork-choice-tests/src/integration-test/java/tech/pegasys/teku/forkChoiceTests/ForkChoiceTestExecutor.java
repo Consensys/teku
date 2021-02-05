@@ -48,7 +48,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
@@ -133,7 +133,7 @@ public class ForkChoiceTestExecutor {
         .get(0);
   }
 
-  private static <T extends ViewRead> T resolvePart(
+  private static <T extends SszData> T resolvePart(
       Class<T> clazz, ViewType<T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;

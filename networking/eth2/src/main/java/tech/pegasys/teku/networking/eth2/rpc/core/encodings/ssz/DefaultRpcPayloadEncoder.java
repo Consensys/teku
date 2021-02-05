@@ -19,11 +19,11 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 
-public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadEncoder<T> {
+public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
   private final ViewType<T> type;
 

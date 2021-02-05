@@ -14,12 +14,12 @@
 package tech.pegasys.teku.ssz.backing.type;
 
 import tech.pegasys.teku.ssz.backing.CompositeViewRead;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Abstract type of {@link CompositeViewRead} views */
-public interface CompositeViewType<ViewT extends ViewRead> extends ViewType<ViewT> {
+public interface CompositeViewType<ViewT extends SszData> extends ViewType<ViewT> {
 
   /**
    * Returns the maximum number of elements in views of this type. For views with fixed number of

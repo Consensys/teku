@@ -79,7 +79,7 @@ public class ContainersGenerator {
             Map.entry(
                 "ViewTypes",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "V" + i + " extends ViewRead")
+                    .mapToObj(i -> "V" + i + " extends SszData")
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewTypeNames",

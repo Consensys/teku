@@ -16,9 +16,9 @@ package tech.pegasys.teku.ssz.backing.view;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class VectorViewWriteImpl<
-        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+        ElementReadType extends SszData, ElementWriteType extends ElementReadType>
     extends AbstractCompositeViewWrite<ElementReadType, ElementWriteType>
     implements VectorViewWriteRef<ElementReadType, ElementWriteType> {
 

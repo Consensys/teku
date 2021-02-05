@@ -15,11 +15,11 @@ package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
 
-public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollection<C>
+public class SSZBackingVector<C, R extends SszData> extends SSZAbstractCollection<C>
     implements SSZMutableVector<C> {
 
   private final VectorViewRead<R> delegate;

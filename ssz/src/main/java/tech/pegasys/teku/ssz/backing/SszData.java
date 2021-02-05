@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  * described here:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#views
  */
-public interface ViewRead extends Merkleizable, SimpleOffsetSerializable {
+public interface SszData extends Merkleizable, SimpleOffsetSerializable {
 
   /**
    * Creates a corresponding writeable copy of this immutable structure Any modifications made to
@@ -33,7 +33,7 @@ public interface ViewRead extends Merkleizable, SimpleOffsetSerializable {
   ViewWrite createWritableCopy();
 
   /** Gets the type of this structure */
-  ViewType<? extends ViewRead> getType();
+  ViewType<? extends SszData> getType();
 
   /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();

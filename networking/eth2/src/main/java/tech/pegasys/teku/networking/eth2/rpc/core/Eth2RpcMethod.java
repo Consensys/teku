@@ -20,10 +20,10 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
-public class Eth2RpcMethod<TRequest extends RpcRequest & ViewRead, TResponse extends ViewRead>
+public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcMethod {
 
   private final AsyncRunner asyncRunner;

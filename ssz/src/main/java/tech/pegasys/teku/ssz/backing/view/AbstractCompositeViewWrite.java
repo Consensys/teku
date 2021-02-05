@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.CompositeViewWrite;
 import tech.pegasys.teku.ssz.backing.CompositeViewWriteRef;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -45,7 +45,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
  * <p>The mutable views based on this class are inherently NOT thread safe
  */
 public abstract class AbstractCompositeViewWrite<
-        ChildReadType extends ViewRead, ChildWriteType extends ChildReadType>
+        ChildReadType extends SszData, ChildWriteType extends ChildReadType>
     implements CompositeViewWriteRef<ChildReadType, ChildWriteType> {
 
   protected AbstractCompositeViewRead<ChildReadType> backingImmutableView;
@@ -132,7 +132,7 @@ public abstract class AbstractCompositeViewWrite<
 
   @Override
   @SuppressWarnings("unchecked")
-  public ViewRead commitChanges() {
+  public SszData commitChanges() {
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableView;
     } else {

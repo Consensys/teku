@@ -17,9 +17,9 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 
-public class SSZBackingList<C, R extends ViewRead> extends SSZAbstractCollection<C>
+public class SSZBackingList<C, R extends SszData> extends SSZAbstractCollection<C>
     implements SSZMutableList<C> {
 
   private final ListViewRead<R> delegate;
