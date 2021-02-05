@@ -221,6 +221,11 @@ jobs:
               ./gradlew --no-daemon expandRefTests
             fi
       - run:
+          # Compile separately so that we have the generated test files for splitting across nodes
+          name: CompileReferenceTests
+          command: |
+            ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - run:
           name: ReferenceTests
           no_output_timeout: 30m
           command: |
