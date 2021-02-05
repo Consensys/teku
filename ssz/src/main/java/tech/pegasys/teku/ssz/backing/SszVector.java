@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 
 /**
  * Immutable Vector view
@@ -27,5 +27,5 @@ public interface SszVector<ElementType extends SszData>
   SszMutableVector<ElementType> createWritableCopy();
 
   @Override
-  VectorViewType<ElementType> getType();
+  SszVectorSchema<ElementType> getType();
 }

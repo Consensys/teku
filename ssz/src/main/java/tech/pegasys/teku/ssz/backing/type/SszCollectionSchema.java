@@ -97,8 +97,8 @@ public abstract class SszCollectionSchema<ElementViewT extends SszData, ViewT ex
   /**
    * Serializes {@code elementsCount} from the content of this collection
    *
-   * @param vectorNode for a {@link VectorViewType} type - the node itself, for a {@link
-   *     ListViewType} - the left sibling node of list size node
+   * @param vectorNode for a {@link SszVectorSchema} type - the node itself, for a {@link
+   *     SszListSchema} - the left sibling node of list size node
    */
   protected int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
     if (getElementType().isFixedSize()) {

@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
 
 /**
@@ -33,26 +33,26 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
 
   public static class ListContainerRead<ElementType extends SszData>
       extends SszContainerImpl {
-    private final ListViewType<ElementType> type;
+    private final SszListSchema<ElementType> type;
 
-    private ListContainerRead(ListViewType<ElementType> type) {
+    private ListContainerRead(SszListSchema<ElementType> type) {
       super(type.getCompatibleListContainerType());
       this.type = type;
     }
 
     public ListContainerRead(
-        ListViewType<ElementType> type, SszContainerSchema<?> containerType, TreeNode backingNode) {
+        SszListSchema<ElementType> type, SszContainerSchema<?> containerType, TreeNode backingNode) {
       super(containerType, backingNode);
       this.type = type;
     }
 
-    public ListContainerRead(ListViewType<ElementType> type, TreeNode backingNode) {
+    public ListContainerRead(SszListSchema<ElementType> type, TreeNode backingNode) {
       super(type.getCompatibleListContainerType(), backingNode);
       this.type = type;
     }
 
     public ListContainerRead(
-        ListViewType<ElementType> type, TreeNode backingNode, IntCache<SszData> cache) {
+        SszListSchema<ElementType> type, TreeNode backingNode, IntCache<SszData> cache) {
       super(type.getCompatibleListContainerType(), backingNode, cache);
       this.type = type;
     }
@@ -71,7 +71,7 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     }
   }
 
-  private final ListViewType<ElementType> type;
+  private final SszListSchema<ElementType> type;
   private final ListContainerRead<ElementType> container;
   private final int cachedSize;
 
@@ -89,14 +89,14 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
     }
   }
 
-  public SszListImpl(ListViewType<ElementType> type, TreeNode node) {
+  public SszListImpl(SszListSchema<ElementType> type, TreeNode node) {
     this.type = type;
     this.container = new ListContainerRead<>(type, node);
     this.cachedSize = container.getSize();
   }
 
   public SszListImpl(
-      ListViewType<ElementType> type, ListContainerRead<ElementType> container) {
+      SszListSchema<ElementType> type, ListContainerRead<ElementType> container) {
     this.type = type;
     this.container = container;
     this.cachedSize = container.getSize();
@@ -114,7 +114,7 @@ public class SszListImpl<ElementType extends SszData> implements SszList<Element
   }
 
   @Override
-  public ListViewType<ElementType> getType() {
+  public SszListSchema<ElementType> getType() {
     return type;
   }
 

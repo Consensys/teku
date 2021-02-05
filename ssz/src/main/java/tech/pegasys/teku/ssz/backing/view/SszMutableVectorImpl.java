@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszMutableVectorImpl<
@@ -43,8 +43,8 @@ public class SszMutableVectorImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public VectorViewType<ElementReadType> getType() {
-    return (VectorViewType<ElementReadType>) super.getType();
+  public SszVectorSchema<ElementReadType> getType() {
+    return (SszVectorSchema<ElementReadType>) super.getType();
   }
 
   @Override
@@ -56,7 +56,7 @@ public class SszMutableVectorImpl<
   @Override
   protected TreeUpdates packChanges(
       List<Map.Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
-    VectorViewType<ElementReadType> type = getType();
+    SszVectorSchema<ElementReadType> type = getType();
     SszSchema<?> elementType = type.getElementType();
     int elementsPerChunk = type.getElementsPerChunk();
 

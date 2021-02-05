@@ -16,15 +16,15 @@ package tech.pegasys.teku.ssz.backing;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 
 public class SszTestUtils {
 
   public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
     return sszContainerSchema.getChildTypes().stream()
-        .filter(t -> t instanceof VectorViewType)
-        .map(t -> (VectorViewType<?>) t)
-        .map(VectorViewType::getLength)
+        .filter(t -> t instanceof SszVectorSchema)
+        .map(t -> (SszVectorSchema<?>) t)
+        .map(SszVectorSchema::getLength)
         .collect(Collectors.toList());
   }
 

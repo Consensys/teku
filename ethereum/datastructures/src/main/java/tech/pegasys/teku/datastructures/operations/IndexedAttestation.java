@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -44,14 +44,14 @@ public class IndexedAttestation
           "IndexedAttestation",
           namedType(
               "attesting_indices",
-              new ListViewType<>(
+              new SszListSchema<>(
                   SszPrimitiveSchemas.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedType("data", AttestationData.TYPE),
           namedType("signature", SszComplexSchemas.BYTES_96_TYPE));
     }
 
-    public ListViewType<UInt64View> getAttestingIndicesType() {
-      return (ListViewType<UInt64View>) getFieldType0();
+    public SszListSchema<UInt64View> getAttestingIndicesType() {
+      return (SszListSchema<UInt64View>) getFieldType0();
     }
 
     @Override

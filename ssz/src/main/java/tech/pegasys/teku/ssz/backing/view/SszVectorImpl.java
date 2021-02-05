@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 
 public class SszVectorImpl<ElementReadType extends SszData>
@@ -39,7 +39,7 @@ public class SszVectorImpl<ElementReadType extends SszData>
   @SuppressWarnings("unchecked")
   @Override
   protected ElementReadType getImpl(int index) {
-    VectorViewType<ElementReadType> type = getType();
+    SszVectorSchema<ElementReadType> type = getType();
     SszSchema<?> elementType = type.getElementType();
     TreeNode node =
         getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
@@ -59,8 +59,8 @@ public class SszVectorImpl<ElementReadType extends SszData>
 
   @SuppressWarnings("unchecked")
   @Override
-  public VectorViewType<ElementReadType> getType() {
-    return (VectorViewType<ElementReadType>) super.getType();
+  public SszVectorSchema<ElementReadType> getType() {
+    return (SszVectorSchema<ElementReadType>) super.getType();
   }
 
   @Override

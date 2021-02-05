@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
@@ -40,11 +40,11 @@ public class HistoricalBatch
           "HistoricalBatch",
           namedType(
               "block_roots",
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)),
           namedType(
               "state_roots",
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT)));
     }
 
@@ -57,12 +57,12 @@ public class HistoricalBatch
       return new HistoricalBatch(this, block_roots, state_roots);
     }
 
-    public VectorViewType<Bytes32View> getBlockRootsType() {
-      return (VectorViewType<Bytes32View>) getFieldType0();
+    public SszVectorSchema<Bytes32View> getBlockRootsType() {
+      return (SszVectorSchema<Bytes32View>) getFieldType0();
     }
 
-    public VectorViewType<Bytes32View> getStateRootsType() {
-      return (VectorViewType<Bytes32View>) getFieldType1();
+    public SszVectorSchema<Bytes32View> getStateRootsType() {
+      return (SszVectorSchema<Bytes32View>) getFieldType1();
     }
   }
 

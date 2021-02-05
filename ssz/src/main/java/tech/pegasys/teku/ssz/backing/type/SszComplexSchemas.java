@@ -26,7 +26,7 @@ public class SszComplexSchemas {
   public static final ByteVectorType BYTES_48_TYPE = new ByteVectorType(48);
   public static final ByteVectorType BYTES_96_TYPE = new ByteVectorType(96);
 
-  public static class ByteListType extends ListViewType<ByteView> {
+  public static class ByteListType extends SszListSchema<ByteView> {
     public ByteListType(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
     }
@@ -43,7 +43,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class ByteVectorType extends VectorViewType<ByteView> {
+  public static class ByteVectorType extends SszVectorSchema<ByteView> {
     public ByteVectorType(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_TYPE, maxLength);
     }
@@ -60,7 +60,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class BitListType extends ListViewType<BitView> {
+  public static class BitListType extends SszListSchema<BitView> {
     public BitListType(long maxLength) {
       super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
     }
@@ -71,7 +71,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class BitVectorType extends VectorViewType<BitView> {
+  public static class BitVectorType extends SszVectorSchema<BitView> {
     public BitVectorType(long maxLength) {
       super(SszPrimitiveSchemas.BIT_TYPE, maxLength);
     }

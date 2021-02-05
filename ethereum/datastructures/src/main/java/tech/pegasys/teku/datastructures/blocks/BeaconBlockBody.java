@@ -31,7 +31,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
@@ -70,36 +70,36 @@ public class BeaconBlockBody
           namedType("graffiti", SszPrimitiveSchemas.BYTES32_TYPE),
           namedType(
               "proposer_slashings",
-              new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
+              new SszListSchema<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
           namedType(
               "attester_slashings",
-              new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
+              new SszListSchema<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
           namedType(
-              "attestations", new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
-          namedType("deposits", new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
+              "attestations", new SszListSchema<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
+          namedType("deposits", new SszListSchema<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
           namedType(
               "voluntary_exits",
-              new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+              new SszListSchema<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    public ListViewType<ProposerSlashing> getProposerSlashingsType() {
-      return (ListViewType<ProposerSlashing>) getFieldType3();
+    public SszListSchema<ProposerSlashing> getProposerSlashingsType() {
+      return (SszListSchema<ProposerSlashing>) getFieldType3();
     }
 
-    public ListViewType<AttesterSlashing> getAttesterSlashingsType() {
-      return (ListViewType<AttesterSlashing>) getFieldType4();
+    public SszListSchema<AttesterSlashing> getAttesterSlashingsType() {
+      return (SszListSchema<AttesterSlashing>) getFieldType4();
     }
 
-    public ListViewType<Attestation> getAttestationsType() {
-      return (ListViewType<Attestation>) getFieldType5();
+    public SszListSchema<Attestation> getAttestationsType() {
+      return (SszListSchema<Attestation>) getFieldType5();
     }
 
-    public ListViewType<Deposit> getDepositsType() {
-      return (ListViewType<Deposit>) getFieldType6();
+    public SszListSchema<Deposit> getDepositsType() {
+      return (SszListSchema<Deposit>) getFieldType6();
     }
 
-    public ListViewType<SignedVoluntaryExit> getVoluntaryExitsType() {
-      return (ListViewType<SignedVoluntaryExit>) getFieldType7();
+    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsType() {
+      return (SszListSchema<SignedVoluntaryExit>) getFieldType7();
     }
 
     @Override

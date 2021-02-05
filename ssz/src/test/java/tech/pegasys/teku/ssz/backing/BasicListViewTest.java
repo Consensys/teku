@@ -20,14 +20,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 public class BasicListViewTest {
 
   @Test
   public void simpleUInt64ListTest() {
-    ListViewType<UInt64View> listType = new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, 7);
+    SszListSchema<UInt64View> listType = new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, 7);
     SszMutableList<UInt64View> listView = listType.getDefault().createWritableCopy();
     TreeNode n0 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UInt64.valueOf(0x111)));

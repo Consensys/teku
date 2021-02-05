@@ -32,7 +32,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -41,8 +41,8 @@ public class ListViewTest {
 
   @Test
   void clearTest() {
-    ListViewType<TestSubContainer> type =
-        new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
+    SszListSchema<TestSubContainer> type =
+        new SszListSchema<>(TestContainers.TestSubContainer.TYPE, 100);
     SszList<TestSubContainer> lr1 = type.getDefault();
     SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
@@ -66,8 +66,8 @@ public class ListViewTest {
             .mapToObj(i -> new TestSubContainer(UInt64.valueOf(i), Bytes32.leftPad(Bytes.of(i))))
             .collect(Collectors.toList());
 
-    ListViewType<TestSubContainer> type =
-        new ListViewType<>(TestContainers.TestSubContainer.TYPE, 100);
+    SszListSchema<TestSubContainer> type =
+        new SszListSchema<>(TestContainers.TestSubContainer.TYPE, 100);
     SszList<TestSubContainer> lr1 = type.getDefault();
     SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
 
@@ -154,31 +154,31 @@ public class ListViewTest {
   <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
       SszSchema<T> listElementType, int maxLength) {
 
-    ListViewType<T> listViewType = new ListViewType<>(listElementType, maxLength);
-    ListViewType<T> largerListViewType = new ListViewType<>(listElementType, maxLength + 10);
+    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T> largerSszListSchema = new SszListSchema<>(listElementType, maxLength + 10);
 
     // should normally deserialize smaller lists
     for (int i = max(0, maxLength - 8); i <= maxLength; i++) {
-      SszMutableList<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
+      SszMutableList<T> writableCopy = largerSszListSchema.getDefault().createWritableCopy();
       for (int j = 0; j < i; j++) {
         writableCopy.append(listElementType.getDefault());
       }
       Bytes ssz = writableCopy.commitChanges().sszSerialize();
-      SszList<T> resList = listViewType.sszDeserialize(ssz);
+      SszList<T> resList = sszListSchema.sszDeserialize(ssz);
 
       assertThat(resList.size()).isEqualTo(i);
     }
 
     // should fail fast when ssz is longer than max
     for (int i = maxLength + 1; i < maxLength + 10; i++) {
-      SszMutableList<T> writableCopy = largerListViewType.getDefault().createWritableCopy();
+      SszMutableList<T> writableCopy = largerSszListSchema.getDefault().createWritableCopy();
       for (int j = 0; j < i; j++) {
         writableCopy.append(listElementType.getDefault());
       }
       Bytes ssz = writableCopy.commitChanges().sszSerialize();
 
       SszReader sszReader = SszReader.fromBytes(ssz);
-      assertThatThrownBy(() -> listViewType.sszDeserialize(sszReader))
+      assertThatThrownBy(() -> sszListSchema.sszDeserialize(sszReader))
           .isInstanceOf(SSZDeserializeException.class);
       if (listElementType.getBitsSize() >= 8 || i > maxLength + 8) {
         assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);

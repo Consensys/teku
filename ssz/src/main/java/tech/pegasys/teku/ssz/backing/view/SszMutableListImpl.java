@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 
 public class SszMutableListImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>
@@ -34,11 +34,11 @@ public class SszMutableListImpl<
   static class ListContainerWrite<
           ElementReadType extends SszData, ElementWriteType extends ElementReadType>
       extends SszMutableContainerImpl {
-    private final ListViewType<ElementReadType> listType;
+    private final SszListSchema<ElementReadType> listType;
 
     public ListContainerWrite(
         ListContainerRead<ElementReadType> backingImmutableView,
-        ListViewType<ElementReadType> type) {
+        SszListSchema<ElementReadType> type) {
       super(backingImmutableView);
       listType = type;
     }
@@ -68,12 +68,12 @@ public class SszMutableListImpl<
     }
   }
 
-  private final ListViewType<ElementReadType> type;
+  private final SszListSchema<ElementReadType> type;
   private final ListContainerWrite<ElementReadType, ElementWriteType> container;
   private int cachedSize;
 
   public SszMutableListImpl(
-      ListViewType<ElementReadType> type,
+      SszListSchema<ElementReadType> type,
       ListContainerWrite<ElementReadType, ElementWriteType> container) {
     this.type = type;
     this.container = container;
@@ -81,7 +81,7 @@ public class SszMutableListImpl<
   }
 
   @Override
-  public ListViewType<ElementReadType> getType() {
+  public SszListSchema<ElementReadType> getType() {
     return type;
   }
 

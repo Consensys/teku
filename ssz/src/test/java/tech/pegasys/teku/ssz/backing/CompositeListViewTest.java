@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -119,7 +119,7 @@ public class CompositeListViewTest {
 
   @Test
   public void simpleTest1() {
-    ListViewType<TestView> listType = new ListViewType<>(testType, 3);
+    SszListSchema<TestView> listType = new SszListSchema<>(testType, 3);
     SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));

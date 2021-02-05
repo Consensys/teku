@@ -32,20 +32,20 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class VectorViewType<ElementViewT extends SszData>
+public class SszVectorSchema<ElementViewT extends SszData>
     extends SszCollectionSchema<ElementViewT, SszVector<ElementViewT>> {
 
   private final boolean isListBacking;
 
-  public VectorViewType(SszSchema<ElementViewT> elementType, long vectorLength) {
+  public SszVectorSchema(SszSchema<ElementViewT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  VectorViewType(SszSchema<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
+  SszVectorSchema(SszSchema<ElementViewT> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, TypeHints.none());
   }
 
-  VectorViewType(
+  SszVectorSchema(
       SszSchema<ElementViewT> elementType,
       long vectorLength,
       boolean isListBacking,
@@ -165,10 +165,10 @@ public class VectorViewType<ElementViewT extends SszData>
     if (this == o) {
       return true;
     }
-    if (!(o instanceof VectorViewType)) {
+    if (!(o instanceof SszVectorSchema)) {
       return false;
     }
-    VectorViewType<?> that = (VectorViewType<?>) o;
+    SszVectorSchema<?> that = (SszVectorSchema<?>) o;
     return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
   }
 

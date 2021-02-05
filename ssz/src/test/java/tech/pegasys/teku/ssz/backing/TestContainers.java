@@ -23,8 +23,8 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.BitView;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.ByteView;
@@ -101,7 +101,7 @@ public class TestContainers {
         SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_TYPE,
-                new VectorViewType<ByteView>(SszPrimitiveSchemas.BYTE_TYPE, 64),
+                new SszVectorSchema<ByteView>(SszPrimitiveSchemas.BYTE_TYPE, 64),
                 SszPrimitiveSchemas.UINT64_TYPE),
             TestByteVectorContainer::new);
 
@@ -157,7 +157,7 @@ public class TestContainers {
         TYPE =
             ContainerType3.create(
                 TestSubContainer.TYPE,
-                new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, 10),
+                new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, 10),
                 SszPrimitiveSchemas.UINT64_TYPE,
                 VariableSizeContainer::new);
 

@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
 
 @State(Scope.Thread)
@@ -44,7 +44,7 @@ public class ListBenchmark {
   SszList<UInt64View> l2r;
 
   public ListBenchmark() {
-    ListViewType<UInt64View> type = new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, 100_000_000);
+    SszListSchema<UInt64View> type = new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, 100_000_000);
     SszList<UInt64View> l1 = type.getDefault();
 
     SszMutableList<UInt64View> l2w = l1.createWritableCopy();
@@ -60,8 +60,8 @@ public class ListBenchmark {
 
   @Setup(Level.Iteration)
   public void init() throws Exception {
-    ListViewType<UInt64View> type =
-        new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
+    SszListSchema<UInt64View> type =
+        new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
     SszList<UInt64View> l1 = type.getDefault();
     l1w = l1.createWritableCopy();
   }
@@ -70,8 +70,8 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    ListViewType<UInt64View> type =
-        new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
+    SszListSchema<UInt64View> type =
+        new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, getListMaxSize());
     SszList<UInt64View> l1 = type.getDefault();
     bh.consume(l1);
   }

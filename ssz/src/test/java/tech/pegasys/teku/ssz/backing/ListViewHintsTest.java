@@ -35,7 +35,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.SszSchema;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class ListViewHintsTest {
 
   <TElement extends SszData> List<SszList<TElement>> createListVariants(
-      ListViewType<TElement> type, SszList<TElement> list0) {
+      SszListSchema<TElement> type, SszList<TElement> list0) {
     List<SszList<TElement>> ret = new ArrayList<>();
     ret.add(list0);
     if (!(list0 instanceof SszMutableData)) {
@@ -54,12 +54,12 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertEmptyListVariants(
-      ListViewType<TElement> type, SszList<TElement> list0) {
+      SszListSchema<TElement> type, SszList<TElement> list0) {
     createListVariants(type, list0).forEach(l -> assertEmptyList(type, l));
   }
 
   <TElement extends SszData> void assertEmptyList(
-      ListViewType<TElement> type, SszList<TElement> list) {
+      SszListSchema<TElement> type, SszList<TElement> list) {
 
     if (!(list instanceof SszMutableData)) {
       assertThat(list.hashTreeRoot()).isEqualTo(type.getDefaultTree().hashTreeRoot());
@@ -74,12 +74,12 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListElementsVariants(
-      ListViewType<TElement> type, SszList<TElement> list0, List<TElement> expectedElements) {
+      SszListSchema<TElement> type, SszList<TElement> list0, List<TElement> expectedElements) {
     createListVariants(type, list0).forEach(l -> assertListElements(type, l, expectedElements));
   }
 
   <TElement extends SszData> void assertListElements(
-      ListViewType<TElement> type, SszList<TElement> list, List<TElement> expectedElements) {
+      SszListSchema<TElement> type, SszList<TElement> list, List<TElement> expectedElements) {
 
     assertThat(list.isEmpty()).isFalse();
     assertThat(list.size()).isEqualTo(expectedElements.size());
@@ -93,7 +93,7 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListEqualsVariants(
-      ListViewType<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
+      SszListSchema<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
     List<SszList<TElement>> listVariants1 = createListVariants(type, list1);
     List<SszList<TElement>> listVariants2 = createListVariants(type, list2);
 
@@ -104,7 +104,7 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void assertListEquals(
-      ListViewType<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
+      SszListSchema<TElement> type, SszList<TElement> list1, SszList<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
     assertThat(list1).isEqualTo(list2);
@@ -179,8 +179,8 @@ public class ListViewHintsTest {
         Arguments.of(listElementType4, 17, elementSupplier4));
   }
 
-  static <TElement extends SszData> List<ListViewType<TElement>> generateTypesWithHints(
-      ListViewType<TElement> originalType) {
+  static <TElement extends SszData> List<SszListSchema<TElement>> generateTypesWithHints(
+      SszListSchema<TElement> originalType) {
     return Stream.concat(
             Stream.of(originalType),
             IntStream.of(0, 1, 2, 4, 8, 10)
@@ -188,7 +188,7 @@ public class ListViewHintsTest {
                 .mapToObj(TypeHints::sszSuperNode)
                 .map(
                     typeHints ->
-                        new ListViewType<TElement>(
+                        new SszListSchema<TElement>(
                             originalType.getElementType(), originalType.getMaxLength(), typeHints)))
         .collect(Collectors.toList());
   }
@@ -200,15 +200,15 @@ public class ListViewHintsTest {
       long maxListSize,
       Supplier<TElement> listElementsFactory) {
 
-    List<ListViewType<TElement>> types =
-        generateTypesWithHints(new ListViewType<>(listElementType, maxListSize));
+    List<SszListSchema<TElement>> types =
+        generateTypesWithHints(new SszListSchema<>(listElementType, maxListSize));
 
     RewindingSupplier<TElement> rewindingSupplier = new RewindingSupplier<>(listElementsFactory);
     ArrayList<SszList<TElement>> resultsToCompare = new ArrayList<>();
     testList(types.get(0), rewindingSupplier, resultsToCompare::add);
 
     for (int i = 1; i < types.size(); i++) {
-      ListViewType<TElement> type = types.get(i);
+      SszListSchema<TElement> type = types.get(i);
       rewindingSupplier.rewind();
       ArrayDeque<SszList<TElement>> resQueue = new ArrayDeque<>(resultsToCompare);
       testList(
@@ -223,7 +223,7 @@ public class ListViewHintsTest {
   }
 
   <TElement extends SszData> void testList(
-      ListViewType<TElement> type,
+      SszListSchema<TElement> type,
       Supplier<TElement> listElementsFactory,
       Consumer<SszList<TElement>> results) {
 

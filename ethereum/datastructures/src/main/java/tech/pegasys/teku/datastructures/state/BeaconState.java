@@ -32,9 +32,9 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.type.SszComplexSchemas.BitVectorType;
 import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 import tech.pegasys.teku.ssz.backing.type.TypeHints;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.UInt64View;
@@ -56,27 +56,27 @@ public interface BeaconState extends SszContainer {
           5,
           "block_roots",
           () ->
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField STATE_ROOTS_FIELD =
       new SszField(
           6,
           "state_roots",
           () ->
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
           "historical_roots",
-          () -> new ListViewType<>(SszPrimitiveSchemas.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT));
+          () -> new SszListSchema<>(SszPrimitiveSchemas.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.TYPE);
   SszField ETH1_DATA_VOTES_FIELD =
       new SszField(
           9,
           "eth1_data_votes",
           () ->
-              new ListViewType<>(
+              new SszListSchema<>(
                   Eth1Data.TYPE,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   SszField ETH1_DEPOSIT_INDEX_FIELD =
@@ -86,40 +86,40 @@ public interface BeaconState extends SszContainer {
           11,
           "validators",
           () ->
-              new ListViewType<>(
+              new SszListSchema<>(
                   Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT, TypeHints.sszSuperNode(8)));
   SszField BALANCES_FIELD =
       new SszField(
           12,
           "balances",
-          () -> new ListViewType<>(SszPrimitiveSchemas.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
+          () -> new SszListSchema<>(SszPrimitiveSchemas.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
           "randao_mixes",
           () ->
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField SLASHINGS_FIELD =
       new SszField(
           14,
           "slashings",
           () ->
-              new VectorViewType<>(
+              new SszVectorSchema<>(
                   SszPrimitiveSchemas.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           15,
           "previous_epoch_attestations",
           () ->
-              new ListViewType<>(
+              new SszListSchema<>(
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           16,
           "current_epoch_attestations",
           () ->
-              new ListViewType<>(
+              new SszListSchema<>(
                   PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(

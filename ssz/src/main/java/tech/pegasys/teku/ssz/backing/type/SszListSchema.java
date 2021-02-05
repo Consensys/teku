@@ -33,19 +33,19 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class ListViewType<ElementViewT extends SszData>
+public class SszListSchema<ElementViewT extends SszData>
     extends SszCollectionSchema<ElementViewT, SszList<ElementViewT>> {
-  private final VectorViewType<ElementViewT> compatibleVectorType;
+  private final SszVectorSchema<ElementViewT> compatibleVectorType;
   private final SszContainerSchema<?> sszContainerSchema;
 
-  public ListViewType(SszSchema<ElementViewT> elementType, long maxLength) {
+  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength) {
     this(elementType, maxLength, TypeHints.none());
   }
 
-  public ListViewType(SszSchema<ElementViewT> elementType, long maxLength, TypeHints hints) {
+  public SszListSchema(SszSchema<ElementViewT> elementType, long maxLength, TypeHints hints) {
     super(maxLength, elementType, hints);
     this.compatibleVectorType =
-        new VectorViewType<>(getElementType(), getMaxLength(), true, getHints());
+        new SszVectorSchema<>(getElementType(), getMaxLength(), true, getHints());
     this.sszContainerSchema =
         SszContainerSchema.create(
             Arrays.asList(getCompatibleVectorType(), SszPrimitiveSchemas.UINT64_TYPE),
@@ -71,7 +71,7 @@ public class ListViewType<ElementViewT extends SszData>
     return new SszListImpl<>(this, node);
   }
 
-  private VectorViewType<ElementViewT> getCompatibleVectorType() {
+  private SszVectorSchema<ElementViewT> getCompatibleVectorType() {
     return compatibleVectorType;
   }
 
@@ -238,10 +238,10 @@ public class ListViewType<ElementViewT extends SszData>
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ListViewType)) {
+    if (!(o instanceof SszListSchema)) {
       return false;
     }
-    ListViewType<?> that = (ListViewType<?>) o;
+    SszListSchema<?> that = (SszListSchema<?>) o;
     return getElementType().equals(that.getElementType()) && getMaxLength() == that.getMaxLength();
   }
 

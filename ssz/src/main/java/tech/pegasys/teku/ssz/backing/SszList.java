@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.SszListSchema;
 
 /**
  * Immutable List view
@@ -27,7 +27,7 @@ public interface SszList<ElementType extends SszData>
   SszMutableList<ElementType> createWritableCopy();
 
   @Override
-  ListViewType<ElementType> getType();
+  SszListSchema<ElementType> getType();
 
   /** Returns the number of elements in this list */
   @Override
