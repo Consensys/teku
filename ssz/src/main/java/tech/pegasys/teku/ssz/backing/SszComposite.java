@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
  * Represents composite immutable view which has descendant views

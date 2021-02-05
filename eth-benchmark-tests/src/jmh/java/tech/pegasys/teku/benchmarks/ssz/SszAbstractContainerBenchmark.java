@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 @Threads(1)
 @State(Scope.Thread)

@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 class SszGossipCodec {
 

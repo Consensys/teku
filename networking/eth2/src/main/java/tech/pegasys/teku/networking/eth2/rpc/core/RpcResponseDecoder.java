@@ -27,7 +27,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 /**
  * Responsible for decoding a stream of responses to a single rpc request

@@ -30,7 +30,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 /**
  * Represents the tree structure for a fixed size SSZ type See {@link SszSuperNode} docs for more

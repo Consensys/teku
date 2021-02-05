@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.SszMutableRefList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
 public class SszMutableListImpl<
         ElementReadType extends SszData, ElementWriteType extends ElementReadType>

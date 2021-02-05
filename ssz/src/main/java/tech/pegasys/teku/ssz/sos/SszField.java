@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.sos;
 
 import java.util.function.Supplier;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszField {
   private final int index;

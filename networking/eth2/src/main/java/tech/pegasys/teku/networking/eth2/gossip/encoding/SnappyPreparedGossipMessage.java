@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to

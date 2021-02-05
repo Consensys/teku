@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.SszMutableRefComposite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
  * Base backing view class for mutable composite views (lists, vectors, containers)

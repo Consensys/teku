@@ -35,9 +35,9 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
-import tech.pegasys.teku.ssz.backing.type.SszListSchema;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
-import tech.pegasys.teku.ssz.backing.type.SszSchemaHints;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class ListViewHintsTest {

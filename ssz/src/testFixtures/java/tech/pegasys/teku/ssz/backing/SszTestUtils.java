@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.backing;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszTestUtils {
 

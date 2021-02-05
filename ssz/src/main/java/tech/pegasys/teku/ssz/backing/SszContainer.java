@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 
 /**
  * Base class for immutable containers. Since containers are heterogeneous their generic child view

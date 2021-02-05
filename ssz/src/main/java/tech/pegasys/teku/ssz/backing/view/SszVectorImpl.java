@@ -20,9 +20,9 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
-import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszVectorImpl<ElementReadType extends SszData>
     extends AbstractSszComposite<ElementReadType> implements SszVector<ElementReadType> {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 /**
  * Immutable Vector view

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.type;
+package tech.pegasys.teku.ssz.backing.schema;
 
 import java.util.Arrays;
 import java.util.List;

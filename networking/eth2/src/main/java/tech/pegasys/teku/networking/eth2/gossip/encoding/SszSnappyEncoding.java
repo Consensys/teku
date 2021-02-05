@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.type.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "ssz_snappy";

@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
  * Base backing view class for immutable composite views (lists, vectors, containers)

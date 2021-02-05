@@ -19,7 +19,7 @@ import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
     implements SszPrimitive<C> {

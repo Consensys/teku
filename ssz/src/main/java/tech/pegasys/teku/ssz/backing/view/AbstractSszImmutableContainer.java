@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.type.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 
 /** Handy base class for immutable containers */
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.type;
+package tech.pegasys.teku.ssz.backing.schema;
 
 import static java.util.Collections.emptyList;
 
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.SszSchemaHints.SszSuperNodeHint;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
