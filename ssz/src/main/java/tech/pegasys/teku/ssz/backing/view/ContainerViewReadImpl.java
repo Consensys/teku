@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ContainerViewWrite;
+import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
 public class ContainerViewReadImpl extends AbstractCompositeViewRead<SszData>
-    implements ContainerViewRead {
+    implements SszContainer {
 
   public ContainerViewReadImpl(ContainerViewType<?> type) {
     this(type, type.getDefaultTree());
@@ -53,7 +53,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<SszData>
   }
 
   @Override
-  public ContainerViewWrite createWritableCopy() {
+  public SszMutableContainer createWritableCopy() {
     return new ContainerViewWriteImpl(this);
   }
 

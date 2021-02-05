@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
 import java.util.Map;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
 public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, SszMutableData>
-    implements ContainerViewWriteRef {
+    implements SszMutableRefContainer {
 
   public ContainerViewWriteImpl(ContainerViewReadImpl backingImmutableView) {
     super(backingImmutableView);
@@ -43,8 +43,8 @@ public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, 
   }
 
   @Override
-  public ContainerViewRead commitChanges() {
-    return (ContainerViewRead) super.commitChanges();
+  public SszContainer commitChanges() {
+    return (SszContainer) super.commitChanges();
   }
 
   @Override

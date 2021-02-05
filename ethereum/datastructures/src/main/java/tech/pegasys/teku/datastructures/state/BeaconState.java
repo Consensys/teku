@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -42,7 +42,7 @@ import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.util.config.Constants;
 
-public interface BeaconState extends ContainerViewRead {
+public interface BeaconState extends SszContainer {
 
   SszField GENESIS_TIME_FIELD = new SszField(0, "genesis_time", BasicViewTypes.UINT64_TYPE);
   SszField GENESIS_VALIDATORS_ROOT_FIELD =

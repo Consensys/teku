@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.ssz.backing.ContainerViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -75,7 +75,7 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   }
 
   @Override
-  public ContainerViewWrite createWritableCopy() {
+  public SszMutableContainer createWritableCopy() {
     throw new UnsupportedOperationException("This container doesn't support mutable View");
   }
 

@@ -23,13 +23,13 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
+import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
-public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
+public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 
   static MutableBeaconState createBuilder() {
     return MutableBeaconStateImpl.createBuilder();

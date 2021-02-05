@@ -13,14 +13,21 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-/** Base class for mutable containers which are able to return mutable children by reference */
-public interface ContainerViewWriteRef
-    extends SszMutableRefComposite<SszData, SszMutableData>, ContainerViewWrite {
+import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+
+/**
+ * Base class for immutable containers. Since containers are heterogeneous their generic child view
+ * is SszData
+ */
+public interface SszContainer extends SszComposite<SszData> {
+
+  @Override
+  ContainerViewType<?> getType();
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here
   // is more convenient and is not less safe
-  default <W extends SszMutableData> W getAnyByRef(int index) {
-    return (W) getByRef(index);
+  default <C extends SszData> C getAny(int index) {
+    return (C) get(index);
   }
 }

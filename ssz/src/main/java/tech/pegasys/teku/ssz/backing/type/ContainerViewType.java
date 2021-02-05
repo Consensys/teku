@@ -21,7 +21,7 @@ import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class ContainerViewType<C extends ContainerViewRead>
+public abstract class ContainerViewType<C extends SszContainer>
     implements CompositeViewType<C> {
 
   protected static class NamedType<T extends SszData> {
@@ -82,7 +82,7 @@ public abstract class ContainerViewType<C extends ContainerViewRead>
     this.treeWidth = CompositeViewType.super.treeWidth();
   }
 
-  public static <C extends ContainerViewRead> ContainerViewType<C> create(
+  public static <C extends SszContainer> ContainerViewType<C> create(
       List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
     return new ContainerViewType<C>(childrenTypes) {
       @Override

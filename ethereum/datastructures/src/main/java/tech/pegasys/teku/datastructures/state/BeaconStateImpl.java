@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
@@ -49,7 +49,7 @@ class BeaconStateImpl extends ContainerViewReadImpl implements BeaconState, Beac
     this.transitionCaches = transitionCaches;
   }
 
-  BeaconStateImpl(ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
+  BeaconStateImpl(ContainerViewType<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }

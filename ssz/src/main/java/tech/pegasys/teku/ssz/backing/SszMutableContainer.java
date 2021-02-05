@@ -13,21 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-
-/**
- * Base class for immutable containers. Since containers are heterogeneous their generic child view
- * is SszData
- */
-public interface ContainerViewRead extends SszComposite<SszData> {
+/** Base class for mutable containers. */
+public interface SszMutableContainer extends SszMutableComposite<SszData>, SszContainer {
 
   @Override
-  ContainerViewType<?> getType();
-
-  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  // container is heterogeneous by its nature so making unsafe cast here
-  // is more convenient and is not less safe
-  default <C extends SszData> C getAny(int index) {
-    return (C) get(index);
-  }
+  SszContainer commitChanges();
 }

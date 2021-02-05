@@ -43,14 +43,14 @@ import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
 
-  public interface ImmutableSubContainer extends ContainerViewRead {
+  public interface ImmutableSubContainer extends SszContainer {
 
     UInt64 getLong1();
 
     Bytes32 getBytes1();
   }
 
-  public interface SubContainerRead extends ContainerViewRead {
+  public interface SubContainerRead extends SszContainer {
 
     ContainerViewType<SubContainerRead> TYPE =
         ContainerViewType.create(
@@ -66,7 +66,7 @@ public class ContainerViewTest {
     }
   }
 
-  public interface SubContainerWrite extends SubContainerRead, ContainerViewWriteRef {
+  public interface SubContainerWrite extends SubContainerRead, SszMutableRefContainer {
 
     default void setLong1(UInt64 val) {
       set(0, new UInt64View(val));
@@ -77,7 +77,7 @@ public class ContainerViewTest {
     }
   }
 
-  public interface ContainerRead extends ContainerViewRead {
+  public interface ContainerRead extends SszContainer {
 
     ContainerViewType<ContainerReadImpl> TYPE =
         ContainerViewType.create(
@@ -122,7 +122,7 @@ public class ContainerViewTest {
     ContainerWrite createWritableCopy();
   }
 
-  public interface ContainerWrite extends ContainerRead, ContainerViewWriteRef {
+  public interface ContainerWrite extends ContainerRead, SszMutableRefContainer {
 
     void setLong1(UInt64 val);
 
