@@ -42,7 +42,7 @@ public class VoteTrackerSerialize {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void genericDeserialization() {
-    checkEpoch(VoteTracker.TYPE.sszDeserialize(votesSerialized));
+    checkEpoch(VoteTracker.SSZ_SCHEMA.sszDeserialize(votesSerialized));
   }
 
   @Benchmark

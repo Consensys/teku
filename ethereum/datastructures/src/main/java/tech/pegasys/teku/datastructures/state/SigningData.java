@@ -38,14 +38,14 @@ public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32>
     }
   }
 
-  public static final SigningDataType TYPE = new SigningDataType();
+  public static final SigningDataType SSZ_SCHEMA = new SigningDataType();
 
   private SigningData(SigningDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SigningData(Bytes32 object_root, Bytes32 domain) {
-    super(TYPE, new SszBytes32(object_root), new SszBytes32(domain));
+    super(SSZ_SCHEMA, new SszBytes32(object_root), new SszBytes32(domain));
   }
 
   public Bytes32 getObjectRoot() {

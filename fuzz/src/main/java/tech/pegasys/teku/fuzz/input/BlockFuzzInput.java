@@ -23,7 +23,7 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
 
   public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
+        BeaconState.getSszType(), SignedBeaconBlock.SSZ_SCHEMA.get(), BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(

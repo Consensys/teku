@@ -36,6 +36,6 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
 
   @Override
   protected SszSchema<SignedVoluntaryExit> getGossipType() {
-    return SignedVoluntaryExit.TYPE;
+    return SignedVoluntaryExit.SSZ_SCHEMA;
   }
 }

@@ -82,7 +82,7 @@ public class RpcResponseDecoder<T extends SszData> {
       return ret;
     } else {
       if (errorDecoder.isEmpty()) {
-        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.TYPE));
+        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.SSZ_SCHEMA));
       }
       Optional<RpcException> rpcException =
           errorDecoder

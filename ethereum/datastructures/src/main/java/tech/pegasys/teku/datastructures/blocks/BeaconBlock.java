@@ -40,7 +40,7 @@ public final class BeaconBlock
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("body", BeaconBlockBody.TYPE.get()));
+          namedSchema("body", BeaconBlockBody.SSZ_SCHEMA.get()));
     }
 
     @Override
@@ -60,10 +60,10 @@ public final class BeaconBlock
   }
 
   public static BeaconBlockType getSszType() {
-    return TYPE.get();
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<BeaconBlockType> TYPE = SpecDependent.of(BeaconBlockType::new);
+  public static final SpecDependent<BeaconBlockType> SSZ_SCHEMA = SpecDependent.of(BeaconBlockType::new);
 
   private BeaconBlock(BeaconBlockType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -76,7 +76,7 @@ public final class BeaconBlock
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body) {
-    this(TYPE.get(), slot, proposer_index, parent_root, state_root, body);
+    this(SSZ_SCHEMA.get(), slot, proposer_index, parent_root, state_root, body);
   }
 
   public BeaconBlock(
@@ -98,7 +98,7 @@ public final class BeaconBlock
   @Deprecated
   public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
     return new BeaconBlock(
-        TYPE.get(),
+        SSZ_SCHEMA.get(),
         UInt64.ZERO,
         UInt64.ZERO,
         Bytes32.ZERO,

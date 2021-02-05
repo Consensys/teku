@@ -36,6 +36,6 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
 
   @Override
   protected SszSchema<AttesterSlashing> getGossipType() {
-    return AttesterSlashing.TYPE;
+    return AttesterSlashing.SSZ_SCHEMA;
   }
 }

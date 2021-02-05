@@ -47,7 +47,7 @@ public class BeaconBlockHeader
     }
   }
 
-  public static final BeaconBlockHeaderType TYPE = new BeaconBlockHeaderType();
+  public static final BeaconBlockHeaderType SSZ_SCHEMA = new BeaconBlockHeaderType();
 
   private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -60,7 +60,7 @@ public class BeaconBlockHeader
       Bytes32 state_root,
       Bytes32 body_root) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszUInt64(slot),
         new SszUInt64(proposer_index),
         new SszBytes32(parent_root),
@@ -69,11 +69,11 @@ public class BeaconBlockHeader
   }
 
   public BeaconBlockHeader(BeaconBlockHeader header) {
-    super(TYPE, header.getBackingNode());
+    super(SSZ_SCHEMA, header.getBackingNode());
   }
 
   public BeaconBlockHeader() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   /**

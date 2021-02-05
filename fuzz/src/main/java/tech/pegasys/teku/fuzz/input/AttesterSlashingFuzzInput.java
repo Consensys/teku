@@ -25,7 +25,7 @@ public class AttesterSlashingFuzzInput
   public static ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
       createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+        BeaconState.getSszType(), AttesterSlashing.SSZ_SCHEMA, AttesterSlashingFuzzInput::new);
   }
 
   private AttesterSlashingFuzzInput(

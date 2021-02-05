@@ -158,6 +158,6 @@ class AttestationDataTest {
   @Test
   void roundtripSSZ() {
     Bytes sszAttestationDataBytes = attestationData.sszSerialize();
-    assertEquals(attestationData, AttestationData.TYPE.sszDeserialize(sszAttestationDataBytes));
+    assertEquals(attestationData, AttestationData.SSZ_SCHEMA.sszDeserialize(sszAttestationDataBytes));
   }
 }

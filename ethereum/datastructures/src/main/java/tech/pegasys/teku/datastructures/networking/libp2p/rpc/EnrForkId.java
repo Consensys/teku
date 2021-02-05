@@ -41,7 +41,7 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
     }
   }
 
-  public static final EnrForkIdType TYPE = new EnrForkIdType();
+  public static final EnrForkIdType SSZ_SCHEMA = new EnrForkIdType();
 
   private EnrForkId(EnrForkIdType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -50,7 +50,7 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
   public EnrForkId(
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszBytes4(forkDigest),
         new SszBytes4(nextForkVersion),
         new SszUInt64(nextForkEpoch));

@@ -52,7 +52,7 @@ class LengthPrefixedEncodingTest {
         Utils.generateTestSlices(Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA80"));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -72,7 +72,7 @@ class LengthPrefixedEncodingTest {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x52"));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -92,7 +92,7 @@ class LengthPrefixedEncodingTest {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x55"));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -113,7 +113,7 @@ class LengthPrefixedEncodingTest {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(statusMessageLengthPrefix);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -137,7 +137,7 @@ class LengthPrefixedEncodingTest {
         Utils.generateTestSlices(correctMessage.slice(0, truncatedSize));
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -161,7 +161,7 @@ class LengthPrefixedEncodingTest {
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(encoded, extraData);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       Optional<StatusMessage> result = Optional.empty();
       int unreadBytes = 0;
       for (ByteBuf bufSlice : bufSlices) {
@@ -187,7 +187,7 @@ class LengthPrefixedEncodingTest {
         Utils.generateTestSlices(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
               () -> {
@@ -206,7 +206,7 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldRejectEmptyMessages() {
     final ByteBuf input = Utils.emptyBuf();
-    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
 
     assertThatThrownBy(
             () -> {
@@ -223,7 +223,7 @@ class LengthPrefixedEncodingTest {
     final ByteBuf input = inputByteBuffer(TWO_BYTE_LENGTH_PREFIX.slice(0, 1));
     assertThatThrownBy(
             () -> {
-              RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+              RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
               decoder.decodeOneMessage(input);
               decoder.complete();
             })
@@ -235,7 +235,7 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
     final ByteBuf input = inputByteBuffer("0x80808001");
-    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.TYPE);
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
     assertThatThrownBy(() -> decoder.decodeOneMessage(input))
         .isInstanceOf(ChunkTooLongException.class);
     input.release();
@@ -261,7 +261,7 @@ class LengthPrefixedEncodingTest {
 
   @Test
   void shouldDecodeEmptyMessage() throws Exception {
-    final RpcByteBufDecoder<EmptyMessage> decoder = encoding.createDecoder(EmptyMessage.TYPE);
+    final RpcByteBufDecoder<EmptyMessage> decoder = encoding.createDecoder(EmptyMessage.SSZ_SCHEMA);
     final Optional<EmptyMessage> message =
         decoder.decodeOneMessage(Unpooled.wrappedBuffer(new byte[0]));
     assertThat(message).contains(EmptyMessage.EMPTY_MESSAGE);
@@ -283,7 +283,7 @@ class LengthPrefixedEncodingTest {
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
       RpcByteBufDecoder<BeaconBlocksByRootRequestMessage> decoder =
-          encoding.createDecoder(BeaconBlocksByRootRequestMessage.TYPE);
+          encoding.createDecoder(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
       Optional<BeaconBlocksByRootRequestMessage> result = Optional.empty();
       for (ByteBuf bufSlice : bufSlices) {
         if (result.isEmpty()) {

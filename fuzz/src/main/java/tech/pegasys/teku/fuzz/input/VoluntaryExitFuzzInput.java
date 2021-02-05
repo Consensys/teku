@@ -25,7 +25,7 @@ public class VoluntaryExitFuzzInput
   public static ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
       createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
+        BeaconState.getSszType(), SignedVoluntaryExit.SSZ_SCHEMA, VoluntaryExitFuzzInput::new);
   }
 
   public VoluntaryExitFuzzInput(

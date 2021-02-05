@@ -40,7 +40,7 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
     }
   }
 
-  public static final ForkType TYPE = new ForkType();
+  public static final ForkType SSZ_SCHEMA = new ForkType();
 
   private Fork(ForkType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -48,7 +48,7 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
   public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszBytes4(previous_version),
         new SszBytes4(current_version),
         new SszUInt64(epoch));

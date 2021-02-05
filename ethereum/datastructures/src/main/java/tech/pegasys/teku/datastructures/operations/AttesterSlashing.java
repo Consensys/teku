@@ -33,8 +33,8 @@ public class AttesterSlashing
     public AttesterSlashingType() {
       super(
           "AttesterSlashing",
-          namedSchema("attestation_1", IndexedAttestation.TYPE),
-          namedSchema("attestation_2", IndexedAttestation.TYPE));
+          namedSchema("attestation_1", IndexedAttestation.SSZ_SCHEMA),
+          namedSchema("attestation_2", IndexedAttestation.SSZ_SCHEMA));
     }
 
     @Override
@@ -43,7 +43,7 @@ public class AttesterSlashing
     }
   }
 
-  public static final AttesterSlashingType TYPE = new AttesterSlashingType();
+  public static final AttesterSlashingType SSZ_SCHEMA = new AttesterSlashingType();
 
   private final Supplier<Set<UInt64>> intersectingIndices =
       Suppliers.memoize(
@@ -60,7 +60,7 @@ public class AttesterSlashing
   }
 
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
-    super(TYPE, attestation_1, attestation_2);
+    super(SSZ_SCHEMA, attestation_1, attestation_2);
   }
 
   public Set<UInt64> getIntersectingValidatorIndices() {

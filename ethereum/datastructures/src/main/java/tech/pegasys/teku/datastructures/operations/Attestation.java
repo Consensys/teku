@@ -42,7 +42,7 @@ public class Attestation
           "Attestation",
           namedSchema(
               "aggregation_bits", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedSchema("data", AttestationData.TYPE),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -56,7 +56,7 @@ public class Attestation
     }
   }
 
-  public static final AttestationType TYPE = new AttestationType();
+  public static final AttestationType SSZ_SCHEMA = new AttestationType();
 
   private Bitlist aggregationBitsCache;
   private BLSSignature signatureCache;
@@ -67,8 +67,8 @@ public class Attestation
 
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
-        TYPE,
-        SszUtils.toSszBitList(TYPE.getAggregationBitsType(), aggregation_bits),
+        SSZ_SCHEMA,
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitsType(), aggregation_bits),
         data,
         SszUtils.toSszByteVector(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;
@@ -76,7 +76,7 @@ public class Attestation
   }
 
   public Attestation() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public static Bitlist createEmptyAggregationBits() {

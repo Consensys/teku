@@ -41,7 +41,7 @@ public final class BeaconBlocksByRangeRequestMessage
     }
   }
 
-  public static final BeaconBlocksByRangeRequestMessageType TYPE =
+  public static final BeaconBlocksByRangeRequestMessageType SSZ_SCHEMA =
       new BeaconBlocksByRangeRequestMessageType();
 
   private BeaconBlocksByRangeRequestMessage(
@@ -51,7 +51,7 @@ public final class BeaconBlocksByRangeRequestMessage
 
   public BeaconBlocksByRangeRequestMessage(
       final UInt64 startSlot, final UInt64 count, final UInt64 step) {
-    super(TYPE, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
+    super(SSZ_SCHEMA, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
   }
 
   public UInt64 getStartSlot() {

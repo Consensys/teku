@@ -42,7 +42,7 @@ public class ListViewTest {
   @Test
   void clearTest() {
     SszListSchema<TestSubContainer> type =
-        new SszListSchema<>(TestContainers.TestSubContainer.TYPE, 100);
+        new SszListSchema<>(TestContainers.TestSubContainer.SSZ_SCHEMA, 100);
     SszList<TestSubContainer> lr1 = type.getDefault();
     SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
@@ -67,7 +67,7 @@ public class ListViewTest {
             .collect(Collectors.toList());
 
     SszListSchema<TestSubContainer> type =
-        new SszListSchema<>(TestContainers.TestSubContainer.TYPE, 100);
+        new SszListSchema<>(TestContainers.TestSubContainer.SSZ_SCHEMA, 100);
     SszList<TestSubContainer> lr1 = type.getDefault();
     SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
 
@@ -145,8 +145,8 @@ public class ListViewTest {
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 0),
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 1),
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 2),
-        Arguments.of(TestDoubleSuperContainer.TYPE, 5),
-        Arguments.of(VariableSizeContainer.TYPE, 5));
+        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 5),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 5));
   }
 
   @ParameterizedTest

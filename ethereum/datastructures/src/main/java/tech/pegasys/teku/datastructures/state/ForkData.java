@@ -39,14 +39,14 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
     }
   }
 
-  public static final ForkDataType TYPE = new ForkDataType();
+  public static final ForkDataType SSZ_SCHEMA = new ForkDataType();
 
   private ForkData(ForkDataType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    super(TYPE, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
+    super(SSZ_SCHEMA, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {

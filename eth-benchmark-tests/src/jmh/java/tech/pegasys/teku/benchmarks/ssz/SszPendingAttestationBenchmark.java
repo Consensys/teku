@@ -41,7 +41,7 @@ public class SszPendingAttestationBenchmark
 
   @Override
   protected SszSchema<PendingAttestation> getContainerType() {
-    return PendingAttestation.TYPE;
+    return PendingAttestation.SSZ_SCHEMA;
   }
 
   @Override

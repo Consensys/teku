@@ -36,7 +36,7 @@ public class SignedBeaconBlock
     public SignedBeaconBlockType() {
       super(
           "SignedBeaconBlock",
-          namedSchema("message", BeaconBlock.TYPE.get()),
+          namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -47,10 +47,10 @@ public class SignedBeaconBlock
   }
 
   public static SignedBeaconBlockType getSszType() {
-    return TYPE.get();
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<SignedBeaconBlockType> TYPE =
+  public static final SpecDependent<SignedBeaconBlockType> SSZ_SCHEMA =
       SpecDependent.of(SignedBeaconBlockType::new);
 
   private BLSSignature signatureCache;
@@ -61,7 +61,7 @@ public class SignedBeaconBlock
 
   @Deprecated
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    this(TYPE.get(), message, signature);
+    this(SSZ_SCHEMA.get(), message, signature);
   }
 
   public SignedBeaconBlock(

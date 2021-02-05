@@ -29,7 +29,7 @@ public class ChainDataLoader {
   }
 
   public static SignedBeaconBlock loadBlock(final String source) throws IOException {
-    return SignedBeaconBlock.TYPE
+    return SignedBeaconBlock.SSZ_SCHEMA
         .get()
         .sszDeserialize(
             ResourceLoader.urlOrFile()

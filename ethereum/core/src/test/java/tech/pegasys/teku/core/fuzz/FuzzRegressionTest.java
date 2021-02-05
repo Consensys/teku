@@ -32,7 +32,7 @@ public class FuzzRegressionTest {
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {
     final BeaconState state = load("issue2345/state.ssz", BeaconState.getSszType());
     final AttesterSlashing slashing =
-        load("issue2345/attester_slashing.ssz", AttesterSlashing.TYPE);
+        load("issue2345/attester_slashing.ssz", AttesterSlashing.SSZ_SCHEMA);
 
     assertThatThrownBy(
             () ->

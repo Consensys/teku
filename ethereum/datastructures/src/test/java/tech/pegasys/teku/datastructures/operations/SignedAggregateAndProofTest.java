@@ -26,7 +26,7 @@ class SignedAggregateAndProofTest {
   public void shouldRoundTripViaSsz() {
     final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes data = original.sszSerialize();
-    final SignedAggregateAndProof result = SignedAggregateAndProof.TYPE.sszDeserialize(data);
+    final SignedAggregateAndProof result = SignedAggregateAndProof.SSZ_SCHEMA.sszDeserialize(data);
     assertThat(result).isEqualTo(original);
   }
 }

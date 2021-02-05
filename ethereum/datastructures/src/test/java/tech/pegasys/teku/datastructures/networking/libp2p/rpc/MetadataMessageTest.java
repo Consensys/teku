@@ -37,7 +37,7 @@ class MetadataMessageTest {
 
   @Test
   public void shouldDeserializeFromSsz() {
-    MetadataMessage result = MetadataMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
+    MetadataMessage result = MetadataMessage.SSZ_SCHEMA.sszDeserialize(EXPECTED_SSZ);
     assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }

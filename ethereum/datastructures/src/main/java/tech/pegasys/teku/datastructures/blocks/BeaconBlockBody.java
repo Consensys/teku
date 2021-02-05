@@ -66,20 +66,20 @@ public class BeaconBlockBody
       super(
           "BeaconBlockBody",
           namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
-          namedSchema("eth1_data", Eth1Data.TYPE),
+          namedSchema("eth1_data", Eth1Data.SSZ_SCHEMA),
           namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
               "proposer_slashings",
-              new SszListSchema<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
+              new SszListSchema<>(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
           namedSchema(
               "attester_slashings",
-              new SszListSchema<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
+              new SszListSchema<>(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
           namedSchema(
-              "attestations", new SszListSchema<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
-          namedSchema("deposits", new SszListSchema<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
+              "attestations", new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
+          namedSchema("deposits", new SszListSchema<>(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
           namedSchema(
               "voluntary_exits",
-              new SszListSchema<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+              new SszListSchema<>(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
     public SszListSchema<ProposerSlashing> getProposerSlashingsType() {
@@ -109,10 +109,10 @@ public class BeaconBlockBody
   }
 
   public static BeaconBlockBodyType getSszType() {
-    return TYPE.get();
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<BeaconBlockBodyType> TYPE =
+  public static final SpecDependent<BeaconBlockBodyType> SSZ_SCHEMA =
       SpecDependent.of(BeaconBlockBodyType::new);
 
   private BLSSignature randaoRevealCache;
@@ -132,7 +132,7 @@ public class BeaconBlockBody
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     this(
-        TYPE.get(),
+        SSZ_SCHEMA.get(),
         randao_reveal,
         eth1_data,
         graffiti,
@@ -168,7 +168,7 @@ public class BeaconBlockBody
   }
 
   public BeaconBlockBody() {
-    super(TYPE.get());
+    super(SSZ_SCHEMA.get());
   }
 
   public BLSSignature getRandao_reveal() {

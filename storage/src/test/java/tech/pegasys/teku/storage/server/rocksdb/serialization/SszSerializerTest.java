@@ -30,7 +30,7 @@ public class SszSerializerTest {
   private final SszSerializer<BeaconState> stateSerializer =
       new SszSerializer<>(BeaconState.getSszType());
   private final SszSerializer<Checkpoint> checkpointSerializer =
-      new SszSerializer<>(Checkpoint.TYPE);
+      new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
 
   @Test
   public void roundTrip_block() {

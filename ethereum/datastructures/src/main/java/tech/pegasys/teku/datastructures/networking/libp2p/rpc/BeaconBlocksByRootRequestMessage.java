@@ -44,7 +44,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     }
   }
 
-  public static final BeaconBlocksByRootRequestMessageType TYPE =
+  public static final BeaconBlocksByRootRequestMessageType SSZ_SCHEMA =
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {

@@ -30,7 +30,7 @@ public class SszCheckpointBenchmark extends SszAbstractContainerBenchmark<Checkp
 
   @Override
   protected SszSchema<Checkpoint> getContainerType() {
-    return Checkpoint.TYPE;
+    return Checkpoint.SSZ_SCHEMA;
   }
 
   @Override

@@ -41,7 +41,7 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     }
   }
 
-  public static final Eth1DataType TYPE = new Eth1DataType();
+  public static final Eth1DataType SSZ_SCHEMA = new Eth1DataType();
 
   private Eth1Data(Eth1DataType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -49,14 +49,14 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
 
   public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszBytes32(deposit_root),
         new SszUInt64(deposit_count),
         new SszBytes32(block_hash));
   }
 
   public Eth1Data() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public Eth1Data withBlockHash(final Bytes32 blockHash) {

@@ -42,7 +42,7 @@ public class NodeRecordConverter {
       final NodeRecord nodeRecord, final InetSocketAddress address) {
 
     final Optional<EnrForkId> enrForkId =
-        parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.TYPE::sszDeserialize);
+        parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
 
     final Bitvector persistentSubnets =
         parseField(

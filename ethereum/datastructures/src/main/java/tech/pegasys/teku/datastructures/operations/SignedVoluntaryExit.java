@@ -32,7 +32,7 @@ public class SignedVoluntaryExit
     public SignedVoluntaryExitType() {
       super(
           "SignedVoluntaryExit",
-          namedSchema("message", VoluntaryExit.TYPE),
+          namedSchema("message", VoluntaryExit.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -42,7 +42,7 @@ public class SignedVoluntaryExit
     }
   }
 
-  public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
+  public static final SignedVoluntaryExitType SSZ_SCHEMA = new SignedVoluntaryExitType();
 
   private BLSSignature signatureCache;
 
@@ -51,7 +51,7 @@ public class SignedVoluntaryExit
   }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    super(TYPE, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 

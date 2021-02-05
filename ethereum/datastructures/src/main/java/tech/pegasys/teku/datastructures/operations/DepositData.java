@@ -51,7 +51,7 @@ public class DepositData
     }
   }
 
-  public static final DepositDataType TYPE = new DepositDataType();
+  public static final DepositDataType SSZ_SCHEMA = new DepositDataType();
 
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;
@@ -63,7 +63,7 @@ public class DepositData
   public DepositData(
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(amount),
@@ -81,7 +81,7 @@ public class DepositData
   }
 
   public DepositData() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public BLSPublicKey getPubkey() {

@@ -125,7 +125,7 @@ public class ListViewHintsTest {
 
   static Stream<Arguments> listTypesTestParameters() {
     Random random = new Random(1);
-    SszSchema<?> listElementType1 = TestContainer.TYPE;
+    SszSchema<?> listElementType1 = TestContainer.SSZ_SCHEMA;
     Supplier<TestContainer> elementSupplier1 =
         () -> {
           Bytes32 bytes32 = Bytes32.random();
@@ -134,15 +134,15 @@ public class ListViewHintsTest {
           return new TestContainer(subContainer, UInt64.fromLongBits(random.nextLong()));
         };
 
-    SszSchema<?> listElementType2 = TestSmallContainer.TYPE;
+    SszSchema<?> listElementType2 = TestSmallContainer.SSZ_SCHEMA;
     Supplier<TestSmallContainer> elementSupplier2 =
         () -> new TestSmallContainer(random.nextBoolean());
 
-    SszSchema<?> listElementType3 = TestByteVectorContainer.TYPE;
+    SszSchema<?> listElementType3 = TestByteVectorContainer.SSZ_SCHEMA;
     Supplier<TestByteVectorContainer> elementSupplier3 =
         () -> TestByteVectorContainer.random(random);
 
-    SszSchema<?> listElementType4 = TestDoubleSuperContainer.TYPE;
+    SszSchema<?> listElementType4 = TestDoubleSuperContainer.SSZ_SCHEMA;
     Supplier<TestDoubleSuperContainer> elementSupplier4 =
         () ->
             new TestDoubleSuperContainer(

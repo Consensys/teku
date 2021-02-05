@@ -27,8 +27,8 @@ public class ProposerSlashing
     public ProposerSlashingType() {
       super(
           "ProposerSlashing",
-          namedSchema("header_1", SignedBeaconBlockHeader.TYPE),
-          namedSchema("header_2", SignedBeaconBlockHeader.TYPE));
+          namedSchema("header_1", SignedBeaconBlockHeader.SSZ_SCHEMA),
+          namedSchema("header_2", SignedBeaconBlockHeader.SSZ_SCHEMA));
     }
 
     @Override
@@ -37,14 +37,14 @@ public class ProposerSlashing
     }
   }
 
-  public static final ProposerSlashingType TYPE = new ProposerSlashingType();
+  public static final ProposerSlashingType SSZ_SCHEMA = new ProposerSlashingType();
 
   private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ProposerSlashing(SignedBeaconBlockHeader header_1, SignedBeaconBlockHeader header_2) {
-    super(TYPE, header_1, header_2);
+    super(SSZ_SCHEMA, header_1, header_2);
   }
 
   public SignedBeaconBlockHeader getHeader_1() {

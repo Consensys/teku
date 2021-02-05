@@ -36,6 +36,6 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
 
   @Override
   protected SszSchema<ProposerSlashing> getGossipType() {
-    return ProposerSlashing.TYPE;
+    return ProposerSlashing.SSZ_SCHEMA;
   }
 }

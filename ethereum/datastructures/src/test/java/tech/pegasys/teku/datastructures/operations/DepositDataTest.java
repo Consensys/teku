@@ -78,6 +78,6 @@ class DepositDataTest {
 
   @Test
   void roundtripSSZ() {
-    assertEquals(depositData, DepositData.TYPE.sszDeserialize(depositData.sszSerialize()));
+    assertEquals(depositData, DepositData.SSZ_SCHEMA.sszDeserialize(depositData.sszSerialize()));
   }
 }

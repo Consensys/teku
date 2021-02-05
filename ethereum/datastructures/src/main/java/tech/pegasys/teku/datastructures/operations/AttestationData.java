@@ -36,8 +36,8 @@ public class AttestationData
           namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("source", Checkpoint.TYPE),
-          namedSchema("target", Checkpoint.TYPE));
+          namedSchema("source", Checkpoint.SSZ_SCHEMA),
+          namedSchema("target", Checkpoint.SSZ_SCHEMA));
     }
 
     @Override
@@ -46,7 +46,7 @@ public class AttestationData
     }
   }
 
-  public static final AttestationDataType TYPE = new AttestationDataType();
+  public static final AttestationDataType SSZ_SCHEMA = new AttestationDataType();
 
   private AttestationData(AttestationDataType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -55,7 +55,7 @@ public class AttestationData
   public AttestationData(
       UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszUInt64(slot),
         new SszUInt64(index),
         new SszBytes32(beacon_block_root),

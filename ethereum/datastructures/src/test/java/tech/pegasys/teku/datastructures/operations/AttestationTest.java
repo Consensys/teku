@@ -123,7 +123,7 @@ class AttestationTest {
   @Test
   void roundtripViaSsz() {
     Attestation attestation = dataStructureUtil.randomAttestation();
-    Attestation newAttestation = Attestation.TYPE.sszDeserialize(attestation.sszSerialize());
+    Attestation newAttestation = Attestation.SSZ_SCHEMA.sszDeserialize(attestation.sszSerialize());
     assertEquals(attestation, newAttestation);
   }
 }

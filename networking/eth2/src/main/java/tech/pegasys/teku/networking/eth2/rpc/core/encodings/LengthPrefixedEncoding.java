@@ -73,7 +73,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   @Override
   public <T extends SszData> RpcByteBufDecoder<T> createDecoder(SszSchema<T> payloadType) {
-    if (payloadType.equals(EmptyMessage.TYPE)) {
+    if (payloadType.equals(EmptyMessage.SSZ_SCHEMA)) {
       return getEmptyMessageDecoder();
     } else {
       return new LengthPrefixedPayloadDecoder<>(

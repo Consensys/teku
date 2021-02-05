@@ -36,7 +36,7 @@ public class TestContainers {
 
   public static class TestSubContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestSubContainer> TYPE =
+    public static final SszContainerSchema<TestSubContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             TestSubContainer::new);
@@ -46,7 +46,7 @@ public class TestContainers {
     }
 
     public TestSubContainer(UInt64 long1, Bytes32 bytes1) {
-      super(TYPE, new SszUInt64(long1), new SszBytes32(bytes1));
+      super(SSZ_SCHEMA, new SszUInt64(long1), new SszBytes32(bytes1));
     }
 
     public UInt64 getLong1() {
@@ -60,16 +60,16 @@ public class TestContainers {
 
   public static class TestContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestContainer> TYPE =
+    public static final SszContainerSchema<TestContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
-            List.of(TestSubContainer.TYPE, SszPrimitiveSchemas.UINT64_SCHEMA), TestContainer::new);
+            List.of(TestSubContainer.SSZ_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA), TestContainer::new);
 
     private TestContainer(SszContainerSchema<TestContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
     public TestContainer(TestSubContainer subContainer, UInt64 long1) {
-      super(TYPE, subContainer, new SszUInt64(long1));
+      super(SSZ_SCHEMA, subContainer, new SszUInt64(long1));
     }
 
     public TestSubContainer getSubContainer() {
@@ -83,7 +83,7 @@ public class TestContainers {
 
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestSmallContainer> TYPE =
+    public static final SszContainerSchema<TestSmallContainer> SSZ_SCHEMA =
         SszContainerSchema.create(List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
 
     private TestSmallContainer(SszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
@@ -91,13 +91,13 @@ public class TestContainers {
     }
 
     public TestSmallContainer(boolean val) {
-      super(TYPE, SszBit.viewOf(val));
+      super(SSZ_SCHEMA, SszBit.viewOf(val));
     }
   }
 
   public static class TestByteVectorContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestByteVectorContainer> TYPE =
+    public static final SszContainerSchema<TestByteVectorContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
@@ -116,19 +116,19 @@ public class TestContainers {
     }
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
-      super(TYPE, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
+      super(SSZ_SCHEMA, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
     }
   }
 
   public static class TestDoubleSuperContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestDoubleSuperContainer> TYPE =
+    public static final SszContainerSchema<TestDoubleSuperContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
-                TestByteVectorContainer.TYPE,
+                TestByteVectorContainer.SSZ_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA,
-                TestByteVectorContainer.TYPE,
+                TestByteVectorContainer.SSZ_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA),
             TestDoubleSuperContainer::new);
 
@@ -139,7 +139,7 @@ public class TestContainers {
 
     public TestDoubleSuperContainer(
         long l1, TestByteVectorContainer c1, long l2, TestByteVectorContainer c2, long l3) {
-      super(TYPE, SszUInt64.fromLong(l1), c1, SszUInt64.fromLong(l2), c2, SszUInt64.fromLong(l3));
+      super(SSZ_SCHEMA, SszUInt64.fromLong(l1), c1, SszUInt64.fromLong(l2), c2, SszUInt64.fromLong(l3));
     }
   }
 
@@ -148,9 +148,9 @@ public class TestContainers {
 
     public static final ContainerSchema3<
             VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
-        TYPE =
+        SSZ_SCHEMA =
             ContainerSchema3.create(
-                TestSubContainer.TYPE,
+                TestSubContainer.SSZ_SCHEMA,
                 new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 VariableSizeContainer::new);

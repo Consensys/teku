@@ -48,7 +48,7 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
     }
   }
 
-  public static final MetadataMessageType TYPE = new MetadataMessageType();
+  public static final MetadataMessageType SSZ_SCHEMA = new MetadataMessageType();
   public static final MetadataMessage DEFAULT = new MetadataMessage();
 
   private Bitvector attnetsCache;
@@ -58,11 +58,11 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
   }
 
   private MetadataMessage() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
-    super(TYPE, new SszUInt64(seqNumber), SszUtils.toSszBitVector(attnets));
+    super(SSZ_SCHEMA, new SszUInt64(seqNumber), SszUtils.toSszBitVector(attnets));
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
     this.attnetsCache = attnets;
   }

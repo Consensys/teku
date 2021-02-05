@@ -34,7 +34,7 @@ class BeaconBlocksByRootRequestMessageTest {
                     "0x2222222222222222222222222222222222222222222222222222222222222222")));
     final Bytes data = request.sszSerialize();
     final BeaconBlocksByRootRequestMessage result =
-        BeaconBlocksByRootRequestMessage.TYPE.sszDeserialize(data);
+        BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
     assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
     assertThat(result).isEqualTo(request);
   }

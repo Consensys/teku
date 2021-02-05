@@ -72,7 +72,7 @@ public class Validator
     }
   }
 
-  public static final ValidatorType TYPE = new ValidatorType();
+  public static final ValidatorType SSZ_SCHEMA = new ValidatorType();
 
   private Validator(ValidatorType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -88,7 +88,7 @@ public class Validator
       UInt64 exit_epoch,
       UInt64 withdrawable_epoch) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         SszUtils.toSszByteVector(pubkey),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(effective_balance),

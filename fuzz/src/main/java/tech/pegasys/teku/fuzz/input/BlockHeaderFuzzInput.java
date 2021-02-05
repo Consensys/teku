@@ -28,7 +28,7 @@ public class BlockHeaderFuzzInput
 
   public static ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
+        BeaconState.getSszType(), BeaconBlock.SSZ_SCHEMA.get(), BlockHeaderFuzzInput::new);
   }
 
   private BlockHeaderFuzzInput(

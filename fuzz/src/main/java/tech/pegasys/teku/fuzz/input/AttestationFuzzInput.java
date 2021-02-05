@@ -24,7 +24,7 @@ public class AttestationFuzzInput
 
   public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), Attestation.TYPE, AttestationFuzzInput::new);
+        BeaconState.getSszType(), Attestation.SSZ_SCHEMA, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(

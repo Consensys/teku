@@ -37,7 +37,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     }
   }
 
-  public static final GoodbyeMessageType TYPE = new GoodbyeMessageType();
+  public static final GoodbyeMessageType SSZ_SCHEMA = new GoodbyeMessageType();
 
   public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
   public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
@@ -54,7 +54,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   }
 
   public GoodbyeMessage(UInt64 reason) {
-    super(TYPE, new SszUInt64(reason));
+    super(SSZ_SCHEMA, new SszUInt64(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)

@@ -31,7 +31,7 @@ public class SignedAggregateAndProof
     public SignedAggregateAndProofType() {
       super(
           "SignedAggregateAndProof",
-          namedSchema("message", AggregateAndProof.TYPE),
+          namedSchema("message", AggregateAndProof.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -41,7 +41,7 @@ public class SignedAggregateAndProof
     }
   }
 
-  public static final SignedAggregateAndProofType TYPE = new SignedAggregateAndProofType();
+  public static final SignedAggregateAndProofType SSZ_SCHEMA = new SignedAggregateAndProofType();
 
   private BLSSignature signatureCache;
 
@@ -50,7 +50,7 @@ public class SignedAggregateAndProof
   }
 
   public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
-    super(TYPE, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     signatureCache = signature;
   }
 

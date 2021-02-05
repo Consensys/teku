@@ -26,7 +26,7 @@ public class EncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
   private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ_SNAPPY);
   private final RpcResponseDecoder<RpcErrorMessage> decoder =
-      new RpcResponseDecoder<>(RpcErrorMessage.TYPE, RpcEncoding.SSZ_SNAPPY);
+      new RpcResponseDecoder<>(RpcErrorMessage.SSZ_SCHEMA, RpcEncoding.SSZ_SNAPPY);
 
   @Test
   public void shouldEncodeErrorResponse() {

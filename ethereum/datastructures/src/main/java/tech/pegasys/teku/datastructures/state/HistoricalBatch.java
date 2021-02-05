@@ -66,10 +66,10 @@ public class HistoricalBatch
   }
 
   public static HistoricalBatchType getSszType() {
-    return TYPE.get();
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<HistoricalBatchType> TYPE =
+  public static final SpecDependent<HistoricalBatchType> SSZ_SCHEMA =
       SpecDependent.of(HistoricalBatchType::new);
 
   private HistoricalBatch(HistoricalBatchType type, TreeNode backingNode) {
@@ -78,7 +78,7 @@ public class HistoricalBatch
 
   @Deprecated // Use the constructor with type
   public HistoricalBatch(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
-    this(TYPE.get(), block_roots, state_roots);
+    this(SSZ_SCHEMA.get(), block_roots, state_roots);
   }
 
   private HistoricalBatch(

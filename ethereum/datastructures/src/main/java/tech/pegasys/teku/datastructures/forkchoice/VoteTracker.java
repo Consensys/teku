@@ -41,7 +41,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
     }
   }
 
-  public static final VoteTrackerType TYPE = new VoteTrackerType();
+  public static final VoteTrackerType SSZ_SCHEMA = new VoteTrackerType();
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
@@ -50,11 +50,11 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   }
 
   private VoteTracker() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(TYPE, new SszBytes32(currentRoot), new SszBytes32(nextRoot), new SszUInt64(nextEpoch));
+    super(SSZ_SCHEMA, new SszBytes32(currentRoot), new SszBytes32(nextRoot), new SszUInt64(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

@@ -45,7 +45,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/attester_slashing",
               new OperationsTestExecutor<>(
                   "attester_slashing.ssz",
-                  AttesterSlashing.TYPE,
+                  AttesterSlashing.SSZ_SCHEMA,
                   (state, data) ->
                       BlockProcessorUtil.process_attester_slashings(
                           state, SSZList.singleton(data))))
@@ -53,7 +53,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/proposer_slashing",
               new OperationsTestExecutor<>(
                   "proposer_slashing.ssz",
-                  ProposerSlashing.TYPE,
+                  ProposerSlashing.SSZ_SCHEMA,
                   (state, data) ->
                       BlockProcessorUtil.process_proposer_slashings(
                           state, SSZList.singleton(data))))
@@ -65,21 +65,21 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/deposit",
               new OperationsTestExecutor<>(
                   "deposit.ssz",
-                  Deposit.TYPE,
+                  Deposit.SSZ_SCHEMA,
                   (state, data) ->
                       BlockProcessorUtil.process_deposits(state, SSZList.singleton(data))))
           .put(
               "operations/voluntary_exit",
               new OperationsTestExecutor<>(
                   "voluntary_exit.ssz",
-                  SignedVoluntaryExit.TYPE,
+                  SignedVoluntaryExit.SSZ_SCHEMA,
                   (state, data) ->
                       BlockProcessorUtil.process_voluntary_exits(state, SSZList.singleton(data))))
           .put(
               "operations/attestation",
               new OperationsTestExecutor<>(
                   "attestation.ssz",
-                  Attestation.TYPE,
+                  Attestation.SSZ_SCHEMA,
                   (state, data) ->
                       BlockProcessorUtil.process_attestations(
                           state,

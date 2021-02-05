@@ -39,7 +39,7 @@ public class PendingAttestation
           "PendingAttestation",
           namedSchema(
               "aggregation_bitfield", new SszBitListSchema(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedSchema("data", AttestationData.TYPE),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
@@ -54,7 +54,7 @@ public class PendingAttestation
     }
   }
 
-  public static final PendingAttestationType TYPE = new PendingAttestationType();
+  public static final PendingAttestationType SSZ_SCHEMA = new PendingAttestationType();
 
   private PendingAttestation(PendingAttestationType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -66,19 +66,19 @@ public class PendingAttestation
       UInt64 inclusion_delay,
       UInt64 proposer_index) {
     super(
-        TYPE,
-        SszUtils.toSszBitList(TYPE.getAggregationBitfieldType(), aggregation_bitfield),
+        SSZ_SCHEMA,
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitfieldType(), aggregation_bitfield),
         data,
         new SszUInt64(inclusion_delay),
         new SszUInt64(proposer_index));
   }
 
   public PendingAttestation() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
-    super(TYPE, pendingAttestation.getBackingNode());
+    super(SSZ_SCHEMA, pendingAttestation.getBackingNode());
   }
 
   public Bitlist getAggregation_bits() {

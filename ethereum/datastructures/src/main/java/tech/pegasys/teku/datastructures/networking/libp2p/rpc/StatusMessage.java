@@ -51,7 +51,7 @@ public class StatusMessage
     }
   }
 
-  public static final StatusMessageType TYPE = new StatusMessageType();
+  public static final StatusMessageType SSZ_SCHEMA = new StatusMessageType();
 
   private StatusMessage(StatusMessageType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -64,7 +64,7 @@ public class StatusMessage
       Bytes32 headRoot,
       UInt64 headSlot) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszBytes4(forkDigest),
         new SszBytes32(finalizedRoot),
         new SszUInt64(finalizedEpoch),

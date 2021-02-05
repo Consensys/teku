@@ -35,14 +35,14 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
     }
   }
 
-  public static final PingMessageType TYPE = new PingMessageType();
+  public static final PingMessageType SSZ_SCHEMA = new PingMessageType();
 
   public PingMessage(PingMessageType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public PingMessage(UInt64 seqNumber) {
-    super(TYPE, new SszUInt64(seqNumber));
+    super(SSZ_SCHEMA, new SszUInt64(seqNumber));
   }
 
   public UInt64 getSeqNumber() {

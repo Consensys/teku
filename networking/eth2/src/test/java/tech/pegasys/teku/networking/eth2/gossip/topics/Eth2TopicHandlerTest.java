@@ -204,14 +204,14 @@ public class Eth2TopicHandlerTest {
 
   private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     private Deserializer<SignedBeaconBlock> deserializer =
-        (bytes) -> getGossipEncoding().decodeMessage(bytes, SignedBeaconBlock.TYPE.get());
+        (bytes) -> getGossipEncoding().decodeMessage(bytes, SignedBeaconBlock.SSZ_SCHEMA.get());
     private static GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private static Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 
     protected MockEth2TopicHandler(
         final AsyncRunner asyncRunner, OperationProcessor<SignedBeaconBlock> processor) {
       super(
-          asyncRunner, processor, gossipEncoding, forkDigest, "test", SignedBeaconBlock.TYPE.get());
+          asyncRunner, processor, gossipEncoding, forkDigest, "test", SignedBeaconBlock.SSZ_SCHEMA.get());
     }
 
     public void setDeserializer(final Deserializer<SignedBeaconBlock> deserializer) {

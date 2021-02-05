@@ -52,7 +52,7 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends SszContainer {
 
-    SszContainerSchema<SubContainerRead> TYPE =
+    SszContainerSchema<SubContainerRead> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             SubContainerReadImpl::new);
@@ -79,19 +79,19 @@ public class ContainerViewTest {
 
   public interface ContainerRead extends SszContainer {
 
-    SszContainerSchema<ContainerReadImpl> TYPE =
+    SszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA,
-                SubContainerRead.TYPE,
+                SubContainerRead.SSZ_SCHEMA,
                 new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
-                new SszListSchema<>(SubContainerRead.TYPE, 2),
-                new SszVectorSchema<>(ImmutableSubContainerImpl.TYPE, 2)),
+                new SszListSchema<>(SubContainerRead.SSZ_SCHEMA, 2),
+                new SszVectorSchema<>(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
             ContainerReadImpl::new);
 
     static ContainerRead createDefault() {
-      return ContainerReadImpl.TYPE.getDefault();
+      return ContainerReadImpl.SSZ_SCHEMA.getDefault();
     }
 
     default UInt64 getLong1() {
@@ -147,7 +147,7 @@ public class ContainerViewTest {
   public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
-    public static final SszContainerSchema<ImmutableSubContainerImpl> TYPE =
+    public static final SszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
         SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             ImmutableSubContainerImpl::new);
@@ -158,7 +158,7 @@ public class ContainerViewTest {
     }
 
     public ImmutableSubContainerImpl(UInt64 long1, Bytes32 bytes1) {
-      super(TYPE, new SszUInt64(long1), new SszBytes32(bytes1));
+      super(SSZ_SCHEMA, new SszUInt64(long1), new SszBytes32(bytes1));
     }
 
     @Override
@@ -175,7 +175,7 @@ public class ContainerViewTest {
   public static class SubContainerReadImpl extends SszContainerImpl implements SubContainerRead {
 
     public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
-      super(TYPE, backingNode, cache);
+      super(SSZ_SCHEMA, backingNode, cache);
     }
 
     private SubContainerReadImpl(SszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
@@ -444,7 +444,7 @@ public class ContainerViewTest {
     assertThat(SszTestUtils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
 
     // new container from backing tree without any cached views
-    ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    ContainerRead c2r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
@@ -472,7 +472,7 @@ public class ContainerViewTest {
     containerMutator.accept(c3w);
     ContainerRead c3r = c3w.commitChanges();
 
-    ContainerRead c4r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
     assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
     // make updated view from the source view in parallel

@@ -31,7 +31,7 @@ public class SignedBeaconBlockHeader
     public SignedBeaconBlockHeaderType() {
       super(
           "SignedBeaconBlockHeader",
-          namedSchema("message", BeaconBlockHeader.TYPE),
+          namedSchema("message", BeaconBlockHeader.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -41,7 +41,7 @@ public class SignedBeaconBlockHeader
     }
   }
 
-  public static final SignedBeaconBlockHeaderType TYPE = new SignedBeaconBlockHeaderType();
+  public static final SignedBeaconBlockHeaderType SSZ_SCHEMA = new SignedBeaconBlockHeaderType();
 
   private BLSSignature signatureCache;
 
@@ -50,7 +50,7 @@ public class SignedBeaconBlockHeader
   }
 
   public SignedBeaconBlockHeader(final BeaconBlockHeader message, final BLSSignature signature) {
-    super(TYPE, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     signatureCache = signature;
   }
 

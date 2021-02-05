@@ -26,6 +26,6 @@ class AggregateAndProofTest {
   void roundTripViaSsz() {
     AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     assertEquals(
-        aggregateAndProof, AggregateAndProof.TYPE.sszDeserialize(aggregateAndProof.sszSerialize()));
+        aggregateAndProof, AggregateAndProof.SSZ_SCHEMA.sszDeserialize(aggregateAndProof.sszSerialize()));
   }
 }

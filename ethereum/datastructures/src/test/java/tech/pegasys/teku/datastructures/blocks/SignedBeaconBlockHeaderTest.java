@@ -40,7 +40,7 @@ class SignedBeaconBlockHeaderTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final Bytes ssz = signedBlockHeader.sszSerialize();
-    final SignedBeaconBlockHeader result = SignedBeaconBlockHeader.TYPE.sszDeserialize(ssz);
+    final SignedBeaconBlockHeader result = SignedBeaconBlockHeader.SSZ_SCHEMA.sszDeserialize(ssz);
 
     assertThat(result).isEqualTo(signedBlockHeader);
   }

@@ -62,7 +62,7 @@ class Eth1DataTest {
   @Test
   void roundtripSSZ() {
     Bytes eth1DataSerialized = eth1Data.sszSerialize();
-    Eth1Data newEth1Data = Eth1Data.TYPE.sszDeserialize(eth1DataSerialized);
+    Eth1Data newEth1Data = Eth1Data.SSZ_SCHEMA.sszDeserialize(eth1DataSerialized);
     assertEquals(eth1Data, newEth1Data);
   }
 }

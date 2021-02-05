@@ -71,7 +71,7 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
   @Test
   public void shouldProcessEmptyMessage() throws Exception {
-    RpcRequestDecoder<EmptyMessage> decoder = new RpcRequestDecoder<>(EmptyMessage.TYPE, ENCODING);
+    RpcRequestDecoder<EmptyMessage> decoder = new RpcRequestDecoder<>(EmptyMessage.SSZ_SCHEMA, ENCODING);
     assertThat(decoder.complete()).isNotEmpty().contains(EmptyMessage.EMPTY_MESSAGE);
   }
 }

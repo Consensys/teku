@@ -42,14 +42,14 @@ public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
     }
   }
 
-  public static final CheckpointType TYPE = new CheckpointType();
+  public static final CheckpointType SSZ_SCHEMA = new CheckpointType();
 
   private Checkpoint(CheckpointType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Checkpoint(UInt64 epoch, Bytes32 root) {
-    super(TYPE, new SszUInt64(epoch), new SszBytes32(root));
+    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszBytes32(root));
   }
 
   public UInt64 getEpoch() {

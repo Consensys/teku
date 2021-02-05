@@ -111,11 +111,11 @@ public class ForkChoiceTestExecutor {
         }
       case block:
         {
-          return resolvePart(SignedBeaconBlock.class, SignedBeaconBlock.TYPE.get(), file, value);
+          return resolvePart(SignedBeaconBlock.class, SignedBeaconBlock.SSZ_SCHEMA.get(), file, value);
         }
       case attestation:
         {
-          return resolvePart(Attestation.class, Attestation.TYPE, file, value);
+          return resolvePart(Attestation.class, Attestation.SSZ_SCHEMA, file, value);
         }
       case checks:
         {

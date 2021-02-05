@@ -35,7 +35,7 @@ public class AggregateAndProof
       super(
           "AggregateAndProof",
           namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("aggregate", Attestation.TYPE),
+          namedSchema("aggregate", Attestation.SSZ_SCHEMA),
           namedSchema("selection_proof", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -45,7 +45,7 @@ public class AggregateAndProof
     }
   }
 
-  public static final AggregateAndProofType TYPE = new AggregateAndProofType();
+  public static final AggregateAndProofType SSZ_SCHEMA = new AggregateAndProofType();
 
   private BLSSignature selectionProofCache;
 
@@ -55,7 +55,7 @@ public class AggregateAndProof
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         new SszUInt64(index),
         aggregate,
         SszUtils.toSszByteVector(selection_proof.toBytesCompressed()));

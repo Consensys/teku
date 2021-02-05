@@ -48,9 +48,9 @@ public interface BeaconState extends SszContainer {
   SszField GENESIS_VALIDATORS_ROOT_FIELD =
       new SszField(1, "genesis_validators_root", SszPrimitiveSchemas.BYTES32_SCHEMA);
   SszField SLOT_FIELD = new SszField(2, "slot", SszPrimitiveSchemas.UINT64_SCHEMA);
-  SszField FORK_FIELD = new SszField(3, "fork", Fork.TYPE);
+  SszField FORK_FIELD = new SszField(3, "fork", Fork.SSZ_SCHEMA);
   SszField LATEST_BLOCK_HEADER_FIELD =
-      new SszField(4, "latest_block_header", BeaconBlockHeader.TYPE);
+      new SszField(4, "latest_block_header", BeaconBlockHeader.SSZ_SCHEMA);
   SszField BLOCK_ROOTS_FIELD =
       new SszField(
           5,
@@ -72,14 +72,14 @@ public interface BeaconState extends SszContainer {
           () ->
               new SszListSchema<>(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
-  SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.TYPE);
+  SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.SSZ_SCHEMA);
   SszField ETH1_DATA_VOTES_FIELD =
       new SszField(
           9,
           "eth1_data_votes",
           () ->
               new SszListSchema<>(
-                  Eth1Data.TYPE,
+                  Eth1Data.SSZ_SCHEMA,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   SszField ETH1_DEPOSIT_INDEX_FIELD =
       new SszField(10, "eth1_deposit_index", SszPrimitiveSchemas.UINT64_SCHEMA);
@@ -89,7 +89,7 @@ public interface BeaconState extends SszContainer {
           "validators",
           () ->
               new SszListSchema<>(
-                  Validator.TYPE,
+                  Validator.SSZ_SCHEMA,
                   Constants.VALIDATOR_REGISTRY_LIMIT,
                   SszSchemaHints.sszSuperNode(8)));
   SszField BALANCES_FIELD =
@@ -119,29 +119,29 @@ public interface BeaconState extends SszContainer {
           "previous_epoch_attestations",
           () ->
               new SszListSchema<>(
-                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  PendingAttestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           16,
           "current_epoch_attestations",
           () ->
               new SszListSchema<>(
-                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  PendingAttestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
           17,
           "justification_bits",
           () -> new SszBitVectorSchema(Constants.JUSTIFICATION_BITS_LENGTH));
   SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
-      new SszField(18, "previous_justified_checkpoint", Checkpoint.TYPE);
+      new SszField(18, "previous_justified_checkpoint", Checkpoint.SSZ_SCHEMA);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
-      new SszField(19, "current_justified_checkpoint_field", Checkpoint.TYPE);
-  SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, "finalized_checkpoint", Checkpoint.TYPE);
+      new SszField(19, "current_justified_checkpoint_field", Checkpoint.SSZ_SCHEMA);
+  SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, "finalized_checkpoint", Checkpoint.SSZ_SCHEMA);
 
-  SpecDependent<BeaconStateType> TYPE = SpecDependent.of(BeaconStateType::new);
+  SpecDependent<BeaconStateType> SSZ_SCHEMA = SpecDependent.of(BeaconStateType::new);
 
   static BeaconStateType getSszType() {
-    return TYPE.get();
+    return SSZ_SCHEMA.get();
   }
 
   class BeaconStateType extends SszContainerSchema<BeaconState> {
@@ -182,7 +182,7 @@ public interface BeaconState extends SszContainer {
   }
 
   static BeaconState createEmpty() {
-    TYPE.reset();
+    SSZ_SCHEMA.reset();
     return new BeaconStateImpl();
   }
 

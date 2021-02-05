@@ -43,7 +43,7 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
     }
   }
 
-  public static final RpcErrorMessageType TYPE = new RpcErrorMessageType();
+  public static final RpcErrorMessageType SSZ_SCHEMA = new RpcErrorMessageType();
 
   public RpcErrorMessage(Bytes bytes) {
     super(SszUtils.toSszList(LIST_VIEW_TYPE, SszUtils.toSszByteList(LIST_VIEW_TYPE, bytes)));

@@ -46,7 +46,7 @@ public class IndexedAttestation
               "attesting_indices",
               new SszListSchema<>(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedSchema("data", AttestationData.TYPE),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
@@ -60,7 +60,7 @@ public class IndexedAttestation
     }
   }
 
-  public static final IndexedAttestationType TYPE = new IndexedAttestationType();
+  public static final IndexedAttestationType SSZ_SCHEMA = new IndexedAttestationType();
 
   private BLSSignature signatureCache;
 
@@ -71,8 +71,8 @@ public class IndexedAttestation
   public IndexedAttestation(
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
-        TYPE,
-        SszUtils.toSszList(TYPE.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
+        SSZ_SCHEMA,
+        SszUtils.toSszList(SSZ_SCHEMA.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
         data,
         SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;

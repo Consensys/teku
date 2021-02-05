@@ -40,6 +40,6 @@ public class AggregateAttestationTopicHandler {
         gossipEncoding,
         forkDigest,
         TOPIC_NAME,
-        SignedAggregateAndProof.TYPE);
+        SignedAggregateAndProof.SSZ_SCHEMA);
   }
 }

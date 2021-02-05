@@ -26,7 +26,7 @@ class IndexedAttestationTest {
   void roundTripViaSsz() {
     IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
     IndexedAttestation newIndexedAttestation =
-        IndexedAttestation.TYPE.sszDeserialize(indexedAttestation.sszSerialize());
+        IndexedAttestation.SSZ_SCHEMA.sszDeserialize(indexedAttestation.sszSerialize());
     assertEquals(indexedAttestation, newIndexedAttestation);
   }
 }

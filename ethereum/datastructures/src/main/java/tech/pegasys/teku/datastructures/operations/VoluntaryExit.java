@@ -38,14 +38,14 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
     }
   }
 
-  public static final VoluntaryExitType TYPE = new VoluntaryExitType();
+  public static final VoluntaryExitType SSZ_SCHEMA = new VoluntaryExitType();
 
   private VoluntaryExit(VoluntaryExitType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    super(TYPE, new SszUInt64(epoch), new SszUInt64(validator_index));
+    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszUInt64(validator_index));
   }
 
   public UInt64 getEpoch() {

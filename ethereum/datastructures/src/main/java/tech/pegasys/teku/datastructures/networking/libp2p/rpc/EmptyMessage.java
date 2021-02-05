@@ -37,7 +37,7 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
     }
   }
 
-  public static final EmptyMessageType TYPE = new EmptyMessageType();
+  public static final EmptyMessageType SSZ_SCHEMA = new EmptyMessageType();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {

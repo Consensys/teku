@@ -74,6 +74,6 @@ class ProposerSlashingTest {
   @Test
   void roundtripSSZ() {
     Bytes sszProposerSlashingBytes = proposerSlashing.sszSerialize();
-    assertEquals(proposerSlashing, ProposerSlashing.TYPE.sszDeserialize(sszProposerSlashingBytes));
+    assertEquals(proposerSlashing, ProposerSlashing.SSZ_SCHEMA.sszDeserialize(sszProposerSlashingBytes));
   }
 }

@@ -48,7 +48,7 @@ public class DepositMessage
     }
   }
 
-  public static final DepositMessageType TYPE = new DepositMessageType();
+  public static final DepositMessageType SSZ_SCHEMA = new DepositMessageType();
 
   private DepositMessage(DepositMessageType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -57,7 +57,7 @@ public class DepositMessage
   public DepositMessage(
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
     super(
-        TYPE,
+        SSZ_SCHEMA,
         SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(amount));
