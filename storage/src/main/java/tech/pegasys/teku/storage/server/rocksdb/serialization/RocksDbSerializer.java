@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
@@ -43,6 +44,10 @@ public interface RocksDbSerializer<T> {
       new SlotAndBlockRootSerializer();
   RocksDbSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
       new CheckpointEpochsSerializer();
+
+  static RocksDbSerializer<BeaconState> stateSerializer(final SpecProvider specProvider) {
+    return new BeaconStateRocksDbSerializer(specProvider);
+  }
 
   T deserialize(final byte[] data);
 
