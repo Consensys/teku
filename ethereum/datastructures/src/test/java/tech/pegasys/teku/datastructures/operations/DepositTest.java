@@ -26,7 +26,6 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
@@ -83,8 +82,8 @@ class DepositTest {
   @Test
   void roundtripSSZ() {
     Deposit deposit = dataStructureUtil.randomDeposit();
-    Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
-    Deposit newDeposit = SimpleOffsetSerializer.deserialize(serialized, Deposit.class);
+    Bytes serialized = deposit.sszSerialize();
+    Deposit newDeposit = Deposit.TYPE.sszDeserialize(serialized);
     assertEquals(deposit, newDeposit);
   }
 

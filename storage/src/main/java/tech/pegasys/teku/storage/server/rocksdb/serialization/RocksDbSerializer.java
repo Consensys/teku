@@ -19,7 +19,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -30,9 +29,9 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
   RocksDbSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   RocksDbSerializer<SignedBeaconBlock> SIGNED_BLOCK_SERIALIZER =
-      new SszSerializer<>(SignedBeaconBlock.class);
-  RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
-  RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
+      new SszSerializer<>(SignedBeaconBlock.getSszType());
+  RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconState.getSszType());
+  RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.TYPE);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
       new DepositsFromBlockEventSerializer();

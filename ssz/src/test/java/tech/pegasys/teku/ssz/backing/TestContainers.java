@@ -31,13 +31,11 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class TestContainers {
 
   public static class TestSubContainer extends AbstractImmutableContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<TestSubContainer> TYPE =
         ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
@@ -62,7 +60,6 @@ public class TestContainers {
 
   public static class TestContainer extends AbstractImmutableContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<TestContainer> TYPE =
         ContainerViewType.create(
             List.of(TestSubContainer.TYPE, BasicViewTypes.UINT64_TYPE), TestContainer::new);
@@ -86,7 +83,6 @@ public class TestContainers {
 
   public static class TestSmallContainer extends AbstractImmutableContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<TestSmallContainer> TYPE =
         ContainerViewType.create(List.of(BasicViewTypes.BIT_TYPE), TestSmallContainer::new);
 
@@ -101,7 +97,6 @@ public class TestContainers {
 
   public static class TestByteVectorContainer extends AbstractImmutableContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<TestByteVectorContainer> TYPE =
         ContainerViewType.create(
             List.of(
@@ -131,7 +126,6 @@ public class TestContainers {
 
   public static class TestDoubleSuperContainer extends AbstractImmutableContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<TestDoubleSuperContainer> TYPE =
         ContainerViewType.create(
             List.of(
@@ -158,7 +152,6 @@ public class TestContainers {
       extends Container3<
           VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View> {
 
-    @SszTypeDescriptor
     public static final ContainerType3<
             VariableSizeContainer, TestSubContainer, ListViewRead<UInt64View>, UInt64View>
         TYPE =

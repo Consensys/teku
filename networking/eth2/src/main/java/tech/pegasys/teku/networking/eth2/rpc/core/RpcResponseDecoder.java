@@ -21,25 +21,27 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
  * Responsible for decoding a stream of responses to a single rpc request
  *
  * @param <T>
  */
-public class RpcResponseDecoder<T> {
+public class RpcResponseDecoder<T extends ViewRead> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
-  private final Class<T> responseType;
+  private final ViewType<T> responseType;
   private final RpcEncoding encoding;
 
-  public RpcResponseDecoder(Class<T> responseType, RpcEncoding encoding) {
+  public RpcResponseDecoder(ViewType<T> responseType, RpcEncoding encoding) {
     this.responseType = responseType;
     this.encoding = encoding;
   }
@@ -80,7 +82,7 @@ public class RpcResponseDecoder<T> {
       return ret;
     } else {
       if (errorDecoder.isEmpty()) {
-        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.class));
+        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.TYPE));
       }
       Optional<RpcException> rpcException =
           errorDecoder

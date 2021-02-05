@@ -18,11 +18,11 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.HISTO
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SERVER_ERROR_CODE;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 
 public class RpcException extends Exception {
   private static final Logger LOG = LogManager.getLogger();
@@ -134,27 +134,5 @@ public class RpcException extends Exception {
   @Override
   public int hashCode() {
     return Objects.hash(responseCode, errorMessage);
-  }
-
-  public static class RpcErrorMessage {
-    private final Bytes data;
-
-    public RpcErrorMessage(final Bytes data) {
-      this.data = data;
-    }
-
-    public Bytes getData() {
-      return data;
-    }
-
-    @Override
-    public String toString() {
-      try {
-        return new String(data.toArray(), StandardCharsets.UTF_8);
-      } catch (IllegalArgumentException ex) {
-        LOG.trace("Error message could not be read as UTF-8: {} ", data);
-        return data.toHexString().toLowerCase();
-      }
-    }
   }
 }

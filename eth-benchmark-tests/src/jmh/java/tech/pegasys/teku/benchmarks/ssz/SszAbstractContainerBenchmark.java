@@ -29,8 +29,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 @Threads(1)
 @State(Scope.Thread)
@@ -39,17 +39,17 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSerializable> {
+public abstract class SszAbstractContainerBenchmark<TView extends ViewRead> {
   protected final Blackhole blackhole =
       new Blackhole(
           "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
   private final TView aContainer = createContainer();
-  private final Bytes aContainerSsz = SimpleOffsetSerializer.serialize(aContainer);
+  private final Bytes aContainerSsz = aContainer.sszSerialize();
 
   protected abstract TView createContainer();
 
-  protected abstract Class<TView> getContainerClass();
+  protected abstract ViewType<TView> getContainerType();
 
   protected abstract void iterateData(TView container, Blackhole bh);
 
@@ -71,30 +71,30 @@ public abstract class SszAbstractContainerBenchmark<TView extends SimpleOffsetSe
 
   @Benchmark
   public void benchSerialize(Blackhole bh) {
-    bh.consume(SimpleOffsetSerializer.serialize(aContainer));
+    bh.consume(aContainer.sszSerialize());
   }
 
   @Benchmark
   public void benchCreateAndSerialize(Blackhole bh) {
     TView container = createContainer();
-    bh.consume(SimpleOffsetSerializer.serialize(container));
+    bh.consume(container.sszSerialize());
   }
 
   @Benchmark
   public void benchDeserialize(Blackhole bh) {
-    bh.consume(SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass()));
+    bh.consume(getContainerType().sszDeserialize(aContainerSsz));
   }
 
   @Benchmark
   public void benchDeserializeAndIterate(Blackhole bh) {
-    TView container1 = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
+    TView container1 = getContainerType().sszDeserialize(aContainerSsz);
     iterateData(container1, bh);
   }
 
   @Benchmark
   public void benchDeserializeAndSerialize(Blackhole bh) {
-    TView container = SimpleOffsetSerializer.deserialize(aContainerSsz, getContainerClass());
-    bh.consume(SimpleOffsetSerializer.serialize(container));
+    TView container = getContainerType().sszDeserialize(aContainerSsz);
+    bh.consume(container.sszSerialize());
   }
 
   public void customRun(int runs, int runLength) {

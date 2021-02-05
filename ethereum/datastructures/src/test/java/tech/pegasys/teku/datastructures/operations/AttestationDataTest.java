@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -158,9 +157,7 @@ class AttestationDataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszAttestationDataBytes = SimpleOffsetSerializer.serialize(attestationData);
-    assertEquals(
-        attestationData,
-        SimpleOffsetSerializer.deserialize(sszAttestationDataBytes, AttestationData.class));
+    Bytes sszAttestationDataBytes = attestationData.sszSerialize();
+    assertEquals(attestationData, AttestationData.TYPE.sszDeserialize(sszAttestationDataBytes));
   }
 }

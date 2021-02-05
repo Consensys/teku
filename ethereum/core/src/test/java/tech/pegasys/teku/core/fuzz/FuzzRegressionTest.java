@@ -23,16 +23,16 @@ import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public class FuzzRegressionTest {
   @Test
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {
-    final BeaconState state = load("issue2345/state.ssz", BeaconStateImpl.class);
+    final BeaconState state = load("issue2345/state.ssz", BeaconState.getSszType());
     final AttesterSlashing slashing =
-        load("issue2345/attester_slashing.ssz", AttesterSlashing.class);
+        load("issue2345/attester_slashing.ssz", AttesterSlashing.TYPE);
 
     assertThatThrownBy(
             () ->
@@ -43,9 +43,10 @@ public class FuzzRegressionTest {
         .isInstanceOf(BlockProcessingException.class);
   }
 
-  private <T> T load(final String resource, final Class<T> type) throws Exception {
+  private <T extends ViewRead> T load(final String resource, final ViewType<T> type)
+      throws Exception {
     final URL resourceUrl = FuzzRegressionTest.class.getResource(resource);
     final Bytes data = Bytes.wrap(Resources.toByteArray(resourceUrl));
-    return SimpleOffsetSerializer.deserialize(data, type);
+    return type.sszDeserialize(data);
   }
 }

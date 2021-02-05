@@ -21,17 +21,19 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppended
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
  * A decoder responsible for handling a single rpc request
  *
  * @param <T> The type of request to expect
  */
-public class RpcRequestDecoder<T extends RpcRequest> {
+public class RpcRequestDecoder<T extends RpcRequest & ViewRead> {
   private final RpcByteBufDecoder<T> decoder;
   private boolean complete;
 
-  public RpcRequestDecoder(final Class<T> requestType, final RpcEncoding encoding) {
+  public RpcRequestDecoder(final ViewType<T> requestType, final RpcEncoding encoding) {
     this.decoder = encoding.createDecoder(requestType);
   }
 

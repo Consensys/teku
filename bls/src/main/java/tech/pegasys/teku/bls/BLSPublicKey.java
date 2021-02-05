@@ -24,9 +24,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.impl.PublicKey;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public final class BLSPublicKey implements SimpleOffsetSerializable {
+public final class BLSPublicKey {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -53,16 +52,6 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
         BLS.getBlsImpl()
             .aggregatePublicKeys(
                 publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList())));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(toSSZBytes());
   }
 
   public static BLSPublicKey fromSSZBytes(Bytes bytes) {

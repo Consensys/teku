@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.benchmarks;
 
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
-
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SimpleOffsetSerializable;
 
 public class SSZBenchmark {
 
@@ -30,6 +28,6 @@ public class SSZBenchmark {
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void BeaconStateSerialization() {
-    serialize(state);
+    state.sszSerialize();
   }
 }

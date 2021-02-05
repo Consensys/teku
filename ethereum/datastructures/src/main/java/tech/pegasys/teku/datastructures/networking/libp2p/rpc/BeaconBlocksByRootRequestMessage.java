@@ -15,53 +15,44 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszReader;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
-    implements ListViewRead<Bytes32View>, SimpleOffsetSerializable, RpcRequest {
+    implements ListViewRead<Bytes32View>, RpcRequest {
 
-  public static class BeaconBlocksByRootRequestMessageType extends ListViewType<Bytes32View> {
+  private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
+      new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+
+  public static class BeaconBlocksByRootRequestMessageType
+      extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {
 
     private BeaconBlocksByRootRequestMessageType() {
-      super(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+      super(LIST_VIEW_TYPE);
     }
 
     @Override
-    public BeaconBlocksByRootRequestMessage sszDeserialize(Bytes ssz)
-        throws SSZDeserializeException {
-      return new BeaconBlocksByRootRequestMessage(
-          this, sszDeserializeTree(SszReader.fromBytes(ssz)));
+    public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
+      return new BeaconBlocksByRootRequestMessage(node);
     }
   }
 
-  @SszTypeDescriptor
   public static final BeaconBlocksByRootRequestMessageType TYPE =
       new BeaconBlocksByRootRequestMessageType();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(ViewUtils.toListView(TYPE, roots, Bytes32View::new));
+    super(ViewUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
   }
 
-  private BeaconBlocksByRootRequestMessage(
-      BeaconBlocksByRootRequestMessageType type, TreeNode node) {
-    super(type, node);
-  }
-
-  @Override
-  public BeaconBlocksByRootRequestMessageType getType() {
-    return TYPE;
+  private BeaconBlocksByRootRequestMessage(TreeNode node) {
+    super(LIST_VIEW_TYPE, node);
   }
 
   @Override

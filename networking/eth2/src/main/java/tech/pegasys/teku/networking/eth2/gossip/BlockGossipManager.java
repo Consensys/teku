@@ -52,7 +52,7 @@ public class BlockGossipManager {
             gossipEncoding,
             forkInfo.getForkDigest(),
             TOPIC_NAME,
-            SignedBeaconBlock.class);
+            SignedBeaconBlock.TYPE.get());
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

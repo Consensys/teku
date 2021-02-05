@@ -59,7 +59,7 @@ public class VoluntaryExitTopicHandlerTest {
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
           VoluntaryExitGossipManager.TOPIC_NAME,
-          SignedVoluntaryExit.class);
+          SignedVoluntaryExit.TYPE);
 
   @BeforeEach
   public void setup() {
@@ -110,7 +110,7 @@ public class VoluntaryExitTopicHandlerTest {
             gossipEncoding,
             forkDigest,
             VoluntaryExitGossipManager.TOPIC_NAME,
-            SignedVoluntaryExit.class);
+            SignedVoluntaryExit.TYPE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }
 }

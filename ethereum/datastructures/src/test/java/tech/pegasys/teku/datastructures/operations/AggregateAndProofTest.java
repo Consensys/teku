@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class AggregateAndProofTest {
 
@@ -27,8 +26,6 @@ class AggregateAndProofTest {
   void roundTripViaSsz() {
     AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     assertEquals(
-        aggregateAndProof,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(aggregateAndProof), AggregateAndProof.class));
+        aggregateAndProof, AggregateAndProof.TYPE.sszDeserialize(aggregateAndProof.sszSerialize()));
   }
 }

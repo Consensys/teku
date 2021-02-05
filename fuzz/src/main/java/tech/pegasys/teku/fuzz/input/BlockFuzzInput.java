@@ -15,21 +15,15 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
 
-  @SszTypeDescriptor
   public static ContainerType2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
+        BeaconState.getSszType(), SignedBeaconBlock.TYPE.get(), BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(
@@ -37,7 +31,7 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
     super(type, backingNode);
   }
 
-  public BlockFuzzInput(final BeaconStateImpl state, final SignedBeaconBlock signed_block) {
+  public BlockFuzzInput(final BeaconState state, final SignedBeaconBlock signed_block) {
     super(createType(), state, signed_block);
   }
 

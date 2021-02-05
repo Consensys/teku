@@ -14,9 +14,7 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -27,12 +25,9 @@ import tech.pegasys.teku.ssz.backing.type.VectorViewType;
 import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
 
   public static class DepositType
       extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
@@ -57,7 +52,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
     }
   }
 
-  @SszTypeDescriptor public static final DepositType TYPE = new DepositType();
+  public static final DepositType TYPE = new DepositType();
 
   private static final SSZVector<Bytes32> EMPTY_PROOF =
       SSZVector.createMutable(TYPE.getProofType().getLength(), Bytes32.ZERO);
@@ -85,10 +80,5 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   public DepositData getData() {
     return getField1();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

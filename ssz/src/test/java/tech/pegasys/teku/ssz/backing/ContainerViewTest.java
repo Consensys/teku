@@ -39,7 +39,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ContainerViewReadImpl;
 import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -53,7 +52,6 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends ContainerViewRead {
 
-    @SszTypeDescriptor
     ContainerViewType<SubContainerRead> TYPE =
         ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
@@ -81,7 +79,6 @@ public class ContainerViewTest {
 
   public interface ContainerRead extends ContainerViewRead {
 
-    @SszTypeDescriptor
     ContainerViewType<ContainerReadImpl> TYPE =
         ContainerViewType.create(
             List.of(
@@ -150,7 +147,6 @@ public class ContainerViewTest {
   public static class ImmutableSubContainerImpl extends AbstractImmutableContainer
       implements ImmutableSubContainer {
 
-    @SszTypeDescriptor
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
         ContainerViewType.create(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),

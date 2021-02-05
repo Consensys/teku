@@ -15,23 +15,17 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class VoluntaryExitFuzzInput
-    extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> {
 
-  @SszTypeDescriptor
   public static ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
       createType() {
     return ContainerType2.create(
-        BeaconState.getSSZType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
+        BeaconState.getSszType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
   }
 
   public VoluntaryExitFuzzInput(
@@ -40,7 +34,7 @@ public class VoluntaryExitFuzzInput
     super(type, backingNode);
   }
 
-  public VoluntaryExitFuzzInput(final BeaconStateImpl state, final SignedVoluntaryExit exit) {
+  public VoluntaryExitFuzzInput(final BeaconState state, final SignedVoluntaryExit exit) {
     super(createType(), state, exit);
   }
 

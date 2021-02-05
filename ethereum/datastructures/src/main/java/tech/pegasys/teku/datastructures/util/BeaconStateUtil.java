@@ -76,6 +76,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.ByteVectorType;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.util.config.Constants;
@@ -108,7 +109,7 @@ public class BeaconStateUtil {
   public static void process_deposit(MutableBeaconState state, Deposit deposit) {
     checkArgument(
         is_valid_merkle_branch(
-            deposit.getData().hash_tree_root(),
+            deposit.getData().hashTreeRoot(),
             deposit.getProof(),
             Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
             toIntExact(state.getEth1_deposit_index().longValue()),
@@ -283,7 +284,7 @@ public class BeaconStateUtil {
    */
   public static Bytes32 compute_fork_data_root(
       Bytes4 current_version, Bytes32 genesis_validators_root) {
-    return new ForkData(current_version, genesis_validators_root).hash_tree_root();
+    return new ForkData(current_version, genesis_validators_root).hashTreeRoot();
   }
 
   public static Bytes4 compute_fork_digest(
@@ -334,7 +335,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(Merkleizable object, Bytes32 domain) {
-    return new SigningData(object.hash_tree_root(), domain).hash_tree_root();
+    return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
 
   /**
@@ -350,7 +351,7 @@ public class BeaconStateUtil {
 
     SigningData domain_wrapped_object =
         new SigningData(new UInt64View(UInt64.valueOf(number)).hashTreeRoot(), domain);
-    return domain_wrapped_object.hash_tree_root();
+    return domain_wrapped_object.hashTreeRoot();
   }
 
   /**
@@ -366,7 +367,7 @@ public class BeaconStateUtil {
     SigningData domain_wrapped_object =
         new SigningData(
             new ByteVectorType(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
-    return domain_wrapped_object.hash_tree_root();
+    return domain_wrapped_object.hashTreeRoot();
   }
 
   /**

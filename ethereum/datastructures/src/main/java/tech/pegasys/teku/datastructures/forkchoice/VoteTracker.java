@@ -21,13 +21,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View>
-    implements SimpleOffsetSerializable {
+public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
-  static class VoteTrackerType
+  public static class VoteTrackerType
       extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
 
     public VoteTrackerType() {
@@ -44,7 +41,7 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
     }
   }
 
-  @SszTypeDescriptor public static final VoteTrackerType TYPE = new VoteTrackerType();
+  public static final VoteTrackerType TYPE = new VoteTrackerType();
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(

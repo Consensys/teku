@@ -17,9 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType4;
@@ -30,13 +28,10 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class DepositData
     extends Container4<
-        DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+        DepositData, VectorViewRead<ByteView>, Bytes32View, UInt64View, VectorViewRead<ByteView>> {
 
   public static class DepositDataType
       extends ContainerType4<
@@ -61,7 +56,7 @@ public class DepositData
     }
   }
 
-  @SszTypeDescriptor public static final DepositDataType TYPE = new DepositDataType();
+  public static final DepositDataType TYPE = new DepositDataType();
 
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;
@@ -115,10 +110,5 @@ public class DepositData
       signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField3()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

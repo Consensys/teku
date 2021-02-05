@@ -13,19 +13,13 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class ProposerSlashing
-    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
   public static class ProposerSlashingType
       extends ContainerType2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
@@ -43,7 +37,7 @@ public class ProposerSlashing
     }
   }
 
-  @SszTypeDescriptor public static final ProposerSlashingType TYPE = new ProposerSlashingType();
+  public static final ProposerSlashingType TYPE = new ProposerSlashingType();
 
   private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
     super(type, backingNode);
@@ -59,10 +53,5 @@ public class ProposerSlashing
 
   public SignedBeaconBlockHeader getHeader_2() {
     return getField1();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }
