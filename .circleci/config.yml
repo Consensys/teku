@@ -107,9 +107,6 @@ commands:
               mkdir -p "$TARGET"
               cp -rf ${FILE}/*/* "$TARGET"
             done
-            zip -r build/test-results.zip build/test-artifacts
-      - store_artifacts:
-          path: build/test-results.zip
 
 jobs:
   assemble:
