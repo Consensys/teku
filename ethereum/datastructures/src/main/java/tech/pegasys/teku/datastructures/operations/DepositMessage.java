@@ -31,10 +31,10 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class DepositMessage
     extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-  public static class DepositMessageType
+  public static class DepositMessageSchema
       extends ContainerSchema3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-    public DepositMessageType() {
+    public DepositMessageSchema() {
       super(
           "DepositMessage",
           namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
@@ -48,9 +48,9 @@ public class DepositMessage
     }
   }
 
-  public static final DepositMessageType SSZ_SCHEMA = new DepositMessageType();
+  public static final DepositMessageSchema SSZ_SCHEMA = new DepositMessageSchema();
 
-  private DepositMessage(DepositMessageType type, TreeNode backingNode) {
+  private DepositMessage(DepositMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

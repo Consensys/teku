@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class ChainDataLoader {
   public static BeaconState loadState(final String source) throws IOException {
-    return BeaconState.getSszType()
+    return BeaconState.getSszSchema()
         .sszDeserialize(
             ResourceLoader.urlOrFile()
                 .loadBytes(source)

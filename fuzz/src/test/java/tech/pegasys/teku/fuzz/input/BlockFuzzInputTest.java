@@ -21,7 +21,7 @@ public class BlockFuzzInputTest extends AbstractFuzzInputTest<BlockFuzzInput> {
 
   @Override
   protected SszSchema<BlockFuzzInput> getInputType() {
-    return BlockFuzzInput.createType();
+    return BlockFuzzInput.createSchema();
   }
 
   @Override

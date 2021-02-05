@@ -31,11 +31,11 @@ public class StatusMessage
     extends Container5<StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64>
     implements RpcRequest {
 
-  public static class StatusMessageType
+  public static class StatusMessageSchema
       extends ContainerSchema5<
           StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
 
-    public StatusMessageType() {
+    public StatusMessageSchema() {
       super(
           "StatusMessage",
           namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
@@ -51,9 +51,9 @@ public class StatusMessage
     }
   }
 
-  public static final StatusMessageType SSZ_SCHEMA = new StatusMessageType();
+  public static final StatusMessageSchema SSZ_SCHEMA = new StatusMessageSchema();
 
-  private StatusMessage(StatusMessageType type, TreeNode backingNode) {
+  private StatusMessage(StatusMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

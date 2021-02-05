@@ -21,7 +21,7 @@ public class VoluntaryExitFuzzInputTest extends AbstractFuzzInputTest<VoluntaryE
 
   @Override
   protected SszSchema<VoluntaryExitFuzzInput> getInputType() {
-    return VoluntaryExitFuzzInput.createType();
+    return VoluntaryExitFuzzInput.createSchema();
   }
 
   @Override

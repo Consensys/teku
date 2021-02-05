@@ -24,10 +24,10 @@ public final class BeaconBlocksByRangeRequestMessage
     extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>
     implements RpcRequest {
 
-  public static class BeaconBlocksByRangeRequestMessageType
+  public static class BeaconBlocksByRangeRequestMessageSchema
       extends ContainerSchema3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
 
-    public BeaconBlocksByRangeRequestMessageType() {
+    public BeaconBlocksByRangeRequestMessageSchema() {
       super(
           "BeaconBlocksByRangeRequestMessage",
           namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -41,11 +41,11 @@ public final class BeaconBlocksByRangeRequestMessage
     }
   }
 
-  public static final BeaconBlocksByRangeRequestMessageType SSZ_SCHEMA =
-      new BeaconBlocksByRangeRequestMessageType();
+  public static final BeaconBlocksByRangeRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRangeRequestMessageSchema();
 
   private BeaconBlocksByRangeRequestMessage(
-      BeaconBlocksByRangeRequestMessageType type, TreeNode backingNode) {
+      BeaconBlocksByRangeRequestMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -24,9 +24,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 
 public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
-  public static class ForkDataType extends ContainerSchema2<ForkData, SszBytes4, SszBytes32> {
+  public static class ForkDataSchema extends ContainerSchema2<ForkData, SszBytes4, SszBytes32> {
 
-    public ForkDataType() {
+    public ForkDataSchema() {
       super(
           "ForkData",
           namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
@@ -39,9 +39,9 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
     }
   }
 
-  public static final ForkDataType SSZ_SCHEMA = new ForkDataType();
+  public static final ForkDataSchema SSZ_SCHEMA = new ForkDataSchema();
 
-  private ForkData(ForkDataType type, TreeNode backingNode) {
+  private ForkData(ForkDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

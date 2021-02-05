@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
-  public static class Eth1DataType
+  public static class Eth1DataSchema
       extends ContainerSchema3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
-    public Eth1DataType() {
+    public Eth1DataSchema() {
       super(
           "Eth1Data",
           namedSchema("deposit_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -41,9 +41,9 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     }
   }
 
-  public static final Eth1DataType SSZ_SCHEMA = new Eth1DataType();
+  public static final Eth1DataSchema SSZ_SCHEMA = new Eth1DataSchema();
 
-  private Eth1Data(Eth1DataType type, TreeNode backingNode) {
+  private Eth1Data(Eth1DataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -32,8 +32,8 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
   private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
       new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, MAX_ERROR_MESSAGE_LENGTH);
 
-  public static class RpcErrorMessageType extends AbstractDelegateSszSchema<RpcErrorMessage> {
-    private RpcErrorMessageType() {
+  public static class RpcErrorMessageSchema extends AbstractDelegateSszSchema<RpcErrorMessage> {
+    private RpcErrorMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -43,7 +43,7 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
     }
   }
 
-  public static final RpcErrorMessageType SSZ_SCHEMA = new RpcErrorMessageType();
+  public static final RpcErrorMessageSchema SSZ_SCHEMA = new RpcErrorMessageSchema();
 
   public RpcErrorMessage(Bytes bytes) {
     super(SszUtils.toSszList(LIST_VIEW_TYPE, SszUtils.toSszByteList(LIST_VIEW_TYPE, bytes)));

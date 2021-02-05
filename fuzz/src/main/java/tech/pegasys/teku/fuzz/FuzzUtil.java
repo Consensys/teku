@@ -83,7 +83,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createType());
+    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createSchema());
 
     // process and return post state
     try {
@@ -127,7 +127,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createType());
+    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createSchema());
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
@@ -165,7 +165,7 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createType());
+    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createSchema());
 
     try {
       BeaconState postState =
@@ -236,7 +236,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
     VoluntaryExitFuzzInput structuredInput =
-        deserialize(input, VoluntaryExitFuzzInput.createType());
+        deserialize(input, VoluntaryExitFuzzInput.createSchema());
 
     try {
       BeaconState postState =

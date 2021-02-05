@@ -30,11 +30,11 @@ import tech.pegasys.teku.util.config.Constants;
 public class PendingAttestation
     extends Container4<PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
-  public static class PendingAttestationType
+  public static class PendingAttestationSchema
       extends ContainerSchema4<
           PendingAttestation, SszList<SszBit>, AttestationData, SszUInt64, SszUInt64> {
 
-    public PendingAttestationType() {
+    public PendingAttestationSchema() {
       super(
           "PendingAttestation",
           namedSchema(
@@ -44,7 +44,7 @@ public class PendingAttestation
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
-    public SszBitListSchema getAggregationBitfieldType() {
+    public SszBitListSchema getAggregationBitfieldSchema() {
       return (SszBitListSchema) getFieldSchema0();
     }
 
@@ -54,9 +54,9 @@ public class PendingAttestation
     }
   }
 
-  public static final PendingAttestationType SSZ_SCHEMA = new PendingAttestationType();
+  public static final PendingAttestationSchema SSZ_SCHEMA = new PendingAttestationSchema();
 
-  private PendingAttestation(PendingAttestationType type, TreeNode backingNode) {
+  private PendingAttestation(PendingAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -67,7 +67,7 @@ public class PendingAttestation
       UInt64 proposer_index) {
     super(
         SSZ_SCHEMA,
-        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitfieldType(), aggregation_bitfield),
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitfieldSchema(), aggregation_bitfield),
         data,
         new SszUInt64(inclusion_delay),
         new SszUInt64(proposer_index));

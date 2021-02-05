@@ -21,10 +21,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
-  public static class ProposerSlashingType
+  public static class ProposerSlashingSchema
       extends ContainerSchema2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {
 
-    public ProposerSlashingType() {
+    public ProposerSlashingSchema() {
       super(
           "ProposerSlashing",
           namedSchema("header_1", SignedBeaconBlockHeader.SSZ_SCHEMA),
@@ -37,9 +37,9 @@ public class ProposerSlashing
     }
   }
 
-  public static final ProposerSlashingType SSZ_SCHEMA = new ProposerSlashingType();
+  public static final ProposerSlashingSchema SSZ_SCHEMA = new ProposerSlashingSchema();
 
-  private ProposerSlashing(ProposerSlashingType type, TreeNode backingNode) {
+  private ProposerSlashing(ProposerSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

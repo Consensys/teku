@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-  public static class VoteTrackerType
+  public static class VoteTrackerSchema
       extends ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-    public VoteTrackerType() {
+    public VoteTrackerSchema() {
       super(
           "VoteTracker",
           namedSchema("currentRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -41,7 +41,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
     }
   }
 
-  public static final VoteTrackerType SSZ_SCHEMA = new VoteTrackerType();
+  public static final VoteTrackerSchema SSZ_SCHEMA = new VoteTrackerSchema();
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
@@ -54,7 +54,11 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(SSZ_SCHEMA, new SszBytes32(currentRoot), new SszBytes32(nextRoot), new SszUInt64(nextEpoch));
+    super(
+        SSZ_SCHEMA,
+        new SszBytes32(currentRoot),
+        new SszBytes32(nextRoot),
+        new SszUInt64(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

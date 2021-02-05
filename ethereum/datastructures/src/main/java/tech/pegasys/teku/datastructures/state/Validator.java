@@ -41,7 +41,7 @@ public class Validator
         SszUInt64,
         SszUInt64> {
 
-  public static class ValidatorType
+  public static class ValidatorSchema
       extends ContainerSchema8<
           Validator,
           SszVector<SszByte>,
@@ -53,7 +53,7 @@ public class Validator
           SszUInt64,
           SszUInt64> {
 
-    public ValidatorType() {
+    public ValidatorSchema() {
       super(
           "Validator",
           namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
@@ -72,9 +72,9 @@ public class Validator
     }
   }
 
-  public static final ValidatorType SSZ_SCHEMA = new ValidatorType();
+  public static final ValidatorSchema SSZ_SCHEMA = new ValidatorSchema();
 
-  private Validator(ValidatorType type, TreeNode backingNode) {
+  private Validator(ValidatorSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

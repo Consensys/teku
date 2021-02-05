@@ -23,9 +23,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class PingMessage extends Container1<PingMessage, SszUInt64> implements RpcRequest {
 
-  static class PingMessageType extends ContainerSchema1<PingMessage, SszUInt64> {
+  static class PingMessageSchema extends ContainerSchema1<PingMessage, SszUInt64> {
 
-    public PingMessageType() {
+    public PingMessageSchema() {
       super("PingMessage", namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
@@ -35,9 +35,9 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
     }
   }
 
-  public static final PingMessageType SSZ_SCHEMA = new PingMessageType();
+  public static final PingMessageSchema SSZ_SCHEMA = new PingMessageSchema();
 
-  public PingMessage(PingMessageType type, TreeNode backingNode) {
+  public PingMessage(PingMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -50,7 +50,7 @@ public class BeaconBlockBody
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>> {
 
-  public static class BeaconBlockBodyType
+  public static class BeaconBlockBodySchema
       extends ContainerSchema8<
           BeaconBlockBody,
           SszVector<SszByte>,
@@ -62,7 +62,7 @@ public class BeaconBlockBody
           SszList<Deposit>,
           SszList<SignedVoluntaryExit>> {
 
-    public BeaconBlockBodyType() {
+    public BeaconBlockBodySchema() {
       super(
           "BeaconBlockBody",
           namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
@@ -75,30 +75,31 @@ public class BeaconBlockBody
               "attester_slashings",
               new SszListSchema<>(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
           namedSchema(
-              "attestations", new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
+              "attestations",
+              new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
           namedSchema("deposits", new SszListSchema<>(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
           namedSchema(
               "voluntary_exits",
               new SszListSchema<>(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    public SszListSchema<ProposerSlashing> getProposerSlashingsType() {
+    public SszListSchema<ProposerSlashing> getProposerSlashingsSchema() {
       return (SszListSchema<ProposerSlashing>) getFieldSchema3();
     }
 
-    public SszListSchema<AttesterSlashing> getAttesterSlashingsType() {
+    public SszListSchema<AttesterSlashing> getAttesterSlashingsSchema() {
       return (SszListSchema<AttesterSlashing>) getFieldSchema4();
     }
 
-    public SszListSchema<Attestation> getAttestationsType() {
+    public SszListSchema<Attestation> getAttestationsSchema() {
       return (SszListSchema<Attestation>) getFieldSchema5();
     }
 
-    public SszListSchema<Deposit> getDepositsType() {
+    public SszListSchema<Deposit> getDepositsSchema() {
       return (SszListSchema<Deposit>) getFieldSchema6();
     }
 
-    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsType() {
+    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsSchema() {
       return (SszListSchema<SignedVoluntaryExit>) getFieldSchema7();
     }
 
@@ -108,16 +109,16 @@ public class BeaconBlockBody
     }
   }
 
-  public static BeaconBlockBodyType getSszType() {
+  public static BeaconBlockBodySchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<BeaconBlockBodyType> SSZ_SCHEMA =
-      SpecDependent.of(BeaconBlockBodyType::new);
+  public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockBodySchema::new);
 
   private BLSSignature randaoRevealCache;
 
-  private BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
+  private BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -145,7 +146,7 @@ public class BeaconBlockBody
   }
 
   public BeaconBlockBody(
-      BeaconBlockBodyType type,
+      BeaconBlockBodySchema type,
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
@@ -159,11 +160,11 @@ public class BeaconBlockBody
         SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
         eth1_data,
         new SszBytes32(graffiti),
-        SszUtils.toSszList(type.getProposerSlashingsType(), proposer_slashings),
-        SszUtils.toSszList(type.getAttesterSlashingsType(), attester_slashings),
-        SszUtils.toSszList(type.getAttestationsType(), attestations),
-        SszUtils.toSszList(type.getDepositsType(), deposits),
-        SszUtils.toSszList(type.getVoluntaryExitsType(), voluntary_exits));
+        SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
+        SszUtils.toSszList(type.getAttesterSlashingsSchema(), attester_slashings),
+        SszUtils.toSszList(type.getAttestationsSchema(), attestations),
+        SszUtils.toSszList(type.getDepositsSchema(), deposits),
+        SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 

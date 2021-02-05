@@ -40,14 +40,8 @@ public class SszTestUtils {
         return false;
       }
       for (int i = 0; i < c1.size(); i++) {
-        if (c1.get(i) instanceof SszData) {
-          if (!equalsByGetters((SszData) c1.get(i), (SszData) c2.get(i))) {
-            return false;
-          }
-        } else {
-          if (!c1.equals(c2)) {
-            return false;
-          }
+        if (!equalsByGetters((SszData) c1.get(i), (SszData) c2.get(i))) {
+          return false;
         }
       }
       return true;

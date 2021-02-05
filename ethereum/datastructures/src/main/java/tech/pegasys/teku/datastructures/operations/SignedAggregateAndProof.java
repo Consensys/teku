@@ -25,10 +25,10 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
-  public static class SignedAggregateAndProofType
+  public static class SignedAggregateAndProofSchema
       extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
 
-    public SignedAggregateAndProofType() {
+    public SignedAggregateAndProofSchema() {
       super(
           "SignedAggregateAndProof",
           namedSchema("message", AggregateAndProof.SSZ_SCHEMA),
@@ -41,11 +41,12 @@ public class SignedAggregateAndProof
     }
   }
 
-  public static final SignedAggregateAndProofType SSZ_SCHEMA = new SignedAggregateAndProofType();
+  public static final SignedAggregateAndProofSchema SSZ_SCHEMA =
+      new SignedAggregateAndProofSchema();
 
   private BLSSignature signatureCache;
 
-  private SignedAggregateAndProof(SignedAggregateAndProofType type, TreeNode backingNode) {
+  private SignedAggregateAndProof(SignedAggregateAndProofSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -119,14 +119,16 @@ public interface BeaconState extends SszContainer {
           "previous_epoch_attestations",
           () ->
               new SszListSchema<>(
-                  PendingAttestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  PendingAttestation.SSZ_SCHEMA,
+                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           16,
           "current_epoch_attestations",
           () ->
               new SszListSchema<>(
-                  PendingAttestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  PendingAttestation.SSZ_SCHEMA,
+                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
           17,
@@ -136,17 +138,18 @@ public interface BeaconState extends SszContainer {
       new SszField(18, "previous_justified_checkpoint", Checkpoint.SSZ_SCHEMA);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
       new SszField(19, "current_justified_checkpoint_field", Checkpoint.SSZ_SCHEMA);
-  SszField FINALIZED_CHECKPOINT_FIELD = new SszField(20, "finalized_checkpoint", Checkpoint.SSZ_SCHEMA);
+  SszField FINALIZED_CHECKPOINT_FIELD =
+      new SszField(20, "finalized_checkpoint", Checkpoint.SSZ_SCHEMA);
 
-  SpecDependent<BeaconStateType> SSZ_SCHEMA = SpecDependent.of(BeaconStateType::new);
+  SpecDependent<BeaconStateSchema> SSZ_SCHEMA = SpecDependent.of(BeaconStateSchema::new);
 
-  static BeaconStateType getSszType() {
+  static BeaconStateSchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }
 
-  class BeaconStateType extends SszContainerSchema<BeaconState> {
+  class BeaconStateSchema extends SszContainerSchema<BeaconState> {
 
-    public BeaconStateType() {
+    public BeaconStateSchema() {
       super(
           "BeaconState",
           Stream.of(
@@ -171,7 +174,7 @@ public interface BeaconState extends SszContainer {
                   PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD,
                   CURRENT_JUSTIFIED_CHECKPOINT_FIELD,
                   FINALIZED_CHECKPOINT_FIELD)
-              .map(f -> namedSchema(f.getName(), f.getViewType().get()))
+              .map(f -> namedSchema(f.getName(), f.getSchema().get()))
               .collect(Collectors.toList()));
     }
 

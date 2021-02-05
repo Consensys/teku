@@ -26,10 +26,10 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class SignedVoluntaryExit
     extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
-  public static class SignedVoluntaryExitType
+  public static class SignedVoluntaryExitSchema
       extends ContainerSchema2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
-    public SignedVoluntaryExitType() {
+    public SignedVoluntaryExitSchema() {
       super(
           "SignedVoluntaryExit",
           namedSchema("message", VoluntaryExit.SSZ_SCHEMA),
@@ -42,11 +42,11 @@ public class SignedVoluntaryExit
     }
   }
 
-  public static final SignedVoluntaryExitType SSZ_SCHEMA = new SignedVoluntaryExitType();
+  public static final SignedVoluntaryExitSchema SSZ_SCHEMA = new SignedVoluntaryExitSchema();
 
   private BLSSignature signatureCache;
 
-  private SignedVoluntaryExit(SignedVoluntaryExitType type, TreeNode backingNode) {
+  private SignedVoluntaryExit(SignedVoluntaryExitSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

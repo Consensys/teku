@@ -29,10 +29,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositData> {
 
-  public static class DepositType
+  public static class DepositSchema
       extends ContainerSchema2<Deposit, SszVector<SszBytes32>, DepositData> {
 
-    public DepositType() {
+    public DepositSchema() {
       super(
           "Deposit",
           namedSchema(
@@ -42,7 +42,7 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
           namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 
-    public SszVectorSchema<SszBytes32> getProofType() {
+    public SszVectorSchema<SszBytes32> getProofSchema() {
       return (SszVectorSchema<SszBytes32>) getFieldSchema0();
     }
 
@@ -52,17 +52,20 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
     }
   }
 
-  public static final DepositType SSZ_SCHEMA = new DepositType();
+  public static final DepositSchema SSZ_SCHEMA = new DepositSchema();
 
   private static final SSZVector<Bytes32> EMPTY_PROOF =
-      SSZVector.createMutable(SSZ_SCHEMA.getProofType().getLength(), Bytes32.ZERO);
+      SSZVector.createMutable(SSZ_SCHEMA.getProofSchema().getLength(), Bytes32.ZERO);
 
-  private Deposit(DepositType type, TreeNode backingNode) {
+  private Deposit(DepositSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(SSZ_SCHEMA, SszUtils.toSszVector(SSZ_SCHEMA.getProofType(), proof, SszBytes32::new), data);
+    super(
+        SSZ_SCHEMA,
+        SszUtils.toSszVector(SSZ_SCHEMA.getProofSchema(), proof, SszBytes32::new),
+        data);
   }
 
   public Deposit() {

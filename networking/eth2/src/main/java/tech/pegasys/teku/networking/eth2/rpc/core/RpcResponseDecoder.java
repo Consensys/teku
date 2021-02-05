@@ -38,11 +38,11 @@ public class RpcResponseDecoder<T extends SszData> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
-  private final SszSchema<T> responseType;
+  private final SszSchema<T> responseSchema;
   private final RpcEncoding encoding;
 
-  public RpcResponseDecoder(SszSchema<T> responseType, RpcEncoding encoding) {
-    this.responseType = responseType;
+  public RpcResponseDecoder(SszSchema<T> responseSchema, RpcEncoding encoding) {
+    this.responseSchema = responseSchema;
     this.encoding = encoding;
   }
 
@@ -72,7 +72,7 @@ public class RpcResponseDecoder<T extends SszData> {
 
     if (respCode == SUCCESS_RESPONSE_CODE) {
       if (payloadDecoder.isEmpty()) {
-        payloadDecoder = Optional.of(encoding.createDecoder(responseType));
+        payloadDecoder = Optional.of(encoding.createDecoder(responseSchema));
       }
       Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
       if (ret.isPresent()) {

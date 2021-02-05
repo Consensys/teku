@@ -60,7 +60,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/block_header",
               new OperationsTestExecutor<>(
-                  "block.ssz", BeaconBlock.getSszType(), BlockProcessorUtil::process_block_header))
+                  "block.ssz",
+                  BeaconBlock.getSszSchema(),
+                  BlockProcessorUtil::process_block_header))
           .put(
               "operations/deposit",
               new OperationsTestExecutor<>(

@@ -26,8 +26,8 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
   private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
       new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, 0);
 
-  public static class EmptyMessageType extends AbstractDelegateSszSchema<EmptyMessage> {
-    private EmptyMessageType() {
+  public static class EmptyMessageSchema extends AbstractDelegateSszSchema<EmptyMessage> {
+    private EmptyMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -37,7 +37,7 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
     }
   }
 
-  public static final EmptyMessageType SSZ_SCHEMA = new EmptyMessageType();
+  public static final EmptyMessageSchema SSZ_SCHEMA = new EmptyMessageSchema();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   private EmptyMessage() {

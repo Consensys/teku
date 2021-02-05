@@ -30,10 +30,10 @@ public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
     implements BeaconBlockSummary {
 
-  public static class SignedBeaconBlockType
+  public static class SignedBeaconBlockSchema
       extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
 
-    public SignedBeaconBlockType() {
+    public SignedBeaconBlockSchema() {
       super(
           "SignedBeaconBlock",
           namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
@@ -46,16 +46,16 @@ public class SignedBeaconBlock
     }
   }
 
-  public static SignedBeaconBlockType getSszType() {
+  public static SignedBeaconBlockSchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<SignedBeaconBlockType> SSZ_SCHEMA =
-      SpecDependent.of(SignedBeaconBlockType::new);
+  public static final SpecDependent<SignedBeaconBlockSchema> SSZ_SCHEMA =
+      SpecDependent.of(SignedBeaconBlockSchema::new);
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlock(SignedBeaconBlockType type, TreeNode backingNode) {
+  private SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -65,7 +65,7 @@ public class SignedBeaconBlock
   }
 
   public SignedBeaconBlock(
-      final SignedBeaconBlockType type, final BeaconBlock message, final BLSSignature signature) {
+      final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
     super(type, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }

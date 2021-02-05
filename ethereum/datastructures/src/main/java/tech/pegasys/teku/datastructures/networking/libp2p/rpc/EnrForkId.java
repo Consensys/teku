@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static class EnrForkIdType
+  public static class EnrForkIdSchema
       extends ContainerSchema3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-    public EnrForkIdType() {
+    public EnrForkIdSchema() {
       super(
           "EnrForkId",
           namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
@@ -41,9 +41,9 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
     }
   }
 
-  public static final EnrForkIdType SSZ_SCHEMA = new EnrForkIdType();
+  public static final EnrForkIdSchema SSZ_SCHEMA = new EnrForkIdSchema();
 
-  private EnrForkId(EnrForkIdType type, TreeNode backingNode) {
+  private EnrForkId(EnrForkIdSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

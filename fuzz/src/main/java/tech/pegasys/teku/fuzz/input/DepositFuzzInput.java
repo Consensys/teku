@@ -21,8 +21,9 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createType() {
-    return ContainerSchema2.create(BeaconState.getSszType(), Deposit.SSZ_SCHEMA, DepositFuzzInput::new);
+  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema() {
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), Deposit.SSZ_SCHEMA, DepositFuzzInput::new);
   }
 
   public DepositFuzzInput(
@@ -31,12 +32,12 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
   }
 
   public DepositFuzzInput(final BeaconState state, final Deposit deposit) {
-    super(createType(), state, deposit);
+    super(createSchema(), state, deposit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public DepositFuzzInput() {
-    super(createType());
+    super(createSchema());
   }
 
   public Deposit getDeposit() {

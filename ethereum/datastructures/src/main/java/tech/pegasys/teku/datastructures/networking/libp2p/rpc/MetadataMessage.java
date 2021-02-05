@@ -32,10 +32,10 @@ import tech.pegasys.teku.util.config.Constants;
 public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszVector<SszBit>>
     implements RpcRequest {
 
-  public static class MetadataMessageType
+  public static class MetadataMessageSchema
       extends ContainerSchema2<MetadataMessage, SszUInt64, SszVector<SszBit>> {
 
-    public MetadataMessageType() {
+    public MetadataMessageSchema() {
       super(
           "MetadataMessage",
           namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -48,12 +48,12 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
     }
   }
 
-  public static final MetadataMessageType SSZ_SCHEMA = new MetadataMessageType();
+  public static final MetadataMessageSchema SSZ_SCHEMA = new MetadataMessageSchema();
   public static final MetadataMessage DEFAULT = new MetadataMessage();
 
   private Bitvector attnetsCache;
 
-  private MetadataMessage(MetadataMessageType type, TreeNode backingNode) {
+  private MetadataMessage(MetadataMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

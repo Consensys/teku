@@ -73,7 +73,8 @@ public class ForkChoiceTestExecutor {
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
-            resolvePart(BeaconState.class, BeaconState.getSszType(), file, content.get("genesis"));
+            resolvePart(
+                BeaconState.class, BeaconState.getSszSchema(), file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
@@ -111,7 +112,8 @@ public class ForkChoiceTestExecutor {
         }
       case block:
         {
-          return resolvePart(SignedBeaconBlock.class, SignedBeaconBlock.SSZ_SCHEMA.get(), file, value);
+          return resolvePart(
+              SignedBeaconBlock.class, SignedBeaconBlock.SSZ_SCHEMA.get(), file, value);
         }
       case attestation:
         {

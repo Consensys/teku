@@ -58,7 +58,8 @@ public class SszSnappyGossipEncodingTest {
     final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
 
     final Bytes encoded = encoding.encode(original);
-    final SignedAggregateAndProof decoded = decode(encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
+    final SignedAggregateAndProof decoded =
+        decode(encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -116,7 +117,8 @@ public class SszSnappyGossipEncodingTest {
 
   @Test
   public void decode_rejectMessageShorterThanValidLength() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.of(1, 2, 3), SignedBeaconBlock.SSZ_SCHEMA.get()))
+    assertThatThrownBy(
+            () -> decode(encoding, Bytes.of(1, 2, 3), SignedBeaconBlock.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 

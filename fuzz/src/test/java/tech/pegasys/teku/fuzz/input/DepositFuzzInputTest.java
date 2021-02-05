@@ -21,7 +21,7 @@ public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput
 
   @Override
   protected SszSchema<DepositFuzzInput> getInputType() {
-    return DepositFuzzInput.createType();
+    return DepositFuzzInput.createSchema();
   }
 
   @Override

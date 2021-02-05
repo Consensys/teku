@@ -42,7 +42,8 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
     final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
     final List<Deposit> deposits =
         IntStream.range(0, metaData.getDepositsCount())
-            .mapToObj(index -> loadSsz(testDefinition, "deposits_" + index + ".ssz", Deposit.SSZ_SCHEMA))
+            .mapToObj(
+                index -> loadSsz(testDefinition, "deposits_" + index + ".ssz", Deposit.SSZ_SCHEMA))
             .collect(Collectors.toList());
 
     final BeaconState result =

@@ -27,9 +27,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
 
-  public static class CheckpointType extends ContainerSchema2<Checkpoint, SszUInt64, SszBytes32> {
+  public static class CheckpointSchema extends ContainerSchema2<Checkpoint, SszUInt64, SszBytes32> {
 
-    public CheckpointType() {
+    public CheckpointSchema() {
       super(
           "Checkpoint",
           namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -42,9 +42,9 @@ public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
     }
   }
 
-  public static final CheckpointType SSZ_SCHEMA = new CheckpointType();
+  public static final CheckpointSchema SSZ_SCHEMA = new CheckpointSchema();
 
-  private Checkpoint(CheckpointType type, TreeNode backingNode) {
+  private Checkpoint(CheckpointSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

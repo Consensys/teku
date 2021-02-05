@@ -27,11 +27,11 @@ public class BeaconBlockHeader
     extends Container5<BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
     implements BeaconBlockSummary {
 
-  public static class BeaconBlockHeaderType
+  public static class BeaconBlockHeaderSchema
       extends ContainerSchema5<
           BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32> {
 
-    public BeaconBlockHeaderType() {
+    public BeaconBlockHeaderSchema() {
       super(
           "BeaconBlockHeader",
           namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -47,9 +47,9 @@ public class BeaconBlockHeader
     }
   }
 
-  public static final BeaconBlockHeaderType SSZ_SCHEMA = new BeaconBlockHeaderType();
+  public static final BeaconBlockHeaderSchema SSZ_SCHEMA = new BeaconBlockHeaderSchema();
 
-  private BeaconBlockHeader(BeaconBlockHeaderType type, TreeNode backingNode) {
+  private BeaconBlockHeader(BeaconBlockHeaderSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

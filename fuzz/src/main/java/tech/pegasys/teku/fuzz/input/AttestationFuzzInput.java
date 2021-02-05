@@ -22,9 +22,9 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createType() {
+  public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createSchema() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), Attestation.SSZ_SCHEMA, AttestationFuzzInput::new);
+        BeaconState.getSszSchema(), Attestation.SSZ_SCHEMA, AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
@@ -33,12 +33,12 @@ public class AttestationFuzzInput
   }
 
   public AttestationFuzzInput(final BeaconState state, final Attestation attestation) {
-    super(createType(), state, attestation);
+    super(createSchema(), state, attestation);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public AttestationFuzzInput() {
-    super(createType());
+    super(createSchema());
   }
 
   public Attestation getAttestation() {

@@ -31,10 +31,10 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
   private static final SszListSchema<SszBytes32> LIST_VIEW_TYPE =
       new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
 
-  public static class BeaconBlocksByRootRequestMessageType
+  public static class BeaconBlocksByRootRequestMessageSchema
       extends AbstractDelegateSszSchema<BeaconBlocksByRootRequestMessage> {
 
-    private BeaconBlocksByRootRequestMessageType() {
+    private BeaconBlocksByRootRequestMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -44,8 +44,8 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     }
   }
 
-  public static final BeaconBlocksByRootRequestMessageType SSZ_SCHEMA =
-      new BeaconBlocksByRootRequestMessageType();
+  public static final BeaconBlocksByRootRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRootRequestMessageSchema();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
     super(SszUtils.toSszList(LIST_VIEW_TYPE, roots, SszBytes32::new));

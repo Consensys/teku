@@ -62,7 +62,8 @@ public class TestContainers {
 
     public static final SszContainerSchema<TestContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
-            List.of(TestSubContainer.SSZ_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA), TestContainer::new);
+            List.of(TestSubContainer.SSZ_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
+            TestContainer::new);
 
     private TestContainer(SszContainerSchema<TestContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -116,7 +117,8 @@ public class TestContainers {
     }
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
-      super(SSZ_SCHEMA, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
+      super(
+          SSZ_SCHEMA, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
     }
   }
 
@@ -139,7 +141,13 @@ public class TestContainers {
 
     public TestDoubleSuperContainer(
         long l1, TestByteVectorContainer c1, long l2, TestByteVectorContainer c2, long l3) {
-      super(SSZ_SCHEMA, SszUInt64.fromLong(l1), c1, SszUInt64.fromLong(l2), c2, SszUInt64.fromLong(l3));
+      super(
+          SSZ_SCHEMA,
+          SszUInt64.fromLong(l1),
+          c1,
+          SszUInt64.fromLong(l2),
+          c2,
+          SszUInt64.fromLong(l3));
     }
   }
 

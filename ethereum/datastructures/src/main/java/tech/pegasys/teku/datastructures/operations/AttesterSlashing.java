@@ -27,10 +27,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
-  public static class AttesterSlashingType
+  public static class AttesterSlashingSchema
       extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
-    public AttesterSlashingType() {
+    public AttesterSlashingSchema() {
       super(
           "AttesterSlashing",
           namedSchema("attestation_1", IndexedAttestation.SSZ_SCHEMA),
@@ -43,7 +43,7 @@ public class AttesterSlashing
     }
   }
 
-  public static final AttesterSlashingType SSZ_SCHEMA = new AttesterSlashingType();
+  public static final AttesterSlashingSchema SSZ_SCHEMA = new AttesterSlashingSchema();
 
   private final Supplier<Set<UInt64>> intersectingIndices =
       Suppliers.memoize(
@@ -55,7 +55,7 @@ public class AttesterSlashing
                           .asList()), // TreeSet as must be sorted
                   new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
 
-  private AttesterSlashing(AttesterSlashingType type, TreeNode backingNode) {
+  private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

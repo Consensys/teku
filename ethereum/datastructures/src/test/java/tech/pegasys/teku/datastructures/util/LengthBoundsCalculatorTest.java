@@ -88,7 +88,8 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(BeaconBlock.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(304, 157656)),
         Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(220, 157572)),
         Arguments.of(BeaconBlockHeader.SSZ_SCHEMA, SszLengthBounds.ofBytes(112, 112)),
-        Arguments.of(BeaconState.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(2687377, 141837543039377L)),
+        Arguments.of(
+            BeaconState.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(2687377, 141837543039377L)),
         Arguments.of(Checkpoint.SSZ_SCHEMA, SszLengthBounds.ofBytes(40, 40)),
         Arguments.of(Deposit.SSZ_SCHEMA, SszLengthBounds.ofBytes(1240, 1240)),
         Arguments.of(DepositData.SSZ_SCHEMA, SszLengthBounds.ofBytes(184, 184)),
@@ -109,6 +110,7 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(MetadataMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
         Arguments.of(StatusMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(84, 84)),
         Arguments.of(GoodbyeMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(8, 8)),
-        Arguments.of(BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(24, 24)));
+        Arguments.of(
+            BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(24, 24)));
   }
 }

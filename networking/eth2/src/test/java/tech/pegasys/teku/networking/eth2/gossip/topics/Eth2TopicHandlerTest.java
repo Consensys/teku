@@ -211,7 +211,12 @@ public class Eth2TopicHandlerTest {
     protected MockEth2TopicHandler(
         final AsyncRunner asyncRunner, OperationProcessor<SignedBeaconBlock> processor) {
       super(
-          asyncRunner, processor, gossipEncoding, forkDigest, "test", SignedBeaconBlock.SSZ_SCHEMA.get());
+          asyncRunner,
+          processor,
+          gossipEncoding,
+          forkDigest,
+          "test",
+          SignedBeaconBlock.SSZ_SCHEMA.get());
     }
 
     public void setDeserializer(final Deserializer<SignedBeaconBlock> deserializer) {

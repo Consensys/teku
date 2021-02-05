@@ -36,7 +36,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
   private final TransitionCaches transitionCaches;
 
   public BeaconStateImpl() {
-    super(BeaconState.getSszType());
+    super(BeaconState.getSszSchema());
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
@@ -93,7 +93,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       Checkpoint finalized_checkpoint) {
 
     super(
-        BeaconState.getSszType(),
+        BeaconState.getSszSchema(),
         BeaconState.create(
                 genesis_time,
                 genesis_validators_root,

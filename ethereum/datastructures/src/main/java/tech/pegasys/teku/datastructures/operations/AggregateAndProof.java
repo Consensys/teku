@@ -28,10 +28,10 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class AggregateAndProof
     extends Container3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-  public static class AggregateAndProofType
+  public static class AggregateAndProofSchema
       extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-    public AggregateAndProofType() {
+    public AggregateAndProofSchema() {
       super(
           "AggregateAndProof",
           namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -45,11 +45,11 @@ public class AggregateAndProof
     }
   }
 
-  public static final AggregateAndProofType SSZ_SCHEMA = new AggregateAndProofType();
+  public static final AggregateAndProofSchema SSZ_SCHEMA = new AggregateAndProofSchema();
 
   private BLSSignature selectionProofCache;
 
-  private AggregateAndProof(AggregateAndProofType type, TreeNode backingNode) {
+  private AggregateAndProof(AggregateAndProofSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

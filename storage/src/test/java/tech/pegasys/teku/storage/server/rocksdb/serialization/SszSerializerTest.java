@@ -26,9 +26,9 @@ public class SszSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final SszSerializer<SignedBeaconBlock> blockSerializer =
-      new SszSerializer<>(SignedBeaconBlock.getSszType());
+      new SszSerializer<>(SignedBeaconBlock.getSszSchema());
   private final SszSerializer<BeaconState> stateSerializer =
-      new SszSerializer<>(BeaconState.getSszType());
+      new SszSerializer<>(BeaconState.getSszSchema());
   private final SszSerializer<Checkpoint> checkpointSerializer =
       new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
 

@@ -162,12 +162,12 @@ public class TransitionCommand implements Runnable {
   }
 
   private BeaconState readState(final Bytes inData) {
-    return deserialize(inData, BeaconState.getSszType(), "pre state");
+    return deserialize(inData, BeaconState.getSszSchema(), "pre state");
   }
 
   private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return deserialize(blockData, SignedBeaconBlock.getSszType(), path);
+    return deserialize(blockData, SignedBeaconBlock.getSszSchema(), path);
   }
 
   private <T extends SszData> T deserialize(

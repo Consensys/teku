@@ -29,11 +29,11 @@ public final class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary {
 
-  public static class BeaconBlockType
+  public static class BeaconBlockSchema
       extends ContainerSchema5<
           BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
 
-    public BeaconBlockType() {
+    public BeaconBlockSchema() {
       super(
           "BeaconBlock",
           namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -59,13 +59,14 @@ public final class BeaconBlock
     }
   }
 
-  public static BeaconBlockType getSszType() {
+  public static BeaconBlockSchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<BeaconBlockType> SSZ_SCHEMA = SpecDependent.of(BeaconBlockType::new);
+  public static final SpecDependent<BeaconBlockSchema> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockSchema::new);
 
-  private BeaconBlock(BeaconBlockType type, TreeNode backingNode) {
+  private BeaconBlock(BeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -80,7 +81,7 @@ public final class BeaconBlock
   }
 
   public BeaconBlock(
-      BeaconBlockType type,
+      BeaconBlockSchema type,
       UInt64 slot,
       UInt64 proposer_index,
       Bytes32 parent_root,
@@ -112,8 +113,8 @@ public final class BeaconBlock
   }
 
   @Override
-  public BeaconBlockType getSchema() {
-    return (BeaconBlockType) super.getSchema();
+  public BeaconBlockSchema getSchema() {
+    return (BeaconBlockSchema) super.getSchema();
   }
 
   @Override

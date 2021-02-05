@@ -47,7 +47,7 @@ public class SszField {
     return name;
   }
 
-  public Supplier<SszSchema<?>> getViewType() {
+  public Supplier<SszSchema<?>> getSchema() {
     return viewType;
   }
 }

@@ -23,9 +23,9 @@ public class VoluntaryExitFuzzInput
     extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> {
 
   public static ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-      createType() {
+      createSchema() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), SignedVoluntaryExit.SSZ_SCHEMA, VoluntaryExitFuzzInput::new);
+        BeaconState.getSszSchema(), SignedVoluntaryExit.SSZ_SCHEMA, VoluntaryExitFuzzInput::new);
   }
 
   public VoluntaryExitFuzzInput(
@@ -35,12 +35,12 @@ public class VoluntaryExitFuzzInput
   }
 
   public VoluntaryExitFuzzInput(final BeaconState state, final SignedVoluntaryExit exit) {
-    super(createType(), state, exit);
+    super(createSchema(), state, exit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public VoluntaryExitFuzzInput() {
-    super(createType());
+    super(createSchema());
   }
 
   public SignedVoluntaryExit getExit() {

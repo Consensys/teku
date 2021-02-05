@@ -22,10 +22,10 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
 public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {
 
-  public static class SigningDataType
+  public static class SigningDataSchema
       extends ContainerSchema2<SigningData, SszBytes32, SszBytes32> {
 
-    public SigningDataType() {
+    public SigningDataSchema() {
       super(
           "SigningData",
           namedSchema("object_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -38,9 +38,9 @@ public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32>
     }
   }
 
-  public static final SigningDataType SSZ_SCHEMA = new SigningDataType();
+  public static final SigningDataSchema SSZ_SCHEMA = new SigningDataSchema();
 
-  private SigningData(SigningDataType type, TreeNode backingNode) {
+  private SigningData(SigningDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

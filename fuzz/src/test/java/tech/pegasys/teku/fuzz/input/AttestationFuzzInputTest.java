@@ -21,7 +21,7 @@ public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationF
 
   @Override
   protected SszSchema<AttestationFuzzInput> getInputType() {
-    return AttestationFuzzInput.createType();
+    return AttestationFuzzInput.createSchema();
   }
 
   @Override

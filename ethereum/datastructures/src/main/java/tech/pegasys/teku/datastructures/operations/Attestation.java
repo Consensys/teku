@@ -34,10 +34,10 @@ import tech.pegasys.teku.util.config.Constants;
 public class Attestation
     extends Container3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
-  public static class AttestationType
+  public static class AttestationSchema
       extends ContainerSchema3<Attestation, SszList<SszBit>, AttestationData, SszVector<SszByte>> {
 
-    public AttestationType() {
+    public AttestationSchema() {
       super(
           "Attestation",
           namedSchema(
@@ -46,7 +46,7 @@ public class Attestation
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public SszBitListSchema getAggregationBitsType() {
+    public SszBitListSchema getAggregationBitsSchema() {
       return (SszBitListSchema) getFieldSchema0();
     }
 
@@ -56,19 +56,19 @@ public class Attestation
     }
   }
 
-  public static final AttestationType SSZ_SCHEMA = new AttestationType();
+  public static final AttestationSchema SSZ_SCHEMA = new AttestationSchema();
 
   private Bitlist aggregationBitsCache;
   private BLSSignature signatureCache;
 
-  private Attestation(AttestationType type, TreeNode backingNode) {
+  private Attestation(AttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
     super(
         SSZ_SCHEMA,
-        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitsType(), aggregation_bits),
+        SszUtils.toSszBitList(SSZ_SCHEMA.getAggregationBitsSchema(), aggregation_bits),
         data,
         SszUtils.toSszByteVector(signature.toBytesCompressed()));
     aggregationBitsCache = aggregation_bits;

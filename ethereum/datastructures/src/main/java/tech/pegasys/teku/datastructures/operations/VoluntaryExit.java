@@ -22,10 +22,10 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-  public static class VoluntaryExitType
+  public static class VoluntaryExitSchema
       extends ContainerSchema2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-    public VoluntaryExitType() {
+    public VoluntaryExitSchema() {
       super(
           "VoluntaryExit",
           namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -38,9 +38,9 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
     }
   }
 
-  public static final VoluntaryExitType SSZ_SCHEMA = new VoluntaryExitType();
+  public static final VoluntaryExitSchema SSZ_SCHEMA = new VoluntaryExitSchema();
 
-  private VoluntaryExit(VoluntaryExitType type, TreeNode backingNode) {
+  private VoluntaryExit(VoluntaryExitSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

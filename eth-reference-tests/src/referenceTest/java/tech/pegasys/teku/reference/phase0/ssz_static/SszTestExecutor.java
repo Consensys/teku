@@ -78,18 +78,23 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/Fork", new SszTestExecutor<>(Fork.SSZ_SCHEMA))
           .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.SSZ_SCHEMA))
           .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.SSZ_SCHEMA))
-          .put("ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.SSZ_SCHEMA))
-          .put("ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.SSZ_SCHEMA))
+          .put(
+              "ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.SSZ_SCHEMA))
+          .put(
+              "ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.SSZ_SCHEMA))
           .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.SSZ_SCHEMA))
           .put(
               "ssz_static/SignedAggregateAndProof",
               new SszTestExecutor<>(SignedAggregateAndProof.SSZ_SCHEMA))
           .put(
-              "ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.getSszType()))
+              "ssz_static/SignedBeaconBlock",
+              new SszTestExecutor<>(SignedBeaconBlock.getSszSchema()))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutor<>(SignedBeaconBlockHeader.SSZ_SCHEMA))
-          .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedVoluntaryExit",
+              new SszTestExecutor<>(SignedVoluntaryExit.SSZ_SCHEMA))
           .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.SSZ_SCHEMA))
           .put("ssz_static/Validator", new SszTestExecutor<>(Validator.SSZ_SCHEMA))
           .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.SSZ_SCHEMA))

@@ -32,11 +32,11 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class DepositData
     extends Container4<DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
 
-  public static class DepositDataType
+  public static class DepositDataSchema
       extends ContainerSchema4<
           DepositData, SszVector<SszByte>, SszBytes32, SszUInt64, SszVector<SszByte>> {
 
-    public DepositDataType() {
+    public DepositDataSchema() {
       super(
           "DepositData",
           namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
@@ -51,12 +51,12 @@ public class DepositData
     }
   }
 
-  public static final DepositDataType SSZ_SCHEMA = new DepositDataType();
+  public static final DepositDataSchema SSZ_SCHEMA = new DepositDataSchema();
 
   private BLSSignature signatureCache;
   private BLSPublicKey pubkeyCache;
 
-  private DepositData(DepositDataType type, TreeNode backingNode) {
+  private DepositData(DepositDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

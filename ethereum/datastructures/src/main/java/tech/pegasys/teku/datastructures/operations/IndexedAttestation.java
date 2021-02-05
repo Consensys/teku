@@ -35,11 +35,11 @@ public class IndexedAttestation
     extends Container3<
         IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-  public static class IndexedAttestationType
+  public static class IndexedAttestationSchema
       extends ContainerSchema3<
           IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-    public IndexedAttestationType() {
+    public IndexedAttestationSchema() {
       super(
           "IndexedAttestation",
           namedSchema(
@@ -50,7 +50,7 @@ public class IndexedAttestation
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public SszListSchema<SszUInt64> getAttestingIndicesType() {
+    public SszListSchema<SszUInt64> getAttestingIndicesSchema() {
       return (SszListSchema<SszUInt64>) getFieldSchema0();
     }
 
@@ -60,11 +60,11 @@ public class IndexedAttestation
     }
   }
 
-  public static final IndexedAttestationType SSZ_SCHEMA = new IndexedAttestationType();
+  public static final IndexedAttestationSchema SSZ_SCHEMA = new IndexedAttestationSchema();
 
   private BLSSignature signatureCache;
 
-  private IndexedAttestation(IndexedAttestationType type, TreeNode backingNode) {
+  private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -72,7 +72,8 @@ public class IndexedAttestation
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
         SSZ_SCHEMA,
-        SszUtils.toSszList(SSZ_SCHEMA.getAttestingIndicesType(), attesting_indices, SszUInt64::new),
+        SszUtils.toSszList(
+            SSZ_SCHEMA.getAttestingIndicesSchema(), attesting_indices, SszUInt64::new),
         data,
         SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;

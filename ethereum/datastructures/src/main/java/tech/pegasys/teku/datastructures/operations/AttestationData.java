@@ -26,11 +26,11 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class AttestationData
     extends Container5<AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
-  public static class AttestationDataType
+  public static class AttestationDataSchema
       extends ContainerSchema5<
           AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
-    public AttestationDataType() {
+    public AttestationDataSchema() {
       super(
           "AttestationData",
           namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -46,9 +46,9 @@ public class AttestationData
     }
   }
 
-  public static final AttestationDataType SSZ_SCHEMA = new AttestationDataType();
+  public static final AttestationDataSchema SSZ_SCHEMA = new AttestationDataSchema();
 
-  private AttestationData(AttestationDataType type, TreeNode backingNode) {
+  private AttestationData(AttestationDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

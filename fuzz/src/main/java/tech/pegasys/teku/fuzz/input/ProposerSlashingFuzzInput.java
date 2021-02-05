@@ -25,7 +25,7 @@ public class ProposerSlashingFuzzInput
   public static ContainerSchema2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing>
       createType() {
     return ContainerSchema2.create(
-        BeaconState.getSszType(), ProposerSlashing.SSZ_SCHEMA, ProposerSlashingFuzzInput::new);
+        BeaconState.getSszSchema(), ProposerSlashing.SSZ_SCHEMA, ProposerSlashingFuzzInput::new);
   }
 
   public ProposerSlashingFuzzInput(

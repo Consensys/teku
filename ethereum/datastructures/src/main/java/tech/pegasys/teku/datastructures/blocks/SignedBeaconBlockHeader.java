@@ -25,10 +25,10 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class SignedBeaconBlockHeader
     extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
 
-  public static class SignedBeaconBlockHeaderType
+  public static class SignedBeaconBlockHeaderSchema
       extends ContainerSchema2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
 
-    public SignedBeaconBlockHeaderType() {
+    public SignedBeaconBlockHeaderSchema() {
       super(
           "SignedBeaconBlockHeader",
           namedSchema("message", BeaconBlockHeader.SSZ_SCHEMA),
@@ -41,11 +41,12 @@ public class SignedBeaconBlockHeader
     }
   }
 
-  public static final SignedBeaconBlockHeaderType SSZ_SCHEMA = new SignedBeaconBlockHeaderType();
+  public static final SignedBeaconBlockHeaderSchema SSZ_SCHEMA =
+      new SignedBeaconBlockHeaderSchema();
 
   private BLSSignature signatureCache;
 
-  private SignedBeaconBlockHeader(SignedBeaconBlockHeaderType type, TreeNode backingNode) {
+  private SignedBeaconBlockHeader(SignedBeaconBlockHeaderSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

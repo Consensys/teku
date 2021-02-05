@@ -24,9 +24,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static class ForkType extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
+  public static class ForkSchema extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-    public ForkType() {
+    public ForkSchema() {
       super(
           "Fork",
           namedSchema("previous_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
@@ -40,9 +40,9 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
     }
   }
 
-  public static final ForkType SSZ_SCHEMA = new ForkType();
+  public static final ForkSchema SSZ_SCHEMA = new ForkSchema();
 
-  private Fork(ForkType type, TreeNode backingNode) {
+  private Fork(ForkSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
