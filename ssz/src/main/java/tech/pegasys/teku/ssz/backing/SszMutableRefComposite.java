@@ -15,8 +15,7 @@ package tech.pegasys.teku.ssz.backing;
 
 /**
  * Represents a mutable {@link SszComposite} which is able to return a mutable child 'by reference'.
- * Any
- * modifications made to such child are reflected in this structure and its backing tree
+ * Any modifications made to such child are reflected in this structure and its backing tree
  */
 public interface SszMutableRefComposite<
         ChildReadType extends SszData, ChildWriteType extends ChildReadType>

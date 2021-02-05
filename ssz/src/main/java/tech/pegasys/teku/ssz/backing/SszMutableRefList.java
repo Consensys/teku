@@ -24,8 +24,7 @@ import java.util.function.Consumer;
  */
 public interface SszMutableRefList<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
-    extends SszMutableRefComposite<SszElementT, SszMutableElementT>,
-        SszMutableList<SszElementT> {
+    extends SszMutableRefComposite<SszElementT, SszMutableElementT>, SszMutableList<SszElementT> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

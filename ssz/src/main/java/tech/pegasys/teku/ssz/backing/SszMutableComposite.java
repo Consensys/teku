@@ -21,14 +21,15 @@ import java.util.function.Function;
  *
  * @param <SszChildT> the type of children
  */
-public interface SszMutableComposite<SszChildT extends SszData> extends SszMutableData, SszComposite<SszChildT> {
+public interface SszMutableComposite<SszChildT extends SszData>
+    extends SszMutableData, SszComposite<SszChildT> {
 
   /**
-   * Sets the function which should called by the implementation on any changes in this structure or its
-   * descendant structures.
+   * Sets the function which should called by the implementation on any changes in this structure or
+   * its descendant structures.
    *
-   * This is to propagate changes up in the data hierarchy from child mutable structures
-   * to parent mutable structures.
+   * <p>This is to propagate changes up in the data hierarchy from child mutable structures to
+   * parent mutable structures.
    *
    * @param listener listener to be called with this instance as a parameter
    */
@@ -37,17 +38,17 @@ public interface SszMutableComposite<SszChildT extends SszData> extends SszMutab
   /**
    * Sets the child at the index.
    *
-   * If {@code index == size()} and the structure is extendable (e.g. List) then
-   * this is treated as `append()` operation and the size is expanded. In this case `size`
-   * should be less than `maxSize`
+   * <p>If {@code index == size()} and the structure is extendable (e.g. List) then this is treated
+   * as `append()` operation and the size is expanded. In this case `size` should be less than
+   * `maxSize`
    *
    * @throws IndexOutOfBoundsException if index > size() or if index == size() but size() == maxSize
    */
   void set(int index, SszChildT value);
 
   /**
-   * Similar to {@link #set(int, SszChildT)} but using modifier function which may consider old value
-   * to calculate new value. The implementation may potentially optimize this case.
+   * Similar to {@link #set(int, SszChildT)} but using modifier function which may consider old
+   * value to calculate new value. The implementation may potentially optimize this case.
    */
   default void update(int index, Function<SszChildT, SszChildT> mutator) {
     set(index, mutator.apply(get(index)));

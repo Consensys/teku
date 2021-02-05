@@ -17,8 +17,8 @@ import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
  * Base backing class for immutable composite ssz structures (lists, vectors, containers)
@@ -52,8 +52,8 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   /**
    * Creates an instance from a schema and a backing node.
    *
-   * <p>{@link SszData} instances cache is supplied for optimization to shortcut children creation from
-   * backing nodes. The cache should correspond to the supplied backing tree.
+   * <p>{@link SszData} instances cache is supplied for optimization to shortcut children creation
+   * from backing nodes. The cache should correspond to the supplied backing tree.
    */
   protected AbstractSszComposite(
       SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszChildT> cache) {
@@ -74,8 +74,8 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   }
 
   /**
-   * Creates a new empty children cache. Could be overridden by subclasses for fine tuning of
-   * the initial cache size
+   * Creates a new empty children cache. Could be overridden by subclasses for fine tuning of the
+   * initial cache size
    */
   protected IntCache<SszChildT> createCache() {
     return new ArrayIntCache<>();

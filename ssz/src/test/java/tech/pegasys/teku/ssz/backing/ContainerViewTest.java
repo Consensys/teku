@@ -27,13 +27,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
@@ -231,7 +231,8 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected ContainerReadImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+    protected ContainerReadImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ContainerReadImpl(getSchema(), backingNode, viewCache);
     }
 

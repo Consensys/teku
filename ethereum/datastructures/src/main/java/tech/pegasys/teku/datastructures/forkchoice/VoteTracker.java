@@ -17,8 +17,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 

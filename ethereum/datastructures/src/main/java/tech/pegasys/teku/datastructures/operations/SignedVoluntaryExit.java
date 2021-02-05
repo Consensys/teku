@@ -18,8 +18,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 

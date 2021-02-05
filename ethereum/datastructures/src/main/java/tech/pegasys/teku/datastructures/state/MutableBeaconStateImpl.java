@@ -55,7 +55,8 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   }
 
   @Override
-  protected BeaconStateImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+  protected BeaconStateImpl createImmutableSszComposite(
+      TreeNode backingNode, IntCache<SszData> viewCache) {
     return new BeaconStateImpl(
         getSchema(),
         backingNode,

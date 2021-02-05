@@ -74,8 +74,7 @@ public class SszUtils {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszVector<SszByte> toSszByteVector(
-      SszVectorSchema<SszByte> type, Bytes bytes) {
+  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 

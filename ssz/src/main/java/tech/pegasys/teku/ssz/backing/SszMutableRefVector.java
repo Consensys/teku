@@ -22,8 +22,7 @@ package tech.pegasys.teku.ssz.backing;
  */
 public interface SszMutableRefVector<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
-    extends SszMutableRefComposite<SszElementT, SszMutableElementT>,
-        SszMutableVector<SszElementT> {
+    extends SszMutableRefComposite<SszElementT, SszMutableElementT>, SszMutableVector<SszElementT> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are

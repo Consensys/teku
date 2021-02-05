@@ -24,11 +24,10 @@ import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class SszMutableListImpl<
-        SszElementT extends SszData, SszMutableElementT extends SszElementT>
+public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT extends SszElementT>
     implements SszMutableRefList<SszElementT, SszMutableElementT> {
 
   static class ListContainerWrite<
@@ -56,7 +55,8 @@ public class SszMutableListImpl<
     }
 
     @Override
-    protected SszContainerImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+    protected SszContainerImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
       return new ListContainerRead<>(listSchema, backingNode, viewCache);
     }
 

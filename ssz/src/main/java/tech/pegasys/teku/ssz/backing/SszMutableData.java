@@ -16,11 +16,10 @@ package tech.pegasys.teku.ssz.backing;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
- * Base class of mutable structures over Binary Backing Tree ({@link TreeNode}) Each {@link SszMutableData}
- * subclass class
- * normally inherits from the corresponding immutable class to have both get/set methods however
- * {@link SszMutableData} instance shouldn't be leaked as {@link SszData} instance, the {@link #commitChanges()}
- * should be used instead to get immutable structure
+ * Base class of mutable structures over Binary Backing Tree ({@link TreeNode}) Each {@link
+ * SszMutableData} subclass class normally inherits from the corresponding immutable class to have
+ * both get/set methods however {@link SszMutableData} instance shouldn't be leaked as {@link
+ * SszData} instance, the {@link #commitChanges()} should be used instead to get immutable structure
  */
 public interface SszMutableData extends SszData {
 
@@ -33,12 +32,11 @@ public interface SszMutableData extends SszData {
   /**
    * Returns the backing tree of this modified structure.
    *
-   * Note that calling this method on {@link
-   * SszMutableData} could be suboptimal from performance perspective as it internally needs to
-   * create an immutable {@link SszData} via {@link #commitChanges()} which is then discarded. It's
-   * normally better to make all modifications on {@link SszMutableData}, commit the changes and
-   * then call either {@link SszData#getBackingNode()} or {@link SszData#hashTreeRoot()} on the
-   * resulting immutable instance
+   * <p>Note that calling this method on {@link SszMutableData} could be suboptimal from performance
+   * perspective as it internally needs to create an immutable {@link SszData} via {@link
+   * #commitChanges()} which is then discarded. It's normally better to make all modifications on
+   * {@link SszMutableData}, commit the changes and then call either {@link
+   * SszData#getBackingNode()} or {@link SszData#hashTreeRoot()} on the resulting immutable instance
    */
   @Override
   default TreeNode getBackingNode() {

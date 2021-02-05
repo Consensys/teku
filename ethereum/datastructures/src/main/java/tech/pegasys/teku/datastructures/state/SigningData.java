@@ -16,8 +16,8 @@ package tech.pegasys.teku.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
 public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {

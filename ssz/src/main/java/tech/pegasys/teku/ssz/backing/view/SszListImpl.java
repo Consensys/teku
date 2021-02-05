@@ -20,14 +20,15 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl.ListContainerWrite;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /**
- * Generic {@link SszList} implementation. This ssz structure is compatible with and implemented as a <code>
+ * Generic {@link SszList} implementation. This ssz structure is compatible with and implemented as
+ * a <code>
  * Container[Vector(maxLength), size]</code> under the cover.
  */
 public class SszListImpl<SszElementT extends SszData> implements SszList<SszElementT> {

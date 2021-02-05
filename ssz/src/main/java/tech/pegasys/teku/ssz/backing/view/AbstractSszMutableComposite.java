@@ -27,16 +27,18 @@ import tech.pegasys.teku.ssz.backing.SszMutableComposite;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefComposite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 /**
- * Base backing {@link SszMutableData} class for mutable composite ssz structures (lists, vectors, containers)
+ * Base backing {@link SszMutableData} class for mutable composite ssz structures (lists, vectors,
+ * containers)
  *
- * <p>It has corresponding backing immutable {@link SszData} and the set of changed children. When the {@link
- * #commitChanges()} is called a new immutable {@link SszData} instance is created where changes accumulated in this
- * instance are merged with cached backing {@link SszData} instance which weren't changed.
+ * <p>It has corresponding backing immutable {@link SszData} and the set of changed children. When
+ * the {@link #commitChanges()} is called a new immutable {@link SszData} instance is created where
+ * changes accumulated in this instance are merged with cached backing {@link SszData} instance
+ * which weren't changed.
  *
  * <p>If this ssz data is get by reference from its parent composite view ({@link
  * SszMutableRefComposite#getByRef(int)} then all the changes are notified to the parent view (see

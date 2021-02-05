@@ -20,9 +20,9 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {
@@ -32,7 +32,8 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  protected SszContainerImpl createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+  protected SszContainerImpl createImmutableSszComposite(
+      TreeNode backingNode, IntCache<SszData> viewCache) {
     return new SszContainerImpl(getSchema(), backingNode, viewCache);
   }
 
