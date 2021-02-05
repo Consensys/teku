@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.BasicView;
-import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewType;
 
@@ -53,7 +53,7 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   }
 
   @Override
-  public ViewWrite createWritableCopy() {
+  public SszMutableData createWritableCopy() {
     throw new UnsupportedOperationException("Basic view instances are immutable");
   }
 

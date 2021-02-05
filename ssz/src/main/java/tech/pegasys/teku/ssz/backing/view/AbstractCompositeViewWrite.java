@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.CompositeViewWrite;
 import tech.pegasys.teku.ssz.backing.CompositeViewWriteRef;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
@@ -49,7 +49,7 @@ public abstract class AbstractCompositeViewWrite<
     implements CompositeViewWriteRef<ChildReadType, ChildWriteType> {
 
   protected AbstractCompositeViewRead<ChildReadType> backingImmutableView;
-  private Consumer<ViewWrite> invalidator;
+  private Consumer<SszMutableData> invalidator;
   private final Map<Integer, ChildReadType> childrenChanges = new HashMap<>();
   private final Map<Integer, ChildWriteType> childrenRefs = new HashMap<>();
   private final Set<Integer> childrenRefsChanged = new HashSet<>();
@@ -146,7 +146,7 @@ public abstract class AbstractCompositeViewWrite<
                               new SimpleImmutableEntry<>(
                                   idx,
                                   (ChildReadType)
-                                      ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
+                                      ((SszMutableData) childrenRefs.get(idx)).commitChanges())))
               .sorted(Map.Entry.comparingByKey())
               .collect(Collectors.toList());
       // pre-fill the read cache with changed values
@@ -190,7 +190,7 @@ public abstract class AbstractCompositeViewWrite<
       TreeNode backingNode, IntCache<ChildReadType> viewCache);
 
   @Override
-  public void setInvalidator(Consumer<ViewWrite> listener) {
+  public void setInvalidator(Consumer<SszMutableData> listener) {
     invalidator = listener;
   }
 
@@ -211,7 +211,7 @@ public abstract class AbstractCompositeViewWrite<
 
   /** Creating nested mutable copies is not supported yet */
   @Override
-  public ViewWrite createWritableCopy() {
+  public SszMutableData createWritableCopy() {
     throw new UnsupportedOperationException(
         "createWritableCopy() is now implemented for immutable views only");
   }

@@ -112,7 +112,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewWrite createWritableCopy() {
+    public SszMutableData createWritableCopy() {
       throw new UnsupportedOperationException();
     }
   }

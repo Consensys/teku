@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
-import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes.BitVectorType;
@@ -374,7 +374,7 @@ public interface BeaconState extends ContainerViewRead {
   }
 
   @Override
-  default ViewWrite createWritableCopy() {
+  default SszMutableData createWritableCopy() {
     throw new UnsupportedOperationException("Use BeaconState.updated() to modify");
   }
 

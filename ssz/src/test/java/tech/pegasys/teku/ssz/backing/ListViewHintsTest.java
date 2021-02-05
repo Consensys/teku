@@ -46,7 +46,7 @@ public class ListViewHintsTest {
       ListViewType<TElement> type, ListViewRead<TElement> list0) {
     List<ListViewRead<TElement>> ret = new ArrayList<>();
     ret.add(list0);
-    if (!(list0 instanceof ViewWrite)) {
+    if (!(list0 instanceof SszMutableData)) {
       ret.add(type.createFromBackingNode(list0.getBackingNode()));
       ret.add(type.sszDeserialize(SszReader.fromBytes(list0.sszSerialize())));
     }
@@ -61,7 +61,7 @@ public class ListViewHintsTest {
   <TElement extends SszData> void assertEmptyList(
       ListViewType<TElement> type, ListViewRead<TElement> list) {
 
-    if (!(list instanceof ViewWrite)) {
+    if (!(list instanceof SszMutableData)) {
       assertThat(list.hashTreeRoot()).isEqualTo(type.getDefaultTree().hashTreeRoot());
     }
 
@@ -113,12 +113,12 @@ public class ListViewHintsTest {
       TElement el1 = list1.get(i);
       TElement el2 = list2.get(i);
       assertThat(el1).isEqualTo(el2);
-      if (!(el1 instanceof ViewWrite) && (el2 instanceof ViewWrite)) {
+      if (!(el1 instanceof SszMutableData) && (el2 instanceof SszMutableData)) {
         assertThat(el1.hashTreeRoot()).isEqualTo(el2.hashTreeRoot());
       }
     }
 
-    if (!(list1 instanceof ViewWrite) && (list2 instanceof ViewWrite)) {
+    if (!(list1 instanceof SszMutableData) && (list2 instanceof SszMutableData)) {
       assertThat(list1.hashTreeRoot()).isEqualTo(list2.hashTreeRoot());
     }
   }

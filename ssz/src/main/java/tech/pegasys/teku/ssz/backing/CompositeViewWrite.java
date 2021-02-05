@@ -21,7 +21,7 @@ import java.util.function.Function;
  *
  * @param <ChildType> the type of children
  */
-public interface CompositeViewWrite<ChildType> extends ViewWrite, CompositeViewRead<ChildType> {
+public interface CompositeViewWrite<ChildType> extends SszMutableData, CompositeViewRead<ChildType> {
 
   /**
    * Sets the function which should called by the implementation on any changes in this view or its
@@ -30,7 +30,7 @@ public interface CompositeViewWrite<ChildType> extends ViewWrite, CompositeViewR
    *
    * @param listener listener to be called with this view instance as a parameter
    */
-  void setInvalidator(Consumer<ViewWrite> listener);
+  void setInvalidator(Consumer<SszMutableData> listener);
 
   /**
    * Sets the child at index If the index == size() and the structure is extendable (e.g. List) then

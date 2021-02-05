@@ -21,8 +21,8 @@ import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.ListViewWriteRef;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
-import tech.pegasys.teku.ssz.backing.ViewWrite;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
@@ -108,7 +108,7 @@ public class ListViewWriteImpl<
   }
 
   @Override
-  public void setInvalidator(Consumer<ViewWrite> listener) {
+  public void setInvalidator(Consumer<SszMutableData> listener) {
     container.setInvalidator(listener);
   }
 

@@ -18,13 +18,13 @@ import java.util.Map;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 
-public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, ViewWrite>
+public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, SszMutableData>
     implements ContainerViewWriteRef {
 
   public ContainerViewWriteImpl(ContainerViewReadImpl backingImmutableView) {
@@ -48,7 +48,7 @@ public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<SszData, 
   }
 
   @Override
-  public ViewWrite createWritableCopy() {
+  public SszMutableData createWritableCopy() {
     return super.createWritableCopy();
   }
 

@@ -18,10 +18,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 /**
  * Base class of mutable views over Binary Backing Tree ({@link TreeNode}) Each mutable View class
  * normally inherits from the corresponding immutable class to have both get/set methods however
- * ViewWrite instance shouldn't be leaked as SszData instance, the {@link #commitChanges()} should
+ * SszMutableData instance shouldn't be leaked as SszData instance, the {@link #commitChanges()} should
  * be used instead to get immutable view
  */
-public interface ViewWrite extends SszData {
+public interface SszMutableData extends SszData {
 
   /** Resets this view to its default value */
   void clear();
@@ -31,9 +31,9 @@ public interface ViewWrite extends SszData {
 
   /**
    * Returns the backing tree of this modified view Note that calling this method on {@link
-   * ViewWrite} could be suboptimal from performance perspective as it internally needs to create an
+   * SszMutableData} could be suboptimal from performance perspective as it internally needs to create an
    * immutable {@link SszData} via {@link #commitChanges()} which is then discarded. It's normally
-   * better to make all modifications on {@link ViewWrite}, commit the changes and then call either
+   * better to make all modifications on {@link SszMutableData}, commit the changes and then call either
    * {@link SszData#getBackingNode()} or {@link SszData#hashTreeRoot()} on the resulting immutable
    * instance
    */
