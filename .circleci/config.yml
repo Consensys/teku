@@ -105,6 +105,8 @@ commands:
               mkdir -p "$TARGET"
               cp -rf ${FILE}/*/* "$TARGET"
             done
+      - store_artifacts:
+          path: build/test-results
 
 jobs:
   assemble:
