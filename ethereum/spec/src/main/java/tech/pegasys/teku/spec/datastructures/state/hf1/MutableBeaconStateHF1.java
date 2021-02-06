@@ -18,9 +18,11 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
-public interface MutableBeaconStateHF1 extends MutableBeaconState {
+public interface MutableBeaconStateHF1 extends MutableBeaconState, BeaconStateHF1 {
 
+  @Override
   SSZMutableList<SSZVector<SszPrimitives.SszBit>> getPreviousEpochParticipation();
 
+  @Override
   SSZMutableList<SSZVector<SszPrimitives.SszBit>> getCurrentEpochParticipation();
 }
