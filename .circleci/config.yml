@@ -89,8 +89,6 @@ commands:
             done
       - store_test_results:
           path: build/test-results
-      - store_artifacts:
-          path: build/test-results
 
   capture_test_artifacts:
     description: "Capture test artifacts"
