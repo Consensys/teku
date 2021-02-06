@@ -52,47 +52,52 @@ import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
-public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
-  private final Supplier<ViewType<T>> sszType;
+public class SszTestExecutor<T extends SszData> implements TestExecutor {
+  private final Supplier<SszSchema<T>> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
-          .put("ssz_static/AggregateAndProof", new SszTestExecutor<>(AggregateAndProof.TYPE))
-          .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.TYPE))
-          .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.TYPE))
-          .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.TYPE))
-          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.TYPE))
-          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.TYPE))
-          .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.TYPE))
-          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconState.TYPE))
-          .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.TYPE))
-          .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.TYPE))
-          .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.TYPE))
-          .put("ssz_static/DepositMessage", new SszTestExecutor<>(DepositMessage.TYPE))
+          .put("ssz_static/AggregateAndProof", new SszTestExecutor<>(AggregateAndProof.SSZ_SCHEMA))
+          .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.SSZ_SCHEMA))
+          .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.SSZ_SCHEMA))
+          .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.SSZ_SCHEMA))
+          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconState.SSZ_SCHEMA))
+          .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.SSZ_SCHEMA))
+          .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.SSZ_SCHEMA))
+          .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.SSZ_SCHEMA))
+          .put("ssz_static/DepositMessage", new SszTestExecutor<>(DepositMessage.SSZ_SCHEMA))
           .put("ssz_static/Eth1Block", IGNORE_TESTS) // We don't have an Eth1Block structure
-          .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.TYPE))
-          .put("ssz_static/Fork", new SszTestExecutor<>(Fork.TYPE))
-          .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.TYPE))
-          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.TYPE))
-          .put("ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.TYPE))
-          .put("ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.TYPE))
-          .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.TYPE))
+          .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.SSZ_SCHEMA))
+          .put("ssz_static/Fork", new SszTestExecutor<>(Fork.SSZ_SCHEMA))
+          .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.SSZ_SCHEMA))
+          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.SSZ_SCHEMA))
+          .put(
+              "ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.SSZ_SCHEMA))
+          .put(
+              "ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.SSZ_SCHEMA))
+          .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.SSZ_SCHEMA))
           .put(
               "ssz_static/SignedAggregateAndProof",
-              new SszTestExecutor<>(SignedAggregateAndProof.TYPE))
+              new SszTestExecutor<>(SignedAggregateAndProof.SSZ_SCHEMA))
           .put(
-              "ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.getSszType()))
+              "ssz_static/SignedBeaconBlock",
+              new SszTestExecutor<>(SignedBeaconBlock.getSszSchema()))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
-              new SszTestExecutor<>(SignedBeaconBlockHeader.TYPE))
-          .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.TYPE))
-          .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.TYPE))
-          .put("ssz_static/Validator", new SszTestExecutor<>(Validator.TYPE))
-          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.TYPE))
+              new SszTestExecutor<>(SignedBeaconBlockHeader.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedVoluntaryExit",
+              new SszTestExecutor<>(SignedVoluntaryExit.SSZ_SCHEMA))
+          .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.SSZ_SCHEMA))
+          .put("ssz_static/Validator", new SszTestExecutor<>(Validator.SSZ_SCHEMA))
+          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.SSZ_SCHEMA))
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)
@@ -103,11 +108,11 @@ public class SszTestExecutor<T extends ViewRead> implements TestExecutor {
           .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
-  public SszTestExecutor(final SpecDependent<? extends ViewType<T>> sszType) {
+  public SszTestExecutor(final SpecDependent<? extends SszSchema<T>> sszType) {
     this.sszType = sszType::get;
   }
 
-  public SszTestExecutor(final ViewType<T> sszType) {
+  public SszTestExecutor(final SszSchema<T> sszType) {
     this.sszType = () -> sszType;
   }
 

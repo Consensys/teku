@@ -17,18 +17,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema1;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
+public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     implements RpcRequest {
 
-  public static class GoodbyeMessageType extends ContainerType1<GoodbyeMessage, UInt64View> {
+  public static class GoodbyeMessageSchema extends ContainerSchema1<GoodbyeMessage, SszUInt64> {
 
-    public GoodbyeMessageType() {
-      super("GoodbyeMessage", namedType("reason", BasicViewTypes.UINT64_TYPE));
+    public GoodbyeMessageSchema() {
+      super("GoodbyeMessage", namedSchema("reason", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -37,7 +37,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
     }
   }
 
-  public static final GoodbyeMessageType TYPE = new GoodbyeMessageType();
+  public static final GoodbyeMessageSchema SSZ_SCHEMA = new GoodbyeMessageSchema();
 
   public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
   public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
@@ -49,12 +49,12 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, UInt64View>
   public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
   public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
 
-  private GoodbyeMessage(GoodbyeMessageType type, TreeNode backingNode) {
+  private GoodbyeMessage(GoodbyeMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public GoodbyeMessage(UInt64 reason) {
-    super(TYPE, new UInt64View(reason));
+    super(SSZ_SCHEMA, new SszUInt64(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)

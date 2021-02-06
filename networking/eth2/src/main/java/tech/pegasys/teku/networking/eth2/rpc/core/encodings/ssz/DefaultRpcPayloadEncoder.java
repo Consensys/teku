@@ -19,15 +19,15 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
-import tech.pegasys.teku.ssz.sos.SSZDeserializeException;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
-public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadEncoder<T> {
+public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private final ViewType<T> type;
+  private final SszSchema<T> type;
 
-  public DefaultRpcPayloadEncoder(ViewType<T> type) {
+  public DefaultRpcPayloadEncoder(SszSchema<T> type) {
     this.type = type;
   }
 
@@ -40,7 +40,7 @@ public class DefaultRpcPayloadEncoder<T extends ViewRead> implements RpcPayloadE
   public T decode(final Bytes message) throws RpcException {
     try {
       return type.sszDeserialize(message);
-    } catch (final SSZDeserializeException e) {
+    } catch (final SszDeserializeException e) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }

@@ -30,7 +30,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 /**
  * Represents the tree structure for a fixed size SSZ type See {@link SszSuperNode} docs for more
@@ -66,10 +66,10 @@ public class SszNodeTemplate {
     }
   }
 
-  public static SszNodeTemplate createFromType(ViewType<?> viewType) {
-    checkArgument(viewType.isFixedSize(), "Only fixed size types supported");
+  public static SszNodeTemplate createFromType(SszSchema<?> sszSchema) {
+    checkArgument(sszSchema.isFixedSize(), "Only fixed size types supported");
 
-    return createFromTree(viewType.getDefaultTree());
+    return createFromTree(sszSchema.getDefaultTree());
   }
 
   // This should be CANONICAL binary tree

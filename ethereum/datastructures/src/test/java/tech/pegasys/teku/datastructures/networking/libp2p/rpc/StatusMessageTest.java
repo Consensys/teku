@@ -34,7 +34,7 @@ class StatusMessageTest {
             UInt64.valueOf(4));
 
     final Bytes data = message.sszSerialize();
-    final StatusMessage result = StatusMessage.TYPE.sszDeserialize(data);
+    final StatusMessage result = StatusMessage.SSZ_SCHEMA.sszDeserialize(data);
     assertThat(SszTestUtils.equalsByGetters(result, message)).isTrue();
     assertThat(result).isEqualTo(message);
   }

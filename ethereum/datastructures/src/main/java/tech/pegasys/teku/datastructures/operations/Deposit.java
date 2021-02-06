@@ -16,34 +16,34 @@ package tech.pegasys.teku.datastructures.operations;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
+public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositData> {
 
-  public static class DepositType
-      extends ContainerType2<Deposit, VectorViewRead<Bytes32View>, DepositData> {
+  public static class DepositSchema
+      extends ContainerSchema2<Deposit, SszVector<SszBytes32>, DepositData> {
 
-    public DepositType() {
+    public DepositSchema() {
       super(
           "Deposit",
-          namedType(
+          namedSchema(
               "proof",
-              new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
-          namedType("data", DepositData.TYPE));
+              new SszVectorSchema<>(
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+          namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 
-    public VectorViewType<Bytes32View> getProofType() {
-      return (VectorViewType<Bytes32View>) getFieldType0();
+    public SszVectorSchema<SszBytes32> getProofSchema() {
+      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
     }
 
     @Override
@@ -52,21 +52,24 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
     }
   }
 
-  public static final DepositType TYPE = new DepositType();
+  public static final DepositSchema SSZ_SCHEMA = new DepositSchema();
 
   private static final SSZVector<Bytes32> EMPTY_PROOF =
-      SSZVector.createMutable(TYPE.getProofType().getLength(), Bytes32.ZERO);
+      SSZVector.createMutable(SSZ_SCHEMA.getProofSchema().getLength(), Bytes32.ZERO);
 
-  private Deposit(DepositType type, TreeNode backingNode) {
+  private Deposit(DepositSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(TYPE, ViewUtils.toVectorView(TYPE.getProofType(), proof, Bytes32View::new), data);
+    super(
+        SSZ_SCHEMA,
+        SszUtils.toSszVector(SSZ_SCHEMA.getProofSchema(), proof, SszBytes32::new),
+        data);
   }
 
   public Deposit() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public Deposit(DepositData data) {
@@ -75,7 +78,7 @@ public class Deposit extends Container2<Deposit, VectorViewRead<Bytes32View>, De
 
   public SSZVector<Bytes32> getProof() {
     return new SSZBackingVector<>(
-        Bytes32.class, getField0(), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getField0(), SszBytes32::new, AbstractSszPrimitive::get);
   }
 
   public DepositData getData() {

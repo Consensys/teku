@@ -61,6 +61,6 @@ class VoluntaryExitTest {
   @Test
   void roundtripSSZ() {
     Bytes sszVoluntaryExitBytes = voluntaryExit.sszSerialize();
-    assertEquals(voluntaryExit, VoluntaryExit.TYPE.sszDeserialize(sszVoluntaryExitBytes));
+    assertEquals(voluntaryExit, VoluntaryExit.SSZ_SCHEMA.sszDeserialize(sszVoluntaryExitBytes));
   }
 }

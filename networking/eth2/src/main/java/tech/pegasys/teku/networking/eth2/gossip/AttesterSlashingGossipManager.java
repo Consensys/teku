@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
   public static String TOPIC_NAME = "attester_slashing";
@@ -35,7 +35,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
   }
 
   @Override
-  protected ViewType<AttesterSlashing> getGossipType() {
-    return AttesterSlashing.TYPE;
+  protected SszSchema<AttesterSlashing> getGossipType() {
+    return AttesterSlashing.SSZ_SCHEMA;
   }
 }

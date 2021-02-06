@@ -17,7 +17,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCE
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
 
 public final class RpcEncoder {
   private final RpcEncoding encoding;
@@ -32,11 +32,11 @@ public final class RpcEncoder {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public <T extends ViewRead> Bytes encodeRequest(T request) {
+  public <T extends SszData> Bytes encodeRequest(T request) {
     return encoding.encodePayload(request);
   }
 
-  public <T extends ViewRead> Bytes encodeSuccessfulResponse(T response) {
+  public <T extends SszData> Bytes encodeSuccessfulResponse(T response) {
     return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encodePayload(response));
   }
 

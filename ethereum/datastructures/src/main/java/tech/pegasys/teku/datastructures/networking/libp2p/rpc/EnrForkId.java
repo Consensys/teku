@@ -16,23 +16,23 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
+public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static class EnrForkIdType
-      extends ContainerType3<EnrForkId, Bytes4View, Bytes4View, UInt64View> {
+  public static class EnrForkIdSchema
+      extends ContainerSchema3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-    public EnrForkIdType() {
+    public EnrForkIdSchema() {
       super(
           "EnrForkId",
-          namedType("forkDigest", BasicViewTypes.BYTES4_TYPE),
-          namedType("nextForkVersion", BasicViewTypes.BYTES4_TYPE),
-          namedType("nextForkEpoch", BasicViewTypes.UINT64_TYPE));
+          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -41,19 +41,19 @@ public class EnrForkId extends Container3<EnrForkId, Bytes4View, Bytes4View, UIn
     }
   }
 
-  public static final EnrForkIdType TYPE = new EnrForkIdType();
+  public static final EnrForkIdSchema SSZ_SCHEMA = new EnrForkIdSchema();
 
-  private EnrForkId(EnrForkIdType type, TreeNode backingNode) {
+  private EnrForkId(EnrForkIdSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public EnrForkId(
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
     super(
-        TYPE,
-        new Bytes4View(forkDigest),
-        new Bytes4View(nextForkVersion),
-        new UInt64View(nextForkEpoch));
+        SSZ_SCHEMA,
+        new SszBytes4(forkDigest),
+        new SszBytes4(nextForkVersion),
+        new SszUInt64(nextForkEpoch));
   }
 
   public Bytes4 getForkDigest() {

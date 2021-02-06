@@ -16,9 +16,20 @@ package tech.pegasys.teku.ssz.backing;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
+/**
+ * Represent the data which can be SSZ serialized
+ *
+ * <p>SSZ spec: https://github.com/protolambda/eth2.0-ssz
+ */
 public interface SimpleOffsetSerializable {
 
+  /** Returns this data SSZ serialization */
   Bytes sszSerialize();
 
+  /**
+   * SSZ serializes this data to supplied {@code writer}
+   *
+   * @return number of bytes written
+   */
   int sszSerialize(SszWriter writer);
 }

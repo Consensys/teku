@@ -40,7 +40,7 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             Constants.JUSTIFICATION_BITS_LENGTH);
-    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(BeaconState.getSszType()));
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(BeaconState.getSszSchema()));
   }
 
   @Test
@@ -109,7 +109,7 @@ class BeaconStateTest {
   void roundTripViaSsz() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     Bytes bytes = beaconState.sszSerialize();
-    BeaconState state = BeaconState.getSszType().sszDeserialize(bytes);
+    BeaconState state = BeaconState.getSszSchema().sszDeserialize(bytes);
     assertEquals(beaconState, state);
   }
 }

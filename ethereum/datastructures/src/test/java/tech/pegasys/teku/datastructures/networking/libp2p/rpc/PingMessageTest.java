@@ -33,7 +33,7 @@ class PingMessageTest {
 
   @Test
   public void shouldDeserializeFromSsz() {
-    PingMessage result = PingMessage.TYPE.sszDeserialize(EXPECTED_SSZ);
+    PingMessage result = PingMessage.SSZ_SCHEMA.sszDeserialize(EXPECTED_SSZ);
     assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }

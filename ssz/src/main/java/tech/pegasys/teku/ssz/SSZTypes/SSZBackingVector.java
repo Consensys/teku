@@ -15,31 +15,28 @@ package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewWrite;
-import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableVector;
+import tech.pegasys.teku.ssz.backing.SszVector;
 
-public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollection<C>
+public class SSZBackingVector<C, R extends SszData> extends SSZAbstractCollection<C>
     implements SSZMutableVector<C> {
 
-  private final VectorViewRead<R> delegate;
+  private final SszVector<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
 
   public SSZBackingVector(
-      Class<C> classInfo,
-      VectorViewRead<R> delegate,
-      Function<C, R> wrapper,
-      Function<R, C> unwrapper) {
+      Class<C> classInfo, SszVector<R> delegate, Function<C, R> wrapper, Function<R, C> unwrapper) {
     super(classInfo);
     this.delegate = delegate;
     this.wrapper = wrapper;
     this.unwrapper = unwrapper;
   }
 
-  private VectorViewWrite<R> getWriteDelegate() {
+  private SszMutableVector<R> getWriteDelegate() {
     // temporary workaround to have a single implementation class
-    return (VectorViewWrite<R>) delegate;
+    return (SszMutableVector<R>) delegate;
   }
 
   @Override

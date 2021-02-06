@@ -16,25 +16,25 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.AbstractDelegateType;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32View>
-    implements ListViewRead<Bytes32View>, RpcRequest {
+public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
+    implements SszList<SszBytes32>, RpcRequest {
 
-  private static final ListViewType<Bytes32View> LIST_VIEW_TYPE =
-      new ListViewType<>(BasicViewTypes.BYTES32_TYPE, MAX_REQUEST_BLOCKS);
+  private static final SszListSchema<SszBytes32> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
 
-  public static class BeaconBlocksByRootRequestMessageType
-      extends AbstractDelegateType<BeaconBlocksByRootRequestMessage> {
+  public static class BeaconBlocksByRootRequestMessageSchema
+      extends AbstractDelegateSszSchema<BeaconBlocksByRootRequestMessage> {
 
-    private BeaconBlocksByRootRequestMessageType() {
+    private BeaconBlocksByRootRequestMessageSchema() {
       super(LIST_VIEW_TYPE);
     }
 
@@ -44,11 +44,11 @@ public class BeaconBlocksByRootRequestMessage extends ListViewReadImpl<Bytes32Vi
     }
   }
 
-  public static final BeaconBlocksByRootRequestMessageType TYPE =
-      new BeaconBlocksByRootRequestMessageType();
+  public static final BeaconBlocksByRootRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRootRequestMessageSchema();
 
   public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(ViewUtils.toListView(LIST_VIEW_TYPE, roots, Bytes32View::new));
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, roots, SszBytes32::new));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

@@ -48,8 +48,8 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ViewRead;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -73,7 +73,8 @@ public class ForkChoiceTestExecutor {
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
-            resolvePart(BeaconState.class, BeaconState.getSszType(), file, content.get("genesis"));
+            resolvePart(
+                BeaconState.class, BeaconState.getSszSchema(), file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
@@ -111,11 +112,12 @@ public class ForkChoiceTestExecutor {
         }
       case block:
         {
-          return resolvePart(SignedBeaconBlock.class, SignedBeaconBlock.TYPE.get(), file, value);
+          return resolvePart(
+              SignedBeaconBlock.class, SignedBeaconBlock.SSZ_SCHEMA.get(), file, value);
         }
       case attestation:
         {
-          return resolvePart(Attestation.class, Attestation.TYPE, file, value);
+          return resolvePart(Attestation.class, Attestation.SSZ_SCHEMA, file, value);
         }
       case checks:
         {
@@ -133,8 +135,8 @@ public class ForkChoiceTestExecutor {
         .get(0);
   }
 
-  private static <T extends ViewRead> T resolvePart(
-      Class<T> clazz, ViewType<T> type, File testFile, Object value) {
+  private static <T extends SszData> T resolvePart(
+      Class<T> clazz, SszSchema<T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
