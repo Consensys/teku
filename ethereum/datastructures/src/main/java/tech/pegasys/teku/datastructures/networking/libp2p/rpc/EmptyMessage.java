@@ -13,10 +13,36 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-public class EmptyMessage implements RpcRequest {
+import java.util.Collections;
+import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
+
+public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
+  private static final SszListSchema<SszByte> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTE_SCHEMA, 0);
+
+  public static class EmptyMessageSchema extends AbstractDelegateSszSchema<EmptyMessage> {
+    private EmptyMessageSchema() {
+      super(LIST_VIEW_TYPE);
+    }
+
+    @Override
+    public EmptyMessage createFromBackingNode(TreeNode node) {
+      return EMPTY_MESSAGE;
+    }
+  }
+
+  public static final EmptyMessageSchema SSZ_SCHEMA = new EmptyMessageSchema();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
-  private EmptyMessage() {}
+  private EmptyMessage() {
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, Collections.emptyList()));
+  }
 
   @Override
   public String toString() {

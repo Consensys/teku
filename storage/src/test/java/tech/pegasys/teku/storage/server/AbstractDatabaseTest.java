@@ -1055,7 +1055,7 @@ public abstract class AbstractDatabaseTest {
     final UInt64 blockEpochBoundary = compute_start_slot_at_epoch(blockEpoch);
     final UInt64 checkpointEpoch =
         equivalentLongs(block.getSlot(), blockEpochBoundary) ? blockEpoch : blockEpoch.plus(ONE);
-    return new Checkpoint(checkpointEpoch, block.getMessage().hash_tree_root());
+    return new Checkpoint(checkpointEpoch, block.getMessage().hashTreeRoot());
   }
 
   private boolean equivalentLongs(final UInt64 valA, final UInt64 valB) {

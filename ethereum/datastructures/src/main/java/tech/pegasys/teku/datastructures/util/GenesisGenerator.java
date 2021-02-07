@@ -37,8 +37,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.ListViewWrite;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
@@ -47,16 +47,16 @@ public class GenesisGenerator {
 
   private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
-  private final ListViewType<DepositData> depositDataListType =
-      new ListViewType<>(DepositData.TYPE, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
-  private final ListViewWrite<DepositData> depositDataList =
-      depositDataListType.getDefault().createWritableCopy();
+  private final SszListSchema<DepositData> depositDataListSchema =
+      new SszListSchema<>(DepositData.SSZ_SCHEMA, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
+  private final SszMutableList<DepositData> depositDataList =
+      depositDataListSchema.getDefault().createWritableCopy();
 
   private int activeValidatorCount = 0;
 
   public GenesisGenerator() {
 
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
+    Bytes32 latestBlockRoot = new BeaconBlockBody().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(

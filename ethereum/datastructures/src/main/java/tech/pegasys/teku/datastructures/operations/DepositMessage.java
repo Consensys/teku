@@ -16,35 +16,30 @@ package tech.pegasys.teku.datastructures.operations;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositMessage
-    extends Container3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-  static class DepositMessageType
-      extends ContainerType3<DepositMessage, VectorViewRead<ByteView>, Bytes32View, UInt64View> {
+  public static class DepositMessageSchema
+      extends ContainerSchema3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-    public DepositMessageType() {
+    public DepositMessageSchema() {
       super(
           "DepositMessage",
-          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
-          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
-          namedType("amount", BasicViewTypes.UINT64_TYPE));
+          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -53,23 +48,23 @@ public class DepositMessage
     }
   }
 
-  @SszTypeDescriptor public static final DepositMessageType TYPE = new DepositMessageType();
+  public static final DepositMessageSchema SSZ_SCHEMA = new DepositMessageSchema();
 
-  private DepositMessage(DepositMessageType type, TreeNode backingNode) {
+  private DepositMessage(DepositMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public DepositMessage(
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
     super(
-        TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytesCompressed()),
-        new Bytes32View(withdrawal_credentials),
-        new UInt64View(amount));
+        SSZ_SCHEMA,
+        SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(amount));
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(ViewUtils.getAllBytes(getField0())));
+    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(SszUtils.getAllBytes(getField0())));
   }
 
   public Bytes32 getWithdrawal_credentials() {
@@ -78,10 +73,5 @@ public class DepositMessage
 
   public UInt64 getAmount() {
     return getField2().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

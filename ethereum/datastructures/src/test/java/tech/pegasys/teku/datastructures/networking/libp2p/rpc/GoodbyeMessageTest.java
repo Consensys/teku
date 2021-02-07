@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
@@ -29,14 +28,13 @@ class GoodbyeMessageTest {
 
   @Test
   public void shouldSerializeToSsz() {
-    final Bytes result = SimpleOffsetSerializer.serialize(MESSAGE);
+    final Bytes result = MESSAGE.sszSerialize();
     assertThat(result).isEqualTo(EXPECTED_SSZ);
   }
 
   @Test
   public void shouldDeserializeFromSsz() {
-    final GoodbyeMessage result =
-        SimpleOffsetSerializer.deserialize(EXPECTED_SSZ, GoodbyeMessage.class);
+    final GoodbyeMessage result = GoodbyeMessage.SSZ_SCHEMA.sszDeserialize(EXPECTED_SSZ);
     assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
     assertThat(result).isEqualTo(MESSAGE);
   }

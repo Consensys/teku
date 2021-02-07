@@ -52,10 +52,9 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -164,9 +163,8 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
-                            state.hash_tree_root().toUnprefixedHexString())));
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                            state.hashTreeRoot().toUnprefixedHexString())));
   }
 
   public SafeFuture<Optional<StateSszResponse>> getBeaconStateSszByBlockRoot(
@@ -179,9 +177,8 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
-                            state.hash_tree_root().toUnprefixedHexString())));
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                            state.hashTreeRoot().toUnprefixedHexString())));
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
@@ -273,7 +270,7 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
         .join()
-        .map(Merkleizable::hash_tree_root);
+        .map(Merkleizable::hashTreeRoot);
   }
 
   public SafeFuture<List<BlockHeader>> getBlockHeaders(

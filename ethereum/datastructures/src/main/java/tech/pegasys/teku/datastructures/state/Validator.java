@@ -16,59 +16,54 @@ package tech.pegasys.teku.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class Validator
     extends Container8<
         Validator,
-        VectorViewRead<ByteView>,
-        Bytes32View,
-        UInt64View,
-        BitView,
-        UInt64View,
-        UInt64View,
-        UInt64View,
-        UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+        SszVector<SszByte>,
+        SszBytes32,
+        SszUInt64,
+        SszBit,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64> {
 
-  public static class ValidatorType
-      extends ContainerType8<
+  public static class ValidatorSchema
+      extends ContainerSchema8<
           Validator,
-          VectorViewRead<ByteView>,
-          Bytes32View,
-          UInt64View,
-          BitView,
-          UInt64View,
-          UInt64View,
-          UInt64View,
-          UInt64View> {
+          SszVector<SszByte>,
+          SszBytes32,
+          SszUInt64,
+          SszBit,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64> {
 
-    public ValidatorType() {
+    public ValidatorSchema() {
       super(
           "Validator",
-          namedType("pubkey", ComplexViewTypes.BYTES_48_TYPE),
-          namedType("withdrawal_credentials", BasicViewTypes.BYTES32_TYPE),
-          namedType("effective_balance", BasicViewTypes.UINT64_TYPE),
-          namedType("slashed", BasicViewTypes.BIT_TYPE),
-          namedType("activation_eligibility_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("activation_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("exit_epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("withdrawable_epoch", BasicViewTypes.UINT64_TYPE));
+          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("effective_balance", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("slashed", SszPrimitiveSchemas.BIT_SCHEMA),
+          namedSchema("activation_eligibility_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("activation_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("exit_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("withdrawable_epoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -77,9 +72,9 @@ public class Validator
     }
   }
 
-  @SszTypeDescriptor public static final ValidatorType TYPE = new ValidatorType();
+  public static final ValidatorSchema SSZ_SCHEMA = new ValidatorSchema();
 
-  private Validator(ValidatorType type, TreeNode backingNode) {
+  private Validator(ValidatorSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -93,15 +88,15 @@ public class Validator
       UInt64 exit_epoch,
       UInt64 withdrawable_epoch) {
     super(
-        TYPE,
-        ViewUtils.createVectorFromBytes(pubkey),
-        new Bytes32View(withdrawal_credentials),
-        new UInt64View(effective_balance),
-        BitView.viewOf(slashed),
-        new UInt64View(activation_eligibility_epoch),
-        new UInt64View(activation_epoch),
-        new UInt64View(exit_epoch),
-        new UInt64View(withdrawable_epoch));
+        SSZ_SCHEMA,
+        SszUtils.toSszByteVector(pubkey),
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(effective_balance),
+        SszBit.viewOf(slashed),
+        new SszUInt64(activation_eligibility_epoch),
+        new SszUInt64(activation_epoch),
+        new SszUInt64(exit_epoch),
+        new SszUInt64(withdrawable_epoch));
   }
 
   /**
@@ -114,7 +109,7 @@ public class Validator
    * if the {@link BeaconState} instance and validator index is available
    */
   public Bytes48 getPubkey() {
-    return Bytes48.wrap(ViewUtils.getAllBytes(getField0()));
+    return Bytes48.wrap(SszUtils.getAllBytes(getField0()));
   }
 
   public Bytes32 getWithdrawal_credentials() {
@@ -215,10 +210,5 @@ public class Validator
         getActivation_epoch(),
         getExit_epoch(),
         withdrawable_epoch);
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

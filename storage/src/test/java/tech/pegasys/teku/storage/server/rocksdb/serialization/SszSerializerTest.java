@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
@@ -27,11 +26,11 @@ public class SszSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final SszSerializer<SignedBeaconBlock> blockSerializer =
-      new SszSerializer<>(SignedBeaconBlock.class);
+      new SszSerializer<>(SignedBeaconBlock.getSszSchema());
   private final SszSerializer<BeaconState> stateSerializer =
-      new SszSerializer<>(BeaconStateImpl.class);
+      new SszSerializer<>(BeaconState.getSszSchema());
   private final SszSerializer<Checkpoint> checkpointSerializer =
-      new SszSerializer<>(Checkpoint.class);
+      new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
 
   @Test
   public void roundTrip_block() {

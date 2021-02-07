@@ -15,38 +15,32 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class VoluntaryExitFuzzInput
-    extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> {
 
-  @SszTypeDescriptor
-  public static ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-      createType() {
-    return ContainerType2.create(
-        BeaconState.getSSZType(), SignedVoluntaryExit.TYPE, VoluntaryExitFuzzInput::new);
+  public static ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
+      createSchema() {
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), SignedVoluntaryExit.SSZ_SCHEMA, VoluntaryExitFuzzInput::new);
   }
 
   public VoluntaryExitFuzzInput(
-      ContainerType2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> type,
+      ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public VoluntaryExitFuzzInput(final BeaconStateImpl state, final SignedVoluntaryExit exit) {
-    super(createType(), state, exit);
+  public VoluntaryExitFuzzInput(final BeaconState state, final SignedVoluntaryExit exit) {
+    super(createSchema(), state, exit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public VoluntaryExitFuzzInput() {
-    super(createType());
+    super(createSchema());
   }
 
   public SignedVoluntaryExit getExit() {

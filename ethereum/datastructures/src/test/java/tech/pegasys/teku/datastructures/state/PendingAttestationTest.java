@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
@@ -108,8 +107,7 @@ class PendingAttestationTest {
             inclusionDelay,
             proposerIndex.plus(dataStructureUtil.randomUInt64()));
     Bytes ssz = testPendingAttestation.sszSerialize();
-    PendingAttestation attestation =
-        SimpleOffsetSerializer.deserialize(ssz, PendingAttestation.class);
+    PendingAttestation attestation = PendingAttestation.SSZ_SCHEMA.sszDeserialize(ssz);
     assertEquals(testPendingAttestation, attestation);
   }
 }

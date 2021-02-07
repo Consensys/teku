@@ -17,23 +17,23 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class ChainDataLoader {
   public static BeaconState loadState(final String source) throws IOException {
-    return SimpleOffsetSerializer.deserialize(
-        ResourceLoader.urlOrFile()
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)),
-        BeaconStateImpl.class);
+    return BeaconState.getSszSchema()
+        .sszDeserialize(
+            ResourceLoader.urlOrFile()
+                .loadBytes(source)
+                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }
 
   public static SignedBeaconBlock loadBlock(final String source) throws IOException {
-    return SimpleOffsetSerializer.deserialize(
-        ResourceLoader.urlOrFile()
-            .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)),
-        SignedBeaconBlock.class);
+    return SignedBeaconBlock.SSZ_SCHEMA
+        .get()
+        .sszDeserialize(
+            ResourceLoader.urlOrFile()
+                .loadBytes(source)
+                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }
 }

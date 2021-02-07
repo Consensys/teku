@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -72,8 +71,7 @@ class ForkTest {
   @Test
   void roundTripViaSsz() {
     Fork fork = dataStructureUtil.randomFork();
-    Fork newFork =
-        SimpleOffsetSerializer.deserialize(SimpleOffsetSerializer.serialize(fork), Fork.class);
+    Fork newFork = Fork.SSZ_SCHEMA.sszDeserialize(fork.sszSerialize());
     assertEquals(fork, newFork);
   }
 }

@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class CheckpointTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -26,9 +25,8 @@ class CheckpointTest {
   @Test
   void roundTripViaSsz() {
     Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
-    Bytes checkpointSerialized = SimpleOffsetSerializer.serialize(checkpoint);
-    Checkpoint newCheckpoint =
-        SimpleOffsetSerializer.deserialize(checkpointSerialized, Checkpoint.class);
+    Bytes checkpointSerialized = checkpoint.sszSerialize();
+    Checkpoint newCheckpoint = Checkpoint.SSZ_SCHEMA.sszDeserialize(checkpointSerialized);
     assertEquals(checkpoint, newCheckpoint);
   }
 }

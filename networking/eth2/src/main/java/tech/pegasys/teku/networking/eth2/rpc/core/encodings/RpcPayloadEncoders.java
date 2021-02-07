@@ -19,25 +19,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.RpcErrorMessagePayloadEncoder;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class RpcPayloadEncoders {
 
-  private final Map<Class<?>, RpcPayloadEncoder<?>> encoders;
-  private final Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
+  private final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders;
+  private final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
 
   private RpcPayloadEncoders(
-      final Map<Class<?>, RpcPayloadEncoder<?>> encoders,
-      final Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
+      final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders,
+      final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
     this.encoders = encoders;
     this.defaultEncoderProvider = defaultEncoderProvider;
   }
 
   public static RpcPayloadEncoders createSszEncoders() {
     return RpcPayloadEncoders.builder()
-        .withEncoder(RpcErrorMessage.class, new RpcErrorMessagePayloadEncoder())
         .defaultEncoderProvider(DefaultRpcPayloadEncoder::new)
         .build();
   }
@@ -47,24 +46,24 @@ public class RpcPayloadEncoders {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> RpcPayloadEncoder<T> getEncoder(final Class<T> clazz) {
+  public <T extends SszData> RpcPayloadEncoder<T> getEncoder(final SszSchema<T> clazz) {
     RpcPayloadEncoder<?> encoder = encoders.get(clazz);
     return (RpcPayloadEncoder<T>) (encoder != null ? encoder : defaultEncoderProvider.apply(clazz));
   }
 
   public static class Builder {
-    private final Map<Class<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
-    private Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
+    private final Map<SszSchema<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
+    private Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
 
     private Builder() {}
 
-    public <T> Builder withEncoder(final Class<T> clazz, final RpcPayloadEncoder<T> encoder) {
-      encoders.put(clazz, encoder);
+    public <T> Builder withEncoder(final SszSchema<?> type, final RpcPayloadEncoder<T> encoder) {
+      encoders.put(type, encoder);
       return this;
     }
 
     public Builder defaultEncoderProvider(
-        final Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
+        final Function<SszSchema<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
       this.defaultEncoderProvider = defaultEncoderProvider;
       return this;
     }

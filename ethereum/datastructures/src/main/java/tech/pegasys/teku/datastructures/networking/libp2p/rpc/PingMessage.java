@@ -14,23 +14,19 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container1;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema1;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
-public class PingMessage extends Container1<PingMessage, UInt64View>
-    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public class PingMessage extends Container1<PingMessage, SszUInt64> implements RpcRequest {
 
-  static class PingMessageType extends ContainerType1<PingMessage, UInt64View> {
+  static class PingMessageSchema extends ContainerSchema1<PingMessage, SszUInt64> {
 
-    public PingMessageType() {
-      super("PingMessage", namedType("seqNumber", BasicViewTypes.UINT64_TYPE));
+    public PingMessageSchema() {
+      super("PingMessage", namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -39,14 +35,14 @@ public class PingMessage extends Container1<PingMessage, UInt64View>
     }
   }
 
-  @SszTypeDescriptor public static final PingMessageType TYPE = new PingMessageType();
+  public static final PingMessageSchema SSZ_SCHEMA = new PingMessageSchema();
 
-  public PingMessage(PingMessageType type, TreeNode backingNode) {
+  public PingMessage(PingMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public PingMessage(UInt64 seqNumber) {
-    super(TYPE, new UInt64View(seqNumber));
+    super(SSZ_SCHEMA, new SszUInt64(seqNumber));
   }
 
   public UInt64 getSeqNumber() {

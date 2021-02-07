@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class SignedAggregateAndProofTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -26,9 +25,8 @@ class SignedAggregateAndProofTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
-    final Bytes data = SimpleOffsetSerializer.serialize(original);
-    final SignedAggregateAndProof result =
-        SimpleOffsetSerializer.deserialize(data, SignedAggregateAndProof.class);
+    final Bytes data = original.sszSerialize();
+    final SignedAggregateAndProof result = SignedAggregateAndProof.SSZ_SCHEMA.sszDeserialize(data);
     assertThat(result).isEqualTo(original);
   }
 }

@@ -17,28 +17,23 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
 
-  static class CheckpointType extends ContainerType2<Checkpoint, UInt64View, Bytes32View> {
+  public static class CheckpointSchema extends ContainerSchema2<Checkpoint, SszUInt64, SszBytes32> {
 
-    public CheckpointType() {
+    public CheckpointSchema() {
       super(
           "Checkpoint",
-          namedType("epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("root", BasicViewTypes.BYTES32_TYPE));
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
     @Override
@@ -47,14 +42,14 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
     }
   }
 
-  @SszTypeDescriptor public static final CheckpointType TYPE = new CheckpointType();
+  public static final CheckpointSchema SSZ_SCHEMA = new CheckpointSchema();
 
-  private Checkpoint(CheckpointType type, TreeNode backingNode) {
+  private Checkpoint(CheckpointSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Checkpoint(UInt64 epoch, Bytes32 root) {
-    super(TYPE, new UInt64View(epoch), new Bytes32View(root));
+    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszBytes32(root));
   }
 
   public UInt64 getEpoch() {
@@ -71,10 +66,5 @@ public class Checkpoint extends Container2<Checkpoint, UInt64View, Bytes32View>
 
   public SlotAndBlockRoot toSlotAndBlockRoot() {
     return new SlotAndBlockRoot(getEpochStartSlot(), getRoot());
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

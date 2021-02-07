@@ -15,33 +15,28 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 /**
  * Note: BlockHeader fuzzing target accepts a block as input (not a SignedBeaconBlock or
  * BeaconBlockHeader)
  */
-public class BlockHeaderFuzzInput extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class BlockHeaderFuzzInput
+    extends Container2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> {
 
-  @SszTypeDescriptor
-  public static ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
-    return ContainerType2.create(
-        BeaconState.getSSZType(), BeaconBlock.TYPE.get(), BlockHeaderFuzzInput::new);
+  public static ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType() {
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), BeaconBlock.SSZ_SCHEMA.get(), BlockHeaderFuzzInput::new);
   }
 
   private BlockHeaderFuzzInput(
-      ContainerType2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
+      ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlockHeaderFuzzInput(final BeaconStateImpl state, final BeaconBlock block) {
+  public BlockHeaderFuzzInput(final BeaconState state, final BeaconBlock block) {
     super(createType(), state, block);
   }
 

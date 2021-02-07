@@ -40,47 +40,47 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class IsVariableTest {
 
   static Stream<Arguments> variableSizeTypes() {
     return Stream.of(
-        Arguments.of(BeaconBlockBody.TYPE.get()),
-        Arguments.of(BeaconBlock.TYPE.get()),
-        Arguments.of(Attestation.TYPE),
-        Arguments.of(AttesterSlashing.TYPE),
-        Arguments.of(IndexedAttestation.TYPE),
-        Arguments.of(BeaconState.getSSZType()),
-        Arguments.of(PendingAttestation.TYPE),
-        Arguments.of(AggregateAndProof.TYPE));
+        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get()),
+        Arguments.of(BeaconBlock.SSZ_SCHEMA.get()),
+        Arguments.of(Attestation.SSZ_SCHEMA),
+        Arguments.of(AttesterSlashing.SSZ_SCHEMA),
+        Arguments.of(IndexedAttestation.SSZ_SCHEMA),
+        Arguments.of(BeaconState.getSszSchema()),
+        Arguments.of(PendingAttestation.SSZ_SCHEMA),
+        Arguments.of(AggregateAndProof.SSZ_SCHEMA));
   }
 
   static Stream<Arguments> fixedSizeTypes() {
     return Stream.of(
-        Arguments.of(BeaconBlockHeader.TYPE),
-        Arguments.of(Eth1Data.TYPE),
-        Arguments.of(AttestationData.TYPE),
-        Arguments.of(DepositData.TYPE),
-        Arguments.of(Deposit.TYPE),
-        Arguments.of(ProposerSlashing.TYPE),
-        Arguments.of(VoluntaryExit.TYPE),
-        Arguments.of(Checkpoint.TYPE),
-        Arguments.of(Fork.TYPE),
-        Arguments.of(HistoricalBatch.TYPE.get()),
-        Arguments.of(VoteTracker.TYPE),
-        Arguments.of(Validator.TYPE));
+        Arguments.of(BeaconBlockHeader.SSZ_SCHEMA),
+        Arguments.of(Eth1Data.SSZ_SCHEMA),
+        Arguments.of(AttestationData.SSZ_SCHEMA),
+        Arguments.of(DepositData.SSZ_SCHEMA),
+        Arguments.of(Deposit.SSZ_SCHEMA),
+        Arguments.of(ProposerSlashing.SSZ_SCHEMA),
+        Arguments.of(VoluntaryExit.SSZ_SCHEMA),
+        Arguments.of(Checkpoint.SSZ_SCHEMA),
+        Arguments.of(Fork.SSZ_SCHEMA),
+        Arguments.of(HistoricalBatch.SSZ_SCHEMA.get()),
+        Arguments.of(VoteTracker.SSZ_SCHEMA),
+        Arguments.of(Validator.SSZ_SCHEMA));
   }
 
   @ParameterizedTest
   @MethodSource("variableSizeTypes")
-  void testTheTypeIsVariableSize(ViewType<?> type) {
+  void testTheTypeIsVariableSize(SszSchema<?> type) {
     assertFalse(type.isFixedSize());
   }
 
   @ParameterizedTest
   @MethodSource("fixedSizeTypes")
-  void testTheTypeIsFixedSize(ViewType<?> type) {
+  void testTheTypeIsFixedSize(SszSchema<?> type) {
     assertTrue(type.isFixedSize());
   }
 }

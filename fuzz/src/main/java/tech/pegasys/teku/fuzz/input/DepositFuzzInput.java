@@ -15,34 +15,29 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
-public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit>
-    implements SimpleOffsetSerializable, SSZContainer {
+public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  @SszTypeDescriptor
-  public static ContainerType2<DepositFuzzInput, BeaconState, Deposit> createType() {
-    return ContainerType2.create(BeaconState.getSSZType(), Deposit.TYPE, DepositFuzzInput::new);
+  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema() {
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), Deposit.SSZ_SCHEMA, DepositFuzzInput::new);
   }
 
   public DepositFuzzInput(
-      ContainerType2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
+      ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public DepositFuzzInput(final BeaconStateImpl state, final Deposit deposit) {
-    super(createType(), state, deposit);
+  public DepositFuzzInput(final BeaconState state, final Deposit deposit) {
+    super(createSchema(), state, deposit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public DepositFuzzInput() {
-    super(createType());
+    super(createSchema());
   }
 
   public Deposit getDeposit() {

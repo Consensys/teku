@@ -15,33 +15,27 @@ package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
 
 public class AttesterSlashingFuzzInput
-    extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
-    implements SimpleOffsetSerializable, SSZContainer {
+    extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> {
 
-  @SszTypeDescriptor
-  public static ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
+  public static ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
       createType() {
-    return ContainerType2.create(
-        BeaconState.getSSZType(), AttesterSlashing.TYPE, AttesterSlashingFuzzInput::new);
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), AttesterSlashing.SSZ_SCHEMA, AttesterSlashingFuzzInput::new);
   }
 
   private AttesterSlashingFuzzInput(
-      ContainerType2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
+      ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
       TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public AttesterSlashingFuzzInput(
-      final BeaconStateImpl state, final AttesterSlashing attester_slashing) {
+      final BeaconState state, final AttesterSlashing attester_slashing) {
     super(createType(), state, attester_slashing);
   }
 

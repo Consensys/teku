@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 public class VoteTrackerSerializerTest {
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
-  private static Bytes votesSerialized = serialize(votes);
+  private static Bytes votesSerialized = votes.sszSerialize();
   private static VoteTrackerSerializer serializer = new VoteTrackerSerializer();
 
   @Test

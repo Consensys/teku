@@ -110,6 +110,6 @@ public class GenesisHandler implements Eth1EventsChannel {
     recentChainData.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(
-        genesisState.hash_tree_root(), genesisBlockRoot, genesisState.getGenesis_time());
+        genesisState.hashTreeRoot(), genesisBlockRoot, genesisState.getGenesis_time());
   }
 }

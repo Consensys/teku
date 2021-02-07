@@ -94,7 +94,7 @@ public final class BlockProcessorUtil {
           block.getProposerIndex().longValue() == get_beacon_proposer_index(state),
           "process_block_header: Verify that proposer index is the correct index");
       checkArgument(
-          block.getParentRoot().equals(state.getLatest_block_header().hash_tree_root()),
+          block.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
           "process_block_header: Verify that the parent matches");
       checkArgument(
           block.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
@@ -107,7 +107,7 @@ public final class BlockProcessorUtil {
               block.getProposerIndex(),
               block.getParentRoot(),
               Bytes32.ZERO, // Overwritten in the next `process_slot` call
-              block.getBody().hash_tree_root()));
+              block.getBody().hashTreeRoot()));
 
       // Only if we are processing blocks (not proposing them)
       Validator proposer =

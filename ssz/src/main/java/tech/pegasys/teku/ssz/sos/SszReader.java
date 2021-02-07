@@ -31,23 +31,23 @@ public interface SszReader extends Closeable {
    * Returns {@link SszReader} instance limited with {@code size} bytes Advances this reader current
    * read position to {@code size} bytes
    *
-   * @throws SSZDeserializeException If not enough bytes available for slice
+   * @throws SszDeserializeException If not enough bytes available for slice
    */
-  SszReader slice(int size) throws SSZDeserializeException;
+  SszReader slice(int size) throws SszDeserializeException;
 
   /**
    * Returns {@code length} bytes and advances this reader current read position to {@code length}
    * bytes
    *
-   * @throws SSZDeserializeException If not enough bytes available
+   * @throws SszDeserializeException If not enough bytes available
    */
-  Bytes read(int length) throws SSZDeserializeException;
+  Bytes read(int length) throws SszDeserializeException;
 
   /**
    * Closes this reader. Doesn't affect the 'parent' reader (if any) this instance was 'sliced' from
    *
-   * @throws SSZDeserializeException If unread bytes remain
+   * @throws SszDeserializeException If unread bytes remain
    */
   @Override
-  void close() throws SSZDeserializeException;
+  void close() throws SszDeserializeException;
 }

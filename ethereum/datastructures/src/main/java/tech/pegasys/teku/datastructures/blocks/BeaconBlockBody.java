@@ -21,90 +21,86 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A Beacon block body */
 public class BeaconBlockBody
     extends Container8<
         BeaconBlockBody,
-        VectorViewRead<ByteView>,
+        SszVector<SszByte>,
         Eth1Data,
-        Bytes32View,
-        ListViewRead<ProposerSlashing>,
-        ListViewRead<AttesterSlashing>,
-        ListViewRead<Attestation>,
-        ListViewRead<Deposit>,
-        ListViewRead<SignedVoluntaryExit>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+        SszBytes32,
+        SszList<ProposerSlashing>,
+        SszList<AttesterSlashing>,
+        SszList<Attestation>,
+        SszList<Deposit>,
+        SszList<SignedVoluntaryExit>> {
 
-  public static class BeaconBlockBodyType
-      extends ContainerType8<
+  public static class BeaconBlockBodySchema
+      extends ContainerSchema8<
           BeaconBlockBody,
-          VectorViewRead<ByteView>,
+          SszVector<SszByte>,
           Eth1Data,
-          Bytes32View,
-          ListViewRead<ProposerSlashing>,
-          ListViewRead<AttesterSlashing>,
-          ListViewRead<Attestation>,
-          ListViewRead<Deposit>,
-          ListViewRead<SignedVoluntaryExit>> {
+          SszBytes32,
+          SszList<ProposerSlashing>,
+          SszList<AttesterSlashing>,
+          SszList<Attestation>,
+          SszList<Deposit>,
+          SszList<SignedVoluntaryExit>> {
 
-    public BeaconBlockBodyType() {
+    public BeaconBlockBodySchema() {
       super(
           "BeaconBlockBody",
-          namedType("randao_reveal", ComplexViewTypes.BYTES_96_TYPE),
-          namedType("eth1_data", Eth1Data.TYPE),
-          namedType("graffiti", BasicViewTypes.BYTES32_TYPE),
-          namedType(
+          namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
+          namedSchema("eth1_data", Eth1Data.SSZ_SCHEMA),
+          namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema(
               "proposer_slashings",
-              new ListViewType<>(ProposerSlashing.TYPE, Constants.MAX_PROPOSER_SLASHINGS)),
-          namedType(
+              new SszListSchema<>(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
+          namedSchema(
               "attester_slashings",
-              new ListViewType<>(AttesterSlashing.TYPE, Constants.MAX_ATTESTER_SLASHINGS)),
-          namedType(
-              "attestations", new ListViewType<>(Attestation.TYPE, Constants.MAX_ATTESTATIONS)),
-          namedType("deposits", new ListViewType<>(Deposit.TYPE, Constants.MAX_DEPOSITS)),
-          namedType(
+              new SszListSchema<>(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
+          namedSchema(
+              "attestations",
+              new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
+          namedSchema("deposits", new SszListSchema<>(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
+          namedSchema(
               "voluntary_exits",
-              new ListViewType<>(SignedVoluntaryExit.TYPE, Constants.MAX_VOLUNTARY_EXITS)));
+              new SszListSchema<>(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    public ListViewType<ProposerSlashing> getProposerSlashingsType() {
-      return (ListViewType<ProposerSlashing>) getFieldType3();
+    public SszListSchema<ProposerSlashing> getProposerSlashingsSchema() {
+      return (SszListSchema<ProposerSlashing>) getFieldSchema3();
     }
 
-    public ListViewType<AttesterSlashing> getAttesterSlashingsType() {
-      return (ListViewType<AttesterSlashing>) getFieldType4();
+    public SszListSchema<AttesterSlashing> getAttesterSlashingsSchema() {
+      return (SszListSchema<AttesterSlashing>) getFieldSchema4();
     }
 
-    public ListViewType<Attestation> getAttestationsType() {
-      return (ListViewType<Attestation>) getFieldType5();
+    public SszListSchema<Attestation> getAttestationsSchema() {
+      return (SszListSchema<Attestation>) getFieldSchema5();
     }
 
-    public ListViewType<Deposit> getDepositsType() {
-      return (ListViewType<Deposit>) getFieldType6();
+    public SszListSchema<Deposit> getDepositsSchema() {
+      return (SszListSchema<Deposit>) getFieldSchema6();
     }
 
-    public ListViewType<SignedVoluntaryExit> getVoluntaryExitsType() {
-      return (ListViewType<SignedVoluntaryExit>) getFieldType7();
+    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsSchema() {
+      return (SszListSchema<SignedVoluntaryExit>) getFieldSchema7();
     }
 
     @Override
@@ -113,17 +109,16 @@ public class BeaconBlockBody
     }
   }
 
-  @SszTypeDescriptor
-  public static BeaconBlockBodyType getSszType() {
-    return TYPE.get();
+  public static BeaconBlockBodySchema getSszSchema() {
+    return SSZ_SCHEMA.get();
   }
 
-  public static final SpecDependent<BeaconBlockBodyType> TYPE =
-      SpecDependent.of(BeaconBlockBodyType::new);
+  public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockBodySchema::new);
 
   private BLSSignature randaoRevealCache;
 
-  private BeaconBlockBody(BeaconBlockBodyType type, TreeNode backingNode) {
+  private BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -138,7 +133,7 @@ public class BeaconBlockBody
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     this(
-        TYPE.get(),
+        SSZ_SCHEMA.get(),
         randao_reveal,
         eth1_data,
         graffiti,
@@ -151,7 +146,7 @@ public class BeaconBlockBody
   }
 
   public BeaconBlockBody(
-      BeaconBlockBodyType type,
+      BeaconBlockBodySchema type,
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
@@ -162,24 +157,24 @@ public class BeaconBlockBody
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
-        ViewUtils.createVectorFromBytes(randao_reveal.toBytesCompressed()),
+        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
         eth1_data,
-        new Bytes32View(graffiti),
-        ViewUtils.toListView(type.getProposerSlashingsType(), proposer_slashings),
-        ViewUtils.toListView(type.getAttesterSlashingsType(), attester_slashings),
-        ViewUtils.toListView(type.getAttestationsType(), attestations),
-        ViewUtils.toListView(type.getDepositsType(), deposits),
-        ViewUtils.toListView(type.getVoluntaryExitsType(), voluntary_exits));
+        new SszBytes32(graffiti),
+        SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
+        SszUtils.toSszList(type.getAttesterSlashingsSchema(), attester_slashings),
+        SszUtils.toSszList(type.getAttestationsSchema(), attestations),
+        SszUtils.toSszList(type.getDepositsSchema(), deposits),
+        SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
     this.randaoRevealCache = randao_reveal;
   }
 
   public BeaconBlockBody() {
-    super(TYPE.get());
+    super(SSZ_SCHEMA.get());
   }
 
   public BLSSignature getRandao_reveal() {
     if (randaoRevealCache == null) {
-      randaoRevealCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField0()));
+      randaoRevealCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField0()));
     }
     return randaoRevealCache;
   }
@@ -215,10 +210,5 @@ public class BeaconBlockBody
   public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
     return new SSZBackingList<>(
         SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

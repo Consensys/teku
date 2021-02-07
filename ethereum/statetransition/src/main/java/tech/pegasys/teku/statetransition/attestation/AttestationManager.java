@@ -163,7 +163,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   @SuppressWarnings("unused")
   private void onBlockImported(final ImportedBlockEvent blockImportedEvent) {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     pendingAttestations
         .getItemsDependingOn(blockRoot, false)
         .forEach(

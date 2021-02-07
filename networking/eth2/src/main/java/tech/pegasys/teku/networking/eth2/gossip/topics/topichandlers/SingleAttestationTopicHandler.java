@@ -13,45 +13,32 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class SingleAttestationTopicHandler extends Eth2TopicHandler<ValidateableAttestation> {
-  private final int subnetId;
+public class SingleAttestationTopicHandler {
 
-  public SingleAttestationTopicHandler(
+  public static Eth2TopicHandler<?> createHandler(
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableAttestation> operationProcessor,
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
       final int subnetId) {
-    super(
+
+    OperationProcessor<Attestation> convertingProcessor =
+        attMessage ->
+            operationProcessor.process(ValidateableAttestation.fromNetwork(attMessage, subnetId));
+    return new Eth2TopicHandler<>(
         asyncRunner,
-        operationProcessor,
+        convertingProcessor,
         gossipEncoding,
         forkDigest,
         topicName,
-        ValidateableAttestation.class);
-    this.subnetId = subnetId;
-  }
-
-  @Override
-  public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(payload, Attestation.class);
-  }
-
-  @Override
-  public ValidateableAttestation deserialize(PreparedGossipMessage message)
-      throws DecodingException {
-    Attestation attestation = getGossipEncoding().decodeMessage(message, Attestation.class);
-    return ValidateableAttestation.fromNetwork(attestation, subnetId);
+        Attestation.SSZ_SCHEMA);
   }
 }

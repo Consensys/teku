@@ -14,29 +14,25 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public final class BeaconBlocksByRangeRequestMessage
-    extends Container3<BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View>
-    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+    extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>
+    implements RpcRequest {
 
-  public static class BeaconBlocksByRangeRequestMessageType
-      extends ContainerType3<
-          BeaconBlocksByRangeRequestMessage, UInt64View, UInt64View, UInt64View> {
+  public static class BeaconBlocksByRangeRequestMessageSchema
+      extends ContainerSchema3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
 
-    public BeaconBlocksByRangeRequestMessageType() {
+    public BeaconBlocksByRangeRequestMessageSchema() {
       super(
           "BeaconBlocksByRangeRequestMessage",
-          namedType("startSlot", BasicViewTypes.UINT64_TYPE),
-          namedType("count", BasicViewTypes.UINT64_TYPE),
-          namedType("step", BasicViewTypes.UINT64_TYPE));
+          namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("step", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -45,18 +41,17 @@ public final class BeaconBlocksByRangeRequestMessage
     }
   }
 
-  @SszTypeDescriptor
-  public static final BeaconBlocksByRangeRequestMessageType TYPE =
-      new BeaconBlocksByRangeRequestMessageType();
+  public static final BeaconBlocksByRangeRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRangeRequestMessageSchema();
 
   private BeaconBlocksByRangeRequestMessage(
-      BeaconBlocksByRangeRequestMessageType type, TreeNode backingNode) {
+      BeaconBlocksByRangeRequestMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BeaconBlocksByRangeRequestMessage(
       final UInt64 startSlot, final UInt64 count, final UInt64 step) {
-    super(TYPE, new UInt64View(startSlot), new UInt64View(count), new UInt64View(step));
+    super(SSZ_SCHEMA, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
   }
 
   public UInt64 getStartSlot() {

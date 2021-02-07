@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -57,8 +58,8 @@ public class SingleAttestationTopicHandlerTest {
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   final String topicName = TopicNames.getAttestationSubnetTopicName(SUBNET_ID);
-  private final SingleAttestationTopicHandler topicHandler =
-      new SingleAttestationTopicHandler(
+  private final Eth2TopicHandler<?> topicHandler =
+      SingleAttestationTopicHandler.createHandler(
           asyncRunner,
           processor,
           gossipEncoding,
@@ -150,8 +151,8 @@ public class SingleAttestationTopicHandlerTest {
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     final String topicName = TopicNames.getAttestationSubnetTopicName(0);
-    final SingleAttestationTopicHandler topicHandler =
-        new SingleAttestationTopicHandler(
+    Eth2TopicHandler<?> topicHandler =
+        SingleAttestationTopicHandler.createHandler(
             asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
   }

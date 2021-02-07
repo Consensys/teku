@@ -13,51 +13,45 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.ListViewRead;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
     extends Container3<
-        IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+        IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-  public static class IndexedAttestationType
-      extends ContainerType3<
-          IndexedAttestation, ListViewRead<UInt64View>, AttestationData, VectorViewRead<ByteView>> {
+  public static class IndexedAttestationSchema
+      extends ContainerSchema3<
+          IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-    public IndexedAttestationType() {
+    public IndexedAttestationSchema() {
       super(
           "IndexedAttestation",
-          namedType(
+          namedSchema(
               "attesting_indices",
-              new ListViewType<>(
-                  BasicViewTypes.UINT64_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
-          namedType("data", AttestationData.TYPE),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+              new SszListSchema<>(
+                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public ListViewType<UInt64View> getAttestingIndicesType() {
-      return (ListViewType<UInt64View>) getFieldType0();
+    public SszListSchema<SszUInt64> getAttestingIndicesSchema() {
+      return (SszListSchema<SszUInt64>) getFieldSchema0();
     }
 
     @Override
@@ -66,26 +60,28 @@ public class IndexedAttestation
     }
   }
 
-  @SszTypeDescriptor public static final IndexedAttestationType TYPE = new IndexedAttestationType();
+  public static final IndexedAttestationSchema SSZ_SCHEMA = new IndexedAttestationSchema();
 
   private BLSSignature signatureCache;
 
-  private IndexedAttestation(IndexedAttestationType type, TreeNode backingNode) {
+  private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public IndexedAttestation(
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     super(
-        TYPE,
-        ViewUtils.toListView(TYPE.getAttestingIndicesType(), attesting_indices, UInt64View::new),
+        SSZ_SCHEMA,
+        SszUtils.toSszList(
+            SSZ_SCHEMA.getAttestingIndicesSchema(), attesting_indices, SszUInt64::new),
         data,
-        ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
   public SSZList<UInt64> getAttesting_indices() {
-    return new SSZBackingList<>(UInt64.class, getField0(), UInt64View::new, AbstractBasicView::get);
+    return new SSZBackingList<>(
+        UInt64.class, getField0(), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   public AttestationData getData() {
@@ -94,13 +90,8 @@ public class IndexedAttestation
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField2()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

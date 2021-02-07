@@ -13,28 +13,23 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64View>
-    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-  static class VoluntaryExitType extends ContainerType2<VoluntaryExit, UInt64View, UInt64View> {
+  public static class VoluntaryExitSchema
+      extends ContainerSchema2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-    public VoluntaryExitType() {
+    public VoluntaryExitSchema() {
       super(
           "VoluntaryExit",
-          namedType("epoch", BasicViewTypes.UINT64_TYPE),
-          namedType("validator_index", BasicViewTypes.UINT64_TYPE));
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -43,14 +38,14 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
     }
   }
 
-  @SszTypeDescriptor public static final VoluntaryExitType TYPE = new VoluntaryExitType();
+  public static final VoluntaryExitSchema SSZ_SCHEMA = new VoluntaryExitSchema();
 
-  private VoluntaryExit(VoluntaryExitType type, TreeNode backingNode) {
+  private VoluntaryExit(VoluntaryExitSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    super(TYPE, new UInt64View(epoch), new UInt64View(validator_index));
+    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszUInt64(validator_index));
   }
 
   public UInt64 getEpoch() {
@@ -59,10 +54,5 @@ public class VoluntaryExit extends Container2<VoluntaryExit, UInt64View, UInt64V
 
   public UInt64 getValidator_index() {
     return getField1().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

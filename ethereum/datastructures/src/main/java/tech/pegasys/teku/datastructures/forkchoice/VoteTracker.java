@@ -16,26 +16,23 @@ package tech.pegasys.teku.datastructures.forkchoice;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32View, UInt64View>
-    implements SimpleOffsetSerializable {
+public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-  static class VoteTrackerType
-      extends ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> {
+  public static class VoteTrackerSchema
+      extends ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-    public VoteTrackerType() {
+    public VoteTrackerSchema() {
       super(
           "VoteTracker",
-          namedType("currentRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("nextRoot", BasicViewTypes.BYTES32_TYPE),
-          namedType("nextEpoch", BasicViewTypes.UINT64_TYPE));
+          namedSchema("currentRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -44,21 +41,24 @@ public class VoteTracker extends Container3<VoteTracker, Bytes32View, Bytes32Vie
     }
   }
 
-  @SszTypeDescriptor public static final VoteTrackerType TYPE = new VoteTrackerType();
+  public static final VoteTrackerSchema SSZ_SCHEMA = new VoteTrackerSchema();
   public static final VoteTracker DEFAULT = new VoteTracker();
 
   private VoteTracker(
-      ContainerType3<VoteTracker, Bytes32View, Bytes32View, UInt64View> type,
-      TreeNode backingNode) {
+      ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   private VoteTracker() {
-    super(TYPE);
+    super(SSZ_SCHEMA);
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(TYPE, new Bytes32View(currentRoot), new Bytes32View(nextRoot), new UInt64View(nextEpoch));
+    super(
+        SSZ_SCHEMA,
+        new SszBytes32(currentRoot),
+        new SszBytes32(nextRoot),
+        new SszUInt64(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

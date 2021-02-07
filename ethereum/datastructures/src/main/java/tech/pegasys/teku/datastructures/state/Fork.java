@@ -13,31 +13,25 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-  static class ForkType extends ContainerType3<Fork, Bytes4View, Bytes4View, UInt64View> {
+  public static class ForkSchema extends ContainerSchema3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
-    public ForkType() {
+    public ForkSchema() {
       super(
           "Fork",
-          namedType("previous_version", BasicViewTypes.BYTES4_TYPE),
-          namedType("current_version", BasicViewTypes.BYTES4_TYPE),
-          namedType("epoch", BasicViewTypes.UINT64_TYPE));
+          namedSchema("previous_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("current_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
@@ -46,18 +40,18 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
     }
   }
 
-  @SszTypeDescriptor public static final ForkType TYPE = new ForkType();
+  public static final ForkSchema SSZ_SCHEMA = new ForkSchema();
 
-  private Fork(ForkType type, TreeNode backingNode) {
+  private Fork(ForkSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
-        TYPE,
-        new Bytes4View(previous_version),
-        new Bytes4View(current_version),
-        new UInt64View(epoch));
+        SSZ_SCHEMA,
+        new SszBytes4(previous_version),
+        new SszBytes4(current_version),
+        new SszUInt64(epoch));
   }
 
   public Bytes4 getPrevious_version() {
@@ -70,10 +64,5 @@ public class Fork extends Container3<Fork, Bytes4View, Bytes4View, UInt64View>
 
   public UInt64 getEpoch() {
     return getField2().get();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

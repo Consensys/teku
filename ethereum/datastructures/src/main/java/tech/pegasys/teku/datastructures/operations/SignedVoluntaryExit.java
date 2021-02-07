@@ -14,32 +14,26 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ComplexViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.teku.ssz.backing.view.ViewUtils;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedVoluntaryExit
-    extends Container2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>>
-    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
-  static class SignedVoluntaryExitType
-      extends ContainerType2<SignedVoluntaryExit, VoluntaryExit, VectorViewRead<ByteView>> {
+  public static class SignedVoluntaryExitSchema
+      extends ContainerSchema2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
 
-    public SignedVoluntaryExitType() {
+    public SignedVoluntaryExitSchema() {
       super(
           "SignedVoluntaryExit",
-          namedType("message", VoluntaryExit.TYPE),
-          namedType("signature", ComplexViewTypes.BYTES_96_TYPE));
+          namedSchema("message", VoluntaryExit.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
     @Override
@@ -48,17 +42,16 @@ public class SignedVoluntaryExit
     }
   }
 
-  @SszTypeDescriptor
-  public static final SignedVoluntaryExitType TYPE = new SignedVoluntaryExitType();
+  public static final SignedVoluntaryExitSchema SSZ_SCHEMA = new SignedVoluntaryExitSchema();
 
   private BLSSignature signatureCache;
 
-  private SignedVoluntaryExit(SignedVoluntaryExitType type, TreeNode backingNode) {
+  private SignedVoluntaryExit(SignedVoluntaryExitSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    super(TYPE, message, ViewUtils.createVectorFromBytes(signature.toBytesCompressed()));
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
     this.signatureCache = signature;
   }
 
@@ -68,14 +61,9 @@ public class SignedVoluntaryExit
 
   public BLSSignature getSignature() {
     if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(ViewUtils.getAllBytes(getField1()));
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
     return signatureCache;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override
