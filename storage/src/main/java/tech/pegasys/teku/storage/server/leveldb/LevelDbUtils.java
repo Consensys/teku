@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.leveldb;
 
 import java.util.Arrays;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
@@ -63,12 +63,12 @@ public class LevelDbUtils {
   }
 
   static <K, V> Optional<ColumnEntry<K, V>> asOptionalColumnEntry(
-      final RocksDbColumn<K, V> column, final Entry<byte[], byte[]> entry) {
+      final RocksDbColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
     return Optional.of(asColumnEntry(column, entry));
   }
 
   static <K, V> ColumnEntry<K, V> asColumnEntry(
-      final RocksDbColumn<K, V> column, final Entry<byte[], byte[]> entry) {
+      final RocksDbColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
     return ColumnEntry.create(
         deserializeKey(column, entry.getKey()),
         column.getValueSerializer().deserialize(entry.getValue()));

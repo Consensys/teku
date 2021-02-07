@@ -21,6 +21,7 @@ import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getKeyAfterC
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getVariableKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.isFromColumn;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
@@ -65,7 +66,7 @@ public class LevelDbInstance implements RocksDbAccessor {
           iterator.seek(column.getId().toArrayUnsafe());
           final Map<K, V> values = new HashMap<>();
           while (iterator.hasNext()) {
-            final Entry<byte[], byte[]> entry = iterator.next();
+            final Map.Entry<byte[], byte[]> entry = iterator.next();
             if (!isFromColumn(column, entry.getKey())) {
               break;
             }
@@ -85,7 +86,7 @@ public class LevelDbInstance implements RocksDbAccessor {
           final byte[] matchingKey = getColumnKey(column, key);
           iterator.seek(matchingKey);
           if (iterator.hasNext()) {
-            final Entry<byte[], byte[]> next = iterator.peekNext();
+            final Map.Entry<byte[], byte[]> next = iterator.peekNext();
             if (Arrays.equals(next.getKey(), matchingKey)) {
               return Optional.of(
                   ColumnEntry.create(
@@ -94,7 +95,7 @@ public class LevelDbInstance implements RocksDbAccessor {
           }
 
           if (iterator.hasPrev()) {
-            final Entry<byte[], byte[]> prev = iterator.peekPrev();
+            final Map.Entry<byte[], byte[]> prev = iterator.peekPrev();
             if (isFromColumn(column, prev.getKey())) {
               return asOptionalColumnEntry(column, prev);
             }
@@ -148,11 +149,13 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  @MustBeClosed
   public <K, V> Stream<ColumnEntry<K, V>> stream(final RocksDbColumn<K, V> column) {
     return stream(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column));
   }
 
   @Override
+  @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final K from, final K to) {
     final byte[] fromBytes = getColumnKey(column, from);
@@ -160,6 +163,7 @@ public class LevelDbInstance implements RocksDbAccessor {
     return stream(column, fromBytes, toBytes);
   }
 
+  @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
     final DBIterator iterator = db.iterator();
