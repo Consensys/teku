@@ -5,7 +5,6 @@
   Ansible users should ensure they have the latest version of the ansible role.
   To ensure a smooth migration, releases are currently published to both Cloudsmith and Bintray but support for Bintray will be dropped in the near future.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
-- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images will continue to be updated for the next few releases but please update your configuration to use `consensys/teku`.
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -18,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
   Note: this should be applied to both the beacon node and validator client if running separately.
 - The default docker image now uses Java 15. Java 14 based images are available with the `-jdk14` suffix if required (e.g `consensys/teku:develop-jdk14`)
 - `--validators-key-files` and `--validators-key-password-files` have now been removed. They are replaced by `--validator-keys`.
+- Docker images are now being published to `consensys/teku`. The `pegasys/teku` images are no longer updated.
 
 ### Additions and Improvements
 - `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
