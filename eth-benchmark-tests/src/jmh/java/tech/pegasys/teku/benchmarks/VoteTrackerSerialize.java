@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.benchmarks;
 
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.deserialize;
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
-
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -29,7 +26,7 @@ import tech.pegasys.teku.storage.server.rocksdb.serialization.VoteTrackerSeriali
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
-  private static Bytes votesSerialized = serialize(votes);
+  private static Bytes votesSerialized = votes.sszSerialize();
   private static VoteTrackerSerializer serializer = new VoteTrackerSerializer();
 
   @Benchmark
@@ -37,7 +34,7 @@ public class VoteTrackerSerialize {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void genericSerialization() {
-    checkSize(serialize(votes));
+    checkSize(votes.sszSerialize());
   }
 
   @Benchmark
@@ -45,7 +42,7 @@ public class VoteTrackerSerialize {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void genericDeserialization() {
-    checkEpoch(deserialize(votesSerialized, VoteTracker.class));
+    checkEpoch(VoteTracker.SSZ_SCHEMA.sszDeserialize(votesSerialized));
   }
 
   @Benchmark

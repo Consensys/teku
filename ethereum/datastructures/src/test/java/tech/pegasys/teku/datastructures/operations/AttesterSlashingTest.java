@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class AttesterSlashingTest {
 
@@ -79,8 +78,7 @@ class AttesterSlashingTest {
   void roundtripSsz() {
     AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
+        AttesterSlashing.SSZ_SCHEMA.sszDeserialize(attesterSlashing.sszSerialize());
     assertEquals(attesterSlashing, newAttesterSlashing);
   }
 }

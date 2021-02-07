@@ -13,114 +13,67 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class AggregateAndProof
+    extends Container3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static class AggregateAndProofSchema
+      extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszVector<SszByte>> {
 
-  private final UInt64 index;
-  private final Attestation aggregate;
-  private final BLSSignature selection_proof;
+    public AggregateAndProofSchema() {
+      super(
+          "AggregateAndProof",
+          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("aggregate", Attestation.SSZ_SCHEMA),
+          namedSchema("selection_proof", SszComplexSchemas.BYTES_96_SCHEMA));
+    }
+
+    @Override
+    public AggregateAndProof createFromBackingNode(TreeNode node) {
+      return new AggregateAndProof(this, node);
+    }
+  }
+
+  public static final AggregateAndProofSchema SSZ_SCHEMA = new AggregateAndProofSchema();
+
+  private BLSSignature selectionProofCache;
+
+  private AggregateAndProof(AggregateAndProofSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
-    this.index = index;
-    this.selection_proof = selection_proof;
-    this.aggregate = aggregate;
+    super(
+        SSZ_SCHEMA,
+        new SszUInt64(index),
+        aggregate,
+        SszUtils.toSszByteVector(selection_proof.toBytesCompressed()));
+    selectionProofCache = selection_proof;
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + selection_proof.getSSZFieldCount() + aggregate.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.add(SSZ.encodeUInt64(index.longValue()));
-    fixedPartsList.add(Bytes.EMPTY);
-    fixedPartsList.addAll(selection_proof.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.add(Bytes.EMPTY);
-    variablePartsList.add(SimpleOffsetSerializer.serialize(aggregate));
-    variablePartsList.addAll(Collections.nCopies(selection_proof.getSSZFieldCount(), Bytes.EMPTY));
-    return variablePartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(index, selection_proof, aggregate);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof AggregateAndProof)) {
-      return false;
-    }
-
-    AggregateAndProof other = (AggregateAndProof) obj;
-    return Objects.equals(this.index, other.index)
-        && Objects.equals(this.selection_proof, other.selection_proof)
-        && Objects.equals(this.aggregate, other.aggregate);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("index", index)
-        .add("selection_proof", selection_proof)
-        .add("aggregate", aggregate)
-        .toString();
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getIndex() {
-    return index;
-  }
-
-  public BLSSignature getSelection_proof() {
-    return selection_proof;
+    return getField0().get();
   }
 
   public Attestation getAggregate() {
-    return aggregate;
+    return getField1();
   }
 
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        List.of(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
-            aggregate.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toSSZBytes())));
+  public BLSSignature getSelection_proof() {
+    if (selectionProofCache == null) {
+      selectionProofCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
+    }
+    return selectionProofCache;
   }
 }

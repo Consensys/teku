@@ -23,9 +23,11 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszSnappyGossipEncodingTest {
 
@@ -36,7 +38,7 @@ public class SszSnappyGossipEncodingTest {
     return GossipEncoding.SSZ_SNAPPY;
   }
 
-  private <T> T decode(GossipEncoding encoding, Bytes data, Class<T> valueType)
+  private <T extends SszData> T decode(GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
       throws DecodingException {
     return encoding.decodeMessage(encoding.prepareMessage(data, valueType), valueType);
   }
@@ -47,7 +49,7 @@ public class SszSnappyGossipEncodingTest {
     final Bytes data =
         Bytes.concatenate(hugeLength, Bytes.fromHexString("000000000000000000000000"));
 
-    assertThatThrownBy(() -> decode(encoding, data, SignedBeaconBlock.class))
+    assertThatThrownBy(() -> decode(encoding, data, SignedBeaconBlock.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -57,7 +59,7 @@ public class SszSnappyGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(original);
     final SignedAggregateAndProof decoded =
-        decode(encoding, encoded, SignedAggregateAndProof.class);
+        decode(encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -67,7 +69,7 @@ public class SszSnappyGossipEncodingTest {
     final Attestation original = dataStructureUtil.randomAttestation();
 
     final Bytes encoded = encoding.encode(original);
-    final Attestation decoded = decode(encoding, encoded, Attestation.class);
+    final Attestation decoded = decode(encoding, encoded, Attestation.SSZ_SCHEMA);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -77,21 +79,21 @@ public class SszSnappyGossipEncodingTest {
     final SignedBeaconBlock original = dataStructureUtil.randomSignedBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(original);
-    final SignedBeaconBlock decoded = decode(encoding, encoded, SignedBeaconBlock.class);
+    final SignedBeaconBlock decoded = decode(encoding, encoded, SignedBeaconBlock.SSZ_SCHEMA.get());
 
     assertThat(decoded).isEqualTo(original);
   }
 
   @Test
   public void decode_emptyValue() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.EMPTY, BeaconStateImpl.class))
+    assertThatThrownBy(() -> decode(encoding, Bytes.EMPTY, BeaconState.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_invalidData() {
     final Bytes data = Bytes.fromHexString("0xB1AB1A");
-    assertThatThrownBy(() -> decode(encoding, data, BeaconStateImpl.class))
+    assertThatThrownBy(() -> decode(encoding, data, BeaconState.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -100,7 +102,7 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(block);
-    assertThatThrownBy(() -> decode(encoding, encoded, BeaconStateImpl.class))
+    assertThatThrownBy(() -> decode(encoding, encoded, BeaconState.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -109,39 +111,20 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = Bytes.concatenate(encoding.encode(block), Bytes.fromHexString("0x01"));
-    assertThatThrownBy(() -> decode(encoding, encoded, BeaconStateImpl.class))
-        .isInstanceOf(DecodingException.class);
-  }
-
-  @Test
-  public void decode_toInvalidClass() {
-    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
-
-    final Bytes encoded = encoding.encode(block);
-    assertThatThrownBy(() -> decode(encoding, encoded, RandomClass.class))
-        .isInstanceOf(DecodingException.class);
-  }
-
-  @Test
-  public void decode_toInvalidPrimitive() {
-    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
-
-    final Bytes encoded = encoding.encode(block);
-    assertThatThrownBy(() -> decode(encoding, encoded, boolean.class))
+    assertThatThrownBy(() -> decode(encoding, encoded, BeaconState.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_rejectMessageShorterThanValidLength() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.of(1, 2, 3), SignedBeaconBlock.class))
+    assertThatThrownBy(
+            () -> decode(encoding, Bytes.of(1, 2, 3), SignedBeaconBlock.SSZ_SCHEMA.get()))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_rejectMessageLongerThanValidLength() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.wrap(new byte[512]), StatusMessage.class))
+    assertThatThrownBy(() -> decode(encoding, Bytes.wrap(new byte[512]), StatusMessage.SSZ_SCHEMA))
         .isInstanceOf(DecodingException.class);
   }
-
-  private static class RandomClass {}
 }

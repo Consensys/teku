@@ -13,81 +13,58 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class EnrForkId implements SimpleOffsetSerializable, SSZContainer {
+public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-  public static final int SSZ_FIELD_COUNT = 3;
+  public static class EnrForkIdSchema
+      extends ContainerSchema3<EnrForkId, SszBytes4, SszBytes4, SszUInt64> {
 
-  private final Bytes4 forkDigest;
-  private final Bytes4 nextForkVersion;
-  private final UInt64 nextForkEpoch;
+    public EnrForkIdSchema() {
+      super(
+          "EnrForkId",
+          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("nextForkEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public EnrForkId createFromBackingNode(TreeNode node) {
+      return new EnrForkId(this, node);
+    }
+  }
+
+  public static final EnrForkIdSchema SSZ_SCHEMA = new EnrForkIdSchema();
+
+  private EnrForkId(EnrForkIdSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public EnrForkId(
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
-    this.forkDigest = forkDigest;
-    this.nextForkVersion = nextForkVersion;
-    this.nextForkEpoch = nextForkEpoch;
+    super(
+        SSZ_SCHEMA,
+        new SszBytes4(forkDigest),
+        new SszBytes4(nextForkVersion),
+        new SszUInt64(nextForkEpoch));
   }
 
   public Bytes4 getForkDigest() {
-    return forkDigest;
+    return getField0().get();
   }
 
   public Bytes4 getNextForkVersion() {
-    return nextForkVersion;
+    return getField1().get();
   }
 
   public UInt64 getNextForkEpoch() {
-    return nextForkEpoch;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(forkDigest.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(nextForkVersion.getWrappedBytes())),
-        SSZ.encodeUInt64(nextForkEpoch.longValue()));
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final EnrForkId enrForkID = (EnrForkId) o;
-    return Objects.equals(forkDigest, enrForkID.forkDigest)
-        && Objects.equals(nextForkVersion, enrForkID.nextForkVersion)
-        && Objects.equals(nextForkEpoch, enrForkID.nextForkEpoch);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(forkDigest, nextForkVersion, nextForkEpoch);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("forkDigest", forkDigest)
-        .add("nextForkVersion", nextForkVersion)
-        .add("nextForkEpoch", nextForkEpoch)
-        .toString();
+    return getField2().get();
   }
 }

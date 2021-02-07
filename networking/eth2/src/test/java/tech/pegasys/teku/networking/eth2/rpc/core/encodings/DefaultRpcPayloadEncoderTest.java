@@ -23,7 +23,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloa
 
 public class DefaultRpcPayloadEncoderTest {
   final DefaultRpcPayloadEncoder<StatusMessage> statusMessageEncoder =
-      new DefaultRpcPayloadEncoder<>(StatusMessage.class);
+      new DefaultRpcPayloadEncoder<>(StatusMessage.SSZ_SCHEMA);
 
   @Test
   public void decode_truncatedMessage() {

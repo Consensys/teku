@@ -21,11 +21,14 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
+- `--initial-state` argument is now ignored if chain data is already initialised. Previously it would be downloaded on every restart and Teku would exit if the referenced state was ahead of the chain on disk.
 - Enabled the new sync algorithm by default. This improves sync behaviour when there are multiple forks and distributes requests for blocks across available peers. The old sync algorithm can still be used by setting `--Xp2p-multipeer-sync-enabled=false`.
 - The validator client now uses an independent timer to trigger attestation creation instead of depending on the beacon node publishing a `head` event 4 seconds into the slot. By default the beacon node no longer publishes a `head` event for empty slots. 
   The previous behaviour can be restored with `--Xvalidators-dependent-root-enabled=false`. Note: this should be applied to both the beacon node and validator client if running separately.
 - The default docker image has been upgraded to use Java 15.
 - Updated the ENRs for MainNet bootnodes run by the Nimbus team.
+- Added a `is_syncing` field to the `/eth/v1/node/syncing` endpoint to explicitly indicate if the node is in sync or not. 
+- Teku will now exit when database writes fail (e.g. due to disk failure) to enable systems like kubernetes to better identify and respond to the failure.
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.

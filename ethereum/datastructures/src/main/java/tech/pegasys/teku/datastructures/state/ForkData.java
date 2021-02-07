@@ -13,81 +13,47 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 
-public class ForkData implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
-  public static final int SSZ_FIELD_COUNT = 2;
-  private final Bytes4 currentVersion;
-  private final Bytes32 genesisValidatorsRoot;
+  public static class ForkDataSchema extends ContainerSchema2<ForkData, SszBytes4, SszBytes32> {
+
+    public ForkDataSchema() {
+      super(
+          "ForkData",
+          namedSchema("currentVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("genesisValidatorsRoot", SszPrimitiveSchemas.BYTES32_SCHEMA));
+    }
+
+    @Override
+    public ForkData createFromBackingNode(TreeNode node) {
+      return new ForkData(this, node);
+    }
+  }
+
+  public static final ForkDataSchema SSZ_SCHEMA = new ForkDataSchema();
+
+  private ForkData(ForkDataSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    this.currentVersion = currentVersion;
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    super(SSZ_SCHEMA, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {
-    return currentVersion;
+    return getField0().get();
   }
 
   public Bytes32 getGenesisValidatorsRoot() {
-    return genesisValidatorsRoot;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        List.of(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, currentVersion.getWrappedBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, genesisValidatorsRoot)));
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final ForkData forkData = (ForkData) o;
-    return Objects.equals(currentVersion, forkData.currentVersion)
-        && Objects.equals(genesisValidatorsRoot, forkData.genesisValidatorsRoot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(currentVersion, genesisValidatorsRoot);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("currentVersion", currentVersion)
-        .add("genesisValidatorsRoot", genesisValidatorsRoot)
-        .toString();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(currentVersion.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(genesisValidatorsRoot)));
+    return getField1().get();
   }
 }

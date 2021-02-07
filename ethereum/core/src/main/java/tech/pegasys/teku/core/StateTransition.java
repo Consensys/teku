@@ -154,7 +154,7 @@ public class StateTransition {
     return preState.updated(
         state -> {
           // Cache state root
-          Bytes32 previous_state_root = state.hash_tree_root();
+          Bytes32 previous_state_root = state.hashTreeRoot();
           int index = state.getSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
           state.getState_roots().set(index, previous_state_root);
 
@@ -172,7 +172,7 @@ public class StateTransition {
           }
 
           // Cache block root
-          Bytes32 previous_block_root = state.getLatest_block_header().hash_tree_root();
+          Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
           state.getBlock_roots().set(index, previous_block_root);
         });
   }

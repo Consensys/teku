@@ -265,7 +265,7 @@ public class BlockImporterTest {
         new BeaconBlock(
             block.getSlot(),
             block.getMessage().getProposerIndex(),
-            block.getMessage().hash_tree_root(),
+            block.getMessage().hashTreeRoot(),
             block.getMessage().getStateRoot(),
             block.getMessage().getBody());
     final Signer signer = localChain.getSigner(block.getMessage().getProposerIndex().intValue());
@@ -337,8 +337,7 @@ public class BlockImporterTest {
   public void importBlock_invalidStateTransition() throws Exception {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UInt64.ONE);
     SignedBeaconBlock newBlock =
-        new SignedBeaconBlock(
-            new BeaconBlock(block.getMessage(), Bytes32.ZERO), block.getSignature());
+        new SignedBeaconBlock(block.getMessage().withStateRoot(Bytes32.ZERO), block.getSignature());
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(newBlock).get();

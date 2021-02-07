@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorTest {
@@ -39,7 +38,7 @@ class ValidatorTest {
   private UInt64 effectiveBalance = dataStructureUtil.randomUInt64();
 
   private Validator validator =
-      Validator.create(
+      new Validator(
           pubkey,
           withdrawalCredentials,
           effectiveBalance,
@@ -59,7 +58,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -76,7 +75,7 @@ class ValidatorTest {
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
     Bytes48 differentPublicKey = BLSTestUtil.randomPublicKey(99).toBytesCompressed();
     Validator testValidator =
-        Validator.create(
+        new Validator(
             differentPublicKey,
             withdrawalCredentials,
             effectiveBalance,
@@ -93,7 +92,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials.not(),
             effectiveBalance,
@@ -109,7 +108,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenActivationEpochsAreDifferent() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -125,7 +124,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenExitEpochsAreDifferent() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -141,7 +140,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalEpochsAreDifferent() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -157,7 +156,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenInitiatedExitIsDifferent() {
     Validator testValidator =
-        Validator.create(
+        new Validator(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -172,7 +171,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = SimpleOffsetSerializer.serialize(validator);
-    assertEquals(validator, SimpleOffsetSerializer.deserialize(sszValidatorBytes, Validator.class));
+    Bytes sszValidatorBytes = validator.sszSerialize();
+    assertEquals(validator, Validator.SSZ_SCHEMA.sszDeserialize(sszValidatorBytes));
   }
 }

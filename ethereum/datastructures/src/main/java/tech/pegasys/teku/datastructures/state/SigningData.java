@@ -13,81 +13,46 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
-public class SigningData implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class SigningDataSchema
+      extends ContainerSchema2<SigningData, SszBytes32, SszBytes32> {
 
-  private final Bytes32 object_root;
-  private final Bytes32 domain;
+    public SigningDataSchema() {
+      super(
+          "SigningData",
+          namedSchema("object_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("domain", SszPrimitiveSchemas.BYTES32_SCHEMA));
+    }
+
+    @Override
+    public SigningData createFromBackingNode(TreeNode node) {
+      return new SigningData(this, node);
+    }
+  }
+
+  public static final SigningDataSchema SSZ_SCHEMA = new SigningDataSchema();
+
+  private SigningData(SigningDataSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public SigningData(Bytes32 object_root, Bytes32 domain) {
-    this.object_root = object_root;
-    this.domain = domain;
+    super(SSZ_SCHEMA, new SszBytes32(object_root), new SszBytes32(domain));
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(object_root)),
-        SSZ.encode(writer -> writer.writeFixedBytes(domain)));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(object_root, domain);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof SigningData)) {
-      return false;
-    }
-
-    SigningData other = (SigningData) obj;
-    return Objects.equals(this.getObjectRoot(), other.getObjectRoot())
-        && Objects.equals(this.getDomain(), other.getDomain());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes32 getObjectRoot() {
-    return object_root;
+    return getField0().get();
   }
 
-  public Bytes getDomain() {
-    return domain;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, object_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, domain)));
+  public Bytes32 getDomain() {
+    return getField1().get();
   }
 }

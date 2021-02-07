@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
   public static String TOPIC_NAME = "proposer_slashing";
@@ -34,7 +35,7 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
   }
 
   @Override
-  protected Class<ProposerSlashing> getGossipType() {
-    return ProposerSlashing.class;
+  protected SszSchema<ProposerSlashing> getGossipType() {
+    return ProposerSlashing.SSZ_SCHEMA;
   }
 }

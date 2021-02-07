@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.backing.SszData;
 
 public class RespondingEth2Peer implements Eth2Peer {
   private static final MockNodeIdGenerator idGenerator = new MockNodeIdGenerator();
@@ -245,11 +246,11 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
-    return SafeFuture.completedFuture(MetadataMessage.createDefault());
+    return SafeFuture.completedFuture(MetadataMessage.DEFAULT);
   }
 
   @Override
-  public <I extends RpcRequest, O> SafeFuture<O> requestSingleItem(
+  public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }

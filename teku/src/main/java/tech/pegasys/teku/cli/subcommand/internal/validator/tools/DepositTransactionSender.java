@@ -94,7 +94,7 @@ public class DepositTransactionSender {
                 depositData.getPubkey().toBytesCompressed().toArray(),
                 depositData.getWithdrawal_credentials().toArray(),
                 depositData.getSignature().toSSZBytes().toArray(),
-                depositData.hash_tree_root().toArray(),
+                depositData.hashTreeRoot().toArray(),
                 new BigInteger(depositData.getAmount() + "000000000"))
             .sendAsync());
   }

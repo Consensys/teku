@@ -141,7 +141,7 @@ public class ChainDataProviderTest {
     SafeFuture<Optional<BeaconState>> future = provider.getBeaconState("head");
     final Optional<BeaconState> maybeState = future.get();
     assertThat(maybeState.get().asInternalBeaconState().hashTreeRoot())
-        .isEqualTo(beaconStateInternal.hash_tree_root());
+        .isEqualTo(beaconStateInternal.hashTreeRoot());
   }
 
   @Test
@@ -259,7 +259,7 @@ public class ChainDataProviderTest {
         combinedChainDataClient.getStateAtSlotExact(ZERO).get();
     final Optional<Root> maybeStateRoot = provider.getStateRoot("genesis").get();
     assertThat(maybeStateRoot).isPresent();
-    assertThat(maybeStateRoot.orElseThrow().root).isEqualTo(state.orElseThrow().hash_tree_root());
+    assertThat(maybeStateRoot.orElseThrow().root).isEqualTo(state.orElseThrow().hashTreeRoot());
   }
 
   @Test

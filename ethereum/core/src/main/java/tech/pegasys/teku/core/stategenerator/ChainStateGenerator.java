@@ -64,7 +64,7 @@ class ChainStateGenerator {
     // Process blocks in order
     BeaconState state = baseState;
     for (SignedBeaconBlock currentBlock : chain) {
-      if (currentBlock.getStateRoot().equals(baseState.hash_tree_root())) {
+      if (currentBlock.getStateRoot().equals(baseState.hashTreeRoot())) {
         // Don't process base block
         handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;

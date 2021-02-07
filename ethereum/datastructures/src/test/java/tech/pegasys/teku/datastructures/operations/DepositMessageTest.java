@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class DepositMessageTest {
@@ -32,8 +31,8 @@ class DepositMessageTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final DepositMessage message = new DepositMessage(pubkey, withdrawalCredentials, amount);
-    final Bytes ssz = SimpleOffsetSerializer.serialize(message);
-    final DepositMessage result = SimpleOffsetSerializer.deserialize(ssz, DepositMessage.class);
+    final Bytes ssz = message.sszSerialize();
+    final DepositMessage result = DepositMessage.SSZ_SCHEMA.sszDeserialize(ssz);
 
     assertThat(result).isEqualTo(message);
   }

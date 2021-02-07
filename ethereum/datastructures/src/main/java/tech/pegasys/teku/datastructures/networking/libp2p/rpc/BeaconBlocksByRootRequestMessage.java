@@ -15,57 +15,53 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
+public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
+    implements SszList<SszBytes32>, RpcRequest {
 
-  private final SSZMutableList<Bytes32> blockRoots =
-      SSZList.createMutable(Bytes32.class, MAX_REQUEST_BLOCKS);
+  private static final SszListSchema<SszBytes32> LIST_VIEW_TYPE =
+      new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
 
-  public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
-    this.blockRoots.addAll(blockRoots);
-  }
+  public static class BeaconBlocksByRootRequestMessageSchema
+      extends AbstractDelegateSszSchema<BeaconBlocksByRootRequestMessage> {
 
-  public SSZList<Bytes32> getBlockRoots() {
-    return blockRoots;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(blockRoots);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
+    private BeaconBlocksByRootRequestMessageSchema() {
+      super(LIST_VIEW_TYPE);
     }
 
-    if (this == obj) {
-      return true;
+    @Override
+    public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
+      return new BeaconBlocksByRootRequestMessage(node);
     }
-
-    if (!(obj instanceof BeaconBlocksByRootRequestMessage)) {
-      return false;
-    }
-
-    BeaconBlocksByRootRequestMessage other = (BeaconBlocksByRootRequestMessage) obj;
-    return Objects.equals(this.blockRoots, other.blockRoots);
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("blockRoots", blockRoots).toString();
+  public static final BeaconBlocksByRootRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRootRequestMessageSchema();
+
+  public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
+    super(SszUtils.toSszList(LIST_VIEW_TYPE, roots, SszBytes32::new));
+  }
+
+  private BeaconBlocksByRootRequestMessage(TreeNode node) {
+    super(LIST_VIEW_TYPE, node);
   }
 
   @Override
   public int getMaximumRequestChunks() {
-    return blockRoots.size();
+    return size();
+  }
+
+  @Override
+  public String toString() {
+    return "BeaconBlocksByRootRequestMessage{" + super.toString() + "}";
   }
 }

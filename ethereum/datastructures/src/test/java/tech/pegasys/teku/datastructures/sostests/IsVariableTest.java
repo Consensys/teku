@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.datastructures.sostests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -30,133 +34,53 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class IsVariableTest {
-  @Test
-  void isBeaconBlockBodyVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockBody.class).isVariable());
+
+  static Stream<Arguments> variableSizeTypes() {
+    return Stream.of(
+        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get()),
+        Arguments.of(BeaconBlock.SSZ_SCHEMA.get()),
+        Arguments.of(Attestation.SSZ_SCHEMA),
+        Arguments.of(AttesterSlashing.SSZ_SCHEMA),
+        Arguments.of(IndexedAttestation.SSZ_SCHEMA),
+        Arguments.of(BeaconState.getSszSchema()),
+        Arguments.of(PendingAttestation.SSZ_SCHEMA),
+        Arguments.of(AggregateAndProof.SSZ_SCHEMA));
   }
 
-  @Test
-  void isBeaconBlockHeaderVariableTest() {
-    assertEquals(
-        false,
-        SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockHeader.class).isVariable());
+  static Stream<Arguments> fixedSizeTypes() {
+    return Stream.of(
+        Arguments.of(BeaconBlockHeader.SSZ_SCHEMA),
+        Arguments.of(Eth1Data.SSZ_SCHEMA),
+        Arguments.of(AttestationData.SSZ_SCHEMA),
+        Arguments.of(DepositData.SSZ_SCHEMA),
+        Arguments.of(Deposit.SSZ_SCHEMA),
+        Arguments.of(ProposerSlashing.SSZ_SCHEMA),
+        Arguments.of(VoluntaryExit.SSZ_SCHEMA),
+        Arguments.of(Checkpoint.SSZ_SCHEMA),
+        Arguments.of(Fork.SSZ_SCHEMA),
+        Arguments.of(HistoricalBatch.SSZ_SCHEMA.get()),
+        Arguments.of(VoteTracker.SSZ_SCHEMA),
+        Arguments.of(Validator.SSZ_SCHEMA));
   }
 
-  @Test
-  void isBeaconBlockVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlock.class).isVariable());
+  @ParameterizedTest
+  @MethodSource("variableSizeTypes")
+  void testTheTypeIsVariableSize(SszSchema<?> type) {
+    assertFalse(type.isFixedSize());
   }
 
-  @Test
-  void isEth1DataVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Eth1Data.class).isVariable());
-  }
-
-  @Test
-  void isAttestationDataVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(AttestationData.class).isVariable());
-  }
-
-  @Test
-  void isAttestationVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(Attestation.class).isVariable());
-  }
-
-  @Test
-  void isAttesterSlashingVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(AttesterSlashing.class).isVariable());
-  }
-
-  @Test
-  void isDepositDataVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(DepositData.class).isVariable());
-  }
-
-  @Test
-  void isDepositVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).isVariable());
-  }
-
-  @Test
-  void isIndexedAttestationVariableTest() {
-    assertEquals(
-        true,
-        SimpleOffsetSerializer.classReflectionInfo.get(IndexedAttestation.class).isVariable());
-  }
-
-  @Test
-  void isProposerSlashingVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(ProposerSlashing.class).isVariable());
-  }
-
-  @Test
-  void isVoluntaryExitVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(VoluntaryExit.class).isVariable());
-  }
-
-  @Test
-  void isBeaconStateVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconStateImpl.class).isVariable());
-  }
-
-  @Test
-  void isCheckpointVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Checkpoint.class).isVariable());
-  }
-
-  @Test
-  void isForkVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Fork.class).isVariable());
-  }
-
-  @Test
-  void isHistoricalBatchVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).isVariable());
-  }
-
-  @Test
-  void isPendingAttestationVariableTest() {
-    assertEquals(
-        true,
-        SimpleOffsetSerializer.classReflectionInfo.get(PendingAttestation.class).isVariable());
-  }
-
-  @Test
-  void isValidatorVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Validator.class).isVariable());
-  }
-
-  @Test
-  void isAggregateAndProofVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(AggregateAndProof.class).isVariable());
-  }
-
-  @Test
-  void isVoteTrackerVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(VoteTracker.class).isVariable());
+  @ParameterizedTest
+  @MethodSource("fixedSizeTypes")
+  void testTheTypeIsFixedSize(SszSchema<?> type) {
+    assertTrue(type.isFixedSize());
   }
 }

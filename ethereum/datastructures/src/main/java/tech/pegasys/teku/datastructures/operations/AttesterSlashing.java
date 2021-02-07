@@ -15,98 +15,63 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Sets;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
-import jdk.jfr.Label;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class AttesterSlashing
+    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class AttesterSlashingSchema
+      extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
-  private final IndexedAttestation attestation_1;
-  private final IndexedAttestation attestation_2;
+    public AttesterSlashingSchema() {
+      super(
+          "AttesterSlashing",
+          namedSchema("attestation_1", IndexedAttestation.SSZ_SCHEMA),
+          namedSchema("attestation_2", IndexedAttestation.SSZ_SCHEMA));
+    }
 
-  @Label("sos-ignore")
-  private final Supplier<Set<UInt64>> intersectingIndices;
+    @Override
+    public AttesterSlashing createFromBackingNode(TreeNode node) {
+      return new AttesterSlashing(this, node);
+    }
+  }
+
+  public static final AttesterSlashingSchema SSZ_SCHEMA = new AttesterSlashingSchema();
+
+  private final Supplier<Set<UInt64>> intersectingIndices =
+      Suppliers.memoize(
+          () ->
+              Sets.intersection(
+                  new TreeSet<>(
+                      getAttestation_1()
+                          .getAttesting_indices()
+                          .asList()), // TreeSet as must be sorted
+                  new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
+
+  private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
-    this.attestation_1 = attestation_1;
-    this.attestation_2 = attestation_2;
-    this.intersectingIndices =
-        Suppliers.memoize(
-            () ->
-                Sets.intersection(
-                    new TreeSet<>(
-                        attestation_1.getAttesting_indices().asList()), // TreeSet as must be sorted
-                    new HashSet<>(attestation_2.getAttesting_indices().asList())));
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(
-        SimpleOffsetSerializer.serialize(attestation_1),
-        SimpleOffsetSerializer.serialize(attestation_2));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(attestation_1, attestation_2);
+    super(SSZ_SCHEMA, attestation_1, attestation_2);
   }
 
   public Set<UInt64> getIntersectingValidatorIndices() {
     return intersectingIndices.get();
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof AttesterSlashing)) {
-      return false;
-    }
-
-    AttesterSlashing other = (AttesterSlashing) obj;
-    return Objects.equals(this.getAttestation_1(), other.getAttestation_1())
-        && Objects.equals(this.getAttestation_2(), other.getAttestation_2());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public IndexedAttestation getAttestation_1() {
-    return attestation_1;
+    return getField0();
   }
 
   public IndexedAttestation getAttestation_2() {
-    return attestation_2;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(attestation_1.hash_tree_root(), attestation_2.hash_tree_root()));
+    return getField1();
   }
 }

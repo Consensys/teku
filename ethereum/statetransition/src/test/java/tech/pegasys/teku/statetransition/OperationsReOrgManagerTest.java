@@ -79,25 +79,25 @@ public class OperationsReOrgManagerTest {
     UInt64 commonAncestorSlot = UInt64.valueOf(9);
 
     NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
-    nowNotCanonicalBlockRoots.put(UInt64.valueOf(10), fork1Block1.hash_tree_root());
-    nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), fork1Block2.hash_tree_root());
-    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root()))
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(10), fork1Block1.hashTreeRoot());
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), fork1Block2.hashTreeRoot());
+    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, fork1Block2.hashTreeRoot()))
         .thenReturn(nowNotCanonicalBlockRoots);
 
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
-    nowCanonicalBlockRoots.put(UInt64.valueOf(12), fork2Block1.hash_tree_root());
-    nowCanonicalBlockRoots.put(UInt64.valueOf(13), fork2Block2.hash_tree_root());
-    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, fork2Block2.hash_tree_root()))
+    nowCanonicalBlockRoots.put(UInt64.valueOf(12), fork2Block1.hashTreeRoot());
+    nowCanonicalBlockRoots.put(UInt64.valueOf(13), fork2Block2.hashTreeRoot());
+    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, fork2Block2.hashTreeRoot()))
         .thenReturn(nowCanonicalBlockRoots);
 
-    when(recentChainData.retrieveBlockByRoot(fork1Block1.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(fork1Block1.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block1)));
-    when(recentChainData.retrieveBlockByRoot(fork1Block2.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(fork1Block2.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block2)));
 
-    when(recentChainData.retrieveBlockByRoot(fork2Block1.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(fork2Block1.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block1)));
-    when(recentChainData.retrieveBlockByRoot(fork2Block2.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(fork2Block2.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block2)));
 
     when(attestationManager.onAttestation(any()))
@@ -106,14 +106,14 @@ public class OperationsReOrgManagerTest {
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         fork2Block2.getStateRoot(),
-        fork2Block2.hash_tree_root(),
+        fork2Block2.hashTreeRoot(),
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         ReorgContext.of(
-            fork1Block2.hash_tree_root(), fork1Block2.getStateRoot(), commonAncestorSlot));
+            fork1Block2.hashTreeRoot(), fork1Block2.getStateRoot(), commonAncestorSlot));
 
-    verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
+    verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hashTreeRoot());
 
     verify(proposerSlashingOperationPool).addAll(fork1Block1.getBody().getProposer_slashings());
     verify(attesterSlashingOperationPool).addAll(fork1Block1.getBody().getAttester_slashings());
@@ -157,18 +157,18 @@ public class OperationsReOrgManagerTest {
     UInt64 commonAncestorSlot = UInt64.valueOf(9);
 
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
-    nowCanonicalBlockRoots.put(UInt64.valueOf(12), block1.hash_tree_root());
-    nowCanonicalBlockRoots.put(UInt64.valueOf(13), block2.hash_tree_root());
-    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root()))
+    nowCanonicalBlockRoots.put(UInt64.valueOf(12), block1.hashTreeRoot());
+    nowCanonicalBlockRoots.put(UInt64.valueOf(13), block2.hashTreeRoot());
+    when(recentChainData.getAncestorsOnFork(commonAncestorSlot, block2.hashTreeRoot()))
         .thenReturn(nowCanonicalBlockRoots);
 
     // reOrged old chain
     when(recentChainData.getAncestorsOnFork(commonAncestorSlot, Bytes32.ZERO))
         .thenReturn(new TreeMap<>());
 
-    when(recentChainData.retrieveBlockByRoot(block1.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(block1.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block1)));
-    when(recentChainData.retrieveBlockByRoot(block2.hash_tree_root()))
+    when(recentChainData.retrieveBlockByRoot(block2.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
     when(attestationManager.onAttestation(any()))
@@ -177,13 +177,13 @@ public class OperationsReOrgManagerTest {
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         block2.getStateRoot(),
-        block2.hash_tree_root(),
+        block2.hashTreeRoot(),
         false,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));
 
-    verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());
+    verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hashTreeRoot());
 
     verify(exitOperationPool, never()).addAll(any());
     verify(proposerSlashingOperationPool, never()).addAll(any());

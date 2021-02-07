@@ -244,13 +244,13 @@ public class BlockManagerTest {
 
     final SignedBeaconBlock invalidBlock =
         remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
-    Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
+    Bytes32 parentBlockRoot = invalidBlock.getMessage().hashTreeRoot();
     for (int i = 0; i < invalidChainDepth; i++) {
       final UInt64 nextSlot = incrementSlot();
       final SignedBeaconBlock block =
           dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
-      parentBlockRoot = block.getMessage().hash_tree_root();
+      parentBlockRoot = block.getMessage().hashTreeRoot();
     }
 
     // Gossip all blocks except the first
@@ -273,13 +273,13 @@ public class BlockManagerTest {
 
     final SignedBeaconBlock invalidBlock =
         remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
-    Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
+    Bytes32 parentBlockRoot = invalidBlock.getMessage().hashTreeRoot();
     for (int i = 0; i < invalidChainDepth; i++) {
       final UInt64 nextSlot = incrementSlot();
       final SignedBeaconBlock block =
           dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
-      parentBlockRoot = block.getMessage().hash_tree_root();
+      parentBlockRoot = block.getMessage().hashTreeRoot();
     }
 
     // Gossip all blocks except the first two

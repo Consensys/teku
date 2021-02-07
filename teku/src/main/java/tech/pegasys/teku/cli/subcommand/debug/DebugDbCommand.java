@@ -34,7 +34,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
@@ -249,7 +248,7 @@ public class DebugDbCommand implements Runnable {
       return 2;
     }
     try {
-      Files.write(outputFile, SimpleOffsetSerializer.serialize(state.get()).toArrayUnsafe());
+      Files.write(outputFile, state.get().sszSerialize().toArrayUnsafe());
     } catch (IOException e) {
       System.err.println("Unable to write state to " + outputFile + ": " + e.getMessage());
       return 1;
@@ -263,7 +262,7 @@ public class DebugDbCommand implements Runnable {
       return 2;
     }
     try {
-      Files.write(outputFile, SimpleOffsetSerializer.serialize(block.get()).toArrayUnsafe());
+      Files.write(outputFile, block.get().sszSerialize().toArrayUnsafe());
     } catch (IOException e) {
       System.err.println("Unable to write block to " + outputFile + ": " + e.getMessage());
       return 1;

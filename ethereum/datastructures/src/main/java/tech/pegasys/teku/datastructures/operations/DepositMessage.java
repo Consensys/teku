@@ -13,90 +13,65 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class DepositMessage implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class DepositMessage
+    extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  private static final int SSZ_FIELD_COUNT = 2;
+  public static class DepositMessageSchema
+      extends ContainerSchema3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
 
-  private final BLSPublicKey pubkey;
-  private final Bytes32 withdrawal_credentials;
-  private final UInt64 amount;
+    public DepositMessageSchema() {
+      super(
+          "DepositMessage",
+          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public DepositMessage createFromBackingNode(TreeNode node) {
+      return new DepositMessage(this, node);
+    }
+  }
+
+  public static final DepositMessageSchema SSZ_SCHEMA = new DepositMessageSchema();
+
+  private DepositMessage(DepositMessageSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public DepositMessage(
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
-    this.pubkey = pubkey;
-    this.withdrawal_credentials = withdrawal_credentials;
-    this.amount = amount;
+    super(
+        SSZ_SCHEMA,
+        SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(amount));
   }
 
   public BLSPublicKey getPubkey() {
-    return pubkey;
+    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(SszUtils.getAllBytes(getField0())));
   }
 
   public Bytes32 getWithdrawal_credentials() {
-    return withdrawal_credentials;
+    return getField1().get();
   }
 
   public UInt64 getAmount() {
-    return amount;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(pubkey.get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(withdrawal_credentials)),
-            SSZ.encodeUInt64(amount.longValue())));
-    return fixedPartsList;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DepositMessage that = (DepositMessage) o;
-    return Objects.equals(pubkey, that.pubkey)
-        && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
-        && Objects.equals(amount, that.amount);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(pubkey, withdrawal_credentials, amount);
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toSSZBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue()))));
+    return getField2().get();
   }
 }

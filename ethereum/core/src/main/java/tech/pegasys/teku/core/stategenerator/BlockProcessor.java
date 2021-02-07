@@ -34,11 +34,11 @@ class BlockProcessor {
   }
 
   public void assertBlockAndStateMatch(final SignedBeaconBlock block, final BeaconState state) {
-    if (!block.getStateRoot().equals(state.hash_tree_root())) {
+    if (!block.getStateRoot().equals(state.hashTreeRoot())) {
       final String msg =
           String.format(
               "Failed to regenerate state for block root %s.  Generated state root %s does not match expected state root %s",
-              block.getRoot(), state.hash_tree_root(), block.getStateRoot());
+              block.getRoot(), state.hashTreeRoot(), block.getStateRoot());
       throw new IllegalStateException(msg);
     }
   }

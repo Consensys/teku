@@ -48,11 +48,11 @@ public class BeaconBlockBenchmark {
 
   @Benchmark
   public void hashFullBlocks(Blackhole bh) {
-    bh.consume(fullBeaconBlock.hash_tree_root());
+    bh.consume(fullBeaconBlock.hashTreeRoot());
   }
 
   @Benchmark
   public void hashSparseBlocks(Blackhole bh) {
-    bh.consume(sparseBeaconBlock.hash_tree_root());
+    bh.consume(sparseBeaconBlock.hashTreeRoot());
   }
 }

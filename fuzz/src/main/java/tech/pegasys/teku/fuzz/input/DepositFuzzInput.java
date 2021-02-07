@@ -13,74 +13,38 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class DepositFuzzInput implements SimpleOffsetSerializable, SSZContainer {
+public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  private BeaconStateImpl state;
-  private Deposit deposit;
+  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema() {
+    return ContainerSchema2.create(
+        BeaconState.getSszSchema(), Deposit.SSZ_SCHEMA, DepositFuzzInput::new);
+  }
 
-  public DepositFuzzInput(final BeaconStateImpl state, final Deposit deposit) {
-    this.state = state;
-    this.deposit = deposit;
+  public DepositFuzzInput(
+      ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  public DepositFuzzInput(final BeaconState state, final Deposit deposit) {
+    super(createSchema(), state, deposit);
   }
 
   // NOTE: empty constructor is needed for reflection/introspection
   public DepositFuzzInput() {
-    this(new BeaconStateImpl(), new Deposit());
+    super(createSchema());
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return 2;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.add(Bytes.EMPTY);
-    fixedPartsList.add(SimpleOffsetSerializer.serialize(deposit));
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(state), Bytes.EMPTY);
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Deposit getDeposit() {
-    return deposit;
+    return getField1();
   }
 
   public BeaconState getState() {
-    return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof DepositFuzzInput)) {
-      return false;
-    }
-    final DepositFuzzInput that = (DepositFuzzInput) o;
-    return Objects.equals(getState(), that.getState())
-        && Objects.equals(getDeposit(), that.getDeposit());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getState(), getDeposit());
+    return getField0();
   }
 }

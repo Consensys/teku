@@ -13,51 +13,116 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.Suppliers;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
-import jdk.jfr.Label;
-import org.apache.tuweni.bytes.Bytes;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.datastructures.util.SpecDependent;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container8;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.util.config.Constants;
 
 /** A Beacon block body */
-public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public class BeaconBlockBody
+    extends Container8<
+        BeaconBlockBody,
+        SszVector<SszByte>,
+        Eth1Data,
+        SszBytes32,
+        SszList<ProposerSlashing>,
+        SszList<AttesterSlashing>,
+        SszList<Attestation>,
+        SszList<Deposit>,
+        SszList<SignedVoluntaryExit>> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 6;
+  public static class BeaconBlockBodySchema
+      extends ContainerSchema8<
+          BeaconBlockBody,
+          SszVector<SszByte>,
+          Eth1Data,
+          SszBytes32,
+          SszList<ProposerSlashing>,
+          SszList<AttesterSlashing>,
+          SszList<Attestation>,
+          SszList<Deposit>,
+          SszList<SignedVoluntaryExit>> {
 
-  private final BLSSignature randao_reveal;
-  private final Eth1Data eth1_data;
-  private final Bytes32 graffiti;
-  private final SSZList<ProposerSlashing>
-      proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
-  private final SSZList<AttesterSlashing>
-      attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
-  private final SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
-  private final SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
-  private final SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+    public BeaconBlockBodySchema() {
+      super(
+          "BeaconBlockBody",
+          namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
+          namedSchema("eth1_data", Eth1Data.SSZ_SCHEMA),
+          namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema(
+              "proposer_slashings",
+              new SszListSchema<>(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
+          namedSchema(
+              "attester_slashings",
+              new SszListSchema<>(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
+          namedSchema(
+              "attestations",
+              new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
+          namedSchema("deposits", new SszListSchema<>(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
+          namedSchema(
+              "voluntary_exits",
+              new SszListSchema<>(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
+    }
 
-  @Label("sos-ignore")
-  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
+    public SszListSchema<ProposerSlashing> getProposerSlashingsSchema() {
+      return (SszListSchema<ProposerSlashing>) getFieldSchema3();
+    }
 
+    public SszListSchema<AttesterSlashing> getAttesterSlashingsSchema() {
+      return (SszListSchema<AttesterSlashing>) getFieldSchema4();
+    }
+
+    public SszListSchema<Attestation> getAttestationsSchema() {
+      return (SszListSchema<Attestation>) getFieldSchema5();
+    }
+
+    public SszListSchema<Deposit> getDepositsSchema() {
+      return (SszListSchema<Deposit>) getFieldSchema6();
+    }
+
+    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsSchema() {
+      return (SszListSchema<SignedVoluntaryExit>) getFieldSchema7();
+    }
+
+    @Override
+    public BeaconBlockBody createFromBackingNode(TreeNode node) {
+      return new BeaconBlockBody(this, node);
+    }
+  }
+
+  public static BeaconBlockBodySchema getSszSchema() {
+    return SSZ_SCHEMA.get();
+  }
+
+  public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockBodySchema::new);
+
+  private BLSSignature randaoRevealCache;
+
+  private BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  @Deprecated // Use the constructor with type
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
@@ -67,61 +132,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, 
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
-    this.randao_reveal = randao_reveal;
-    this.eth1_data = eth1_data;
-    this.graffiti = graffiti;
-    this.proposer_slashings = proposer_slashings;
-    this.attester_slashings = attester_slashings;
-    this.attestations = attestations;
-    this.deposits = deposits;
-    this.voluntary_exits = voluntary_exits;
-  }
-
-  public BeaconBlockBody() {
-    this.randao_reveal = BLSSignature.empty();
-    this.eth1_data = new Eth1Data();
-    this.graffiti = Bytes32.ZERO;
-    this.proposer_slashings = BeaconBlockBodyLists.createProposerSlashings();
-    this.attester_slashings = BeaconBlockBodyLists.createAttesterSlashings();
-    this.attestations = BeaconBlockBodyLists.createAttestations();
-    this.deposits = BeaconBlockBodyLists.createDeposits();
-    this.voluntary_exits = BeaconBlockBodyLists.createVoluntaryExits();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(randao_reveal.get_fixed_parts());
-    fixedPartsList.addAll(eth1_data.get_fixed_parts());
-    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(graffiti))));
-    fixedPartsList.addAll(Collections.nCopies(5, Bytes.EMPTY));
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(List.of(Bytes.EMPTY));
-    variablePartsList.addAll(
-        List.of(
-            SimpleOffsetSerializer.serializeFixedCompositeList(proposer_slashings),
-            SimpleOffsetSerializer.serializeVariableCompositeList(attester_slashings),
-            SimpleOffsetSerializer.serializeVariableCompositeList(attestations),
-            SimpleOffsetSerializer.serializeFixedCompositeList(deposits),
-            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits)));
-    return variablePartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
+    this(
+        SSZ_SCHEMA.get(),
         randao_reveal,
         eth1_data,
         graffiti,
@@ -130,81 +142,73 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, 
         attestations,
         deposits,
         voluntary_exits);
+    this.randaoRevealCache = randao_reveal;
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconBlockBody)) {
-      return false;
-    }
-
-    BeaconBlockBody other = (BeaconBlockBody) obj;
-    return Objects.equals(this.getRandao_reveal(), other.getRandao_reveal())
-        && Objects.equals(this.getEth1_data(), other.getEth1_data())
-        && Objects.equals(this.getGraffiti(), other.getGraffiti())
-        && Objects.equals(this.getProposer_slashings(), other.getProposer_slashings())
-        && Objects.equals(this.getAttester_slashings(), other.getAttester_slashings())
-        && Objects.equals(this.getAttestations(), other.getAttestations())
-        && Objects.equals(this.getDeposits(), other.getDeposits())
-        && Objects.equals(this.getVoluntary_exits(), other.getVoluntary_exits());
+  public BeaconBlockBody(
+      BeaconBlockBodySchema type,
+      BLSSignature randao_reveal,
+      Eth1Data eth1_data,
+      Bytes32 graffiti,
+      SSZList<ProposerSlashing> proposer_slashings,
+      SSZList<AttesterSlashing> attester_slashings,
+      SSZList<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<SignedVoluntaryExit> voluntary_exits) {
+    super(
+        type,
+        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
+        eth1_data,
+        new SszBytes32(graffiti),
+        SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
+        SszUtils.toSszList(type.getAttesterSlashingsSchema(), attester_slashings),
+        SszUtils.toSszList(type.getAttestationsSchema(), attestations),
+        SszUtils.toSszList(type.getDepositsSchema(), deposits),
+        SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
+    this.randaoRevealCache = randao_reveal;
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
+  public BeaconBlockBody() {
+    super(SSZ_SCHEMA.get());
+  }
+
   public BLSSignature getRandao_reveal() {
-    return randao_reveal;
+    if (randaoRevealCache == null) {
+      randaoRevealCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField0()));
+    }
+    return randaoRevealCache;
   }
 
   public Eth1Data getEth1_data() {
-    return eth1_data;
+    return getField1();
   }
 
   public Bytes32 getGraffiti() {
-    return graffiti;
-  }
-
-  public SSZList<Attestation> getAttestations() {
-    return attestations;
+    return getField2().get();
   }
 
   public SSZList<ProposerSlashing> getProposer_slashings() {
-    return proposer_slashings;
+    return new SSZBackingList<>(
+        ProposerSlashing.class, getField3(), Function.identity(), Function.identity());
   }
 
   public SSZList<AttesterSlashing> getAttester_slashings() {
-    return attester_slashings;
+    return new SSZBackingList<>(
+        AttesterSlashing.class, getField4(), Function.identity(), Function.identity());
+  }
+
+  public SSZList<Attestation> getAttestations() {
+    return new SSZBackingList<>(
+        Attestation.class, getField5(), Function.identity(), Function.identity());
   }
 
   public SSZList<Deposit> getDeposits() {
-    return deposits;
+    return new SSZBackingList<>(
+        Deposit.class, getField6(), Function.identity(), Function.identity());
   }
 
   public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
-    return voluntary_exits;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot.get();
-  }
-
-  public Bytes32 calculateRoot() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toSSZBytes()),
-            eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, graffiti),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits)));
+    return new SSZBackingList<>(
+        SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
   }
 }

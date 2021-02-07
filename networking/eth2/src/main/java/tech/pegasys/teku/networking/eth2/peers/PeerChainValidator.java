@@ -299,7 +299,7 @@ public class PeerChainValidator {
 
   private boolean validateBlockRootsMatch(
       final Eth2Peer peer, final SignedBeaconBlock block, final Bytes32 root) {
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
     if (rootsMatch) {
       LOG.trace("Verified finalized blocks match for peer: {}", peer.getId());

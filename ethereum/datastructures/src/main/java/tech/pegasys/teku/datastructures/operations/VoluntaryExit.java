@@ -13,82 +13,46 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class VoluntaryExitSchema
+      extends ContainerSchema2<VoluntaryExit, SszUInt64, SszUInt64> {
 
-  private final UInt64 epoch;
-  private final UInt64 validator_index;
+    public VoluntaryExitSchema() {
+      super(
+          "VoluntaryExit",
+          namedSchema("epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public VoluntaryExit createFromBackingNode(TreeNode node) {
+      return new VoluntaryExit(this, node);
+    }
+  }
+
+  public static final VoluntaryExitSchema SSZ_SCHEMA = new VoluntaryExitSchema();
+
+  private VoluntaryExit(VoluntaryExitSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    this.epoch = epoch;
-    this.validator_index = validator_index;
+    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszUInt64(validator_index));
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(epoch.longValue()), SSZ.encodeUInt64(validator_index.longValue()));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(epoch, validator_index);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof VoluntaryExit)) {
-      return false;
-    }
-
-    VoluntaryExit other = (VoluntaryExit) obj;
-    return Objects.equals(this.getEpoch(), other.getEpoch())
-        && Objects.equals(this.getValidator_index(), other.getValidator_index());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getEpoch() {
-    return epoch;
+    return getField0().get();
   }
 
   public UInt64 getValidator_index() {
-    return validator_index;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue()))));
+    return getField1().get();
   }
 }

@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class ProposerSlashingTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -74,9 +73,8 @@ class ProposerSlashingTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszProposerSlashingBytes = SimpleOffsetSerializer.serialize(proposerSlashing);
+    Bytes sszProposerSlashingBytes = proposerSlashing.sszSerialize();
     assertEquals(
-        proposerSlashing,
-        SimpleOffsetSerializer.deserialize(sszProposerSlashingBytes, ProposerSlashing.class));
+        proposerSlashing, ProposerSlashing.SSZ_SCHEMA.sszDeserialize(sszProposerSlashingBytes));
   }
 }
