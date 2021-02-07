@@ -170,6 +170,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
               dbDirectory.getAbsolutePath());
         }
         break;
+      case LEVELDB1:
+        database = createLevelDbDatabase();
+        LOG.info(
+            "Created leveldb1 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.info(
+            "Created leveldb1 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            v5ArchiveDirectory.getAbsolutePath());
+        break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
@@ -254,6 +265,28 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           finalizedConfiguration,
           V4SchemaHot.INSTANCE,
           V6SchemaFinalized.INSTANCE,
+          stateStorageMode,
+          stateStorageFrequency,
+          specProvider);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
+    }
+  }
+
+  /**
+   * LevelDb database uses same setup as v4 but backed by leveldb instead of RocksDb
+   *
+   * @return the created database
+   */
+  private Database createLevelDbDatabase() {
+    try {
+      final V5DatabaseMetadata metaData =
+          V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      return RocksDbDatabase.createLevelDb(
+          metricsSystem,
+          metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
+          metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
           specProvider);

@@ -133,6 +133,7 @@ dependencyManagement {
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
+    dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
 
     dependencySet(group: "org.web3j", version: "4.6.2") {
       entry 'core'

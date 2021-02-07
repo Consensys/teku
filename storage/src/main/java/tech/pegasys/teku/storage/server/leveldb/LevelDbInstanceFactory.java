@@ -1,0 +1,51 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.storage.server.leveldb;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.io.IOException;
+import java.util.Collection;
+import org.fusesource.leveldbjni.JniDBFactory;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+
+public class LevelDbInstanceFactory {
+  public static RocksDbAccessor create(
+      final MetricsSystem metricsSystem,
+      final MetricCategory metricCategory,
+      final RocksDbConfiguration configuration,
+      final Collection<RocksDbColumn<?, ?>> columns)
+      throws DatabaseStorageException {
+    checkArgument(
+        columns.stream().map(RocksDbColumn::getId).distinct().count() == columns.size(),
+        "Column IDs are not distinct");
+    final Options options = new Options().createIfMissing(true);
+    //            .cacheSize(configuration.getCacheCapacity())
+    //            .writeBufferSize((int) configuration.getWriteBufferCapacity());
+
+    try {
+      final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
+      return new LevelDbInstance(db);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to open database", e);
+    }
+  }
+}

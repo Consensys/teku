@@ -59,6 +59,9 @@ public class FileBackedStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB1:
+        database = createLevelDb1Database();
+        break;
       case V6:
         database = createV6Database();
         break;
@@ -139,6 +142,16 @@ public class FileBackedStorageSystemBuilder {
 
   private StorageSystem.RestartedStorageSupplier createRestartSupplier() {
     return (mode) -> copy().storageMode(mode).build();
+  }
+
+  private Database createLevelDb1Database() {
+    return RocksDbDatabase.createLevelDb(
+        new StubMetricsSystem(),
+        RocksDbConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
+        RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
+        storageMode,
+        stateStorageFrequency,
+        specProvider);
   }
 
   private Database createV6Database() {
