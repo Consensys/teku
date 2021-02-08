@@ -45,6 +45,7 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -98,18 +99,93 @@ class RecentChainDataTest {
 
   private void initPostGenesis(final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
   }
 
   @Test
   public void initialize_setupInitialState() {
     initPreGenesis();
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(UInt64.valueOf(Constants.GENESIS_SLOT));
     assertThat(recentChainData.getBestState()).hasValue(genesisState);
     assertThat(recentChainData.getStore()).isNotNull();
+  }
+
+  @Test
+  public void initializeFromGenesis_withTimeLessThanGenesisTime() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.valueOf(100));
+    assertThat(recentChainData.getStore().getTime()).isEqualTo(genesisTime);
+  }
+
+  @Test
+  public void initializeFromGenesis_withTimeGreaterThanGenesisTime() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    final UInt64 time = genesisTime.plus(100);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
+    recentChainData.initializeFromGenesis(genesis.getState(), time);
+    assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
+  }
+
+  @Test
+  public void initializeFromAnchorPoint_withTimeLessThanGenesisTime() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    // Build a small chain
+    chainBuilder.generateBlocksUpToSlot(10);
+    final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(100));
+    assertThat(recentChainData.getStore().getTime()).isEqualTo(anchorBlockTime);
+  }
+
+  @Test
+  public void initializeFromAnchorPoint_withTimeLessThanAnchorBlockTime() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    // Build a small chain
+    chainBuilder.generateBlocksUpToSlot(10);
+    final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+    final UInt64 time = genesisTime.plus(1);
+    assertThat(time).isLessThan(anchorBlockTime);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTime()).isEqualTo(anchorBlockTime);
+  }
+
+  @Test
+  public void initializeFromAnchorPoint_withTimeGreaterThanAnchorBlockTime() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    // Build a small chain
+    chainBuilder.generateBlocksUpToSlot(10);
+    final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+    final UInt64 time = anchorBlockTime.plus(100);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
   }
 
   @ParameterizedTest
@@ -233,7 +309,7 @@ class RecentChainDataTest {
   @ValueSource(booleans = {true, false})
   public void updateHead_noReorgEventWhenBestBlockFirstSet(final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isZero();
@@ -341,7 +417,7 @@ class RecentChainDataTest {
     initPreGenesis(updateHeadForEmptySlots);
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    recentChainData.initializeFromGenesis(genesis.getState());
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
@@ -387,7 +463,7 @@ class RecentChainDataTest {
     initPreGenesis(updateHeadForEmptySlots);
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    recentChainData.initializeFromGenesis(genesis.getState());
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
@@ -714,7 +790,7 @@ class RecentChainDataTest {
     initPreGenesis();
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    recentChainData.initializeFromGenesis(genesis.getState());
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -755,7 +831,7 @@ class RecentChainDataTest {
     initPreGenesis();
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    recentChainData.initializeFromGenesis(genesis.getState());
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(recentChainData.getAncestorsOnFork(UInt64.valueOf(1), Bytes32.ZERO)).isEmpty();
   }
 

@@ -773,9 +773,6 @@ task dockerUpload {
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
 
-  def psImageName = "pegasyseng/teku"
-  def psImage = "${psImageName}:${dockerBuildVersion}"
-
   def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
@@ -801,9 +798,7 @@ task dockerUpload {
     // Publish default version without variant suffix
     exec {
       def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
-      cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
       additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
-      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
       executable "sh"
       args '-c', cmd
     }

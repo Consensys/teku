@@ -124,15 +124,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.always(runnable);
   }
 
-  public void initializeFromGenesis(final BeaconState genesisState) {
+  public void initializeFromGenesis(final BeaconState genesisState, final UInt64 currentTime) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    initializeFromAnchorPoint(genesis);
+    initializeFromAnchorPoint(genesis, currentTime);
   }
 
-  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint) {
+  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint, final UInt64 currentTime) {
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint)
+                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint, currentTime)
             .storeConfig(storeConfig)
             .build();
 
