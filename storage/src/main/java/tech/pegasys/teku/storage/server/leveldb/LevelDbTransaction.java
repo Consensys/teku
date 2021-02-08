@@ -92,7 +92,7 @@ public class LevelDbTransaction implements RocksDbTransaction {
 
   @Override
   public void close() {
-    if (!closed.compareAndSet(true, false)) {
+    if (!closed.compareAndSet(false, true)) {
       return;
     }
     try {

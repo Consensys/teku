@@ -247,6 +247,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  @MustBeClosed
   public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
     openedTransactionsCounter.inc();
