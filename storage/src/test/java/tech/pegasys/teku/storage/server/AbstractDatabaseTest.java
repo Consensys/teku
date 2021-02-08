@@ -1063,12 +1063,12 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void initGenesis() {
-    recentChainData.initializeFromGenesis(genesisBlockAndState.getState());
+    recentChainData.initializeFromGenesis(genesisBlockAndState.getState(), UInt64.ZERO);
     store = recentChainData.getStore();
   }
 
   protected void initFromAnchor(final AnchorPoint anchor) {
-    recentChainData.initializeFromAnchorPoint(anchor);
+    recentChainData.initializeFromAnchorPoint(anchor, UInt64.ZERO);
     store = recentChainData.getStore();
   }
 
