@@ -40,9 +40,9 @@ public class LevelDbInstanceFactory {
     final Options options =
         new Options()
             .createIfMissing(true)
-            .cacheSize(configuration.getCacheCapacity())
-            .maxOpenFiles(configuration.getMaxOpenFiles())
-            .writeBufferSize((int) configuration.getWriteBufferCapacity());
+            .maxOpenFiles(configuration.getMaxOpenFiles());
+//            .cacheSize(configuration.getCacheCapacity())
+//            .writeBufferSize((int) configuration.getWriteBufferCapacity());
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);

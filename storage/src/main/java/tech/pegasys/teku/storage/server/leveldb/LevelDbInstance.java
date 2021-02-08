@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -182,7 +183,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   private <T> T withIterator(final Function<DBIterator, T> action) {
-    try (final DBIterator iterator = db.iterator()) {
+    try (final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false))) {
       return action.apply(iterator);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
