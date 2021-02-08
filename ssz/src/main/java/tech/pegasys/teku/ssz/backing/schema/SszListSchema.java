@@ -17,17 +17,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
-import tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public class SszListSchema<ElementDataT extends SszData>
     extends SszCollectionSchema<ElementDataT, SszList<ElementDataT>> {
   private final SszVectorSchema<ElementDataT> compatibleVectorSchema;
-  private final SszContainerSchema<?> sszContainerSchema;
 
   public SszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
@@ -47,10 +45,6 @@ public class SszListSchema<ElementDataT extends SszData>
     super(maxLength, elementSchema, hints);
     this.compatibleVectorSchema =
         new SszVectorSchema<>(getElementSchema(), getMaxLength(), true, getHints());
-    this.sszContainerSchema =
-        SszContainerSchema.create(
-            Arrays.asList(getCompatibleVectorSchema(), SszPrimitiveSchemas.UINT64_SCHEMA),
-            (type, node) -> new ListContainerRead<>(this, type, node));
   }
 
   @Override
@@ -76,8 +70,10 @@ public class SszListSchema<ElementDataT extends SszData>
     return compatibleVectorSchema;
   }
 
-  public SszContainerSchema<?> getCompatibleListContainerType() {
-    return sszContainerSchema;
+  @Override
+  public long getGeneralizedIndex(long elementIndex) {
+    return GIndexUtil.gIdxCompose(
+        GIndexUtil.LEFT_CHILD_G_INDEX, super.getGeneralizedIndex(elementIndex));
   }
 
   @Override
@@ -97,7 +93,8 @@ public class SszListSchema<ElementDataT extends SszData>
         return length * elementSchema.getFixedPartSize();
       }
     } else {
-      return getVariablePartSize(getVectorNode(node), length) + length * SSZ_LENGTH_SIZE;
+      return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)
+          + length * SSZ_LENGTH_SIZE;
     }
   }
 
@@ -112,10 +109,12 @@ public class SszListSchema<ElementDataT extends SszData>
     if (getElementSchema().getBitsSize() == 1) {
       // Bitlist is handled specially
       BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
-      sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
+      getCompatibleVectorSchema()
+          .sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
       return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
     } else {
-      return sszSerializeVector(getVectorNode(node), writer, elementsCount);
+      return getCompatibleVectorSchema()
+          .sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }
   }
 
@@ -156,19 +155,13 @@ public class SszListSchema<ElementDataT extends SszData>
   }
 
   private static int getLength(TreeNode listNode) {
-    if (!(listNode instanceof BranchNode)) {
-      throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);
-    }
-    long longLength = fromLengthNode(((BranchNode) listNode).right());
+    long longLength = fromLengthNode(listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX));
     assert longLength < Integer.MAX_VALUE;
     return (int) longLength;
   }
 
   private static TreeNode getVectorNode(TreeNode listNode) {
-    if (!(listNode instanceof BranchNode)) {
-      throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);
-    }
-    return ((BranchNode) listNode).left();
+    return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
   @Override

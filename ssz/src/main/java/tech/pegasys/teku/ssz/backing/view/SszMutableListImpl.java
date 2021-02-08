@@ -13,75 +13,32 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import static tech.pegasys.teku.ssz.backing.view.SszListImpl.ListContainerRead;
-import static tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-
-import java.util.function.Consumer;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefList;
-import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.tree.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT extends SszElementT>
+    extends AbstractSszMutableCollection<SszElementT, SszMutableElementT>
     implements SszMutableRefList<SszElementT, SszMutableElementT> {
 
-  static class ListContainerWrite<
-          ElementReadType extends SszData, ElementWriteType extends ElementReadType>
-      extends SszMutableContainerImpl {
-    private final SszListSchema<ElementReadType> listSchema;
-
-    public ListContainerWrite(
-        ListContainerRead<ElementReadType> backingImmutableView,
-        SszListSchema<ElementReadType> listSchema) {
-      super(backingImmutableView);
-      this.listSchema = listSchema;
-    }
-
-    public int getSize() {
-      return (int) ((SszUInt64) get(1)).longValue();
-    }
-
-    public void setSize(int size) {
-      set(1, SszUInt64.fromLong(size));
-    }
-
-    public SszMutableRefVector<ElementReadType, ElementWriteType> getData() {
-      return getAnyByRef(0);
-    }
-
-    @Override
-    protected SszContainerImpl createImmutableSszComposite(
-        TreeNode backingNode, IntCache<SszData> viewCache) {
-      return new ListContainerRead<>(listSchema, backingNode, viewCache);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public ListContainerRead<ElementReadType> commitChanges() {
-      return (ListContainerRead<ElementReadType>) super.commitChanges();
-    }
-  }
-
-  private final SszListSchema<SszElementT> schema;
-  private final ListContainerWrite<SszElementT, SszMutableElementT> container;
   private int cachedSize;
 
-  public SszMutableListImpl(
-      SszListSchema<SszElementT> schema,
-      ListContainerWrite<SszElementT, SszMutableElementT> container) {
-    this.schema = schema;
-    this.container = container;
-    this.cachedSize = this.container.getSize();
+  public SszMutableListImpl(SszListImpl<SszElementT> backingImmutableList) {
+    super(backingImmutableList);
+    cachedSize = backingImmutableList.size();
   }
 
   @Override
-  public SszListSchema<SszElementT> getSchema() {
-    return schema;
+  protected SszListImpl<SszElementT> createImmutableSszComposite(
+      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+    TreeNode nodeWithUpdatedSize = updateSize(backingNode);
+    return new SszListImpl<>(getSchema(), nodeWithUpdatedSize, childrenCache);
   }
 
   @Override
@@ -89,50 +46,47 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
     return cachedSize;
   }
 
-  @Override
-  public SszElementT get(int index) {
-    checkIndex(index, false);
-    return container.getData().get(index);
+  private TreeNode updateSize(TreeNode root) {
+    return BranchNode.create(root.get(GIndexUtil.LEFT_CHILD_G_INDEX), createSizeNode());
   }
 
-  @Override
-  public SszMutableElementT getByRef(int index) {
-    checkIndex(index, false);
-    return container.getData().getByRef(index);
-  }
-
-  @Override
-  public SszList<SszElementT> commitChanges() {
-    return new SszListImpl<>(getSchema(), container.commitChanges());
-  }
-
-  @Override
-  public void setInvalidator(Consumer<SszMutableData> listener) {
-    container.setInvalidator(listener);
+  private TreeNode createSizeNode() {
+    return SszUInt64.fromLong(size()).getBackingNode();
   }
 
   @Override
   public void set(int index, SszElementT value) {
-    checkIndex(index, true);
+    super.set(index, value);
     if (index == size()) {
       cachedSize++;
-      container.setSize(cachedSize);
     }
-    container.getData().set(index, value);
   }
 
   @Override
   public void clear() {
-    container.clear();
+    super.clear();
     cachedSize = 0;
   }
 
+  @Override
   protected void checkIndex(int index, boolean set) {
     if ((!set && index >= size())
         || (set && (index > size() || index >= getSchema().getMaxLength()))) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<SszElementT> getSchema() {
+    return (SszListSchema<SszElementT>) super.getSchema();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public SszListImpl<SszElementT> commitChanges() {
+    return (SszListImpl<SszElementT>) super.commitChanges();
   }
 
   @Override
