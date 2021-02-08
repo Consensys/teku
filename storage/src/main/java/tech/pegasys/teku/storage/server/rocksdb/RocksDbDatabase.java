@@ -196,6 +196,47 @@ public class RocksDbDatabase implements Database {
         metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, specProvider);
   }
 
+  public static Database createLevelDbV2(
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration hotConfiguration,
+      final Optional<RocksDbConfiguration> finalizedConfiguration,
+      final SchemaHot schemaHot,
+      final SchemaFinalized schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
+    final RocksDbAccessor hotDb;
+    final RocksDbAccessor finalizedDb;
+
+    if (finalizedConfiguration.isPresent()) {
+      hotDb =
+          LevelDbInstanceFactory.create(
+              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
+      finalizedDb =
+          LevelDbInstanceFactory.create(
+              metricsSystem,
+              STORAGE_FINALIZED_DB,
+              finalizedConfiguration.get(),
+              schemaFinalized.getAllColumns());
+    } else {
+
+      ArrayList<RocksDbColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+      allColumns.addAll(schemaFinalized.getAllColumns());
+      finalizedDb =
+          LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+      hotDb = finalizedDb;
+    }
+    return createV6(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        stateStorageFrequency,
+        specProvider);
+  }
+
   static Database createV4(
       final MetricsSystem metricsSystem,
       final RocksDbAccessor hotDb,

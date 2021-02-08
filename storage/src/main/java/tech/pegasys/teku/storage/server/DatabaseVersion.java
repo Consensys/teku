@@ -20,7 +20,8 @@ public enum DatabaseVersion {
   V4("4"),
   V5("5"),
   V6("6"),
-  LEVELDB1("leveldb1");
+  LEVELDB1("leveldb1"),
+  LEVELDB2("leveldb2");
 
   public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V5;
   private String value;
