@@ -33,7 +33,6 @@ import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class AttesterSlashingGossipIntegrationTest {
 
@@ -56,8 +55,7 @@ public class AttesterSlashingGossipIntegrationTest {
     final OperationProcessor<AttesterSlashing> operationProcessor =
         (slashing) -> {
           receivedGossip.add(slashing);
-          return SafeFuture.completedFuture(
-              InternalValidationResult.create(ValidationResultCode.ACCEPT));
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };
 
     // Setup network 1

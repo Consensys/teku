@@ -23,7 +23,7 @@ public class InternalValidationResultTest {
 
   @Test
   void shouldPrintAcceptToString() {
-    assertThat(InternalValidationResult.create(ValidationResultCode.ACCEPT).toString())
+    assertThat(InternalValidationResult.ACCEPT.toString())
         .isEqualTo("InternalValidationResult{validationResultCode=ACCEPT}");
   }
 
