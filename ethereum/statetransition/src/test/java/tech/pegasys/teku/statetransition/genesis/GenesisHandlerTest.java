@@ -66,14 +66,14 @@ public class GenesisHandlerTest {
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final TimeProvider timeProvider = mock(TimeProvider.class);
   private GenesisHandler genesisHandler;
+
   @BeforeEach
   public void setup() {
     specProvider =
         StubSpecProvider.create(
-            config -> {
-              config.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size());
-            });
-    genesisHandler = new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
+            config -> config.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
+    genesisHandler =
+        new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);
   }
 
