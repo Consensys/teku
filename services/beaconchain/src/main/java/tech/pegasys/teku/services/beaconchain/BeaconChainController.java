@@ -490,8 +490,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
-    eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(recentChainData, specProvider));
+    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, specProvider));
   }
 
   private void initAttestationManager() {
@@ -703,7 +702,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
     if (initialAnchor.isPresent()) {
       final AnchorPoint anchor = initialAnchor.get();
-      client.initializeFromAnchorPoint(anchor);
+      client.initializeFromAnchorPoint(anchor, timeProvider.getTimeInSeconds());
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
@@ -726,7 +725,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         InteropStartupUtil.createMockedStartInitialBeaconState(
             config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),

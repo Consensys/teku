@@ -10,6 +10,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')
+  implementation project(':infrastructure:time')
   implementation project(':pow')
   implementation project(':protoarray')
   implementation project(':services:serviceutils')

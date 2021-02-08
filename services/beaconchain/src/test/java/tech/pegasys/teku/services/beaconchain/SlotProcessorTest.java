@@ -71,7 +71,7 @@ public class SlotProcessorTest {
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(beaconState);
+    recentChainData.initializeFromGenesis(beaconState, UInt64.ZERO);
   }
 
   @Test

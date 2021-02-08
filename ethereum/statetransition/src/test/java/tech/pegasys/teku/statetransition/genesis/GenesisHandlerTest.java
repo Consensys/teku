@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.genesis;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -61,16 +64,17 @@ public class GenesisHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+  private final TimeProvider timeProvider = mock(TimeProvider.class);
   private GenesisHandler genesisHandler;
-
   @BeforeEach
   public void setup() {
     specProvider =
         StubSpecProvider.create(
-            consumer -> {
-              consumer.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size());
+            config -> {
+              config.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size());
             });
-    genesisHandler = new GenesisHandler(storageSystem.recentChainData(), specProvider);
+    genesisHandler = new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
+    when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);
   }
 
   @AfterEach
