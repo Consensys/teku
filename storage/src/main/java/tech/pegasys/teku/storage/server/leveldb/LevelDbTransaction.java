@@ -35,7 +35,8 @@ public class LevelDbTransaction implements RocksDbTransaction {
   private final DB db;
   private final WriteBatch writeBatch;
 
-  public LevelDbTransaction(final LevelDbInstance dbInstance, final DB db, final WriteBatch writeBatch) {
+  public LevelDbTransaction(
+      final LevelDbInstance dbInstance, final DB db, final WriteBatch writeBatch) {
     this.dbInstance = dbInstance;
     this.db = db;
     this.writeBatch = writeBatch;
@@ -98,6 +99,8 @@ public class LevelDbTransaction implements RocksDbTransaction {
       writeBatch.close();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
+    } finally {
+      dbInstance.onTransactionClosed(this);
     }
   }
 
@@ -107,6 +110,7 @@ public class LevelDbTransaction implements RocksDbTransaction {
     }
     dbInstance.assertOpen();
   }
+
   private <K, V> byte[] serializeValue(final RocksDbColumn<K, V> column, final V value) {
     return column.getValueSerializer().serialize(value);
   }

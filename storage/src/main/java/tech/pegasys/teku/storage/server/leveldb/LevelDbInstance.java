@@ -23,14 +23,20 @@ import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.isFromColumn
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
@@ -44,6 +50,11 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
 public class LevelDbInstance implements RocksDbAccessor {
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final Set<LevelDbTransaction> openTransactions =
+      Collections.synchronizedSet(new HashSet<>());
+  private final Set<DBIterator> openIterators = Collections.synchronizedSet(new HashSet<>());
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final DB db;
 
@@ -91,13 +102,25 @@ public class LevelDbInstance implements RocksDbAccessor {
         iterator -> {
           final byte[] matchingKey = getColumnKey(column, key);
           iterator.seek(matchingKey);
-          if (iterator.hasNext()) {
-            final Map.Entry<byte[], byte[]> next = iterator.peekNext();
-            if (Arrays.equals(next.getKey(), matchingKey)) {
-              return Optional.of(
-                  ColumnEntry.create(
-                      key, column.getValueSerializer().deserialize(next.getValue())));
+          if (!iterator.hasNext()) {
+            // We seeked past the last item in the database
+            iterator.seekToLast();
+            if (!iterator.hasNext()) {
+              // Empty database
+              return Optional.empty();
             }
+            final Entry<byte[], byte[]> entry = iterator.peekNext();
+            if (isFromColumn(column, entry.getKey())) {
+              return asOptionalColumnEntry(column, entry);
+            }
+            return Optional.empty();
+          }
+
+          // Check if an exact match was found
+          final Entry<byte[], byte[]> next = iterator.peekNext();
+          if (Arrays.equals(next.getKey(), matchingKey)) {
+            return Optional.of(
+                ColumnEntry.create(key, column.getValueSerializer().deserialize(next.getValue())));
           }
 
           if (iterator.hasPrev()) {
@@ -130,6 +153,10 @@ public class LevelDbInstance implements RocksDbAccessor {
         iterator -> {
           final byte[] keyAfterColumn = getKeyAfterColumn(column);
           iterator.seek(keyAfterColumn);
+          if (!iterator.hasNext()) {
+            // We seeked past the end of the database, go back a step
+            iterator.seekToLast();
+          }
           if (iterator.hasPrev()) {
             return Optional.of(iterator.peekPrev())
                 .filter(entry -> isFromColumn(column, entry.getKey()))
@@ -145,6 +172,10 @@ public class LevelDbInstance implements RocksDbAccessor {
         iterator -> {
           final byte[] keyAfterColumn = getKeyAfterColumn(column);
           iterator.seek(keyAfterColumn);
+          if (!iterator.hasNext()) {
+            // We seeked past the end of the database, go back a step
+            iterator.seekToLast();
+          }
           if (iterator.hasPrev()) {
             return Optional.of(iterator.peekPrev())
                 .filter(entry -> isFromColumn(column, entry.getKey()))
@@ -173,35 +204,63 @@ public class LevelDbInstance implements RocksDbAccessor {
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
-    final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false));
+    final DBIterator iterator = createIterator();
     iterator.seek(fromBytes);
-    return new LevelDbIterator<>(iterator, column, toBytes).toStream();
+    return new LevelDbIterator<>(this, iterator, column, toBytes)
+        .toStream()
+        .onClose(() -> closeIterator(iterator));
   }
 
   @Override
-  public RocksDbTransaction startTransaction() {
+  public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
     final WriteBatch writeBatch = db.createWriteBatch();
-    return new LevelDbTransaction(this, db, writeBatch);
+    final LevelDbTransaction transaction = new LevelDbTransaction(this, db, writeBatch);
+    openTransactions.add(transaction);
+    return transaction;
   }
 
   @Override
-  public void close() throws Exception {
+  public synchronized void close() throws Exception {
     if (!closed.compareAndSet(false, true)) {
       return;
     }
+    new ArrayList<>(openIterators).forEach(this::closeIterator);
+    new ArrayList<>(openTransactions).forEach(LevelDbTransaction::close);
     db.close();
   }
 
-  private <T> T withIterator(final Function<DBIterator, T> action) {
+  private synchronized <T> T withIterator(final Function<DBIterator, T> action) {
     assertOpen();
-    try (final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false))) {
+    final DBIterator iterator = createIterator();
+    try {
       return action.apply(iterator);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
     } catch (final DBException e) {
       throw DatabaseStorageException.unrecoverable("Failed to create iterator", e);
+    } finally {
+      closeIterator(iterator);
     }
+  }
+
+  private synchronized void closeIterator(final DBIterator iterator) {
+    if (!openIterators.remove(iterator)) {
+      return;
+    }
+    try {
+      iterator.close();
+    } catch (final IOException e) {
+      LOG.error("Failed to close leveldb iterator", e);
+    }
+  }
+
+  void onTransactionClosed(final LevelDbTransaction transaction) {
+    openTransactions.remove(transaction);
+  }
+
+  private DBIterator createIterator() {
+    final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false));
+    openIterators.add(iterator);
+    return iterator;
   }
 
   void assertOpen() {

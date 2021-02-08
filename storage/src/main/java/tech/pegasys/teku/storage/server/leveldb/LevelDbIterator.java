@@ -17,8 +17,6 @@ import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asColumnEntr
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.isFromColumn;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -29,13 +27,19 @@ import org.iq80.leveldb.DBIterator;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 
-public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>>, AutoCloseable {
+public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
+
+  private final LevelDbInstance dbInstance;
   private final DBIterator iterator;
   private final RocksDbColumn<K, V> column;
   private final byte[] lastKey;
 
   public LevelDbIterator(
-      final DBIterator iterator, final RocksDbColumn<K, V> column, final byte[] lastKey) {
+      final LevelDbInstance dbInstance,
+      final DBIterator iterator,
+      final RocksDbColumn<K, V> column,
+      final byte[] lastKey) {
+    this.dbInstance = dbInstance;
     this.iterator = iterator;
     this.column = column;
     this.lastKey = lastKey;
@@ -43,6 +47,7 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>>, AutoC
 
   @Override
   public boolean hasNext() {
+    dbInstance.assertOpen();
     return iterator.hasNext() && isValidKey();
   }
 
@@ -53,6 +58,7 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>>, AutoC
 
   @Override
   public ColumnEntry<K, V> next() {
+    dbInstance.assertOpen();
     return asColumnEntry(column, iterator.next());
   }
 
@@ -67,15 +73,6 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>>, AutoC
                 | Spliterator.ORDERED
                 | Spliterator.SORTED);
 
-    return StreamSupport.stream(split, false).onClose(this::close);
-  }
-
-  @Override
-  public void close() {
-    try {
-      iterator.close();
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    return StreamSupport.stream(split, false);
   }
 }
