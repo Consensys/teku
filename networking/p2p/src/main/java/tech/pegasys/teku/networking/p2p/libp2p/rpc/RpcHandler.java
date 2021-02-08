@@ -21,7 +21,6 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
-import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
 import io.libp2p.etc.util.netty.mux.RemoteWriteClosed;
@@ -75,9 +74,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
                     "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
 
     return SafeFuture.notInterrupted(closeInterruptor)
-        .thenApply(
-            __ ->
-                connection.muxerSession().createStream(Multistream.create(this).toStreamHandler()))
+        .thenApply(__ -> connection.muxerSession().createStream(this))
         // waiting for a stream or interrupt
         .thenWaitFor(StreamPromise::getStream)
         .orInterrupt(closeInterruptor, timeoutInterruptor)

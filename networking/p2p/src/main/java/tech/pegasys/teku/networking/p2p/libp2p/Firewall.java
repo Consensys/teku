@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -21,7 +20,6 @@ import io.netty.channel.WriteBufferWaterMark;
 import io.netty.handler.timeout.WriteTimeoutException;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,16 +34,13 @@ public class Firewall extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Duration writeTimeout;
-  private final List<ChannelHandler> additionalHandlers;
 
-  public Firewall(Duration writeTimeout, List<ChannelHandler> additionalHandlers) {
+  public Firewall(Duration writeTimeout) {
     this.writeTimeout = writeTimeout;
-    this.additionalHandlers = additionalHandlers;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
-    additionalHandlers.forEach(h -> ctx.pipeline().addLast(h));
     ctx.channel().config().setWriteBufferWaterMark(new WriteBufferWaterMark(100, 1024));
     ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeout.toMillis(), TimeUnit.MILLISECONDS));
     ctx.pipeline().addLast(new FirewallExceptionHandler());

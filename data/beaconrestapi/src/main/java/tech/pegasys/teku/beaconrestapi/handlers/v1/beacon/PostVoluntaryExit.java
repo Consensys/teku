@@ -34,6 +34,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostVoluntaryExit extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/voluntary_exits";
@@ -73,13 +74,16 @@ public class PostVoluntaryExit extends AbstractHandler {
       final SignedVoluntaryExit exit =
           jsonProvider.jsonToObject(ctx.body(), SignedVoluntaryExit.class);
       InternalValidationResult result = nodeDataProvider.postVoluntaryExit(exit).join();
-      if (result.equals(InternalValidationResult.IGNORE)
-          || result.equals(InternalValidationResult.REJECT)) {
+      if (result.code().equals(ValidationResultCode.IGNORE)
+          || result.code().equals(ValidationResultCode.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
         ctx.result(
             BadRequest.badRequest(
                 jsonProvider,
-                "Invalid voluntary exit, it will never pass validation so it's rejected"));
+                result
+                    .getDescription()
+                    .orElse(
+                        "Invalid voluntary exit, it will never pass validation so it's rejected")));
       } else {
         ctx.status(SC_OK);
       }
