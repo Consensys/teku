@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuild
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -131,10 +130,6 @@ public class TekuConfiguration {
 
   public SyncConfig sync() {
     return beaconChain().syncConfig();
-  }
-
-  public GossipConfig gossipConfig() {
-    return beaconChain().p2pConfig().getNetworkConfig().getGossipConfig();
   }
 
   public PowchainConfiguration powchain() {
