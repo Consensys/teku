@@ -25,7 +25,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,6 +35,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
@@ -51,14 +53,48 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 public class LevelDbInstance implements RocksDbAccessor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Set<LevelDbTransaction> openTransactions =
-      Collections.synchronizedSet(new HashSet<>());
-  private final Set<DBIterator> openIterators = Collections.synchronizedSet(new HashSet<>());
+  private final Set<LevelDbTransaction> openTransactions = new HashSet<>();
+  private final Set<DBIterator> openIterators = new HashSet<>();
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final DB db;
+  private final Counter openedTransactionsCounter;
+  private final Counter closedTransactionsCounter;
+  private final Counter openedIteratorsCounter;
+  private final Counter closedIteratorsCounter;
 
-  public LevelDbInstance(final DB db) {
+  public LevelDbInstance(
+      final DB db, final MetricsSystem metricsSystem, MetricCategory metricCategory) {
     this.db = db;
+    metricsSystem.createIntegerGauge(
+        metricCategory,
+        "open_transactions_current",
+        "Number of open LevelDB transactions",
+        () -> {
+          synchronized (this) {
+            return openTransactions.size();
+          }
+        });
+    metricsSystem.createIntegerGauge(
+        metricCategory,
+        "open_iterators_current",
+        "Number of open LevelDB iterators",
+        () -> {
+          synchronized (this) {
+            return openIterators.size();
+          }
+        });
+    openedTransactionsCounter =
+        metricsSystem.createCounter(
+            metricCategory, "opened_transactions_total", "Total number of opened transactions");
+    closedTransactionsCounter =
+        metricsSystem.createCounter(
+            metricCategory, "closed_transactions_total", "Total number of closed transactions");
+    openedIteratorsCounter =
+        metricsSystem.createCounter(
+            metricCategory, "opened_iterators_total", "Total number of opened iterators");
+    closedIteratorsCounter =
+        metricsSystem.createCounter(
+            metricCategory, "closed_iterators_total", "Total number of closed iterators");
   }
 
   @Override
@@ -213,6 +249,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   @Override
   public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
+    openedTransactionsCounter.inc();
     final WriteBatch writeBatch = db.createWriteBatch();
     final LevelDbTransaction transaction = new LevelDbTransaction(this, db, writeBatch);
     openTransactions.add(transaction);
@@ -231,6 +268,7 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   private synchronized <T> T withIterator(final Function<DBIterator, T> action) {
     assertOpen();
+    openedIteratorsCounter.inc();
     final DBIterator iterator = createIterator();
     try {
       return action.apply(iterator);
@@ -245,6 +283,7 @@ public class LevelDbInstance implements RocksDbAccessor {
     if (!openIterators.remove(iterator)) {
       return;
     }
+    closedIteratorsCounter.inc();
     try {
       iterator.close();
     } catch (final IOException e) {
@@ -252,7 +291,8 @@ public class LevelDbInstance implements RocksDbAccessor {
     }
   }
 
-  void onTransactionClosed(final LevelDbTransaction transaction) {
+  synchronized void onTransactionClosed(final LevelDbTransaction transaction) {
+    closedTransactionsCounter.inc();
     openTransactions.remove(transaction);
   }
 

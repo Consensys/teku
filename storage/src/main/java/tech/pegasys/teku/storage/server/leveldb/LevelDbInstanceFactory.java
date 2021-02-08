@@ -44,7 +44,7 @@ public class LevelDbInstanceFactory {
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
-      return new LevelDbInstance(db);
+      return new LevelDbInstance(db, metricsSystem, metricCategory);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to open database", e);
     }
