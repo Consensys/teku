@@ -109,7 +109,7 @@ public class LevelDbInstance implements RocksDbAccessor {
               // Empty database
               return Optional.empty();
             }
-            final Entry<byte[], byte[]> entry = iterator.peekNext();
+            final Map.Entry<byte[], byte[]> entry = iterator.peekNext();
             if (isFromColumn(column, entry.getKey())) {
               return asOptionalColumnEntry(column, entry);
             }

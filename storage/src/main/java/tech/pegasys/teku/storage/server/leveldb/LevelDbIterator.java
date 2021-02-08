@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.leveldb;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asColumnEntry;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.isFromColumn;
 
-import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -62,7 +61,6 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
     return asColumnEntry(column, iterator.next());
   }
 
-  @MustBeClosed
   public Stream<ColumnEntry<K, V>> toStream() {
     final Spliterator<ColumnEntry<K, V>> split =
         Spliterators.spliteratorUnknownSize(
