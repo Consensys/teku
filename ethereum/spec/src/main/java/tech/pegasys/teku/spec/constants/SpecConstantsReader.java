@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstantsReader {
-  private final Converter<String, String> camelToSnakeCase =
+  protected final Converter<String, String> camelToSnakeCase =
       CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
@@ -52,6 +52,10 @@ public class SpecConstantsReader {
           .build();
 
   public SpecConstants read(final InputStream source) throws IOException {
+    return readToBuilder(source).build();
+  }
+
+  protected SpecConstantsBuilder readToBuilder(final InputStream source) throws IOException {
     final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
     final Map<String, Object> rawValues = readValues(source);
     final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
@@ -70,8 +74,7 @@ public class SpecConstantsReader {
       final String unknownKeys = String.join(",", unprocessedConstants.keySet());
       throw new IllegalArgumentException("Detected unknown constants: " + unknownKeys);
     }
-
-    return constantsBuilder.build();
+    return constantsBuilder;
   }
 
   @SuppressWarnings("unchecked")

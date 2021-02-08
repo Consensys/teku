@@ -198,16 +198,17 @@ public class BeaconStateUtil {
         FAR_FUTURE_EPOCH);
   }
 
+  @Deprecated
   public static boolean is_valid_genesis_state(UInt64 genesisTime, int activeValidatorCount) {
     return isItMinGenesisTimeYet(genesisTime)
         && isThereEnoughNumberOfValidators(activeValidatorCount);
   }
 
-  public static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
+  private static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
     return activeValidatorCount >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   }
 
-  public static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
+  private static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
     return genesisTime.compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
