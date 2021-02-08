@@ -90,8 +90,8 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -490,7 +490,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
-    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
+    eventChannels.subscribe(
+        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider));
   }
 
   private void initAttestationManager() {
@@ -535,21 +536,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             voluntaryExitGossipPublisher.publish(item);
           }
         });
     // Set up gossip for attester slashings
     attesterSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             attesterSlashingGossipPublisher.publish(item);
           }
         });
     // Set up gossip for proposer slashings
     proposerSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
@@ -702,7 +703,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
     if (initialAnchor.isPresent()) {
       final AnchorPoint anchor = initialAnchor.get();
-      client.initializeFromAnchorPoint(anchor);
+      client.initializeFromAnchorPoint(anchor, timeProvider.getTimeInSeconds());
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
@@ -725,7 +726,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         InteropStartupUtil.createMockedStartInitialBeaconState(
             config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),

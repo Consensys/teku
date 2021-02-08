@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -84,7 +85,7 @@ public class ProfilingRun {
       EventBus localEventBus = mock(EventBus.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
-      recentChainData.initializeFromGenesis(initialState);
+      recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice =
           new ForkChoice(
               new ForkChoiceAttestationValidator(),
@@ -161,7 +162,7 @@ public class ProfilingRun {
       EventBus localEventBus = mock(EventBus.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
-      recentChainData.initializeFromGenesis(initialState);
+      recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       ForkChoice forkChoice =
           new ForkChoice(

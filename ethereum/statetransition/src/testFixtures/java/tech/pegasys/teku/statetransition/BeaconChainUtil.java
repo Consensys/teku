@@ -124,7 +124,7 @@ public class BeaconChainUtil {
       final boolean signDeposits) {
     final BeaconState initState =
         InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, signDeposits);
-    recentChainData.initializeFromGenesis(initState);
+    recentChainData.initializeFromGenesis(initState, UInt64.ZERO);
   }
 
   public void initializeStorage() {

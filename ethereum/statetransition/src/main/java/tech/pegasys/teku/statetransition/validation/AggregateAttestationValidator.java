@@ -18,9 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -84,20 +81,19 @@ public class AggregateAttestationValidator {
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       LOG.trace("Ignoring duplicate aggregate");
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
     if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
       LOG.trace("Ignoring duplicate aggregate based on hash tree root");
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
     return attestationValidator
         .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
-              if (aggregateInternalValidationResult == REJECT
-                  || aggregateInternalValidationResult == IGNORE) {
+              if (aggregateInternalValidationResult.isNotProcessable()) {
                 LOG.trace("Rejecting aggregate because attestation failed validation");
                 return SafeFuture.completedFuture(aggregateInternalValidationResult);
               }
@@ -113,7 +109,7 @@ public class AggregateAttestationValidator {
                   .thenApply(
                       maybeState -> {
                         if (maybeState.isEmpty()) {
-                          return SAVE_FOR_FUTURE;
+                          return InternalValidationResult.SAVE_FOR_FUTURE;
                         }
 
                         final BeaconState state = maybeState.get();
@@ -122,7 +118,7 @@ public class AggregateAttestationValidator {
                             ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {
                           LOG.trace("Rejecting aggregate with invalid index");
-                          return REJECT;
+                          return InternalValidationResult.REJECT;
                         }
 
                         if (!isSelectionProofValid(
@@ -131,7 +127,7 @@ public class AggregateAttestationValidator {
                             aggregatorPublicKey.get(),
                             aggregateAndProof.getSelection_proof())) {
                           LOG.trace("Rejecting aggregate with incorrect selection proof");
-                          return REJECT;
+                          return InternalValidationResult.REJECT;
                         }
 
                         final List<Integer> beaconCommittee =
@@ -147,29 +143,29 @@ public class AggregateAttestationValidator {
                             aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
                           LOG.trace(
                               "Rejecting aggregate because selection proof does not select validator as aggregator");
-                          return REJECT;
+                          return InternalValidationResult.REJECT;
                         }
                         if (!beaconCommittee.contains(
                             toIntExact(aggregateAndProof.getIndex().longValue()))) {
                           LOG.trace(
                               "Rejecting aggregate because attester is not in committee. Should have been one of {}",
                               beaconCommittee);
-                          return REJECT;
+                          return InternalValidationResult.REJECT;
                         }
 
                         if (!isSignatureValid(signedAggregate, state, aggregatorPublicKey.get())) {
                           LOG.trace("Rejecting aggregate with invalid signature");
-                          return REJECT;
+                          return InternalValidationResult.REJECT;
                         }
 
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
                           LOG.trace("Ignoring duplicate aggregate");
-                          return IGNORE;
+                          return InternalValidationResult.IGNORE;
                         }
 
                         if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
                           LOG.trace("Ignoring duplicate aggregate based on hash tree root");
-                          return IGNORE;
+                          return InternalValidationResult.IGNORE;
                         }
 
                         return aggregateInternalValidationResult;

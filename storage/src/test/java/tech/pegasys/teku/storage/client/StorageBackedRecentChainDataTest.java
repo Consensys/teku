@@ -99,7 +99,8 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(INITIAL_STATE));
+            AnchorPoint.fromGenesisState(INITIAL_STATE),
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -215,10 +216,11 @@ public class StorageBackedRecentChainDataTest {
                 new StubMetricsSystem(),
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
-                AnchorPoint.fromGenesisState(INITIAL_STATE))
+                AnchorPoint.fromGenesisState(INITIAL_STATE),
+                UInt64.ZERO)
             .storeConfig(storeConfig)
             .build();
-    client.get().initializeFromGenesis(INITIAL_STATE);
+    client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
@@ -260,7 +262,8 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
-            AnchorPoint.fromGenesisState(INITIAL_STATE));
+            AnchorPoint.fromGenesisState(INITIAL_STATE),
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -310,7 +313,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
+    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE, UInt64.ZERO))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "Failed to initialize from state: store has already been initialized");
