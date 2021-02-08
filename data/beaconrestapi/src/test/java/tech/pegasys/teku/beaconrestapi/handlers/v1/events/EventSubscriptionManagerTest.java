@@ -54,7 +54,6 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.util.config.Constants;
@@ -318,8 +317,7 @@ public class EventSubscriptionManagerTest {
 
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(
-        sampleVoluntaryExit.asInternalSignedVoluntaryExit(),
-        InternalValidationResult.create(ValidationResultCode.ACCEPT));
+        sampleVoluntaryExit.asInternalSignedVoluntaryExit(), InternalValidationResult.ACCEPT);
     asyncRunner.executeQueuedActions();
   }
 

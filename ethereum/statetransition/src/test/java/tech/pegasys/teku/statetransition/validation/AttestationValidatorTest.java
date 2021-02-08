@@ -303,10 +303,10 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
-        .isCompletedWithValue(InternalValidationResult.create(REJECT));
+        .isCompletedWithValue(InternalValidationResult.REJECT);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.create(ACCEPT));
+        .isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
   @Test
@@ -329,7 +329,7 @@ class AttestationValidatorTest {
                             data.getTarget()),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.create(REJECT));
+        .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
   @Test
@@ -351,7 +351,7 @@ class AttestationValidatorTest {
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.create(REJECT));
+        .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
   @Test
@@ -366,7 +366,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.create(REJECT));
+        .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
   @Test
@@ -382,7 +382,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.create(REJECT));
+        .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {

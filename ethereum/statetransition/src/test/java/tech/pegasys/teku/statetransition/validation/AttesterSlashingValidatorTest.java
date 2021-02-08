@@ -13,14 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,8 +47,7 @@ public class AttesterSlashingValidatorTest {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validateFully(slashing))
-        .isEqualTo(InternalValidationResult.create(ACCEPT));
+    assertTrue(attesterSlashingValidator.validateFully(slashing).isAccept());
   }
 
   @Test
@@ -62,8 +58,7 @@ public class AttesterSlashingValidatorTest {
             Optional.of(
                 AttesterSlashingStateTransitionValidator.AttesterSlashingInvalidReason
                     .ATTESTATIONS_NOT_SLASHABLE));
-    assertThat(attesterSlashingValidator.validateFully(slashing))
-        .isEqualTo(InternalValidationResult.create(REJECT));
+    assertTrue(attesterSlashingValidator.validateFully(slashing).isReject());
   }
 
   @Test
@@ -73,9 +68,7 @@ public class AttesterSlashingValidatorTest {
         new AttesterSlashing(slashing1.getAttestation_1(), slashing1.getAttestation_2());
     when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
-    assertThat(attesterSlashingValidator.validateFully(slashing1))
-        .isEqualTo(InternalValidationResult.create(ACCEPT));
-    assertThat(attesterSlashingValidator.validateFully(slashing2))
-        .isEqualTo(InternalValidationResult.create(IGNORE));
+    assertTrue(attesterSlashingValidator.validateFully(slashing1).isAccept());
+    assertTrue(attesterSlashingValidator.validateFully(slashing2).isIgnore());
   }
 }

@@ -30,7 +30,6 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostAttesterSlashingTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -50,9 +49,7 @@ public class PostAttesterSlashingTest {
         new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
     when(provider.postAttesterSlashing(slashing))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                InternalValidationResult.create(ValidationResultCode.ACCEPT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     handler.handle(context);
 
     verify(provider).postAttesterSlashing(slashing);
@@ -65,9 +62,7 @@ public class PostAttesterSlashingTest {
         new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
     when(provider.postAttesterSlashing(slashing))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                InternalValidationResult.create(ValidationResultCode.REJECT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     handler.handle(context);
 
     verify(provider).postAttesterSlashing(slashing);

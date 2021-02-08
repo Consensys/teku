@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,5 +33,45 @@ public class InternalValidationResultTest {
             InternalValidationResult.create(ValidationResultCode.REJECT, "good reason").toString())
         .isEqualTo(
             "InternalValidationResult{validationResultCode=REJECT, description=good reason}");
+  }
+
+  @Test
+  void isAccept() {
+    assertTrue(InternalValidationResult.ACCEPT.isAccept());
+    assertFalse(InternalValidationResult.IGNORE.isAccept());
+    assertFalse(InternalValidationResult.REJECT.isAccept());
+    assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isAccept());
+  }
+
+  @Test
+  void isIgnore() {
+    assertFalse(InternalValidationResult.ACCEPT.isIgnore());
+    assertTrue(InternalValidationResult.IGNORE.isIgnore());
+    assertFalse(InternalValidationResult.REJECT.isIgnore());
+    assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isIgnore());
+  }
+
+  @Test
+  void isReject() {
+    assertFalse(InternalValidationResult.ACCEPT.isReject());
+    assertFalse(InternalValidationResult.IGNORE.isReject());
+    assertTrue(InternalValidationResult.REJECT.isReject());
+    assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isReject());
+  }
+
+  @Test
+  void isSaveForFuture() {
+    assertFalse(InternalValidationResult.ACCEPT.isSaveForFuture());
+    assertFalse(InternalValidationResult.IGNORE.isSaveForFuture());
+    assertFalse(InternalValidationResult.REJECT.isSaveForFuture());
+    assertTrue(InternalValidationResult.SAVE_FOR_FUTURE.isSaveForFuture());
+  }
+
+  @Test
+  void isNotProcessable() {
+    assertFalse(InternalValidationResult.ACCEPT.isNotProcessable());
+    assertTrue(InternalValidationResult.IGNORE.isNotProcessable());
+    assertTrue(InternalValidationResult.REJECT.isNotProcessable());
+    assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isNotProcessable());
   }
 }

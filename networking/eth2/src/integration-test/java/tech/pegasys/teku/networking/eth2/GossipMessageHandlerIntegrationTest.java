@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,7 +70,7 @@ public class GossipMessageHandlerIntegrationTest {
                 .gossipedBlockProcessor(
                     (block) -> {
                       node2ReceivedBlocks.add(block);
-                      return SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT));
+                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
     NodeManager node2 = createNodeManager(networkBuilder2);
     node2.chainUtil().setSlot(blockSlot);
@@ -84,7 +83,7 @@ public class GossipMessageHandlerIntegrationTest {
                 .gossipedBlockProcessor(
                     (block) -> {
                       node3ReceivedBlocks.add(block);
-                      return SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT));
+                      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
     NodeManager node3 = createNodeManager(networkBuilder3);
     node2.chainUtil().setSlot(blockSlot);
@@ -180,7 +179,7 @@ public class GossipMessageHandlerIntegrationTest {
           b.gossipedAttestationProcessor(
               (attestation) -> {
                 node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT));
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });
         };
 
@@ -231,7 +230,7 @@ public class GossipMessageHandlerIntegrationTest {
           b.gossipedAttestationProcessor(
               (attestation) -> {
                 node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT));
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });
         };
 
@@ -287,7 +286,7 @@ public class GossipMessageHandlerIntegrationTest {
         b -> {
           b.gossipEncoding(gossipEncoding);
           b.gossipedAttestationProcessor(
-              (__) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
+              (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
           b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
         };
 
@@ -297,7 +296,7 @@ public class GossipMessageHandlerIntegrationTest {
           b.gossipedAttestationProcessor(
               (attestation) -> {
                 node2attestations.add(attestation);
-                return SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT));
+                return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });
         };
 

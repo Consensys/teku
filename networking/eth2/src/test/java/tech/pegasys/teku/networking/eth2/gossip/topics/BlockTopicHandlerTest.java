@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -70,7 +68,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -85,7 +83,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(SAVE_FOR_FUTURE)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -99,7 +97,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
 
     when(processor.process(block))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(SAVE_FOR_FUTURE)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));

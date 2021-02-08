@@ -27,7 +27,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -66,9 +65,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
     final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
 
     when(voluntaryExitPool.add(signedVoluntaryExit))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                InternalValidationResult.create(ValidationResultCode.ACCEPT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
 

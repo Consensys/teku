@@ -16,9 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -68,7 +65,7 @@ public class ProposerSlashingTopicHandlerTest {
   public void handleMessage_validSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -80,7 +77,7 @@ public class ProposerSlashingTopicHandlerTest {
   public void handleMessage_ignoredSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(IGNORE)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -92,7 +89,7 @@ public class ProposerSlashingTopicHandlerTest {
   public void handleMessage_rejectedSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(REJECT)));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));

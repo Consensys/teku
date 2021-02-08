@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
@@ -68,7 +67,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     }
 
     if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
-      return InternalValidationResult.create(ACCEPT);
+      return InternalValidationResult.ACCEPT;
     } else {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",

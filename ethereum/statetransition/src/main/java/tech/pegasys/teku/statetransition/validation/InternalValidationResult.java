@@ -19,6 +19,15 @@ import java.util.Optional;
 
 public class InternalValidationResult {
 
+  public static InternalValidationResult ACCEPT =
+      InternalValidationResult.create(ValidationResultCode.ACCEPT);
+  public static InternalValidationResult IGNORE =
+      InternalValidationResult.create(ValidationResultCode.IGNORE);
+  public static InternalValidationResult REJECT =
+      InternalValidationResult.create(ValidationResultCode.REJECT);
+  public static InternalValidationResult SAVE_FOR_FUTURE =
+      InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE);
+
   private final ValidationResultCode validationResultCode;
   private final Optional<String> description;
 
@@ -28,7 +37,7 @@ public class InternalValidationResult {
     this.description = description;
   }
 
-  public static InternalValidationResult create(final ValidationResultCode validationResultCode) {
+  static InternalValidationResult create(final ValidationResultCode validationResultCode) {
     return new InternalValidationResult(validationResultCode, Optional.empty());
   }
 
@@ -52,6 +61,26 @@ public class InternalValidationResult {
     final InternalValidationResult that = (InternalValidationResult) o;
     return validationResultCode == that.validationResultCode
         && Objects.equals(description, that.description);
+  }
+
+  public boolean isAccept() {
+    return this.validationResultCode.equals(ValidationResultCode.ACCEPT);
+  }
+
+  public boolean isNotProcessable() {
+    return isIgnore() || isReject();
+  }
+
+  public boolean isIgnore() {
+    return this.validationResultCode.equals(ValidationResultCode.IGNORE);
+  }
+
+  public boolean isReject() {
+    return this.validationResultCode.equals(ValidationResultCode.REJECT);
+  }
+
+  public boolean isSaveForFuture() {
+    return this.validationResultCode.equals(ValidationResultCode.SAVE_FOR_FUTURE);
   }
 
   @Override
