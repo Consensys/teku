@@ -323,10 +323,6 @@ public class ChainDataProvider {
             maybeState -> maybeState.map(state -> getValidatorFromState(state, validatorIdParam)));
   }
 
-  ValidatorResponse getValidatorFromState(final BeaconState state, final String validatorIdParam) {
-    return getValidatorFromState(state.asInternalBeaconState(), validatorIdParam);
-  }
-
   private ValidatorResponse getValidatorFromState(
       final tech.pegasys.teku.datastructures.state.BeaconState state,
       final String validatorIdParam) {
@@ -415,9 +411,5 @@ public class ChainDataProvider {
     return maybeForkInfo
         .map(forkInfo -> List.of(new Fork(forkInfo.getFork())))
         .orElse(Collections.emptyList());
-  }
-
-  public UInt64 getEpoch() {
-    return compute_epoch_at_slot(combinedChainDataClient.getHeadSlot());
   }
 }
