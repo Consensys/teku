@@ -111,18 +111,20 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
   private static class V4FinalizedUpdater implements FinalizedUpdater {
     private final RocksDbAccessor.RocksDbTransaction transaction;
+    private final RocksDbAccessor db;
     private final SchemaFinalized schema;
     private final UInt64 stateStorageFrequency;
-    private Optional<UInt64> lastStateStoredSlot;
+    private Optional<UInt64> lastStateStoredSlot = Optional.empty();
+    private boolean loadedLastStoreState = false;
 
     V4FinalizedUpdater(
         final RocksDbAccessor db,
         final SchemaFinalized schema,
         final UInt64 stateStorageFrequency) {
       this.transaction = db.startTransaction();
+      this.db = db;
       this.schema = schema;
       this.stateStorageFrequency = stateStorageFrequency;
-      lastStateStoredSlot = db.getLastKey(schema.getColumnFinalizedStatesBySlot());
     }
 
     @Override
@@ -133,6 +135,10 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
+      if (!loadedLastStoreState) {
+        lastStateStoredSlot = db.getLastKey(schema.getColumnFinalizedStatesBySlot());
+        loadedLastStoreState = true;
+      }
       if (lastStateStoredSlot.isPresent()) {
         UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
         if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
