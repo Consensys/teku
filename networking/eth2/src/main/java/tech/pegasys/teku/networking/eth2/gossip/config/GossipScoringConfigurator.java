@@ -289,7 +289,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           .topicWeight(topicWeight)
           .timeInMeshQuantum(scoringConfig.getSlotDuration())
           .timeInMeshCap(timeInMeshCap)
-          .timeInMeshWeight(10.0 / timeInMeshCap)
+          .timeInMeshWeight(scoringConfig.getMaxInMeshScore() / timeInMeshCap)
           .firstMessageDeliveriesDecay(firstMessageDeliveryDecay)
           .firstMessageDeliveriesCap(firstMessageDeliveriesCap)
           .firstMessageDeliveriesWeight(
