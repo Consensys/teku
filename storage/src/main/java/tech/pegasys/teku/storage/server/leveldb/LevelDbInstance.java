@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,7 +116,7 @@ public class LevelDbInstance implements RocksDbAccessor {
           }
 
           // Check if an exact match was found
-          final Entry<byte[], byte[]> next = iterator.peekNext();
+          final Map.Entry<byte[], byte[]> next = iterator.peekNext();
           if (Arrays.equals(next.getKey(), matchingKey)) {
             return Optional.of(
                 ColumnEntry.create(key, column.getValueSerializer().deserialize(next.getValue())));
