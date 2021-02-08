@@ -10,6 +10,7 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+- Pull in latest jvm-libp2p release (0.7.0).
 
 ### Breaking Changes
 - Teku no longer publishes a `head` event on the REST API 4 seconds into a slot even if a block has not been received. The `head` event is only published when a new
