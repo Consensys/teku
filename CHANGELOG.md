@@ -11,6 +11,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 - Pull in latest jvm-libp2p release (0.7.0).
+- Delay gossip topic subscription until the node is nearly in sync.
 
 ### Breaking Changes
 - Teku no longer publishes a `head` event on the REST API 4 seconds into a slot even if a block has not been received. The `head` event is only published when a new
