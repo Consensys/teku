@@ -90,8 +90,8 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -536,21 +536,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             voluntaryExitGossipPublisher.publish(item);
           }
         });
     // Set up gossip for attester slashings
     attesterSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             attesterSlashingGossipPublisher.publish(item);
           }
         });
     // Set up gossip for proposer slashings
     proposerSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
