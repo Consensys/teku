@@ -68,6 +68,7 @@ public class LevelDbTransaction implements RocksDbTransaction {
   public void commit() {
     try {
       db.write(writeBatch);
+      db.compactRange(null, null);
     } finally {
       close();
     }
