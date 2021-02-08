@@ -78,7 +78,6 @@ public class LevelDbTransaction implements RocksDbTransaction {
     assertOpen();
     try {
       db.write(writeBatch);
-      db.compactRange(null, null);
     } finally {
       close();
     }
