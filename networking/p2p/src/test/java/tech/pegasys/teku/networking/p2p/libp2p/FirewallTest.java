@@ -17,7 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ public class FirewallTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void testFirewallNotPropagateTimeoutExceptionUpstream() throws Exception {
-    Firewall firewall = new Firewall(Duration.ofMillis(100), Collections.emptyList());
+    Firewall firewall = new Firewall(Duration.ofMillis(100));
     EmbeddedChannel channel =
         new EmbeddedChannel(
             firewall,
