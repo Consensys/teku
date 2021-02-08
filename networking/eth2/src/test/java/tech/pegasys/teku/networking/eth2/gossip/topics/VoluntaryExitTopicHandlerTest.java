@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -83,7 +82,8 @@ public class VoluntaryExitTopicHandlerTest {
   public void handleMessage_ignoredExit() {
     final SignedVoluntaryExit exit =
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
-    when(processor.process(exit)).thenReturn(SafeFuture.completedFuture(IGNORE));
+    when(processor.process(exit))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));

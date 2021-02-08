@@ -121,8 +121,8 @@ public class OperationPoolTest {
 
     assertThat(addedSlashings.size()).isEqualTo(2);
     assertThat(addedSlashings).containsKey(slashing1);
-    assertThat(addedSlashings.get(slashing1)).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(addedSlashings.get(slashing1).isAccept()).isTrue();
     assertThat(addedSlashings).containsKey(slashing2);
-    assertThat(addedSlashings.get(slashing2)).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
+    assertThat(addedSlashings.get(slashing2).isSaveForFuture()).isTrue();
   }
 }

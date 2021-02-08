@@ -34,6 +34,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostProposerSlashing extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/proposer_slashings";
@@ -74,8 +75,8 @@ public class PostProposerSlashing extends AbstractHandler {
           jsonProvider.jsonToObject(ctx.body(), ProposerSlashing.class);
       InternalValidationResult result =
           nodeDataProvider.postProposerSlashing(proposerSlashing).join();
-      if (result.equals(InternalValidationResult.IGNORE)
-          || result.equals(InternalValidationResult.REJECT)) {
+      if (result.code().equals(ValidationResultCode.IGNORE)
+          || result.code().equals(ValidationResultCode.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
         ctx.result(
             BadRequest.badRequest(
