@@ -491,7 +491,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
     eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider));
+        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, specProvider));
   }
 
   private void initAttestationManager() {
