@@ -28,19 +28,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
 public class LevelDbInstance implements RocksDbAccessor {
-
+  private final AtomicBoolean closed = new AtomicBoolean(false);
   private final DB db;
 
   public LevelDbInstance(final DB db) {
@@ -49,12 +53,14 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   @Override
   public <T> Optional<T> get(final RocksDbVariable<T> variable) {
+    assertOpen();
     return Optional.ofNullable(db.get(getVariableKey(variable)))
         .map(variable.getSerializer()::deserialize);
   }
 
   @Override
   public <K, V> Optional<V> get(final RocksDbColumn<K, V> column, final K key) {
+    assertOpen();
     return Optional.ofNullable(db.get(getColumnKey(column, key)))
         .map(column.getValueSerializer()::deserialize);
   }
@@ -166,27 +172,41 @@ public class LevelDbInstance implements RocksDbAccessor {
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
-    final DBIterator iterator = db.iterator();
+    assertOpen();
+    final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false));
     iterator.seek(fromBytes);
     return new LevelDbIterator<>(iterator, column, toBytes).toStream();
   }
 
   @Override
   public RocksDbTransaction startTransaction() {
+    assertOpen();
     final WriteBatch writeBatch = db.createWriteBatch();
-    return new LevelDbTransaction(db, writeBatch);
+    return new LevelDbTransaction(this, db, writeBatch);
   }
 
   @Override
   public void close() throws Exception {
+    if (!closed.compareAndSet(false, true)) {
+      return;
+    }
     db.close();
   }
 
   private <T> T withIterator(final Function<DBIterator, T> action) {
+    assertOpen();
     try (final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false))) {
       return action.apply(iterator);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
+    } catch (final DBException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to create iterator", e);
+    }
+  }
+
+  void assertOpen() {
+    if (closed.get()) {
+      throw new ShuttingDownException();
     }
   }
 }

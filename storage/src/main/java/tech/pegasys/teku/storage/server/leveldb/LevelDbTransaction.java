@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.WriteBatch;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
@@ -30,42 +31,50 @@ public class LevelDbTransaction implements RocksDbTransaction {
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
+  private final LevelDbInstance dbInstance;
   private final DB db;
   private final WriteBatch writeBatch;
 
-  public LevelDbTransaction(final DB db, final WriteBatch writeBatch) {
+  public LevelDbTransaction(final LevelDbInstance dbInstance, final DB db, final WriteBatch writeBatch) {
+    this.dbInstance = dbInstance;
     this.db = db;
     this.writeBatch = writeBatch;
   }
 
   @Override
   public <T> void put(final RocksDbVariable<T> variable, final T value) {
+    assertOpen();
     writeBatch.put(getVariableKey(variable), variable.getSerializer().serialize(value));
   }
 
   @Override
   public <K, V> void put(final RocksDbColumn<K, V> column, final K key, final V value) {
+    assertOpen();
     writeBatch.put(getColumnKey(column, key), serializeValue(column, value));
   }
 
   @Override
   public <K, V> void put(final RocksDbColumn<K, V> column, final Map<K, V> data) {
+    assertOpen();
     data.forEach(
         (key, value) -> writeBatch.put(getColumnKey(column, key), serializeValue(column, value)));
   }
 
   @Override
   public <K, V> void delete(final RocksDbColumn<K, V> column, final K key) {
+    assertOpen();
     writeBatch.delete(getColumnKey(column, key));
   }
 
   @Override
   public <T> void delete(final RocksDbVariable<T> variable) {
+    assertOpen();
     writeBatch.delete(getVariableKey(variable));
   }
 
   @Override
   public void commit() {
+    assertOpen();
     try {
       db.write(writeBatch);
       db.compactRange(null, null);
@@ -76,6 +85,7 @@ public class LevelDbTransaction implements RocksDbTransaction {
 
   @Override
   public void rollback() {
+    assertOpen();
     close();
   }
 
@@ -91,6 +101,12 @@ public class LevelDbTransaction implements RocksDbTransaction {
     }
   }
 
+  private void assertOpen() {
+    if (closed.get()) {
+      throw new ShuttingDownException();
+    }
+    dbInstance.assertOpen();
+  }
   private <K, V> byte[] serializeValue(final RocksDbColumn<K, V> column, final V value) {
     return column.getValueSerializer().serialize(value);
   }
