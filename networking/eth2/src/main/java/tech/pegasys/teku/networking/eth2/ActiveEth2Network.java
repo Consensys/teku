@@ -175,18 +175,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       // inactive because our chain is almost caught up to the chainhead, but gossip inactive so
       // that our node slowly falls behind because no gossip is propagating.  However, if we're too
       // aggressive, our node could be down-scored for subscribing to topics that it can't yet
-      // validate causing our node to fail to propagate any gossip.
+      // validate or propagate.
       startGossip();
     } else {
-      // Check again when we should be caught up assuming a speedy sync process
-      final int blocksPerSecond = 100;
-      final int delayInSeconds = slotsBehind.dividedBy(blocksPerSecond).min(600).max(10).intValue();
-      LOG.debug(
-          "Chain is not yet in sync, check if gossip should be started in {} seconds",
-          delayInSeconds);
-      asyncRunner
-          .runAfterDelay(this::queueGossipStart, Duration.ofSeconds(delayInSeconds))
-          .reportExceptions();
+      // Schedule a future check
+      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(10)).reportExceptions();
     }
   }
 
