@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitGossipIntegrationTest {
@@ -62,7 +63,8 @@ public class VoluntaryExitGossipIntegrationTest {
     final OperationProcessor<SignedVoluntaryExit> operationProcessor =
         (voluntaryExit) -> {
           receivedVoluntaryExits.add(voluntaryExit);
-          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+          return SafeFuture.completedFuture(
+              InternalValidationResult.create(ValidationResultCode.ACCEPT));
         };
 
     // Setup network 1

@@ -16,9 +16,10 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -80,7 +81,7 @@ public class SingleAttestationTopicHandlerTest {
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
@@ -96,7 +97,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
-    when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(IGNORE));
+    when(processor.process(attestation))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(IGNORE)));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
@@ -112,7 +114,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
-    when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
+    when(processor.process(attestation))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(SAVE_FOR_FUTURE)));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
@@ -128,7 +131,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
             attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
-    when(processor.process(attestation)).thenReturn(SafeFuture.completedFuture(REJECT));
+    when(processor.process(attestation))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.create(REJECT)));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =

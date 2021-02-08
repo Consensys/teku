@@ -19,6 +19,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists.createAttesterSlashings;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +55,7 @@ public class OperationPoolTest {
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
         new OperationPool<>(SignedVoluntaryExit.class, validator);
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.create(ACCEPT));
     when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     for (int i = 0; i < Constants.MAX_VOLUNTARY_EXITS + 1; i++) {
       pool.add(dataStructureUtil.randomSignedVoluntaryExit());
@@ -64,7 +68,7 @@ public class OperationPoolTest {
     OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
     OperationPool<AttesterSlashing> pool = new OperationPool<>(AttesterSlashing.class, validator);
     SSZMutableList<AttesterSlashing> slashingsInBlock = createAttesterSlashings();
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.create(ACCEPT));
     when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     for (int i = 0; i < Constants.MAX_ATTESTER_SLASHINGS; i++) {
       AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
@@ -83,7 +87,7 @@ public class OperationPoolTest {
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.create(ACCEPT));
 
     pool.add(slashing1);
     pool.add(slashing2);
@@ -109,10 +113,11 @@ public class OperationPoolTest {
     ProposerSlashing slashing3 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing4 = dataStructureUtil.randomProposerSlashing();
 
-    when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.ACCEPT);
-    when(validator.validateFully(slashing2)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
-    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.REJECT);
-    when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.IGNORE);
+    when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.create(ACCEPT));
+    when(validator.validateFully(slashing2))
+        .thenReturn(InternalValidationResult.create(SAVE_FOR_FUTURE));
+    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.create(REJECT));
+    when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.create(IGNORE));
 
     pool.add(slashing1);
     pool.add(slashing2);
@@ -121,8 +126,9 @@ public class OperationPoolTest {
 
     assertThat(addedSlashings.size()).isEqualTo(2);
     assertThat(addedSlashings).containsKey(slashing1);
-    assertThat(addedSlashings.get(slashing1)).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(addedSlashings.get(slashing1)).isEqualTo(InternalValidationResult.create(ACCEPT));
     assertThat(addedSlashings).containsKey(slashing2);
-    assertThat(addedSlashings.get(slashing2)).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
+    assertThat(addedSlashings.get(slashing2))
+        .isEqualTo(InternalValidationResult.create(SAVE_FOR_FUTURE));
   }
 }

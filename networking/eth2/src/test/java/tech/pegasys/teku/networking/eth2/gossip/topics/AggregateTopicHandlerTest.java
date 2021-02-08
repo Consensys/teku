@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAt
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -51,7 +52,9 @@ public class AggregateTopicHandlerTest {
         ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.ACCEPT)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
@@ -67,7 +70,9 @@ public class AggregateTopicHandlerTest {
         ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
@@ -83,7 +88,9 @@ public class AggregateTopicHandlerTest {
         ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.IGNORE)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
@@ -99,7 +106,9 @@ public class AggregateTopicHandlerTest {
         ValidateableAttestation.aggregateFromValidator(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(

@@ -27,6 +27,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -65,7 +66,9 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
     final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
 
     when(proposerSlashingPool.add(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.ACCEPT)));
 
     Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
 

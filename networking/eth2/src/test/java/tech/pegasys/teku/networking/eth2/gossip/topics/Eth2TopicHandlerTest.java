@@ -14,6 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.CompletionException;
@@ -42,7 +45,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_valid() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
@@ -54,7 +58,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_invalid() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.REJECT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(REJECT)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
@@ -66,7 +71,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_ignore() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(IGNORE)));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));
@@ -78,7 +84,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_invalidBytes() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
     final Bytes invalidBytes = Bytes.fromHexString("0x0102");
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(invalidBytes));
@@ -91,7 +98,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_errorWhileProcessing_decodingException() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
     topicHandler.setDeserializer(
         (b) -> {
           throw new DecodingException("oops");
@@ -108,7 +116,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_errorWhileProcessing_wrappedDecodingException() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
     topicHandler.setDeserializer(
         (b) -> {
           throw new CompletionException(new DecodingException("oops"));
@@ -125,7 +134,8 @@ public class Eth2TopicHandlerTest {
   public void handleMessage_errorWhileProcessing_decodingExceptionWithCause() {
     MockEth2TopicHandler topicHandler =
         new MockEth2TopicHandler(
-            asyncRunner, (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            asyncRunner,
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.create(ACCEPT)));
     topicHandler.setDeserializer(
         (b) -> {
           throw new DecodingException("oops", new RuntimeException("oops"));
@@ -205,8 +215,8 @@ public class Eth2TopicHandlerTest {
   private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     private Deserializer<SignedBeaconBlock> deserializer =
         (bytes) -> getGossipEncoding().decodeMessage(bytes, SignedBeaconBlock.SSZ_SCHEMA.get());
-    private static GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    private static Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
+    private static final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private static final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 
     protected MockEth2TopicHandler(
         final AsyncRunner asyncRunner, OperationProcessor<SignedBeaconBlock> processor) {

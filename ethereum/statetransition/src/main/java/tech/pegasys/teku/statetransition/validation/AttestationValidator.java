@@ -21,10 +21,10 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetF
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
@@ -70,7 +70,7 @@ public class AttestationValidator {
       final ValidateableAttestation validateableAttestation) {
     Attestation attestation = validateableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
-    if (internalValidationResult != ACCEPT) {
+    if (internalValidationResult.code() != ACCEPT) {
       return SafeFuture.completedFuture(internalValidationResult);
     }
 
@@ -78,7 +78,7 @@ public class AttestationValidator {
             validateableAttestation, validateableAttestation.getReceivedSubnetId())
         .thenApply(
             result -> {
-              if (result != ACCEPT) {
+              if (result.code() != ACCEPT) {
                 return result;
               }
 
@@ -94,24 +94,24 @@ public class AttestationValidator {
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
     if (!receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation))) {
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
-    return ACCEPT;
+    return InternalValidationResult.create(ACCEPT);
   }
 
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
     if (attestation.getAggregation_bits().getBitCount() != 1) {
-      return REJECT;
+      return InternalValidationResult.create(REJECT);
     }
 
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
     if (receivedValidAttestations.contains(getValidatorAndTargetEpoch(attestation))) {
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
-    return ACCEPT;
+    return InternalValidationResult.create(ACCEPT);
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
@@ -121,7 +121,7 @@ public class AttestationValidator {
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot()))) {
-      return SafeFuture.completedFuture(REJECT);
+      return SafeFuture.completedFuture(InternalValidationResult.create(REJECT));
     }
 
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
@@ -132,10 +132,10 @@ public class AttestationValidator {
     final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
-      return SafeFuture.completedFuture(IGNORE);
+      return SafeFuture.completedFuture(InternalValidationResult.create(IGNORE));
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return SafeFuture.completedFuture(SAVE_FOR_FUTURE);
+      return SafeFuture.completedFuture(InternalValidationResult.create(SAVE_FOR_FUTURE));
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -151,14 +151,14 @@ public class AttestationValidator {
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                return SAVE_FOR_FUTURE;
+                return InternalValidationResult.create(SAVE_FOR_FUTURE);
               }
               final BeaconState state = maybeState.get();
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(
                       get_committee_count_per_slot(state, data.getTarget().getEpoch()))) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               // The attestation's committee index (attestation.data.index) is for the correct
@@ -166,7 +166,7 @@ public class AttestationValidator {
               if (receivedOnSubnetId.isPresent()
                   && computeSubnetForAttestation(state, attestation)
                       != receivedOnSubnetId.getAsInt()) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
@@ -175,11 +175,11 @@ public class AttestationValidator {
               final List<Integer> committee =
                   get_beacon_committee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               if (!is_valid_indexed_attestation(state, validateableAttestation).isSuccessful()) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               // The attestation's target block is an ancestor of the block named in the LMD vote
@@ -190,7 +190,7 @@ public class AttestationValidator {
                       compute_start_slot_at_epoch(data.getTarget().getEpoch()))
                   .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(data.getTarget().getRoot()))
                   .orElse(false)) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               // The current finalized_checkpoint is an ancestor of the block defined by
@@ -204,12 +204,12 @@ public class AttestationValidator {
                       compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch()))
                   .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
                   .orElse(false)) {
-                return REJECT;
+                return InternalValidationResult.create(REJECT);
               }
 
               // Save committee shuffling seed since the state is available and attestation is valid
               validateableAttestation.saveCommitteeShufflingSeed(state);
-              return ACCEPT;
+              return InternalValidationResult.create(ACCEPT);
             });
   }
 

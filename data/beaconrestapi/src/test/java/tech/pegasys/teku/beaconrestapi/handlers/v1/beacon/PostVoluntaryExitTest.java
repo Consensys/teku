@@ -30,6 +30,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostVoluntaryExitTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -49,7 +50,9 @@ public class PostVoluntaryExitTest {
         new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
     when(provider.postVoluntaryExit(exit))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.ACCEPT)));
     handler.handle(context);
 
     verify(provider).postVoluntaryExit(exit);
@@ -62,7 +65,9 @@ public class PostVoluntaryExitTest {
         new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
     when(provider.postVoluntaryExit(exit))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT)));
     handler.handle(context);
 
     verify(provider).postVoluntaryExit(exit);

@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -55,51 +55,64 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
           exit.getMessage().getValidator_index());
-      return IGNORE;
+      return InternalValidationResult.create(
+          IGNORE,
+          String.format(
+              "Exit is not the first one for validator %s.",
+              exit.getMessage().getValidator_index()));
     }
 
-    if (!passesProcessVoluntaryExitConditions(exit)) {
-      return REJECT;
+    final Optional<String> failureReason = getFailureReason(exit);
+    if (failureReason.isPresent()) {
+      return InternalValidationResult.create(REJECT, failureReason.get());
     }
 
     if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
-      return ACCEPT;
+      return InternalValidationResult.create(ACCEPT);
     } else {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
           exit.getMessage().getValidator_index());
-      return IGNORE;
+      return InternalValidationResult.create(
+          IGNORE,
+          String.format(
+              "Exit is not the first one for validator %s.",
+              exit.getMessage().getValidator_index()));
     }
   }
 
   @Override
   public boolean validateForStateTransition(BeaconState state, SignedVoluntaryExit exit) {
-    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
-
-    if (invalidReason.isPresent()) {
-      LOG.debug(
-          "VoluntaryExitValidator: Exit for validator {} fails process voluntary exit conditions {}.",
-          exit.getMessage().getValidator_index(),
-          invalidReason.get().describe());
-      return false;
-    }
-
-    return true;
+    return getFailureReason(state, exit, false).isEmpty();
   }
 
-  private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
+  private Optional<String> getFailureReason(SignedVoluntaryExit exit) {
     final BeaconState state = getState();
-    if (!validateForStateTransition(state, exit)) {
-      return false;
+    return getFailureReason(state, exit, true);
+  }
+
+  private Optional<String> getFailureReason(
+      final BeaconState state, final SignedVoluntaryExit exit, final boolean verifySignature) {
+    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
+    if (invalidReason.isPresent()) {
+      final String message =
+          String.format(
+              "Exit for validator %s fails process voluntary exit conditions %s.",
+              exit.getMessage().getValidator_index(), invalidReason.get().describe());
+      LOG.debug("VoluntaryExitValidator: " + message);
+      return Optional.of(message);
     }
 
-    if (!signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
-      LOG.trace(
-          "VoluntaryExitValidator: Exit for validator {} fails signature verification.",
-          exit.getMessage().getValidator_index());
-      return false;
+    if (verifySignature
+        && !signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
+      final String message =
+          String.format(
+              "Exit for validator %s fails signature verification.",
+              exit.getMessage().getValidator_index());
+      LOG.trace("VoluntaryExitValidator: " + message);
+      return Optional.of(message);
     }
-    return true;
+    return Optional.empty();
   }
 
   private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {

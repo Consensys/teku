@@ -13,9 +13,62 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-public enum InternalValidationResult {
-  ACCEPT,
-  SAVE_FOR_FUTURE,
-  IGNORE,
-  REJECT
+import com.google.common.base.MoreObjects;
+
+import java.util.Objects;
+import java.util.Optional;
+
+public class InternalValidationResult {
+
+  private final ValidationResultCode validationResultCode;
+  private final Optional<String> description;
+
+  private InternalValidationResult(
+      final ValidationResultCode validationResultCode, final Optional<String> description) {
+    this.validationResultCode = validationResultCode;
+    this.description = description;
+  }
+
+  public static InternalValidationResult create(final ValidationResultCode validationResultCode) {
+    return new InternalValidationResult(validationResultCode, Optional.empty());
+  }
+
+  public static InternalValidationResult create(
+      final ValidationResultCode validationResultCode, final String description) {
+    return new InternalValidationResult(validationResultCode, Optional.of(description));
+  }
+
+  public ValidationResultCode code() {
+    return validationResultCode;
+  }
+
+  public Optional<String> getDescription() {
+    return description;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final InternalValidationResult that = (InternalValidationResult) o;
+    return validationResultCode == that.validationResultCode
+        && Objects.equals(description, that.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(validationResultCode, description);
+  }
+
+  @Override
+  public String toString() {
+    MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this)
+        .add("validationResultCode", validationResultCode);
+
+    if (description.isPresent()) {
+      helper.add("description", description.get());
+    }
+
+    return helper.toString();
+  }
 }

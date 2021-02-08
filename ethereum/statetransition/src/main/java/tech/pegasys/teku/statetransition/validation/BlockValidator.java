@@ -60,27 +60,32 @@ public class BlockValidator {
       LOG.trace(
           "BlockValidator: Block is either too old or is not the first block with valid signature for "
               + "its slot. It will be dropped");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(ValidationResultCode.IGNORE));
     }
 
     if (blockIsFromFutureSlot(block)) {
       LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE));
     }
 
     if (recentChainData.containsBlock(block.getRoot())) {
       LOG.trace("Block is already imported");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(ValidationResultCode.IGNORE));
     }
 
     if (!recentChainData.containsBlock(block.getParentRoot())) {
       LOG.trace("Block parent is not available. It will be saved for future processing");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE));
     }
 
     if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
       LOG.trace("Block does not descend from finalized checkpoint");
-      return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+      return SafeFuture.completedFuture(
+          InternalValidationResult.create(ValidationResultCode.REJECT));
     }
 
     return recentChainData
@@ -90,12 +95,14 @@ public class BlockValidator {
               if (parentBlock.isEmpty()) {
                 LOG.trace(
                     "BlockValidator: Parent block does not exist. It will be saved for future processing");
-                return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+                return SafeFuture.completedFuture(
+                    InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE));
               }
 
               if (parentBlock.get().getSlot().isGreaterThanOrEqualTo(block.getSlot())) {
                 LOG.trace("Parent block is after child block.");
-                return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+                return SafeFuture.completedFuture(
+                    InternalValidationResult.create(ValidationResultCode.REJECT));
               }
 
               final UInt64 firstSlotInBlockEpoch =
@@ -110,14 +117,14 @@ public class BlockValidator {
                         if (postState.isEmpty()) {
                           LOG.trace(
                               "Block was available but state wasn't. Must have been pruned by finalized.");
-                          return InternalValidationResult.IGNORE;
+                          return InternalValidationResult.create(ValidationResultCode.IGNORE);
                         }
                         if (blockIsProposedByTheExpectedProposer(block, postState.get())
                             && blockSignatureIsValidWithRespectToProposerIndex(
                                 block, postState.get())) {
-                          return InternalValidationResult.ACCEPT;
+                          return InternalValidationResult.create(ValidationResultCode.ACCEPT);
                         }
-                        return InternalValidationResult.REJECT;
+                        return InternalValidationResult.create(ValidationResultCode.REJECT);
                       });
             });
   }

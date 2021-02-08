@@ -16,6 +16,10 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -60,7 +64,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     InternalValidationResult result = blockValidator.validate(block).join();
-    assertThat(result).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(result.code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -69,7 +73,7 @@ public class BlockValidatorTest {
         beaconChainUtil.createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(ONE));
 
     assertThat(blockValidator.validate(block))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValue(InternalValidationResult.create(IGNORE));
   }
 
   @Test
@@ -79,10 +83,10 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     InternalValidationResult result1 = blockValidator.validate(block).join();
-    assertThat(result1).isEqualTo(InternalValidationResult.ACCEPT);
+    assertThat(result1.code()).isEqualTo(ACCEPT);
 
     InternalValidationResult result2 = blockValidator.validate(block).join();
-    assertThat(result2).isEqualTo(InternalValidationResult.IGNORE);
+    assertThat(result2.code()).isEqualTo(IGNORE);
   }
 
   @Test
@@ -91,7 +95,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     InternalValidationResult result = blockValidator.validate(block).join();
-    assertThat(result).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
+    assertThat(result.code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -117,7 +121,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
-    assertThat(result).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
+    assertThat(result.code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -129,7 +133,7 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(recentChainData.getHeadSlot());
 
     InternalValidationResult result = blockValidator.validate(block).join();
-    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
+    assertThat(result.code()).isEqualTo(IGNORE);
   }
 
   @Test
@@ -158,7 +162,7 @@ public class BlockValidatorTest {
         new SignedBeaconBlock(block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
-    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
+    assertThat(result.code()).isEqualTo(REJECT);
   }
 
   @Test
@@ -172,7 +176,7 @@ public class BlockValidatorTest {
             BLSTestUtil.randomSignature(0));
 
     InternalValidationResult result = blockValidator.validate(block).join();
-    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
+    assertThat(result.code()).isEqualTo(REJECT);
   }
 
   @Test
@@ -203,6 +207,6 @@ public class BlockValidatorTest {
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
         blockValidator.validate(blockAndState.getBlock());
-    assertThat(result).isCompletedWithValue(InternalValidationResult.REJECT);
+    assertThat(result).isCompletedWithValue(InternalValidationResult.create(REJECT));
   }
 }

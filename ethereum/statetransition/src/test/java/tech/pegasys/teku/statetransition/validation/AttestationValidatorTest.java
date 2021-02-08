@@ -22,10 +22,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committe
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -111,7 +111,7 @@ class AttestationValidatorTest {
   public void shouldReturnValidForValidAttestation() {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
-    assertThat(validate(attestation)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -122,7 +122,7 @@ class AttestationValidatorTest {
 
     final Attestation attestation =
         attestationGenerator.validAttestation(head, head.getSlot().plus(SLOTS_PER_EPOCH * 3));
-    assertThat(validate(attestation)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -136,7 +136,7 @@ class AttestationValidatorTest {
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
-    assertThat(validate(invalidAttestation)).isEqualTo(REJECT);
+    assertThat(validate(invalidAttestation).code()).isEqualTo(REJECT);
   }
 
   @Test
@@ -150,7 +150,7 @@ class AttestationValidatorTest {
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
     chainUpdater.setTime(recentChainData.getStore().getTime().plus(ONE));
 
-    assertThat(validate(attestation)).isEqualTo(IGNORE);
+    assertThat(validate(attestation).code()).isEqualTo(IGNORE);
   }
 
   @Test
@@ -163,7 +163,7 @@ class AttestationValidatorTest {
     final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
     chainUpdater.setCurrentSlot(slot);
 
-    assertThat(validate(attestation)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -174,7 +174,7 @@ class AttestationValidatorTest {
 
     chainUpdater.setCurrentSlot(ZERO);
 
-    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validate(attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -187,7 +187,7 @@ class AttestationValidatorTest {
     // precision.  Alternatively we might consider using system time, not store time.
     chainUpdater.setCurrentSlot(ONE);
 
-    assertThat(validate(attestation)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -198,11 +198,11 @@ class AttestationValidatorTest {
                     recentChainData.getChainHead().orElseThrow()))
             .get(0);
 
-    assertThat(validate(attestation)).isEqualTo(REJECT);
+    assertThat(validate(attestation).code()).isEqualTo(REJECT);
   }
 
   @Test
-  public void shouldRejectAttestationForSameValidatorAndTargetEpoch() throws Exception {
+  public void shouldRejectAttestationForSameValidatorAndTargetEpoch() {
     final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
     chainUpdater.advanceChain(ONE);
 
@@ -222,12 +222,12 @@ class AttestationValidatorTest {
         .isEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
-    assertThat(validate(attestation2)).isEqualTo(IGNORE);
+    assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2).code()).isEqualTo(IGNORE);
   }
 
   @Test
-  public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
+  public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() {
     final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
         chainUpdater.advanceChain(UInt64.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
@@ -249,8 +249,8 @@ class AttestationValidatorTest {
         .isNotEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
-    assertThat(validate(attestation2)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -272,8 +272,8 @@ class AttestationValidatorTest {
     assertThat(attestation1.getData().getSlot()).isEqualTo(attestation2.getData().getSlot());
     assertThat(attestation1.getAggregation_bits()).isNotEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
-    assertThat(validate(attestation2)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -282,17 +282,17 @@ class AttestationValidatorTest {
         attestationGenerator.attestationWithInvalidSignature(
             recentChainData.getChainHead().orElseThrow());
 
-    assertThat(validate(attestation)).isEqualTo(REJECT);
+    assertThat(validate(attestation).code()).isEqualTo(REJECT);
   }
 
   @Test
-  public void shouldDeferAttestationWhenBlockBeingVotedForIsNotAvailable() throws Exception {
+  public void shouldDeferAttestationWhenBlockBeingVotedForIsNotAvailable() {
     final BeaconBlockAndState unknownBlockAndState =
         chainBuilder.generateBlockAtSlot(ONE).toUnsigned();
     chainUpdater.setCurrentSlot(ONE);
     final Attestation attestation = attestationGenerator.validAttestation(unknownBlockAndState);
 
-    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validate(attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -303,10 +303,10 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValue(InternalValidationResult.create(REJECT));
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(ACCEPT);
+        .isCompletedWithValue(InternalValidationResult.create(ACCEPT));
   }
 
   @Test
@@ -329,7 +329,7 @@ class AttestationValidatorTest {
                             data.getTarget()),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValue(InternalValidationResult.create(REJECT));
   }
 
   @Test
@@ -351,7 +351,7 @@ class AttestationValidatorTest {
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValue(InternalValidationResult.create(REJECT));
   }
 
   @Test
@@ -366,7 +366,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValue(InternalValidationResult.create(REJECT));
   }
 
   @Test
@@ -382,7 +382,7 @@ class AttestationValidatorTest {
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValue(InternalValidationResult.create(REJECT));
   }
 
   private InternalValidationResult validate(final Attestation attestation) {

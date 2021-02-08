@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -48,19 +48,19 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   public InternalValidationResult validateFully(AttesterSlashing slashing) {
     if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
 
     BeaconState state = getState();
     if (!validateForStateTransition(state, slashing)) {
-      return REJECT;
+      return InternalValidationResult.create(REJECT);
     }
 
     if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
-      return ACCEPT;
+      return InternalValidationResult.create(ACCEPT);
     } else {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
   }
 

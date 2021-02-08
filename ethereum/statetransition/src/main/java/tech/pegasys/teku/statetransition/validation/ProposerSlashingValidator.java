@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -55,20 +55,20 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
 
     if (!passesProcessProposerSlashingConditions(slashing)) {
-      return REJECT;
+      return InternalValidationResult.create(REJECT);
     }
 
     if (receivedValidSlashingForProposerSet.add(
         slashing.getHeader_1().getMessage().getProposerIndex())) {
-      return ACCEPT;
+      return InternalValidationResult.create(ACCEPT);
     } else {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
-      return IGNORE;
+      return InternalValidationResult.create(IGNORE);
     }
   }
 

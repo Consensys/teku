@@ -15,11 +15,14 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public interface OperationProcessor<T> {
   SafeFuture<InternalValidationResult> process(T operation);
 
-  OperationProcessor<?> NOOP = (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+  OperationProcessor<?> NOOP =
+      (__) ->
+          SafeFuture.completedFuture(InternalValidationResult.create(ValidationResultCode.ACCEPT));
 
   @SuppressWarnings("unchecked")
   static <T> OperationProcessor<T> noop() {
