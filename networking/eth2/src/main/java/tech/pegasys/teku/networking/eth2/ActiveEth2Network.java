@@ -184,11 +184,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private synchronized void startGossip() {
-    LOG.info("Starting eth2 gossip");
     if (!gossipStarted.compareAndSet(false, true)) {
       return;
     }
 
+    LOG.info("Starting eth2 gossip");
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
@@ -287,10 +287,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return SafeFuture.COMPLETE;
     }
-    if (gossipUpdateTask != null) {
-      gossipUpdateTask.cancel();
-    }
+
     if (gossipStarted.get()) {
+      gossipUpdateTask.cancel();
       blockGossipManager.shutdown();
       attestationGossipManager.shutdown();
       aggregateGossipManager.shutdown();
