@@ -50,6 +50,8 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testFixturesImplementation testFixtures(project(':ethereum:networks'))
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
