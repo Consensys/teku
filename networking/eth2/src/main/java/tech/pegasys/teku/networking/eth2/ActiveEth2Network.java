@@ -254,9 +254,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private void setTopicScoringParams() {
-    final GossipTopicsScoringConfig.Builder builder = GossipTopicsScoringConfig.builder();
-    gossipConfigurator.configureAllTopics(builder, getEth2Context());
-    discoveryNetwork.updateGossipTopicScoring(builder.build());
+    final GossipTopicsScoringConfig topicConfig =
+        gossipConfigurator.configureAllTopics(getEth2Context());
+    discoveryNetwork.updateGossipTopicScoring(topicConfig);
 
     gossipUpdateTask =
         asyncRunner.runWithFixedDelay(
@@ -269,9 +269,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   private void updateDynamicTopicScoring() {
     LOG.trace("Update dynamic topic scoring");
-    final GossipTopicsScoringConfig.Builder builder = GossipTopicsScoringConfig.builder();
-    gossipConfigurator.configureDynamicTopics(builder, getEth2Context());
-    discoveryNetwork.updateGossipTopicScoring(builder.build());
+    final GossipTopicsScoringConfig topicConfig =
+        gossipConfigurator.configureDynamicTopics(getEth2Context());
+    discoveryNetwork.updateGossipTopicScoring(topicConfig);
   }
 
   private Eth2Context getEth2Context() {

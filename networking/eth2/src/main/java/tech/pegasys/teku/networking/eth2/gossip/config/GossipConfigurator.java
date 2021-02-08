@@ -57,6 +57,17 @@ public interface GossipConfigurator {
       final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context);
 
   /**
+   * Configure scoring for all topics
+   *
+   * @param eth2Context Contextual information about the current chain
+   */
+  default GossipTopicsScoringConfig configureAllTopics(final Eth2Context eth2Context) {
+    final GossipTopicsScoringConfig.Builder builder = GossipTopicsScoringConfig.builder();
+    configureAllTopics(builder, eth2Context);
+    return builder.build();
+  }
+
+  /**
    * Configure scoring for dynamic topics that should be updated over time
    *
    * @param topicsConfigBuilder The builder to be configured
@@ -64,4 +75,15 @@ public interface GossipConfigurator {
    */
   void configureDynamicTopics(
       final GossipTopicsScoringConfig.Builder topicsConfigBuilder, final Eth2Context eth2Context);
+
+  /**
+   * Configure scoring for dynamic topics that should be updated over time
+   *
+   * @param eth2Context Contextual information about the current chain
+   */
+  default GossipTopicsScoringConfig configureDynamicTopics(final Eth2Context eth2Context) {
+    final GossipTopicsScoringConfig.Builder builder = GossipTopicsScoringConfig.builder();
+    configureDynamicTopics(builder, eth2Context);
+    return builder.build();
+  }
 }
