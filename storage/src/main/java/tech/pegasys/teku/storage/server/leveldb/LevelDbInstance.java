@@ -183,25 +183,6 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(final RocksDbColumn<K, V> column) {
-    return withIterator(
-        iterator -> {
-          final byte[] keyAfterColumn = getKeyAfterColumn(column);
-          iterator.seek(keyAfterColumn);
-          if (!iterator.hasNext()) {
-            // We seeked past the end of the database, go back a step
-            iterator.seekToLast();
-          }
-          if (iterator.hasPrev()) {
-            return Optional.of(iterator.peekPrev())
-                .filter(entry -> isFromColumn(column, entry.getKey()))
-                .map(entry -> asColumnEntry(column, entry));
-          }
-          return Optional.empty();
-        });
-  }
-
-  @Override
   public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
     return withIterator(
         iterator -> {
