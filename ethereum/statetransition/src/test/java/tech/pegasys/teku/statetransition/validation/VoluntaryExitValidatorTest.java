@@ -115,7 +115,8 @@ public class VoluntaryExitValidatorTest {
 
     final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
     assertThat(exitValidation.code()).isEqualTo(REJECT);
-    assertThat(exitValidation.getDescription().orElse("")).contains("Validator has already initiated exit");
+    assertThat(exitValidation.getDescription().orElse(""))
+        .contains("Validator has already initiated exit");
   }
 
   @Test

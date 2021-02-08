@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import com.google.common.base.MoreObjects;
-
 import java.util.Objects;
 import java.util.Optional;
 
@@ -62,8 +61,8 @@ public class InternalValidationResult {
 
   @Override
   public String toString() {
-    MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this)
-        .add("validationResultCode", validationResultCode);
+    MoreObjects.ToStringHelper helper =
+        MoreObjects.toStringHelper(this).add("validationResultCode", validationResultCode);
 
     if (description.isPresent()) {
       helper.add("description", description.get());
