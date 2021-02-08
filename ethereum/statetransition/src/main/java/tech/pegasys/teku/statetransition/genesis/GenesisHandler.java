@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DepositUtil;
 import tech.pegasys.teku.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -37,10 +38,12 @@ import tech.pegasys.teku.util.config.Constants;
 public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
+  private final TimeProvider timeProvider;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
 
-  public GenesisHandler(final RecentChainData recentChainData) {
+  public GenesisHandler(final RecentChainData recentChainData, final TimeProvider timeProvider) {
     this.recentChainData = recentChainData;
+    this.timeProvider = timeProvider;
   }
 
   @Override
@@ -103,7 +106,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void eth2Genesis(BeaconState genesisState) {
-    recentChainData.initializeFromGenesis(genesisState, genesisState.getGenesis_time());
+    recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
     Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(), genesisBlockRoot, genesisState.getGenesis_time());

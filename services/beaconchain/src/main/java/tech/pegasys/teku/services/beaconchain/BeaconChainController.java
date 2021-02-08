@@ -490,7 +490,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
-    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
+    eventChannels.subscribe(
+        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider));
   }
 
   private void initAttestationManager() {
