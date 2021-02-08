@@ -37,9 +37,12 @@ public class LevelDbInstanceFactory {
     checkArgument(
         columns.stream().map(RocksDbColumn::getId).distinct().count() == columns.size(),
         "Column IDs are not distinct");
-    final Options options = new Options().createIfMissing(true);
-    //            .cacheSize(configuration.getCacheCapacity())
-    //            .writeBufferSize((int) configuration.getWriteBufferCapacity());
+    final Options options =
+        new Options()
+            .createIfMissing(true)
+            .cacheSize(configuration.getCacheCapacity())
+            .maxOpenFiles(configuration.getMaxOpenFiles())
+            .writeBufferSize((int) configuration.getWriteBufferCapacity());
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
