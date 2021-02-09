@@ -29,54 +29,115 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 public interface BeaconState extends SszContainer {
 
   // Versioning
-  UInt64 getGenesis_time();
+  default UInt64 getGenesis_time() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME.name());
+    return ((SszPrimitives.SszUInt64) get(fieldIndex)).get();
+  }
 
-  Bytes32 getGenesis_validators_root();
+  default Bytes32 getGenesis_validators_root() {
+    // TODO
+    return null;
+  }
 
-  UInt64 getSlot();
+  default UInt64 getSlot() {
+    // TODO
+    return null;
+  }
 
-  Fork getFork();
+  default Fork getFork() {
+    // TODO
+    return null;
+  }
 
-  ForkInfo getForkInfo();
+  default ForkInfo getForkInfo() {
+    // TODO
+    return null;
+  }
 
   // History
-  BeaconBlockHeader getLatest_block_header();
+  default BeaconBlockHeader getLatest_block_header() {
+    // TODO
+    return null;
+  }
 
-  SSZVector<Bytes32> getBlock_roots();
+  default SSZVector<Bytes32> getBlock_roots() {
+    // TODO
+    return null;
+  }
 
-  SSZVector<Bytes32> getState_roots();
+  default SSZVector<Bytes32> getState_roots() {
+    // TODO
+    return null;
+  }
 
-  SSZList<Bytes32> getHistorical_roots();
+  default SSZList<Bytes32> getHistorical_roots() {
+    // TODO
+    return null;
+  }
 
   // Eth1
-  Eth1Data getEth1_data();
+  default Eth1Data getEth1_data() {
+    // TODO
+    return null;
+  }
 
-  SSZList<Eth1Data> getEth1_data_votes();
+  default SSZList<Eth1Data> getEth1_data_votes() {
+    // TODO
+    return null;
+  }
 
-  UInt64 getEth1_deposit_index();
+  default UInt64 getEth1_deposit_index() {
+    // TODO
+    return null;
+  }
 
   // Registry
-  SSZList<Validator> getValidators();
+  default SSZList<Validator> getValidators() {
+    // TODO
+    return null;
+  }
 
-  SSZList<UInt64> getBalances();
+  default SSZList<UInt64> getBalances() {
+    // TODO
+    return null;
+  }
 
-  SSZVector<Bytes32> getRandao_mixes();
+  default SSZVector<Bytes32> getRandao_mixes() {
+    // TODO
+    return null;
+  }
 
   // Slashings
-  SSZVector<UInt64> getSlashings();
+  default SSZVector<UInt64> getSlashings() {
+    // TODO
+    return null;
+  }
 
   // Finality
-  Bitvector getJustification_bits();
+  default Bitvector getJustification_bits() {
+    // TODO
+    return null;
+  }
 
-  Checkpoint getPrevious_justified_checkpoint();
+  default Checkpoint getPrevious_justified_checkpoint() {
+    // TODO
+    return null;
+  }
 
-  Checkpoint getCurrent_justified_checkpoint();
+  default Checkpoint getCurrent_justified_checkpoint() {
+    // TODO
+    return null;
+  }
 
-  Checkpoint getFinalized_checkpoint();
+  default Checkpoint getFinalized_checkpoint() {
+    // TODO
+    return null;
+  }
 
   // Update
   BeaconState updated(Consumer<MutableBeaconState> updater);
