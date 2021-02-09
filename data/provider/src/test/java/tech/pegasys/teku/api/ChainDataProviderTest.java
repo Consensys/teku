@@ -71,13 +71,11 @@ public class ChainDataProviderTest {
   private tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal;
 
   private SignedBlockAndState bestBlock;
-  private BeaconState beaconState;
   private Bytes32 blockRoot;
   private UInt64 slot;
   private RecentChainData recentChainData;
   private final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
   private UInt64 actualBalance;
   private final DataStructureUtil data = new DataStructureUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
@@ -93,7 +91,6 @@ public class ChainDataProviderTest {
     recentChainData = storageSystem.recentChainData();
     beaconStateInternal = bestBlock.getState();
 
-    beaconState = new BeaconState(beaconStateInternal);
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     blockRoot = bestBlock.getRoot();
   }
