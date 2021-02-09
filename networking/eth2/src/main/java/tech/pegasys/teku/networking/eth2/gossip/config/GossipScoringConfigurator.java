@@ -47,11 +47,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
   @Override
   public void configure(
       final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {
-    gossipConfigBuilder
-        .d(GOSSIP_D)
-        .dLazy(GOSSIP_D)
-        .dLow(6)
-        .scoring(b -> configureScoring(b, eth2Context));
+    gossipConfigBuilder.d(GOSSIP_D).dLow(6).scoring(b -> configureScoring(b, eth2Context));
   }
 
   @Override
