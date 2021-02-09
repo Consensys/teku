@@ -34,7 +34,7 @@ public class SchemaDefinitionsGenesis implements SchemaDefinitions {
   public BeaconStateSchema<?> getBeaconStateSchema() {
     final List<SszField> allFields = new ArrayList<>();
     allFields.addAll(BeaconStateSchema.getCommonFields(specConstants));
-    allFields.addAll(BeaconStateSchemaGenesis.getNewFields(specConstants));
+    allFields.addAll(BeaconStateSchemaGenesis.getGenesisFields(specConstants));
     final List<SszField> sortedFields =
         allFields.stream()
             .sorted(Comparator.comparing(SszField::getIndex))

@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.sos.SszField;
 public class BeaconStateSchemaGenesis extends SszContainerSchema<BeaconStateGenesis>
     implements BeaconStateSchema<BeaconStateGenesis> {
 
-  public static List<SszField> getNewFields(final SpecConstants specConstants) {
+  public static List<SszField> getGenesisFields(final SpecConstants specConstants) {
     SszField previous_epoch_attestations_field =
         new SszField(
             15,
