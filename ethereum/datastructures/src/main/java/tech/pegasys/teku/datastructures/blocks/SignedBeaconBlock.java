@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.blocks;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SignedBeaconBlock
     extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
