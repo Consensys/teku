@@ -185,16 +185,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         database = createLevelDbV2Database();
         if (v6ArchiveDirectory.isPresent()) {
           LOG.info(
-              "Created V6 Hot database ({}) at {}",
+              "Created leveldb2 Hot database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());
           LOG.info(
-              "Created V6 Finalized database ({}) at {}",
+              "Created leveldb2 Finalized database ({}) at {}",
               dbVersion.getValue(),
               v6ArchiveDirectory.get().getAbsolutePath());
         } else {
           LOG.info(
-              "Created V6 Hot and Finalized database ({}) at {}",
+              "Created leveldb2 Hot and Finalized database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());
         }
