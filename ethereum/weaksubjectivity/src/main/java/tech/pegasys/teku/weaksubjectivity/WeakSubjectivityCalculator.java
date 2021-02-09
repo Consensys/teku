@@ -33,6 +33,8 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
+  private static final UInt64 ETH_TO_GWEI = UInt64.valueOf(BigInteger.TEN.pow(9));
+
   private final SpecProvider specProvider;
   private final UInt64 safetyDecay;
   // Use injectable StateCalculator to make unit testing simpler
@@ -79,32 +81,43 @@ public class WeakSubjectivityCalculator {
   public UInt64 computeWeakSubjectivityPeriod(final CheckpointState checkpointState) {
     final BeaconState state = checkpointState.getState();
     final int activeValidators = stateCalculator.getActiveValidators(state);
-    final UInt64 avgActiveValidatorBalance =
-        stateCalculator.getAverageActiveBalance(state, activeValidators);
+    final UInt64 totalActiveValidatorBalance =
+        stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
     final SpecConstants constants = specProvider.get(checkpointState.getEpoch()).getConstants();
-    return computeWeakSubjectivityPeriod(constants, activeValidators, avgActiveValidatorBalance);
+    return computeWeakSubjectivityPeriod(constants, activeValidators, totalActiveValidatorBalance);
   }
 
   @VisibleForTesting
   UInt64 computeWeakSubjectivityPeriod(
       final SpecConstants constants,
       final int activeValidatorCount,
-      final UInt64 averageActiveValidatorBalance) {
-    // Term appearing in the weak subjectivity period calculation due to top-up limits
-    final UInt64 maxMinusAvgBalance =
-        constants.getMaxEffectiveBalance().minus(averageActiveValidatorBalance);
-    final UInt64 topUpTerm =
-        maxMinusAvgBalance.times(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
-    // Term appearing in the weak subjectivity period calculation due to deposits
-    final UInt64 validatorChurnLimit = get_validator_churn_limit(activeValidatorCount);
-    final UInt64 churnMultiplier =
-        averageActiveValidatorBalance.times(2).plus(constants.getMaxEffectiveBalance());
-    final UInt64 depositTerm = validatorChurnLimit.times(churnMultiplier);
+      final UInt64 totalValidatorBalance) {
+    final UInt64 N = UInt64.valueOf(activeValidatorCount);
+    final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(ETH_TO_GWEI);
+    final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(ETH_TO_GWEI);
+    final UInt64 delta = get_validator_churn_limit(activeValidatorCount);
+    final UInt64 Delta =
+        UInt64.valueOf(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
+    final UInt64 D = safetyDecay;
 
-    final UInt64 dividend =
-        averageActiveValidatorBalance.times(activeValidatorCount).times(safetyDecay).times(3);
-    final UInt64 divisor = depositTerm.plus(topUpTerm).times(200);
-    return dividend.dividedBy(divisor).plus(constants.getMinValidatorWithdrawabilityDelay());
+    final UInt64 wsPeriod;
+    final UInt64 maxBalanceMultiplier = D.times(3).plus(200);
+    final UInt64 scaledMaxBalance = T.times(maxBalanceMultiplier);
+    final UInt64 scaledAverageBalance = t.times(D.times(12).plus(200));
+    if (scaledMaxBalance.isLessThan(scaledAverageBalance)) {
+      final UInt64 churnDivisor = delta.times(600).times(t.times(2).plus(T));
+      final UInt64 epochsForValidatorChurnSet =
+          N.times(scaledAverageBalance.minus(scaledMaxBalance)).dividedBy(churnDivisor);
+      final UInt64 epochsForBalanceTopUps =
+          N.times(maxBalanceMultiplier).dividedBy(Delta.times(600));
+
+      wsPeriod = epochsForValidatorChurnSet.max(epochsForBalanceTopUps);
+    } else {
+      final UInt64 divisor = Delta.times(200).times(T.minus(t));
+      wsPeriod = N.times(D).times(t).times(3).dividedBy(divisor);
+    }
+
+    return wsPeriod.plus(constants.getMinValidatorWithdrawabilityDelay());
   }
 
   interface StateCalculator {
@@ -116,15 +129,14 @@ public class WeakSubjectivityCalculator {
           }
 
           @Override
-          public UInt64 getAverageActiveBalance(
+          public UInt64 getTotalActiveValidatorBalance(
               final BeaconState state, final int activeValidatorCount) {
-            final UInt64 totalActiveBalance = get_total_active_balance(state);
-            return totalActiveBalance.dividedBy(activeValidatorCount);
+            return get_total_active_balance(state);
           }
         };
 
     static StateCalculator createStaticCalculator(
-        final int activeValidators, final UInt64 avgValidatorBalance) {
+        final int activeValidators, final UInt64 totalActiveValidatorBalance) {
       return new StateCalculator() {
         @Override
         public int getActiveValidators(final BeaconState state) {
@@ -132,15 +144,15 @@ public class WeakSubjectivityCalculator {
         }
 
         @Override
-        public UInt64 getAverageActiveBalance(
+        public UInt64 getTotalActiveValidatorBalance(
             final BeaconState state, final int activeValidatorCount) {
-          return avgValidatorBalance;
+          return totalActiveValidatorBalance;
         }
       };
     }
 
     int getActiveValidators(final BeaconState state);
 
-    UInt64 getAverageActiveBalance(final BeaconState state, final int activeValidatorCount);
+    UInt64 getTotalActiveValidatorBalance(final BeaconState state, final int activeValidatorCount);
   }
 }
