@@ -176,7 +176,8 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel integrationTest
       - capture_test_results
-      - capture_test_artifacts
+      - store_artefacts:
+          path: build/test-results
 
   acceptanceTests:
     parallelism: 2
