@@ -13,30 +13,39 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
+import java.time.Duration;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public interface GossipConfigurator {
-  GossipConfigurator NOOP =
-      new GossipConfigurator() {
-        @Override
-        public void configure(
-            final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {}
-
-        @Override
-        public void configureAllTopics(
-            final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
-            final Eth2Context eth2Context) {}
-
-        @Override
-        public void configureDynamicTopics(
-            final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
-            final Eth2Context eth2Context) {}
-      };
+  int GOSSIP_D = 8;
+  int GOSSIP_D_LOW = 6;
+  int GOSSIP_D_HIGH = 12;
+  int GOSSIP_D_LAZY = 6;
+  Duration GOSSIP_FANOUT_TTL = Duration.ofSeconds(60);
+  int GOSSIP_ADVERTISE = 3;
+  int GOSSIP_HISTORY = 6;
+  Duration GOSSIP_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
+  Duration GOSSIP_SEEN_TTL = GOSSIP_HEARTBEAT_INTERVAL.multipliedBy(550);
 
   static GossipConfigurator scoringEnabled(SpecConstants specConstants) {
     return new GossipScoringConfigurator(specConstants);
+  }
+
+  static GossipConfigurator scoringDisabled() {
+    return new GossipConfigurator() {
+
+      @Override
+      public void configureAllTopics(
+          final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
+          final Eth2Context eth2Context) {}
+
+      @Override
+      public void configureDynamicTopics(
+          final GossipTopicsScoringConfig.Builder topicsConfigBuilder,
+          final Eth2Context eth2Context) {}
+    };
   }
 
   /**
@@ -45,7 +54,19 @@ public interface GossipConfigurator {
    * @param gossipConfigBuilder The builder to be configured
    * @param eth2Context Contextual information about the current chain
    */
-  void configure(final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context);
+  default void configure(
+      final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {
+    gossipConfigBuilder
+        .d(GOSSIP_D)
+        .dLow(GOSSIP_D_LOW)
+        .dHigh(GOSSIP_D_HIGH)
+        .dLazy(GOSSIP_D_LAZY)
+        .fanoutTTL(GOSSIP_FANOUT_TTL)
+        .advertise(GOSSIP_ADVERTISE)
+        .history(GOSSIP_HISTORY)
+        .heartbeatInterval(GOSSIP_HEARTBEAT_INTERVAL)
+        .seenTTL(GOSSIP_SEEN_TTL);
+  }
 
   /**
    * Configure scoring for all topics
