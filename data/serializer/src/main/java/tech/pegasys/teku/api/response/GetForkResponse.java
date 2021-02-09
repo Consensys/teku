@@ -59,9 +59,4 @@ public class GetForkResponse {
     }
     genesis_validators_root = forkInfo.getGenesisValidatorsRoot();
   }
-
-  public tech.pegasys.teku.datastructures.state.ForkInfo asInternalForkInfo() {
-    return new tech.pegasys.teku.datastructures.state.ForkInfo(
-        new Fork(previous_version, current_version, epoch), genesis_validators_root);
-  }
 }
