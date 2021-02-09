@@ -81,7 +81,7 @@ public class WeakSubjectivityCalculator {
       final int activeValidatorCount, final UInt64 averageActiveValidatorBalance) {
     // Term appearing in the weak subjectivity period calculation due to top-up limits
     final UInt64 maxMinusAvgBalance =
-        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE).minus(averageActiveValidatorBalance);
+        Constants.MAX_EFFECTIVE_BALANCE.minus(averageActiveValidatorBalance);
     final UInt64 topUpTerm =
         maxMinusAvgBalance.times(Constants.MAX_DEPOSITS).times(Constants.SLOTS_PER_EPOCH);
     // Term appearing in the weak subjectivity period calculation due to deposits
