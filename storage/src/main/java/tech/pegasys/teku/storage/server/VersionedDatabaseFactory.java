@@ -171,7 +171,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         }
         break;
       case LEVELDB1:
-        database = createLevelDbDatabase();
+        database = createLevelDbV1Database();
         LOG.info(
             "Created leveldb1 Hot database ({}) at {}",
             dbVersion.getValue(),
@@ -296,7 +296,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
    *
    * @return the created database
    */
-  private Database createLevelDbDatabase() {
+  private Database createLevelDbV1Database() {
     try {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());

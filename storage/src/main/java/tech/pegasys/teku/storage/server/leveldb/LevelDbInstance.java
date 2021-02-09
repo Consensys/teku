@@ -65,24 +65,6 @@ public class LevelDbInstance implements RocksDbAccessor {
   public LevelDbInstance(
       final DB db, final MetricsSystem metricsSystem, MetricCategory metricCategory) {
     this.db = db;
-    metricsSystem.createIntegerGauge(
-        metricCategory,
-        "open_transactions_current",
-        "Number of open LevelDB transactions",
-        () -> {
-          synchronized (this) {
-            return openTransactions.size();
-          }
-        });
-    metricsSystem.createIntegerGauge(
-        metricCategory,
-        "open_iterators_current",
-        "Number of open LevelDB iterators",
-        () -> {
-          synchronized (this) {
-            return openIterators.size();
-          }
-        });
     openedTransactionsCounter =
         metricsSystem.createCounter(
             metricCategory, "opened_transactions_total", "Total number of opened transactions");
