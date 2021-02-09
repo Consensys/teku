@@ -124,10 +124,7 @@ public class SingleQueryParameterUtils {
           : Optional.empty();
     } catch (IllegalArgumentException ex) {
       throw new BadRequestException(
-          "Invalid value for "
-              + key
-              + ": "
-              + String.join(",", parameterMap.get(key)));
+          "Invalid value for " + key + ": " + String.join(",", parameterMap.get(key)));
     }
   }
 }
