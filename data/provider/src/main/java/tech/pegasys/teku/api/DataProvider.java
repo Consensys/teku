@@ -58,7 +58,8 @@ public class DataProvider {
             voluntaryExitPool,
             blockManager,
             attestationManager);
-    chainDataProvider = new ChainDataProvider(recentChainData, combinedChainDataClient);
+    chainDataProvider =
+        new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
         new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);

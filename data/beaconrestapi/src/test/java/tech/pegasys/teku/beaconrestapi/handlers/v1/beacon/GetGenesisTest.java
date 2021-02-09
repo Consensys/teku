@@ -18,14 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetGenesisTest extends AbstractBeaconHandlerTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -42,17 +38,16 @@ public class GetGenesisTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldReturnGenesisInformation() throws Exception {
     final GetGenesis handler = new GetGenesis(chainDataProvider, jsonProvider);
-    final UInt64 genesisTime = dataStructureUtil.randomUInt64();
-    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    final GenesisData expectedGenesisData =
+        new GenesisData(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes4());
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(chainDataProvider.getGenesisTime()).thenReturn(genesisTime);
-    when(chainDataProvider.getForkInfo()).thenReturn(new GetForkResponse(forkInfo));
+    when(chainDataProvider.getGenesisData()).thenReturn(expectedGenesisData);
 
     handler.handle(context);
     final GetGenesisResponse response = getResponseObject(GetGenesisResponse.class);
-    assertThat(response.data)
-        .isEqualTo(
-            new GenesisData(
-                genesisTime, forkInfo.getGenesisValidatorsRoot(), Constants.GENESIS_FORK_VERSION));
+    assertThat(response.data).isEqualTo(expectedGenesisData);
   }
 }
