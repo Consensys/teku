@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -34,10 +35,12 @@ import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ListViewTest {
+public class SszListTest {
 
   @Test
   void clearTest() {
@@ -110,7 +113,7 @@ public class ListViewTest {
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
   }
 
-  static Stream<Arguments> testListSszDeserializeFailsFastWithTooLongDataParameters() {
+  static Stream<Arguments> testBitListTypeParameters() {
     return Stream.of(
         Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 0),
         Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 1),
@@ -129,6 +132,17 @@ public class ListViewTest {
         Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 14),
         Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 15),
         Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 16),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 17),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 255),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 256),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 257),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 511),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 512),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 513));
+  }
+
+  static Stream<Arguments> testNonBitListTypeParameters() {
+    return Stream.of(
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 0),
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 1),
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 5),
@@ -136,21 +150,36 @@ public class ListViewTest {
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 31),
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 32),
         Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 33),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 63),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 64),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 65),
         Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 7),
         Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 8),
         Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 9),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 15),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 16),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 17),
         Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 3),
         Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 4),
         Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 5),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 7),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 8),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 9),
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 0),
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 1),
         Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 2),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 3),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 3),
         Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 5),
         Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 5));
   }
 
+  static Stream<Arguments> testAllListTypeParameters() {
+    return Stream.concat(testBitListTypeParameters(), testNonBitListTypeParameters());
+  }
+
   @ParameterizedTest
-  @MethodSource("testListSszDeserializeFailsFastWithTooLongDataParameters")
+  @MethodSource("testAllListTypeParameters")
   <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
       SszSchema<T> listElementType, int maxLength) {
 
@@ -184,5 +213,45 @@ public class ListViewTest {
         assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);
       }
     }
+  }
+
+  @ParameterizedTest
+  @MethodSource("testNonBitListTypeParameters")
+  <T extends SszData> void testNonBitEmptyListSsz(SszSchema<T> listElementType, int maxLength) {
+
+    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszList<T> emptyList = sszListSchema.getDefault();
+
+    assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.EMPTY);
+
+    SszList<T> emptyList1 = sszListSchema.sszDeserialize(Bytes.EMPTY);
+    assertThat(emptyList1).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("testBitListTypeParameters")
+  <T extends SszData> void testBitEmptyListSsz(SszSchema<T> listElementType, int maxLength) {
+
+    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszList<T> emptyList = sszListSchema.getDefault();
+
+    assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.of(1));
+
+    SszList<T> emptyList1 = sszListSchema.sszDeserialize(Bytes.of(1));
+    assertThat(emptyList1).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("testAllListTypeParameters")
+  <T extends SszData> void testEmptyListHash(SszSchema<T> listElementType, int maxLength) {
+
+    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszList<T> emptyList = sszListSchema.getDefault();
+
+    assertThat(emptyList.hashTreeRoot())
+        .isEqualTo(
+            Hash.sha2_256(
+                Bytes.concatenate(
+                    TreeUtil.ZERO_TREES[sszListSchema.treeDepth()].hashTreeRoot(), Bytes32.ZERO)));
   }
 }
