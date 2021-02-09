@@ -53,6 +53,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 /**
  * This is in the wrong module but we want to be able to access the datastructure types to check
