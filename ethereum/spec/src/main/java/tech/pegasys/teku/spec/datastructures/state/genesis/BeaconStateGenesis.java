@@ -25,7 +25,7 @@ public interface BeaconStateGenesis extends BeaconState {
 
   SSZList<PendingAttestation> getCurrent_epoch_attestations();
 
-  BeaconState updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater);
+  BeaconStateGenesis updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater);
 
   @Override
   default Optional<BeaconStateGenesis> toGenesisVersion() {

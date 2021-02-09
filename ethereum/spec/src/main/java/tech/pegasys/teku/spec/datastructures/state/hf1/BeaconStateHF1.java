@@ -26,7 +26,7 @@ public interface BeaconStateHF1 extends BeaconState {
 
   SSZList<SSZVector<SszPrimitives.SszBit>> getCurrentEpochParticipation();
 
-  BeaconState updatedHF1(final Consumer<MutableBeaconStateHF1> updater);
+  BeaconStateHF1 updatedHF1(final Consumer<MutableBeaconStateHF1> updater);
 
   @Override
   default Optional<BeaconStateHF1> toHF1Version() {

@@ -79,7 +79,7 @@ class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconStateGene
   }
 
   @Override
-  public BeaconState updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater) {
+  public BeaconStateGenesis updatedGenesis(final Consumer<MutableBeaconStateGenesis> updater) {
     return null;
   }
 
