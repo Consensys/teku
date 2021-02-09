@@ -18,9 +18,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -71,7 +71,7 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(ACCEPT);
+    assertThat(voluntaryExitValidator.validateFully(exit).code()).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -91,9 +91,14 @@ public class VoluntaryExitValidatorTest {
             eq(BLSSignatureVerifier.SIMPLE)))
         .thenReturn(true);
 
-    assertThat(voluntaryExitValidator.validateFully(exit1)).isEqualTo(ACCEPT);
-    assertThat(voluntaryExitValidator.validateFully(exit2)).isEqualTo(IGNORE);
-    assertThat(voluntaryExitValidator.validateFully(exit3)).isEqualTo(IGNORE);
+    assertThat(voluntaryExitValidator.validateFully(exit1).code()).isEqualTo(ACCEPT);
+    final InternalValidationResult exit2Validation = voluntaryExitValidator.validateFully(exit2);
+    assertThat(exit2Validation.code()).isEqualTo(IGNORE);
+    assertThat(exit2Validation.getDescription().orElse("")).contains("Exit is not the first one");
+
+    final InternalValidationResult exit3Validation = voluntaryExitValidator.validateFully(exit3);
+    assertThat(exit3Validation.code()).isEqualTo(IGNORE);
+    assertThat(exit3Validation.getDescription().orElse("")).contains("Exit is not the first one");
   }
 
   @Test
@@ -107,7 +112,11 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
-    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(REJECT);
+
+    final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
+    assertThat(exitValidation.code()).isEqualTo(REJECT);
+    assertThat(exitValidation.getDescription().orElse(""))
+        .contains("Validator has already initiated exit");
   }
 
   @Test
@@ -120,6 +129,8 @@ public class VoluntaryExitValidatorTest {
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
-    assertThat(voluntaryExitValidator.validateFully(exit)).isEqualTo(REJECT);
+    final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
+    assertThat(exitValidation.code()).isEqualTo(REJECT);
+    assertThat(exitValidation.getDescription().orElse("")).contains("fails signature verification");
   }
 }

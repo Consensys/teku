@@ -34,6 +34,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
@@ -128,8 +129,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       SafeFuture<InternalValidationResult> validationResult, ValidateableAttestation attestation) {
     validationResult.thenAccept(
         internalValidationResult -> {
-          if (internalValidationResult.equals(InternalValidationResult.ACCEPT)
-              || internalValidationResult.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+          if (internalValidationResult.code().equals(ValidationResultCode.ACCEPT)
+              || internalValidationResult.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
             onAttestation(attestation)
                 .finish(
                     result ->
