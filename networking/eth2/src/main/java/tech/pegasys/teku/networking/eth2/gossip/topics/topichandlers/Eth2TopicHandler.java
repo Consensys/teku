@@ -76,7 +76,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   private void processMessage(final InternalValidationResult internalValidationResult) {
-    switch (internalValidationResult) {
+    switch (internalValidationResult.code()) {
       case REJECT:
       case IGNORE:
         LOG.trace("Received invalid message for topic: {}", this::getTopic);

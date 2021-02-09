@@ -13,30 +13,19 @@
 
 package tech.pegasys.teku.spec;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.function.Consumer;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.util.CommitteeUtil;
+import tech.pegasys.teku.spec.constants.SpecConstantsBuilder;
+import tech.pegasys.teku.spec.constants.SpecConstantsReader;
 
-public class Spec {
-  private final SpecConstants constants;
-  private final CommitteeUtil committeeUtil;
-  private final BeaconStateUtil beaconStateUtil;
-
-  Spec(final SpecConstants constants) {
-    this.constants = constants;
-    this.committeeUtil = new CommitteeUtil(this.constants);
-    this.beaconStateUtil = new BeaconStateUtil(this.constants);
-  }
-
-  public SpecConstants getConstants() {
-    return constants;
-  }
-
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
-  }
-
-  public BeaconStateUtil getBeaconStateUtil() {
-    return beaconStateUtil;
+class AlteredSpecConstantsReader extends SpecConstantsReader {
+  public SpecConstants read(
+      final InputStream source, final Consumer<SpecConstantsBuilder> builderConsumer)
+      throws IOException {
+    final SpecConstantsBuilder constantsBuilder = readToBuilder(source);
+    builderConsumer.accept(constantsBuilder);
+    return constantsBuilder.build();
   }
 }

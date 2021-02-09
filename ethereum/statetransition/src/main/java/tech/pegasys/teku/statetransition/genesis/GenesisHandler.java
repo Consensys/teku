@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DepositUtil;
 import tech.pegasys.teku.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -40,10 +40,15 @@ public class GenesisHandler implements Eth1EventsChannel {
   private final RecentChainData recentChainData;
   private final TimeProvider timeProvider;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final SpecProvider specProvider;
 
-  public GenesisHandler(final RecentChainData recentChainData, final TimeProvider timeProvider) {
+  public GenesisHandler(
+      final RecentChainData recentChainData,
+      final TimeProvider timeProvider,
+      final SpecProvider specProvider) {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -79,7 +84,9 @@ public class GenesisHandler implements Eth1EventsChannel {
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
-    if (BeaconStateUtil.is_valid_genesis_state(
+    final tech.pegasys.teku.spec.util.BeaconStateUtil beaconStateUtil =
+        specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
+    if (beaconStateUtil.isValidGenesisState(
         genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {
       eth2Genesis(genesisGenerator.getGenesisState());
     } else if (roundPercent(newActiveValidatorCount) > previousValidatorRequirementPercent) {
