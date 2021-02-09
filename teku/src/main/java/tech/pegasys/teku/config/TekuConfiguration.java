@@ -186,6 +186,8 @@ public class TekuConfiguration {
       storageConfigurationBuilder.specProvider(specProvider);
       // Update p2p config
       p2pConfigBuilder.specConstants(genesisConstants);
+      // Update weak subjectivity
+      weakSubjectivityBuilder.specProvider(specProvider);
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,

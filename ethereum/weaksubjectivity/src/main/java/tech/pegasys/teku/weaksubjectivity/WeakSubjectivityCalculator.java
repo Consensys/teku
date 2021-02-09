@@ -23,7 +23,8 @@ import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
@@ -32,17 +33,23 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
+  private final SpecProvider specProvider;
   private final UInt64 safetyDecay;
   // Use injectable StateCalculator to make unit testing simpler
   private final StateCalculator stateCalculator;
 
-  WeakSubjectivityCalculator(final UInt64 safetyDecay, final StateCalculator stateCalculator) {
+  WeakSubjectivityCalculator(
+      final SpecProvider specProvider,
+      final UInt64 safetyDecay,
+      final StateCalculator stateCalculator) {
+    this.specProvider = specProvider;
     this.safetyDecay = safetyDecay;
     this.stateCalculator = stateCalculator;
   }
 
   public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
-    return new WeakSubjectivityCalculator(config.getSafetyDecay(), StateCalculator.DEFAULT);
+    return new WeakSubjectivityCalculator(
+        config.getSpecProvider(), config.getSafetyDecay(), StateCalculator.DEFAULT);
   }
 
   /**
@@ -55,7 +62,7 @@ public class WeakSubjectivityCalculator {
    */
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
-    UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint.getState());
+    UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
 
     return finalizedCheckpoint
@@ -66,34 +73,38 @@ public class WeakSubjectivityCalculator {
   }
 
   /**
-   * @param state A trusted / effectively finalized state
+   * @param checkpointState A trusted / effectively finalized checkpoint state
    * @return The weak subjectivity period in epochs
    */
-  public UInt64 computeWeakSubjectivityPeriod(final BeaconState state) {
+  public UInt64 computeWeakSubjectivityPeriod(final CheckpointState checkpointState) {
+    final BeaconState state = checkpointState.getState();
     final int activeValidators = stateCalculator.getActiveValidators(state);
     final UInt64 avgActiveValidatorBalance =
         stateCalculator.getAverageActiveBalance(state, activeValidators);
-    return computeWeakSubjectivityPeriod(activeValidators, avgActiveValidatorBalance);
+    final SpecConstants constants = specProvider.get(checkpointState.getEpoch()).getConstants();
+    return computeWeakSubjectivityPeriod(constants, activeValidators, avgActiveValidatorBalance);
   }
 
   @VisibleForTesting
   UInt64 computeWeakSubjectivityPeriod(
-      final int activeValidatorCount, final UInt64 averageActiveValidatorBalance) {
+      final SpecConstants constants,
+      final int activeValidatorCount,
+      final UInt64 averageActiveValidatorBalance) {
     // Term appearing in the weak subjectivity period calculation due to top-up limits
     final UInt64 maxMinusAvgBalance =
-        Constants.MAX_EFFECTIVE_BALANCE.minus(averageActiveValidatorBalance);
+        constants.getMaxEffectiveBalance().minus(averageActiveValidatorBalance);
     final UInt64 topUpTerm =
-        maxMinusAvgBalance.times(Constants.MAX_DEPOSITS).times(Constants.SLOTS_PER_EPOCH);
+        maxMinusAvgBalance.times(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
     // Term appearing in the weak subjectivity period calculation due to deposits
     final UInt64 validatorChurnLimit = get_validator_churn_limit(activeValidatorCount);
     final UInt64 churnMultiplier =
-        averageActiveValidatorBalance.times(2).plus(Constants.MAX_EFFECTIVE_BALANCE);
+        averageActiveValidatorBalance.times(2).plus(constants.getMaxEffectiveBalance());
     final UInt64 depositTerm = validatorChurnLimit.times(churnMultiplier);
 
     final UInt64 dividend =
         averageActiveValidatorBalance.times(activeValidatorCount).times(safetyDecay).times(3);
     final UInt64 divisor = depositTerm.plus(topUpTerm).times(200);
-    return dividend.dividedBy(divisor).plus(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
+    return dividend.dividedBy(divisor).plus(constants.getMinValidatorWithdrawabilityDelay());
   }
 
   interface StateCalculator {

@@ -69,8 +69,7 @@ public class WeakSubjectivityValidatorTest {
         new WeakSubjectivityValidator(config, calculator, policy);
 
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
-    when(calculator.computeWeakSubjectivityPeriod(checkpointState.getState()))
-        .thenReturn(mockWsPeriod);
+    when(calculator.computeWeakSubjectivityPeriod(checkpointState)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
@@ -122,8 +121,7 @@ public class WeakSubjectivityValidatorTest {
 
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch().plus(1));
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
-    when(calculator.computeWeakSubjectivityPeriod(checkpointState.getState()))
-        .thenReturn(mockWsPeriod);
+    when(calculator.computeWeakSubjectivityPeriod(checkpointState)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
@@ -188,8 +186,7 @@ public class WeakSubjectivityValidatorTest {
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(wsCheckpoint.getRoot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
-    when(calculator.computeWeakSubjectivityPeriod(checkpointState.getState()))
-        .thenReturn(mockWsPeriod);
+    when(calculator.computeWeakSubjectivityPeriod(checkpointState)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
@@ -214,8 +211,7 @@ public class WeakSubjectivityValidatorTest {
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
     when(checkpointState.getBlockSlot()).thenReturn(wsCheckpoint.getEpochStartSlot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
-    when(calculator.computeWeakSubjectivityPeriod(checkpointState.getState()))
-        .thenReturn(mockWsPeriod);
+    when(calculator.computeWeakSubjectivityPeriod(checkpointState)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
@@ -272,8 +268,7 @@ public class WeakSubjectivityValidatorTest {
         new WeakSubjectivityValidator(config, calculator, policy);
 
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
-    when(calculator.computeWeakSubjectivityPeriod(checkpointState.getState()))
-        .thenReturn(mockWsPeriod);
+    when(calculator.computeWeakSubjectivityPeriod(checkpointState)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 

@@ -19,8 +19,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,20 +26,12 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityCalculatorTest {
-
-  @BeforeAll
-  public static void setup() {
-    Constants.setConstants("mainnet");
-  }
-
-  @AfterAll
-  public static void tearDown() {
-    Constants.setConstants("minimal");
-  }
+  private static final SpecProvider specProvider = StubSpecProvider.createMainnet();
 
   @ParameterizedTest(name = "safetyDecay: {0}, avgBalance: {1}, validatorCount: {2}")
   @MethodSource("computeWeakSubjectivityParams")
@@ -54,7 +44,8 @@ public class WeakSubjectivityCalculatorTest {
         WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result =
-        calculator.computeWeakSubjectivityPeriod(validatorCount, avgActiveValidatorBalance);
+        calculator.computeWeakSubjectivityPeriod(
+            specProvider.getGenesisSpecConstants(), validatorCount, avgActiveValidatorBalance);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 
@@ -67,6 +58,7 @@ public class WeakSubjectivityCalculatorTest {
       final int expectedWeakSubjectivityPeriod) {
     final WeakSubjectivityCalculator calculator =
         new WeakSubjectivityCalculator(
+            specProvider,
             safetyDecay,
             WeakSubjectivityCalculator.StateCalculator.createStaticCalculator(
                 validatorCount, avgActiveValidatorBalance));
