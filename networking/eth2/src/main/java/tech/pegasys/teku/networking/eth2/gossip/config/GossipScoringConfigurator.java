@@ -105,7 +105,6 @@ class GossipScoringConfigurator implements GossipConfigurator {
         .opportunisticGraftThreshold(scoringConfig.getOpportunisticGraftThreshold())
         .peerScoring(
             p ->
-                // TODO - Look into app-specific scoring (.appSpecificScore(), .appSpecificWeight())
                 p.decayInterval(scoringConfig.getSlotDuration())
                     .decayToZero(scoringConfig.getDecayToZero())
                     .retainScore(scoringConfig.getTargetScoreRetention())
