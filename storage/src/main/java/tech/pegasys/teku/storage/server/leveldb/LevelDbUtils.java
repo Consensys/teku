@@ -20,7 +20,7 @@ import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
-public class LevelDbUtils {
+class LevelDbUtils {
 
   static byte[] getKeyAfterColumn(final RocksDbColumn<?, ?> column) {
     final byte[] keyAfterColumn = column.getId().toArray();
