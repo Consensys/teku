@@ -155,7 +155,7 @@ public class SszListSchema<ElementDataT extends SszData>
   }
 
   private static int getLength(TreeNode listNode) {
-    long longLength = fromLengthNode(listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX));
+    long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
     assert longLength < Integer.MAX_VALUE;
     return (int) longLength;
   }
