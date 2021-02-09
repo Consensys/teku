@@ -54,6 +54,17 @@ public class GossipScoringConfiguratorTest {
   }
 
   @Test
+  void configure_shouldUseCorrectSeenTtl() {
+    final GossipConfig.Builder builder = GossipConfig.builder();
+    configurator.configure(builder, postGenesisEth2Context());
+    final GossipConfig config = builder.build();
+
+    // Should be heartbeat interval * 550
+    assertThat(config.getHeartbeatInterval().toMillis()).isEqualTo(700);
+    assertThat(config.getSeenTTL().toMillis()).isEqualTo(700 * 550);
+  }
+
+  @Test
   public void configure_preGenesis() {
     final GossipConfig.Builder builder = GossipConfig.builder();
     configurator.configure(builder, preGenesisEth2Context());

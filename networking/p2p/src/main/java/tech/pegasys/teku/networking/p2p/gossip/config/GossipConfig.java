@@ -23,16 +23,6 @@ import java.util.function.Consumer;
  * https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#the-gossip-domain-gossipsub
  */
 public class GossipConfig {
-  public static final int DEFAULT_D = 6;
-  public static final int DEFAULT_D_LOW = 5;
-  public static final int DEFAULT_D_HIGH = 12;
-  public static final int DEFAULT_D_LAZY = 6;
-  public static final Duration DEFAULT_FANOUT_TTL = Duration.ofSeconds(60);
-  public static final int DEFAULT_ADVERTISE = 3;
-  public static final int DEFAULT_HISTORY = 6;
-  public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
-  public static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(550);
-
   private final int d;
   private final int dLow;
   private final int dHigh;
@@ -118,19 +108,20 @@ public class GossipConfig {
   public static class Builder {
     private final GossipScoringConfig.Builder scoringConfigBuilder = GossipScoringConfig.builder();
 
-    private Integer d = DEFAULT_D;
-    private Integer dLow = DEFAULT_D_LOW;
-    private Integer dHigh = DEFAULT_D_HIGH;
-    private Integer dLazy = DEFAULT_D_LAZY;
-    private Duration fanoutTTL = DEFAULT_FANOUT_TTL;
-    private Integer advertise = DEFAULT_ADVERTISE;
-    private Integer history = DEFAULT_HISTORY;
-    private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
-    private Duration seenTTL = DEFAULT_SEEN_TTL;
+    private Integer d;
+    private Integer dLow;
+    private Integer dHigh;
+    private Integer dLazy;
+    private Duration fanoutTTL;
+    private Integer advertise;
+    private Integer history;
+    private Duration heartbeatInterval;
+    private Duration seenTTL;
 
     private Builder() {}
 
     public GossipConfig build() {
+      validate();
       return new GossipConfig(
           d,
           dLow,
@@ -142,6 +133,18 @@ public class GossipConfig {
           heartbeatInterval,
           seenTTL,
           scoringConfigBuilder.build());
+    }
+
+    private void validate() {
+      checkNotNull(d, "Gossip parameter 'd' must be set");
+      checkNotNull(dLow, "Gossip parameter 'dLow' must be set");
+      checkNotNull(dHigh, "Gossip parameter 'dHigh' must be set");
+      checkNotNull(dLazy, "Gossip parameter 'dLazy' must be set");
+      checkNotNull(fanoutTTL, "Gossip parameter 'fanoutTTL' must be set");
+      checkNotNull(advertise, "Gossip parameter 'advertise' must be set");
+      checkNotNull(history, "Gossip parameter 'history' must be set");
+      checkNotNull(heartbeatInterval, "Gossip parameter 'heartbeatInterval' must be set");
+      checkNotNull(seenTTL, "Gossip parameter 'seenTTL' must be set");
     }
 
     public Builder scoring(final Consumer<GossipScoringConfig.Builder> consumer) {
