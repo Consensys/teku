@@ -38,15 +38,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
  */
 class GossipScoringConfigurator implements GossipConfigurator {
   private static final int GOSSIP_D = 8;
-  private static final int GOSSIP_D_LOW = 6;
-  private static final int GOSSIP_D_HIGH = 12;
-  private static final int GOSSIP_D_LAZY = 6;
-  private static final Duration GOSSIP_FANOUT_TTL = Duration.ofSeconds(60);
-  private static final int GOSSIP_ADVERTISE = 3;
-  private static final int GOSSIP_HISTORY = 6;
-  private static final Duration GOSSIP_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
-  private static final Duration GOSSIP_SEEN_TTL = GOSSIP_HEARTBEAT_INTERVAL.multipliedBy(550);
-
   private final ScoringConfig scoringConfig;
 
   public GossipScoringConfigurator(final SpecConstants specConstants) {
@@ -58,14 +49,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
       final GossipConfig.Builder gossipConfigBuilder, final Eth2Context eth2Context) {
     gossipConfigBuilder
         .d(GOSSIP_D)
-        .dLow(GOSSIP_D_LOW)
-        .dHigh(GOSSIP_D_HIGH)
-        .dLazy(GOSSIP_D_LAZY)
-        .fanoutTTL(GOSSIP_FANOUT_TTL)
-        .advertise(GOSSIP_ADVERTISE)
-        .history(GOSSIP_HISTORY)
-        .heartbeatInterval(GOSSIP_HEARTBEAT_INTERVAL)
-        .seenTTL(GOSSIP_SEEN_TTL)
+        .dLazy(GOSSIP_D)
+        .dLow(6)
         .scoring(b -> configureScoring(b, eth2Context));
   }
 
