@@ -106,7 +106,7 @@ commands:
               cp -rf ${FILE}/*/* "$TARGET"
             done
       - store_artifacts:
-          path: build/test-results
+          path: build/test-artifacts
 
 jobs:
   assemble:
