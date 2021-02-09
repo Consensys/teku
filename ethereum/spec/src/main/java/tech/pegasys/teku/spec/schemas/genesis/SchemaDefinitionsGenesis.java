@@ -13,15 +13,10 @@
 
 package tech.pegasys.teku.spec.schemas.genesis;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.genesis.BeaconStateSchemaGenesis;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.sos.SszField;
 
 public class SchemaDefinitionsGenesis implements SchemaDefinitions {
   private final SpecConstants specConstants;
@@ -32,14 +27,6 @@ public class SchemaDefinitionsGenesis implements SchemaDefinitions {
 
   @Override
   public BeaconStateSchema<?> getBeaconStateSchema() {
-    final List<SszField> allFields = new ArrayList<>();
-    allFields.addAll(BeaconStateSchema.getCommonFields(specConstants));
-    allFields.addAll(BeaconStateSchemaGenesis.getGenesisFields(specConstants));
-    final List<SszField> sortedFields =
-        allFields.stream()
-            .sorted(Comparator.comparing(SszField::getIndex))
-            .collect(Collectors.toList());
-
-    return BeaconStateSchemaGenesis.create(sortedFields);
+    return BeaconStateSchemaGenesis.create(specConstants);
   }
 }

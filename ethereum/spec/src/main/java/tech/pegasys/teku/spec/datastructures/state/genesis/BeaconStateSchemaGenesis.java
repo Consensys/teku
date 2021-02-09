@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state.genesis;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -27,7 +29,7 @@ import tech.pegasys.teku.ssz.sos.SszField;
 public class BeaconStateSchemaGenesis extends SszContainerSchema<BeaconStateGenesis>
     implements BeaconStateSchema<BeaconStateGenesis> {
 
-  public static List<SszField> getGenesisFields(final SpecConstants specConstants) {
+  private static List<SszField> getGenesisFields(final SpecConstants specConstants) {
     SszField previous_epoch_attestations_field =
         new SszField(
             15,
@@ -52,12 +54,23 @@ public class BeaconStateSchemaGenesis extends SszContainerSchema<BeaconStateGene
     super("BeaconState", fieldSchemas);
   }
 
-  public static BeaconStateSchemaGenesis create(List<SszField> fields) {
+  private static BeaconStateSchemaGenesis create(List<SszField> fields) {
     final List<NamedSchema<?>> namedFields =
         fields.stream()
             .map(f -> namedSchema(f.getName(), f.getSchema().get()))
             .collect(Collectors.toList());
     return new BeaconStateSchemaGenesis(namedFields);
+  }
+
+  public static BeaconStateSchemaGenesis create(final SpecConstants specConstants) {
+    final List<SszField> allFields = new ArrayList<>();
+    allFields.addAll(BeaconStateSchema.getCommonFields(specConstants));
+    allFields.addAll(BeaconStateSchemaGenesis.getGenesisFields(specConstants));
+    final List<SszField> sortedFields =
+        allFields.stream()
+            .sorted(Comparator.comparing(SszField::getIndex))
+            .collect(Collectors.toList());
+    return create(sortedFields);
   }
 
   @Override
