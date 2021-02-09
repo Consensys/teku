@@ -16,13 +16,11 @@ package tech.pegasys.teku.beaconrestapi;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SingleQueryParameterUtils {
 
@@ -38,8 +36,8 @@ public class SingleQueryParameterUtils {
   /**
    * Checks that a parameter exists, has a single entry, and is not an empty string
    *
-   * @param parameterMap
-   * @param key
+   * @param parameterMap the parameter map
+   * @param key the name of the param to get and validate
    * @return returns the Value from the key, or throws IllegalArgumentException
    */
   public static String validateQueryParameter(
@@ -76,17 +74,6 @@ public class SingleQueryParameterUtils {
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }
-  }
-
-  public static UInt64 getParameterValueAsEpoch(
-      final Map<String, List<String>> parameterMap, final String key)
-      throws IllegalArgumentException {
-    final UInt64 value = getParameterValueAsUInt64(parameterMap, key);
-    // Restrict valid epoch values to ones that can be converted to slot without overflowing
-    if (value.isGreaterThan(UInt64.MAX_VALUE.dividedBy(Constants.SLOTS_PER_EPOCH))) {
-      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
-    }
-    return value;
   }
 
   public static long getParameterValueAsLong(
@@ -140,7 +127,7 @@ public class SingleQueryParameterUtils {
           "Invalid value for "
               + key
               + ": "
-              + parameterMap.get(key).stream().collect(Collectors.joining(",")));
+              + String.join(",", parameterMap.get(key)));
     }
   }
 }
