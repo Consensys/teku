@@ -276,6 +276,22 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the combined effective balance of the active validators.
+   *
+   * @param state - Current BeaconState
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
+   */
+  public static UInt64 get_total_active_balance(BeaconState state) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getTotalActiveBalance()
+        .get(
+            get_current_epoch(state),
+            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
+  }
+
+  /**
    * Return the 32-byte fork data root for the current_version and genesis_validators_root. This is
    * used primarily in signature domains to avoid collisions across forks/chains.
    *
