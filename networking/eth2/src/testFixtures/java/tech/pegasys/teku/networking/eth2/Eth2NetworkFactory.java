@@ -244,7 +244,7 @@ public class Eth2NetworkFactory {
             recentChainData,
             attestationSubnetService,
             gossipEncoding,
-            GossipConfigurator.scoringDisabled(),
+            GossipConfigurator.NOOP,
             gossipedBlockProcessor,
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,

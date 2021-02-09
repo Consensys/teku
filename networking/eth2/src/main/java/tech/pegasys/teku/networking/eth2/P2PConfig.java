@@ -113,7 +113,7 @@ public class P2PConfig {
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
               ? GossipConfigurator.scoringEnabled(specConstants)
-              : GossipConfigurator.scoringDisabled();
+              : GossipConfigurator.NOOP;
       final Eth2Context eth2Context =
           Eth2Context.builder()
               .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())

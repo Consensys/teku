@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
-import static tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator.GOSSIP_D;
 import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
 
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 public class ScoringConfigTest {
 
   private final SpecConstants specConstants = ConstantsLoader.loadConstants("mainnet");
-  private final ScoringConfig scoringConfig = ScoringConfig.create(specConstants, GOSSIP_D);
+  private final ScoringConfig scoringConfig = ScoringConfig.create(specConstants, 8);
 
   @Test
   public void maxPositiveScore() {
