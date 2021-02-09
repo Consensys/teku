@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.server.leveldb;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +23,9 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
 class LevelDbUtils {
+
+  /** There's no default column in LevelDB so we use a -1 column prefix to store variables. */
+  private static final byte VARIABLE_COLUMN_PREFIX = -1;
 
   static byte[] getKeyAfterColumn(final RocksDbColumn<?, ?> column) {
     final byte[] keyAfterColumn = column.getId().toArray();
@@ -32,7 +37,7 @@ class LevelDbUtils {
     final byte[] suffix = variable.getId().toArrayUnsafe();
     final byte[] key = new byte[suffix.length + 1];
     // All 1s in binary so right at the end of the index.
-    key[0] = -1;
+    key[0] = VARIABLE_COLUMN_PREFIX;
     System.arraycopy(suffix, 0, key, 1, suffix.length);
     return key;
   }
@@ -40,6 +45,7 @@ class LevelDbUtils {
   static <K, V> byte[] getColumnKey(final RocksDbColumn<K, V> column, final K key) {
     final byte[] prefix = column.getId().toArrayUnsafe();
     final byte[] suffix = column.getKeySerializer().serialize(key);
+    checkArgument(suffix.length > 0, "Empty item key detected for serialization of %s", key);
     return concat(prefix, suffix);
   }
 
@@ -56,7 +62,7 @@ class LevelDbUtils {
     return true;
   }
 
-  static byte[] concat(final byte[] a, final byte[] b) {
+  private static byte[] concat(final byte[] a, final byte[] b) {
     final byte[] result = Arrays.copyOf(a, a.length + b.length);
     System.arraycopy(b, 0, result, a.length, b.length);
     return result;

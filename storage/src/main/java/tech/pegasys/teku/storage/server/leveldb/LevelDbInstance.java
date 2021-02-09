@@ -50,6 +50,16 @@ import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
+/**
+ * Implements {@link RocksDbAccessor} but actually uses LevelDB to store the data.
+ *
+ * <p>The primary difference between RocksDB and LevelDB is that LevelDB doesn't support columns. To
+ * support the same interface and generally make it easy to work with the database, columns are
+ * implemented by prefixing all keys with the column ID. As a result, each column has a unique
+ * keyspace and column entries are sorted together. Iterators can then be used to walk through the
+ * column with the only caveat being that we need to manually check if the next entry is from a
+ * different column and stop iterating.
+ */
 public class LevelDbInstance implements RocksDbAccessor {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -120,17 +130,8 @@ public class LevelDbInstance implements RocksDbAccessor {
           final byte[] matchingKey = getColumnKey(column, key);
           iterator.seek(matchingKey);
           if (!iterator.hasNext()) {
-            // We seeked past the last item in the database
-            iterator.seekToLast();
-            if (!iterator.hasNext()) {
-              // Empty database
-              return Optional.empty();
-            }
-            final Map.Entry<byte[], byte[]> entry = iterator.peekNext();
-            if (isFromColumn(column, entry.getKey())) {
-              return asOptionalColumnEntry(column, entry);
-            }
-            return Optional.empty();
+            return getLastDatabaseEntryIfFromColumn(column, iterator)
+                .map(entry -> asColumnEntry(column, entry));
           }
 
           // Check if an exact match was found
@@ -140,12 +141,14 @@ public class LevelDbInstance implements RocksDbAccessor {
                 ColumnEntry.create(key, column.getValueSerializer().deserialize(next.getValue())));
           }
 
+          // Otherwise check if the previous item is in our column.
           if (iterator.hasPrev()) {
             final Map.Entry<byte[], byte[]> prev = iterator.peekPrev();
             if (isFromColumn(column, prev.getKey())) {
               return asOptionalColumnEntry(column, prev);
             }
           }
+          // No entry in this column at or prior to the specified key
           return Optional.empty();
         });
   }
@@ -171,8 +174,8 @@ public class LevelDbInstance implements RocksDbAccessor {
           final byte[] keyAfterColumn = getKeyAfterColumn(column);
           iterator.seek(keyAfterColumn);
           if (!iterator.hasNext()) {
-            // We seeked past the end of the database, go back a step
-            iterator.seekToLast();
+            return getLastDatabaseEntryIfFromColumn(column, iterator)
+                .map(entry -> deserializeKey(column, entry.getKey()));
           }
           if (iterator.hasPrev()) {
             return Optional.of(iterator.peekPrev())
@@ -183,9 +186,29 @@ public class LevelDbInstance implements RocksDbAccessor {
         });
   }
 
+  /**
+   * LevelDB iterators have a slightly odd property where if you seek to an item that is after the
+   * last entry in the database, the iterator is invalid (no next or previous item).
+   *
+   * <p>We work around that by explicitly seeking the last item, and checking if it's part of the
+   * column we're interested in.
+   */
+  private <K, V> Optional<Map.Entry<byte[], byte[]>> getLastDatabaseEntryIfFromColumn(
+      final RocksDbColumn<K, V> column, final DBIterator iterator) {
+    iterator.seekToLast();
+    if (!iterator.hasNext()) {
+      // Empty database
+      return Optional.empty();
+    }
+    return Optional.of(iterator.peekNext()).filter(entry -> isFromColumn(column, entry.getKey()));
+  }
+
   @Override
   @MustBeClosed
   public <K, V> Stream<ColumnEntry<K, V>> stream(final RocksDbColumn<K, V> column) {
+    // Note that the "to" key is actually after the end of the column and iteration is inclusive.
+    // Fortunately, we know that the "to" key can't exist because it is just the column ID with an
+    // empty item key and empty item keys are not allowed.
     return stream(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column));
   }
 
