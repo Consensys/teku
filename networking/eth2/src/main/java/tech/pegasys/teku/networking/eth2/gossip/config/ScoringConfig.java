@@ -25,12 +25,12 @@ import tech.pegasys.teku.util.config.Constants;
 class ScoringConfig {
   private static final double MAX_IN_MESH_SCORE = 10.0;
   private static final double MAX_FIRST_MESSAGE_DELIVERIES_SCORE = 40.0;
-  private static final double BEACON_BLOCK_WEIGHT = 0.5;
-  private static final double BEACON_AGGREGATE_PROOF_WEIGHT = 0.5;
-  private static final double ATTESTATION_SUBNET_CUMULATIVE_WEIGHT = 1.0;
-  private static final double VOLUNTARY_EXIT_WEIGHT = 0.05;
-  private static final double PROPOSER_SLASHING_WEIGHT = 0.05;
-  private static final double ATTESTER_SLASHING_WEIGHT = 0.05;
+  private static final double BEACON_BLOCK_TOPIC_WEIGHT = 0.5;
+  private static final double BEACON_AGGREGATE_PROOF_TOPIC_WEIGHT = 0.5;
+  private static final double ATTESTATION_SUBNET_CUMULATIVE_TOPIC_WEIGHT = 1.0;
+  private static final double VOLUNTARY_EXIT_TOPIC_WEIGHT = 0.05;
+  private static final double PROPOSER_SLASHING_TOPIC_WEIGHT = 0.05;
+  private static final double ATTESTER_SLASHING_TOPIC_WEIGHT = 0.05;
 
   private static final double GOSSIP_THRESHOLD = -4000.0;
   private static final double PUBLISH_THRESHOLD = -8000.0;
@@ -74,24 +74,24 @@ class ScoringConfig {
     return MAX_FIRST_MESSAGE_DELIVERIES_SCORE;
   }
 
-  public double getBeaconBlockWeight() {
-    return BEACON_BLOCK_WEIGHT;
+  public double getBeaconBlockTopicWeight() {
+    return BEACON_BLOCK_TOPIC_WEIGHT;
   }
 
-  public double getBeaconAggregateProofWeight() {
-    return BEACON_AGGREGATE_PROOF_WEIGHT;
+  public double getBeaconAggregateProofTopicWeight() {
+    return BEACON_AGGREGATE_PROOF_TOPIC_WEIGHT;
   }
 
-  public double getVoluntaryExitWeight() {
-    return VOLUNTARY_EXIT_WEIGHT;
+  public double getVoluntaryExitTopicWeight() {
+    return VOLUNTARY_EXIT_TOPIC_WEIGHT;
   }
 
-  public double getProposerSlashingWeight() {
-    return PROPOSER_SLASHING_WEIGHT;
+  public double getProposerSlashingTopicWeight() {
+    return PROPOSER_SLASHING_TOPIC_WEIGHT;
   }
 
-  public double getAttesterSlashingWeight() {
-    return ATTESTER_SLASHING_WEIGHT;
+  public double getAttesterSlashingTopicWeight() {
+    return ATTESTER_SLASHING_TOPIC_WEIGHT;
   }
 
   public double getGossipThreshold() {
@@ -192,16 +192,16 @@ class ScoringConfig {
 
   private double calculateMaxPositiveScore() {
     return (getMaxInMeshScore() + getMaxFirstMessageDeliveriesScore())
-        * (getBeaconBlockWeight()
-            + getBeaconAggregateProofWeight()
-            + ATTESTATION_SUBNET_CUMULATIVE_WEIGHT
-            + getVoluntaryExitWeight()
-            + getProposerSlashingWeight()
-            + getAttesterSlashingWeight());
+        * (getBeaconBlockTopicWeight()
+            + getBeaconAggregateProofTopicWeight()
+            + ATTESTATION_SUBNET_CUMULATIVE_TOPIC_WEIGHT
+            + getVoluntaryExitTopicWeight()
+            + getProposerSlashingTopicWeight()
+            + getAttesterSlashingTopicWeight());
   }
 
   public double getAttestationSubnetTopicWeight() {
-    return ATTESTATION_SUBNET_CUMULATIVE_WEIGHT / getAttestationSubnetCount();
+    return ATTESTATION_SUBNET_CUMULATIVE_TOPIC_WEIGHT / getAttestationSubnetCount();
   }
 
   public int getAttestationSubnetCount() {

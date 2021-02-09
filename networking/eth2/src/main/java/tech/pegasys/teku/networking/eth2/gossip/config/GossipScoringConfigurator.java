@@ -147,7 +147,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           b ->
               configureTopic(
                   b,
-                  scoringConfig.getVoluntaryExitWeight(),
+                  scoringConfig.getVoluntaryExitTopicWeight(),
                   4.0 / scoringConfig.getSlotsPerEpoch(),
                   scoringConfig.getTargetScoreDecayFactor()));
     }
@@ -163,7 +163,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           b ->
               configureTopic(
                   b,
-                  scoringConfig.getAttesterSlashingWeight(),
+                  scoringConfig.getAttesterSlashingTopicWeight(),
                   1.0 / 5.0 / scoringConfig.getSlotsPerEpoch(),
                   scoringConfig.getTargetScoreDecayFactor()));
     }
@@ -179,7 +179,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           b ->
               configureTopic(
                   b,
-                  scoringConfig.getProposerSlashingWeight(),
+                  scoringConfig.getProposerSlashingTopicWeight(),
                   1.0 / 5.0 / scoringConfig.getSlotsPerEpoch(),
                   scoringConfig.getTargetScoreDecayFactor()));
     }
@@ -196,7 +196,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           b ->
               configureTopic(
                   b,
-                  scoringConfig.getBeaconBlockWeight(),
+                  scoringConfig.getBeaconBlockTopicWeight(),
                   1.0,
                   scoringConfig.calculateDecayFactor(
                       scoringConfig.getEpochDuration().multipliedBy(20)),
@@ -215,7 +215,7 @@ class GossipScoringConfigurator implements GossipConfigurator {
           b ->
               configureTopic(
                   b,
-                  scoringConfig.getBeaconAggregateProofWeight(),
+                  scoringConfig.getBeaconAggregateProofTopicWeight(),
                   scoringConfig.getAggregatorsPerSlot(eth2Context.getActiveValidatorCount()),
                   scoringConfig.calculateDecayFactor(scoringConfig.getEpochDuration()),
                   Optional.of(msgDeliveryOptions)));
