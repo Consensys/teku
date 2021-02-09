@@ -39,6 +39,8 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
@@ -46,7 +48,9 @@ import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPoli
 public class WeakSubjectivityValidatorTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final WeakSubjectivityConfig config = WeakSubjectivityConfig.defaultConfig();
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final WeakSubjectivityConfig config =
+      WeakSubjectivityConfig.builder().specProvider(specProvider).build();
 
   // Set up mocks
   private final WeakSubjectivityCalculator calculator = mock(WeakSubjectivityCalculator.class);

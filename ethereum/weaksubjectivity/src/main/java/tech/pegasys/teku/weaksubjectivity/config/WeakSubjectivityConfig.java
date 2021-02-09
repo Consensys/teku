@@ -44,10 +44,6 @@ public class WeakSubjectivityConfig {
     this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
   }
 
-  public static WeakSubjectivityConfig defaultConfig() {
-    return builder().build();
-  }
-
   public static WeakSubjectivityConfig from(final WeakSubjectivityState state) {
     return builder().weakSubjectivityCheckpoint(state.getCheckpoint()).build();
   }

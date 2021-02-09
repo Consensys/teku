@@ -9,5 +9,6 @@ dependencies {
     implementation 'com.google.guava:guava'
 
     testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:spec'))
     implementation testFixtures(project(':ethereum:spec'))
 }

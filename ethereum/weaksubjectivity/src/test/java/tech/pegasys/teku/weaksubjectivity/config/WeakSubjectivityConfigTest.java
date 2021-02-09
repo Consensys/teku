@@ -20,8 +20,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 public class WeakSubjectivityConfigTest {
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final WeakSubjectivityConfig config =
+      WeakSubjectivityConfig.builder().specProvider(specProvider).build();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
@@ -41,7 +46,7 @@ public class WeakSubjectivityConfigTest {
 
   @Test
   public void updated_setNewCheckpoint() {
-    WeakSubjectivityConfig original = WeakSubjectivityConfig.defaultConfig();
+    WeakSubjectivityConfig original = config;
     assertThat(original.getWeakSubjectivityCheckpoint()).isEmpty();
 
     WeakSubjectivityConfig updated =
@@ -80,7 +85,7 @@ public class WeakSubjectivityConfigTest {
 
   @Test
   public void equals() {
-    WeakSubjectivityConfig configA = WeakSubjectivityConfig.defaultConfig();
+    WeakSubjectivityConfig configA = config;
     WeakSubjectivityConfig configB =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
 

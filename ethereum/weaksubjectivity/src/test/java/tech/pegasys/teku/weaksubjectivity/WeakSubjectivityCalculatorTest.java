@@ -41,7 +41,10 @@ public class WeakSubjectivityCalculatorTest {
       final int validatorCount,
       final int expectedResult) {
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
+        WeakSubjectivityConfig.builder()
+            .specProvider(specProvider)
+            .safetyDecay(safetyDecay)
+            .build();
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result =
         calculator.computeWeakSubjectivityPeriod(
