@@ -33,7 +33,6 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
