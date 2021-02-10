@@ -121,7 +121,7 @@ public class Eth2NetworkBuilder {
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
 
-    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
@@ -132,8 +132,9 @@ public class Eth2NetworkBuilder {
         eth2PeerManager,
         eventBus,
         recentChainData,
-        gossipEncoding,
         attestationSubnetService,
+        gossipEncoding,
+        config.getGossipConfigurator(),
         gossipedBlockProcessor,
         gossipedAttestationConsumer,
         gossipedAggregateProcessor,
