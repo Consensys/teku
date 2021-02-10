@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator.ETH_TO_GWEI;
+import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;

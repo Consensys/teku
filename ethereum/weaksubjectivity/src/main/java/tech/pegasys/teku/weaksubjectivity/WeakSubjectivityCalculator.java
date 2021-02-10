@@ -20,11 +20,11 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validato
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.math.BigInteger;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
@@ -34,7 +34,6 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
-  static final UInt64 ETH_TO_GWEI = UInt64.valueOf(BigInteger.TEN.pow(9));
 
   private final SpecProvider specProvider;
   private final UInt64 safetyDecay;
@@ -94,8 +93,8 @@ public class WeakSubjectivityCalculator {
       final int activeValidatorCount,
       final UInt64 totalValidatorBalance) {
     final UInt64 N = UInt64.valueOf(activeValidatorCount);
-    final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(ETH_TO_GWEI);
-    final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(ETH_TO_GWEI);
+    final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(EthConstants.ETH_TO_GWEI);
+    final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(EthConstants.ETH_TO_GWEI);
     final UInt64 delta = get_validator_churn_limit(activeValidatorCount);
     final UInt64 Delta =
         UInt64.valueOf(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
