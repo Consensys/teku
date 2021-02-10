@@ -33,6 +33,12 @@ public class SszPrimitives {
     private SszBit(Boolean value) {
       super(value, SszPrimitiveSchemas.BIT_SCHEMA);
     }
+
+    @Override
+    @SuppressWarnings("ReferenceEquality")
+    public String toString() {
+      return this == TRUE_VIEW ? "1" : "0";
+    }
   }
 
   public static class SszByte extends AbstractSszPrimitive<Byte, SszByte> {

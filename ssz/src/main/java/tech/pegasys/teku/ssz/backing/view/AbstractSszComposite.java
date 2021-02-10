@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -40,6 +41,21 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final int sizeCache;
   private final SszCompositeSchema<?> schema;
   private final TreeNode backingNode;
+
+  protected AbstractSszComposite(SszComposite<SszChildT> otherComposite) {
+    if (otherComposite instanceof AbstractSszComposite) {
+      AbstractSszComposite<SszChildT> other = (AbstractSszComposite<SszChildT>) otherComposite;
+      schema = other.schema;
+      backingNode = other.backingNode;
+      childrenViewCache = other.childrenViewCache.copy();
+      sizeCache = other.sizeCache;
+    } else {
+      schema = otherComposite.getSchema();
+      backingNode = otherComposite.getBackingNode();
+      childrenViewCache = createCache();
+      this.sizeCache = sizeImpl();
+    }
+  }
 
   /** Creates an instance from a schema and a backing node */
   protected AbstractSszComposite(SszCompositeSchema<?> schema, TreeNode backingNode) {
@@ -114,4 +130,21 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    * @throws IndexOutOfBoundsException if index is invalid
    */
   protected abstract void checkIndex(int index);
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SszComposite)) {
+      return false;
+    }
+    SszComposite<?> that = (SszComposite<?>) o;
+    return getSchema().equals(that.getSchema()) && hashTreeRoot().equals(that.hashTreeRoot());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(childrenViewCache, sizeCache, getSchema(), getBackingNode());
+  }
 }
