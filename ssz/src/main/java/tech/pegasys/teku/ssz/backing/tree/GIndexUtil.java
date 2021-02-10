@@ -174,7 +174,7 @@ public class GIndexUtil {
   public static long gIdxChildGIndex(long generalizedIndex, long childIdx, int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth < 64;
-    assert childIdx >= 0 && childIdx < (1 << childDepth);
+    assert childIdx >= 0 && childIdx < (1L << childDepth);
     assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
     return (generalizedIndex << childDepth) | childIdx;
   }
