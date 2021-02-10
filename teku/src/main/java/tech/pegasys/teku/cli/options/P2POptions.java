@@ -139,15 +139,6 @@ public class P2POptions {
       fallbackValue = "false")
   private boolean subscribeAllSubnetsEnabled = false;
 
-  @Option(
-      names = {"--Xp2p-gossip-scoring-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enables experimental gossip scoring",
-      hidden = true,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean gossipScoringEnabled = false;
-
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -177,8 +168,7 @@ public class P2POptions {
         .p2p(
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
-                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .isGossipScoringEnabled(gossipScoringEnabled))
+                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {

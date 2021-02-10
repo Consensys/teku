@@ -29,25 +29,15 @@ public interface AsyncRunner {
   <U> SafeFuture<U> runAfterDelay(
       ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit);
 
-  default <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
-    return runAfterDelay(action, delay.toMillis(), TimeUnit.MILLISECONDS);
-  }
+  void shutdown();
 
-  default SafeFuture<Void> runAfterDelay(
-      final ExceptionThrowingRunnable action, final Duration delay) {
-    return runAfterDelay(action, delay.toMillis(), TimeUnit.MILLISECONDS);
+  default <U> SafeFuture<U> runAsync(final ExceptionThrowingSupplier<U> action) {
+    return runAsync(() -> SafeFuture.of(action));
   }
 
   default SafeFuture<Void> runAfterDelay(
       final ExceptionThrowingRunnable action, long delayAmount, TimeUnit delayUnit) {
     return runAfterDelay(() -> SafeFuture.fromRunnable(action), delayAmount, delayUnit);
-  }
-
-  void shutdown();
-
-  default <U> SafeFuture<U> runAsync(final ExceptionThrowingSupplier<U> action) {
-    return runAsync(() -> SafeFuture.of(action));
   }
 
   default SafeFuture<Void> getDelayedFuture(final Duration delay) {
@@ -68,26 +58,10 @@ public interface AsyncRunner {
    * exceptionHandler} and the task recurring executions are not interrupted
    */
   default Cancellable runWithFixedDelay(
-      final ExceptionThrowingRunnable runnable,
-      final Duration delay,
-      final Consumer<Throwable> exceptionHandler) {
-    return runWithFixedDelay(runnable, delay.toMillis(), TimeUnit.MILLISECONDS, exceptionHandler);
-  }
-
-  /**
-   * Schedules the recurrent task which will be repeatedly executed with the specified delay.
-   *
-   * <p>The returned instance can be used to cancel the task. Note that {@link Cancellable#cancel()}
-   * doesn't interrupt already running task.
-   *
-   * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
-   * exceptionHandler} and the task recurring executions are not interrupted
-   */
-  default Cancellable runWithFixedDelay(
-      final ExceptionThrowingRunnable runnable,
-      final long delayAmount,
-      final TimeUnit delayUnit,
-      final Consumer<Throwable> exceptionHandler) {
+      ExceptionThrowingRunnable runnable,
+      long delayAmount,
+      TimeUnit delayUnit,
+      Consumer<Throwable> exceptionHandler) {
 
     Preconditions.checkNotNull(exceptionHandler);
 
