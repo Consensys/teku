@@ -44,8 +44,8 @@ public class WeakSubjectivityConfig {
     this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
   }
 
-  public static WeakSubjectivityConfig from(final WeakSubjectivityState state) {
-    return builder().weakSubjectivityCheckpoint(state.getCheckpoint()).build();
+  public static WeakSubjectivityConfig.Builder builder(final WeakSubjectivityState state) {
+    return builder().weakSubjectivityCheckpoint(state.getCheckpoint());
   }
 
   public static Builder builder() {
@@ -60,6 +60,7 @@ public class WeakSubjectivityConfig {
 
   private Builder copy() {
     return WeakSubjectivityConfig.builder()
+        .specProvider(specProvider)
         .safetyDecay(safetyDecay)
         .weakSubjectivityCheckpoint(weakSubjectivityCheckpoint)
         .suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);

@@ -32,15 +32,14 @@ public class WeakSubjectivityConfigTest {
 
   @Test
   public void build_withParsedParameters() {
-    WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
+    WeakSubjectivityConfig config = configBuilder().weakSubjectivityCheckpoint(checkpoint).build();
 
     assertThat(config.getWeakSubjectivityCheckpoint()).contains(checkpoint);
   }
 
   @Test
   public void build_withNoWeakSubjectivityCheckpoint() {
-    WeakSubjectivityConfig config = WeakSubjectivityConfig.builder().build();
+    WeakSubjectivityConfig config = configBuilder().build();
     assertThat(config.getWeakSubjectivityCheckpoint()).isEmpty();
   }
 
@@ -59,7 +58,7 @@ public class WeakSubjectivityConfigTest {
   @Test
   public void updated_shouldCloneAllProperties() {
     WeakSubjectivityConfig configA =
-        WeakSubjectivityConfig.builder()
+        configBuilder()
             .safetyDecay(UInt64.valueOf(123))
             .weakSubjectivityCheckpoint(checkpoint)
             .suppressWSPeriodChecksUntilEpoch(UInt64.ONE)
@@ -73,7 +72,7 @@ public class WeakSubjectivityConfigTest {
   @Test
   public void updated_clearCheckpoint() {
     WeakSubjectivityConfig original =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(checkpoint).build();
     assertThat(original.getWeakSubjectivityCheckpoint()).contains(checkpoint);
 
     WeakSubjectivityConfig updated =
@@ -86,11 +85,14 @@ public class WeakSubjectivityConfigTest {
   @Test
   public void equals() {
     WeakSubjectivityConfig configA = config;
-    WeakSubjectivityConfig configB =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
+    WeakSubjectivityConfig configB = configBuilder().weakSubjectivityCheckpoint(checkpoint).build();
 
     assertThat(configA).isEqualTo(configA);
     assertThat(configB).isEqualTo(configB);
     assertThat(configA).isNotEqualTo(configB);
+  }
+
+  private WeakSubjectivityConfig.Builder configBuilder() {
+    return WeakSubjectivityConfig.builder().specProvider(specProvider);
   }
 }

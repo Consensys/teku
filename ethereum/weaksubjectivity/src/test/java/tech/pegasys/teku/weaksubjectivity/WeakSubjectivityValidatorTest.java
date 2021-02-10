@@ -102,7 +102,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch().minus(1));
@@ -119,7 +119,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -141,7 +141,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch().plus(1));
@@ -159,7 +159,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -183,7 +183,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -206,7 +206,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -234,7 +234,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     // Checkpoint is at the ws epoch, with the same root
@@ -252,7 +252,7 @@ public class WeakSubjectivityValidatorTest {
   public void validateLatestFinalizedCheckpoint_suppressWarnings_shouldSuppress() {
     final UInt64 configuredEpoch = currentEpoch.plus(1);
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
+        configBuilder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -267,7 +267,7 @@ public class WeakSubjectivityValidatorTest {
   public void validateLatestFinalizedCheckpoint_suppressWarnings_shouldNotSuppressAtEpochLimit() {
     final UInt64 configuredEpoch = currentEpoch;
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
+        configBuilder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -287,7 +287,7 @@ public class WeakSubjectivityValidatorTest {
     final UInt64 configuredEpoch =
         currentEpoch.plus(WeakSubjectivityValidator.MAX_SUPPRESSED_EPOCHS).minus(1);
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
+        configBuilder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -305,7 +305,7 @@ public class WeakSubjectivityValidatorTest {
     final UInt64 configuredEpoch =
         currentEpoch.plus(WeakSubjectivityValidator.MAX_SUPPRESSED_EPOCHS).plus(1);
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
+        configBuilder().suppressWSPeriodChecksUntilEpoch(configuredEpoch).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -346,7 +346,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final CombinedChainDataClient chainData = mockChainDataClientPriorToCheckpoint();
@@ -366,7 +366,7 @@ public class WeakSubjectivityValidatorTest {
         dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final CombinedChainDataClient chainData =
@@ -389,7 +389,7 @@ public class WeakSubjectivityValidatorTest {
     final SignedBeaconBlock otherBlock = dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final CombinedChainDataClient chainData =
@@ -415,7 +415,7 @@ public class WeakSubjectivityValidatorTest {
         dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final CombinedChainDataClient chainData =
@@ -444,7 +444,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final SignedBeaconBlock block =
@@ -460,7 +460,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(wsCheckpointEpoch, Bytes32.fromHexStringLenient("0x0100"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final SignedBeaconBlock block =
@@ -476,7 +476,7 @@ public class WeakSubjectivityValidatorTest {
     final Checkpoint wsCheckpoint =
         new Checkpoint(wsCheckpointEpoch, Bytes32.fromHexStringLenient("0x0100"));
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
     final SignedBeaconBlock block =
@@ -494,7 +494,7 @@ public class WeakSubjectivityValidatorTest {
 
     final Checkpoint wsCheckpoint = new Checkpoint(wsCheckpointEpoch, checkpointBlock.getRoot());
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -519,7 +519,7 @@ public class WeakSubjectivityValidatorTest {
 
     final Checkpoint wsCheckpoint = new Checkpoint(wsCheckpointEpoch, checkpointBlock.getRoot());
     final WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        configBuilder().weakSubjectivityCheckpoint(wsCheckpoint).build();
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
 
@@ -594,5 +594,9 @@ public class WeakSubjectivityValidatorTest {
         .thenReturn(SafeFuture.completedFuture(block));
 
     return client;
+  }
+
+  private WeakSubjectivityConfig.Builder configBuilder() {
+    return WeakSubjectivityConfig.builder().specProvider(specProvider);
   }
 }
