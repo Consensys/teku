@@ -46,6 +46,9 @@ public interface SecretKeyInterface {
    */
   Signature sign(Bytes message, String dst);
 
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  void destroy();
+
   /** Implementation must override */
   @Override
   int hashCode();

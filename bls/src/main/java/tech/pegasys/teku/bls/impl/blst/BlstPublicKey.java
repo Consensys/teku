@@ -54,7 +54,7 @@ public class BlstPublicKey implements PublicKey {
     try {
       P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
       return new BlstPublicKey(ecPoint);
-    } catch (RuntimeException err) {
+    } catch (Exception err) {
       throw new DeserializeException("Invalid PublicKey bytes: " + compressed);
     }
   }
