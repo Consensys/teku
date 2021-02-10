@@ -189,6 +189,7 @@ public class Constants {
     } catch (IOException e) {
       throw new InvalidConfigurationException("Failed to load constants from " + source, e);
     }
+    SpecDependent.resetAll();
   }
 
   public static InputStream createInputStream(final String source) throws IOException {

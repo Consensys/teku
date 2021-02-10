@@ -463,7 +463,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(recentChainData, combinedChainDataClient),
+            new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient),
             combinedChainDataClient,
             syncService,
             blockFactory,
