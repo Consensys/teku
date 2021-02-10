@@ -35,7 +35,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     this.eth2Network = eth2Network;
   }
 
-  public synchronized void subscribeToCommitteeForAggregation(
+  public void subscribeToCommitteeForAggregation(
       final int committeeIndex, final UInt64 committeesAtSlot, final UInt64 aggregationSlot) {
     final int subnetId =
         CommitteeUtil.computeSubnetForCommittee(

@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public interface GossipNetwork {
@@ -26,6 +25,4 @@ public interface GossipNetwork {
   TopicChannel subscribe(String topic, TopicHandler topicHandler);
 
   Map<String, Collection<NodeId>> getSubscribersByTopic();
-
-  void updateGossipTopicScoring(final GossipTopicsScoringConfig config);
 }

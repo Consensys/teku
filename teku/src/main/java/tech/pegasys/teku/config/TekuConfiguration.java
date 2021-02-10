@@ -30,7 +30,6 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -181,11 +180,8 @@ public class TekuConfiguration {
           eth2NetworkConfigurationBuilder.build();
       final SpecProvider specProvider =
           SpecProvider.create(eth2NetworkConfiguration.getSpecConfig());
-      final SpecConstants genesisConstants = specProvider.getGenesisSpecConstants();
       // Update storage config
       storageConfigurationBuilder.specProvider(specProvider);
-      // Update p2p config
-      p2pConfigBuilder.specConstants(genesisConstants);
       // Update weak subjectivity
       weakSubjectivityBuilder.specProvider(specProvider);
 
