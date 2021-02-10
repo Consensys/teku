@@ -30,6 +30,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
@@ -39,12 +40,12 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toSszList(
-      SszListSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
+      SszSchema<? extends SszList<V>> type, Iterable<C> list, Function<C, V> converter) {
     return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
   public static <V extends SszData> SszList<V> toSszList(
-      SszListSchema<V, ?> type, Iterable<V> list) {
+      SszSchema<? extends SszList<V>> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();

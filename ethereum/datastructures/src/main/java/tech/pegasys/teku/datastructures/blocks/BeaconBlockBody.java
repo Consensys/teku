@@ -30,6 +30,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -83,24 +84,29 @@ public class BeaconBlockBody
               SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
-      return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
+    @Override
+    public SszSchema<SszList<ProposerSlashing>> getFieldSchema3() {
+      return super.getFieldSchema3();
     }
 
-    public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
-      return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
+    public SszSchema<SszList<ProposerSlashing>> getProposerSlashingsSchema() {
+      return getFieldSchema3();
     }
 
-    public SszListSchema<Attestation, ?> getAttestationsSchema() {
-      return (SszListSchema<Attestation, ?>) getFieldSchema5();
+    public SszSchema<SszList<AttesterSlashing>> getAttesterSlashingsSchema() {
+      return getFieldSchema4();
     }
 
-    public SszListSchema<Deposit, ?> getDepositsSchema() {
-      return (SszListSchema<Deposit, ?>) getFieldSchema6();
+    public SszSchema<SszList<Attestation>> getAttestationsSchema() {
+      return getFieldSchema5();
     }
 
-    public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
-      return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
+    public SszSchema<SszList<Deposit>> getDepositsSchema() {
+      return getFieldSchema6();
+    }
+
+    public SszSchema<SszList<SignedVoluntaryExit>> getVoluntaryExitsSchema() {
+      return getFieldSchema7();
     }
 
     @Override

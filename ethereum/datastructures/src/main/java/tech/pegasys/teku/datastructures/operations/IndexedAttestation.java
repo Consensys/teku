@@ -24,6 +24,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
@@ -50,8 +51,8 @@ public class IndexedAttestation
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public SszListSchema<SszUInt64, ?> getAttestingIndicesSchema() {
-      return (SszListSchema<SszUInt64, ?>) getFieldSchema0();
+    public SszSchema<SszList<SszUInt64>> getAttestingIndicesSchema() {
+      return super.getFieldSchema0();
     }
 
     @Override

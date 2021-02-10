@@ -56,10 +56,12 @@ public class HistoricalBatch
       return new HistoricalBatch(this, block_roots, state_roots);
     }
 
+    @SuppressWarnings("unchecked")
     public SszVectorSchema<SszBytes32, ?> getBlockRootsSchema() {
       return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
     }
 
+    @SuppressWarnings("unchecked")
     public SszVectorSchema<SszBytes32, ?> getStateRootsSchema() {
       return (SszVectorSchema<SszBytes32, ?>) getFieldSchema1();
     }
