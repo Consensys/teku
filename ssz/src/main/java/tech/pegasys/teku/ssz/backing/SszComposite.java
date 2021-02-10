@@ -36,4 +36,7 @@ public interface SszComposite<SszChildT extends SszData> extends SszData {
 
   @Override
   SszCompositeSchema<?> getSchema();
+
+  @Override
+  SszMutableComposite<SszChildT> createWritableCopy();
 }

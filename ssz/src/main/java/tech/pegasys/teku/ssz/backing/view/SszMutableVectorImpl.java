@@ -13,22 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 
 public class SszMutableVectorImpl<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
-    extends AbstractSszMutableComposite<SszElementT, SszMutableElementT>
+    extends AbstractSszMutableCollection<SszElementT, SszMutableElementT>
     implements SszMutableRefVector<SszElementT, SszMutableElementT> {
 
   public SszMutableVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
@@ -51,37 +45,6 @@ public class SszMutableVectorImpl<
   @SuppressWarnings("unchecked")
   public SszVectorImpl<SszElementT> commitChanges() {
     return (SszVectorImpl<SszElementT>) super.commitChanges();
-  }
-
-  @Override
-  protected TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
-    SszVectorSchema<SszElementT> type = getSchema();
-    SszSchema<?> elementType = type.getElementSchema();
-    int elementsPerChunk = type.getElementsPerChunk();
-
-    return newChildValues.stream()
-        .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
-        .entrySet()
-        .stream()
-        .sorted(Map.Entry.comparingByKey())
-        .map(
-            e -> {
-              int nodeIndex = e.getKey();
-              List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
-              long gIndex = type.getGeneralizedIndex(nodeIndex);
-              // optimization: when all packed values changed no need to retrieve original node to
-              // merge with
-              TreeNode node =
-                  nodeVals.size() == elementsPerChunk ? LeafNode.EMPTY_LEAF : original.get(gIndex);
-              for (Map.Entry<Integer, SszElementT> entry : nodeVals) {
-                node =
-                    elementType.updateBackingNode(
-                        node, entry.getKey() % elementsPerChunk, entry.getValue());
-              }
-              return new TreeUpdates.Update(gIndex, node);
-            })
-        .collect(TreeUpdates.collector());
   }
 
   @Override

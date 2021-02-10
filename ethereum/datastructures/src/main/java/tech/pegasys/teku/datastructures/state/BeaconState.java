@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszMutableData;
+import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -388,7 +388,7 @@ public interface BeaconState extends SszContainer {
   }
 
   @Override
-  default SszMutableData createWritableCopy() {
+  default SszMutableContainer createWritableCopy() {
     throw new UnsupportedOperationException("Use BeaconState.updated() to modify");
   }
 
