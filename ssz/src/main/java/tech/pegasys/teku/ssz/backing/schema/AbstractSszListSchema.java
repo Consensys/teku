@@ -70,9 +70,9 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public long getGeneralizedIndex(long elementIndex) {
+  public long getChildGeneralizedIndex(long elementIndex) {
     return GIndexUtil.gIdxCompose(
-        GIndexUtil.LEFT_CHILD_G_INDEX, super.getGeneralizedIndex(elementIndex));
+        GIndexUtil.LEFT_CHILD_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
 
   @Override

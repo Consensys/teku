@@ -40,7 +40,7 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
         (SszCollectionSchema<SszElementT, ?>) this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     TreeNode node =
-        getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
+        getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
     return (SszElementT)
         elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }

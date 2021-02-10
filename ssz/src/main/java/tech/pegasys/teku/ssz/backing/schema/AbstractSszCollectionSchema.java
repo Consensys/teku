@@ -90,7 +90,7 @@ abstract class AbstractSszCollectionSchema<
     } else {
       int size = 0;
       for (int i = 0; i < length; i++) {
-        size += getElementSchema().getSszSize(vectorNode.get(getGeneralizedIndex(i)));
+        size += getElementSchema().getSszSize(vectorNode.get(getChildGeneralizedIndex(i)));
       }
       return size;
     }
@@ -119,8 +119,8 @@ abstract class AbstractSszCollectionSchema<
     int[] bytesCnt = new int[1];
     TreeUtil.iterateLeavesData(
         vectorNode,
-        getGeneralizedIndex(0),
-        getGeneralizedIndex(nodesCount - 1),
+        getChildGeneralizedIndex(0),
+        getChildGeneralizedIndex(nodesCount - 1),
         leafData -> {
           writer.write(leafData);
           bytesCnt[0] += leafData.size();
@@ -132,13 +132,13 @@ abstract class AbstractSszCollectionSchema<
     SszSchema<?> elementType = getElementSchema();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
-      TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
+      TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
       int childSize = elementType.getSszSize(childSubtree);
       writer.write(SszType.lengthToBytes(variableOffset));
       variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
-      TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
+      TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
       elementType.sszSerializeTree(childSubtree, writer);
     }
     return variableOffset;

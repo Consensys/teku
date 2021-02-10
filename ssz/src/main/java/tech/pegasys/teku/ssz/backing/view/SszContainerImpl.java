@@ -42,7 +42,7 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   @Override
   protected SszData getImpl(int index) {
     SszCompositeSchema<?> type = this.getSchema();
-    TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
+    TreeNode node = getBackingNode().get(type.getChildGeneralizedIndex(index));
     return type.getChildSchema(index).createFromBackingNode(node);
   }
 
