@@ -198,8 +198,8 @@ jobs:
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
-      - capture_test_results
       - capture_test_artifacts
+      - capture_test_results
 
   referenceTestsPrep:
     executor: large_executor
