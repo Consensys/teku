@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -56,30 +58,12 @@ public class SszListTest {
   private static final Random random = new Random(1);
   private static final Supplier<SszBit> bitSupplier = () -> SszBit.viewOf(random.nextBoolean());
   private static final Supplier<SszByte> byteSupplier = () -> new SszByte((byte) random.nextInt());
-  private static final Supplier<SszBytes4> bytes4Supplier = () -> new SszBytes4(
-      Bytes4.rightPad(Bytes.random(4, random)));
-  private static final Supplier<SszUInt64> uintSupplier = () -> SszUInt64.fromLong(random.nextLong());
-  private static final Supplier<SszBytes32> bytes32Supplier = () -> new SszBytes32(Bytes32.random(random));
-
-  @Test
-  void clearTest() {
-    SszListSchema<TestSubContainer> type =
-        new SszListSchema<>(TestContainers.TestSubContainer.SSZ_SCHEMA, 100);
-    SszList<TestSubContainer> lr1 = type.getDefault();
-    SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
-    lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    lw1.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    SszMutableList<TestSubContainer> lw2 = lw1.commitChanges().createWritableCopy();
-    lw2.clear();
-    SszList<TestSubContainer> lr2 = lw2.commitChanges();
-    assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
-
-    SszMutableList<TestSubContainer> lw3 = lw1.commitChanges().createWritableCopy();
-    lw3.clear();
-    lw3.append(new TestSubContainer(UInt64.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
-    SszList<TestSubContainer> lr3 = lw3.commitChanges();
-    assertThat(lr3.size()).isEqualTo(1);
-  }
+  private static final Supplier<SszBytes4> bytes4Supplier =
+      () -> new SszBytes4(Bytes4.rightPad(Bytes.random(4, random)));
+  private static final Supplier<SszUInt64> uintSupplier =
+      () -> SszUInt64.fromLong(random.nextLong());
+  private static final Supplier<SszBytes32> bytes32Supplier =
+      () -> new SszBytes32(Bytes32.random(random));
 
   @Test
   void testMutableListReusable() {
@@ -132,8 +116,12 @@ public class SszListTest {
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
   }
 
+  static <T extends SszData> T randomData(SszSchema<T> schema) {
+    return randomDataStream(schema).findFirst().orElseThrow();
+  }
+
   @SuppressWarnings("unchecked")
-  static <T extends SszData> Stream<T> randomData(SszSchema<T> schema) {
+  static <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
     if (schema instanceof SszPrimitiveSchema) {
       if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
         return (Stream<T>) Stream.generate(bitSupplier);
@@ -148,11 +136,31 @@ public class SszListTest {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
+    } else if (schema instanceof SszContainerSchema) {
+      SszContainerSchema<SszContainer> containerSchema = (SszContainerSchema<SszContainer>) schema;
+      return Stream.generate(
+          () -> {
+            List<? extends SszData> children =
+                containerSchema.getChildSchemas().stream()
+                    .map(SszListTest::randomData)
+                    .collect(Collectors.toList());
+            return (T) containerSchema.createFromFields(children);
+          });
     } else if (schema instanceof SszCompositeSchema) {
-//      SszCompositeSchema<T> compositeSchema = (SszCompositeSchema<T>) schema;
-//      int childrenToAdd = (int) Long.min(compositeSchema.getMaxLength(), 1024);
-//      compositeSchema.getDefault().createWritableCopy();
-      throw new IllegalArgumentException("Unknown schema: " + schema);
+      return Stream.generate(
+          () -> {
+            SszCompositeSchema<SszComposite<SszData>> compositeSchema =
+                (SszCompositeSchema<SszComposite<SszData>>) schema;
+            int maxChildrenToAdd = (int) Long.min(compositeSchema.getMaxLength(), 16 * 1024);
+            SszMutableComposite<SszData> writableCopy =
+                compositeSchema.getDefault().createWritableCopy();
+            for (int i = 0; i < maxChildrenToAdd; i++) {
+              SszSchema<?> childSchema = compositeSchema.getChildSchema(i);
+              SszData sszData = randomData(childSchema);
+              writableCopy.set(i, sszData);
+            }
+            return (T) writableCopy.commitChanges();
+          });
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);
     }
@@ -160,90 +168,110 @@ public class SszListTest {
 
   static Stream<Arguments> testPrimitiveBitListTypeParameters() {
     return Stream.of(
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 0, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 1, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 2, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 3, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 4, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 5, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 6, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 7, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 8, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 9, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 10, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 11, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 12, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 13, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 14, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 15, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 16, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 17, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 255, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 256, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 257, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 511, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 512, bitSupplier),
-        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 513, bitSupplier));
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 0L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 1L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 2L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 3L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 4L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 5L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 6L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 7L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 8L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 9L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 10L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 11L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 12L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 13L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 14L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 15L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 16L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 17L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 255L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 256L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 257L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 511L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 512L),
+        Arguments.of(SszPrimitiveSchemas.BIT_SCHEMA, 513L));
   }
 
   static Stream<Arguments> testPrimitiveNonBitListTypeParameters() {
     return Stream.of(
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 0, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 1, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 5, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 16, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 31, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 32, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 33, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 63, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 64, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 65, byteSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 7, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 8, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 9, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 15, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 16, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 17, bytes4Supplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 3, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 4, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 5, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 7, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 8, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 9, uintSupplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 0, bytes32Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 1, bytes32Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 2, bytes32Supplier),
-        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 3, bytes32Supplier));
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 0L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 1L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 5L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 16L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 31L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 32L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 33L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 63L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 64L),
+        Arguments.of(SszPrimitiveSchemas.BYTE_SCHEMA, 65L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 7L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 8L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 9L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 15L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 16L),
+        Arguments.of(SszPrimitiveSchemas.BYTES4_SCHEMA, 17L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 3L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 4L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 5L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 7L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 8L),
+        Arguments.of(SszPrimitiveSchemas.UINT64_SCHEMA, 9L),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 0L),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 1L),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 2L),
+        Arguments.of(SszPrimitiveSchemas.BYTES32_SCHEMA, 3L));
   }
 
   static Stream<Arguments> testComplexStaticTypeParameters() {
     return Stream.of(
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 0),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 1),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 31),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 32),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 33),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 0),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 1),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 31),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 32),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 33),
-        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 0),
-        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 1),
-        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 5));
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 0L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 1L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 31L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 32L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 33L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 0L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 1L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 31L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 32L),
+        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 33L),
+        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 0L),
+        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 1L),
+        Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 5L));
   }
 
   static Stream<Arguments> testComplexVariableSizeTypeParameters() {
     return Stream.of(
-        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 5));
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 0L),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 1L),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 2L),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 3L),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 4L),
+        Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 0), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 1), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 32), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 33), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 63), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 64), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 65), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 0), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 1), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 7), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 8), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 9), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 15), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 16), 5L),
+        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 17), 5L));
   }
 
   static Stream<Arguments> testAllNonBitListTypeParameters() {
     return Stream.of(
-        testPrimitiveNonBitListTypeParameters(),
-        testComplexStaticTypeParameters(),
-        testComplexVariableSizeTypeParameters())
-      .flatMap(Function.identity());
+            testPrimitiveNonBitListTypeParameters(),
+            testComplexStaticTypeParameters(),
+            testComplexVariableSizeTypeParameters())
+        .flatMap(Function.identity());
   }
 
   static Stream<Arguments> testAllListTypeParameters() {
@@ -252,9 +280,39 @@ public class SszListTest {
 
   @ParameterizedTest
   @MethodSource("testAllListTypeParameters")
+  <T extends SszData> void clearTest1(SszSchema<T> listElementType, long maxLength) {
+    if (maxLength == 0) {
+      return;
+    }
+
+    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszList<T> lr1 = sszListSchema.getDefault();
+    SszMutableList<T> lw1 = lr1.createWritableCopy();
+    lw1.append(randomData(listElementType));
+    if (maxLength > 1) {
+      lw1.append(randomData(listElementType));
+    }
+    SszMutableList<T> lw2 = lw1.commitChanges().createWritableCopy();
+    lw2.clear();
+    SszList<T> lr2 = lw2.commitChanges();
+    assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
+
+    SszMutableList<T> lw3 = lw1.commitChanges().createWritableCopy();
+    lw3.clear();
+    lw3.append(randomData(listElementType));
+    SszList<T> lr3 = lw3.commitChanges();
+    assertThat(lr3.size()).isEqualTo(1);
+  }
+
+  @ParameterizedTest
+  @MethodSource("testAllListTypeParameters")
   <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
-      SszSchema<T> listElementType, int maxLength,
-      Supplier<T> elementFactory) {
+      SszSchema<T> listElementType, long maxLengthL) {
+
+    if (maxLengthL > 1024) {
+      return;
+    }
+    int maxLength = (int) maxLengthL;
 
     SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
     SszListSchema<T> largerSszListSchema = new SszListSchema<>(listElementType, maxLength + 10);
@@ -290,8 +348,7 @@ public class SszListTest {
 
   @ParameterizedTest
   @MethodSource("testPrimitiveNonBitListTypeParameters")
-  <T extends SszData> void testNonBitEmptyListSsz(SszSchema<T> listElementType, int maxLength,
-      Supplier<T> elementFactory) {
+  <T extends SszData> void testNonBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
 
     SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
@@ -304,8 +361,7 @@ public class SszListTest {
 
   @ParameterizedTest
   @MethodSource("testPrimitiveBitListTypeParameters")
-  <T extends SszData> void testBitEmptyListSsz(SszSchema<T> listElementType, int maxLength,
-      Supplier<T> elementFactory) {
+  <T extends SszData> void testBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
 
     SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
@@ -318,8 +374,7 @@ public class SszListTest {
 
   @ParameterizedTest
   @MethodSource("testAllListTypeParameters")
-  <T extends SszData> void testEmptyListHash(SszSchema<T> listElementType, int maxLength,
-      Supplier<T> elementFactory) {
+  <T extends SszData> void testEmptyListHash(SszSchema<T> listElementType, long maxLength) {
 
     SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
@@ -333,16 +388,24 @@ public class SszListTest {
 
   @ParameterizedTest
   @MethodSource("testAllListTypeParameters")
-  <T extends SszData> void testSszRoundtrip(SszSchema<T> listElementType, int maxLength,
-      Supplier<T> elementFactory) {
+  <T extends SszData> void testSszRoundtrip(SszSchema<T> listElementType, long maxLength) {
 
     SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
-    SszList<T> emptyList = sszListSchema.getDefault();
 
-    assertThat(emptyList.hashTreeRoot())
-        .isEqualTo(
-            Hash.sha2_256(
-                Bytes.concatenate(
-                    TreeUtil.ZERO_TREES[sszListSchema.treeDepth()].hashTreeRoot(), Bytes32.ZERO)));
+    LongStream.of(1, 2, 3, 4, 5, maxLength - 1, maxLength)
+        .takeWhile(i -> i <= maxLength)
+        .takeWhile(i -> i < 1024)
+        .forEach(
+            size -> {
+              SszList<T> list =
+                  sszListSchema.ofElements(
+                      randomDataStream(listElementType).limit(size).collect(Collectors.toList()));
+              Bytes ssz = list.sszSerialize();
+              SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
+              assertThat(SszTestUtils.equalsByGetters(list, list1)).isTrue();
+              assertThat(list1.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
+              Bytes ssz1 = list1.sszSerialize();
+              assertThat(ssz1).isEqualTo(ssz);
+            });
   }
 }
