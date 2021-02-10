@@ -13,18 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszComposite<SszElementT>
+public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszVector<SszElementT> {
 
   public SszVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
@@ -34,17 +32,6 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCompo
   public SszVectorImpl(
       SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  protected SszElementT getImpl(int index) {
-    SszVectorSchema<SszElementT> type = this.getSchema();
-    SszSchema<?> elementType = type.getElementSchema();
-    TreeNode node =
-        getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
-    return (SszElementT)
-        elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }
 
   @Override
@@ -77,23 +64,7 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCompo
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof SszVector)) {
-      return false;
-    }
-    return hashTreeRoot().equals(((SszData) o).hashTreeRoot());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(hashTreeRoot());
-  }
-
-  @Override
   public String toString() {
-    return "SszVector{" + stream().map(Object::toString).collect(Collectors.joining()) + "}";
+    return "SszVector{" + stream().map(Object::toString).collect(Collectors.joining(", ")) + "}";
   }
 }

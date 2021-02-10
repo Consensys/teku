@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +93,16 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
         return instanceCtor.apply(this, node);
       }
     };
+  }
+
+  public TreeNode createTreeFromFieldValues(List<? extends SszData> fieldValues) {
+    checkArgument(fieldValues.size() == getChildCount(), "Wrong number of filed values");
+    return TreeUtil.createTree(
+        fieldValues.stream().map(SszData::getBackingNode).collect(Collectors.toList()));
+  }
+
+  public C createFromFields(List<? extends SszData> fieldValues) {
+    return createFromBackingNode(createTreeFromFieldValues(fieldValues));
   }
 
   @Override

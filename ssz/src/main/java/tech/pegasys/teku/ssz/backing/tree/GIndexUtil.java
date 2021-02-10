@@ -25,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
  * <p>Here the general index is represented by <code>long</code> which is treated as unsigned uint64
  * Thus the only illegal generalized index value is <code>0</code>
  */
-class GIndexUtil {
+public class GIndexUtil {
 
   /** See {@link #gIdxCompare(long, long)} */
   public enum NodeRelation {
@@ -59,6 +59,12 @@ class GIndexUtil {
    * itself. Effectively this is <code>1L</code>
    */
   static final long SELF_G_INDEX = 1;
+
+  /** The generalized index of the left child. Effectively <code>0b10</code> */
+  public static final long LEFT_CHILD_G_INDEX = gIdxLeftGIndex(SELF_G_INDEX);
+
+  /** The generalized index of the right child. Effectively <code>0b11</code> */
+  public static final long RIGHT_CHILD_G_INDEX = gIdxRightGIndex(SELF_G_INDEX);
 
   /**
    * The generalized index (normally an index of non-existing node) of the leftmost possible node
@@ -171,6 +177,27 @@ class GIndexUtil {
     assert childIdx >= 0 && childIdx < (1 << childDepth);
     assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
     return (generalizedIndex << childDepth) | childIdx;
+  }
+
+  /**
+   * Compose absolute generalized index, where <code>childGeneralizedIndex</code> is relative to the
+   * node at <code>parentGeneralizedIndex</code>
+   *
+   * <p>For example:
+   *
+   * <ul>
+   *   <li><code>gIdxCompose(0b1111, 0b1000) == 0b1111000</code>
+   *   <li><code>gIdxCompose(0b1000, 0b1111) == 0b1000111</code>
+   * </ul>
+   */
+  public static long gIdxCompose(long parentGeneralizedIndex, long childGeneralizedIndex) {
+    checkGIndex(parentGeneralizedIndex);
+    checkGIndex(childGeneralizedIndex);
+    assert gIdxGetDepth(parentGeneralizedIndex) + gIdxGetDepth(childGeneralizedIndex) < 64;
+
+    long childAnchor = Long.highestOneBit(childGeneralizedIndex);
+    int childDepth = Long.bitCount(childAnchor - 1);
+    return (parentGeneralizedIndex << childDepth) | (childGeneralizedIndex ^ childAnchor);
   }
 
   /**

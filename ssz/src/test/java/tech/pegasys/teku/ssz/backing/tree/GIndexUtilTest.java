@@ -25,6 +25,7 @@ import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.RIGHTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxChildGIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompare;
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxCompose;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetChildIndex;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetDepth;
 import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.gIdxGetParent;
@@ -150,6 +151,20 @@ public class GIndexUtilTest {
     assertThatThrownBy(() -> gIdxChildGIndex(LEFTMOST_G_INDEX, 0, 1));
     assertThatThrownBy(() -> gIdxChildGIndex(RIGHTMOST_G_INDEX, 0, 1));
     assertThatThrownBy(() -> gIdxChildGIndex(gIdxGetParent(LEFTMOST_G_INDEX), 0, 2));
+  }
+
+  @Test
+  void testCombine() {
+    assertThat(gIdxCompose(SELF_G_INDEX, SELF_G_INDEX)).isEqualTo(SELF_G_INDEX);
+    assertThat(gIdxCompose(SELF_G_INDEX, 0b10101)).isEqualTo(0b10101);
+    assertThat(gIdxCompose(0b10101, SELF_G_INDEX)).isEqualTo(0b10101);
+    assertThat(gIdxCompose(0b10, 0b11)).isEqualTo(0b101);
+    assertThat(gIdxCompose(0b11, 0b11)).isEqualTo(0b111);
+    assertThat(gIdxCompose(0b10, 0b10)).isEqualTo(0b100);
+
+    assertThatThrownBy(() -> gIdxCompose(LEFTMOST_G_INDEX, 0b11));
+    assertThatThrownBy(() -> gIdxCompose(RIGHTMOST_G_INDEX, 0b11));
+    assertThatThrownBy(() -> gIdxCompose(0xFFFFFFFF, 0x01FFFFFFFFL));
   }
 
   @Test

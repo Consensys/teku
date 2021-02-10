@@ -15,15 +15,14 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 
 /** Handy base class for immutable containers */
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
@@ -40,7 +39,10 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
   protected AbstractSszImmutableContainer(
       SszContainerSchema<? extends AbstractSszImmutableContainer> schema, SszData... memberValues) {
-    super(schema, createBackingTree(schema, memberValues), createCache(memberValues));
+    super(
+        schema,
+        schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
+        createCache(memberValues));
     checkArgument(
         memberValues.length == this.getSchema().getMaxLength(),
         "Wrong number of member values: %s",
@@ -63,20 +65,10 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
     return cache;
   }
 
-  private static TreeNode createBackingTree(SszContainerSchema<?> schema, SszData... memberValues) {
-    TreeUpdates nodes =
-        IntStream.range(0, memberValues.length)
-            .mapToObj(
-                i ->
-                    new TreeUpdates.Update(
-                        schema.getGeneralizedIndex(i), memberValues[i].getBackingNode()))
-            .collect(TreeUpdates.collector());
-    return schema.getDefaultTree().updated(nodes);
-  }
-
   @Override
   public SszMutableContainer createWritableCopy() {
-    throw new UnsupportedOperationException("This container doesn't support mutable structure");
+    throw new UnsupportedOperationException(
+        "This container doesn't support mutable structure: " + getClass().getName());
   }
 
   @Override
