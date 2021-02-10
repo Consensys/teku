@@ -30,10 +30,12 @@ public class TransitionCaches {
   private static final int MAX_ACTIVE_VALIDATORS_CACHE = 8;
   private static final int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static final int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
+  private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -60,6 +62,7 @@ public class TransitionCaches {
   private final Cache<UInt64, List<Integer>> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
   private final Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee;
+  private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
   private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
@@ -70,6 +73,7 @@ public class TransitionCaches {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
     validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
@@ -79,12 +83,14 @@ public class TransitionCaches {
       Cache<UInt64, List<Integer>> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
       Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee,
+      Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
       ValidatorIndexCache validatorIndexCache,
       Cache<Bytes32, List<Integer>> committeeShuffle) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
+    this.totalActiveBalance = totalActiveBalance;
     this.validatorsPubKeys = validatorsPubKeys;
     this.validatorIndexCache = validatorIndexCache;
     this.committeeShuffle = committeeShuffle;
@@ -111,6 +117,11 @@ public class TransitionCaches {
   /** (slot, committeeIndex) -> (committee) cache */
   public Cache<Pair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
     return beaconCommittee;
+  }
+
+  /** (epoch) -> (total active balance) cache */
+  public Cache<UInt64, UInt64> getTotalActiveBalance() {
+    return totalActiveBalance;
   }
 
   /** (validator index) -> (validator pub key) cache */
@@ -143,6 +154,7 @@ public class TransitionCaches {
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),
+        totalActiveBalance.copy(),
         validatorsPubKeys,
         validatorIndexCache,
         committeeShuffle.copy());

@@ -22,10 +22,7 @@ class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      CheckpointState latestFinalizedCheckpoint,
-      int activeValidatorCount,
-      UInt64 currentSlot,
-      final UInt64 wsPeriod) {
+      CheckpointState latestFinalizedCheckpoint, UInt64 currentSlot, final UInt64 wsPeriod) {
     exitClient();
   }
 

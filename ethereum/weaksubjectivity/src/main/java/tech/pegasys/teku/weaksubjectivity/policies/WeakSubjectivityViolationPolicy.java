@@ -42,7 +42,6 @@ public interface WeakSubjectivityViolationPolicy {
 
   void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,
-      final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod);
 
