@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
@@ -147,7 +147,7 @@ public interface BeaconState extends SszContainer {
     return SSZ_SCHEMA.get();
   }
 
-  class BeaconStateSchema extends SszContainerSchema<BeaconState> {
+  class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
 
     public BeaconStateSchema() {
       super(

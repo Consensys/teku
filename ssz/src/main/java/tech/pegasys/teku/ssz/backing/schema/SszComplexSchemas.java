@@ -21,12 +21,12 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class SszComplexSchemas {
+public interface SszComplexSchemas {
 
-  public static final SszByteVectorSchema BYTES_48_SCHEMA = new SszByteVectorSchema(48);
-  public static final SszByteVectorSchema BYTES_96_SCHEMA = new SszByteVectorSchema(96);
+  SszByteVectorSchema BYTES_48_SCHEMA = new SszByteVectorSchema(48);
+  SszByteVectorSchema BYTES_96_SCHEMA = new SszByteVectorSchema(96);
 
-  public static class SszByteListSchema extends SszListSchemaImpl<SszByte> {
+  class SszByteListSchema extends SszListSchemaImpl<SszByte> {
     public SszByteListSchema(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
@@ -43,7 +43,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszByteVectorSchema extends SszVectorSchemaImpl<SszByte> {
+  class SszByteVectorSchema extends SszVectorSchemaImpl<SszByte> {
     public SszByteVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
@@ -60,7 +60,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszBitListSchema extends SszListSchemaImpl<SszBit> {
+  class SszBitListSchema extends SszListSchemaImpl<SszBit> {
     public SszBitListSchema(long maxLength) {
       super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }
@@ -71,7 +71,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszBitVectorSchema extends SszVectorSchemaImpl<SszBit> {
+  class SszBitVectorSchema extends SszVectorSchemaImpl<SszBit> {
     public SszBitVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }

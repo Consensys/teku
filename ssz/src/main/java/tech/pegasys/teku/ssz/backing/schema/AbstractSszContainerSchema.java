@@ -32,7 +32,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class SszContainerSchema<C extends SszContainer> implements SszCompositeSchema<C> {
+public abstract class AbstractSszContainerSchema<C extends SszContainer> implements SszCompositeSchema<C> {
 
   protected static class NamedSchema<T extends SszData> {
     private final String name;
@@ -63,7 +63,7 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
   private final TreeNode defaultTree;
   private final long treeWidth;
 
-  protected SszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
+  protected AbstractSszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
     this.childrenNames =
         childrenSchemas.stream().map(NamedSchema::getName).collect(Collectors.toList());
@@ -73,7 +73,7 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
-  protected SszContainerSchema(List<SszSchema<?>> childrenSchemas) {
+  protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
     this.containerName = "";
     this.childrenNames =
         IntStream.range(0, childrenSchemas.size())
@@ -84,10 +84,10 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
     this.treeWidth = SszCompositeSchema.super.treeWidth();
   }
 
-  public static <C extends SszContainer> SszContainerSchema<C> create(
+  public static <C extends SszContainer> AbstractSszContainerSchema<C> create(
       List<SszSchema<?>> childrenSchemas,
-      BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
-    return new SszContainerSchema<C>(childrenSchemas) {
+      BiFunction<AbstractSszContainerSchema<C>, TreeNode, C> instanceCtor) {
+    return new AbstractSszContainerSchema<C>(childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -149,7 +149,7 @@ public abstract class SszContainerSchema<C extends SszContainer> implements SszC
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SszContainerSchema<?> that = (SszContainerSchema<?>) o;
+    AbstractSszContainerSchema<?> that = (AbstractSszContainerSchema<?>) o;
     return childrenSchemas.equals(that.childrenSchemas);
   }
 

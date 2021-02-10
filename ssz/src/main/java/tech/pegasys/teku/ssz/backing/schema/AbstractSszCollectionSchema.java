@@ -198,7 +198,7 @@ abstract class AbstractSszCollectionSchema<
           (bytesSize - 1) * 8 / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     }
-    if (getElementSchema() instanceof SszPrimitiveSchema) {
+    if (getElementSchema() instanceof AbstractSszPrimitiveSchema) {
       int bytesRemain = bytesSize;
       List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {

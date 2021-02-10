@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 
 /**
  * Base class for immutable containers. Since containers are heterogeneous their generic child type
@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 public interface SszContainer extends SszComposite<SszData> {
 
   @Override
-  SszContainerSchema<?> getSchema();
+  AbstractSszContainerSchema<?> getSchema();
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here

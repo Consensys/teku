@@ -17,15 +17,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
     implements SszPrimitive<C> {
-  private final SszPrimitiveSchema<V> schema;
+  private final AbstractSszPrimitiveSchema<V> schema;
   private final C value;
 
-  protected AbstractSszPrimitive(C value, SszPrimitiveSchema<V> schema) {
+  protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<V> schema) {
     checkNotNull(value);
     this.schema = schema;
     this.value = value;
@@ -37,7 +37,7 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   }
 
   @Override
-  public SszPrimitiveSchema<V> getSchema() {
+  public AbstractSszPrimitiveSchema<V> getSchema() {
     return schema;
   }
 

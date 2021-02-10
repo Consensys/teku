@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -35,12 +35,12 @@ public class TestContainers {
 
   public static class TestSubContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestSubContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    public static final AbstractSszContainerSchema<TestSubContainer> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             TestSubContainer::new);
 
-    private TestSubContainer(SszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
+    private TestSubContainer(AbstractSszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -59,12 +59,12 @@ public class TestContainers {
 
   public static class TestContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    public static final AbstractSszContainerSchema<TestContainer> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(TestSubContainer.SSZ_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             TestContainer::new);
 
-    private TestContainer(SszContainerSchema<TestContainer> type, TreeNode backingNode) {
+    private TestContainer(AbstractSszContainerSchema<TestContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -83,10 +83,11 @@ public class TestContainers {
 
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestSmallContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
+    public static final AbstractSszContainerSchema<TestSmallContainer> SSZ_SCHEMA =
+        AbstractSszContainerSchema
+            .create(List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
 
-    private TestSmallContainer(SszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
+    private TestSmallContainer(AbstractSszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -97,8 +98,8 @@ public class TestContainers {
 
   public static class TestByteVectorContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestByteVectorContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    public static final AbstractSszContainerSchema<TestByteVectorContainer> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64),
@@ -111,7 +112,7 @@ public class TestContainers {
     }
 
     private TestByteVectorContainer(
-        SszContainerSchema<TestByteVectorContainer> type, TreeNode backingNode) {
+        AbstractSszContainerSchema<TestByteVectorContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -123,8 +124,8 @@ public class TestContainers {
 
   public static class TestDoubleSuperContainer extends AbstractSszImmutableContainer {
 
-    public static final SszContainerSchema<TestDoubleSuperContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    public static final AbstractSszContainerSchema<TestDoubleSuperContainer> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 TestByteVectorContainer.SSZ_SCHEMA,
@@ -134,7 +135,7 @@ public class TestContainers {
             TestDoubleSuperContainer::new);
 
     private TestDoubleSuperContainer(
-        SszContainerSchema<TestDoubleSuperContainer> type, TreeNode backingNode) {
+        AbstractSszContainerSchema<TestDoubleSuperContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

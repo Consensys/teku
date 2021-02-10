@@ -38,9 +38,9 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -122,7 +122,7 @@ public class SszListTest {
 
   @SuppressWarnings("unchecked")
   static <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
-    if (schema instanceof SszPrimitiveSchema) {
+    if (schema instanceof AbstractSszPrimitiveSchema) {
       if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
         return (Stream<T>) Stream.generate(bitSupplier);
       } else if (schema == SszPrimitiveSchemas.BYTE_SCHEMA) {
@@ -136,8 +136,8 @@ public class SszListTest {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof SszContainerSchema) {
-      SszContainerSchema<SszContainer> containerSchema = (SszContainerSchema<SszContainer>) schema;
+    } else if (schema instanceof AbstractSszContainerSchema) {
+      AbstractSszContainerSchema<SszContainer> containerSchema = (AbstractSszContainerSchema<SszContainer>) schema;
       return Stream.generate(
           () -> {
             List<? extends SszData> children =
