@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import com.google.common.base.Preconditions;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecProvider {
@@ -55,14 +54,6 @@ public class SpecProvider {
 
   public Spec atSlot(final UInt64 slot) {
     return get(compute_epoch_at_slot(slot));
-  }
-
-  public Spec getGenesisSpec() {
-    return get(UInt64.ZERO);
-  }
-
-  public SpecConstants getGenesisSpecConstants() {
-    return getGenesisSpec().getConstants();
   }
 
   public ForkManifest getForkManifest() {

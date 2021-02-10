@@ -51,7 +51,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
@@ -286,11 +285,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return gossipNetwork.getSubscribersByTopic();
-  }
-
-  @Override
-  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
-    gossipNetwork.updateGossipTopicScoring(config);
   }
 
   @FunctionalInterface
