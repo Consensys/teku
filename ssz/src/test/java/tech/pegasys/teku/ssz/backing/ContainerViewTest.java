@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -178,7 +178,8 @@ public class ContainerViewTest {
       super(SSZ_SCHEMA, backingNode, cache);
     }
 
-    private SubContainerReadImpl(AbstractSszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
+    private SubContainerReadImpl(
+        AbstractSszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

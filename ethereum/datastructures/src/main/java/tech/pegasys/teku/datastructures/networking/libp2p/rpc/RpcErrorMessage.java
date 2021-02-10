@@ -29,7 +29,8 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
   public static final int MAX_ERROR_MESSAGE_LENGTH = 256;
   private static final Charset ERROR_MESSAGE_CHARSET = StandardCharsets.UTF_8;
 
-  public static class RpcErrorMessageSchema extends AbstractSszListSchema<SszByte, RpcErrorMessage> {
+  public static class RpcErrorMessageSchema
+      extends AbstractSszListSchema<SszByte, RpcErrorMessage> {
     private RpcErrorMessageSchema() {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, MAX_ERROR_MESSAGE_LENGTH);
     }

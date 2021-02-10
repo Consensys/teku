@@ -33,12 +33,14 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
   }
 
   protected AbstractSszImmutableContainer(
-      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema, TreeNode backingNode) {
+      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected AbstractSszImmutableContainer(
-      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema, SszData... memberValues) {
+      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      SszData... memberValues) {
     super(
         schema,
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),

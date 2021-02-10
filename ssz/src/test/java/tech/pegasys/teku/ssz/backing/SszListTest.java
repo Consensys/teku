@@ -37,10 +37,10 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -137,7 +137,8 @@ public class SszListTest {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
     } else if (schema instanceof AbstractSszContainerSchema) {
-      AbstractSszContainerSchema<SszContainer> containerSchema = (AbstractSszContainerSchema<SszContainer>) schema;
+      AbstractSszContainerSchema<SszContainer> containerSchema =
+          (AbstractSszContainerSchema<SszContainer>) schema;
       return Stream.generate(
           () -> {
             List<? extends SszData> children =

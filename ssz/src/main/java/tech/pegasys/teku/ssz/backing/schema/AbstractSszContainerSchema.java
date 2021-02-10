@@ -32,7 +32,8 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class AbstractSszContainerSchema<C extends SszContainer> implements SszCompositeSchema<C> {
+public abstract class AbstractSszContainerSchema<C extends SszContainer>
+    implements SszCompositeSchema<C> {
 
   protected static class NamedSchema<T extends SszData> {
     private final String name;

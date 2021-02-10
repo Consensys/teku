@@ -43,7 +43,8 @@ public class SszUtils {
     return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszList<V> toSszList(SszListSchema<V, ?> type, Iterable<V> list) {
+  public static <V extends SszData> SszList<V> toSszList(
+      SszListSchema<V, ?> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();

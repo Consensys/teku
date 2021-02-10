@@ -31,21 +31,23 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class AbstractSszVectorSchema<SszElementT extends SszData, SszVectorT extends SszVector<SszElementT>>
+public abstract class AbstractSszVectorSchema<
+        SszElementT extends SszData, SszVectorT extends SszVector<SszElementT>>
     extends AbstractSszCollectionSchema<SszElementT, SszVectorT>
     implements SszVectorSchema<SszElementT, SszVectorT> {
 
   private final boolean isListBacking;
 
-  public AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
+  protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
-  AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength, boolean isListBacking) {
+  protected AbstractSszVectorSchema(
+      SszSchema<SszElementT> elementType, long vectorLength, boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, SszSchemaHints.none());
   }
 
-  AbstractSszVectorSchema(
+  protected AbstractSszVectorSchema(
       SszSchema<SszElementT> elementSchema,
       long vectorLength,
       boolean isListBacking,
@@ -93,6 +95,7 @@ public abstract class AbstractSszVectorSchema<SszElementT extends SszData, SszVe
   @Override
   public abstract SszVectorT createFromBackingNode(TreeNode node);
 
+  @Override
   public int getLength() {
     long maxLength = getMaxLength();
     if (maxLength > Integer.MAX_VALUE) {

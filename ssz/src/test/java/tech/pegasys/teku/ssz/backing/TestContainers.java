@@ -40,7 +40,8 @@ public class TestContainers {
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             TestSubContainer::new);
 
-    private TestSubContainer(AbstractSszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
+    private TestSubContainer(
+        AbstractSszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -84,10 +85,11 @@ public class TestContainers {
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
     public static final AbstractSszContainerSchema<TestSmallContainer> SSZ_SCHEMA =
-        AbstractSszContainerSchema
-            .create(List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
+        AbstractSszContainerSchema.create(
+            List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
 
-    private TestSmallContainer(AbstractSszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
+    private TestSmallContainer(
+        AbstractSszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

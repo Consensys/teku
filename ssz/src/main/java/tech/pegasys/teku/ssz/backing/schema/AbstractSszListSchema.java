@@ -31,16 +31,17 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public abstract class AbstractSszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
+public abstract class AbstractSszListSchema<
+        ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
     extends AbstractSszCollectionSchema<ElementDataT, SszListT>
     implements SszListSchema<ElementDataT, SszListT> {
   private final SszVectorSchemaImpl<ElementDataT> compatibleVectorSchema;
 
-  public AbstractSszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
+  protected AbstractSszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
   }
 
-  public AbstractSszListSchema(
+  protected AbstractSszListSchema(
       SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
     this.compatibleVectorSchema =

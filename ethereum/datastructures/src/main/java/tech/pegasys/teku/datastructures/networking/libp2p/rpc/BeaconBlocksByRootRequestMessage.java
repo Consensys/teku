@@ -24,7 +24,6 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {
@@ -46,8 +45,10 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
       new BeaconBlocksByRootRequestMessageSchema();
 
   public BeaconBlocksByRootRequestMessage(List<Bytes32> roots) {
-    super(SSZ_SCHEMA, SSZ_SCHEMA.createTreeFromElements(roots.stream().map(SszBytes32::new).collect(
-        Collectors.toList())));
+    super(
+        SSZ_SCHEMA,
+        SSZ_SCHEMA.createTreeFromElements(
+            roots.stream().map(SszBytes32::new).collect(Collectors.toList())));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

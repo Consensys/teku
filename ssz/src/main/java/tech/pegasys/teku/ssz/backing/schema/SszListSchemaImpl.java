@@ -25,8 +25,8 @@ class SszListSchemaImpl<ElementDataT extends SszData>
     super(elementSchema, maxLength);
   }
 
-  public SszListSchemaImpl(SszSchema<ElementDataT> elementSchema, long maxLength,
-      SszSchemaHints hints) {
+  public SszListSchemaImpl(
+      SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
     super(elementSchema, maxLength, hints);
   }
 
