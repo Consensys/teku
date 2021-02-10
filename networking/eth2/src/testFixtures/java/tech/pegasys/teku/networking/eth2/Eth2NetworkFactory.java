@@ -51,7 +51,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
-import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -71,8 +70,6 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -128,7 +125,6 @@ public class Eth2NetworkFactory {
     protected Duration eth2RpcPingInterval;
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
-    protected SpecConstants specConstants = ConstantsLoader.loadConstants("minimal");
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -242,9 +238,8 @@ public class Eth2NetworkFactory {
             eth2PeerManager,
             eventBus,
             recentChainData,
-            attestationSubnetService,
             gossipEncoding,
-            GossipConfigurator.NOOP,
+            attestationSubnetService,
             gossipedBlockProcessor,
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,
@@ -266,7 +261,6 @@ public class Eth2NetworkFactory {
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return P2PConfig.builder()
-          .specConstants(specConstants)
           .targetSubnetSubscriberCount(2)
           .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
@@ -336,12 +330,6 @@ public class Eth2NetworkFactory {
       if (attesterSlashingGossipPublisher == null) {
         attesterSlashingGossipPublisher = new GossipPublisher<>();
       }
-    }
-
-    public Eth2P2PNetworkBuilder specConstants(final SpecConstants specConstants) {
-      checkNotNull(specConstants);
-      this.specConstants = specConstants;
-      return this;
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
