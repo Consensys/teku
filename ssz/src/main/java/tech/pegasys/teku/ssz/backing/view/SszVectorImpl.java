@@ -65,6 +65,6 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszColle
 
   @Override
   public String toString() {
-    return "SszVector{" + stream().map(Object::toString).collect(Collectors.joining()) + "}";
+    return "SszVector{" + stream().map(Object::toString).collect(Collectors.joining(", ")) + "}";
   }
 }
