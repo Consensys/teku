@@ -106,7 +106,7 @@ commands:
               cp -rf ${FILE}/*/* "$TARGET"
             done
       - store_artifacts:
-          path: build/test-results
+          path: build/test-artifacts
 
 jobs:
   assemble:
@@ -176,6 +176,8 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel integrationTest
       - capture_test_results
+      - store_artifacts:
+          path: build/test-results
 
   acceptanceTests:
     parallelism: 2
@@ -198,6 +200,8 @@ jobs:
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
       - capture_test_results
       - capture_test_artifacts
+      - store_artifacts:
+          path: build/test-results
 
   referenceTestsPrep:
     executor: large_executor
