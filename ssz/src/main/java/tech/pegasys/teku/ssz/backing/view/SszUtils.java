@@ -50,12 +50,12 @@ public class SszUtils {
   }
 
   public static <C, V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V> type, Iterable<C> list, Function<C, V> converter) {
+      SszVectorSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
     return toSszVector(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
   public static <V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V> type, Iterable<V> list) {
+      SszVectorSchema<V, ?> type, Iterable<V> list) {
     SszMutableVector<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
     for (V v : list) {
@@ -70,11 +70,11 @@ public class SszUtils {
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static SszVector<SszByte> toSszByteVector(Bytes bytes) {
-    SszVectorSchema<SszByte> type = new SszByteVectorSchema(bytes.size());
+    SszVectorSchema<SszByte, ?> type = new SszByteVectorSchema(bytes.size());
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte> type, Bytes bytes) {
+  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte, ?> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 

@@ -43,7 +43,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszByteVectorSchema extends SszVectorSchema<SszByte> {
+  public static class SszByteVectorSchema extends SszVectorSchema<SszByte, SszVector<SszByte>> {
     public SszByteVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
@@ -71,7 +71,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszBitVectorSchema extends SszVectorSchema<SszBit> {
+  public static class SszBitVectorSchema extends SszVectorSchema<SszBit, SszVector<SszBit>> {
     public SszBitVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }

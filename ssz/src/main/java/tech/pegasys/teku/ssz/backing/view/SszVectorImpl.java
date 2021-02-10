@@ -46,8 +46,8 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszColle
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszVectorSchema<SszElementT> getSchema() {
-    return (SszVectorSchema<SszElementT>) super.getSchema();
+  public SszVectorSchema<SszElementT, ?> getSchema() {
+    return (SszVectorSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override

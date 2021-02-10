@@ -23,7 +23,7 @@ public class SszTestUtils {
   public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
     return sszContainerSchema.getChildSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
-        .map(t -> (SszVectorSchema<?>) t)
+        .map(t -> (SszVectorSchema<?, ?>) t)
         .map(SszVectorSchema::getLength)
         .collect(Collectors.toList());
   }

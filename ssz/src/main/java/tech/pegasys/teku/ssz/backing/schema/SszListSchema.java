@@ -33,8 +33,9 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class SszListSchema<ElementDataT extends SszData>
-    extends SszCollectionSchema<ElementDataT, SszList<ElementDataT>> {
-  private final SszVectorSchema<ElementDataT> compatibleVectorSchema;
+    extends SszCollectionSchema<ElementDataT, SszList<ElementDataT>>
+    implements SszListSchemaIfc<ElementDataT, SszList<ElementDataT>>{
+  private final SszVectorSchema<ElementDataT, ?> compatibleVectorSchema;
 
   public SszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
@@ -66,7 +67,7 @@ public class SszListSchema<ElementDataT extends SszData>
     return new SszListImpl<>(this, node);
   }
 
-  private SszVectorSchema<ElementDataT> getCompatibleVectorSchema() {
+  private SszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;
   }
 

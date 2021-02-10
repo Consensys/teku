@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.view;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -37,8 +38,8 @@ public class SszMutableVectorImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorSchema<SszElementT> getSchema() {
-    return (SszVectorSchema<SszElementT>) super.getSchema();
+  public SszVectorSchema<SszElementT, ?> getSchema() {
+    return (SszVectorSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override

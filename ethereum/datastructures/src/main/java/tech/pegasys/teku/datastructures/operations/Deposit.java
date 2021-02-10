@@ -42,8 +42,8 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
           namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 
-    public SszVectorSchema<SszBytes32> getProofSchema() {
-      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
+    public SszVectorSchema<SszBytes32, ?> getProofSchema() {
+      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
     }
 
     @Override
