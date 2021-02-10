@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.ConstantsLoader;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.SpecProvider;
@@ -159,6 +160,7 @@ public class DebugDbCommand implements Runnable {
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
+      final SpecProvider specProvider = SpecProvider.create(eth2NetworkOptions.getNetworkConfiguration().getSpecConfig());
       final Optional<AnchorPoint> finalizedAnchor =
           database
               .createMemoryStore()
@@ -166,6 +168,7 @@ public class DebugDbCommand implements Runnable {
                   builder ->
                       builder
                           .blockProvider(BlockProvider.NOOP)
+                          .specProvider(specProvider)
                           .asyncRunner(asyncRunner)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())

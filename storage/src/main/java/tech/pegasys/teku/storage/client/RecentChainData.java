@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
@@ -82,6 +83,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
   private final Counter reorgCounter;
   private final boolean updateHeadForEmptySlots;
+  protected final SpecProvider specProvider;
 
   private volatile UpdatableStore store;
   private volatile Optional<ChainHead> chainHead = Optional.empty();
@@ -97,7 +99,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final EventBus eventBus) {
+      final EventBus eventBus,
+      final SpecProvider specProvider) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
@@ -109,6 +112,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
     this.updateHeadForEmptySlots = storeConfig.updateHeadForEmptySlots();
+    this.specProvider = specProvider;
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -132,7 +136,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public void initializeFromAnchorPoint(final AnchorPoint anchorPoint, final UInt64 currentTime) {
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint, currentTime)
+                asyncRunner,
+                metricsSystem,
+                blockProvider,
+                stateProvider,
+                anchorPoint,
+                currentTime,
+                specProvider)
             .storeConfig(storeConfig)
             .build();
 
@@ -474,5 +484,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
+  }
+
+  public SpecProvider getSpecProvider() {
+    return specProvider;
   }
 }

@@ -23,6 +23,8 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -41,7 +43,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ChainHeadChannel chainHeadChannel) {
+      final ChainHeadChannel chainHeadChannel,
+      final SpecProvider specProvider) {
     super(
         asyncRunner,
         metricsSystem,
@@ -52,7 +55,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        eventBus);
+        eventBus,
+        specProvider);
     eventBus.register(this);
   }
 
@@ -76,6 +80,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
+    private SpecProvider specProvider = StubSpecProvider.create();
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
@@ -86,7 +91,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storageUpdateChannel,
           ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
-          chainHeadChannel);
+          chainHeadChannel,
+          specProvider);
     }
 
     public Builder storeConfig(final StoreConfig storeConfig) {
@@ -98,6 +104,11 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public Builder eventBus(final EventBus eventBus) {
       checkNotNull(eventBus);
       this.eventBus = eventBus;
+      return this;
+    }
+
+    public Builder specProvider(final SpecProvider specProvider) {
+      this.specProvider = specProvider;
       return this;
     }
 

@@ -143,7 +143,7 @@ class StateGenerationTaskTest {
                         startBlockAndState.getRoot(), startBlockAndState.getState())),
             chainBuilder.getStateAndBlockProvider(),
             Optional.empty(),
-            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
+            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS), specProvider);
   }
 
   private static class TrackingBlockProvider implements BlockProvider {

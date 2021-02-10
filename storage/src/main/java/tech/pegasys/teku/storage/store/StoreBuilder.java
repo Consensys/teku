@@ -32,11 +32,13 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
   private MetricsSystem metricsSystem;
   private BlockProvider blockProvider;
+  private SpecProvider specProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
@@ -62,7 +64,8 @@ public class StoreBuilder {
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor,
-      final UInt64 currentTime) {
+      final UInt64 currentTime,
+      final SpecProvider specProvider) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT)).max(currentTime);
@@ -83,6 +86,7 @@ public class StoreBuilder {
         .asyncRunner(asyncRunner)
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
+        .specProvider(specProvider)
         .stateProvider(stateAndBlockProvider)
         .anchor(anchor.getCheckpoint())
         .time(time)
@@ -100,6 +104,7 @@ public class StoreBuilder {
     return Store.create(
         asyncRunner,
         metricsSystem,
+        specProvider,
         blockProvider,
         stateAndBlockProvider,
         anchor,
@@ -148,6 +153,11 @@ public class StoreBuilder {
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
+    return this;
+  }
+
+  public StoreBuilder specProvider(final SpecProvider specProvider) {
+    this.specProvider = specProvider;
     return this;
   }
 

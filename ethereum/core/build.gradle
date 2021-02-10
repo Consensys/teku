@@ -7,6 +7,7 @@ dependencies {
   implementation project(':data:signingrecord')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:independent')
+  implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':protoarray')
   implementation project(':ssz')

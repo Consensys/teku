@@ -207,7 +207,7 @@ public class AggregateGenerator {
         return state;
       }
 
-      StateTransition stateTransition = new StateTransition();
+      StateTransition stateTransition = new StateTransition(specProvider);
       try {
         return stateTransition.process_slots(state, slot);
       } catch (EpochProcessingException | SlotProcessingException e) {

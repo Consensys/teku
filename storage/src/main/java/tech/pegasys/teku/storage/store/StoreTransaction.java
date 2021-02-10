@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
@@ -62,16 +63,19 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+  private final SpecProvider specProvider;
 
   StoreTransaction(
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
-      final UpdatableStore.StoreUpdateHandler updateHandler) {
+      final UpdatableStore.StoreUpdateHandler updateHandler,
+      final SpecProvider specProvider) {
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
     this.updateHandler = updateHandler;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -344,7 +348,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
       return new StateAtSlotTask(
-              checkpoint.toSlotAndBlockRoot(), fromBlockAndState(inMemoryCheckpointBlockState))
+              checkpoint.toSlotAndBlockRoot(),
+              fromBlockAndState(inMemoryCheckpointBlockState),
+              specProvider)
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
@@ -357,7 +363,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
-      return new StateAtSlotTask(slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+      return new StateAtSlotTask(
+              slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState), specProvider)
           .performTask();
     }
     return store.retrieveStateAtSlot(slotAndBlockRoot);

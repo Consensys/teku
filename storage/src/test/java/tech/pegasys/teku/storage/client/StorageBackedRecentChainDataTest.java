@@ -42,6 +42,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -64,6 +66,7 @@ public class StorageBackedRecentChainDataTest {
       new StubFinalizedCheckpointChannel();
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final SpecProvider specProvider = StubSpecProvider.create();
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
@@ -84,7 +87,8 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -100,7 +104,8 @@ public class StorageBackedRecentChainDataTest {
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO);
+            UInt64.ZERO,
+            specProvider);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -135,7 +140,8 @@ public class StorageBackedRecentChainDataTest {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -196,7 +202,8 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -217,7 +224,8 @@ public class StorageBackedRecentChainDataTest {
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE),
-                UInt64.ZERO)
+                UInt64.ZERO,
+                specProvider)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
@@ -245,7 +253,8 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -263,7 +272,8 @@ public class StorageBackedRecentChainDataTest {
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO);
+            UInt64.ZERO,
+            specProvider);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -289,7 +299,8 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();

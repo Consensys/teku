@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateGenerator {
   public static final int DEFAULT_STATE_CACHE_SIZE = 100;
@@ -33,32 +34,28 @@ public class StateGenerator {
 
   private final HashTree blockTree;
   private final AsyncChainStateGenerator chainStateGenerator;
+  @SuppressWarnings("unused")
+  private final SpecProvider specProvider;
 
   private StateGenerator(
       final HashTree blockTree,
       final AsyncChainStateGenerator chainStateGenerator,
-      final StateCache stateCache) {
+      final StateCache stateCache,
+      final SpecProvider specProvider) {
     checkArgument(
         stateCache.containsKnownState(blockTree.getRootHash()), "Root state must be available");
 
     this.blockTree = blockTree;
     this.chainStateGenerator = chainStateGenerator;
-  }
-
-  public static StateGenerator create(
-      final HashTree blockTree,
-      final StateAndBlockSummary rootBlockAndState,
-      final BlockProvider blockProvider) {
-    return create(blockTree, rootBlockAndState, blockProvider, Collections.emptyMap());
+    this.specProvider = specProvider;
   }
 
   public static StateGenerator create(
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
-      final Map<Bytes32, BeaconState> knownStates) {
-    return create(
-        blockTree, rootBlockAndState, blockProvider, knownStates, DEFAULT_STATE_CACHE_SIZE);
+      final SpecProvider specProvider) {
+    return create(blockTree, rootBlockAndState, blockProvider, Collections.emptyMap(), specProvider);
   }
 
   public static StateGenerator create(
@@ -66,7 +63,18 @@ public class StateGenerator {
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates,
-      final int stateCacheSize) {
+      final SpecProvider specProvider) {
+    return create(
+        blockTree, rootBlockAndState, blockProvider, knownStates, DEFAULT_STATE_CACHE_SIZE, specProvider);
+  }
+
+  public static StateGenerator create(
+      final HashTree blockTree,
+      final StateAndBlockSummary rootBlockAndState,
+      final BlockProvider blockProvider,
+      final Map<Bytes32, BeaconState> knownStates,
+      final int stateCacheSize,
+      final SpecProvider specProvider) {
     checkArgument(
         rootBlockAndState.getRoot().equals(blockTree.getRootHash()),
         "Provided root block must match the root of the provided block tree");
@@ -76,8 +84,8 @@ public class StateGenerator {
     final StateCache stateCache = new StateCache(stateCacheSize, availableStates);
 
     final AsyncChainStateGenerator chainStateGenerator =
-        AsyncChainStateGenerator.create(blockTree, blockProvider, stateCache::get);
-    return new StateGenerator(blockTree, chainStateGenerator, stateCache);
+        AsyncChainStateGenerator.create(blockTree, blockProvider, stateCache::get, specProvider);
+    return new StateGenerator(blockTree, chainStateGenerator, stateCache, specProvider);
   }
 
   public SafeFuture<StateAndBlockSummary> regenerateStateForBlock(final Bytes32 blockRoot) {

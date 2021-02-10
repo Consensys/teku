@@ -144,6 +144,6 @@ class StateAtSlotTaskTest {
   }
 
   private StateAtSlotTask createTask(final UInt64 slot, final Bytes32 root) {
-    return new StateAtSlotTask(new SlotAndBlockRoot(slot, root), stateProvider);
+    return new StateAtSlotTask(new SlotAndBlockRoot(slot, root), stateProvider, specProvider);
   }
 }

@@ -69,6 +69,8 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public final class BlockProcessorUtil {
@@ -120,14 +122,19 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
+  public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body, final SpecProvider specProvider)
       throws BlockProcessingException {
     try {
       UInt64 epoch = get_current_epoch(state);
+      final Spec spec = specProvider.atSlot(state.getSlot());
+      final int epochsPerHistoricalVector = spec.getConstants().getEpochsPerHistoricalVector();
 
       Bytes32 mix =
-          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
+          spec
+              .getBeaconStateUtil()
+              .getRandaoMix(state, epoch)
+              .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
+      int index = epoch.mod(epochsPerHistoricalVector).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

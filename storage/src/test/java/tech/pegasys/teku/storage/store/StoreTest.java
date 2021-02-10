@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -57,6 +58,7 @@ class StoreTest extends AbstractStoreTest {
                 Store.create(
                     SYNC_RUNNER,
                     new StubMetricsSystem(),
+                    StubSpecProvider.create(),
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),

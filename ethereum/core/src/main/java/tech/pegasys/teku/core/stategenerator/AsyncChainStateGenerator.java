@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
 
 class AsyncChainStateGenerator {
   private static final Logger LOG = LogManager.getLogger();
@@ -38,24 +39,27 @@ class AsyncChainStateGenerator {
   private final BlockProvider blockProvider;
   private final StateProvider stateProvider;
   private final int blockBatchSize;
+  private final SpecProvider specProvider;
 
   private AsyncChainStateGenerator(
       final HashTree blockTree,
       final BlockProvider blockProvider,
       final StateProvider stateProvider,
-      final int blockBatchSize) {
+      final int blockBatchSize, final SpecProvider specProvider) {
     this.blockTree = blockTree;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
     this.blockBatchSize = blockBatchSize;
+    this.specProvider = specProvider;
   }
 
   public static AsyncChainStateGenerator create(
       final HashTree blockTree,
       final BlockProvider blockProvider,
-      final StateProvider stateProvider) {
+      final StateProvider stateProvider,
+      final SpecProvider specProvider) {
     return new AsyncChainStateGenerator(
-        blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
+        blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE, specProvider);
   }
 
   public SafeFuture<StateAndBlockSummary> generateTargetState(final Bytes32 targetRoot) {
@@ -166,7 +170,7 @@ class AsyncChainStateGenerator {
               }
 
               final ChainStateGenerator chainStateGenerator =
-                  ChainStateGenerator.create(chainBlocks, startState, true);
+                  ChainStateGenerator.create(chainBlocks, startState, true, specProvider);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
                   stateAndBlock -> {

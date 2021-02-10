@@ -41,7 +41,8 @@ public class StoreAssertions {
             "states",
             "stateProvider",
             "checkpointStates",
-            "forkChoiceStrategy");
+            "forkChoiceStrategy",
+            "specProvider");
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());
   }

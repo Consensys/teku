@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateTransition {
 
@@ -44,13 +45,15 @@ public class StateTransition {
   }
 
   private final BlockValidator blockValidator;
+  private final SpecProvider specProvider;
 
-  public StateTransition() {
-    this(createDefaultBlockValidator());
+  public StateTransition(final SpecProvider specProvider) {
+    this(createDefaultBlockValidator(), specProvider);
   }
 
-  public StateTransition(BlockValidator blockValidator) {
+  public StateTransition(BlockValidator blockValidator, final SpecProvider specProvider) {
     this.blockValidator = blockValidator;
+    this.specProvider = specProvider;
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signed_block)
@@ -139,7 +142,7 @@ public class StateTransition {
     return preState.updated(
         state -> {
           BlockProcessorUtil.process_block_header(state, block);
-          BlockProcessorUtil.process_randao_no_validation(state, block.getBody());
+          BlockProcessorUtil.process_randao_no_validation(state, block.getBody(), specProvider);
           BlockProcessorUtil.process_eth1_data(state, block.getBody());
           BlockProcessorUtil.process_operations_no_validation(state, block.getBody());
         });

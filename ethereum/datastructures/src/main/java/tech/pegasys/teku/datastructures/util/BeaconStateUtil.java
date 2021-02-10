@@ -248,6 +248,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
    */
+  @Deprecated
   public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
@@ -591,6 +592,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_randao_mix</a>
    */
+  @Deprecated
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
     return state.getRandao_mixes().get(index);
@@ -757,7 +759,9 @@ public class BeaconStateUtil {
    * @param value - The value to be converted to bytes.
    * @param numBytes - The number of bytes to be returned.
    * @return The value represented as the requested number of bytes.
+   * @deprecated use spec.util.BeaconStateUtil.uintToBytes
    */
+  @Deprecated
   public static Bytes uint_to_bytes(long value, int numBytes) {
     int longBytes = Long.SIZE / 8;
     Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);

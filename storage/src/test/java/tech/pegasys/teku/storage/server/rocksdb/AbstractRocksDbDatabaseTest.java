@@ -96,6 +96,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .get()
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
+            .specProvider(specProvider)
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .build();
 

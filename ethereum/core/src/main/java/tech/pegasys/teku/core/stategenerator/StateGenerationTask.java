@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlockSummary> {
   private static final Logger LOG = LogManager.getLogger();
@@ -30,16 +31,18 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
   private final BlockProvider blockProvider;
   private final Bytes32 blockRoot;
   private final StateRegenerationBaseSelector baseSelector;
+  private final SpecProvider specProvider;
 
   public StateGenerationTask(
       final Bytes32 blockRoot,
       final HashTree tree,
       final BlockProvider blockProvider,
-      final StateRegenerationBaseSelector baseSelector) {
+      final StateRegenerationBaseSelector baseSelector, final SpecProvider specProvider) {
     this.tree = tree;
     this.blockProvider = blockProvider;
     this.blockRoot = blockRoot;
     this.baseSelector = baseSelector;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -74,7 +77,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
         blockRoot,
         tree,
         blockProvider,
-        baseSelector.withRebasedStartingPoint(newBaseBlockAndState));
+        baseSelector.withRebasedStartingPoint(newBaseBlockAndState), specProvider);
   }
 
   @Override
@@ -89,7 +92,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
     }
     final StateAndBlockSummary base = maybeBase.get();
     return StateGenerator.create(
-            tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
+            tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider, specProvider)
         .regenerateStateForBlock(blockRoot)
         .thenApply(Optional::of);
   }

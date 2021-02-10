@@ -38,12 +38,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
 public abstract class AbstractStoreTest {
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  protected final SpecProvider specProvider = StubSpecProvider.create();
 
   protected void processChainWithLimitedCache(
       BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
@@ -133,6 +136,7 @@ public abstract class AbstractStoreTest {
         .asyncRunner(SYNC_RUNNER)
         .metricsSystem(new StubMetricsSystem())
         .blockProvider(blockProviderFromChainBuilder())
+        .specProvider(specProvider)
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesis_time())

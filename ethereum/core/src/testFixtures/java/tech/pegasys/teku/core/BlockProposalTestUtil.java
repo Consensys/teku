@@ -38,15 +38,18 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class BlockProposalTestUtil {
 
   private final BlockProposalUtil blockProposalUtil;
   private final StateTransition stateTransition;
+  private final SpecProvider specProvider = StubSpecProvider.create();
 
   public BlockProposalTestUtil() {
-    stateTransition = new StateTransition();
+    stateTransition = new StateTransition(specProvider);
     blockProposalUtil = new BlockProposalUtil(stateTransition);
   }
 

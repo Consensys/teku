@@ -13,8 +13,18 @@
 
 package tech.pegasys.teku.spec.util;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+
+import java.nio.ByteOrder;
+
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
+import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 
 public class BeaconStateUtil {
   private final SpecConstants specConstants;
@@ -34,5 +44,28 @@ public class BeaconStateUtil {
 
   private boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
     return genesisTime.compareTo(specConstants.getMinGenesisTime()) >= 0;
+  }
+
+  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
+      throws IllegalArgumentException {
+    UInt64 randaoIndex = epoch.plus(specConstants.getEpochsPerHistoricalVector() - specConstants.getMinSeedLookahead() - 1);
+    Bytes32 mix = getRandaoMix(state, randaoIndex);
+    Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
+    return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+  }
+
+  public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
+    int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
+    return state.getRandao_mixes().get(index);
+  }
+
+  public static Bytes uintToBytes(long value, int numBytes) {
+    int longBytes = Long.SIZE / 8;
+    Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
+    if (numBytes <= longBytes) {
+      return valueBytes.slice(0, numBytes);
+    } else {
+      return Bytes.wrap(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
+    }
   }
 }

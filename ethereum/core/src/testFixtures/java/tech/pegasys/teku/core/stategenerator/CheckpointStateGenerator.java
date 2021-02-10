@@ -23,9 +23,10 @@ import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 public abstract class CheckpointStateGenerator {
-
   public static CheckpointState generate(
       final Checkpoint checkpoint, final SignedBlockAndState blockAndState) {
     checkArgument(
@@ -47,7 +48,7 @@ public abstract class CheckpointStateGenerator {
         return baseState;
       }
 
-      return new StateTransition().process_slots(baseState, checkpoint.getEpochStartSlot());
+      return new StateTransition(StubSpecProvider.create()).process_slots(baseState, checkpoint.getEpochStartSlot());
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

@@ -19,16 +19,20 @@ import java.util.List;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecProvider;
 
 class ChainStateGenerator {
-  private final BlockProcessor blockProcessor = new BlockProcessor();
+  private final BlockProcessor blockProcessor;
   private final List<SignedBeaconBlock> chain;
   private final BeaconState baseState;
 
   private ChainStateGenerator(
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
-      final boolean skipValidation) {
+      final boolean skipValidation,
+      final SpecProvider specProvider) {
+    blockProcessor = new BlockProcessor(specProvider);
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
         checkArgument(
@@ -48,16 +52,13 @@ class ChainStateGenerator {
    * @param baseState A base state corresponding to the first block in the chain
    * @return
    */
-  public static ChainStateGenerator create(
-      final List<SignedBeaconBlock> chain, final BeaconState baseState) {
-    return create(chain, baseState, false);
-  }
 
   static ChainStateGenerator create(
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
-      final boolean skipValidation) {
-    return new ChainStateGenerator(chain, baseState, skipValidation);
+      final boolean skipValidation,
+      final SpecProvider specProvider) {
+    return new ChainStateGenerator(chain, baseState, skipValidation, specProvider);
   }
 
   public void generateStates(final StateHandler handler) {

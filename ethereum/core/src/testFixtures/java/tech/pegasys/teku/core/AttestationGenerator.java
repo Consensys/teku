@@ -44,12 +44,15 @@ import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
   private final BLSKeyPair randomKeyPair = BLSTestUtil.randomKeyPair(12345);
+  private final SpecProvider specProvider = StubSpecProvider.create();
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
@@ -160,7 +163,7 @@ public class AttestationGenerator {
    */
   public Stream<Attestation> streamAttestations(
       final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
-    return AttestationIterator.create(headBlockAndState, assignedSlot, validatorKeys).toStream();
+    return AttestationIterator.create(headBlockAndState, assignedSlot, validatorKeys, specProvider).toStream();
   }
 
   /**
@@ -174,7 +177,7 @@ public class AttestationGenerator {
   private Stream<Attestation> streamInvalidAttestations(
       final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.createWithInvalidSignatures(
-            headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
+            headBlockAndState, assignedSlot, validatorKeys, randomKeyPair, specProvider)
         .toStream();
   }
 
@@ -197,18 +200,21 @@ public class AttestationGenerator {
 
     private Optional<Attestation> nextAttestation = Optional.empty();
     private int currentValidatorIndex = 0;
+    private SpecProvider specProvider;
 
     private AttestationIterator(
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
-        final Function<Integer, BLSKeyPair> validatorKeySupplier) {
+        final Function<Integer, BLSKeyPair> validatorKeySupplier,
+        final SpecProvider specProvider) {
       this.headBlock = headBlockAndState;
       this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
       this.assignedSlot = assignedSlot;
       this.assignedSlotEpoch = compute_epoch_at_slot(assignedSlot);
       this.validatorKeySupplier = validatorKeySupplier;
+      this.specProvider = specProvider;
       generateNextAttestation();
     }
 
@@ -217,7 +223,7 @@ public class AttestationGenerator {
         return state;
       }
 
-      StateTransition stateTransition = new StateTransition();
+      StateTransition stateTransition = new StateTransition(specProvider);
       try {
         return stateTransition.process_slots(state, slot);
       } catch (EpochProcessingException | SlotProcessingException e) {
@@ -228,18 +234,20 @@ public class AttestationGenerator {
     public static AttestationIterator create(
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
-        final List<BLSKeyPair> validatorKeys) {
+        final List<BLSKeyPair> validatorKeys,
+        final SpecProvider specProvider) {
       return new AttestationIterator(
-          headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get);
+          headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get, specProvider);
     }
 
     public static AttestationIterator createWithInvalidSignatures(
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
-        final BLSKeyPair invalidKeyPair) {
+        final BLSKeyPair invalidKeyPair,
+        final SpecProvider specProvider) {
       return new AttestationIterator(
-          headBlockAndState, assignedSlot, validatorKeys, __ -> invalidKeyPair);
+          headBlockAndState, assignedSlot, validatorKeys, __ -> invalidKeyPair, specProvider);
     }
 
     public Stream<Attestation> toStream() {

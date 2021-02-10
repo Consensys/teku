@@ -66,7 +66,7 @@ public class CombinedChainDataClient {
       final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
-    this.stateTransition = new StateTransition();
+    this.stateTransition = new StateTransition(recentChainData.getSpecProvider());
   }
 
   public CombinedChainDataClient(

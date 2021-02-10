@@ -24,6 +24,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 /** Note: Most tests should be added to the integration-test directory */
@@ -32,7 +33,7 @@ class CombinedChainDataClientTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
-  private final StateTransition stateTransition = new StateTransition();
+  private final StateTransition stateTransition = new StateTransition(StubSpecProvider.create());
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, stateTransition);
 

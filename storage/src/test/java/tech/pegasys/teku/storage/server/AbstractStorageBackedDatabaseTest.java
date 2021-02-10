@@ -32,6 +32,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -39,6 +41,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
   private final List<File> tmpDirectories = new ArrayList<>();
+
+  protected final SpecProvider specProvider = StubSpecProvider.create();
 
   protected abstract StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig);

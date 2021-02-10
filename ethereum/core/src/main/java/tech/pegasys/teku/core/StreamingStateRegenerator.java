@@ -16,6 +16,7 @@ package tech.pegasys.teku.core;
 import java.util.stream.Stream;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.SpecProvider;
 
 /**
  * This class is only suitable for regenerating states we have previously performed full validation
@@ -24,10 +25,11 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
  */
 public class StreamingStateRegenerator {
 
-  private final StateTransition stateTransition = new StateTransition();
+  private final StateTransition stateTransition;
   private BeaconState state;
 
-  private StreamingStateRegenerator(final BeaconState preState) {
+  private StreamingStateRegenerator(final BeaconState preState, final SpecProvider specProvider) {
+    stateTransition = new StateTransition(specProvider);
     this.state = preState;
   }
 
@@ -40,8 +42,8 @@ public class StreamingStateRegenerator {
   }
 
   public static BeaconState regenerate(
-      final BeaconState initialState, final Stream<SignedBeaconBlock> blocks) {
-    final StreamingStateRegenerator regenerator = new StreamingStateRegenerator(initialState);
+      final BeaconState initialState, final Stream<SignedBeaconBlock> blocks, final SpecProvider specProvider) {
+    final StreamingStateRegenerator regenerator = new StreamingStateRegenerator(initialState, specProvider);
     blocks.forEach(regenerator::processBlock);
     return regenerator.state;
   }

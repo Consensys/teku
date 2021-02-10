@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StreamingStateRegenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
@@ -42,10 +43,15 @@ public class FinalizedStateCache {
 
   private final LoadingCache<UInt64, BeaconState> stateCache;
   private final Database database;
+  private final SpecProvider specProvider;
 
   public FinalizedStateCache(
-      final Database database, final int maximumCacheSize, final boolean useSoftReferences) {
+      final Database database,
+      final int maximumCacheSize,
+      final boolean useSoftReferences,
+      final SpecProvider specProvider) {
     this.database = database;
+    this.specProvider = specProvider;
     final CacheBuilder<UInt64, BeaconState> cacheBuilder =
         CacheBuilder.newBuilder()
             .maximumSize(maximumCacheSize)
@@ -104,7 +110,8 @@ public class FinalizedStateCache {
       }
       try (final Stream<SignedBeaconBlock> blocks =
           database.streamFinalizedBlocks(preState.getSlot().plus(ONE), slot)) {
-        final BeaconState state = StreamingStateRegenerator.regenerate(preState, blocks);
+        final BeaconState state =
+            StreamingStateRegenerator.regenerate(preState, blocks, specProvider);
         availableSlots.add(state.getSlot());
         return state;
       }
