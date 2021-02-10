@@ -39,11 +39,11 @@ public class HistoricalBatch
           "HistoricalBatch",
           namedSchema(
               "block_roots",
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT)),
           namedSchema(
               "state_roots",
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT)));
     }
 

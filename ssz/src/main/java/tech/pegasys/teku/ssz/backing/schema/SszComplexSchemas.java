@@ -26,7 +26,7 @@ public class SszComplexSchemas {
   public static final SszByteVectorSchema BYTES_48_SCHEMA = new SszByteVectorSchema(48);
   public static final SszByteVectorSchema BYTES_96_SCHEMA = new SszByteVectorSchema(96);
 
-  public static class SszByteListSchema extends SszListSchema<SszByte> {
+  public static class SszByteListSchema extends SszListSchemaImpl<SszByte> {
     public SszByteListSchema(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
@@ -43,7 +43,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszByteVectorSchema extends SszVectorSchema<SszByte, SszVector<SszByte>> {
+  public static class SszByteVectorSchema extends SszVectorSchemaImpl<SszByte> {
     public SszByteVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
     }
@@ -60,7 +60,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszBitListSchema extends SszListSchema<SszBit> {
+  public static class SszBitListSchema extends SszListSchemaImpl<SszBit> {
     public SszBitListSchema(long maxLength) {
       super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }
@@ -71,7 +71,7 @@ public class SszComplexSchemas {
     }
   }
 
-  public static class SszBitVectorSchema extends SszVectorSchema<SszBit, SszVector<SszBit>> {
+  public static class SszBitVectorSchema extends SszVectorSchemaImpl<SszBit> {
     public SszBitVectorSchema(long maxLength) {
       super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
     }

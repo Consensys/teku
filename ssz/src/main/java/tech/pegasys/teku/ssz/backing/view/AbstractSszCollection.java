@@ -24,10 +24,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public abstract class AbstractSszCollection<SszElementT extends SszData>
     extends AbstractSszComposite<SszElementT> implements SszCollection<SszElementT> {
 
-  protected AbstractSszCollection(SszCollection<SszElementT> otherComposite) {
-    super(otherComposite);
-  }
-
   protected AbstractSszCollection(SszCompositeSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);
   }

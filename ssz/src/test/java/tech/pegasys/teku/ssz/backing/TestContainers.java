@@ -24,11 +24,9 @@ import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchemaIfc;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
@@ -103,7 +101,7 @@ public class TestContainers {
         SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
-                SszVectorSchemaIfc.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64),
+                SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64),
                 SszPrimitiveSchemas.UINT64_SCHEMA),
             TestByteVectorContainer::new);
 
@@ -160,7 +158,7 @@ public class TestContainers {
         SSZ_SCHEMA =
             ContainerSchema3.create(
                 TestSubContainer.SSZ_SCHEMA,
-                new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
+                SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 VariableSizeContainer::new);
 

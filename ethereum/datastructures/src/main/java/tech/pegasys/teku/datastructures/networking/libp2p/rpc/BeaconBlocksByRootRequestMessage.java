@@ -15,10 +15,11 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.schema.AbstractDelegateSszSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
@@ -28,14 +29,11 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {
 
-  private static final SszListSchema<SszBytes32> LIST_VIEW_TYPE =
-      new SszListSchema<>(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
-
   public static class BeaconBlocksByRootRequestMessageSchema
-      extends AbstractDelegateSszSchema<BeaconBlocksByRootRequestMessage> {
+      extends AbstractSszListSchema<SszBytes32, BeaconBlocksByRootRequestMessage> {
 
     private BeaconBlocksByRootRequestMessageSchema() {
-      super(LIST_VIEW_TYPE);
+      super(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
     }
 
     @Override
@@ -47,12 +45,13 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
   public static final BeaconBlocksByRootRequestMessageSchema SSZ_SCHEMA =
       new BeaconBlocksByRootRequestMessageSchema();
 
-  public BeaconBlocksByRootRequestMessage(Iterable<Bytes32> roots) {
-    super(SszUtils.toSszList(LIST_VIEW_TYPE, roots, SszBytes32::new));
+  public BeaconBlocksByRootRequestMessage(List<Bytes32> roots) {
+    super(SSZ_SCHEMA, SSZ_SCHEMA.createTreeFromElements(roots.stream().map(SszBytes32::new).collect(
+        Collectors.toList())));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {
-    super(LIST_VIEW_TYPE, node);
+    super(SSZ_SCHEMA, node);
   }
 
   @Override

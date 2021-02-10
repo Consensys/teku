@@ -119,7 +119,7 @@ public class CompositeListViewTest {
 
   @Test
   public void simpleTest1() {
-    SszListSchema<TestView> listType = new SszListSchema<>(testType, 3);
+    SszListSchema<TestView, ?> listType = SszListSchema.create(testType, 3);
     SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));

@@ -39,11 +39,11 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toSszList(
-      SszListSchema<V> type, Iterable<C> list, Function<C, V> converter) {
+      SszListSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
     return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszList<V> toSszList(SszListSchema<V> type, Iterable<V> list) {
+  public static <V extends SszData> SszList<V> toSszList(SszListSchema<V, ?> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
@@ -78,7 +78,7 @@ public class SszUtils {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte> type, Bytes bytes) {
+  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte, ?> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
@@ -95,7 +95,7 @@ public class SszUtils {
     return toSszBitList(new SszBitListSchema(bitlist.getMaxSize()), bitlist);
   }
 
-  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit> type, Bitlist bitlist) {
+  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit, ?> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 

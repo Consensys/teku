@@ -85,9 +85,9 @@ public class ContainerViewTest {
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SubContainerRead.SSZ_SCHEMA,
-                new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
-                new SszListSchema<>(SubContainerRead.SSZ_SCHEMA, 2),
-                new SszVectorSchema<>(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
+                SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
+                SszListSchema.create(SubContainerRead.SSZ_SCHEMA, 2),
+                SszVectorSchema.create(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
             ContainerReadImpl::new);
 
     static ContainerRead createDefault() {

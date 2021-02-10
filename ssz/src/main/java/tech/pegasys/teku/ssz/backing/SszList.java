@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.backing;
 
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchemaIfc;
 
 /**
  * Immutable SSZ List structure
@@ -27,7 +26,7 @@ public interface SszList<SszElementT extends SszData> extends SszCollection<SszE
   SszMutableList<SszElementT> createWritableCopy();
 
   @Override
-  SszListSchemaIfc<SszElementT, ?> getSchema();
+  SszListSchema<SszElementT, ?> getSchema();
 
   /** Returns the number of elements in this list */
   @Override

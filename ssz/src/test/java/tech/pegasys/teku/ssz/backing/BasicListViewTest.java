@@ -27,7 +27,7 @@ public class BasicListViewTest {
 
   @Test
   public void simpleUInt64ListTest() {
-    SszListSchema<SszUInt64> listType = new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 7);
+    SszListSchema<SszUInt64, ?> listType = SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 7);
     SszMutableList<SszUInt64> listView = listType.getDefault().createWritableCopy();
     TreeNode n0 = listView.commitChanges().getBackingNode();
     listView.append(new SszUInt64(UInt64.valueOf(0x111)));

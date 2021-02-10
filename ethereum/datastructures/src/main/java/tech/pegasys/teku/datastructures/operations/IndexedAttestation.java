@@ -44,14 +44,14 @@ public class IndexedAttestation
           "IndexedAttestation",
           namedSchema(
               "attesting_indices",
-              new SszListSchema<>(
+              SszListSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
     }
 
-    public SszListSchema<SszUInt64> getAttestingIndicesSchema() {
-      return (SszListSchema<SszUInt64>) getFieldSchema0();
+    public SszListSchema<SszUInt64, ?> getAttestingIndicesSchema() {
+      return (SszListSchema<SszUInt64, ?>) getFieldSchema0();
     }
 
     @Override
