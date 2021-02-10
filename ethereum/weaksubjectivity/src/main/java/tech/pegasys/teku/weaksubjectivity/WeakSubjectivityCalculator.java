@@ -34,7 +34,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
-  private static final UInt64 ETH_TO_GWEI = UInt64.valueOf(BigInteger.TEN.pow(9));
+  static final UInt64 ETH_TO_GWEI = UInt64.valueOf(BigInteger.TEN.pow(9));
 
   private final SpecProvider specProvider;
   private final UInt64 safetyDecay;

@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator.ETH_TO_GWEI;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -114,20 +115,19 @@ public class WeakSubjectivityCalculatorTest {
   // Parameters from the table here:
   // https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/weak-subjectivity.md#compute_weak_subjectivity_period
   public static Stream<Arguments> computeWeakSubjectivityParams() {
-    final UInt64 ethToGwei = UInt64.valueOf(1_000_000_000);
     return Stream.of(
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 32768, 504),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 65536, 752),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 131072, 1248),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 262144, 2241),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 524288, 2241),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(28), 1048576, 2241),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 32768, 665),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 65536, 1075),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 131072, 1894),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 262144, 3532),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 524288, 3532),
-        Arguments.of(UInt64.valueOf(10), ethToGwei.times(32), 1048576, 3532));
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 32768, 504),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 65536, 752),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 131072, 1248),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 262144, 2241),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 524288, 2241),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 1048576, 2241),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 32768, 665),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 65536, 1075),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 131072, 1894),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 262144, 3532),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 524288, 3532),
+        Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(32), 1048576, 3532));
   }
 
   private CheckpointState createMockCheckpointState(final UInt64 finalizedEpoch) {
