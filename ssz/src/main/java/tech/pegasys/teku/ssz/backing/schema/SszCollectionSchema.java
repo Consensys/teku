@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableComposite;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.SszNodeTemplate;
@@ -53,6 +54,16 @@ public abstract class SszCollectionSchema<
     this.maxLength = maxLength;
     this.elementSchema = elementSchema;
     this.hints = hints;
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszCollectionT ofElements(Iterable<SszElementT> elements) {
+    SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
+    int idx = 0;
+    for (SszElementT element : elements) {
+      writableCopy.set(idx++, element);
+    }
+    return (SszCollectionT) writableCopy.commitChanges();
   }
 
   protected abstract TreeNode createDefaultTree();
