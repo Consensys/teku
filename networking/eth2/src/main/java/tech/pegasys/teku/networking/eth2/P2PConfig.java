@@ -16,14 +16,20 @@ package tech.pegasys.teku.networking.eth2;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
+import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class P2PConfig {
 
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
+  private final GossipConfigurator gossipConfigurator;
 
+  private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int peerRateLimit;
@@ -32,12 +38,16 @@ public class P2PConfig {
   private P2PConfig(
       final NetworkConfig networkConfig,
       final DiscoveryConfig discoveryConfig,
+      final GossipConfigurator gossipConfigurator,
+      final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit) {
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
+    this.gossipConfigurator = gossipConfigurator;
+    this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.peerRateLimit = peerRateLimit;
@@ -54,6 +64,14 @@ public class P2PConfig {
 
   public DiscoveryConfig getDiscoveryConfig() {
     return discoveryConfig;
+  }
+
+  public GossipConfigurator getGossipConfigurator() {
+    return gossipConfigurator;
+  }
+
+  public GossipEncoding getGossipEncoding() {
+    return gossipEncoding;
   }
 
   public int getTargetSubnetSubscriberCount() {
@@ -79,6 +97,9 @@ public class P2PConfig {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
+    private SpecConstants specConstants;
+    private Boolean isGossipScoringEnabled = false;
+    private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = 2;
     private Boolean subscribeAllSubnetsEnabled = false;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
@@ -87,13 +108,32 @@ public class P2PConfig {
     private Builder() {}
 
     public P2PConfig build() {
+      validate();
+
+      final GossipConfigurator gossipConfigurator =
+          isGossipScoringEnabled
+              ? GossipConfigurator.scoringEnabled(specConstants)
+              : GossipConfigurator.NOOP;
+      final Eth2Context eth2Context =
+          Eth2Context.builder()
+              .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())
+              .gossipEncoding(gossipEncoding)
+              .build();
+      networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
+
       return new P2PConfig(
           networkConfig.build(),
           discoveryConfig.build(),
+          gossipConfigurator,
+          gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           peerRateLimit,
           peerRequestLimit);
+    }
+
+    private void validate() {
+      checkNotNull(specConstants);
     }
 
     public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
@@ -103,6 +143,18 @@ public class P2PConfig {
 
     public Builder discovery(final Consumer<DiscoveryConfig.Builder> consumer) {
       consumer.accept(discoveryConfig);
+      return this;
+    }
+
+    public Builder specConstants(final SpecConstants specConstants) {
+      checkNotNull(specConstants);
+      this.specConstants = specConstants;
+      return this;
+    }
+
+    public Builder isGossipScoringEnabled(final Boolean gossipScoringEnabled) {
+      checkNotNull(gossipScoringEnabled);
+      isGossipScoringEnabled = gossipScoringEnabled;
       return this;
     }
 
