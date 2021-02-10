@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Abstract schema of {@link tech.pegasys.teku.ssz.backing.SszComposite} subclasses */
-public interface SszCompositeSchema<SszCompositeT extends SszData>
+public interface SszCompositeSchema<SszCompositeT extends SszComposite>
     extends SszSchema<SszCompositeT> {
 
   /**

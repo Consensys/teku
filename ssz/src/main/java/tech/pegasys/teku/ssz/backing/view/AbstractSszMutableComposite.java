@@ -203,7 +203,7 @@ public abstract class AbstractSszMutableComposite<
 
   /** Creating nested mutable copies is not supported yet */
   @Override
-  public SszMutableData createWritableCopy() {
+  public SszMutableComposite<SszChildT> createWritableCopy() {
     throw new UnsupportedOperationException(
         "createWritableCopy() is now implemented for immutable SszData only");
   }
