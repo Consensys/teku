@@ -33,9 +33,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetGenesis extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/beacon/genesis";
@@ -80,11 +78,6 @@ public class GetGenesis extends AbstractHandler implements Handler {
     if (!chainDataProvider.isStoreAvailable()) {
       return Optional.empty();
     }
-    final ForkInfo forkInfo = chainDataProvider.getForkInfo().asInternalForkInfo();
-    return Optional.of(
-        new GenesisData(
-            chainDataProvider.getGenesisTime(),
-            forkInfo.getGenesisValidatorsRoot(),
-            Constants.GENESIS_FORK_VERSION));
+    return Optional.of(chainDataProvider.getGenesisData());
   }
 }

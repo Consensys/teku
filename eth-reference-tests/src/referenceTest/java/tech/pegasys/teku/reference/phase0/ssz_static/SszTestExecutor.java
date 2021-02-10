@@ -48,12 +48,12 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.SpecDependent;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final Supplier<SszSchema<T>> sszType;
