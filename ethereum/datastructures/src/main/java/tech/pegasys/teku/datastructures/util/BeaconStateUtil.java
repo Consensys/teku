@@ -572,14 +572,17 @@ public class BeaconStateUtil {
    */
   public static UInt64 get_committee_count_per_slot(BeaconState state, UInt64 epoch) {
     List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
+    return get_committee_count_per_slot(active_validator_indices.size());
+  }
+
+  public static UInt64 get_committee_count_per_slot(final int activeValidatorCount) {
     return UInt64.valueOf(
         Math.max(
             1,
             Math.min(
                 MAX_COMMITTEES_PER_SLOT,
                 Math.floorDiv(
-                    Math.floorDiv(active_validator_indices.size(), SLOTS_PER_EPOCH),
-                    TARGET_COMMITTEE_SIZE))));
+                    Math.floorDiv(activeValidatorCount, SLOTS_PER_EPOCH), TARGET_COMMITTEE_SIZE))));
   }
 
   /**

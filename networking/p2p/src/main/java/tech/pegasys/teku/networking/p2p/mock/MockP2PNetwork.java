@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -141,4 +142,7 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return Collections.emptyMap();
   }
+
+  @Override
+  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {}
 }

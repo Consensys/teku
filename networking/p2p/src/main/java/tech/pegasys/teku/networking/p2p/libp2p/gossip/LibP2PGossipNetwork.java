@@ -32,6 +32,7 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.pubsub.gossip.GossipScoreParams;
+import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +59,9 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class LibP2PGossipNetwork implements GossipNetwork {
@@ -95,36 +99,15 @@ public class LibP2PGossipNetwork implements GossipNetwork {
       PreparedGossipMessageFactory defaultMessageFactory,
       GossipTopicFilter gossipTopicFilter,
       TopicHandlers topicHandlers) {
-    GossipParams gossipParams =
-        GossipParams.builder()
-            .D(gossipConfig.getD())
-            .DLow(gossipConfig.getDLow())
-            .DHigh(gossipConfig.getDHigh())
-            .DLazy(gossipConfig.getDLazy())
-            .fanoutTTL(gossipConfig.getFanoutTTL())
-            .gossipSize(gossipConfig.getAdvertise())
-            .gossipHistoryLength(gossipConfig.getHistory())
-            .heartbeatInterval(gossipConfig.getHeartbeatInterval())
-            .floodPublish(true)
-            .seenTTL(gossipConfig.getSeenTTL())
-            .maxPublishedMessages(1000)
-            .maxTopicsPerPublishedMessage(1)
-            .maxSubscriptions(200)
-            .maxGraftMessages(200)
-            .maxPruneMessages(200)
-            .maxPeersPerPruneMessage(1000)
-            .maxIHaveLength(5000)
-            .maxIWantMessageIds(5000)
-            .build();
+    final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
+    final GossipScoreParams scoreParams =
+        LibP2PParamsFactory.createGossipScoreParams(gossipConfig.getScoringConfig());
 
     final TopicSubscriptionFilter subscriptionFilter =
         new MaxCountTopicSubscriptionFilter(100, 200, gossipTopicFilter::isRelevantTopic);
     GossipRouter router =
         new GossipRouter(
-            gossipParams,
-            new GossipScoreParams(),
-            PubsubProtocol.Gossip_V_1_1,
-            subscriptionFilter) {
+            gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {
 
           final SeenCache<Optional<ValidationResult>> seenCache =
               new TTLSeenCache<>(
@@ -207,6 +190,21 @@ public class LibP2PGossipNetwork implements GossipNetwork {
               topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
     }
     return result;
+  }
+
+  @Override
+  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
+    if (config.isEmpty()) {
+      return;
+    }
+
+    final Map<String, GossipTopicScoreParams> params =
+        config.getTopicConfigs().entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> LibP2PParamsFactory.createTopicScoreParams(e.getValue())));
+    gossip.updateTopicScoreParams(params);
   }
 
   public Gossip getGossip() {
