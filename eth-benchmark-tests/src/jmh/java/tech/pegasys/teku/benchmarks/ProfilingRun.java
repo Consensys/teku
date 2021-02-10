@@ -48,11 +48,11 @@ import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
-
   public static Consumer<Object> blackHole = o -> {};
 
   @Disabled
@@ -80,6 +80,7 @@ public class ProfilingRun {
 
     BeaconState initialState =
         InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+    final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
@@ -94,8 +95,7 @@ public class ProfilingRun {
               recentChainData,
               new StateTransition());
       BlockImporter blockImporter =
-          new BlockImporter(
-              recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
+          new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -157,6 +157,7 @@ public class ProfilingRun {
 
     BeaconState initialState =
         InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+    final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
@@ -172,8 +173,7 @@ public class ProfilingRun {
               recentChainData,
               new StateTransition());
       BlockImporter blockImporter =
-          new BlockImporter(
-              recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
+          new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;
