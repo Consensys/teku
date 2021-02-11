@@ -19,6 +19,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
@@ -26,7 +27,7 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
   private static final Attestation anAttestation = dataStructureUtil.randomAttestation();
 
-  private static final Bitlist aggregation_bits = anAttestation.getAggregation_bits();
+  private static final SszBitlist aggregation_bits = anAttestation.getAggregation_bits();
   private static final AttestationData attestationData = anAttestation.getData();
   private static final BLSSignature signature = anAttestation.getAggregate_signature();
 

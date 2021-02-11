@@ -171,7 +171,7 @@ public class AttestationValidator {
               // reject those attestations at the networking layer.
               final List<Integer> committee =
                   get_beacon_committee(state, data.getSlot(), data.getIndex());
-              if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
+              if (committee.size() != attestation.getAggregation_bits().getSize()) {
                 return InternalValidationResult.REJECT;
               }
 

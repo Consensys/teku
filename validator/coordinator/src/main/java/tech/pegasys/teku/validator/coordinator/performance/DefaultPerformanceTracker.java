@@ -42,6 +42,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -203,15 +204,15 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
-    Map<Bytes32, NavigableMap<UInt64, Bitlist>> slotAndBitlistsByAttestationDataHash =
+    Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
         new HashMap<>();
     for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
       for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
         Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-        NavigableMap<UInt64, Bitlist> slotToBitlists =
+        NavigableMap<UInt64, SszBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        slotToBitlists.merge(slot, attestation.getAggregation_bits(), Bitlist::nullableOr);
+        slotToBitlists.merge(slot, attestation.getAggregation_bits(), SszBitlist::nullableOr);
       }
     }
 
@@ -221,7 +222,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
         continue;
       }
-      NavigableMap<UInt64, Bitlist> slotAndBitlists =
+      NavigableMap<UInt64, SszBitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
         if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {

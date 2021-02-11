@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AttestationUtil {
 
@@ -107,17 +108,17 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData data, Bitlist bits) {
+      BeaconState state, AttestationData data, SszBitlist bits) {
     return stream_attesting_indices(state, data, bits).boxed().collect(toList());
   }
 
   public static IntStream stream_attesting_indices(
-      BeaconState state, AttestationData data, Bitlist bits) {
+      BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
     checkArgument(
-        bits.getCurrentSize() == committee.size(),
+        bits.getSize() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
-        bits.getCurrentSize(),
+        bits.getSize(),
         committee.size());
     return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
   }
@@ -197,8 +198,8 @@ public class AttestationUtil {
 
   // Returns the index of the first attester in the Attestation
   public static int getAttesterIndexIntoCommittee(Attestation attestation) {
-    Bitlist aggregationBits = attestation.getAggregation_bits();
-    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
+    SszBitlist aggregationBits = attestation.getAggregation_bits();
+    for (int i = 0; i < aggregationBits.getSize(); i++) {
       if (aggregationBits.getBit(i)) {
         return i;
       }

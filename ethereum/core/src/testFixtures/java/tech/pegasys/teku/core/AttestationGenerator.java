@@ -45,6 +45,7 @@ import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationGenerator {
@@ -90,16 +91,16 @@ public class AttestationGenerator {
 
     int targetBitlistSize =
         srcAttestations.stream()
-            .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
+            .mapToInt(a -> a.getAggregation_bits().getSize())
             .max()
             .getAsInt();
-    Bitlist targetBitlist =
+    SszBitlist targetBitlist =
         srcAttestations.stream()
             .map(Attestation::getAggregation_bits)
             .reduce(
-                new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE),
-                Bitlist::or,
-                Bitlist::or);
+                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(targetBitlistSize),
+                SszBitlist::or,
+                SszBitlist::or);
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
