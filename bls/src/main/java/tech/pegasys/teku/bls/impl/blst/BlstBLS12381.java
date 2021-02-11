@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,6 +27,15 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();
@@ -75,13 +76,13 @@ public class BlstBLS12381 implements BLS12381 {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     }
 
-    P2 sig = new P2();
-    byte[] sig_for_wire =
-        sig.hash_to(message.toArrayUnsafe(), dst, new byte[0])
-            .sign_with(secretKey.getKey())
-            .serialize();
+    P2 p2 = new P2();
+    p2.hash_to(message.toArrayUnsafe(), dst, new byte[0])
+            .sign_with(secretKey.getKey());
 
-    return new BlstSignature(new P2_Affine(sig_for_wire), true);
+    P2_Affine p2_affine = p2.to_affine();
+    p2.delete();
+    return new BlstSignature(p2_affine, true);
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
@@ -141,7 +142,6 @@ public class BlstBLS12381 implements BLS12381 {
   BlstSemiAggregate blstPrepareBatchVerify(
       BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
 
-    P2 g2Hash = HashToCurve.hashToG2(message);
     Pairing ctx = new Pairing(true, ETH2_DST);
     try {
       BLST_ERROR ret =
@@ -166,8 +166,6 @@ public class BlstBLS12381 implements BLS12381 {
     } catch (Exception e) {
       ctx.delete();
       throw e;
-    } finally {
-      g2Hash.delete();
     }
   }
 
