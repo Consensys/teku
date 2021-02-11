@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.util.config.Constants.FORK_REFRESH_TIME_SECONDS;
-import static tech.pegasys.teku.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
+import static tech.pegasys.teku.util.config.Constants.FORK_REFRESH_TIME;
+import static tech.pegasys.teku.util.config.Constants.FORK_RETRY_DELAY;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +53,7 @@ public class ForkProvider extends Service {
         .exceptionallyCompose(
             error -> {
               LOG.error("Failed to retrieve current fork info. Retrying after delay", error);
-              return asyncRunner.runAfterDelay(this::loadForkInfo, FORK_RETRY_DELAY_SECONDS);
+              return asyncRunner.runAfterDelay(this::loadForkInfo, FORK_RETRY_DELAY);
             });
   }
 
@@ -68,16 +68,14 @@ public class ForkProvider extends Service {
             maybeFork -> {
               if (maybeFork.isEmpty()) {
                 LOG.trace("Fork info not available, retrying");
-                return asyncRunner.runAfterDelay(this::requestForkInfo, FORK_RETRY_DELAY_SECONDS);
+                return asyncRunner.runAfterDelay(this::requestForkInfo, FORK_RETRY_DELAY);
               }
               final ForkInfo forkInfo =
                   new ForkInfo(maybeFork.orElseThrow(), genesisValidatorsRoot);
               currentFork.complete(forkInfo);
               currentFork = SafeFuture.completedFuture(forkInfo);
               // Periodically refresh the current fork info.
-              asyncRunner
-                  .runAfterDelay(this::loadForkInfo, FORK_REFRESH_TIME_SECONDS)
-                  .reportExceptions();
+              asyncRunner.runAfterDelay(this::loadForkInfo, FORK_REFRESH_TIME).reportExceptions();
               return SafeFuture.completedFuture(forkInfo);
             });
   }

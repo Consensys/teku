@@ -168,9 +168,9 @@ public class Constants {
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
-  public static final Duration FORK_RETRY_DELAY_SECONDS = Duration.ofSeconds(10);
-  public static final Duration FORK_REFRESH_TIME_SECONDS = Duration.ofMinutes(5);
-  public static final Duration GENESIS_DATA_RETRY_DELAY_SECONDS = Duration.ofSeconds(10);
+  public static final Duration FORK_RETRY_DELAY = Duration.ofSeconds(10);
+  public static final Duration FORK_REFRESH_TIME = Duration.ofMinutes(5);
+  public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
 
   static {
     setConstants("minimal");
