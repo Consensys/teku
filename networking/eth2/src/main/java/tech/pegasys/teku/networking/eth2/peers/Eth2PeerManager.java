@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -45,7 +45,6 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -158,16 +157,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                 .finish(
                     () -> LOG.trace("Updated status for peer {}", peer),
                     err -> LOG.debug("Exception updating status for peer {}", peer, err)),
-        eth2StatusUpdateInterval.getSeconds(),
-        TimeUnit.SECONDS,
+        eth2StatusUpdateInterval,
         err -> LOG.debug("Exception calling runnable for updating peer status.", err));
   }
 
   Cancellable periodicallyPingPeer(Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
         () -> sendPeriodicPing(peer),
-        eth2RpcPingInterval.toMillis(),
-        TimeUnit.MILLISECONDS,
+        eth2RpcPingInterval,
         err -> LOG.debug("Exception calling runnable for pinging peer", err));
   }
 
@@ -220,8 +217,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                 peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
               }
             },
-            Constants.RESP_TIMEOUT,
-            TimeUnit.SECONDS)
+            RpcTimeouts.RESP_TIMEOUT)
         .finish(
             () -> {},
             error -> {

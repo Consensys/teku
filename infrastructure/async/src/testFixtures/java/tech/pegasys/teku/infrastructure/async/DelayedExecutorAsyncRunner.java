@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -45,8 +46,8 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit) {
-    final Executor executor = getDelayedExecutor(delayAmount, delayUnit);
+      ExceptionThrowingFutureSupplier<U> action, Duration delay) {
+    final Executor executor = getDelayedExecutor(delay.toMillis(), TimeUnit.MILLISECONDS);
     return runAsync(action, executor);
   }
 

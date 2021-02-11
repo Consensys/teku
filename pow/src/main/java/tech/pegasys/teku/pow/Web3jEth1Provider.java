@@ -17,7 +17,6 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
@@ -81,8 +80,7 @@ public class Web3jEth1Provider implements Eth1Provider {
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockHash, err);
               return asyncRunner
-                  .getDelayedFuture(
-                      Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
+                  .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
                   .thenCompose(__ -> getGuaranteedEth1Block(blockHash));
             });
   }
@@ -95,8 +93,7 @@ public class Web3jEth1Provider implements Eth1Provider {
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockNumber, err);
               return asyncRunner
-                  .getDelayedFuture(
-                      Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
+                  .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
                   .thenCompose(__ -> getGuaranteedEth1Block(blockNumber));
             });
   }

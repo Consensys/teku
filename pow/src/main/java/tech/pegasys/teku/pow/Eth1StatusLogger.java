@@ -15,8 +15,8 @@ package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Eth1StatusLogger {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int LOG_INTERVAL = 30000;
+  private static final Duration LOG_INTERVAL = Duration.ofSeconds(30);
 
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
@@ -53,7 +53,6 @@ public class Eth1StatusLogger {
           asyncRunner.runWithFixedDelay(
               () -> reportOutage(outageStartInSeconds),
               LOG_INTERVAL,
-              TimeUnit.MILLISECONDS,
               error -> LOG.error("Failed to check Eth1 status", error));
       activeReporter = Optional.of(reporter);
     }

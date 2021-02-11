@@ -19,7 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,9 +159,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {
-    return storageQueryChannel
-        .onStoreRequest()
-        .orTimeout(Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS);
+    return storageQueryChannel.onStoreRequest().orTimeout(Constants.STORAGE_REQUEST_TIMEOUT);
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStoreWithRetry(
@@ -174,8 +171,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                 LOG.trace("Storage initialization timed out, will retry.");
                 return asyncRunner.runAfterDelay(
                     () -> requestInitialStoreWithRetry(asyncRunner),
-                    Constants.STORAGE_REQUEST_TIMEOUT,
-                    TimeUnit.SECONDS);
+                    Constants.STORAGE_REQUEST_TIMEOUT);
               } else {
                 STATUS_LOG.fatalErrorInitialisingStorage(err);
                 return SafeFuture.failedFuture(err);

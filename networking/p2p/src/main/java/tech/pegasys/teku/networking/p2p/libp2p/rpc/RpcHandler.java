@@ -29,7 +29,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,7 +67,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
     Interruptor timeoutInterruptor =
         SafeFuture.createInterruptor(
-            asyncRunner.getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+            asyncRunner.getDelayedFuture(TIMEOUT),
             () ->
                 new StreamTimeoutException(
                     "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
