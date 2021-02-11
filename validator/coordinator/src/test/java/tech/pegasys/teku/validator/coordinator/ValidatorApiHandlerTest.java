@@ -374,7 +374,7 @@ class ValidatorApiHandlerTest {
     assertThat(maybeAttestation).isPresent();
     final Attestation attestation = maybeAttestation.orElseThrow();
     assertThat(attestation.getAggregation_bits())
-        .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(4));
     assertThat(attestation.getData())
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(
@@ -415,7 +415,7 @@ class ValidatorApiHandlerTest {
     assertThat(maybeAttestation).isPresent();
     final Attestation attestation = maybeAttestation.orElseThrow();
     assertThat(attestation.getAggregation_bits())
-        .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(4));
     assertThat(attestation.getData())
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(
