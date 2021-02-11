@@ -45,9 +45,6 @@ public interface SszBitlist extends SszList<SszBit> {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 
-  @Deprecated
-  Bitlist toLegacy();
-
   @Override
   SszBitlistSchema<SszBitlist> getSchema();
 

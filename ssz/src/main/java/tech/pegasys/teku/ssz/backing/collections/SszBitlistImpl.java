@@ -43,14 +43,17 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     return (SszBitlistSchema<SszBitlist>) super.getSchema();
   }
 
-  @Override
-  public Bitlist toLegacy() {
-    return value;
+  public Bitlist toLegacy(SszBitlist bl) {
+    if (bl instanceof SszBitlistImpl) {
+      return ((SszBitlistImpl) bl).value;
+    } else {
+      throw new UnsupportedOperationException("TODO");
+    }
   }
 
   @Override
   public SszBitlist or(SszBitlist other) {
-    return new SszBitlistImpl(getSchema(), value.or(other.toLegacy()));
+    return new SszBitlistImpl(getSchema(), value.or(toLegacy(other)));
   }
 
   @Override
@@ -65,12 +68,12 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
 
   @Override
   public boolean intersects(SszBitlist other) {
-    return value.intersects(other.toLegacy());
+    return value.intersects(toLegacy(other));
   }
 
   @Override
   public boolean isSuperSetOf(SszBitlist other) {
-    return value.isSuperSetOf(other.toLegacy());
+    return value.isSuperSetOf(toLegacy(other));
   }
 
   @Override

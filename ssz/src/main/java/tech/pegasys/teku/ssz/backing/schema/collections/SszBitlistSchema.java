@@ -25,9 +25,6 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
     return new SszBitlistSchemaImpl(maxLength);
   }
 
-  @Deprecated
-  SszBitlistT fromLegacy(Bitlist bitlist);
-
   default SszBitlistT empty() {
     return createZero(0);
   }
