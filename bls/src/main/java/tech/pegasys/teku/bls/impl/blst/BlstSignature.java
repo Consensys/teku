@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
@@ -27,6 +21,13 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
@@ -128,11 +129,7 @@ public class BlstSignature implements Signature {
 
   @Override
   public Bytes toBytesCompressed() {
-    try {
-      return Bytes.wrap(ec2Point.compress());
-    } catch (Exception e) {
-      return Bytes.wrap(new byte[96]);
-    }
+    return Bytes.wrap(ec2Point.compress());
   }
 
   @Override
