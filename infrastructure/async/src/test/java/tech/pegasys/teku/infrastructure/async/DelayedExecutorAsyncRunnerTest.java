@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -133,8 +133,7 @@ public class DelayedExecutorAsyncRunnerTest {
   public void testRecurrentTaskCancel() throws Exception {
     AtomicInteger counter = new AtomicInteger();
     Cancellable task =
-        asyncRunner.runWithFixedDelay(
-            counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
+        asyncRunner.runWithFixedDelay(counter::incrementAndGet, Duration.ofMillis(100), t -> {});
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
     task.cancel();
     int cnt1 = counter.get();
@@ -154,8 +153,7 @@ public class DelayedExecutorAsyncRunnerTest {
                 throw new RuntimeException("Ups");
               }
             },
-            100,
-            TimeUnit.MILLISECONDS,
+            Duration.ofMillis(100),
             exception::set);
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
     assertThat(exception.get()).hasMessageContaining("Ups");

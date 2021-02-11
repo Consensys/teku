@@ -44,8 +44,8 @@ public class ListBenchmark {
   SszList<SszUInt64> l2r;
 
   public ListBenchmark() {
-    SszListSchema<SszUInt64> type =
-        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 100_000_000);
+    SszListSchema<SszUInt64, ?> type =
+        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 100_000_000);
     SszList<SszUInt64> l1 = type.getDefault();
 
     SszMutableList<SszUInt64> l2w = l1.createWritableCopy();
@@ -60,9 +60,9 @@ public class ListBenchmark {
   }
 
   @Setup(Level.Iteration)
-  public void init() throws Exception {
-    SszListSchema<SszUInt64> type =
-        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
+  public void init() {
+    SszListSchema<SszUInt64, ?> type =
+        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
     SszList<SszUInt64> l1 = type.getDefault();
     l1w = l1.createWritableCopy();
   }
@@ -71,8 +71,8 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    SszListSchema<SszUInt64> type =
-        new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
+    SszListSchema<SszUInt64, ?> type =
+        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, getListMaxSize());
     SszList<SszUInt64> l1 = type.getDefault();
     bh.consume(l1);
   }

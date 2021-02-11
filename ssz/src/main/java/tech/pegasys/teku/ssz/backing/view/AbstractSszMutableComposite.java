@@ -169,7 +169,7 @@ public abstract class AbstractSszMutableComposite<
           .map(
               e ->
                   new TreeUpdates.Update(
-                      type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
+                      type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
           .collect(TreeUpdates.collector());
     } else {
       return packChanges(newChildValues, original);

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.sync.forward.multipeer.chains;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -55,7 +55,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlocksByRange(startSlot, count, step, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, step, listener), 3, TimeUnit.SECONDS);
+          () -> requestBlocksByRange(startSlot, count, step, listener), Duration.ofSeconds(3));
     }
   }
 

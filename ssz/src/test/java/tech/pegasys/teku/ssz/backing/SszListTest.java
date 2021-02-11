@@ -37,10 +37,10 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -72,8 +72,8 @@ public class SszListTest {
             .mapToObj(i -> new TestSubContainer(UInt64.valueOf(i), Bytes32.leftPad(Bytes.of(i))))
             .collect(Collectors.toList());
 
-    SszListSchema<TestSubContainer> type =
-        new SszListSchema<>(TestContainers.TestSubContainer.SSZ_SCHEMA, 100);
+    SszListSchema<TestSubContainer, ?> type =
+        SszListSchema.create(TestContainers.TestSubContainer.SSZ_SCHEMA, 100);
     SszList<TestSubContainer> lr1 = type.getDefault();
     SszMutableList<TestSubContainer> lw1 = lr1.createWritableCopy();
 
@@ -122,7 +122,7 @@ public class SszListTest {
 
   @SuppressWarnings("unchecked")
   static <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
-    if (schema instanceof SszPrimitiveSchema) {
+    if (schema instanceof AbstractSszPrimitiveSchema) {
       if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
         return (Stream<T>) Stream.generate(bitSupplier);
       } else if (schema == SszPrimitiveSchemas.BYTE_SCHEMA) {
@@ -136,8 +136,9 @@ public class SszListTest {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof SszContainerSchema) {
-      SszContainerSchema<SszContainer> containerSchema = (SszContainerSchema<SszContainer>) schema;
+    } else if (schema instanceof AbstractSszContainerSchema) {
+      AbstractSszContainerSchema<SszContainer> containerSchema =
+          (AbstractSszContainerSchema<SszContainer>) schema;
       return Stream.generate(
           () -> {
             List<? extends SszData> children =
@@ -226,16 +227,16 @@ public class SszListTest {
 
   static Stream<Arguments> testComplexStaticTypeParameters() {
     return Stream.of(
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 0L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 1L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 31L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 32L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 8), 33L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 0L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 1L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 31L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 32L),
-        Arguments.of(new SszVectorSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 5), 33L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 8), 0L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 8), 1L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 8), 31L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 8), 32L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 8), 33L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 5), 0L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 5), 1L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 5), 31L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 5), 32L),
+        Arguments.of(SszVectorSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 5), 33L),
         Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 0L),
         Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 1L),
         Arguments.of(TestDoubleSuperContainer.SSZ_SCHEMA, 5L));
@@ -249,21 +250,21 @@ public class SszListTest {
         Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 3L),
         Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 4L),
         Arguments.of(VariableSizeContainer.SSZ_SCHEMA, 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 0), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 1), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 32), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 33), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 63), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 64), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 65), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 0), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 1), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 7), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 8), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 9), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 15), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 16), 5L),
-        Arguments.of(new SszListSchema<>(SszPrimitiveSchemas.BYTES4_SCHEMA, 17), 5L));
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 0), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 1), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 32), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 33), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 63), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 64), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 65), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 0), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 1), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 7), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 8), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 9), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 15), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 16), 5L),
+        Arguments.of(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 17), 5L));
   }
 
   static Stream<Arguments> testAllNonBitListTypeParameters() {
@@ -285,7 +286,7 @@ public class SszListTest {
       return;
     }
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
     SszList<T> lr1 = sszListSchema.getDefault();
     SszMutableList<T> lw1 = lr1.createWritableCopy();
     lw1.append(randomData(listElementType));
@@ -314,8 +315,8 @@ public class SszListTest {
     }
     int maxLength = (int) maxLengthL;
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
-    SszListSchema<T> largerSszListSchema = new SszListSchema<>(listElementType, maxLength + 10);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
+    SszListSchema<T, ?> largerSszListSchema = SszListSchema.create(listElementType, maxLength + 10);
 
     // should normally deserialize smaller lists
     for (int i = max(0, maxLength - 8); i <= maxLength; i++) {
@@ -350,7 +351,7 @@ public class SszListTest {
   @MethodSource("testPrimitiveNonBitListTypeParameters")
   <T extends SszData> void testNonBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
 
     assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.EMPTY);
@@ -363,7 +364,7 @@ public class SszListTest {
   @MethodSource("testPrimitiveBitListTypeParameters")
   <T extends SszData> void testBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
 
     assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.of(1));
@@ -376,7 +377,7 @@ public class SszListTest {
   @MethodSource("testAllListTypeParameters")
   <T extends SszData> void testEmptyListHash(SszSchema<T> listElementType, long maxLength) {
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
     SszList<T> emptyList = sszListSchema.getDefault();
 
     assertThat(emptyList.hashTreeRoot())
@@ -390,7 +391,7 @@ public class SszListTest {
   @MethodSource("testAllListTypeParameters")
   <T extends SszData> void testSszRoundtrip(SszSchema<T> listElementType, long maxLength) {
 
-    SszListSchema<T> sszListSchema = new SszListSchema<>(listElementType, maxLength);
+    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
 
     LongStream.of(1, 2, 3, 4, 5, maxLength - 1, maxLength)
         .takeWhile(i -> i <= maxLength)
@@ -398,7 +399,7 @@ public class SszListTest {
         .forEach(
             size -> {
               SszList<T> list =
-                  sszListSchema.ofElements(
+                  sszListSchema.createFromElements(
                       randomDataStream(listElementType).limit(size).collect(Collectors.toList()));
               Bytes ssz = list.sszSerialize();
               SszList<T> list1 = sszListSchema.sszDeserialize(ssz);

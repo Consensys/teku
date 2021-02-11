@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -52,8 +52,8 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends SszContainer {
 
-    SszContainerSchema<SubContainerRead> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    AbstractSszContainerSchema<SubContainerRead> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             SubContainerReadImpl::new);
 
@@ -79,15 +79,15 @@ public class ContainerViewTest {
 
   public interface ContainerRead extends SszContainer {
 
-    SszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    AbstractSszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SubContainerRead.SSZ_SCHEMA,
-                new SszListSchema<>(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
-                new SszListSchema<>(SubContainerRead.SSZ_SCHEMA, 2),
-                new SszVectorSchema<>(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
+                SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
+                SszListSchema.create(SubContainerRead.SSZ_SCHEMA, 2),
+                SszVectorSchema.create(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
             ContainerReadImpl::new);
 
     static ContainerRead createDefault() {
@@ -147,13 +147,13 @@ public class ContainerViewTest {
   public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
-    public static final SszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
-        SszContainerSchema.create(
+    public static final AbstractSszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(
-        SszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
+        AbstractSszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -178,7 +178,8 @@ public class ContainerViewTest {
       super(SSZ_SCHEMA, backingNode, cache);
     }
 
-    private SubContainerReadImpl(SszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
+    private SubContainerReadImpl(
+        AbstractSszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -209,7 +210,7 @@ public class ContainerViewTest {
 
   public static class ContainerReadImpl extends SszContainerImpl implements ContainerRead {
 
-    public ContainerReadImpl(SszContainerSchema<?> type, TreeNode backingNode) {
+    public ContainerReadImpl(AbstractSszContainerSchema<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 

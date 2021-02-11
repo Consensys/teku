@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -74,9 +75,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public <U> SafeFuture<U> runAfterDelay(
-      final ExceptionThrowingFutureSupplier<U> action,
-      final long delayAmount,
-      final TimeUnit delayUnit) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     if (shutdown.get()) {
       LOG.debug("Ignoring async task because shutdown is in progress");
       return new SafeFuture<>();
@@ -91,8 +90,8 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
               handleExecutorError(result, t);
             }
           },
-          delayAmount,
-          delayUnit);
+          delay.toMillis(),
+          TimeUnit.MILLISECONDS);
     } catch (final Throwable t) {
       handleExecutorError(result, t);
     }

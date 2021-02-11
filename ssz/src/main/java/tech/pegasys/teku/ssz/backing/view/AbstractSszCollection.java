@@ -24,10 +24,6 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public abstract class AbstractSszCollection<SszElementT extends SszData>
     extends AbstractSszComposite<SszElementT> implements SszCollection<SszElementT> {
 
-  protected AbstractSszCollection(SszCollection<SszElementT> otherComposite) {
-    super(otherComposite);
-  }
-
   protected AbstractSszCollection(SszCompositeSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
@@ -44,7 +40,7 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
         (SszCollectionSchema<SszElementT, ?>) this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     TreeNode node =
-        getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
+        getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
     return (SszElementT)
         elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }

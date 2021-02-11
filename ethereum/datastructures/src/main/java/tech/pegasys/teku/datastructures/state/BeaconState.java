@@ -27,8 +27,8 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
@@ -56,21 +56,21 @@ public interface BeaconState extends SszContainer {
           5,
           "block_roots",
           () ->
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField STATE_ROOTS_FIELD =
       new SszField(
           6,
           "state_roots",
           () ->
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
           "historical_roots",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.SSZ_SCHEMA);
   SszField ETH1_DATA_VOTES_FIELD =
@@ -78,7 +78,7 @@ public interface BeaconState extends SszContainer {
           9,
           "eth1_data_votes",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   Eth1Data.SSZ_SCHEMA,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   SszField ETH1_DEPOSIT_INDEX_FIELD =
@@ -88,7 +88,7 @@ public interface BeaconState extends SszContainer {
           11,
           "validators",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   Validator.SSZ_SCHEMA,
                   Constants.VALIDATOR_REGISTRY_LIMIT,
                   SszSchemaHints.sszSuperNode(8)));
@@ -97,28 +97,28 @@ public interface BeaconState extends SszContainer {
           12,
           "balances",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
           "randao_mixes",
           () ->
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField SLASHINGS_FIELD =
       new SszField(
           14,
           "slashings",
           () ->
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           15,
           "previous_epoch_attestations",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   PendingAttestation.SSZ_SCHEMA,
                   Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
@@ -126,7 +126,7 @@ public interface BeaconState extends SszContainer {
           16,
           "current_epoch_attestations",
           () ->
-              new SszListSchema<>(
+              SszListSchema.create(
                   PendingAttestation.SSZ_SCHEMA,
                   Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField JUSTIFICATION_BITS_FIELD =
@@ -147,7 +147,7 @@ public interface BeaconState extends SszContainer {
     return SSZ_SCHEMA.get();
   }
 
-  class BeaconStateSchema extends SszContainerSchema<BeaconState> {
+  class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
 
     public BeaconStateSchema() {
       super(

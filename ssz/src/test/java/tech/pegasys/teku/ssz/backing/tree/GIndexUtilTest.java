@@ -145,6 +145,10 @@ public class GIndexUtilTest {
     assertThat(gIdxChildGIndex(0b100L, 1, 2)).isEqualTo(0b10001L);
     assertThat(gIdxChildGIndex(0b100L, 2, 2)).isEqualTo(0b10010L);
     assertThat(gIdxChildGIndex(0b100L, 3, 2)).isEqualTo(0b10011L);
+    assertThat(gIdxChildGIndex(SELF_G_INDEX, 0, 31))
+        .isEqualTo(0b10000000_00000000_00000000_00000000L);
+    assertThat(gIdxChildGIndex(SELF_G_INDEX, 1, 31))
+        .isEqualTo(0b10000000_00000000_00000000_00000001L);
 
     assertThatThrownBy(() -> gIdxChildGIndex(INVALID_G_INDEX, 0, 2));
     assertThatThrownBy(() -> gIdxChildGIndex(SELF_G_INDEX, 4, 2));

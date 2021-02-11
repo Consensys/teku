@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -492,6 +493,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
     return (SafeFuture<T>) super.whenComplete(action);
+  }
+
+  public SafeFuture<T> orTimeout(final Duration timeout) {
+    return orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   @Override
