@@ -596,7 +596,6 @@ class BatchSyncTest {
         storageSystem.chainUpdater().advanceChainUntil(batch4.getFirstSlot().longValue());
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
 
-
     // We receive a block from in batch4 which is a child of an existing block
     // but it's not the common ancestor sync started from
     final SignedBeaconBlock batch4Block = chainBuilder.getBlockAtSlot(batch4.getFirstSlot());

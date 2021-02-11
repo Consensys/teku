@@ -251,8 +251,8 @@ public class BatchSync implements Sync {
   /**
    * Returns true if firstBlock is the first block in the chain we're trying to download.
    *
-   * Specifically, it's parent block must exist in our Store and be from the same slot as the common
-   * ancestor.  If we accept the child of any block we have, we may incorrectly mark batches
+   * <p>Specifically, it's parent block must exist in our Store and be from the same slot as the
+   * common ancestor. If we accept the child of any block we have, we may incorrectly mark batches
    * between the common ancestor and this block as empty, then later contest that when we received
    * blocks from those batches.
    *
