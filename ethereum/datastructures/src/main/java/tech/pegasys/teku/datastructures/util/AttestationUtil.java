@@ -42,7 +42,6 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
@@ -200,11 +199,6 @@ public class AttestationUtil {
       }
     }
     throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
-  }
-
-  // Returns the indices of the attesters in the Attestation
-  public static List<Integer> getAttesterIndicesIntoCommittee(Bitlist aggregationBits) {
-    return aggregationBits.getAllSetBits();
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information
