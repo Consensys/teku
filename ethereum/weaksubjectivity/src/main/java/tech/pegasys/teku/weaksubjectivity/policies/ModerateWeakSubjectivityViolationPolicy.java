@@ -34,7 +34,6 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,
-      final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod) {
     // Warn periodically
@@ -42,6 +41,6 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
         currentSlot,
         p ->
             p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-                latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod));
+                latestFinalizedCheckpoint, currentSlot, wsPeriod));
   }
 }

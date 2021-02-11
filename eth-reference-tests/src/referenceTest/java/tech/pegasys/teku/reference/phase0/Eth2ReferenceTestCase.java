@@ -15,8 +15,6 @@ package tech.pegasys.teku.reference.phase0;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
@@ -27,6 +25,7 @@ import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public abstract class Eth2ReferenceTestCase {
 
@@ -50,13 +49,7 @@ public abstract class Eth2ReferenceTestCase {
   private void setConstants(final String spec) {
     if (!spec.equals("general")) {
       Constants.setConstants(spec);
-      if (Constants.SLOTS_PER_HISTORICAL_ROOT
-          != SimpleOffsetSerializer.classReflectionInfo
-              .get(BeaconStateImpl.class)
-              .getVectorLengths()
-              .get(0)) {
-        SimpleOffsetSerializer.setConstants();
-      }
+      SpecDependent.resetAll();
     }
   }
 

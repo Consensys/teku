@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class SyncAsyncRunner implements AsyncRunner {
   public static final SyncAsyncRunner SYNC_RUNNER = new SyncAsyncRunner();
@@ -27,9 +27,7 @@ public class SyncAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      final ExceptionThrowingFutureSupplier<U> action,
-      final long delayAmount,
-      final TimeUnit delayUnit) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     throw new UnsupportedOperationException(
         "Delayed execution not possible using " + SyncAsyncRunner.class.getName());
   }

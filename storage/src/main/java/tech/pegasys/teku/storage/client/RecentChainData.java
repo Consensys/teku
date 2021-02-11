@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -124,15 +125,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.always(runnable);
   }
 
-  public void initializeFromGenesis(final BeaconState genesisState) {
+  public void initializeFromGenesis(final BeaconState genesisState, final UInt64 currentTime) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    initializeFromAnchorPoint(genesis);
+    initializeFromAnchorPoint(genesis, currentTime);
   }
 
-  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint) {
+  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint, final UInt64 currentTime) {
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint)
+                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint, currentTime)
             .storeConfig(storeConfig)
             .build();
 
@@ -324,6 +325,17 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.of(ForkChoiceUtil.get_current_slot(store));
   }
 
+  public Optional<UInt64> getCurrentEpoch() {
+    return getCurrentSlot().map(BeaconStateUtil::compute_epoch_at_slot);
+  }
+
+  /** @return The number of slots between our chainhead and the current slot by time */
+  public Optional<UInt64> getChainHeadSlotsBehind() {
+    return chainHead
+        .map(StateAndBlockSummary::getSlot)
+        .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
+  }
+
   public Optional<ForkInfo> getHeadForkInfo() {
     return getBestState().map(BeaconState::getForkInfo);
   }
@@ -398,6 +410,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public boolean containsBlock(final Bytes32 root) {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
+  }
+
+  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
+    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }
 
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {

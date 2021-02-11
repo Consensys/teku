@@ -46,7 +46,7 @@ public class FetchBlockTaskTest {
   @Test
   public void run_successful() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
     assertThat(task.getBlockRoot()).isEqualTo(blockRoot);
 
@@ -64,7 +64,7 @@ public class FetchBlockTaskTest {
   @Test
   public void run_noPeers() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final SafeFuture<FetchBlockResult> result = task.run();
@@ -77,7 +77,7 @@ public class FetchBlockTaskTest {
   @Test
   public void run_failAndRetryWithNoNewPeers() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
@@ -103,7 +103,7 @@ public class FetchBlockTaskTest {
   @Test
   public void run_failAndRetryWithNewPeer() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
@@ -134,7 +134,7 @@ public class FetchBlockTaskTest {
   @Test
   public void run_withMultiplesPeersAvailable() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
@@ -158,7 +158,7 @@ public class FetchBlockTaskTest {
   @Test
   public void cancel() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);

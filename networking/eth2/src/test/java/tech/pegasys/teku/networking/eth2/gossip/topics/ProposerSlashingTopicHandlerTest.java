@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
@@ -56,7 +54,7 @@ public class ProposerSlashingTopicHandlerTest {
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
           ProposerSlashingGossipManager.TOPIC_NAME,
-          ProposerSlashing.class);
+          ProposerSlashing.SSZ_SCHEMA);
 
   @BeforeEach
   public void setup() {
@@ -78,7 +76,8 @@ public class ProposerSlashingTopicHandlerTest {
   @Test
   public void handleMessage_ignoredSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(IGNORE));
+    when(processor.process(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -89,7 +88,8 @@ public class ProposerSlashingTopicHandlerTest {
   @Test
   public void handleMessage_rejectedSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(processor.process(slashing)).thenReturn(SafeFuture.completedFuture(REJECT));
+    when(processor.process(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
@@ -117,7 +117,7 @@ public class ProposerSlashingTopicHandlerTest {
             gossipEncoding,
             forkDigest,
             ProposerSlashingGossipManager.TOPIC_NAME,
-            ProposerSlashing.class);
+            ProposerSlashing.SSZ_SCHEMA);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }
 }

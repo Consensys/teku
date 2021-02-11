@@ -28,7 +28,7 @@ public class ContainersGenerator {
   private final Path targetSrcPath;
   private final String typePackagePath = "tech/pegasys/teku/ssz/backing/containers/";
   private final String viewPackagePath = "tech/pegasys/teku/ssz/backing/containers/";
-  private final String containerTypeTemplateFile = "ContainerTypeTemplate.java";
+  private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
 
   public ContainersGenerator(Path templateSourcePath, Path destinationSourcePath) {
@@ -55,7 +55,7 @@ public class ContainersGenerator {
     }
 
     System.out.println(
-        "Generating ContainerView classes from templates in: "
+        "Generating SszContainer classes from templates in: "
             + templateSourcePath.toAbsolutePath()
             + ", to source dir: "
             + targetSourcePath.toAbsolutePath());
@@ -70,7 +70,7 @@ public class ContainersGenerator {
   }
 
   public void generateContainerClasses(int fieldsCount) {
-    String typeClassName = "ContainerType" + fieldsCount;
+    String typeClassName = "ContainerSchema" + fieldsCount;
     String viewClassName = "Container" + fieldsCount;
     Map<String, String> vars =
         Map.ofEntries(
@@ -79,7 +79,7 @@ public class ContainersGenerator {
             Map.entry(
                 "ViewTypes",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "V" + i + " extends ViewRead")
+                    .mapToObj(i -> "V" + i + " extends SszData")
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewTypeNames",
@@ -89,12 +89,22 @@ public class ContainersGenerator {
             Map.entry(
                 "FieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "ViewType<V" + i + "> fieldType" + i)
+                    .mapToObj(i -> "SszSchema<V" + i + "> fieldSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedFieldsDeclarations",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "NamedSchema<V" + i + "> fieldNamedSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "Fields",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "fieldType" + i)
+                    .mapToObj(i -> "fieldSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedFields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldNamedSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewParams",
@@ -115,6 +125,17 @@ public class ContainersGenerator {
                                     + "protected V$ getField$() {\n"
                                     + "    return getAny($);\n"
                                     + "  }")
+                                .replace("$", "" + i))
+                    .collect(Collectors.joining("\n\n"))),
+            Map.entry(
+                "TypeGetters",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i ->
+                            ("  @SuppressWarnings(\"unchecked\")\n"
+                                    + "  public SszSchema<V$> getFieldSchema$() {\n"
+                                    + "    return (SszSchema<V$>) getChildSchema($);\n"
+                                    + "  }\n")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(

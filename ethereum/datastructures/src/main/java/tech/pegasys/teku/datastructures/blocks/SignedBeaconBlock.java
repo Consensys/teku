@@ -13,88 +13,97 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Suppliers;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
-import jdk.jfr.Label;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SignedBeaconBlock
-    implements BeaconBlockSummary, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
+    implements BeaconBlockSummary {
 
-  private final BeaconBlock message;
-  private final BLSSignature signature;
+  public static class SignedBeaconBlockSchema
+      extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
 
-  @Label("sos-ignore")
-  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
+    public SignedBeaconBlockSchema() {
+      super(
+          "SignedBeaconBlock",
+          namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+    }
 
+    @Override
+    public SignedBeaconBlock createFromBackingNode(TreeNode node) {
+      return new SignedBeaconBlock(this, node);
+    }
+  }
+
+  public static SignedBeaconBlockSchema getSszSchema() {
+    return SSZ_SCHEMA.get();
+  }
+
+  public static final SpecDependent<SignedBeaconBlockSchema> SSZ_SCHEMA =
+      SpecDependent.of(SignedBeaconBlockSchema::new);
+
+  private BLSSignature signatureCache;
+
+  private SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  @Deprecated
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    this.message = message;
-    this.signature = signature;
+    this(SSZ_SCHEMA.get(), message, signature);
+  }
+
+  public SignedBeaconBlock(
+      final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
+    super(type, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public BeaconBlock getMessage() {
-    return message;
+    return getField0();
   }
 
   public BLSSignature getSignature() {
-    return signature;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    final List<Bytes> parts = new ArrayList<>();
-    parts.add(Bytes.EMPTY);
-    parts.addAll(signature.get_fixed_parts());
-    return parts;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(message), Bytes.EMPTY);
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
+    }
+    return signatureCache;
   }
 
   @Override
   public UInt64 getSlot() {
-    return message.getSlot();
+    return getMessage().getSlot();
   }
 
   @Override
   public Bytes32 getParentRoot() {
-    return message.getParentRoot();
+    return getMessage().getParentRoot();
   }
 
   @Override
   public UInt64 getProposerIndex() {
-    return message.getProposerIndex();
+    return getMessage().getProposerIndex();
   }
 
   @Override
   public Bytes32 getBodyRoot() {
-    return message.getBodyRoot();
+    return getMessage().getBodyRoot();
   }
 
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
-    return Optional.of(message);
+    return Optional.of(getMessage());
   }
 
   @Override
@@ -109,7 +118,7 @@ public class SignedBeaconBlock
    */
   @Override
   public Bytes32 getStateRoot() {
-    return message.getStateRoot();
+    return getMessage().getStateRoot();
   }
 
   /**
@@ -119,43 +128,6 @@ public class SignedBeaconBlock
    */
   @Override
   public Bytes32 getRoot() {
-    return message.hash_tree_root();
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedBeaconBlock that = (SignedBeaconBlock) o;
-    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, signature);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("signature", signature)
-        .toString();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot.get();
-  }
-
-  public Bytes32 calculateRoot() {
-    return HashTreeUtil.merkleize(
-        List.of(
-            message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
+    return getMessage().hashTreeRoot();
   }
 }

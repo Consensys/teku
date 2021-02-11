@@ -90,8 +90,8 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -169,7 +169,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       new GossipPublisher<>();
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
-  private volatile Optional<AnchorPoint> initialAnchor = Optional.empty();
   private volatile PerformanceTracker performanceTracker;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
@@ -277,13 +276,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (initialAnchor.isPresent()) {
-                // If we already have an existing database and an initial anchor, validate that they
-                // are consistent
-                return wsInitializer
-                    .assertInitialAnchorIsConsistentWithExistingData(
-                        client, initialAnchor.get(), storageQueryChannel)
-                    .thenApply(__ -> client);
+              } else if (beaconConfig.eth2NetworkConfig().isUsingCustomInitialState()) {
+                STATUS_LOG.warnInitialStateIgnored();
               }
               return SafeFuture.completedFuture(client);
             })
@@ -392,17 +386,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   @VisibleForTesting
   SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
-    this.initialAnchor = wsInitializer.loadInitialAnchorPoint(beaconConfig.weakSubjectivity());
-    // Validate
-    initialAnchor.ifPresent(
-        anchor -> {
-          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot);
-        });
-
     return wsInitializer
-        .finalizeAndStoreConfig(
-            beaconConfig.weakSubjectivity(), initialAnchor, queryChannel, updateChannel)
+        .finalizeAndStoreConfig(beaconConfig.weakSubjectivity(), queryChannel, updateChannel)
         .thenAccept(
             finalConfig -> {
               this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
@@ -478,7 +463,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(recentChainData, combinedChainDataClient),
+            new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient),
             combinedChainDataClient,
             syncService,
             blockFactory,
@@ -505,7 +490,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
     STATUS_LOG.loadingGenesisFromEth1Chain();
-    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
+    eventChannels.subscribe(
+        Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, specProvider));
   }
 
   private void initAttestationManager() {
@@ -517,7 +503,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AttestationValidator attestationValidator =
         new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
     AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(recentChainData, attestationValidator);
+        new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
     blockImporter.subscribeToVerifiedBlockAttestations(
         (attestations) ->
             attestations.forEach(
@@ -550,21 +536,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             voluntaryExitGossipPublisher.publish(item);
           }
         });
     // Set up gossip for attester slashings
     attesterSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             attesterSlashingGossipPublisher.publish(item);
           }
         });
     // Set up gossip for proposer slashings
     proposerSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.equals(InternalValidationResult.ACCEPT)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
@@ -706,9 +692,18 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void setupInitialState(final RecentChainData client) {
+    final Optional<AnchorPoint> initialAnchor =
+        wsInitializer.loadInitialAnchorPoint(beaconConfig.eth2NetworkConfig().getInitialState());
+    // Validate
+    initialAnchor.ifPresent(
+        anchor -> {
+          final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
+          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+        });
+
     if (initialAnchor.isPresent()) {
       final AnchorPoint anchor = initialAnchor.get();
-      client.initializeFromAnchorPoint(anchor);
+      client.initializeFromAnchorPoint(anchor, timeProvider.getTimeInSeconds());
       if (anchor.isGenesis()) {
         EVENT_LOG.genesisEvent(
             anchor.getStateRoot(),
@@ -731,7 +726,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         InteropStartupUtil.createMockedStartInitialBeaconState(
             config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
-    recentChainData.initializeFromGenesis(genesisState);
+    recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(),

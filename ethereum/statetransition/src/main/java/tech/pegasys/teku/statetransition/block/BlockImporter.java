@@ -72,7 +72,7 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
-    if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
+    if (recentChainData.containsBlock(block.getMessage().hashTreeRoot())) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
           () -> formatBlock(block));

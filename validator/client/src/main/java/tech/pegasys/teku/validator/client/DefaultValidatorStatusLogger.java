@@ -16,11 +16,11 @@ package tech.pegasys.teku.validator.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
-  private static final long INITIAL_STATUS_CHECK_RETRY_PERIOD = 5; // seconds
+  private static final Duration INITIAL_STATUS_CHECK_RETRY_PERIOD = Duration.ofSeconds(5);
 
   final List<BLSPublicKey> validatorPublicKeys;
   final ValidatorApiChannel validatorApiChannel;
@@ -78,7 +78,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private SafeFuture<Void> retryInitialValidatorStatusCheck() {
     return asyncRunner.runAfterDelay(
-        this::printInitialValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD, TimeUnit.SECONDS);
+        this::printInitialValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD);
   }
 
   private void printValidatorStatusesOneByOne(

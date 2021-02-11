@@ -43,14 +43,17 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 /**
  * This is in the wrong module but we want to be able to access the datastructure types to check
@@ -61,53 +64,54 @@ public class LengthBoundsCalculatorTest {
   @BeforeAll
   static void setConstants() {
     Constants.setConstants("mainnet");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @AfterAll
   static void restoreConstants() {
     Constants.setConstants("minimal");
-    SimpleOffsetSerializer.setConstants();
+    SpecDependent.resetAll();
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateParameters")
-  void shouldCalculateCorrectLengthBounds(final Class<?> type, final LengthBounds expected) {
-    final LengthBounds actual = SimpleOffsetSerializer.getLengthBounds(type).orElseThrow();
-    assertThat(actual).isEqualTo(expected);
+  void shouldCalculateCorrectLengthBounds(final SszSchema<?> type, final SszLengthBounds expected) {
+    assertThat(type.getSszLengthBounds()).isEqualTo(expected);
   }
 
   // Expected values taken from https://gist.github.com/protolambda/db75c7faa1e94f2464787a480e5d613e
   static Stream<Arguments> generateParameters() {
     return Stream.of(
-        Arguments.of(AggregateAndProof.class, new LengthBounds(337, 593)),
-        Arguments.of(Attestation.class, new LengthBounds(229, 485)),
-        Arguments.of(AttestationData.class, new LengthBounds(128, 128)),
-        Arguments.of(AttesterSlashing.class, new LengthBounds(464, 33232)),
-        Arguments.of(BeaconBlock.class, new LengthBounds(304, 157656)),
-        Arguments.of(BeaconBlockBody.class, new LengthBounds(220, 157572)),
-        Arguments.of(BeaconBlockHeader.class, new LengthBounds(112, 112)),
-        Arguments.of(BeaconStateImpl.class, new LengthBounds(2687377, 141837543039377L)),
-        Arguments.of(Checkpoint.class, new LengthBounds(40, 40)),
-        Arguments.of(Deposit.class, new LengthBounds(1240, 1240)),
-        Arguments.of(DepositData.class, new LengthBounds(184, 184)),
-        Arguments.of(DepositMessage.class, new LengthBounds(88, 88)),
-        Arguments.of(Eth1Data.class, new LengthBounds(72, 72)),
-        Arguments.of(Fork.class, new LengthBounds(16, 16)),
-        Arguments.of(ForkData.class, new LengthBounds(36, 36)),
-        Arguments.of(HistoricalBatch.class, new LengthBounds(524288, 524288)),
-        Arguments.of(IndexedAttestation.class, new LengthBounds(228, 16612)),
-        Arguments.of(PendingAttestation.class, new LengthBounds(149, 405)),
-        Arguments.of(ProposerSlashing.class, new LengthBounds(416, 416)),
-        Arguments.of(SignedAggregateAndProof.class, new LengthBounds(437, 693)),
-        Arguments.of(SignedBeaconBlock.class, new LengthBounds(404, 157756)),
-        Arguments.of(SignedBeaconBlockHeader.class, new LengthBounds(208, 208)),
-        Arguments.of(SignedVoluntaryExit.class, new LengthBounds(112, 112)),
-        Arguments.of(Validator.class, new LengthBounds(121, 121)),
-        Arguments.of(VoluntaryExit.class, new LengthBounds(16, 16)),
-        Arguments.of(MetadataMessage.class, new LengthBounds(16, 16)),
-        Arguments.of(StatusMessage.class, new LengthBounds(84, 84)),
-        Arguments.of(GoodbyeMessage.class, new LengthBounds(8, 8)),
-        Arguments.of(BeaconBlocksByRangeRequestMessage.class, new LengthBounds(24, 24)));
+        Arguments.of(AggregateAndProof.SSZ_SCHEMA, SszLengthBounds.ofBytes(337, 593)),
+        Arguments.of(Attestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(229, 485)),
+        Arguments.of(AttestationData.SSZ_SCHEMA, SszLengthBounds.ofBytes(128, 128)),
+        Arguments.of(AttesterSlashing.SSZ_SCHEMA, SszLengthBounds.ofBytes(464, 33232)),
+        Arguments.of(BeaconBlock.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(304, 157656)),
+        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(220, 157572)),
+        Arguments.of(BeaconBlockHeader.SSZ_SCHEMA, SszLengthBounds.ofBytes(112, 112)),
+        Arguments.of(
+            BeaconState.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(2687377, 141837543039377L)),
+        Arguments.of(Checkpoint.SSZ_SCHEMA, SszLengthBounds.ofBytes(40, 40)),
+        Arguments.of(Deposit.SSZ_SCHEMA, SszLengthBounds.ofBytes(1240, 1240)),
+        Arguments.of(DepositData.SSZ_SCHEMA, SszLengthBounds.ofBytes(184, 184)),
+        Arguments.of(DepositMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(88, 88)),
+        Arguments.of(Eth1Data.SSZ_SCHEMA, SszLengthBounds.ofBytes(72, 72)),
+        Arguments.of(Fork.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(ForkData.SSZ_SCHEMA, SszLengthBounds.ofBytes(36, 36)),
+        Arguments.of(HistoricalBatch.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(524288, 524288)),
+        Arguments.of(IndexedAttestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(228, 16612)),
+        Arguments.of(PendingAttestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(149, 405)),
+        Arguments.of(ProposerSlashing.SSZ_SCHEMA, SszLengthBounds.ofBytes(416, 416)),
+        Arguments.of(SignedAggregateAndProof.SSZ_SCHEMA, SszLengthBounds.ofBytes(437, 693)),
+        Arguments.of(SignedBeaconBlock.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(404, 157756)),
+        Arguments.of(SignedBeaconBlockHeader.SSZ_SCHEMA, SszLengthBounds.ofBytes(208, 208)),
+        Arguments.of(SignedVoluntaryExit.SSZ_SCHEMA, SszLengthBounds.ofBytes(112, 112)),
+        Arguments.of(Validator.SSZ_SCHEMA, SszLengthBounds.ofBytes(121, 121)),
+        Arguments.of(VoluntaryExit.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(MetadataMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(StatusMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(84, 84)),
+        Arguments.of(GoodbyeMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(8, 8)),
+        Arguments.of(
+            BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(24, 24)));
   }
 }

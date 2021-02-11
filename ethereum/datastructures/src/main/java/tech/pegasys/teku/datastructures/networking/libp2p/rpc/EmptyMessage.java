@@ -13,39 +13,30 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import java.util.Collections;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
-public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
+
+  public static class EmptyMessageSchema extends AbstractSszListSchema<SszByte, EmptyMessage> {
+    private EmptyMessageSchema() {
+      super(SszPrimitiveSchemas.BYTE_SCHEMA, 0);
+    }
+
+    @Override
+    public EmptyMessage createFromBackingNode(TreeNode node) {
+      return EMPTY_MESSAGE;
+    }
+  }
+
+  public static final EmptyMessageSchema SSZ_SCHEMA = new EmptyMessageSchema();
   public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
-  @Override
-  public int getSSZFieldCount() {
-    return 0;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return 0;
+  private EmptyMessage() {
+    super(SSZ_SCHEMA, SSZ_SCHEMA.getDefaultTree());
   }
 
   @Override

@@ -21,26 +21,28 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 /**
  * Responsible for decoding a stream of responses to a single rpc request
  *
  * @param <T>
  */
-public class RpcResponseDecoder<T> {
+public class RpcResponseDecoder<T extends SszData> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
-  private final Class<T> responseType;
+  private final SszSchema<T> responseSchema;
   private final RpcEncoding encoding;
 
-  public RpcResponseDecoder(Class<T> responseType, RpcEncoding encoding) {
-    this.responseType = responseType;
+  public RpcResponseDecoder(SszSchema<T> responseSchema, RpcEncoding encoding) {
+    this.responseSchema = responseSchema;
     this.encoding = encoding;
   }
 
@@ -70,7 +72,7 @@ public class RpcResponseDecoder<T> {
 
     if (respCode == SUCCESS_RESPONSE_CODE) {
       if (payloadDecoder.isEmpty()) {
-        payloadDecoder = Optional.of(encoding.createDecoder(responseType));
+        payloadDecoder = Optional.of(encoding.createDecoder(responseSchema));
       }
       Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
       if (ret.isPresent()) {
@@ -80,7 +82,7 @@ public class RpcResponseDecoder<T> {
       return ret;
     } else {
       if (errorDecoder.isEmpty()) {
-        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.class));
+        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.SSZ_SCHEMA));
       }
       Optional<RpcException> rpcException =
           errorDecoder

@@ -37,6 +37,7 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -104,8 +105,8 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
-          if (result.equals(InternalValidationResult.ACCEPT)
-              || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+          if (result.code().equals(ValidationResultCode.ACCEPT)
+              || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
             importBlock(block).finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -206,7 +207,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
 
     blocksToDrop.forEach(
         blockToDrop -> {
-          invalidBlockRoots.add(blockToDrop.getMessage().hash_tree_root());
+          invalidBlockRoots.add(blockToDrop.getMessage().hashTreeRoot());
           pendingBlocks.remove(blockToDrop);
         });
   }

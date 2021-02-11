@@ -19,7 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
@@ -51,7 +50,7 @@ public class TreeUtil {
     }
   }
 
-  @VisibleForTesting static final TreeNode[] ZERO_TREES;
+  @VisibleForTesting public static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
@@ -140,8 +139,12 @@ public class TreeUtil {
     }
   }
 
+  public static long nextPowerOf2(long x) {
+    return x <= 1 ? 1 : Long.highestOneBit(x - 1) << 1;
+  }
+
   public static int treeDepth(long maxChunks) {
-    return Long.bitCount(Utils.nextPowerOf2(maxChunks) - 1);
+    return Long.bitCount(nextPowerOf2(maxChunks) - 1);
   }
 
   /** Estimates the number of 'non-default' tree nodes */

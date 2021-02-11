@@ -24,18 +24,15 @@ import io.libp2p.core.dsl.Builder.Defaults;
 import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multistream.ProtocolBinding;
+import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.etc.types.ByteArrayExtKt;
-import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.Ping;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
-import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +51,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
@@ -126,25 +124,24 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getMuxers().add(MplexStreamMuxer::new);
+              b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
               b.getNetwork().listen(listenAddr.toString());
 
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
 
-              List<ChannelHandler> beforeSecureLogHandler = new ArrayList<>();
               if (config.getWireLogsConfig().isLogWireCipher()) {
-                beforeSecureLogHandler.add(new LoggingHandler("wire.ciphered", LogLevel.DEBUG));
+                b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
               }
-              Firewall firewall = new Firewall(Duration.ofSeconds(30), beforeSecureLogHandler);
-              b.getDebug().getBeforeSecureHandler().setHandler(firewall);
+              Firewall firewall = new Firewall(Duration.ofSeconds(30));
+              b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
 
               if (config.getWireLogsConfig().isLogWirePlain()) {
-                b.getDebug().getAfterSecureHandler().setLogger(LogLevel.DEBUG, "wire.plain");
+                b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
               }
               if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().setLogger(LogLevel.DEBUG, "wire.mux");
+                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
               }
 
               b.getConnectionHandlers().add(peerManager);
@@ -289,6 +286,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return gossipNetwork.getSubscribersByTopic();
+  }
+
+  @Override
+  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
+    gossipNetwork.updateGossipTopicScoring(config);
   }
 
   @FunctionalInterface

@@ -14,18 +14,19 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class BlockHeaderFuzzInputTest extends AbstractFuzzInputTest<BlockHeaderFuzzInput> {
 
   @Override
-  protected Class<BlockHeaderFuzzInput> getInputType() {
-    return BlockHeaderFuzzInput.class;
+  protected SszSchema<BlockHeaderFuzzInput> getInputType() {
+    return BlockHeaderFuzzInput.createType();
   }
 
   @Override
   protected BlockHeaderFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     return new BlockHeaderFuzzInput(state, block.getMessage());
   }

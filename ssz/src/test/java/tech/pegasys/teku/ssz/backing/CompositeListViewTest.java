@@ -18,20 +18,21 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class CompositeListViewTest {
 
-  static ViewType<?> testType =
-      new ViewType<>() {
+  static SszSchema<TestView> testType =
+      new SszSchema<>() {
 
         @Override
         public TreeNode getDefaultTree() {
@@ -69,7 +70,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+        public int sszSerializeTree(TreeNode node, SszWriter writer) {
           return 0;
         }
 
@@ -77,9 +78,14 @@ public class CompositeListViewTest {
         public TreeNode sszDeserializeTree(SszReader reader) {
           return null;
         }
+
+        @Override
+        public SszLengthBounds getSszLengthBounds() {
+          return SszLengthBounds.ZERO;
+        }
       };
 
-  static class TestView implements ViewRead {
+  static class TestView implements SszData {
     TreeNode node;
     public final int v;
 
@@ -93,7 +99,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewType<?> getType() {
+    public SszSchema<?> getSchema() {
       return testType;
     }
 
@@ -106,15 +112,15 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewWrite createWritableCopy() {
+    public SszMutableData createWritableCopy() {
       throw new UnsupportedOperationException();
     }
   }
 
   @Test
   public void simpleTest1() {
-    ListViewType<TestView> listType = new ListViewType<>(testType, 3);
-    ListViewWrite<TestView> list = listType.getDefault().createWritableCopy();
+    SszListSchema<TestView, ?> listType = SszListSchema.create(testType, 3);
+    SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.commitChanges().getBackingNode();

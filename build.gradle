@@ -55,6 +55,9 @@ apply plugin: 'com.jfrog.bintray'
 def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
 def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
 
+def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
+def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
+
 def bintrayPackage = bintray.pkg {
   repo = 'pegasys-repo'
   name = 'teku'
@@ -358,8 +361,8 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerVariants = [
+  "jdk15",
   "jdk14",
-  "jdk15"
 ]
 
 task distDocker  {
@@ -471,6 +474,16 @@ subprojects {
     apply plugin: 'maven-publish'
 
     publishing {
+      repositories {
+        maven {
+          name = "cloudsmith"
+          url = "https://api-g.cloudsmith.io/maven/consensys/teku/"
+          credentials {
+            username = cloudsmithUser
+            password = cloudsmithKey
+          }
+        }
+      }
       publications {
         mavenJava(MavenPublication) {
           groupId "tech.pegasys.teku.internal"
@@ -484,6 +497,8 @@ subprojects {
             usage('java-api') { fromResolutionOf('runtimeClasspath') }
             usage('java-runtime') { fromResolutionResult() }
           }
+          suppressPomMetadataWarningsFor('testFixturesApiElements')
+          suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
           pom {
             name = "Teku - ${project.name}"
             url = 'https://github.com/ConsenSys/teku'
@@ -723,6 +738,16 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
   }
 }
 
+task cloudsmithUpload {
+  dependsOn([distTar, distZip])
+  doLast {
+    exec {
+      executable project.file("scripts/cloudsmith-upload.sh")
+      args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+    }
+  }
+}
+
 bintray {
   user = bintrayUser
   key = bintrayKey
@@ -747,9 +772,6 @@ task dockerUpload {
   def dockerBuildVersion = "${rootProject.version}"
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
-
-  def psImageName = "pegasyseng/teku"
-  def psImage = "${psImageName}:${dockerBuildVersion}"
 
   def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
@@ -776,9 +798,7 @@ task dockerUpload {
     // Publish default version without variant suffix
     exec {
       def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
-      cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
       additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
-      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
       executable "sh"
       args '-c', cmd
     }

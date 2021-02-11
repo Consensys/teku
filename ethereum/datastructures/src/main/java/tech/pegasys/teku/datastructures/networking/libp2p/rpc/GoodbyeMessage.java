@@ -15,18 +15,29 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container1;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema1;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
+    implements RpcRequest {
 
-  private final UInt64 reason;
+  public static class GoodbyeMessageSchema extends ContainerSchema1<GoodbyeMessage, SszUInt64> {
+
+    public GoodbyeMessageSchema() {
+      super("GoodbyeMessage", namedSchema("reason", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public GoodbyeMessage createFromBackingNode(TreeNode node) {
+      return new GoodbyeMessage(this, node);
+    }
+  }
+
+  public static final GoodbyeMessageSchema SSZ_SCHEMA = new GoodbyeMessageSchema();
 
   public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
   public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
@@ -38,56 +49,22 @@ public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializabl
   public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
   public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
 
+  private GoodbyeMessage(GoodbyeMessageSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
   public GoodbyeMessage(UInt64 reason) {
+    super(SSZ_SCHEMA, new SszUInt64(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)
             || REASON_IRRELEVANT_NETWORK.equals(reason)
             || MIN_CUSTOM_REASON_CODE.compareTo(reason) <= 0,
         "Invalid reason code for Goodbye message");
-    this.reason = reason;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 1;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encodeUInt64(reason.longValue()));
   }
 
   public UInt64 getReason() {
-    return reason;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(reason);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof GoodbyeMessage)) {
-      return false;
-    }
-
-    GoodbyeMessage other = (GoodbyeMessage) obj;
-    return Objects.equals(this.getReason(), other.getReason());
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("reason", reason).toString();
+    return getField0().get();
   }
 
   @Override

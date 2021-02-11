@@ -28,7 +28,6 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -109,8 +108,7 @@ public class DepositFetcher {
 
               return asyncRunner.runAfterDelay(
                   () -> sendNextBatchRequest(fetchState),
-                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
-                  TimeUnit.SECONDS);
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
             })
         .thenCompose(
             __ -> {

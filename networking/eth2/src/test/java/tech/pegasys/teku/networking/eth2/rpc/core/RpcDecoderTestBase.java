@@ -28,20 +28,16 @@ import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 
 public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> PAYLOAD_ENCODER =
-      new BeaconBlocksByRootRequestMessageEncoder();
   protected static final RpcEncoding ENCODING = RpcEncoding.SSZ_SNAPPY;
   protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
-  protected static final Bytes MESSAGE_PLAIN_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
+  protected static final Bytes MESSAGE_PLAIN_DATA = MESSAGE.sszSerialize();
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_PLAIN_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
@@ -62,8 +58,8 @@ public class RpcDecoderTestBase {
               asyncRunner,
               "",
               ENCODING,
-              BeaconBlocksByRootRequestMessage.class,
-              BeaconBlocksByRootRequestMessage.class,
+              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
+              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
               false,
               mock(LocalMessageHandler.class),
               peerLookup);

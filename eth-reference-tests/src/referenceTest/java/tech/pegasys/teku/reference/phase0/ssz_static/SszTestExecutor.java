@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -39,7 +40,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
@@ -47,51 +48,56 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.util.config.SpecDependent;
 
-public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
-    implements TestExecutor {
-  private final Class<T> clazz;
+public class SszTestExecutor<T extends SszData> implements TestExecutor {
+  private final Supplier<SszSchema<T>> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
-          .put("ssz_static/AggregateAndProof", new SszTestExecutor<>(AggregateAndProof.class))
-          .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.class))
-          .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.class))
-          .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.class))
-          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.class))
-          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.class))
-          .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.class))
-          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconStateImpl.class))
-          .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.class))
-          .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.class))
-          .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.class))
-          .put("ssz_static/DepositMessage", new SszTestExecutor<>(DepositMessage.class))
+          .put("ssz_static/AggregateAndProof", new SszTestExecutor<>(AggregateAndProof.SSZ_SCHEMA))
+          .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.SSZ_SCHEMA))
+          .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.SSZ_SCHEMA))
+          .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.SSZ_SCHEMA))
+          .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.SSZ_SCHEMA))
+          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconState.SSZ_SCHEMA))
+          .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.SSZ_SCHEMA))
+          .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.SSZ_SCHEMA))
+          .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.SSZ_SCHEMA))
+          .put("ssz_static/DepositMessage", new SszTestExecutor<>(DepositMessage.SSZ_SCHEMA))
           .put("ssz_static/Eth1Block", IGNORE_TESTS) // We don't have an Eth1Block structure
-          .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.class))
-          .put("ssz_static/Fork", new SszTestExecutor<>(Fork.class))
-          .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.class))
-          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.class))
-          .put("ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.class))
-          .put("ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.class))
-          .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.class))
+          .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.SSZ_SCHEMA))
+          .put("ssz_static/Fork", new SszTestExecutor<>(Fork.SSZ_SCHEMA))
+          .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.SSZ_SCHEMA))
+          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.SSZ_SCHEMA))
+          .put(
+              "ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.SSZ_SCHEMA))
+          .put(
+              "ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.SSZ_SCHEMA))
+          .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.SSZ_SCHEMA))
           .put(
               "ssz_static/SignedAggregateAndProof",
-              new SszTestExecutor<>(SignedAggregateAndProof.class))
-          .put("ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.class))
+              new SszTestExecutor<>(SignedAggregateAndProof.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedBeaconBlock",
+              new SszTestExecutor<>(SignedBeaconBlock.getSszSchema()))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
-              new SszTestExecutor<>(SignedBeaconBlockHeader.class))
-          .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.class))
-          .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.class))
-          .put("ssz_static/Validator", new SszTestExecutor<>(Validator.class))
-          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.class))
+              new SszTestExecutor<>(SignedBeaconBlockHeader.SSZ_SCHEMA))
+          .put(
+              "ssz_static/SignedVoluntaryExit",
+              new SszTestExecutor<>(SignedVoluntaryExit.SSZ_SCHEMA))
+          .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.SSZ_SCHEMA))
+          .put("ssz_static/Validator", new SszTestExecutor<>(Validator.SSZ_SCHEMA))
+          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.SSZ_SCHEMA))
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)
@@ -102,8 +108,12 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
           .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
-  public SszTestExecutor(final Class<T> clazz) {
-    this.clazz = clazz;
+  public SszTestExecutor(final SpecDependent<? extends SszSchema<T>> sszType) {
+    this.sszType = sszType::get;
+  }
+
+  public SszTestExecutor(final SszSchema<T> sszType) {
+    this.sszType = () -> sszType;
   }
 
   @Override
@@ -112,13 +122,13 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     final Bytes inputData = Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
-    final T result = SimpleOffsetSerializer.deserialize(inputData, clazz);
+    final T result = sszType.get().sszDeserialize(inputData);
 
     // Deserialize
-    assertThat(result.hash_tree_root()).isEqualTo(expectedRoot);
+    assertThat(result.hashTreeRoot()).isEqualTo(expectedRoot);
 
     // Serialize
-    assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);
+    assertThat(result.sszSerialize()).isEqualTo(inputData);
   }
 
   private static class Roots {

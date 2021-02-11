@@ -15,25 +15,47 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 
-import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
-public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public class StatusMessage
+    extends Container5<StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64>
+    implements RpcRequest {
 
-  private final Bytes4 forkDigest;
-  private final Bytes32 finalizedRoot;
-  private final UInt64 finalizedEpoch;
-  private final Bytes32 headRoot;
-  private final UInt64 headSlot;
+  public static class StatusMessageSchema
+      extends ContainerSchema5<
+          StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64> {
+
+    public StatusMessageSchema() {
+      super(
+          "StatusMessage",
+          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("finalizedRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("finalizedEpoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("headRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("headSlot", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public StatusMessage createFromBackingNode(TreeNode node) {
+      return new StatusMessage(this, node);
+    }
+  }
+
+  public static final StatusMessageSchema SSZ_SCHEMA = new StatusMessageSchema();
+
+  private StatusMessage(StatusMessageSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public StatusMessage(
       Bytes4 forkDigest,
@@ -41,11 +63,13 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
       UInt64 finalizedEpoch,
       Bytes32 headRoot,
       UInt64 headSlot) {
-    this.forkDigest = forkDigest;
-    this.finalizedRoot = finalizedRoot;
-    this.finalizedEpoch = finalizedEpoch;
-    this.headRoot = headRoot;
-    this.headSlot = headSlot;
+    super(
+        SSZ_SCHEMA,
+        new SszBytes4(forkDigest),
+        new SszBytes32(finalizedRoot),
+        new SszUInt64(finalizedEpoch),
+        new SszBytes32(headRoot),
+        new SszUInt64(headSlot));
   }
 
   public static StatusMessage createPreGenesisStatus() {
@@ -59,78 +83,24 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
     return compute_fork_digest(genesisFork, emptyValidatorsRoot);
   }
 
-  @Override
-  public int getSSZFieldCount() {
-    return 5;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(forkDigest.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
-        SSZ.encodeUInt64(finalizedEpoch.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
-        SSZ.encodeUInt64(headSlot.longValue()));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(forkDigest, finalizedRoot, finalizedEpoch, headRoot, headSlot);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof StatusMessage)) {
-      return false;
-    }
-
-    StatusMessage other = (StatusMessage) obj;
-    return Objects.equals(
-            this.getForkDigest().getWrappedBytes(), other.getForkDigest().getWrappedBytes())
-        && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
-        && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
-        && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
-        && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
-  }
-
   public Bytes4 getForkDigest() {
-    return forkDigest;
+    return getField0().get();
   }
 
   public Bytes32 getFinalizedRoot() {
-    return finalizedRoot;
+    return getField1().get();
   }
 
   public UInt64 getFinalizedEpoch() {
-    return finalizedEpoch;
+    return getField2().get();
   }
 
   public Bytes32 getHeadRoot() {
-    return headRoot;
+    return getField3().get();
   }
 
   public UInt64 getHeadSlot() {
-    return headSlot;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("forkDigest", forkDigest)
-        .add("finalizedRoot", finalizedRoot)
-        .add("finalizedEpoch", finalizedEpoch)
-        .add("headRoot", headRoot)
-        .add("headSlot", headSlot)
-        .toString();
+    return getField4().get();
   }
 
   @Override

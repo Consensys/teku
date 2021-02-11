@@ -78,7 +78,7 @@ class ForkChoiceTest {
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(genesis.getState());
+    recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
 
     storageSystem
         .chainUpdater()

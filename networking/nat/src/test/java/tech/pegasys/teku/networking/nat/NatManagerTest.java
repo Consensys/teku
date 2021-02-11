@@ -15,78 +15,65 @@ package tech.pegasys.teku.networking.nat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.jupnp.UpnpService;
-import org.jupnp.model.meta.DeviceDetails;
-import org.jupnp.model.meta.RemoteDevice;
-import org.jupnp.model.meta.RemoteDeviceIdentity;
 import org.jupnp.model.meta.RemoteService;
-import org.jupnp.model.types.UDADeviceType;
-import org.jupnp.model.types.UDAServiceId;
-import org.jupnp.model.types.UDAServiceType;
-import org.jupnp.model.types.UDN;
-import org.jupnp.registry.Registry;
-import org.jupnp.registry.RegistryListener;
-import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class NatManagerTest {
-  private UpnpService natService;
-  private Registry registry;
+  private UpnpClient upnpClient;
   private NatManager natManager;
 
   @BeforeEach
   public void setup() {
-    natService = mock(UpnpService.class);
-    registry = mock(Registry.class);
-
-    when(natService.getRegistry()).thenReturn(registry);
-    natManager = new NatManager(natService, NatMethod.UPNP);
+    upnpClient = mock(UpnpClient.class);
+    natManager = new NatManager(upnpClient);
+    when(upnpClient.startup()).thenReturn(SafeFuture.completedFuture(null));
   }
 
   @Test
-  public void startShouldInvokeUPnPService() {
+  public void startShouldInvokeUPnPClientStartup() {
     assertThat(natManager.start()).isCompleted();
+    verify(upnpClient).startup();
 
-    verify(natService).startup();
-    verify(registry).addListener(notNull());
+    verifyNoMoreInteractions(upnpClient);
   }
 
   @Test
-  public void stopShouldInvokeUPnPService() {
+  public void stopShouldInvokeUPnPClientShutdown() {
+    final RemoteService remoteService = mock(RemoteService.class);
     assertThat(natManager.start()).isCompleted();
+    verify(upnpClient).startup();
+
+    when(upnpClient.getWanIpFuture()).thenReturn(SafeFuture.completedFuture(remoteService));
     assertThat(natManager.stop()).isCompleted();
 
-    verify(registry).removeListener(notNull());
-    verify(natService).shutdown();
+    verify(upnpClient).getWanIpFuture();
+    verify(upnpClient).shutdown();
+
+    verifyNoMoreInteractions(upnpClient);
   }
 
   @Test
   public void stopDoesNothingWhenAlreadyStopped() {
     assertThat(natManager.stop()).isCompleted();
-
-    verifyNoMoreInteractions(natService);
+    verifyNoMoreInteractions(upnpClient);
   }
 
   @Test
   public void startDoesNothingWhenAlreadyStarted() {
     assertThat(natManager.start()).isCompleted();
 
-    verify(natService).startup();
-    verify(natService).getRegistry();
+    verify(upnpClient).startup();
 
     assertThat(natManager.start()).hasFailed();
 
-    verifyNoMoreInteractions(natService);
+    verifyNoMoreInteractions(upnpClient);
   }
 
   @Test
@@ -110,41 +97,27 @@ class NatManagerTest {
   }
 
   @Test
-  public void registryListenerShouldDetectService() throws Exception {
+  public void shouldReleasePortsOnShutdown() {
+    final NatPortMapping tcpMapping = mock(NatPortMapping.class);
+    final SafeFuture<NatPortMapping> futureTcpMapping = SafeFuture.completedFuture(tcpMapping);
+
     assertThat(natManager.start()).isCompleted();
+    verify(upnpClient).startup();
 
-    ArgumentCaptor<RegistryListener> captor = ArgumentCaptor.forClass(RegistryListener.class);
-    verify(registry).addListener(captor.capture());
-    RegistryListener listener = captor.getValue();
+    // after the manager starts, the parent service will map any required ports
+    when(upnpClient.requestPortForward(1234, NetworkProtocol.TCP, NatServiceType.TEKU_P2P))
+        .thenReturn(futureTcpMapping);
+    natManager.requestPortForward(1234, NetworkProtocol.TCP, NatServiceType.TEKU_P2P);
+    verify(upnpClient).requestPortForward(1234, NetworkProtocol.TCP, NatServiceType.TEKU_P2P);
+    verifyNoMoreInteractions(upnpClient);
 
-    assertThat(listener).isNotNull();
-
-    // create a remote device that matches the WANIPConnection service that NatManager
-    // is looking for and directly call the registry listener
-    RemoteService wanIpConnectionService =
-        new RemoteService(
-            new UDAServiceType("WANIPConnection"),
-            new UDAServiceId("WANIPConnectionService"),
-            URI.create("/x_wanipconnection.xml"),
-            URI.create("/control?WANIPConnection"),
-            URI.create("/event?WANIPConnection"),
-            null,
-            null);
-
-    RemoteDevice device =
-        new RemoteDevice(
-            new RemoteDeviceIdentity(
-                UDN.valueOf(NatManager.SERVICE_TYPE_WAN_IP_CONNECTION),
-                3600,
-                new URL("http://127.63.31.15/"),
-                null,
-                InetAddress.getByName("127.63.31.15")),
-            new UDADeviceType("WANConnectionDevice"),
-            new DeviceDetails("WAN Connection Device"),
-            wanIpConnectionService);
-
-    listener.remoteDeviceAdded(registry, device);
-
-    assertThat(natManager.getWANIPConnectionService().join()).isEqualTo(wanIpConnectionService);
+    // when stop is called, the port that got mapped needs to be released
+    when(upnpClient.getWanIpFuture()).thenReturn(SafeFuture.completedFuture(null));
+    when(upnpClient.releasePortForward(tcpMapping)).thenReturn(SafeFuture.COMPLETE);
+    assertThat(natManager.stop()).isCompleted();
+    verify(upnpClient).getWanIpFuture();
+    verify(upnpClient).releasePortForward(tcpMapping);
+    verify(upnpClient).shutdown();
+    verifyNoMoreInteractions(upnpClient);
   }
 }

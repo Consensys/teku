@@ -24,7 +24,7 @@ public interface ResponseStream<O> {
                 maybeResult.orElseThrow(
                     () ->
                         new IllegalStateException(
-                            "No response received when single repsonse expected")));
+                            "No response received when single response expected")));
   }
 
   SafeFuture<Optional<O>> expectOptionalResponse();

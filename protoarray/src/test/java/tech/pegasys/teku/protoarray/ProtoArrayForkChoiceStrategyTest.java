@@ -313,13 +313,13 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
       final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
       when(block.getSlot()).thenReturn(slot);
       when(block.getRoot()).thenReturn(blockHash);
-      when(block.hash_tree_root()).thenReturn(blockHash);
+      when(block.hashTreeRoot()).thenReturn(blockHash);
       when(block.getParentRoot()).thenReturn(parentRoot);
       when(block.getStateRoot()).thenReturn(blockHash);
 
       final BeaconState state = mock(BeaconState.class);
       when(state.getSlot()).thenReturn(slot);
-      when(state.hash_tree_root()).thenReturn(blockHash);
+      when(state.hashTreeRoot()).thenReturn(blockHash);
       when(state.hashTreeRoot()).thenReturn(blockHash);
       when(state.getCurrent_justified_checkpoint()).thenReturn(checkpoint);
       when(state.getFinalized_checkpoint()).thenReturn(checkpoint);

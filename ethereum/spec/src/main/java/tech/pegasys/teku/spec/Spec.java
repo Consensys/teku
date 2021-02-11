@@ -14,15 +14,29 @@
 package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.CommitteeUtil;
 
 public class Spec {
   private final SpecConstants constants;
+  private final CommitteeUtil committeeUtil;
+  private final BeaconStateUtil beaconStateUtil;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
+    this.committeeUtil = new CommitteeUtil(this.constants);
+    this.beaconStateUtil = new BeaconStateUtil(this.constants);
   }
 
   public SpecConstants getConstants() {
     return constants;
+  }
+
+  public CommitteeUtil getCommitteeUtil() {
+    return committeeUtil;
+  }
+
+  public BeaconStateUtil getBeaconStateUtil() {
+    return beaconStateUtil;
   }
 }

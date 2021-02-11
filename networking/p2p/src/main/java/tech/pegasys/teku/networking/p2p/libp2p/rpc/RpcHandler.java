@@ -21,7 +21,6 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
-import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
 import io.libp2p.etc.util.netty.mux.RemoteWriteClosed;
@@ -30,7 +29,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,15 +67,13 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
     Interruptor timeoutInterruptor =
         SafeFuture.createInterruptor(
-            asyncRunner.getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+            asyncRunner.getDelayedFuture(TIMEOUT),
             () ->
                 new StreamTimeoutException(
                     "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
 
     return SafeFuture.notInterrupted(closeInterruptor)
-        .thenApply(
-            __ ->
-                connection.muxerSession().createStream(Multistream.create(this).toStreamHandler()))
+        .thenApply(__ -> connection.muxerSession().createStream(this))
         // waiting for a stream or interrupt
         .thenWaitFor(StreamPromise::getStream)
         .orInterrupt(closeInterruptor, timeoutInterruptor)

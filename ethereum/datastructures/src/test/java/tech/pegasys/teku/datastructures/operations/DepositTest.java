@@ -26,9 +26,9 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -82,17 +82,15 @@ class DepositTest {
   @Test
   void roundtripSSZ() {
     Deposit deposit = dataStructureUtil.randomDeposit();
-    Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
-    Deposit newDeposit = SimpleOffsetSerializer.deserialize(serialized, Deposit.class);
+    Bytes serialized = deposit.sszSerialize();
+    Deposit newDeposit = Deposit.SSZ_SCHEMA.sszDeserialize(serialized);
     assertEquals(deposit, newDeposit);
   }
 
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-    assertEquals(
-        vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.SSZ_SCHEMA));
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {

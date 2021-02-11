@@ -53,12 +53,15 @@ import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
+      StubSpecProvider.create().atSlot(UInt64.ZERO).getCommitteeUtil();
 
   @Test
   void minReturnsMin() {
@@ -406,7 +409,7 @@ class BeaconStateUtilTest {
     int listSize = 1000;
     boolean[] done = new boolean[listSize]; // Initialized to false
     for (int i = 0; i < listSize; i++) {
-      int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
+      int idx = committeeUtil.computeShuffledIndex(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
     }
@@ -417,7 +420,18 @@ class BeaconStateUtilTest {
   @Test
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
     ArrayList<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
-    deposits.get(1).getData().setSignature(BLSSignature.empty());
+    DepositWithIndex deposit = deposits.get(1);
+    DepositData depositData = deposit.getData();
+    DepositWithIndex invalidSigDeposit =
+        new DepositWithIndex(
+            new DepositData(
+                depositData.getPubkey(),
+                depositData.getWithdrawal_credentials(),
+                depositData.getAmount(),
+                BLSSignature.empty()),
+            deposit.getIndex());
+    deposits.set(1, invalidSigDeposit);
+
     BeaconState state = initialize_beacon_state_from_eth1(Bytes32.ZERO, UInt64.ZERO, deposits);
     assertEquals(2, state.getValidators().size());
     assertEquals(
@@ -453,7 +467,7 @@ class BeaconStateUtilTest {
   void getCurrentDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
   }
 
   @Test
@@ -475,7 +489,7 @@ class BeaconStateUtilTest {
   void getPreviousDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT));
     assertThat(BeaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(new BeaconBlock(state.hash_tree_root()).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
   }
 
   @Test

@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
-import org.hyperledger.besu.metrics.prometheus.MetricsConfiguration;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDB;
@@ -36,12 +35,7 @@ class RocksDbStatsTest {
   @Test
   void shouldNotCrashIfMetricsRequestedAfterClose() throws Exception {
     final ObservableMetricsSystem metricsSystem =
-        PrometheusMetricsSystem.init(
-            MetricsConfiguration.builder()
-                .enabled(true)
-                .metricCategories(Set.of(TekuMetricCategory.STORAGE_HOT_DB))
-                .timersEnabled(true)
-                .build());
+        new PrometheusMetricsSystem(Set.of(TekuMetricCategory.STORAGE_HOT_DB), true);
 
     try (RocksDbStats stats = new RocksDbStats(metricsSystem, TekuMetricCategory.STORAGE_HOT_DB)) {
       stats.registerMetrics(database);

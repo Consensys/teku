@@ -13,43 +13,31 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerType5;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class AttestationData
-    extends Container5<AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint>
-    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+    extends Container5<AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
+  public static class AttestationDataSchema
+      extends ContainerSchema5<
+          AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
 
-  static class AttestationDataType
-      extends ContainerType5<
-          AttestationData, UInt64View, UInt64View, Bytes32View, Checkpoint, Checkpoint> {
-
-    public AttestationDataType() {
+    public AttestationDataSchema() {
       super(
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.UINT64_TYPE,
-          BasicViewTypes.BYTES32_TYPE,
-          Checkpoint.TYPE,
-          Checkpoint.TYPE);
+          "AttestationData",
+          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("source", Checkpoint.SSZ_SCHEMA),
+          namedSchema("target", Checkpoint.SSZ_SCHEMA));
     }
 
     @Override
@@ -58,71 +46,25 @@ public class AttestationData
     }
   }
 
-  @SszTypeDescriptor public static final AttestationDataType TYPE = new AttestationDataType();
+  public static final AttestationDataSchema SSZ_SCHEMA = new AttestationDataSchema();
 
-  @SuppressWarnings("unused")
-  private final UInt64 slot = null;
-
-  @SuppressWarnings("unused")
-  private final UInt64 index = null;
-
-  // LMD GHOST vote
-  @SuppressWarnings("unused")
-  private final Bytes32 beacon_block_root = null;
-
-  // FFG vote
-  @SuppressWarnings("unused")
-  private final Checkpoint source = null;
-
-  @SuppressWarnings("unused")
-  private final Checkpoint target = null;
-
-  private AttestationData(AttestationDataType type, TreeNode backingNode) {
+  private AttestationData(AttestationDataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public AttestationData(
       UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
     super(
-        TYPE,
-        new UInt64View(slot),
-        new UInt64View(index),
-        new Bytes32View(beacon_block_root),
+        SSZ_SCHEMA,
+        new SszUInt64(slot),
+        new SszUInt64(index),
+        new SszBytes32(beacon_block_root),
         source,
         target);
   }
 
   public AttestationData(UInt64 slot, AttestationData data) {
     this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + getSource().getSSZFieldCount() + getTarget().getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encodeUInt64(getSlot().longValue()),
-            SSZ.encodeUInt64(getIndex().longValue()),
-            SSZ.encode(writer -> writer.writeFixedBytes(getBeacon_block_root()))));
-    fixedPartsList.addAll(getSource().get_fixed_parts());
-    fixedPartsList.addAll(getTarget().get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("slot", getSlot())
-        .add("index", getIndex())
-        .add("beacon_block_root", getBeacon_block_root())
-        .add("source", getSource())
-        .add("target", getTarget())
-        .toString();
   }
 
   public UInt64 getEarliestSlotForForkChoice() {
@@ -149,10 +91,5 @@ public class AttestationData
 
   public Checkpoint getTarget() {
     return getField4();
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 }

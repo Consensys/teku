@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getVali
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.ByteArrayInputStream;
@@ -33,11 +34,11 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.StateSszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -52,10 +53,10 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -63,13 +64,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ChainDataProvider {
   private final BlockSelectorFactory defaultBlockSelectorFactory;
   private final StateSelectorFactory defaultStateSelectorFactory;
+  private final SpecProvider specProvider;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
 
   public ChainDataProvider(
+      final SpecProvider specProvider,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
+    this.specProvider = specProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
     this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
@@ -83,16 +87,16 @@ public class ChainDataProvider {
     return recentChainData.getGenesisTime();
   }
 
-  public GetForkResponse getForkInfo() {
+  public GenesisData getGenesisData() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-
-    tech.pegasys.teku.datastructures.state.BeaconState bestBlockRootState =
-        recentChainData.getBestState().orElseThrow(ChainDataUnavailableException::new);
-
-    final ForkInfo forkInfo = bestBlockRootState.getForkInfo();
-    return new GetForkResponse(forkInfo);
+    final tech.pegasys.teku.datastructures.genesis.GenesisData genesisData =
+        recentChainData.getGenesisData().orElseThrow(ChainDataUnavailableException::new);
+    return new GenesisData(
+        genesisData.getGenesisTime(),
+        genesisData.getGenesisValidatorsRoot(),
+        specProvider.get(ZERO).getConstants().getGenesisForkVersion());
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
@@ -164,9 +168,8 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
-                            state.hash_tree_root().toUnprefixedHexString())));
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                            state.hashTreeRoot().toUnprefixedHexString())));
   }
 
   public SafeFuture<Optional<StateSszResponse>> getBeaconStateSszByBlockRoot(
@@ -179,9 +182,8 @@ public class ChainDataProvider {
                 maybeState.map(
                     state ->
                         new StateSszResponse(
-                            new ByteArrayInputStream(
-                                SimpleOffsetSerializer.serialize(state).toArrayUnsafe()),
-                            state.hash_tree_root().toUnprefixedHexString())));
+                            new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
+                            state.hashTreeRoot().toUnprefixedHexString())));
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
@@ -273,7 +275,7 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
         .join()
-        .map(Merkleizable::hash_tree_root);
+        .map(Merkleizable::hashTreeRoot);
   }
 
   public SafeFuture<List<BlockHeader>> getBlockHeaders(

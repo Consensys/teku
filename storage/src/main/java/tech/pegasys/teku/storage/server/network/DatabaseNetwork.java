@@ -60,12 +60,12 @@ public class DatabaseNetwork {
           objectMapper.readerFor(DatabaseNetwork.class).readValue(source);
 
       if (!forkVersionString.equals(databaseNetwork.forkVersion)) {
-        throw new DatabaseStorageException(
+        throw DatabaseStorageException.unrecoverable(
             formatMessage("fork version", forkVersionString, databaseNetwork.forkVersion));
       }
       if (databaseNetwork.depositContract != null
           && !databaseNetwork.depositContract.equals(depositContractString)) {
-        throw new DatabaseStorageException(
+        throw DatabaseStorageException.unrecoverable(
             formatMessage(
                 "deposit contract", depositContractString, databaseNetwork.depositContract));
       }

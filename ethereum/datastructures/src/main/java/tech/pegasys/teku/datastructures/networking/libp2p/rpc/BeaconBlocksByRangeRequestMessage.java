@@ -13,73 +13,61 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public final class BeaconBlocksByRangeRequestMessage
-    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
-  private final UInt64 startSlot;
-  private final UInt64 count;
-  private final UInt64 step;
+    extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>
+    implements RpcRequest {
+
+  public static class BeaconBlocksByRangeRequestMessageSchema
+      extends ContainerSchema3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64> {
+
+    public BeaconBlocksByRangeRequestMessageSchema() {
+      super(
+          "BeaconBlocksByRangeRequestMessage",
+          namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("step", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public BeaconBlocksByRangeRequestMessage createFromBackingNode(TreeNode node) {
+      return new BeaconBlocksByRangeRequestMessage(this, node);
+    }
+  }
+
+  public static final BeaconBlocksByRangeRequestMessageSchema SSZ_SCHEMA =
+      new BeaconBlocksByRangeRequestMessageSchema();
+
+  private BeaconBlocksByRangeRequestMessage(
+      BeaconBlocksByRangeRequestMessageSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public BeaconBlocksByRangeRequestMessage(
       final UInt64 startSlot, final UInt64 count, final UInt64 step) {
-    this.startSlot = startSlot;
-    this.count = count;
-    this.step = step;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 3;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encodeUInt64(startSlot.longValue()),
-        SSZ.encodeUInt64(count.longValue()),
-        SSZ.encodeUInt64(step.longValue()));
+    super(SSZ_SCHEMA, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
   }
 
   public UInt64 getStartSlot() {
-    return startSlot;
+    return getField0().get();
   }
 
   public UInt64 getCount() {
-    return count;
+    return getField1().get();
   }
 
   public UInt64 getStep() {
-    return step;
+    return getField2().get();
   }
 
   @Override
   public int getMaximumRequestChunks() {
-    return Math.toIntExact(count.longValue());
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final BeaconBlocksByRangeRequestMessage that = (BeaconBlocksByRangeRequestMessage) o;
-    return Objects.equals(startSlot, that.startSlot)
-        && Objects.equals(count, that.count)
-        && Objects.equals(step, that.step);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(startSlot, count, step);
+    return Math.toIntExact(getCount().longValue());
   }
 }

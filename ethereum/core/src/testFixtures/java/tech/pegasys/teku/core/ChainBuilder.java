@@ -41,7 +41,6 @@ import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -52,6 +51,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -217,7 +217,7 @@ public class ChainBuilder {
   public Checkpoint getCurrentCheckpointForEpoch(final UInt64 epoch) {
     assertChainIsNotEmpty();
     final SignedBeaconBlock block = getLatestBlockAndStateAtEpochBoundary(epoch).getBlock();
-    return new Checkpoint(epoch, block.getMessage().hash_tree_root());
+    return new Checkpoint(epoch, block.getMessage().hashTreeRoot());
   }
 
   public SignedBlockAndState generateGenesis() {
@@ -241,7 +241,7 @@ public class ChainBuilder {
             .createInitialBeaconState(genesisTime, initialDepositData);
 
     // Generate genesis block
-    BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
+    BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(genesisState);
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
@@ -375,7 +375,7 @@ public class ChainBuilder {
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState = latestBlockAndState.getState();
-    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
+    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final Signer signer = getSigner(proposerIndex);

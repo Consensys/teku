@@ -20,7 +20,6 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class Eth1DataTest {
@@ -62,8 +61,8 @@ class Eth1DataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes eth1DataSerialized = SimpleOffsetSerializer.serialize(eth1Data);
-    Eth1Data newEth1Data = SimpleOffsetSerializer.deserialize(eth1DataSerialized, Eth1Data.class);
+    Bytes eth1DataSerialized = eth1Data.sszSerialize();
+    Eth1Data newEth1Data = Eth1Data.SSZ_SCHEMA.sszDeserialize(eth1DataSerialized);
     assertEquals(eth1Data, newEth1Data);
   }
 }

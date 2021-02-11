@@ -26,6 +26,10 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.util.config.Constants;
 
 @Fork(3)
@@ -37,6 +41,12 @@ public class ShuffleBenchmark {
   int indexCount;
 
   Bytes32 seed = Bytes32.ZERO;
+  private final SpecConstants specConstants = SpecConstants.builder().configName("mainnet").build();
+  private final SpecConfiguration specConfiguration =
+      SpecConfiguration.builder().constants(specConstants).build();
+  private final SpecProvider specProvider = SpecProvider.create(specConfiguration);
+  private final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
+      specProvider.atSlot(UInt64.ZERO).getCommitteeUtil();
 
   public ShuffleBenchmark() {
     Constants.setConstants("mainnet");
@@ -47,7 +57,7 @@ public class ShuffleBenchmark {
   @Measurement(iterations = 5)
   public void shuffledIndexBench(Blackhole bh) {
     for (int i = 0; i < indexCount; i++) {
-      int index = CommitteeUtil.compute_shuffled_index(i, indexCount, seed);
+      int index = committeeUtil.computeShuffledIndex(i, indexCount, seed);
       bh.consume(index);
     }
   }

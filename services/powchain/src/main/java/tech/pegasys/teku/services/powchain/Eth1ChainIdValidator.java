@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,7 +61,8 @@ public class Eth1ChainIdValidator {
                     Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact());
               }
             })
-        .handleComposed((__, err) -> asyncRunner.runAfterDelay(this::validate, 1, TimeUnit.MINUTES))
+        .handleComposed(
+            (__, err) -> asyncRunner.runAfterDelay(this::validate, Duration.ofMinutes(1)))
         .reportExceptions();
   }
 }

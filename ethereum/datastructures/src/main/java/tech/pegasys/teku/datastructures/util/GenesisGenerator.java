@@ -37,8 +37,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
@@ -47,14 +47,16 @@ public class GenesisGenerator {
 
   private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
-  private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-  private final SSZMutableList<DepositData> depositDataList =
-      SSZList.createMutable(DepositData.class, depositListLength);
+  private final SszListSchema<DepositData, ?> depositDataListSchema =
+      SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
+  private final SszMutableList<DepositData> depositDataList =
+      depositDataListSchema.getDefault().createWritableCopy();
 
   private int activeValidatorCount = 0;
 
   public GenesisGenerator() {
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
+
+    Bytes32 latestBlockRoot = new BeaconBlockBody().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
@@ -76,7 +78,7 @@ public class GenesisGenerator {
     deposits.forEach(
         deposit -> {
           LOG.trace("About to process deposit: {}", depositDataList::size);
-          depositDataList.add(deposit.getData());
+          depositDataList.append(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
           // We do still verify the signature
@@ -158,9 +160,7 @@ public class GenesisGenerator {
     Eth1Data eth1Data = state.getEth1_data();
     state.setEth1_data(
         new Eth1Data(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositDataList),
-            eth1Data.getDeposit_count(),
-            eth1Data.getBlock_hash()));
+            depositDataList.hashTreeRoot(), eth1Data.getDeposit_count(), eth1Data.getBlock_hash()));
   }
 
   private void updateGenesisTime(final UInt64 eth1Timestamp) {

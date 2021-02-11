@@ -57,7 +57,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -77,6 +76,9 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.Merkleizable;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {
@@ -107,7 +109,7 @@ public class BeaconStateUtil {
   public static void process_deposit(MutableBeaconState state, Deposit deposit) {
     checkArgument(
         is_valid_merkle_branch(
-            deposit.getData().hash_tree_root(),
+            deposit.getData().hashTreeRoot(),
             deposit.getProof(),
             Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
             toIntExact(state.getEth1_deposit_index().longValue()),
@@ -196,16 +198,17 @@ public class BeaconStateUtil {
         FAR_FUTURE_EPOCH);
   }
 
+  @Deprecated
   public static boolean is_valid_genesis_state(UInt64 genesisTime, int activeValidatorCount) {
     return isItMinGenesisTimeYet(genesisTime)
         && isThereEnoughNumberOfValidators(activeValidatorCount);
   }
 
-  public static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
+  private static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
     return activeValidatorCount >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   }
 
-  public static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
+  private static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
     return genesisTime.compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
@@ -273,6 +276,22 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the combined effective balance of the active validators.
+   *
+   * @param state - Current BeaconState
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
+   */
+  public static UInt64 get_total_active_balance(BeaconState state) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getTotalActiveBalance()
+        .get(
+            get_current_epoch(state),
+            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
+  }
+
+  /**
    * Return the 32-byte fork data root for the current_version and genesis_validators_root. This is
    * used primarily in signature domains to avoid collisions across forks/chains.
    *
@@ -282,7 +301,7 @@ public class BeaconStateUtil {
    */
   public static Bytes32 compute_fork_data_root(
       Bytes4 current_version, Bytes32 genesis_validators_root) {
-    return new ForkData(current_version, genesis_validators_root).hash_tree_root();
+    return new ForkData(current_version, genesis_validators_root).hashTreeRoot();
   }
 
   public static Bytes4 compute_fork_digest(
@@ -333,7 +352,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(Merkleizable object, Bytes32 domain) {
-    return new SigningData(object.hash_tree_root(), domain).hash_tree_root();
+    return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
 
   /**
@@ -346,11 +365,10 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
+
     SigningData domain_wrapped_object =
-        new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
-            domain);
-    return domain_wrapped_object.hash_tree_root();
+        new SigningData(new SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
+    return domain_wrapped_object.hashTreeRoot();
   }
 
   /**
@@ -365,8 +383,8 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(Bytes bytes, Bytes32 domain) {
     SigningData domain_wrapped_object =
         new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
-    return domain_wrapped_object.hash_tree_root();
+            new SszByteVectorSchema(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
+    return domain_wrapped_object.hashTreeRoot();
   }
 
   /**
@@ -570,14 +588,17 @@ public class BeaconStateUtil {
    */
   public static UInt64 get_committee_count_per_slot(BeaconState state, UInt64 epoch) {
     List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
+    return get_committee_count_per_slot(active_validator_indices.size());
+  }
+
+  public static UInt64 get_committee_count_per_slot(final int activeValidatorCount) {
     return UInt64.valueOf(
         Math.max(
             1,
             Math.min(
                 MAX_COMMITTEES_PER_SLOT,
                 Math.floorDiv(
-                    Math.floorDiv(active_validator_indices.size(), SLOTS_PER_EPOCH),
-                    TARGET_COMMITTEE_SIZE))));
+                    Math.floorDiv(activeValidatorCount, SLOTS_PER_EPOCH), TARGET_COMMITTEE_SIZE))));
   }
 
   /**
@@ -699,10 +720,14 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_validator_churn_limit</a>
    */
   public static UInt64 get_validator_churn_limit(BeaconState state) {
-    List<Integer> active_validator_indices =
-        get_active_validator_indices(state, get_current_epoch(state));
+    final int activeValidatorCount =
+        get_active_validator_indices(state, get_current_epoch(state)).size();
+    return get_validator_churn_limit(activeValidatorCount);
+  }
+
+  public static UInt64 get_validator_churn_limit(final int activeValidatorCount) {
     return UInt64.valueOf(MIN_PER_EPOCH_CHURN_LIMIT)
-        .max(UInt64.valueOf(active_validator_indices.size() / CHURN_LIMIT_QUOTIENT));
+        .max(UInt64.valueOf(activeValidatorCount / CHURN_LIMIT_QUOTIENT));
   }
 
   /**

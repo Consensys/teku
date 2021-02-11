@@ -14,79 +14,63 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container2;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
-public class SignedVoluntaryExit implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
-  private final VoluntaryExit message;
-  private final BLSSignature signature;
+public class SignedVoluntaryExit
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
+
+  public static class SignedVoluntaryExitSchema
+      extends ContainerSchema2<SignedVoluntaryExit, VoluntaryExit, SszVector<SszByte>> {
+
+    public SignedVoluntaryExitSchema() {
+      super(
+          "SignedVoluntaryExit",
+          namedSchema("message", VoluntaryExit.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+    }
+
+    @Override
+    public SignedVoluntaryExit createFromBackingNode(TreeNode node) {
+      return new SignedVoluntaryExit(this, node);
+    }
+  }
+
+  public static final SignedVoluntaryExitSchema SSZ_SCHEMA = new SignedVoluntaryExitSchema();
+
+  private BLSSignature signatureCache;
+
+  private SignedVoluntaryExit(SignedVoluntaryExitSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public SignedVoluntaryExit(final VoluntaryExit message, final BLSSignature signature) {
-    this.message = message;
-    this.signature = signature;
+    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
   public VoluntaryExit getMessage() {
-    return message;
+    return getField0();
   }
 
   public BLSSignature getSignature() {
-    return signature;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return message.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(message.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedVoluntaryExit that = (SignedVoluntaryExit) o;
-    return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, signature);
+    return signatureCache;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("signature", signature)
+        .add("message", getMessage())
+        .add("signature", getSignature())
         .toString();
   }
 }

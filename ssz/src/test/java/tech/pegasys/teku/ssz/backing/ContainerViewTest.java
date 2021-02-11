@@ -27,98 +27,94 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
-import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
-import tech.pegasys.teku.ssz.backing.type.ListViewType;
-import tech.pegasys.teku.ssz.backing.type.VectorViewType;
-import tech.pegasys.teku.ssz.backing.view.AbstractCompositeViewRead;
-import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewReadImpl;
-import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.teku.ssz.sos.SszTypeDescriptor;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
+import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
 
-  public interface ImmutableSubContainer extends ContainerViewRead {
+  public interface ImmutableSubContainer extends SszContainer {
 
     UInt64 getLong1();
 
     Bytes32 getBytes1();
   }
 
-  public interface SubContainerRead extends ContainerViewRead {
+  public interface SubContainerRead extends SszContainer {
 
-    @SszTypeDescriptor
-    ContainerViewType<SubContainerRead> TYPE =
-        ContainerViewType.create(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
+    AbstractSszContainerSchema<SubContainerRead> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
+            List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             SubContainerReadImpl::new);
 
     default UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     default UInt64 getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((SszUInt64) get(1)).get();
     }
   }
 
-  public interface SubContainerWrite extends SubContainerRead, ContainerViewWriteRef {
+  public interface SubContainerWrite extends SubContainerRead, SszMutableRefContainer {
 
     default void setLong1(UInt64 val) {
-      set(0, new UInt64View(val));
+      set(0, new SszUInt64(val));
     }
 
     default void setLong2(UInt64 val) {
-      set(1, new UInt64View(val));
+      set(1, new SszUInt64(val));
     }
   }
 
-  public interface ContainerRead extends ContainerViewRead {
+  public interface ContainerRead extends SszContainer {
 
-    @SszTypeDescriptor
-    ContainerViewType<ContainerReadImpl> TYPE =
-        ContainerViewType.create(
+    AbstractSszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
             List.of(
-                BasicViewTypes.UINT64_TYPE,
-                BasicViewTypes.UINT64_TYPE,
-                SubContainerRead.TYPE,
-                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
-                new ListViewType<>(SubContainerRead.TYPE, 2),
-                new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
+                SszPrimitiveSchemas.UINT64_SCHEMA,
+                SszPrimitiveSchemas.UINT64_SCHEMA,
+                SubContainerRead.SSZ_SCHEMA,
+                SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
+                SszListSchema.create(SubContainerRead.SSZ_SCHEMA, 2),
+                SszVectorSchema.create(ImmutableSubContainerImpl.SSZ_SCHEMA, 2)),
             ContainerReadImpl::new);
 
     static ContainerRead createDefault() {
-      return ContainerReadImpl.TYPE.getDefault();
+      return ContainerReadImpl.SSZ_SCHEMA.getDefault();
     }
 
     default UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     default UInt64 getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((SszUInt64) get(1)).get();
     }
 
     default SubContainerRead getSub1() {
       return (SubContainerRead) get(2);
     }
 
-    default ListViewRead<UInt64View> getList1() {
+    default SszList<SszUInt64> getList1() {
       return getAny(3);
     }
 
-    default ListViewRead<SubContainerRead> getList2() {
+    default SszList<SubContainerRead> getList2() {
       return getAny(4);
     }
 
-    default VectorViewRead<ImmutableSubContainer> getList3() {
+    default SszVector<ImmutableSubContainer> getList3() {
       return getAny(5);
     }
 
@@ -126,7 +122,7 @@ public class ContainerViewTest {
     ContainerWrite createWritableCopy();
   }
 
-  public interface ContainerWrite extends ContainerRead, ContainerViewWriteRef {
+  public interface ContainerWrite extends ContainerRead, SszMutableRefContainer {
 
     void setLong1(UInt64 val);
 
@@ -136,55 +132,54 @@ public class ContainerViewTest {
     SubContainerWrite getSub1();
 
     @Override
-    ListViewWrite<UInt64View> getList1();
+    SszMutableList<SszUInt64> getList1();
 
     @Override
-    ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2();
+    SszMutableRefList<SubContainerRead, SubContainerWrite> getList2();
 
     @Override
-    VectorViewWrite<ImmutableSubContainer> getList3();
+    SszMutableVector<ImmutableSubContainer> getList3();
 
     @Override
     ContainerRead commitChanges();
   }
 
-  public static class ImmutableSubContainerImpl extends AbstractImmutableContainer
+  public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
-    @SszTypeDescriptor
-    public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
-        ContainerViewType.create(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
+    public static final AbstractSszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
+        AbstractSszContainerSchema.create(
+            List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(
-        ContainerViewType<ImmutableSubContainerImpl> type, TreeNode backingNode) {
+        AbstractSszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
     public ImmutableSubContainerImpl(UInt64 long1, Bytes32 bytes1) {
-      super(TYPE, new UInt64View(long1), new Bytes32View(bytes1));
+      super(SSZ_SCHEMA, new SszUInt64(long1), new SszBytes32(bytes1));
     }
 
     @Override
     public UInt64 getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((SszUInt64) get(0)).get();
     }
 
     @Override
     public Bytes32 getBytes1() {
-      return ((Bytes32View) get(1)).get();
+      return ((SszBytes32) get(1)).get();
     }
   }
 
-  public static class SubContainerReadImpl extends ContainerViewReadImpl
-      implements SubContainerRead {
+  public static class SubContainerReadImpl extends SszContainerImpl implements SubContainerRead {
 
-    public SubContainerReadImpl(TreeNode backingNode, IntCache<ViewRead> cache) {
-      super(TYPE, backingNode, cache);
+    public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
+      super(SSZ_SCHEMA, backingNode, cache);
     }
 
-    private SubContainerReadImpl(ContainerViewType<SubContainerRead> type, TreeNode backingNode) {
+    private SubContainerReadImpl(
+        AbstractSszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -194,7 +189,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerWriteImpl extends ContainerViewWriteImpl
+  public static class SubContainerWriteImpl extends SszMutableContainerImpl
       implements SubContainerWrite {
 
     public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
@@ -202,8 +197,8 @@ public class ContainerViewTest {
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+    protected SubContainerReadImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
       return new SubContainerReadImpl(backingNode, viewCache);
     }
 
@@ -213,14 +208,14 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerReadImpl extends ContainerViewReadImpl implements ContainerRead {
+  public static class ContainerReadImpl extends SszContainerImpl implements ContainerRead {
 
-    public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
+    public ContainerReadImpl(AbstractSszContainerSchema<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
     public ContainerReadImpl(
-        CompositeViewType<?> type, TreeNode backingNode, IntCache<ViewRead> cache) {
+        SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
       super(type, backingNode, cache);
     }
 
@@ -230,16 +225,16 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerWriteImpl extends ContainerViewWriteImpl implements ContainerWrite {
+  public static class ContainerWriteImpl extends SszMutableContainerImpl implements ContainerWrite {
 
     public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
       super(backingImmutableView);
     }
 
     @Override
-    protected AbstractCompositeViewRead<ViewRead> createViewRead(
-        TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ContainerReadImpl(getType(), backingNode, viewCache);
+    protected ContainerReadImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
+      return new ContainerReadImpl(getSchema(), backingNode, viewCache);
     }
 
     @Override
@@ -259,30 +254,30 @@ public class ContainerViewTest {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewWrite<UInt64View> getList1() {
-      return (ListViewWrite<UInt64View>) getByRef(3);
+    public SszMutableList<SszUInt64> getList1() {
+      return (SszMutableList<SszUInt64>) getByRef(3);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2() {
-      return (ListViewWriteRef<SubContainerRead, SubContainerWrite>) getByRef(4);
+    public SszMutableRefList<SubContainerRead, SubContainerWrite> getList2() {
+      return (SszMutableRefList<SubContainerRead, SubContainerWrite>) getByRef(4);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public VectorViewWrite<ImmutableSubContainer> getList3() {
-      return (VectorViewWrite<ImmutableSubContainer>) getByRef(5);
+    public SszMutableVector<ImmutableSubContainer> getList3() {
+      return (SszMutableVector<ImmutableSubContainer>) getByRef(5);
     }
 
     @Override
     public void setLong1(UInt64 val) {
-      set(0, new UInt64View(val));
+      set(0, new SszUInt64(val));
     }
 
     @Override
     public void setLong2(UInt64 val) {
-      set(1, new UInt64View(val));
+      set(1, new SszUInt64(val));
     }
   }
 
@@ -312,8 +307,8 @@ public class ContainerViewTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(UInt64View.fromLong(0x333));
-    c1w.getList1().append(UInt64View.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.fromLong(0x333));
+    c1w.getList1().append(SszUInt64.fromLong(0x444));
 
     c1w.getList2()
         .append(
@@ -419,8 +414,8 @@ public class ContainerViewTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(UInt64View.fromLong(0x333));
-    c1w.getList1().append(UInt64View.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.fromLong(0x333));
+    c1w.getList1().append(SszUInt64.fromLong(0x444));
 
     c1w.getList2()
         .append(
@@ -443,18 +438,18 @@ public class ContainerViewTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThat(Utils.equalsByGetters(c1r, c1w)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c1w)).isTrue();
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThat(Utils.equalsByGetters(c1r, c2w)).isFalse();
-    assertThat(Utils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c2w)).isFalse();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
 
     // new container from backing tree without any cached views
-    ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    ContainerRead c2r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
-        TestUtil.executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
+        TestUtil.executeParallel(() -> SszTestUtils.equalsByGetters(c2r, c1r), 512);
 
     assertThat(TestUtil.waitAll(futures)).containsOnly(true);
 
@@ -462,8 +457,8 @@ public class ContainerViewTest {
         w -> {
           w.setLong2(UInt64.valueOf(0x11111));
           w.getSub1().setLong2(UInt64.valueOf(0x22222));
-          w.getList1().append(UInt64View.fromLong(0x44444));
-          w.getList1().set(0, UInt64View.fromLong(0x11111));
+          w.getList1().append(SszUInt64.fromLong(0x44444));
+          w.getList1().set(0, SszUInt64.fromLong(0x11111));
           SubContainerWrite sc = w.getList2().append();
           sc.setLong1(UInt64.valueOf(0x77777));
           sc.setLong2(UInt64.valueOf(0x88888));
@@ -478,9 +473,9 @@ public class ContainerViewTest {
     containerMutator.accept(c3w);
     ContainerRead c3r = c3w.commitChanges();
 
-    ContainerRead c4r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
-    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -494,11 +489,13 @@ public class ContainerViewTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
     assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
 
     assertThat(modified)
         .allMatch(
-            c -> Utils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+            c ->
+                SszTestUtils.equalsByGetters(c, c3r)
+                    && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
   }
 }

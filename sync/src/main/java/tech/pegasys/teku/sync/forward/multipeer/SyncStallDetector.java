@@ -16,8 +16,8 @@ package tech.pegasys.teku.sync.forward.multipeer;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.MoreObjects;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +35,7 @@ import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 public class SyncStallDetector extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final int STALL_CHECK_INTERVAL_SECONDS = 15;
+  static final Duration STALL_CHECK_INTERVAL = Duration.ofSeconds(15);
   // Time periods are fairly long because sync stalls should be rare and we might be rate limited
   // if we have to request blocks from a small number of peers.
   static final int MAX_SECONDS_BETWEEN_IMPORTS = 180;
@@ -116,8 +116,7 @@ public class SyncStallDetector extends Service {
     cancellable =
         asyncRunner.runWithFixedDelay(
             () -> eventThread.execute(this::performStallCheck),
-            STALL_CHECK_INTERVAL_SECONDS,
-            TimeUnit.SECONDS,
+            STALL_CHECK_INTERVAL,
             error -> LOG.error("Failed to check for sync stalls", error));
     return SafeFuture.COMPLETE;
   }

@@ -38,9 +38,9 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @Command(
@@ -128,7 +128,7 @@ public class TransitionCommand implements Runnable {
       final StateTransition stateTransition = new StateTransition();
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
-        out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
+        out.write(result.sszSerialize().toArrayUnsafe());
         return 0;
       } catch (final StateTransitionException
           | EpochProcessingException
@@ -161,18 +161,19 @@ public class TransitionCommand implements Runnable {
     }
   }
 
-  private BeaconStateImpl readState(final Bytes inData) {
-    return deserialize(inData, BeaconStateImpl.class, "pre state");
+  private BeaconState readState(final Bytes inData) {
+    return deserialize(inData, BeaconState.getSszSchema(), "pre state");
   }
 
   private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return deserialize(blockData, SignedBeaconBlock.class, path);
+    return deserialize(blockData, SignedBeaconBlock.getSszSchema(), path);
   }
 
-  private <T> T deserialize(final Bytes data, final Class<T> type, final String descriptor) {
+  private <T extends SszData> T deserialize(
+      final Bytes data, final SszSchema<T> type, final String descriptor) {
     try {
-      return SimpleOffsetSerializer.deserialize(data, type);
+      return type.sszDeserialize(data);
     } catch (final IllegalArgumentException e) {
       throw new SSZException("Failed to parse SSZ (" + descriptor + "): " + e.getMessage(), e);
     }

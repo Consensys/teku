@@ -25,7 +25,6 @@ import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,8 +37,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts.RpcTimeoutExceptio
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.ssz.backing.SszData;
 
-public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
+public class Eth2OutgoingRequestHandler<
+        TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
 
   @VisibleForTesting
@@ -230,15 +231,15 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
-    final Duration timeout = RpcTimeouts.TTFB_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(RpcTimeouts.TTFB_TIMEOUT)
         .thenAccept(
             (__) -> {
               if (!hasReceivedInitialBytes.get()) {
                 abortRequest(
                     stream,
-                    new RpcTimeoutException("Timed out waiting for initial response", timeout));
+                    new RpcTimeoutException(
+                        "Timed out waiting for initial response", RpcTimeouts.TTFB_TIMEOUT));
               }
             })
         .reportExceptions();
@@ -250,7 +251,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       final AtomicInteger currentResponseCount) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (previousResponseCount == currentResponseCount.get()) {
@@ -266,7 +267,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {

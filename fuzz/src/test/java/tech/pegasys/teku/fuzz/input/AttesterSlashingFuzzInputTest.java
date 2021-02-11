@@ -14,19 +14,20 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class AttesterSlashingFuzzInputTest
     extends AbstractFuzzInputTest<AttesterSlashingFuzzInput> {
 
   @Override
-  protected Class<AttesterSlashingFuzzInput> getInputType() {
-    return AttesterSlashingFuzzInput.class;
+  protected SszSchema<AttesterSlashingFuzzInput> getInputType() {
+    return AttesterSlashingFuzzInput.createType();
   }
 
   @Override
   protected AttesterSlashingFuzzInput createInput() {
-    final BeaconStateImpl state = (BeaconStateImpl) dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     return new AttesterSlashingFuzzInput(state, slashing);
   }

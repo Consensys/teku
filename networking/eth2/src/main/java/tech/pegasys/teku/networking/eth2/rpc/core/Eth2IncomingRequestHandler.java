@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,8 +28,10 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.ssz.backing.SszData;
 
-public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
+public class Eth2IncomingRequestHandler<
+        TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -113,7 +114,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     asyncRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (!requestHandled.get()) {

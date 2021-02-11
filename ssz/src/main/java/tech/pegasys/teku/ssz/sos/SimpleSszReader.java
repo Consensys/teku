@@ -47,14 +47,14 @@ class SimpleSszReader implements SszReader {
 
   private void checkIfAvailable(int size) {
     if (getAvailableBytes() < size) {
-      throw new SSZDeserializeException("Invalid SSZ: trying to read more bytes than available");
+      throw new SszDeserializeException("Invalid SSZ: trying to read more bytes than available");
     }
   }
 
   @Override
   public void close() {
     if (getAvailableBytes() > 0) {
-      throw new SSZDeserializeException("Invalid SSZ: unread bytes remain: " + getAvailableBytes());
+      throw new SszDeserializeException("Invalid SSZ: unread bytes remain: " + getAvailableBytes());
     }
   }
 }

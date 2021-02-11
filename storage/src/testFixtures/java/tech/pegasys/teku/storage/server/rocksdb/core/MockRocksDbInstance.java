@@ -117,13 +117,6 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(final RocksDbColumn<K, V> column) {
-    assertOpen();
-    assertValidColumn(column);
-    return Optional.ofNullable(columnData.get(column).lastEntry()).map(e -> columnEntry(column, e));
-  }
-
-  @Override
   public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);

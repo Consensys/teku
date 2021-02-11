@@ -14,8 +14,8 @@
 package tech.pegasys.teku.validator.client;
 
 import com.google.common.base.Throwables;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -71,7 +71,7 @@ public class RetryingDutyLoader implements DutyLoader {
               }
               // Short delay before retrying as loading duties is very time sensitive
               return asyncRunner.runAfterDelay(
-                  () -> requestDuties(epoch, cancellable), 1, TimeUnit.SECONDS);
+                  () -> requestDuties(epoch, cancellable), Duration.ofSeconds(1));
             });
   }
 }

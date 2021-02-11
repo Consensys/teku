@@ -103,14 +103,14 @@ public class BeaconBlocksByRootIntegrationTest {
     final SignedBeaconBlock block = addBlock();
 
     final List<SignedBeaconBlock> response =
-        requestBlocks(singletonList(block.getMessage().hash_tree_root()));
+        requestBlocks(singletonList(block.getMessage().hashTreeRoot()));
     assertThat(response).containsExactly(block);
   }
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnectedImmediately() throws RpcException {
     final SignedBeaconBlock block = addBlock();
-    final Bytes32 blockHash = block.getMessage().hash_tree_root();
+    final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
@@ -127,7 +127,7 @@ public class BeaconBlocksByRootIntegrationTest {
   public void requestBlocksByRootAfterPeerDisconnected()
       throws RpcException, InterruptedException, ExecutionException, TimeoutException {
     final SignedBeaconBlock block = addBlock();
-    final Bytes32 blockHash = block.getMessage().hash_tree_root();
+    final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
@@ -143,7 +143,7 @@ public class BeaconBlocksByRootIntegrationTest {
   @Test
   public void requestBlockByRootAfterPeerDisconnectedImmediately() {
     final SignedBeaconBlock block = addBlock();
-    final Bytes32 blockHash = block.getMessage().hash_tree_root();
+    final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
@@ -157,7 +157,7 @@ public class BeaconBlocksByRootIntegrationTest {
   public void requestBlockByRootAfterPeerDisconnected()
       throws InterruptedException, ExecutionException, TimeoutException {
     final SignedBeaconBlock block = addBlock();
-    final Bytes32 blockHash = block.getMessage().hash_tree_root();
+    final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final SafeFuture<Optional<SignedBeaconBlock>> res = peer1.requestBlockByRoot(blockHash);
@@ -173,7 +173,7 @@ public class BeaconBlocksByRootIntegrationTest {
     final List<Bytes32> blockRoots =
         blocks.stream()
             .map(SignedBeaconBlock::getMessage)
-            .map(BeaconBlock::hash_tree_root)
+            .map(BeaconBlock::hashTreeRoot)
             .collect(toList());
     final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
@@ -196,7 +196,7 @@ public class BeaconBlocksByRootIntegrationTest {
     final List<Bytes32> blockRoots =
         blocks.stream()
             .map(SignedBeaconBlock::getMessage)
-            .map(BeaconBlock::hash_tree_root)
+            .map(BeaconBlock::hashTreeRoot)
             .flatMap(hash -> Stream.of(Bytes32.fromHexStringLenient("0x123456789"), hash))
             .collect(toList());
 

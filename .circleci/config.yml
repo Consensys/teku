@@ -176,6 +176,8 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel integrationTest
       - capture_test_results
+      - store_artifacts:
+          path: build/test-results
 
   acceptanceTests:
     parallelism: 2
@@ -198,9 +200,10 @@ jobs:
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
       - capture_test_results
       - capture_test_artifacts
+      - store_artifacts:
+          path: build/test-results
 
-  referenceTests:
-    parallelism: 5
+  referenceTestsPrep:
     executor: large_executor
     steps:
       - prepare
@@ -218,11 +221,30 @@ jobs:
               ./gradlew --no-daemon expandRefTests
             fi
       - run:
+          # Compile separately so that we have the generated test files for splitting across nodes
           name: CompileReferenceTests
           command: |
             ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - save_cache:
+          name: Caching reference tests
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./eth-reference-tests/
+
+  referenceTests:
+    parallelism: 7
+    executor: large_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
       - run:
           name: ReferenceTests
+          no_output_timeout: 30m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/referenceTest/generated/**/*Test.java" \
               | sed 's@.*/src/referenceTest/generated/@@' \
@@ -232,12 +254,7 @@ jobs:
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            ./gradlew --no-daemon --parallel referenceTest $GRADLE_ARGS
-      - save_cache:
-          name: Caching reference tests
-          key: reftests-{{ checksum "build.gradle" }}
-          paths:
-            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
+            ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
       - capture_test_results
 
   compatibilityTests:
@@ -277,6 +294,22 @@ jobs:
           # binTray plugin doesn't publish pom artifacts if configure-on-demand is used
           command: |
             ./gradlew --no-daemon --parallel -no-configure-on-demand bintrayUpload
+
+  publish-cloudsmith:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Install Python3
+          command: |
+            sudo apt update
+            sudo apt install python3 python3-pip python3-venv
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish to Cloudsmith
+          command: |
+            ./gradlew --no-daemon --parallel cloudsmithUpload publish
 
   publishDocker:
     executor: medium_executor
@@ -370,10 +403,20 @@ workflows:
               <<: *filters-release-tags
           context:
             - dockerhub-quorumengineering-ro
+      - referenceTestsPrep:
+          requires:
+            - assemble
+            - spotless
+          filters:
+            tags:
+              <<: *filters-release-tags
+          context:
+            - dockerhub-quorumengineering-ro
       - referenceTests:
           requires:
             - assemble
             - spotless
+            - referenceTestsPrep
           filters:
             tags:
               <<: *filters-release-tags
@@ -423,6 +466,24 @@ workflows:
               <<: *filters-release-tags
           context: dockerhub-quorumengineering-ro
       - publish:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+          context:
+            - dockerhub-quorumengineering-ro
+            - quorum-gradle
+      - publish-cloudsmith:
           filters:
             branches:
               only:

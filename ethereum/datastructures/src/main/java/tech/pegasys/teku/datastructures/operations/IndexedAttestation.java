@@ -13,120 +13,86 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil;
-import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
-public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class IndexedAttestation
+    extends Container3<
+        IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static class IndexedAttestationSchema
+      extends ContainerSchema3<
+          IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
 
-  private final SSZList<UInt64> attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private final AttestationData data;
-  private final BLSSignature signature;
+    public IndexedAttestationSchema() {
+      super(
+          "IndexedAttestation",
+          namedSchema(
+              "attesting_indices",
+              SszListSchema.create(
+                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+          namedSchema("data", AttestationData.SSZ_SCHEMA),
+          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+    }
+
+    public SszSchema<SszList<SszUInt64>> getAttestingIndicesSchema() {
+      return super.getFieldSchema0();
+    }
+
+    @Override
+    public IndexedAttestation createFromBackingNode(TreeNode node) {
+      return new IndexedAttestation(this, node);
+    }
+  }
+
+  public static final IndexedAttestationSchema SSZ_SCHEMA = new IndexedAttestationSchema();
+
+  private BLSSignature signatureCache;
+
+  private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public IndexedAttestation(
       SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
-    this.attesting_indices = attesting_indices;
-    this.data = data;
-    this.signature = signature;
+    super(
+        SSZ_SCHEMA,
+        SszUtils.toSszList(
+            SSZ_SCHEMA.getAttestingIndicesSchema(), attesting_indices, SszUInt64::new),
+        data,
+        SszUtils.toSszByteVector(signature.toBytesCompressed()));
+    this.signatureCache = signature;
   }
 
-  // Required by SSZ reflection
-  public IndexedAttestation() {
-    this.attesting_indices =
-        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    data = null;
-    signature = null;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(data.get_fixed_parts());
-    fixedPartsList.addAll(signature.get_fixed_parts());
-    return fixedPartsList;
-  }
-
-  @Override
-  public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.add(
-        SSZ.encode(
-            writer ->
-                attesting_indices.stream()
-                    .forEach(value -> writer.writeUInt64(value.longValue()))));
-    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
-    return variablePartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(attesting_indices, data, signature);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof IndexedAttestation)) {
-      return false;
-    }
-
-    IndexedAttestation other = (IndexedAttestation) obj;
-    return Objects.equals(this.getAttesting_indices(), other.getAttesting_indices())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getSignature(), other.getSignature());
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public SSZList<UInt64> getAttesting_indices() {
-    return attesting_indices;
+    return new SSZBackingList<>(
+        UInt64.class, getField0(), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   public AttestationData getData() {
-    return data;
+    return getField1();
   }
 
   public BLSSignature getSignature() {
-    return signature;
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_list_ul(
-                attesting_indices.map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))),
-            data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
+    if (signatureCache == null) {
+      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
+    }
+    return signatureCache;
   }
 }

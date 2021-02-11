@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -22,14 +20,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
-
-  @CommandLine.Option(
-      names = {"--initial-state"},
-      paramLabel = "<STRING>",
-      description =
-          "The initial state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
-      arity = "1")
-  private String weakSubjectivityState;
 
   @CommandLine.Option(
       converter = CheckpointConverter.class,
@@ -51,10 +41,6 @@ public class WeakSubjectivityOptions {
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
-          Optional.ofNullable(weakSubjectivityState)
-              .filter(StringUtils::isNotBlank)
-              .ifPresent(wsBuilder::weakSubjectivityStateResource);
-
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }

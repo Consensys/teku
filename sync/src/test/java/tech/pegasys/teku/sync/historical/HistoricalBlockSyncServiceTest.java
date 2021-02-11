@@ -362,7 +362,7 @@ public class HistoricalBlockSyncServiceTest {
         includeAnchorBlock ? Optional.of(anchorStateAndBlock.getBlock()) : Optional.empty();
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorStateAndBlock.getState(), block);
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
 
     return anchorPoint;
   }

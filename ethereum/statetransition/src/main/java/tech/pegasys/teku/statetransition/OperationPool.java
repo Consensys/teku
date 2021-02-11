@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T> {
@@ -72,8 +73,8 @@ public class OperationPool<T> {
 
   public SafeFuture<InternalValidationResult> add(T item) {
     InternalValidationResult result = operationValidator.validateFully(item);
-    if (result.equals(InternalValidationResult.ACCEPT)
-        || result.equals(InternalValidationResult.SAVE_FOR_FUTURE)) {
+    if (result.code().equals(ValidationResultCode.ACCEPT)
+        || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
       operations.add(item);
       subscribers.forEach(s -> s.onOperationAdded(item, result));
     }

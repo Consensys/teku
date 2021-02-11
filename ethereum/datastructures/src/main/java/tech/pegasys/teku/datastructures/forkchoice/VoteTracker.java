@@ -13,78 +13,63 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.base.Objects;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.backing.containers.Container3;
+import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class VoteTracker implements SimpleOffsetSerializable {
+public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-  public static final VoteTracker DEFAULT =
-      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
+  public static class VoteTrackerSchema
+      extends ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
-  private final Bytes32 currentRoot;
-  private final Bytes32 nextRoot;
-  private final UInt64 nextEpoch;
+    public VoteTrackerSchema() {
+      super(
+          "VoteTracker",
+          namedSchema("currentRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("nextEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    @Override
+    public VoteTracker createFromBackingNode(TreeNode node) {
+      return new VoteTracker(this, node);
+    }
+  }
+
+  public static final VoteTrackerSchema SSZ_SCHEMA = new VoteTrackerSchema();
+  public static final VoteTracker DEFAULT = new VoteTracker();
+
+  private VoteTracker(
+      ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  private VoteTracker() {
+    super(SSZ_SCHEMA);
+  }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    this.currentRoot = currentRoot;
-    this.nextRoot = nextRoot;
-    this.nextEpoch = nextEpoch;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 3;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(getCurrentRoot())),
-        SSZ.encode(writer -> writer.writeFixedBytes(getNextRoot())),
-        SSZ.encodeUInt64(getNextEpoch().longValue()));
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof VoteTracker)) return false;
-    VoteTracker that = (VoteTracker) o;
-    return Objects.equal(getCurrentRoot(), that.getCurrentRoot())
-        && Objects.equal(getNextRoot(), that.getNextRoot())
-        && Objects.equal(getNextEpoch(), that.getNextEpoch());
-  }
-
-  @Override
-  public String toString() {
-    return "VoteTracker{"
-        + "currentRoot="
-        + currentRoot
-        + ", nextRoot="
-        + nextRoot
-        + ", nextEpoch="
-        + nextEpoch
-        + '}';
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(getCurrentRoot(), getNextRoot(), getNextEpoch());
+    super(
+        SSZ_SCHEMA,
+        new SszBytes32(currentRoot),
+        new SszBytes32(nextRoot),
+        new SszUInt64(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {
-    return currentRoot;
+    return getField0().get();
   }
 
   public Bytes32 getNextRoot() {
-    return nextRoot;
+    return getField1().get();
   }
 
   public UInt64 getNextEpoch() {
-    return nextEpoch;
+    return getField2().get();
   }
 }

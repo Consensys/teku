@@ -281,7 +281,7 @@ public final class DataStructureUtil {
       final long nextSlot = parentBlock.getSlot().plus(UInt64.ONE).longValue();
       final Bytes32 parentRoot = parentBlock.getRoot();
       final BeaconState state = randomBeaconState(UInt64.valueOf(nextSlot));
-      final Bytes32 stateRoot = state.hash_tree_root();
+      final Bytes32 stateRoot = state.hashTreeRoot();
       final SignedBeaconBlock block =
           signedBlock(randomBeaconBlock(nextSlot, parentRoot, stateRoot, full));
       blocks.add(new SignedBlockAndState(block, state));
@@ -318,7 +318,7 @@ public final class DataStructureUtil {
 
   public SignedBeaconBlock randomSignedBeaconBlock(UInt64 slotNum, BeaconState state) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final Bytes32 stateRoot = state.hash_tree_root();
+    final Bytes32 stateRoot = state.hashTreeRoot();
 
     final BeaconBlock block =
         new BeaconBlock(slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
@@ -364,8 +364,7 @@ public final class DataStructureUtil {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
     final BeaconBlockHeader latestHeader =
-        new BeaconBlockHeader(
-            slot, proposer_index, parentRoot, Bytes32.ZERO, body.hash_tree_root());
+        new BeaconBlockHeader(slot, proposer_index, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
     final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
     final BeaconBlock block =
@@ -570,7 +569,7 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator() {
-    return Validator.create(
+    return new Validator(
         randomPublicKeyBytes(),
         randomBytes32(),
         Constants.MAX_EFFECTIVE_BALANCE,
@@ -639,7 +638,7 @@ public final class DataStructureUtil {
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
+    final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
     final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 

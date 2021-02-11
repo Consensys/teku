@@ -20,25 +20,38 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
+  @BeforeAll
+  static void setConstants() {
+    Constants.setConstants("mainnet");
+    SpecDependent.resetAll();
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
+    SpecDependent.resetAll();
+  }
+
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(
-        vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).getVectorLengths());
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.SSZ_SCHEMA.get()));
   }
 
   @Test
@@ -54,8 +67,8 @@ public class HistoricalBatchTest {
               state_roots.set(i, dataStructureUtil.randomBytes32());
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
-    Bytes serialized = SimpleOffsetSerializer.serialize(batch);
-    HistoricalBatch result = SimpleOffsetSerializer.deserialize(serialized, HistoricalBatch.class);
+    Bytes serialized = batch.sszSerialize();
+    HistoricalBatch result = HistoricalBatch.SSZ_SCHEMA.get().sszDeserialize(serialized);
     assertEquals(batch, result);
   }
 }
