@@ -31,9 +31,9 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /** The collection of commonly used basic types */
-public class SszPrimitiveSchemas {
-  public static final SszPrimitiveSchema<SszBit> BIT_SCHEMA =
-      new SszPrimitiveSchema<>(1) {
+public interface SszPrimitiveSchemas {
+  AbstractSszPrimitiveSchema<SszBit> BIT_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(1) {
         @Override
         public SszBit createFromLeafBackingNode(LeafDataNode node, int idx) {
           return SszBit.viewOf((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
@@ -66,8 +66,8 @@ public class SszPrimitiveSchemas {
         }
       };
 
-  public static final SszPrimitiveSchema<SszByte> BYTE_SCHEMA =
-      new SszPrimitiveSchema<>(8) {
+  AbstractSszPrimitiveSchema<SszByte> BYTE_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(8) {
         @Override
         public SszByte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new SszByte(node.getData().get(internalIndex));
@@ -92,8 +92,8 @@ public class SszPrimitiveSchemas {
         }
       };
 
-  public static final SszPrimitiveSchema<SszUInt64> UINT64_SCHEMA =
-      new SszPrimitiveSchema<>(64) {
+  AbstractSszPrimitiveSchema<SszUInt64> UINT64_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(64) {
         @Override
         public SszUInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           Bytes leafNodeBytes = node.getData();
@@ -140,8 +140,8 @@ public class SszPrimitiveSchemas {
         }
       };
 
-  public static final SszPrimitiveSchema<SszBytes4> BYTES4_SCHEMA =
-      new SszPrimitiveSchema<>(32) {
+  AbstractSszPrimitiveSchema<SszBytes4> BYTES4_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(32) {
         @Override
         public SszBytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new SszBytes4(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
@@ -168,8 +168,8 @@ public class SszPrimitiveSchemas {
         }
       };
 
-  public static final SszPrimitiveSchema<SszBytes32> BYTES32_SCHEMA =
-      new SszPrimitiveSchema<>(256) {
+  AbstractSszPrimitiveSchema<SszBytes32> BYTES32_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(256) {
         @Override
         public SszBytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           return new SszBytes32(node.hashTreeRoot());

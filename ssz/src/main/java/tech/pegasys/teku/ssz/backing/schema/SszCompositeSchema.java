@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static tech.pegasys.teku.ssz.backing.tree.GIndexUtil.SELF_G_INDEX;
+
 import tech.pegasys.teku.ssz.backing.SszComposite;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
@@ -76,8 +79,8 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
    *
    * @see TreeNode#get(long)
    */
-  default long getGeneralizedIndex(long elementIndex) {
-    return treeWidth() + elementIndex;
+  default long getChildGeneralizedIndex(long elementIndex) {
+    return GIndexUtil.gIdxChildGIndex(SELF_G_INDEX, elementIndex, treeDepth());
   }
 
   @Override

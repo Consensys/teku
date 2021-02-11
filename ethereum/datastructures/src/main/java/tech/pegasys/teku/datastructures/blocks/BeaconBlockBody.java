@@ -30,6 +30,7 @@ import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -70,37 +71,42 @@ public class BeaconBlockBody
           namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
               "proposer_slashings",
-              new SszListSchema<>(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
+              SszListSchema.create(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
           namedSchema(
               "attester_slashings",
-              new SszListSchema<>(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
+              SszListSchema.create(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
           namedSchema(
               "attestations",
-              new SszListSchema<>(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
-          namedSchema("deposits", new SszListSchema<>(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
+              SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
+          namedSchema("deposits", SszListSchema.create(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
           namedSchema(
               "voluntary_exits",
-              new SszListSchema<>(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
+              SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    public SszListSchema<ProposerSlashing> getProposerSlashingsSchema() {
-      return (SszListSchema<ProposerSlashing>) getFieldSchema3();
+    @Override
+    public SszSchema<SszList<ProposerSlashing>> getFieldSchema3() {
+      return super.getFieldSchema3();
     }
 
-    public SszListSchema<AttesterSlashing> getAttesterSlashingsSchema() {
-      return (SszListSchema<AttesterSlashing>) getFieldSchema4();
+    public SszSchema<SszList<ProposerSlashing>> getProposerSlashingsSchema() {
+      return getFieldSchema3();
     }
 
-    public SszListSchema<Attestation> getAttestationsSchema() {
-      return (SszListSchema<Attestation>) getFieldSchema5();
+    public SszSchema<SszList<AttesterSlashing>> getAttesterSlashingsSchema() {
+      return getFieldSchema4();
     }
 
-    public SszListSchema<Deposit> getDepositsSchema() {
-      return (SszListSchema<Deposit>) getFieldSchema6();
+    public SszSchema<SszList<Attestation>> getAttestationsSchema() {
+      return getFieldSchema5();
     }
 
-    public SszListSchema<SignedVoluntaryExit> getVoluntaryExitsSchema() {
-      return (SszListSchema<SignedVoluntaryExit>) getFieldSchema7();
+    public SszSchema<SszList<Deposit>> getDepositsSchema() {
+      return getFieldSchema6();
+    }
+
+    public SszSchema<SszList<SignedVoluntaryExit>> getVoluntaryExitsSchema() {
+      return getFieldSchema7();
     }
 
     @Override

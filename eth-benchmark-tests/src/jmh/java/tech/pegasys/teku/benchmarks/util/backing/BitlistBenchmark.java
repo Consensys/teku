@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistBenchmark {
 
-  static SszListSchema<SszBit> type = new SszListSchema<>(SszPrimitiveSchemas.BIT_SCHEMA, 4096);
+  static SszListSchema<SszBit, ?> type = SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 4096);
   static SszList<SszBit> bitlist;
 
   static {

@@ -42,21 +42,6 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final SszCompositeSchema<?> schema;
   private final TreeNode backingNode;
 
-  protected AbstractSszComposite(SszComposite<SszChildT> otherComposite) {
-    if (otherComposite instanceof AbstractSszComposite) {
-      AbstractSszComposite<SszChildT> other = (AbstractSszComposite<SszChildT>) otherComposite;
-      schema = other.schema;
-      backingNode = other.backingNode;
-      childrenViewCache = other.childrenViewCache.copy();
-      sizeCache = other.sizeCache;
-    } else {
-      schema = otherComposite.getSchema();
-      backingNode = otherComposite.getBackingNode();
-      childrenViewCache = createCache();
-      this.sizeCache = sizeImpl();
-    }
-  }
-
   /** Creates an instance from a schema and a backing node */
   protected AbstractSszComposite(SszCompositeSchema<?> schema, TreeNode backingNode) {
     this.schema = schema;

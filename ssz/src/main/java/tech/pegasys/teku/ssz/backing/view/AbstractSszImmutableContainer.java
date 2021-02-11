@@ -21,24 +21,26 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /** Handy base class for immutable containers */
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
+      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
     this(schema, schema.getDefaultTree());
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, TreeNode backingNode) {
+      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, SszData... memberValues) {
+      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      SszData... memberValues) {
     super(
         schema,
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),

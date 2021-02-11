@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,17 +15,23 @@ package tech.pegasys.teku.ssz.backing.schema;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 
-public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
-    extends SszCollectionSchema<ElementDataT, SszListT> {
+class SszListSchemaImpl<ElementDataT extends SszData>
+    extends AbstractSszListSchema<ElementDataT, SszList<ElementDataT>> {
 
-  static <ElementDataT extends SszData> SszListSchema<ElementDataT, SszList<ElementDataT>> create(
-      SszSchema<ElementDataT> elementSchema, long maxLength) {
-    return new SszListSchemaImpl<>(elementSchema, maxLength);
+  public SszListSchemaImpl(SszSchema<ElementDataT> elementSchema, long maxLength) {
+    super(elementSchema, maxLength);
   }
 
-  static <ElementDataT extends SszData> SszListSchema<ElementDataT, SszList<ElementDataT>> create(
+  public SszListSchemaImpl(
       SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
-    return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
+    super(elementSchema, maxLength, hints);
+  }
+
+  @Override
+  public SszList<ElementDataT> createFromBackingNode(TreeNode node) {
+    return new SszListImpl<>(this, node);
   }
 }
