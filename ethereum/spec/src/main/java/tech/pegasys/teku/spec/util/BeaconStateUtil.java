@@ -47,7 +47,6 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -67,11 +66,11 @@ public class BeaconStateUtil {
   public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConstants specConstants;
-  private final Spec spec;
+  private final CommitteeUtil committeeUtil;
 
-  public BeaconStateUtil(final Spec spec) {
-    this.spec = spec;
-    this.specConstants = spec.getConstants();
+  public BeaconStateUtil(final SpecConstants specConstants, CommitteeUtil committeeUtil) {
+    this.specConstants = specConstants;
+    this.committeeUtil = committeeUtil;
   }
 
   public boolean isValidGenesisState(UInt64 genesisTime, int activeValidatorCount) {
@@ -174,7 +173,7 @@ public class BeaconStateUtil {
                           getSeed(state, epoch, specConstants.getDomainBeaconProposer()),
                           uintToBytes(slot.longValue(), 8)));
               List<Integer> indices = get_active_validator_indices(state, epoch);
-              return spec.getCommitteeUtil().computeProposerIndex(state, indices, seed);
+              return committeeUtil.computeProposerIndex(state, indices, seed);
             });
   }
 

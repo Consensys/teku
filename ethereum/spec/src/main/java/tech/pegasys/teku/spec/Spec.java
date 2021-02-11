@@ -25,7 +25,7 @@ public class Spec {
   Spec(final SpecConstants constants) {
     this.constants = constants;
     this.committeeUtil = new CommitteeUtil(this.constants);
-    this.beaconStateUtil = new BeaconStateUtil(this);
+    this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil);
   }
 
   public SpecConstants getConstants() {
