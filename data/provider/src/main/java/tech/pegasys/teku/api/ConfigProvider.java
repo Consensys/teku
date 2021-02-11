@@ -51,4 +51,8 @@ public class ConfigProvider {
             .collect(Collectors.toList());
     return new GetForkScheduleResponse(forkList);
   }
+
+  public UInt64 computeEpochAtSlot(final UInt64 slot) {
+    return specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  }
 }

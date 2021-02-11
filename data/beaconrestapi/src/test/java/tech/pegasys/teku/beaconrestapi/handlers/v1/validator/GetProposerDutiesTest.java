@@ -32,11 +32,14 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 
 public class GetProposerDutiesTest extends AbstractValidatorApiTest {
+  private BeaconStateUtil beaconStateUtil;
   @BeforeEach
   public void setup() {
-    handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
+    handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider, configProvider);
+    beaconStateUtil = specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
   }
 
   @Test
@@ -48,7 +51,7 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     GetProposerDutiesResponse duties =
         new GetProposerDutiesResponse(
             Bytes32.fromHexString("0x1234"),
-            List.of(getProposerDuty(2, compute_start_slot_at_epoch(UInt64.valueOf(100)))));
+            List.of(getProposerDuty(2, beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 

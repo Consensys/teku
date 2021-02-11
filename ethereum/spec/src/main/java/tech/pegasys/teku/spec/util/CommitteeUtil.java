@@ -16,11 +16,17 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
+import com.google.common.primitives.UnsignedBytes;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+
+import java.util.List;
 
 public class CommitteeUtil {
   private final SpecConstants specConstants;
@@ -59,6 +65,28 @@ public class CommitteeUtil {
     }
 
     return indexRet;
+  }
+
+  public int computeProposerIndex(BeaconState state, List<Integer> indices, Bytes32 seed) {
+    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+    UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
+    int i = 0;
+    final int total = indices.size();
+    Bytes32 hash = null;
+    while (true) {
+      int candidate_index = indices.get(computeShuffledIndex(i % total, total, seed));
+      if (i % 32 == 0) {
+        hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
+      }
+      int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
+      UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
+      if (effective_balance
+          .times(MAX_RANDOM_BYTE)
+          .isGreaterThanOrEqualTo(specConstants.getMaxEffectiveBalance().times(random_byte))) {
+        return candidate_index;
+      }
+      i++;
+    }
   }
 
   public int getAggregatorModulo(final int committeeSize) {

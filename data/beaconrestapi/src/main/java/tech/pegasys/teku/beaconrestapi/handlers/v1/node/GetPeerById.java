@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;

@@ -17,7 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;

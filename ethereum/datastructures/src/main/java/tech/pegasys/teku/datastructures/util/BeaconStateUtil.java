@@ -248,6 +248,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
    */
+  @Deprecated
   public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
@@ -283,11 +284,13 @@ public class BeaconStateUtil {
    * @param genesis_validators_root
    * @return
    */
-  public static Bytes32 compute_fork_data_root(
+  @Deprecated
+  private static Bytes32 compute_fork_data_root(
       Bytes4 current_version, Bytes32 genesis_validators_root) {
     return new ForkData(current_version, genesis_validators_root).hashTreeRoot();
   }
 
+  @Deprecated
   public static Bytes4 compute_fork_digest(
       Bytes4 current_version, Bytes32 genesis_validators_root) {
     return new Bytes4(compute_fork_data_root(current_version, genesis_validators_root).slice(0, 4));
@@ -303,13 +306,15 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes32 compute_domain(
+  @Deprecated
+  private static Bytes32 compute_domain(
       Bytes4 domain_type, Bytes4 fork_version, Bytes32 genesis_validators_root) {
     final Bytes32 fork_data_root = compute_fork_data_root(fork_version, genesis_validators_root);
     return compute_domain(domain_type, fork_data_root);
   }
 
-  public static Bytes32 compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
+  @Deprecated
+  private static Bytes32 compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
     return Bytes32.wrap(
         Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28)));
   }
@@ -322,6 +327,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
+  @Deprecated
   public static Bytes32 compute_domain(Bytes4 domain_type) {
     return compute_domain(domain_type, GENESIS_FORK_VERSION, Bytes32.ZERO);
   }
@@ -379,6 +385,7 @@ public class BeaconStateUtil {
    * @see <a>
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
+  @Deprecated
   public static UInt64 compute_epoch_at_slot(UInt64 slot) {
     return slot.dividedBy(Constants.SLOTS_PER_EPOCH);
   }
@@ -392,6 +399,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_previous_epoch</a>
    */
+  @Deprecated
   public static UInt64 get_previous_epoch(BeaconState state) {
     UInt64 current_epoch = get_current_epoch(state);
     return current_epoch.equals(UInt64.valueOf(GENESIS_EPOCH))
@@ -407,6 +415,7 @@ public class BeaconStateUtil {
    * @see <a>
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_current_epoch</a>
    */
+  @Deprecated
   public static UInt64 get_current_epoch(BeaconState state) {
     return compute_epoch_at_slot(state.getSlot());
   }
@@ -420,7 +429,8 @@ public class BeaconStateUtil {
    * @param state The beacon state under consideration.
    * @return The next epoch number.
    */
-  public static UInt64 get_next_epoch(BeaconState state) {
+  @Deprecated
+  static UInt64 get_next_epoch(BeaconState state) {
     return get_current_epoch(state).plus(UInt64.ONE);
   }
 
@@ -432,6 +442,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
+  @Deprecated
   public static UInt64 compute_start_slot_at_epoch(UInt64 epoch) {
     return epoch.times(SLOTS_PER_EPOCH);
   }
@@ -444,6 +455,7 @@ public class BeaconStateUtil {
    * @return Either the current epoch or next epoch depending on whether the slot is at or before an
    *     epoch boundary
    */
+  @Deprecated
   public static UInt64 compute_next_epoch_boundary(final UInt64 slot) {
     final UInt64 currentEpoch = compute_epoch_at_slot(slot);
     return compute_start_slot_at_epoch(currentEpoch).equals(slot)
@@ -558,6 +570,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_block_root</a>
    */
+  @Deprecated
   public static Bytes32 get_block_root(BeaconState state, UInt64 epoch)
       throws IllegalArgumentException {
     return get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch));
@@ -591,6 +604,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_randao_mix</a>
    */
+  @Deprecated
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
     return state.getRandao_mixes().get(index);
@@ -604,10 +618,12 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_beacon_proposer_index</a>
    */
+  @Deprecated
   public static int get_beacon_proposer_index(BeaconState state) {
     return get_beacon_proposer_index(state, state.getSlot());
   }
 
+  @Deprecated
   public static int get_beacon_proposer_index(BeaconState state, UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
     return BeaconStateCache.getTransitionCaches(state)
@@ -626,6 +642,7 @@ public class BeaconStateUtil {
             });
   }
 
+  @Deprecated
   private static void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
     UInt64 epoch = compute_epoch_at_slot(requestedSlot);
@@ -650,6 +667,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
+  @Deprecated
   public static Bytes32 get_domain(BeaconState state, Bytes4 domain_type, UInt64 message_epoch) {
     UInt64 epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
     return get_domain(domain_type, epoch, state.getFork(), state.getGenesis_validators_root());
@@ -666,6 +684,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
+  @Deprecated
   public static Bytes32 get_domain(
       final Bytes4 domain_type,
       final UInt64 epoch,
@@ -758,6 +777,7 @@ public class BeaconStateUtil {
    * @param numBytes - The number of bytes to be returned.
    * @return The value represented as the requested number of bytes.
    */
+  @Deprecated
   public static Bytes uint_to_bytes(long value, int numBytes) {
     int longBytes = Long.SIZE / 8;
     Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
@@ -794,6 +814,7 @@ public class BeaconStateUtil {
         : get_block_root_at_slot(state, slot);
   }
 
+  @Deprecated
   public static Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
     return slot.equals(state.getSlot())
@@ -811,6 +832,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_block_root_at_slot</a>
    */
+  @Deprecated
   public static Bytes32 get_block_root_at_slot(BeaconState state, UInt64 slot)
       throws IllegalArgumentException {
     checkArgument(
@@ -822,6 +844,7 @@ public class BeaconStateUtil {
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
+  @Deprecated
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
     UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
     return slot.isLessThan(state.getSlot())
