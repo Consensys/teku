@@ -50,11 +50,6 @@ public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
-    // Create aggregation bitfield
-    return new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE, indexIntoCommittee);
-  }
-
   /**
    * Check if ``data_1`` and ``data_2`` are slashable according to Casper FFG rules.
    *
