@@ -39,7 +39,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   }
 
   @Override
-  public SszBitlist createZero(int zeroBitsCount) {
-    return fromLegacy(new Bitlist(zeroBitsCount, getMaxLength()));
+  public SszBitlist ofBits(int size, int... setBitIndexes) {
+    return fromLegacy(new Bitlist(size, getMaxLength(), setBitIndexes));
   }
 }

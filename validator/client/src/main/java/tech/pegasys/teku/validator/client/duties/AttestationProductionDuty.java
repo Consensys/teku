@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.duties;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -161,11 +160,10 @@ public class AttestationProductionDuty implements Duty {
       final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
-    final Bitlist aggregationBits =
-        new Bitlist(
-            validator.getCommitteeSize(),
-            MAX_VALIDATORS_PER_COMMITTEE,
-            validator.getCommitteePosition());
+    SszBitlist aggregationBits =
+        Attestation.SSZ_SCHEMA
+            .getAggregationBitsSchema()
+            .ofBits(validator.getCommitteeSize(), validator.getCommitteePosition());
     return new Attestation(aggregationBits, attestationData, signature);
   }
 

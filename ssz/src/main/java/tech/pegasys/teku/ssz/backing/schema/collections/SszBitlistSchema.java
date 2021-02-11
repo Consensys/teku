@@ -28,5 +28,9 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
   @Deprecated
   SszBitlistT fromLegacy(Bitlist bitlist);
 
-  SszBitlistT createZero(int zeroBitsCount);
+  default SszBitlistT createZero(int zeroBitsCount) {
+    return ofBits(zeroBitsCount);
+  }
+
+  SszBitlistT ofBits(int size, int... setBitIndexes);
 }
