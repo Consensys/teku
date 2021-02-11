@@ -20,7 +20,6 @@ import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
@@ -55,8 +54,8 @@ public class BlstPublicKey implements PublicKey {
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
-    Optional<BlstPublicKey> maybeInfinitePubkey = publicKeys.stream()
-        .filter(BlstPublicKey::isInfinity).findAny();
+    Optional<BlstPublicKey> maybeInfinitePubkey =
+        publicKeys.stream().filter(BlstPublicKey::isInfinity).findAny();
     if (maybeInfinitePubkey.isPresent()) {
       // if the Infinity is not a valid public key then aggregating with any
       // non-valid pubkey should result to a non-valid pubkey
@@ -76,8 +75,8 @@ public class BlstPublicKey implements PublicKey {
   }
 
   final P1_Affine ecPoint;
-  private final Supplier<Boolean> isInfinity = Suppliers
-      .memoize(() -> toBytesCompressed().equals(INFINITY_COMPRESSED_BYTES));
+  private final Supplier<Boolean> isInfinity =
+      Suppliers.memoize(() -> toBytesCompressed().equals(INFINITY_COMPRESSED_BYTES));
 
   public BlstPublicKey(P1_Affine ecPoint) {
     this.ecPoint = ecPoint;
