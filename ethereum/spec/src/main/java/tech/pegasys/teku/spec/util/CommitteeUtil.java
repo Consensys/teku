@@ -16,17 +16,15 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-
-import java.util.List;
 
 public class CommitteeUtil {
   private final SpecConstants specConstants;

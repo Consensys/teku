@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
@@ -72,7 +71,8 @@ public class EventSubscriptionManagerTest {
   private ConfigProvider configProvider = new ConfigProvider(specProvider);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
-  private final UInt64 epoch = specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  private final UInt64 epoch =
+      specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
   private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(

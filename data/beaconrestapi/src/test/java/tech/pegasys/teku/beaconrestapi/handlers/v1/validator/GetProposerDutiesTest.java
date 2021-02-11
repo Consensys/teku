@@ -17,7 +17,6 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import java.util.Map;
@@ -36,9 +35,12 @@ import tech.pegasys.teku.spec.util.BeaconStateUtil;
 
 public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   private BeaconStateUtil beaconStateUtil;
+
   @BeforeEach
   public void setup() {
-    handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider, configProvider);
+    handler =
+        new GetProposerDuties(
+            syncDataProvider, validatorDataProvider, jsonProvider, configProvider);
     beaconStateUtil = specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
   }
 
@@ -51,7 +53,8 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     GetProposerDutiesResponse duties =
         new GetProposerDutiesResponse(
             Bytes32.fromHexString("0x1234"),
-            List.of(getProposerDuty(2, beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
+            List.of(
+                getProposerDuty(2, beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 

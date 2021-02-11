@@ -12,7 +12,12 @@
  */
 
 package tech.pegasys.teku.spec.util;
-import com.google.common.primitives.UnsignedBytes;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+
+import java.nio.ByteOrder;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -25,12 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-
-import java.nio.ByteOrder;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 public class BeaconStateUtil {
   private final SpecConstants specConstants;
@@ -55,7 +54,7 @@ public class BeaconStateUtil {
   }
 
   public UInt64 computeEpochAtSlot(UInt64 slot) {
-    //TODO this should take into account hard forks
+    // TODO this should take into account hard forks
     return slot.dividedBy(specConstants.getSlotsPerEpoch());
   }
 
@@ -76,9 +75,7 @@ public class BeaconStateUtil {
 
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
     final UInt64 currentEpoch = computeEpochAtSlot(slot);
-    return computeStartSlotAtEpoch(currentEpoch).equals(slot)
-        ? currentEpoch
-        : currentEpoch.plus(1);
+    return computeStartSlotAtEpoch(currentEpoch).equals(slot) ? currentEpoch : currentEpoch.plus(1);
   }
 
   public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
@@ -92,8 +89,7 @@ public class BeaconStateUtil {
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
-  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch)
-      throws IllegalArgumentException {
+  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
     return getBlockRootAtSlot(state, computeStartSlotAtEpoch(epoch));
   }
 
@@ -103,7 +99,9 @@ public class BeaconStateUtil {
 
   public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
-    UInt64 randaoIndex = epoch.plus(specConstants.getEpochsPerHistoricalVector() - specConstants.getMinSeedLookahead() - 1);
+    UInt64 randaoIndex =
+        epoch.plus(
+            specConstants.getEpochsPerHistoricalVector() - specConstants.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
     Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
@@ -158,8 +156,7 @@ public class BeaconStateUtil {
     return getDutyDependentRoot(state, getCurrentEpoch(state));
   }
 
-  public Bytes4 computeForkDigest(
-      Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
     return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
   }
 
@@ -187,12 +184,10 @@ public class BeaconStateUtil {
   }
 
   private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
-    return Bytes32.wrap(
-        Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
+    return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
-  private Bytes32 computeForkDataRoot(
-      Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 

@@ -1,5 +1,25 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.spec.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,40 +35,37 @@ import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
-  private final BeaconStateUtil beaconStateUtil = specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
+  private final BeaconStateUtil beaconStateUtil =
+      specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
   private final SpecConstants specConstants = specProvider.atSlot(UInt64.ZERO).getConstants();
   private final long GENESIS_SLOT = specConstants.getGenesisSlot();
   private final long SLOTS_PER_EPOCH = specConstants.getSlotsPerEpoch();
+
   @BeforeEach
-  void setup () {
-  }
+  void setup() {}
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot())));
+        createBeaconState()
+            .updated(state -> state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot())));
     assertEquals(
-        UInt64.valueOf(specConstants.getGenesisEpoch() + 1), beaconStateUtil.getNextEpoch(beaconState));
+        UInt64.valueOf(specConstants.getGenesisEpoch() + 1),
+        beaconStateUtil.getNextEpoch(beaconState));
   }
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot())));
+        createBeaconState()
+            .updated(state -> state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot())));
     assertEquals(
-        UInt64.valueOf(specConstants.getGenesisEpoch()), beaconStateUtil.getPreviousEpoch(beaconState));
+        UInt64.valueOf(specConstants.getGenesisEpoch()),
+        beaconStateUtil.getPreviousEpoch(beaconState));
   }
 
   @Test
@@ -56,9 +73,13 @@ public class BeaconStateUtilTest {
     BeaconState beaconState =
         createBeaconState()
             .updated(
-                state -> state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot() + specConstants.getSlotsPerEpoch())));
+                state ->
+                    state.setSlot(
+                        UInt64.valueOf(
+                            specConstants.getGenesisSlot() + specConstants.getSlotsPerEpoch())));
     assertEquals(
-        UInt64.valueOf(specConstants.getGenesisEpoch()), beaconStateUtil.getPreviousEpoch(beaconState));
+        UInt64.valueOf(specConstants.getGenesisEpoch()),
+        beaconStateUtil.getPreviousEpoch(beaconState));
   }
 
   @Test
@@ -67,7 +88,10 @@ public class BeaconStateUtilTest {
         createBeaconState()
             .updated(
                 state ->
-                    state.setSlot(UInt64.valueOf(specConstants.getGenesisSlot() + 2 * specConstants.getSlotsPerEpoch())));
+                    state.setSlot(
+                        UInt64.valueOf(
+                            specConstants.getGenesisSlot()
+                                + 2 * specConstants.getSlotsPerEpoch())));
     assertEquals(
         UInt64.valueOf(specConstants.getGenesisEpoch() + 1),
         beaconStateUtil.getPreviousEpoch(beaconState));
@@ -140,6 +164,7 @@ public class BeaconStateUtilTest {
     assertThat(beaconStateUtil.getCurrentDutyDependentRoot(state))
         .isEqualTo(state.getBlock_roots().get((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
   }
+
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
@@ -174,7 +199,9 @@ public class BeaconStateUtilTest {
                   .getValidators()
                   .addAll(
                       SSZList.createMutable(
-                          validatorList, specConstants.getValidatorRegistryLimit(), Validator.class));
+                          validatorList,
+                          specConstants.getValidatorRegistryLimit(),
+                          Validator.class));
               beaconState
                   .getBalances()
                   .addAll(
