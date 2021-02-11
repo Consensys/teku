@@ -77,7 +77,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -91,6 +90,7 @@ public class BeaconStateUtil {
    */
   public static boolean BLS_VERIFY_DEPOSIT = true;
 
+  @Deprecated
   public static BeaconState initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UInt64 eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
@@ -106,6 +106,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
+  @Deprecated
   public static void process_deposit(MutableBeaconState state, Deposit deposit) {
     checkArgument(
         is_valid_merkle_branch(
@@ -119,6 +120,7 @@ public class BeaconStateUtil {
     process_deposit_without_checking_merkle_proof(state, deposit, null);
   }
 
+  @Deprecated
   static void process_deposit_without_checking_merkle_proof(
       final MutableBeaconState state,
       final Deposit deposit,
@@ -183,6 +185,7 @@ public class BeaconStateUtil {
     }
   }
 
+  @Deprecated
   private static Validator getValidatorFromDeposit(Deposit deposit) {
     final UInt64 amount = deposit.getData().getAmount();
     final UInt64 effectiveBalance =
@@ -225,6 +228,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
+  @Deprecated
   public static boolean is_valid_merkle_branch(
       Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
@@ -267,6 +271,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_balance</a>
    */
+  @Deprecated
   public static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
     SSZList<Validator> validator_registry = state.getValidators();
@@ -357,6 +362,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
+  @Deprecated
   public static Bytes compute_signing_root(Merkleizable object, Bytes32 domain) {
     return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
@@ -370,26 +376,11 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
+  @Deprecated
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
 
     SigningData domain_wrapped_object =
         new SigningData(new SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
-    return domain_wrapped_object.hashTreeRoot();
-  }
-
-  /**
-   * Return the signing root of a Bytes object by calculating the root of the object-domain tree.
-   *
-   * @param bytes Bytes string
-   * @param domain
-   * @return the signing root
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
-   */
-  public static Bytes compute_signing_root(Bytes bytes, Bytes32 domain) {
-    SigningData domain_wrapped_object =
-        new SigningData(
-            new SszByteVectorSchema(bytes.size()).createVector(bytes).hashTreeRoot(), domain);
     return domain_wrapped_object.hashTreeRoot();
   }
 
@@ -599,6 +590,7 @@ public class BeaconStateUtil {
    * @param epoch
    * @return
    */
+  @Deprecated
   public static UInt64 get_committee_count_per_slot(BeaconState state, UInt64 epoch) {
     List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
     return UInt64.valueOf(
@@ -723,6 +715,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
+  @Deprecated
   public static Bytes32 get_domain(BeaconState state, Bytes4 domain_type) {
     return get_domain(state, domain_type, null);
   }
@@ -735,12 +728,14 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_validator_churn_limit</a>
    */
+  @Deprecated
   public static UInt64 get_validator_churn_limit(BeaconState state) {
     final int activeValidatorCount =
         get_active_validator_indices(state, get_current_epoch(state)).size();
     return get_validator_churn_limit(activeValidatorCount);
   }
 
+  @Deprecated
   public static UInt64 get_validator_churn_limit(final int activeValidatorCount) {
     return UInt64.valueOf(MIN_PER_EPOCH_CHURN_LIMIT)
         .max(UInt64.valueOf(activeValidatorCount / CHURN_LIMIT_QUOTIENT));
@@ -754,10 +749,12 @@ public class BeaconStateUtil {
    * @see <a>
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_activation_exit_epoch</a>
    */
+  @Deprecated
   public static UInt64 compute_activation_exit_epoch(UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(MAX_SEED_LOOKAHEAD);
   }
 
+  @Deprecated
   public static boolean all(Bitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
       if (!bitvector.getBit(i)) {
@@ -775,6 +772,7 @@ public class BeaconStateUtil {
    * @see <a>
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#integer_squareroot</a>
    */
+  @Deprecated
   public static UInt64 integer_squareroot(UInt64 n) {
     checkArgument(
         n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integer_squareroot()");
@@ -871,6 +869,7 @@ public class BeaconStateUtil {
         && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
   }
 
+  @Deprecated
   public static boolean isSlotAtNthEpochBoundary(
       final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
     checkArgument(n > 0, "Parameter n must be greater than 0");

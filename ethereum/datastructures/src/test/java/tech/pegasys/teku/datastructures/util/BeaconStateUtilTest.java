@@ -14,30 +14,23 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -47,7 +40,6 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -90,27 +82,6 @@ class BeaconStateUtilTest {
   }
 
   @Test
-  void sqrtOfSquareNumber() {
-    UInt64 actual = BeaconStateUtil.integer_squareroot(UInt64.valueOf(3481L));
-    UInt64 expected = UInt64.valueOf(59L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void sqrtOfANonSquareNumber() {
-    UInt64 actual = BeaconStateUtil.integer_squareroot(UInt64.valueOf(27L));
-    UInt64 expected = UInt64.valueOf(5L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void sqrtOfANegativeNumber() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> BeaconStateUtil.integer_squareroot(UInt64.valueOf(-1L)));
-  }
-
-  @Test
   void validateProofOfPossessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
     Deposit deposit = dataStructureUtil.newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
@@ -148,26 +119,6 @@ class BeaconStateUtilTest {
     Bytes signing_root = compute_signing_root(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
-  }
-
-  @Test
-  void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
-    // Data Setup
-    BeaconState state = createBeaconState();
-    Committee committee = new Committee(UInt64.ONE, Arrays.asList(0, 1, 2));
-
-    // Calculate Expected Results
-    UInt64 expectedBalance = UInt64.ZERO;
-    for (UInt64 balance : state.getBalances()) {
-      if (balance.isLessThan(Constants.MAX_EFFECTIVE_BALANCE)) {
-        expectedBalance = expectedBalance.plus(balance);
-      } else {
-        expectedBalance = expectedBalance.plus(Constants.MAX_EFFECTIVE_BALANCE);
-      }
-    }
-
-    UInt64 totalBalance = BeaconStateUtil.get_total_balance(state, committee.getCommittee());
-    assertEquals(expectedBalance, totalBalance);
   }
 
   @Test
@@ -238,81 +189,6 @@ class BeaconStateUtilTest {
     assertEquals(
         UInt64.fromLongBits(0xffffffffffffff7fL),
         BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x7fffffffffffffff")));
-  }
-
-  @Test
-  public void isSlotAtNthEpochBoundary_invalidNParameter_zero() {
-    assertThatThrownBy(() -> BeaconStateUtil.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, 0))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @Test
-  public void isSlotAtNthEpochBoundary_invalidNParameter_negative() {
-    assertThatThrownBy(() -> BeaconStateUtil.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, -1))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_allSlotsFilled(final int n) {
-    final UInt64 epochs = UInt64.valueOf(n * 3);
-    final UInt64 slots = epochs.times(SLOTS_PER_EPOCH);
-
-    for (int i = 1; i <= slots.intValue(); i++) {
-      final boolean expected = i % (n * SLOTS_PER_EPOCH) == 0 && i != 0;
-
-      final UInt64 blockSlot = UInt64.valueOf(i);
-      assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(blockSlot, blockSlot.minus(1), n))
-          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
-          .isEqualTo(expected);
-    }
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  void isSlotAtNthEpochBoundary_withSkippedBlock(final int n) {
-    final int nthStartSlot = compute_start_slot_at_epoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_oneEpochAndSlotSkipped(final int n) {
-    final int nthStartSlot = compute_start_slot_at_epoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + SLOTS_PER_EPOCH + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_nearlyNEpochsSkipped(final int n) {
-    final int startSlotAt2N = compute_start_slot_at_epoch(UInt64.valueOf(n * 2)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(startSlotAt2N - 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    final UInt64 block3Slot = block2Slot.plus(1);
-
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isTrue();
-    assertThat(BeaconStateUtil.isSlotAtNthEpochBoundary(block3Slot, block2Slot, n)).isFalse();
-  }
-
-  public static Stream<Arguments> getNValues() {
-    return Stream.of(
-        Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
   }
 
   private BeaconState createBeaconState() {
