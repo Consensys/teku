@@ -15,12 +15,17 @@ package tech.pegasys.teku.weaksubjectivity;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
+import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.EthConstants;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
@@ -29,22 +34,24 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
-  private static final UInt64 WITHDRAWAL_DELAY =
-      UInt64.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
 
+  private final SpecProvider specProvider;
   private final UInt64 safetyDecay;
-  // Use injectable activeValidatorCalculator to make unit testing simpler
-  private final ActiveValidatorCalculator activeValidatorCalculator;
+  // Use injectable StateCalculator to make unit testing simpler
+  private final StateCalculator stateCalculator;
 
   WeakSubjectivityCalculator(
-      final UInt64 safetyDecay, final ActiveValidatorCalculator activeValidatorCalculator) {
+      final SpecProvider specProvider,
+      final UInt64 safetyDecay,
+      final StateCalculator stateCalculator) {
+    this.specProvider = specProvider;
     this.safetyDecay = safetyDecay;
-    this.activeValidatorCalculator = activeValidatorCalculator;
+    this.stateCalculator = stateCalculator;
   }
 
   public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
     return new WeakSubjectivityCalculator(
-        config.getSafetyDecay(), ActiveValidatorCalculator.DEFAULT);
+        config.getSpecProvider(), config.getSafetyDecay(), StateCalculator.DEFAULT);
   }
 
   /**
@@ -57,8 +64,7 @@ public class WeakSubjectivityCalculator {
    */
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
-    final int validatorCount = getActiveValidators(finalizedCheckpoint.getState());
-    UInt64 wsPeriod = computeWeakSubjectivityPeriod(validatorCount);
+    UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
 
     return finalizedCheckpoint
@@ -69,36 +75,84 @@ public class WeakSubjectivityCalculator {
   }
 
   /**
-   * @param state A trusted / effectively finalized state
+   * @param checkpointState A trusted / effectively finalized checkpoint state
    * @return The weak subjectivity period in epochs
    */
-  public UInt64 computeWeakSubjectivityPeriod(final BeaconState state) {
-    return computeWeakSubjectivityPeriod(getActiveValidators(state));
+  public UInt64 computeWeakSubjectivityPeriod(final CheckpointState checkpointState) {
+    final BeaconState state = checkpointState.getState();
+    final int activeValidators = stateCalculator.getActiveValidators(state);
+    final UInt64 totalActiveValidatorBalance =
+        stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
+    final SpecConstants constants = specProvider.get(checkpointState.getEpoch()).getConstants();
+    return computeWeakSubjectivityPeriod(constants, activeValidators, totalActiveValidatorBalance);
   }
 
-  // TODO(#2779) - This calculation is still under development, make sure it is updated to the
-  // latest when possible
-  public UInt64 computeWeakSubjectivityPeriod(final int validatorCount) {
-    final UInt64 safeEpochs;
-    if (validatorCount > Constants.MIN_PER_EPOCH_CHURN_LIMIT * Constants.CHURN_LIMIT_QUOTIENT) {
-      safeEpochs = safetyDecay.times(Constants.CHURN_LIMIT_QUOTIENT).dividedBy(200);
+  @VisibleForTesting
+  UInt64 computeWeakSubjectivityPeriod(
+      final SpecConstants constants,
+      final int activeValidatorCount,
+      final UInt64 totalValidatorBalance) {
+    final UInt64 N = UInt64.valueOf(activeValidatorCount);
+    final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(EthConstants.ETH_TO_GWEI);
+    final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(EthConstants.ETH_TO_GWEI);
+    final UInt64 delta = get_validator_churn_limit(activeValidatorCount);
+    final UInt64 Delta =
+        UInt64.valueOf(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
+    final UInt64 D = safetyDecay;
+
+    final UInt64 wsPeriod;
+    final UInt64 maxBalanceMultiplier = D.times(3).plus(200);
+    final UInt64 scaledMaxBalance = T.times(maxBalanceMultiplier);
+    final UInt64 scaledAverageBalance = t.times(D.times(12).plus(200));
+    if (scaledMaxBalance.isLessThan(scaledAverageBalance)) {
+      final UInt64 churnDivisor = delta.times(600).times(t.times(2).plus(T));
+      final UInt64 epochsForValidatorChurnSet =
+          N.times(scaledAverageBalance.minus(scaledMaxBalance)).dividedBy(churnDivisor);
+      final UInt64 epochsForBalanceTopUps =
+          N.times(maxBalanceMultiplier).dividedBy(Delta.times(600));
+
+      wsPeriod = epochsForValidatorChurnSet.max(epochsForBalanceTopUps);
     } else {
-      safeEpochs =
-          safetyDecay.times(validatorCount).dividedBy(200 * Constants.MIN_PER_EPOCH_CHURN_LIMIT);
+      final UInt64 divisor = Delta.times(200).times(T.minus(t));
+      wsPeriod = N.times(D).times(t).times(3).dividedBy(divisor);
     }
 
-    return safeEpochs.plus(WITHDRAWAL_DELAY);
+    return wsPeriod.plus(constants.getMinValidatorWithdrawabilityDelay());
   }
 
-  public int getActiveValidators(final BeaconState state) {
-    return activeValidatorCalculator.getActiveValidators(state);
-  }
+  interface StateCalculator {
+    StateCalculator DEFAULT =
+        new StateCalculator() {
+          @Override
+          public int getActiveValidators(final BeaconState state) {
+            return get_active_validator_indices(state, get_current_epoch(state)).size();
+          }
 
-  @FunctionalInterface
-  interface ActiveValidatorCalculator {
-    ActiveValidatorCalculator DEFAULT =
-        (state) -> get_active_validator_indices(state, get_current_epoch(state)).size();
+          @Override
+          public UInt64 getTotalActiveValidatorBalance(
+              final BeaconState state, final int activeValidatorCount) {
+            return get_total_active_balance(state);
+          }
+        };
+
+    static StateCalculator createStaticCalculator(
+        final int activeValidators, final UInt64 totalActiveValidatorBalance) {
+      return new StateCalculator() {
+        @Override
+        public int getActiveValidators(final BeaconState state) {
+          return activeValidators;
+        }
+
+        @Override
+        public UInt64 getTotalActiveValidatorBalance(
+            final BeaconState state, final int activeValidatorCount) {
+          return totalActiveValidatorBalance;
+        }
+      };
+    }
 
     int getActiveValidators(final BeaconState state);
+
+    UInt64 getTotalActiveValidatorBalance(final BeaconState state, final int activeValidatorCount);
   }
 }

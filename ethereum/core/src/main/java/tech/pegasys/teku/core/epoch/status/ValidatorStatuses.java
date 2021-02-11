@@ -58,6 +58,9 @@ public class ValidatorStatuses {
 
     final TotalBalances totalBalances = createTotalBalances(statuses);
     BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
+    BeaconStateCache.getTransitionCaches(state)
+        .getTotalActiveBalance()
+        .get(currentEpoch, __ -> totalBalances.getCurrentEpoch());
 
     return new ValidatorStatuses(statuses, totalBalances);
   }

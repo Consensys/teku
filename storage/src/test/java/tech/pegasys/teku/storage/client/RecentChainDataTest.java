@@ -43,6 +43,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
 
 class RecentChainDataTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private StorageSystem storageSystem;
 
   private ChainBuilder chainBuilder;
@@ -734,7 +736,6 @@ class RecentChainDataTest {
   @Test
   public void getBlockRootBySlotWithHeadRoot_forUnknownHeadRoot() {
     initPostGenesis();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
@@ -771,6 +772,21 @@ class RecentChainDataTest {
       assertThat(recentChainData.getBlockRootBySlot(targetSlot, headRoot))
           .contains(expectedBlock.getRoot());
     }
+  }
+
+  @Test
+  void getSlotForBlockRoot_shouldReturnEmptyForUnknownBlock() {
+    initPostGenesis();
+
+    assertThat(recentChainData.getSlotForBlockRoot(dataStructureUtil.randomBytes32())).isEmpty();
+  }
+
+  @Test
+  void getSlotForBlockRoot_shouldReturnSlotForKnownBlock() {
+    initPostGenesis();
+
+    final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
+    assertThat(recentChainData.getSlotForBlockRoot(block.getRoot())).contains(block.getSlot());
   }
 
   @Test
