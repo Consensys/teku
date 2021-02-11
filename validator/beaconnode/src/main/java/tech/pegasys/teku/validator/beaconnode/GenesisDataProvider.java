@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.beaconnode;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_DATA_RETRY_DELAY_SECONDS;
 
 import com.google.common.base.Suppliers;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +57,7 @@ public class GenesisDataProvider {
             error -> {
               LOG.error("Failed to retrieve genesis data. Retrying after delay", error);
               return asyncRunner.runAfterDelay(
-                  this::fetchGenesisData, GENESIS_DATA_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+                  this::fetchGenesisData, GENESIS_DATA_RETRY_DELAY_SECONDS);
             });
   }
 
@@ -73,9 +72,7 @@ public class GenesisDataProvider {
                         () -> {
                           LOG.info("Waiting for genesis data to be known");
                           return asyncRunner.runAfterDelay(
-                              this::requestGenesisData,
-                              GENESIS_DATA_RETRY_DELAY_SECONDS,
-                              TimeUnit.SECONDS);
+                              this::requestGenesisData, GENESIS_DATA_RETRY_DELAY_SECONDS);
                         }));
   }
 }

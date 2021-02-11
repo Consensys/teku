@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -188,7 +187,7 @@ public class SyncManager extends Service {
             () -> {
               LOG.trace("No suitable peers (out of {}) found for sync.", network.getPeerCount());
               asyncRunner
-                  .getDelayedFuture(LONG_DELAY.toMillis(), TimeUnit.MILLISECONDS)
+                  .getDelayedFuture(LONG_DELAY)
                   .thenAccept((res) -> startOrScheduleSync())
                   .reportExceptions();
               return completedFuture(null);
@@ -209,8 +208,7 @@ public class SyncManager extends Service {
             result -> {
               if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
                 LOG.trace("Sync to peer {} failed with {}.", syncPeer.getId(), result.name());
-                return asyncRunner.runAfterDelay(
-                    this::executeSync, SHORT_DELAY.toMillis(), TimeUnit.MILLISECONDS);
+                return asyncRunner.runAfterDelay(this::executeSync, SHORT_DELAY);
               } else {
                 LOG.trace("Successfully synced to peer {}.", syncPeer.getId());
                 return completedFuture(null);
@@ -228,7 +226,7 @@ public class SyncManager extends Service {
               peersWithSyncErrors.add(syncPeer.getId());
               // Wait a little bit, clear error and retry
               asyncRunner
-                  .getDelayedFuture(LONG_DELAY.toMillis(), TimeUnit.MILLISECONDS)
+                  .getDelayedFuture(LONG_DELAY)
                   .thenAccept(
                       (res) -> {
                         peersWithSyncErrors.remove(syncPeer.getId());

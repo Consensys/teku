@@ -15,8 +15,8 @@ package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,8 +65,7 @@ public class Eth1HeadTracker {
                 asyncRunner
                     .runAfterDelay(
                         this::pollLatestHead,
-                        Constants.SECONDS_PER_ETH1_BLOCK.longValue(),
-                        TimeUnit.SECONDS)
+                        Duration.ofSeconds(Constants.SECONDS_PER_ETH1_BLOCK.longValue()))
                     .finish(
                         () -> {},
                         error ->

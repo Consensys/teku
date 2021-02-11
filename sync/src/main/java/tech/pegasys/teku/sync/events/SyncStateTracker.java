@@ -14,7 +14,6 @@
 package tech.pegasys.teku.sync.events;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -100,9 +99,7 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
         startupTargetPeerCount,
         startupTimeout);
     peerConnectedSubscriptionId = network.subscribeConnect(peer -> onPeerConnected());
-    asyncRunner
-        .runAfterDelay(this::onStartupTimeout, startupTimeout.toMillis(), TimeUnit.MILLISECONDS)
-        .reportExceptions();
+    asyncRunner.runAfterDelay(this::onStartupTimeout, startupTimeout).reportExceptions();
     syncSubscriptionId = syncService.subscribeToSyncChanges(this::onSyncingChanged);
     return SafeFuture.COMPLETE;
   }

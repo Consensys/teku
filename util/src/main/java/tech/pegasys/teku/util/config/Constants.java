@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
@@ -138,8 +138,6 @@ public class Constants {
   public static final int MAX_REQUEST_BLOCKS = 1024;
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
-  public static final int TTFB_TIMEOUT = 5; // in sec
-  public static final int RESP_TIMEOUT = 10; // in sec
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
@@ -153,12 +151,12 @@ public class Constants {
   // Teku specific
   public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
-  public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
-  public static final long ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = 3; // in sec
+  public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
+  public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
+  public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
-  public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec
+  public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
   public static final int ATTESTATION_RETENTION_EPOCHS = 2;
@@ -170,9 +168,9 @@ public class Constants {
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
-  public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
-  public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
-  public static final long GENESIS_DATA_RETRY_DELAY_SECONDS = 10; // in sec
+  public static final Duration FORK_RETRY_DELAY_SECONDS = Duration.ofSeconds(10);
+  public static final Duration FORK_REFRESH_TIME_SECONDS = Duration.ofMinutes(5);
+  public static final Duration GENESIS_DATA_RETRY_DELAY_SECONDS = Duration.ofSeconds(10);
 
   static {
     setConstants("minimal");
