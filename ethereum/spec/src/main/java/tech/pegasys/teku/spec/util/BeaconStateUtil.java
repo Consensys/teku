@@ -59,8 +59,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
-  private static final Logger LOG =
-      LogManager.getLogger(tech.pegasys.teku.datastructures.util.BeaconStateUtil.class);
+  private static final Logger LOG = LogManager.getLogger();
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
