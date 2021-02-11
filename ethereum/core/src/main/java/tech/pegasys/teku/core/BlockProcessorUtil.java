@@ -353,7 +353,7 @@ public final class BlockProcessorUtil {
 
         PendingAttestation pendingAttestation =
             new PendingAttestation(
-                attestation.getAggregation_bits().toLegacy(),
+                attestation.getAggregation_bits(),
                 data,
                 state.getSlot().minus(data.getSlot()),
                 UInt64.valueOf(get_beacon_proposer_index(state)));

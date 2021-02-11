@@ -19,11 +19,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class PendingAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bitlist aggregation_bits;
+  public final SszBitlist aggregation_bits;
 
   public final AttestationData data;
 
@@ -35,7 +35,7 @@ public class PendingAttestation {
 
   @JsonCreator
   public PendingAttestation(
-      @JsonProperty("aggregation_bits") final Bitlist aggregation_bits,
+      @JsonProperty("aggregation_bits") final SszBitlist aggregation_bits,
       @JsonProperty("data") final AttestationData data,
       @JsonProperty("inclusion_delay") final UInt64 inclusion_delay,
       @JsonProperty("proposer_index") final UInt64 proposer_index) {
@@ -47,7 +47,7 @@ public class PendingAttestation {
 
   public PendingAttestation(
       final tech.pegasys.teku.datastructures.state.PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregation_bits().toLegacy();
+    this.aggregation_bits = pendingAttestation.getAggregation_bits();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();

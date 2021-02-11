@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -44,12 +45,11 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 class BeaconChainMetricsTest {
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
@@ -273,7 +273,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void currentLiveValidators_treatSameBitIndexInDifferentSlotAsUnique() {
-    final Bitlist bitlist = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist = bitlistOf(1, 3, 5, 7);
     final List<PendingAttestation> attestations =
         Stream.concat(createAttestations(13, 1, bitlist), createAttestations(14, 1, bitlist))
             .collect(toList());
@@ -285,7 +285,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void currentLiveValidators_treatSameBitIndexInDifferentCommitteeAsUnique() {
-    final Bitlist bitlist = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist = bitlistOf(1, 3, 5, 7);
     final List<PendingAttestation> attestations =
         Stream.concat(createAttestations(13, 1, bitlist), createAttestations(13, 2, bitlist))
             .collect(toList());
@@ -297,8 +297,8 @@ class BeaconChainMetricsTest {
 
   @Test
   void currentLiveValidators_treatSameBitIndexInSameSlotAsOneValidator() {
-    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
-    final Bitlist bitlist2 = bitlistOf(1, 2, 3, 4);
+    final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist2 = bitlistOf(1, 2, 3, 4);
     withCurrentEpochAttestations(createAttestations(13, 1, bitlist1, bitlist2).collect(toList()));
 
     beaconChainMetrics.onSlot(UInt64.valueOf(100));
@@ -307,7 +307,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void previousLiveValidators_treatSameBitIndexInDifferentSlotAsUnique() {
-    final Bitlist bitlist = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist = bitlistOf(1, 3, 5, 7);
     final List<PendingAttestation> attestations =
         Stream.concat(createAttestations(13, 1, bitlist), createAttestations(14, 1, bitlist))
             .collect(toList());
@@ -319,7 +319,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void previousLiveValidators_treatSameBitIndexInDifferentCommitteeAsUnique() {
-    final Bitlist bitlist = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist = bitlistOf(1, 3, 5, 7);
     final List<PendingAttestation> attestations =
         Stream.concat(createAttestations(13, 1, bitlist), createAttestations(13, 2, bitlist))
             .collect(toList());
@@ -331,8 +331,8 @@ class BeaconChainMetricsTest {
 
   @Test
   void previousLiveValidators_treatSameBitIndexInSameSlotAsOneValidator() {
-    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
-    final Bitlist bitlist2 = bitlistOf(1, 2, 3, 4);
+    final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist2 = bitlistOf(1, 2, 3, 4);
     withPreviousEpochAttestations(
         100, createAttestations(13, 1, bitlist1, bitlist2).collect(toList()));
 
@@ -351,8 +351,8 @@ class BeaconChainMetricsTest {
         target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
     SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
     when(state.getBlock_roots()).thenReturn(blockRootSSZList);
-    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
-    final Bitlist bitlist2 = bitlistOf(2, 4, 6, 8);
+    final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
         Stream.concat(
                 createAttestationsWithTargetCheckpoint(13, 1, target, bitlist1),
@@ -382,8 +382,8 @@ class BeaconChainMetricsTest {
     blockRootsList.set(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
     SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
     when(state.getBlock_roots()).thenReturn(blockRootSSZList);
-    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
-    final Bitlist bitlist2 = bitlistOf(2, 4, 6, 8);
+    final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
         Stream.concat(
                 createAttestationsWithTargetCheckpoint(slot.intValue(), 1, target, bitlist1),
@@ -412,8 +412,8 @@ class BeaconChainMetricsTest {
     blockRootsList.set(blockRootIndex, blockRoot);
     SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
     when(state.getBlock_roots()).thenReturn(blockRootSSZList);
-    final Bitlist bitlist1 = bitlistOf(1, 3, 5, 7);
-    final Bitlist bitlist2 = bitlistOf(2, 4, 6, 8);
+    final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
+    final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
         Stream.concat(
                 createAttestationsWithTargetCheckpoint(13, 1, target, bitlist1),
@@ -473,7 +473,7 @@ class BeaconChainMetricsTest {
   }
 
   private Stream<PendingAttestation> createAttestations(
-      final int slot, final int index, final Bitlist... bitlists) {
+      final int slot, final int index, final SszBitlist... bitlists) {
     return Stream.of(bitlists)
         .map(
             bitlist1 ->
@@ -490,7 +490,7 @@ class BeaconChainMetricsTest {
   }
 
   private Stream<PendingAttestation> createAttestationsWithTargetCheckpoint(
-      final int slot, final int index, final Checkpoint target, final Bitlist... bitlists) {
+      final int slot, final int index, final Checkpoint target, final SszBitlist... bitlists) {
     return Stream.of(bitlists)
         .map(
             bitlist1 ->
@@ -506,9 +506,8 @@ class BeaconChainMetricsTest {
                     dataStructureUtil.randomUInt64()));
   }
 
-  private Bitlist bitlistOf(final int... indices) {
-    final Bitlist bitlist = new Bitlist(10, Constants.MAX_VALIDATORS_PER_COMMITTEE, indices);
-    return bitlist;
+  private SszBitlist bitlistOf(final int... indices) {
+    return Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(10, indices);
   }
 
   private Validator validator(
