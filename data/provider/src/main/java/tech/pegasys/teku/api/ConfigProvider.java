@@ -34,7 +34,7 @@ public class ConfigProvider {
     final Map<String, String> configAttributes = new HashMap<>();
     specProvider
         // Display genesis spec, for now
-        .get(UInt64.ZERO)
+        .atEpoch(UInt64.ZERO)
         .getConstants()
         .getRawConstants()
         .forEach(
