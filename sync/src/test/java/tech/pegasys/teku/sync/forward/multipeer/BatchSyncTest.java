@@ -581,6 +581,37 @@ class BatchSyncTest {
   }
 
   @Test
+  void shouldHandleBatchWithNoSyncSourceMarkedCompleteBecauseOfLaterBatch() {
+    final SafeFuture<SyncResult> syncFuture = sync.syncToChain(targetChain);
+    assertThat(syncFuture).isNotDone();
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    final Batch batch2 = batches.get(2);
+    final Batch batch3 = batches.get(3);
+    final Batch batch4 = batches.get(4);
+
+    // Found an old common ancestor so we already have blocks up to the start of batch 2
+    final SignedBlockAndState bestBlock =
+        storageSystem.chainUpdater().advanceChainUntil(batch4.getFirstSlot().longValue());
+    storageSystem.chainUpdater().updateBestBlock(bestBlock);
+
+
+    // We receive a block from in batch4 which is a child of an existing block
+    // but it's not the common ancestor sync started from
+    final SignedBeaconBlock batch4Block = chainBuilder.getBlockAtSlot(batch4.getFirstSlot());
+    assertThat(recentChainData.containsBlock(batch4Block.getParentRoot())).isTrue();
+    batches.receiveBlocks(batch4, batch4Block);
+
+    // None of the batches should be complete
+    assertThatBatch(batch0).isNotComplete();
+    assertThatBatch(batch1).isNotComplete();
+    assertThatBatch(batch2).isNotComplete();
+    assertThatBatch(batch3).isNotComplete();
+    assertThatBatch(batch4).isNotComplete();
+  }
+
+  @Test
   void shouldRemoveBatchFromActiveSetWhenImportCompletesSuccessfully() {
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
