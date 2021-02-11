@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
+import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-
-import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
-import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 /** This class represents a BLS12-381 private key. */
 public class MikuliSecretKey implements SecretKey {

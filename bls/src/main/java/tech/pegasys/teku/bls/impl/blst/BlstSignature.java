@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
@@ -22,33 +28,26 @@ import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
-//  private static final Bytes INFINITY_BYTES =
-//      Bytes.fromHexString(
-//          "0x"
-//              + "c000000000000000000000000000000000000000000000000000000000000000"
-//              + "0000000000000000000000000000000000000000000000000000000000000000"
-//              + "0000000000000000000000000000000000000000000000000000000000000000");
-//  static final BlstSignature INFINITY;
+  //  private static final Bytes INFINITY_BYTES =
+  //      Bytes.fromHexString(
+  //          "0x"
+  //              + "c000000000000000000000000000000000000000000000000000000000000000"
+  //              + "0000000000000000000000000000000000000000000000000000000000000000"
+  //              + "0000000000000000000000000000000000000000000000000000000000000000");
+  //  static final BlstSignature INFINITY;
 
   static {
-//    P2_Affine ec2Point = new P2_Affine(INFINITY_BYTES.toArrayUnsafe());
-//    INFINITY = new BlstSignature(ec2Point, true);
+    //    P2_Affine ec2Point = new P2_Affine(INFINITY_BYTES.toArrayUnsafe());
+    //    INFINITY = new BlstSignature(ec2Point, true);
   }
 
   public static BlstSignature fromBytes(Bytes compressed) {
-//    if (compressed.equals(INFINITY_BYTES)) {
-//      return INFINITY;
-//    }
+    //    if (compressed.equals(INFINITY_BYTES)) {
+    //      return INFINITY;
+    //    }
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
@@ -70,15 +69,15 @@ public class BlstSignature implements Signature {
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
-//    List<BlstSignature> finiteSignatures =
-//        signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
+    //    List<BlstSignature> finiteSignatures =
+    //        signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
 
-//    if (finiteSignatures.size() < signatures.size()) {
-//      return BlstSignature.INFINITY;
-//    }
+    //    if (finiteSignatures.size() < signatures.size()) {
+    //      return BlstSignature.INFINITY;
+    //    }
 
     Optional<BlstSignature> invalidSignature =
-//        finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
+        //        finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
         signatures.stream().filter(s -> !s.isValid).findFirst();
     if (invalidSignature.isPresent()) {
       throw new IllegalArgumentException(
@@ -87,8 +86,8 @@ public class BlstSignature implements Signature {
 
     P2 sum = new P2();
     try {
-//      for (BlstSignature finiteSignature : finiteSignatures) {
-        for (BlstSignature finiteSignature : signatures) {
+      //      for (BlstSignature finiteSignature : finiteSignatures) {
+      for (BlstSignature finiteSignature : signatures) {
         sum.aggregate(finiteSignature.ec2Point);
       }
 
@@ -175,10 +174,10 @@ public class BlstSignature implements Signature {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
   }
 
-//  @SuppressWarnings("ReferenceEquality")
-//  boolean isInfinity() {
-//    return this == INFINITY;
-//  }
+  //  @SuppressWarnings("ReferenceEquality")
+  //  boolean isInfinity() {
+  //    return this == INFINITY;
+  //  }
 
   @Override
   public int hashCode() {
