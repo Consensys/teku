@@ -37,13 +37,14 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
           "Deposit",
           namedSchema(
               "proof",
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
           namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 
-    public SszVectorSchema<SszBytes32> getProofSchema() {
-      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
+    @SuppressWarnings("unchecked")
+    public SszVectorSchema<SszBytes32, ?> getProofSchema() {
+      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
     }
 
     @Override

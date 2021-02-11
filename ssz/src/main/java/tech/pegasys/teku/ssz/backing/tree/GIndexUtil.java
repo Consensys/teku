@@ -58,7 +58,7 @@ public class GIndexUtil {
    * The generalized index of either a root tree node or an index of a node relative to the node
    * itself. Effectively this is <code>1L</code>
    */
-  static final long SELF_G_INDEX = 1;
+  public static final long SELF_G_INDEX = 1;
 
   /** The generalized index of the left child. Effectively <code>0b10</code> */
   public static final long LEFT_CHILD_G_INDEX = gIdxLeftGIndex(SELF_G_INDEX);
@@ -171,10 +171,10 @@ public class GIndexUtil {
    *   <li><code>gIdxChildGIndex(anyIndex, 1, 1) == gIdxRightGIndex(anyIndex)</code>
    * </ul>
    */
-  public static long gIdxChildGIndex(long generalizedIndex, int childIdx, int childDepth) {
+  public static long gIdxChildGIndex(long generalizedIndex, long childIdx, int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth < 64;
-    assert childIdx >= 0 && childIdx < (1 << childDepth);
+    assert childIdx >= 0 && childIdx < (1L << childDepth);
     assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
     return (generalizedIndex << childDepth) | childIdx;
   }

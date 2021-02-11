@@ -39,11 +39,11 @@ public class HistoricalBatch
           "HistoricalBatch",
           namedSchema(
               "block_roots",
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT)),
           namedSchema(
               "state_roots",
-              new SszVectorSchema<>(
+              SszVectorSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT)));
     }
 
@@ -56,12 +56,14 @@ public class HistoricalBatch
       return new HistoricalBatch(this, block_roots, state_roots);
     }
 
-    public SszVectorSchema<SszBytes32> getBlockRootsSchema() {
-      return (SszVectorSchema<SszBytes32>) getFieldSchema0();
+    @SuppressWarnings("unchecked")
+    public SszVectorSchema<SszBytes32, ?> getBlockRootsSchema() {
+      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
     }
 
-    public SszVectorSchema<SszBytes32> getStateRootsSchema() {
-      return (SszVectorSchema<SszBytes32>) getFieldSchema1();
+    @SuppressWarnings("unchecked")
+    public SszVectorSchema<SszBytes32, ?> getStateRootsSchema() {
+      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema1();
     }
   }
 

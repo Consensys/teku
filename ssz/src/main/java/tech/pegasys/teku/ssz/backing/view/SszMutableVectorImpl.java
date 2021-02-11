@@ -37,8 +37,8 @@ public class SszMutableVectorImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorSchema<SszElementT> getSchema() {
-    return (SszVectorSchema<SszElementT>) super.getSchema();
+  public SszVectorSchema<SszElementT, ?> getSchema() {
+    return (SszVectorSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override
