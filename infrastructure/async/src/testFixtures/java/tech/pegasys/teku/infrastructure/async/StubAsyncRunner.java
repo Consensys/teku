@@ -16,11 +16,11 @@ package tech.pegasys.teku.infrastructure.async;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.propagateResult;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.TimeUnit;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -62,9 +62,8 @@ public class StubAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit) {
-    return schedule(
-        action, timeProvider.getTimeInMillis().longValue() + delayUnit.toMillis(delayAmount));
+      ExceptionThrowingFutureSupplier<U> action, Duration delay) {
+    return schedule(action, timeProvider.getTimeInMillis().longValue() + delay.toMillis());
   }
 
   @Override

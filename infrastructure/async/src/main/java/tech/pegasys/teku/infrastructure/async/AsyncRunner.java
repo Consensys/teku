@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.base.Preconditions;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface AsyncRunner {
@@ -26,22 +25,11 @@ public interface AsyncRunner {
 
   <U> SafeFuture<U> runAsync(final ExceptionThrowingFutureSupplier<U> action);
 
-  <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, long delayAmount, TimeUnit delayUnit);
-
-  default <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
-    return runAfterDelay(action, delay.toMillis(), TimeUnit.MILLISECONDS);
-  }
+  <U> SafeFuture<U> runAfterDelay(ExceptionThrowingFutureSupplier<U> action, final Duration delay);
 
   default SafeFuture<Void> runAfterDelay(
       final ExceptionThrowingRunnable action, final Duration delay) {
-    return runAfterDelay(action, delay.toMillis(), TimeUnit.MILLISECONDS);
-  }
-
-  default SafeFuture<Void> runAfterDelay(
-      final ExceptionThrowingRunnable action, long delayAmount, TimeUnit delayUnit) {
-    return runAfterDelay(() -> SafeFuture.fromRunnable(action), delayAmount, delayUnit);
+    return runAfterDelay(() -> SafeFuture.fromRunnable(action), delay);
   }
 
   void shutdown();
@@ -51,11 +39,7 @@ public interface AsyncRunner {
   }
 
   default SafeFuture<Void> getDelayedFuture(final Duration delay) {
-    return runAfterDelay(() -> SafeFuture.COMPLETE, delay.toMillis(), TimeUnit.MILLISECONDS);
-  }
-
-  default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
-    return runAfterDelay(() -> SafeFuture.COMPLETE, delayAmount, delayUnit);
+    return runAfterDelay(() -> SafeFuture.COMPLETE, delay);
   }
 
   /**
@@ -71,29 +55,10 @@ public interface AsyncRunner {
       final ExceptionThrowingRunnable runnable,
       final Duration delay,
       final Consumer<Throwable> exceptionHandler) {
-    return runWithFixedDelay(runnable, delay.toMillis(), TimeUnit.MILLISECONDS, exceptionHandler);
-  }
-
-  /**
-   * Schedules the recurrent task which will be repeatedly executed with the specified delay.
-   *
-   * <p>The returned instance can be used to cancel the task. Note that {@link Cancellable#cancel()}
-   * doesn't interrupt already running task.
-   *
-   * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
-   * exceptionHandler} and the task recurring executions are not interrupted
-   */
-  default Cancellable runWithFixedDelay(
-      final ExceptionThrowingRunnable runnable,
-      final long delayAmount,
-      final TimeUnit delayUnit,
-      final Consumer<Throwable> exceptionHandler) {
-
     Preconditions.checkNotNull(exceptionHandler);
 
     Cancellable cancellable = FutureUtil.createCancellable();
-    FutureUtil.runWithFixedDelay(
-        this, runnable, cancellable, delayAmount, delayUnit, exceptionHandler);
+    FutureUtil.runWithFixedDelay(this, runnable, cancellable, delay, exceptionHandler);
     return cancellable;
   }
 
@@ -120,9 +85,7 @@ public interface AsyncRunner {
                 // Retry after delay, decrementing the remaining available retries
                 final int remainingRetries = maxRetries - 1;
                 return runAfterDelay(
-                    () -> runWithRetry(action, retryDelay, remainingRetries),
-                    retryDelay.toMillis(),
-                    TimeUnit.MILLISECONDS);
+                    () -> runWithRetry(action, retryDelay, remainingRetries), retryDelay);
               } else {
                 return SafeFuture.failedFuture(err);
               }

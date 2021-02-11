@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.async.timed;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -69,7 +69,7 @@ public class RepeatingTaskScheduler {
     }
     asyncRunner
         .runAfterDelay(
-            () -> scheduleEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
+            () -> scheduleEvent(event), Duration.ofMillis(dueMs.minus(nowMs).longValue()))
         .finish(
             error -> {
               LOG.error("Failed to schedule next repeat of event. Skipping", error);

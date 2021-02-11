@@ -20,7 +20,6 @@ import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -153,8 +152,7 @@ public class PeerSync {
                   ancestorStartSlot,
                   peer.getId());
               final SafeFuture<Void> readyForNextRequest =
-                  asyncRunner.getDelayedFuture(
-                      NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                  asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
               final PeerSyncBlockRequest request =
                   new PeerSyncBlockRequest(
                       readyForNextRequest,

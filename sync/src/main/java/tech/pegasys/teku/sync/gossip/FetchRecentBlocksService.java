@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -215,7 +214,7 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
 
   private void queueTaskWithDelay(FetchBlockTask task, Duration delay) {
     asyncRunner
-        .getDelayedFuture(delay.getSeconds(), TimeUnit.SECONDS)
+        .getDelayedFuture(delay)
         .finish(
             () -> queueTask(task),
             (err) -> {
