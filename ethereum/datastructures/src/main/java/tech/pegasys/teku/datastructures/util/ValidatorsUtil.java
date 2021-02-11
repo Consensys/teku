@@ -95,8 +95,9 @@ public class ValidatorsUtil {
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
+    final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
-        epoch.isLessThanOrEqualTo(stateEpoch.plus(MAX_SEED_LOOKAHEAD)),
+        epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
         "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
         epoch,
         stateEpoch);
@@ -111,6 +112,14 @@ public class ValidatorsUtil {
                   .boxed()
                   .collect(Collectors.toList());
             });
+  }
+
+  public static UInt64 getMaxLookaheadEpoch(final BeaconState state) {
+    return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
+  }
+
+  private static UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
+    return stateEpoch.plus(MAX_SEED_LOOKAHEAD);
   }
 
   @SuppressWarnings("DoNotReturnNullOptionals")

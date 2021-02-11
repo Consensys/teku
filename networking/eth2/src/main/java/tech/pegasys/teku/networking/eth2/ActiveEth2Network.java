@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -272,8 +273,12 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest();
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+
+    final UInt64 activeValidatorsEpoch =
+        ValidatorsUtil.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
     final int activeValidators =
-        get_active_validator_indices(chainHead.getState(), currentEpoch).size();
+        get_active_validator_indices(chainHead.getState(), activeValidatorsEpoch).size();
+
     return Eth2Context.builder()
         .currentSlot(currentSlot)
         .activeValidatorCount(activeValidators)
