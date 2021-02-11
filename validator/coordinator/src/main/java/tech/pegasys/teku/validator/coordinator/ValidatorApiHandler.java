@@ -336,7 +336,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
     SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(committee.size());
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committee.size());
     return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
   }
 

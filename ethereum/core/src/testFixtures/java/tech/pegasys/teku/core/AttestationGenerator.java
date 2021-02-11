@@ -93,7 +93,7 @@ public class AttestationGenerator {
         srcAttestations.stream()
             .map(Attestation::getAggregation_bits)
             .reduce(
-                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(targetBitlistSize),
+                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,
                 SszBitlist::or);
     BLSSignature targetSig =

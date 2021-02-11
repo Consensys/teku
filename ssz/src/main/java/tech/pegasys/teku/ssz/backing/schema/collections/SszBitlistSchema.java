@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
@@ -26,11 +25,7 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
   }
 
   default SszBitlistT empty() {
-    return createZero(0);
-  }
-
-  default SszBitlistT createZero(int zeroBitsCount) {
-    return ofBits(zeroBitsCount);
+    return ofBits(0);
   }
 
   SszBitlistT ofBits(int size, int... setBitIndexes);

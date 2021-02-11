@@ -209,7 +209,7 @@ class AttestationManagerTest {
 
   private Attestation attestationFromSlot(final long slot, final Bytes32 targetRoot) {
     return new Attestation(
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(1),
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(1),
         new AttestationData(
             UInt64.valueOf(slot),
             UInt64.ZERO,

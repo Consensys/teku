@@ -76,7 +76,7 @@ public class Attestation
   }
 
   public static SszBitlist createEmptyAggregationBits() {
-    return SSZ_SCHEMA.getAggregationBitsSchema().createZero(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return SSZ_SCHEMA.getAggregationBitsSchema().ofBits(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing() {

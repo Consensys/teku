@@ -133,7 +133,7 @@ class AttestationValidatorTest {
     SszBitlist invalidAggregationBits =
         validAggregationBits
             .getSchema()
-            .createZero(validAggregationBits.getSize() + 1)
+            .ofBits(validAggregationBits.getSize() + 1)
             .or(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(

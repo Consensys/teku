@@ -15,17 +15,26 @@ package tech.pegasys.teku.ssz.backing.schema;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
     extends SszCollectionSchema<ElementDataT, SszListT> {
 
-  static <ElementDataT extends SszData> SszListSchema<ElementDataT, SszList<ElementDataT>> create(
-      SszSchema<ElementDataT> elementSchema, long maxLength) {
-    return new SszListSchemaImpl<>(elementSchema, maxLength);
+  static <ElementDataT extends SszData>
+      SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
+          SszSchema<ElementDataT> elementSchema, long maxLength) {
+    return create(elementSchema, maxLength, SszSchemaHints.none());
   }
 
-  static <ElementDataT extends SszData> SszListSchema<ElementDataT, SszList<ElementDataT>> create(
-      SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
-    return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
+  @SuppressWarnings("unchecked")
+  static <ElementDataT extends SszData>
+      SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
+          SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
+      return (SszListSchema<ElementDataT, ? extends SszList<ElementDataT>>)
+          SszBitlistSchema.create(maxLength);
+    } else {
+      return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
+    }
   }
 }

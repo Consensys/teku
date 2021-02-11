@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlistImpl;
@@ -20,6 +25,9 @@ import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitlist>
     implements SszBitlistSchema<SszBitlist> {
@@ -36,5 +44,86 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   @Override
   public SszBitlist ofBits(int size, int... setBitIndexes) {
     return new SszBitlistImpl(this, new Bitlist(size, getMaxLength(), setBitIndexes));
+  }
+
+  @Override
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+    int elementsCount = getLength(node);
+    // Bitlist is handled specially
+    BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
+    getCompatibleVectorSchema()
+        .sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
+    return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
+  }
+
+  @Override
+  public TreeNode sszDeserializeTree(SszReader reader) {
+    // Bitlist is handled specially
+    int availableBytes = reader.getAvailableBytes();
+    // preliminary rough check
+    checkSsz(
+        (availableBytes - 1) * 8 <= getMaxLength(), "SSZ sequence length exceeds max type length");
+    Bytes bytes = reader.read(availableBytes);
+    int length = Bitlist.sszGetLengthAndValidate(bytes);
+    if (length > getMaxLength()) {
+      throw new SszDeserializeException("Too long bitlist");
+    }
+    Bytes treeBytes = Bitlist.sszTruncateLeadingBit(bytes, length);
+    try (SszReader sszReader = SszReader.fromBytes(treeBytes)) {
+      DeserializedData data = sszDeserializeVector(sszReader);
+      return createTree(data.getDataTree(), length);
+    }
+  }
+
+  private static class BytesCollector implements SszWriter {
+
+    private static class UnsafeBytes {
+
+      private final byte[] bytes;
+      private final int offset;
+      private final int length;
+
+      public UnsafeBytes(byte[] bytes, int offset, int length) {
+        this.bytes = bytes;
+        this.offset = offset;
+        this.length = length;
+      }
+    }
+
+    private final List<UnsafeBytes> bytesList = new ArrayList<>();
+    private int size;
+
+    @Override
+    public void write(byte[] bytes, int offset, int length) {
+      if (length == 0) {
+        return;
+      }
+      bytesList.add(new UnsafeBytes(bytes, offset, length));
+      size += length;
+    }
+
+    public int flushWithBoundaryBit(SszWriter writer, int boundaryBitOffset) {
+      int bitIdx = boundaryBitOffset % 8;
+      checkArgument((boundaryBitOffset + 7) / 8 == size, "Invalid boundary bit offset");
+      if (bitIdx == 0) {
+        bytesList.forEach(bb -> writer.write(bb.bytes, bb.offset, bb.length));
+        writer.write(new byte[] {1});
+        return size + 1;
+      } else {
+        UnsafeBytes lastBytes = bytesList.get(bytesList.size() - 1);
+        byte lastByte = lastBytes.bytes[lastBytes.offset + lastBytes.length - 1];
+        byte lastByteWithBoundaryBit = (byte) (lastByte ^ (1 << bitIdx));
+
+        for (int i = 0; i < bytesList.size() - 1; i++) {
+          UnsafeBytes bb = bytesList.get(i);
+          writer.write(bb.bytes, bb.offset, bb.length);
+        }
+        if (lastBytes.length > 1) {
+          writer.write(lastBytes.bytes, lastBytes.offset, lastBytes.length - 1);
+        }
+        writer.write(new byte[] {lastByteWithBoundaryBit});
+        return size;
+      }
+    }
   }
 }

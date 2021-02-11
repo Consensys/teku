@@ -233,7 +233,7 @@ class ForkChoiceTest {
     final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
     final Attestation attestation =
         new Attestation(
-            Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(5),
+            Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(5),
             new AttestationData(
                 targetBlock.getSlot(),
                 compute_epoch_at_slot(targetBlock.getSlot()),
@@ -259,7 +259,7 @@ class ForkChoiceTest {
     final ValidateableAttestation updatedVote =
         ValidateableAttestation.from(
             new Attestation(
-                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().createZero(16),
+                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(16),
                 new AttestationData(
                     updatedAttestationSlot,
                     UInt64.ONE,

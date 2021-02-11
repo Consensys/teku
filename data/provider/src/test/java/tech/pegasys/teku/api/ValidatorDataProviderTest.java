@@ -178,7 +178,7 @@ public class ValidatorDataProviderTest {
         new tech.pegasys.teku.datastructures.operations.Attestation(
             tech.pegasys.teku.datastructures.operations.Attestation.SSZ_SCHEMA
                 .getAggregationBitsSchema()
-                .createZero(4),
+                .ofBits(4),
             attestationData,
             tech.pegasys.teku.bls.BLSSignature.empty());
 
