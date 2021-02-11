@@ -49,14 +49,12 @@ public class BlstSignature implements Signature {
     if (compressed.equals(INFINITY_BYTES)) {
       return INFINITY;
     }
-
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         compressed.size());
-    P2_Affine ec2Point = null;
     try {
-      ec2Point = new P2_Affine(compressed.toArrayUnsafe());
+      P2_Affine ec2Point = new P2_Affine(compressed.toArrayUnsafe());
       return new BlstSignature(ec2Point, true);
     } catch (Exception e) {
       return new BlstSignature(new P2_Affine(), false);
