@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import java.util.Map;
@@ -62,10 +61,12 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
 
+    final UInt64 epoch = UInt64.valueOf(100);
+    final UInt64 startSlot =
+        specProvider.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
     PostAttesterDutiesResponse duties =
         new PostAttesterDutiesResponse(
-            Bytes32.fromHexString("0x1234"),
-            List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100)))));
+            Bytes32.fromHexString("0x1234"), List.of(getDuty(2, 1, 2, 10, 3, startSlot)));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
