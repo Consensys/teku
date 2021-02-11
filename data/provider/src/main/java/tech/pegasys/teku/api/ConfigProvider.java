@@ -34,7 +34,7 @@ public class ConfigProvider {
     final Map<String, String> configAttributes = new HashMap<>();
     specProvider
         // Display genesis spec, for now
-        .get(UInt64.ZERO)
+        .atEpoch(UInt64.ZERO)
         .getConstants()
         .getRawConstants()
         .forEach(
@@ -50,5 +50,9 @@ public class ConfigProvider {
             .map(Fork::new)
             .collect(Collectors.toList());
     return new GetForkScheduleResponse(forkList);
+  }
+
+  public UInt64 computeEpochAtSlot(final UInt64 slot) {
+    return specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   }
 }

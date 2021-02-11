@@ -49,16 +49,16 @@ public class SpecProvider {
     return new SpecProvider(initialSpec, forkManifest);
   }
 
-  public Spec get(final UInt64 epoch) {
+  public Spec atEpoch(final UInt64 epoch) {
     return genesisSpec;
   }
 
   public Spec atSlot(final UInt64 slot) {
-    return get(compute_epoch_at_slot(slot));
+    return atEpoch(compute_epoch_at_slot(slot));
   }
 
   public Spec getGenesisSpec() {
-    return get(UInt64.ZERO);
+    return atEpoch(UInt64.ZERO);
   }
 
   public SpecConstants getGenesisSpecConstants() {
@@ -70,15 +70,15 @@ public class SpecProvider {
   }
 
   public int slotsPerEpoch(final UInt64 epoch) {
-    return get(epoch).getConstants().getSlotsPerEpoch();
+    return atEpoch(epoch).getConstants().getSlotsPerEpoch();
   }
 
   public int secondsPerSlot(final UInt64 epoch) {
-    return get(epoch).getConstants().getSecondsPerSlot();
+    return atEpoch(epoch).getConstants().getSecondsPerSlot();
   }
 
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
-    return get(epoch).getConstants().getDomainBeaconProposer();
+    return atEpoch(epoch).getConstants().getDomainBeaconProposer();
   }
 
   public Fork fork(final UInt64 epoch) {
