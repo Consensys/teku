@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateCache;
@@ -103,11 +102,7 @@ public class ValidatorStatuses {
 
               // Apply flags to attestingIndices
               AttestationUtil.stream_attesting_indices(
-                      state,
-                      data,
-                      Attestation.SSZ_SCHEMA
-                          .getAggregationBitsSchema()
-                          .fromLegacy(attestation.getAggregation_bits()))
+                      state, data, attestation.getAggregation_bits())
                   .mapToObj(statuses::get)
                   .forEach(updates::apply);
             });

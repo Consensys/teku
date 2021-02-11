@@ -36,8 +36,8 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -239,9 +239,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private CorrectAndLiveValidators getNumberOfValidators(
       final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
 
-    final Map<UInt64, Map<UInt64, Bitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
+    final Map<UInt64, Map<UInt64, SszBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
-    final Map<UInt64, Map<UInt64, Bitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
+    final Map<UInt64, Map<UInt64, SszBitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();
 
     attestations.forEach(
@@ -252,7 +252,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
                 .merge(
                     attestation.getData().getIndex(),
                     attestation.getAggregation_bits(),
-                    Bitlist::nullableOr);
+                    SszBitlist::nullableOr);
           }
 
           liveValidatorsAggregationBitsBySlotAndCommittee
@@ -260,19 +260,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
               .merge(
                   attestation.getData().getIndex(),
                   attestation.getAggregation_bits(),
-                  Bitlist::nullableOr);
+                  SszBitlist::nullableOr);
         });
 
     final int numberOfCorrectValidators =
         correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
             .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(Bitlist::getBitCount)
+            .mapToInt(SszBitlist::getBitCount)
             .sum();
 
     final int numberOfLiveValidators =
         liveValidatorsAggregationBitsBySlotAndCommittee.values().stream()
             .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(Bitlist::getBitCount)
+            .mapToInt(SszBitlist::getBitCount)
             .sum();
 
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
