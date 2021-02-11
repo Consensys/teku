@@ -15,7 +15,6 @@ package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.base.Preconditions;
 import java.util.Collection;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AttestationGenerator {
@@ -313,7 +311,7 @@ public class AttestationGenerator {
         Committee committee,
         AttestationData attestationData) {
       int committeSize = committee.getCommitteeSize();
-      Bitlist aggregationBitfield = getAggregationBits(committeSize, indexIntoCommittee);
+      SszBitlist aggregationBitfield = getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
           new LocalSigner(attesterKeyPair, SYNC_RUNNER)
@@ -322,9 +320,11 @@ public class AttestationGenerator {
       return new Attestation(aggregationBitfield, attestationData, signature);
     }
 
-    public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
+    public static SszBitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
       // Create aggregation bitfield
-      return new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE, indexIntoCommittee);
+      return Attestation.SSZ_SCHEMA
+          .getAggregationBitsSchema()
+          .ofBits(committeeSize, indexIntoCommittee);
     }
   }
 }

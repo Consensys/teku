@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.state;
 
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.containers.Container4;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema4;
@@ -67,20 +66,6 @@ public class PendingAttestation
     super(
         SSZ_SCHEMA,
         aggregation_bitfield,
-        data,
-        new SszUInt64(inclusion_delay),
-        new SszUInt64(proposer_index));
-  }
-
-  @Deprecated
-  public PendingAttestation(
-      Bitlist aggregation_bitfield,
-      AttestationData data,
-      UInt64 inclusion_delay,
-      UInt64 proposer_index) {
-    super(
-        SSZ_SCHEMA,
-        SSZ_SCHEMA.getAggregationBitfieldSchema().fromLegacy(aggregation_bitfield),
         data,
         new SszUInt64(inclusion_delay),
         new SszUInt64(proposer_index));

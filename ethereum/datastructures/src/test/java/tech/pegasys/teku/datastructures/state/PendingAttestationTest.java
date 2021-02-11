@@ -22,12 +22,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 class PendingAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private Bitlist participationBitfield = dataStructureUtil.randomBitlist();
+  private SszBitlist participationBitfield = dataStructureUtil.randomBitlist();
   private AttestationData data = dataStructureUtil.randomAttestationData();
   private UInt64 inclusionDelay = dataStructureUtil.randomUInt64();
   private UInt64 proposerIndex = dataStructureUtil.randomUInt64();
@@ -102,7 +101,7 @@ class PendingAttestationTest {
   void testSszRoundtripWithEmptyBitlist() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            new Bitlist(0, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+            PendingAttestation.SSZ_SCHEMA.getAggregationBitfieldSchema().empty(),
             data,
             inclusionDelay,
             proposerIndex.plus(dataStructureUtil.randomUInt64()));

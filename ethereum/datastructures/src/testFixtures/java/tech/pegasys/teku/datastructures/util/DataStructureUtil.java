@@ -68,13 +68,14 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public final class DataStructureUtil {
@@ -155,14 +156,14 @@ public final class DataStructureUtil {
     return sszvector;
   }
 
-  public Bitlist randomBitlist() {
+  public SszBitlist randomBitlist() {
     return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public Bitlist randomBitlist(int n) {
+  public SszBitlist randomBitlist(int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return new Bitlist(n, n, bits);
+    return SszBitlistSchema.create(n).ofBits(n, bits);
   }
 
   public Bitvector randomBitvector(int n) {

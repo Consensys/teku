@@ -18,7 +18,6 @@ import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
@@ -61,11 +60,6 @@ public class Attestation
 
   private Attestation(AttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
-  }
-
-  @Deprecated
-  public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    this(SSZ_SCHEMA.getAggregationBitsSchema().fromLegacy(aggregation_bits), data, signature);
   }
 
   public Attestation(SszBitlist aggregation_bits, AttestationData data, BLSSignature signature) {

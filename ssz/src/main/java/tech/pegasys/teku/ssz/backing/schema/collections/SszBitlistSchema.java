@@ -28,6 +28,10 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
   @Deprecated
   SszBitlistT fromLegacy(Bitlist bitlist);
 
+  default SszBitlistT empty() {
+    return createZero(0);
+  }
+
   default SszBitlistT createZero(int zeroBitsCount) {
     return ofBits(zeroBitsCount);
   }

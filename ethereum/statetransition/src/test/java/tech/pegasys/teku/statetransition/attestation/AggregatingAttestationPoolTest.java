@@ -36,7 +36,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 class AggregatingAttestationPoolTest {
@@ -351,7 +351,8 @@ class AggregatingAttestationPoolTest {
 
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
-    final Bitlist bitlist = new Bitlist(20, Constants.MAX_VALIDATORS_PER_COMMITTEE, validators);
+    final SszBitlist bitlist =
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
     ValidateableAttestation validateableAttestation = ValidateableAttestation.from(attestation);
