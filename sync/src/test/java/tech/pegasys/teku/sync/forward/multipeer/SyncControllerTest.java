@@ -117,6 +117,22 @@ class SyncControllerTest {
   }
 
   @Test
+  void shouldPassFailedSyncsToSyncTargetSelector() {
+    // When a sync fails, we want to stay in sync mode and switch to another target chain even
+    // if it's not much ahead of our current head.
+
+    final SafeFuture<SyncResult> syncFuture = startFinalizedSync();
+
+    // First selection has no current sync
+    verify(syncTargetSelector).selectSyncTarget(Optional.empty());
+
+    syncFuture.complete(SyncResult.FAILED);
+
+    verify(syncTargetSelector)
+        .selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain)));
+  }
+
+  @Test
   void shouldRemainSyncingWhenNoTargetChainSelectedButPreviousSyncStillActive() {
     final SafeFuture<SyncResult> previousSync = startFinalizedSync();
 
