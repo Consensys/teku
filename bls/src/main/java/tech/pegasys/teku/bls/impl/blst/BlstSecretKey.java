@@ -74,9 +74,6 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public BlstPublicKey derivePublicKey() {
-    if (isZero()) {
-      return BlstPublicKey.INFINITY;
-    }
     P1 pk = null;
     try {
       pk = new P1(secretKey);

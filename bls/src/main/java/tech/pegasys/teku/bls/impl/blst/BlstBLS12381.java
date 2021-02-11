@@ -91,14 +91,6 @@ public class BlstBLS12381 implements BLS12381 {
 
   public static boolean verify(
       BlstPublicKey publicKey, Bytes message, BlstSignature signature, String dst) {
-//    if (publicKey.isInfinity()) {
-//      return false;
-//    }
-
-//    if (publicKey.isInfinity() || signature.isInfinity()) {
-//      return publicKey.isInfinity() && signature.isInfinity();
-//    }
-
     BLST_ERROR res =
         signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), dst);
     return res == BLST_ERROR.BLST_SUCCESS;
@@ -138,22 +130,16 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   @Override
-  public BatchSemiAggregate prepareBatchVerify(
+  public BlstSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
     BlstSignature blstSignature = BlstSignature.fromSignature(signature);
-//    if (aggrPubKey.isInfinity()) {
-//      return new BlstInfiniteSemiAggregate(false);
-//    }
 
-//    if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
-//      return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
-//    }
     return blstPrepareBatchVerify(aggrPubKey, message, blstSignature);
   }
 
-  BatchSemiAggregate blstPrepareBatchVerify(
+  BlstSemiAggregate blstPrepareBatchVerify(
       BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
 
     P2 g2Hash = HashToCurve.hashToG2(message);
@@ -165,13 +151,19 @@ public class BlstBLS12381 implements BLS12381 {
               blstSignature.ec2Point,
               nextBatchRandomMultiplier(),
               message.toArray());
+
       if (ret != BLST_ERROR.BLST_SUCCESS) {
-        throw new IllegalArgumentException("Error: " + ret);
+        if (ret == BLST_ERROR.BLST_PK_IS_INFINITY) {
+          ctx.delete();
+          return BlstSemiAggregate.createInvalid();
+        } else {
+          throw new IllegalArgumentException("Error: " + ret);
+        }
       }
 
       ctx.commit();
 
-      return new BlstFiniteSemiAggregate(ctx);
+      return new BlstSemiAggregate(ctx);
     } catch (Exception e) {
       ctx.delete();
       throw e;
@@ -189,31 +181,27 @@ public class BlstBLS12381 implements BLS12381 {
       List<? extends PublicKey> publicKeys2,
       Bytes message2,
       Signature signature2) {
-    BatchSemiAggregate aggregate1 = prepareBatchVerify(index, publicKeys1, message1, signature1);
-    BatchSemiAggregate aggregate2 =
+    BlstSemiAggregate aggregate1 = prepareBatchVerify(index, publicKeys1, message1, signature1);
+    BlstSemiAggregate aggregate2 =
         prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
 
-    return BlstFiniteSemiAggregate.merge(aggregate1, aggregate2);
+    aggregate1.mergeWith(aggregate2);
+    aggregate2.release();
+    return aggregate1;
   }
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
     try {
-      boolean anyInvalidInfinity =
+      List<BlstSemiAggregate> blstList =
           preparedList.stream()
-              .filter(a -> a instanceof BlstInfiniteSemiAggregate)
-              .map(a -> (BlstInfiniteSemiAggregate) a)
-              .anyMatch(a -> !a.isValid());
-
-      List<BlstFiniteSemiAggregate> blstList =
-          preparedList.stream()
-              .filter(a -> a instanceof BlstFiniteSemiAggregate)
-              .map(b -> (BlstFiniteSemiAggregate) b)
+              .map(b -> (BlstSemiAggregate) b)
               .collect(Collectors.toList());
 
-      if (blstList.isEmpty()) {
-        return !anyInvalidInfinity;
+      if (blstList.stream().anyMatch(b -> !b.isValid())) {
+        return false;
       }
+
       Pairing ctx0 = blstList.get(0).getCtx();
       boolean mergeRes = true;
       for (int i = 1; i < blstList.size(); i++) {
@@ -221,13 +209,13 @@ public class BlstBLS12381 implements BLS12381 {
         mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
       }
 
-      return mergeRes && ctx0.finalverify() && !anyInvalidInfinity;
+      return mergeRes && ctx0.finalverify();
 
     } finally {
       preparedList.stream()
-          .filter(a -> a instanceof BlstFiniteSemiAggregate)
-          .map(b -> (BlstFiniteSemiAggregate) b)
-          .forEach(BlstFiniteSemiAggregate::release);
+          .filter(a -> a instanceof BlstSemiAggregate)
+          .map(b -> (BlstSemiAggregate) b)
+          .forEach(BlstSemiAggregate::release);
     }
   }
 
