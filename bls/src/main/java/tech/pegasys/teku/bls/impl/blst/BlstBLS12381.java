@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,6 +27,15 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.P2;
 import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
 import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
 
 public class BlstBLS12381 implements BLS12381 {
   private static final Logger LOG = LogManager.getLogger();
@@ -90,13 +91,13 @@ public class BlstBLS12381 implements BLS12381 {
 
   public static boolean verify(
       BlstPublicKey publicKey, Bytes message, BlstSignature signature, String dst) {
-    if (publicKey.isInfinity()) {
-      return false;
-    }
+//    if (publicKey.isInfinity()) {
+//      return false;
+//    }
 
-    if (publicKey.isInfinity() || signature.isInfinity()) {
-      return publicKey.isInfinity() && signature.isInfinity();
-    }
+//    if (publicKey.isInfinity() || signature.isInfinity()) {
+//      return publicKey.isInfinity() && signature.isInfinity();
+//    }
 
     BLST_ERROR res =
         signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), dst);
@@ -142,13 +143,13 @@ public class BlstBLS12381 implements BLS12381 {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
     BlstSignature blstSignature = BlstSignature.fromSignature(signature);
-    if (aggrPubKey.isInfinity()) {
-      return new BlstInfiniteSemiAggregate(false);
-    }
+//    if (aggrPubKey.isInfinity()) {
+//      return new BlstInfiniteSemiAggregate(false);
+//    }
 
-    if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
-      return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
-    }
+//    if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
+//      return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
+//    }
     return blstPrepareBatchVerify(aggrPubKey, message, blstSignature);
   }
 
