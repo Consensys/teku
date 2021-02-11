@@ -46,7 +46,6 @@ import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -90,10 +89,7 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
-        srcAttestations.stream()
-            .mapToInt(a -> a.getAggregation_bits().getSize())
-            .max()
-            .getAsInt();
+        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().getSize()).max().getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
             .map(Attestation::getAggregation_bits)

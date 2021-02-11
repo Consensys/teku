@@ -130,9 +130,11 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
     final SszBitlist validAggregationBits = attestation.getAggregation_bits();
-    SszBitlist invalidAggregationBits = validAggregationBits.getSchema()
-        .createZero(validAggregationBits.getSize() + 1)
-        .or(validAggregationBits);
+    SszBitlist invalidAggregationBits =
+        validAggregationBits
+            .getSchema()
+            .createZero(validAggregationBits.getSize() + 1)
+            .or(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
@@ -194,8 +196,8 @@ class AttestationValidatorTest {
   public void shouldRejectAggregatedAttestation() {
     final Attestation attestation =
         AttestationGenerator.groupAndAggregateAttestations(
-            attestationGenerator.getAttestationsForSlot(
-                recentChainData.getChainHead().orElseThrow()))
+                attestationGenerator.getAttestationsForSlot(
+                    recentChainData.getChainHead().orElseThrow()))
             .get(0);
 
     assertThat(validate(attestation).code()).isEqualTo(REJECT);
@@ -301,11 +303,11 @@ class AttestationValidatorTest {
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-        validator.validate(
-            ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
     assertThat(
-        validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -316,19 +318,19 @@ class AttestationValidatorTest {
     final AttestationData data = attestation.getData();
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-        validator.validate(
-            ValidateableAttestation.fromNetwork(
-                new Attestation(
-                    attestation.getAggregation_bits(),
-                    new AttestationData(
-                        data.getSlot(),
-                        get_committee_count_per_slot(
-                            blockAndState.getState(), data.getTarget().getEpoch()),
-                        data.getBeacon_block_root(),
-                        data.getSource(),
-                        data.getTarget()),
-                    attestation.getAggregate_signature()),
-                expectedSubnetId)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(
+                    new Attestation(
+                        attestation.getAggregation_bits(),
+                        new AttestationData(
+                            data.getSlot(),
+                            get_committee_count_per_slot(
+                                blockAndState.getState(), data.getTarget().getEpoch()),
+                            data.getBeacon_block_root(),
+                            data.getSource(),
+                            data.getTarget()),
+                        attestation.getAggregate_signature()),
+                    expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
@@ -339,18 +341,18 @@ class AttestationValidatorTest {
     final AttestationData data = attestation.getData();
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-        validator.validate(
-            ValidateableAttestation.fromNetwork(
-                new Attestation(
-                    attestation.getAggregation_bits(),
-                    new AttestationData(
-                        data.getSlot(),
-                        data.getIndex(),
-                        data.getBeacon_block_root(),
-                        data.getSource(),
-                        new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
-                    attestation.getAggregate_signature()),
-                expectedSubnetId)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(
+                    new Attestation(
+                        attestation.getAggregation_bits(),
+                        new AttestationData(
+                            data.getSlot(),
+                            data.getIndex(),
+                            data.getBeacon_block_root(),
+                            data.getSource(),
+                            new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
+                        attestation.getAggregate_signature()),
+                    expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
@@ -365,7 +367,7 @@ class AttestationValidatorTest {
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-        validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
@@ -381,7 +383,7 @@ class AttestationValidatorTest {
         .thenReturn(Optional.of(Bytes32.ZERO));
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-        validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 

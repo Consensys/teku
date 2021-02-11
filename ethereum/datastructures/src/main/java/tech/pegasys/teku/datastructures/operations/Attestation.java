@@ -65,9 +65,7 @@ public class Attestation
 
   @Deprecated
   public Attestation(Bitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    this(SSZ_SCHEMA.getAggregationBitsSchema().fromLegacy(aggregation_bits),
-        data,
-        signature);
+    this(SSZ_SCHEMA.getAggregationBitsSchema().fromLegacy(aggregation_bits), data, signature);
   }
 
   public Attestation(SszBitlist aggregation_bits, AttestationData data, BLSSignature signature) {
@@ -84,8 +82,7 @@ public class Attestation
   }
 
   public static SszBitlist createEmptyAggregationBits() {
-    return SSZ_SCHEMA.getAggregationBitsSchema()
-        .createZero(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return SSZ_SCHEMA.getAggregationBitsSchema().createZero(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing() {

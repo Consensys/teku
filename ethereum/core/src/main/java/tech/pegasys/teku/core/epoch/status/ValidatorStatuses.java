@@ -103,7 +103,11 @@ public class ValidatorStatuses {
 
               // Apply flags to attestingIndices
               AttestationUtil.stream_attesting_indices(
-                      state, data, Attestation.SSZ_SCHEMA.getAggregationBitsSchema().fromLegacy(attestation.getAggregation_bits()))
+                      state,
+                      data,
+                      Attestation.SSZ_SCHEMA
+                          .getAggregationBitsSchema()
+                          .fromLegacy(attestation.getAggregation_bits()))
                   .mapToObj(statuses::get)
                   .forEach(updates::apply);
             });
