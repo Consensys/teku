@@ -18,7 +18,7 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.impl.SecretKeyInterface;
+import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
   /**
@@ -53,19 +53,19 @@ public final class BLSSecretKey {
     return fromBytes(keyBytes);
   }
 
-  private SecretKeyInterface secretKeyInterface;
+  private SecretKey secretKey;
 
   /**
    * Construct from a Mikuli SecretKey object.
    *
-   * @param secretKeyInterface A Mikuli SecretKey
+   * @param secretKey A Mikuli SecretKey
    */
-  public BLSSecretKey(SecretKeyInterface secretKeyInterface) {
-    this.secretKeyInterface = secretKeyInterface;
+  public BLSSecretKey(SecretKey secretKey) {
+    this.secretKey = secretKey;
   }
 
-  SecretKeyInterface getSecretKey() {
-    return secretKeyInterface;
+  SecretKey getSecretKey() {
+    return secretKey;
   }
 
   public BLSPublicKey toPublicKey() {
@@ -73,7 +73,7 @@ public final class BLSSecretKey {
   }
 
   public Bytes32 toBytes() {
-    return secretKeyInterface.toBytes();
+    return secretKey.toBytes();
   }
 
   @Override
@@ -81,11 +81,11 @@ public final class BLSSecretKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final BLSSecretKey that = (BLSSecretKey) o;
-    return secretKeyInterface.equals(that.secretKeyInterface);
+    return secretKey.equals(that.secretKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(secretKeyInterface);
+    return Objects.hash(secretKey);
   }
 }

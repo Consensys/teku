@@ -26,7 +26,7 @@ import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
-import tech.pegasys.teku.bls.impl.SecretKeyInterface;
+import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
 /*
@@ -84,7 +84,7 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public SecretKeyInterface secretKeyFromBytes(Bytes32 secretKeyBytes) {
+  public SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
     return MikuliSecretKey.fromBytes(secretKeyBytes);
   }
 

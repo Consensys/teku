@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 /** This class represents a BLS12-381 private key. */
-public interface SecretKeyInterface {
+public interface SecretKey {
 
   /**
    * Returns byte secret key representation

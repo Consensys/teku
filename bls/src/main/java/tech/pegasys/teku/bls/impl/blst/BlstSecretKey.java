@@ -17,12 +17,11 @@ import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.impl.SecretKeyInterface;
+import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.P1;
-import tech.pegasys.teku.bls.impl.blst.swig.SecretKey;
 
-public class BlstSecretKey implements SecretKeyInterface {
+public class BlstSecretKey implements SecretKey {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
 
   public static BlstSecretKey fromBytes(Bytes32 bytes) {
@@ -34,7 +33,7 @@ public class BlstSecretKey implements SecretKeyInterface {
   }
 
   private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
-    SecretKey secretKey = new SecretKey();
+    tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey = new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
     secretKey.from_bendian(bytes.toArrayUnsafe());
     return new BlstSecretKey(secretKey);
   }
@@ -42,18 +41,18 @@ public class BlstSecretKey implements SecretKeyInterface {
   public static BlstSecretKey generateNew(Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
-    SecretKey sk = new SecretKey();
+    tech.pegasys.teku.bls.impl.blst.swig.SecretKey sk = new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
     sk.keygen(ikm);
     return new BlstSecretKey(sk);
   }
 
   private final tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey;
 
-  public BlstSecretKey(SecretKey secretKey) {
+  public BlstSecretKey(tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey) {
     this.secretKey = secretKey;
   }
 
-  public SecretKey getKey() {
+  public tech.pegasys.teku.bls.impl.blst.swig.SecretKey getKey() {
     return secretKey;
   }
 
@@ -103,9 +102,9 @@ public class BlstSecretKey implements SecretKeyInterface {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SecretKeyInterface)) {
+    if (!(o instanceof SecretKey)) {
       return false;
     }
-    return Objects.equals(toBytes(), ((SecretKeyInterface) o).toBytes());
+    return Objects.equals(toBytes(), ((SecretKey) o).toBytes());
   }
 }
