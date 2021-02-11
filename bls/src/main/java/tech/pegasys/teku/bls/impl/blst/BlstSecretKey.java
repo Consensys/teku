@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.util.Objects;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.P1;
-
-import java.util.Objects;
-import java.util.Random;
 
 public class BlstSecretKey implements SecretKey {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
@@ -34,7 +33,8 @@ public class BlstSecretKey implements SecretKey {
   }
 
   private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
-    tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey = new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
+    tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey =
+        new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
     secretKey.from_bendian(bytes.toArrayUnsafe());
     return new BlstSecretKey(secretKey);
   }
@@ -42,7 +42,8 @@ public class BlstSecretKey implements SecretKey {
   public static BlstSecretKey generateNew(Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
-    tech.pegasys.teku.bls.impl.blst.swig.SecretKey sk = new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
+    tech.pegasys.teku.bls.impl.blst.swig.SecretKey sk =
+        new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
     sk.keygen(ikm);
     return new BlstSecretKey(sk);
   }
