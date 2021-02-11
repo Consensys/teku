@@ -10,12 +10,14 @@ import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.SszCollection;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableComposite;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
-public interface SszBitlist extends SszCollection<SszBit> {
+public interface SszBitlist extends SszList<SszBit> {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
@@ -32,15 +34,17 @@ public interface SszBitlist extends SszCollection<SszBit> {
   }
 
   @Override
-  default SszMutableComposite<SszBit> createWritableCopy() {
+  default SszMutableList<SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
+
+
 
   @Deprecated
   Bitlist toLegacy();
 
   @Override
-  SszBitlistSchema<?> getSchema();
+  SszBitlistSchema<SszBitlist> getSchema();
 
   SszBitlist or(SszBitlist other);
 
