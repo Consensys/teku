@@ -15,15 +15,15 @@ package tech.pegasys.teku.ssz.backing;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszTestUtils {
 
-  public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
+  public static List<Integer> getVectorLengths(AbstractSszContainerSchema<?> sszContainerSchema) {
     return sszContainerSchema.getChildSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
-        .map(t -> (SszVectorSchema<?>) t)
+        .map(t -> (SszVectorSchema<?, ?>) t)
         .map(SszVectorSchema::getLength)
         .collect(Collectors.toList());
   }

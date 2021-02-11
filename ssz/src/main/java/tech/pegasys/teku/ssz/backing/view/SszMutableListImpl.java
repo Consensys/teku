@@ -79,8 +79,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<SszElementT> getSchema() {
-    return (SszListSchema<SszElementT>) super.getSchema();
+  public SszListSchema<SszElementT, ?> getSchema() {
+    return (SszListSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override

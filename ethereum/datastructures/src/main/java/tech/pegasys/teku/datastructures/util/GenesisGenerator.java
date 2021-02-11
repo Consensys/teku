@@ -47,8 +47,8 @@ public class GenesisGenerator {
 
   private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
-  private final SszListSchema<DepositData> depositDataListSchema =
-      new SszListSchema<>(DepositData.SSZ_SCHEMA, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
+  private final SszListSchema<DepositData, ?> depositDataListSchema =
+      SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
   private final SszMutableList<DepositData> depositDataList =
       depositDataListSchema.getDefault().createWritableCopy();
 

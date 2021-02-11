@@ -30,6 +30,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
@@ -39,23 +40,24 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toSszList(
-      SszListSchema<V> type, Iterable<C> list, Function<C, V> converter) {
+      SszSchema<? extends SszList<V>> type, Iterable<C> list, Function<C, V> converter) {
     return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
-  public static <V extends SszData> SszList<V> toSszList(SszListSchema<V> type, Iterable<V> list) {
+  public static <V extends SszData> SszList<V> toSszList(
+      SszSchema<? extends SszList<V>> type, Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
 
   public static <C, V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V> type, Iterable<C> list, Function<C, V> converter) {
+      SszVectorSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
     return toSszVector(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
   }
 
   public static <V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V> type, Iterable<V> list) {
+      SszVectorSchema<V, ?> type, Iterable<V> list) {
     SszMutableVector<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
     for (V v : list) {
@@ -70,15 +72,15 @@ public class SszUtils {
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static SszVector<SszByte> toSszByteVector(Bytes bytes) {
-    SszVectorSchema<SszByte> type = new SszByteVectorSchema(bytes.size());
+    SszVectorSchema<SszByte, ?> type = new SszByteVectorSchema(bytes.size());
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte> type, Bytes bytes) {
+  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte, ?> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
-  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte> type, Bytes bytes) {
+  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte, ?> type, Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
@@ -95,7 +97,7 @@ public class SszUtils {
     return toSszBitList(new SszBitListSchema(bitlist.getMaxSize()), bitlist);
   }
 
-  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit> type, Bitlist bitlist) {
+  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit, ?> type, Bitlist bitlist) {
     return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 

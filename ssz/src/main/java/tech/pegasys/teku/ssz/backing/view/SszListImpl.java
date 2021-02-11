@@ -31,23 +31,19 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class SszListImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszList<SszElementT> {
 
-  protected SszListImpl(SszList<SszElementT> other) {
-    super(other);
-  }
-
-  public SszListImpl(SszListSchema<SszElementT> schema, TreeNode backingNode) {
+  public SszListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   public SszListImpl(
-      SszListSchema<SszElementT> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+      SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszElementT> getSchema() {
-    return (SszListSchema<SszElementT>) super.getSchema();
+  public SszListSchema<SszElementT, ?> getSchema() {
+    return (SszListSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override

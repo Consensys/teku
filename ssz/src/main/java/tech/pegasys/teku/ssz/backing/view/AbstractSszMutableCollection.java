@@ -52,7 +52,7 @@ public abstract class AbstractSszMutableCollection<
             e -> {
               int nodeIndex = e.getKey();
               List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
-              long gIndex = type.getGeneralizedIndex(nodeIndex);
+              long gIndex = type.getChildGeneralizedIndex(nodeIndex);
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =

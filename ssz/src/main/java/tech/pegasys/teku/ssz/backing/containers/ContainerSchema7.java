@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
@@ -31,7 +31,7 @@ public abstract class ContainerSchema7<
         V4 extends SszData,
         V5 extends SszData,
         V6 extends SszData>
-    extends SszContainerSchema<C> {
+    extends AbstractSszContainerSchema<C> {
 
   public static <
           C extends SszContainer,
