@@ -26,23 +26,45 @@ import tech.pegasys.teku.util.config.Constants;
 public class StubSpecProvider {
 
   public static SpecProvider create() {
-    return create(__ -> {});
+    return createMinimal();
   }
 
   public static SpecProvider create(Consumer<SpecConstantsBuilder> builderConsumer) {
+    return createMinimal(builderConsumer);
+  }
+
+  public static SpecProvider createMinimal() {
+    return createMinimal(__ -> {});
+  }
+
+  public static SpecProvider createMinimal(Consumer<SpecConstantsBuilder> builderConsumer) {
+    return create("minimal", builderConsumer);
+  }
+
+  public static SpecProvider createMainnet() {
+    return createMainnet(__ -> {});
+  }
+
+  public static SpecProvider createMainnet(Consumer<SpecConstantsBuilder> builderConsumer) {
+    return create("mainnet", builderConsumer);
+  }
+
+  private static SpecProvider create(
+      final String constants, final Consumer<SpecConstantsBuilder> builderConsumer) {
     final Bytes4 genesisFork = Bytes4.fromHexString("0x00000000");
 
     final SpecConfiguration config =
-        SpecConfiguration.builder().constants(loadConstants(builderConsumer)).build();
+        SpecConfiguration.builder().constants(loadConstants(constants, builderConsumer)).build();
     final ForkManifest forkManifest =
         ForkManifest.create(List.of(new Fork(genesisFork, genesisFork, UInt64.ZERO)));
     return SpecProvider.create(config, forkManifest);
   }
 
-  private static SpecConstants loadConstants(Consumer<SpecConstantsBuilder> builderConsumer) {
+  private static SpecConstants loadConstants(
+      final String constants, Consumer<SpecConstantsBuilder> builderConsumer) {
     final AlteredSpecConstantsReader reader = new AlteredSpecConstantsReader();
     try {
-      return reader.read(Constants.createInputStream("minimal"), builderConsumer);
+      return reader.read(Constants.createInputStream(constants), builderConsumer);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }

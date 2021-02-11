@@ -46,7 +46,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
@@ -80,7 +80,10 @@ public class BlockManagerTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
-          localRecentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
+          localRecentChainData,
+          forkChoice,
+          WeakSubjectivityFactory.lenientValidator(),
+          localEventBus);
   private final BlockManager blockManager =
       new BlockManager(
           localEventBus,
