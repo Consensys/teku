@@ -68,7 +68,7 @@ public class BeaconStateUtil {
   private final SpecConstants specConstants;
   private final CommitteeUtil committeeUtil;
 
-  public BeaconStateUtil(final SpecConstants specConstants, CommitteeUtil committeeUtil) {
+  public BeaconStateUtil(final SpecConstants specConstants, final CommitteeUtil committeeUtil) {
     this.specConstants = specConstants;
     this.committeeUtil = committeeUtil;
   }
