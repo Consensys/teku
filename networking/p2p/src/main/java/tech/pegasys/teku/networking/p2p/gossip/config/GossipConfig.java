@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.gossip.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 /**
  * Gossip options
@@ -41,6 +42,7 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
+  private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
       int d,
@@ -51,7 +53,8 @@ public class GossipConfig {
       int advertise,
       int history,
       Duration heartbeatInterval,
-      Duration seenTTL) {
+      Duration seenTTL,
+      final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;
     this.dHigh = dHigh;
@@ -61,6 +64,7 @@ public class GossipConfig {
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
     this.seenTTL = seenTTL;
+    this.scoringConfig = scoringConfig;
   }
 
   public static Builder builder() {
@@ -107,7 +111,13 @@ public class GossipConfig {
     return seenTTL;
   }
 
+  public GossipScoringConfig getScoringConfig() {
+    return scoringConfig;
+  }
+
   public static class Builder {
+    private final GossipScoringConfig.Builder scoringConfigBuilder = GossipScoringConfig.builder();
+
     private Integer d = DEFAULT_D;
     private Integer dLow = DEFAULT_D_LOW;
     private Integer dHigh = DEFAULT_D_HIGH;
@@ -122,7 +132,21 @@ public class GossipConfig {
 
     public GossipConfig build() {
       return new GossipConfig(
-          d, dLow, dHigh, dLazy, fanoutTTL, advertise, history, heartbeatInterval, seenTTL);
+          d,
+          dLow,
+          dHigh,
+          dLazy,
+          fanoutTTL,
+          advertise,
+          history,
+          heartbeatInterval,
+          seenTTL,
+          scoringConfigBuilder.build());
+    }
+
+    public Builder scoring(final Consumer<GossipScoringConfig.Builder> consumer) {
+      consumer.accept(scoringConfigBuilder);
+      return this;
     }
 
     public Builder d(final Integer d) {
