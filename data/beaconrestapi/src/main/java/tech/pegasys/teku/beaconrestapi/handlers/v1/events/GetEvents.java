@@ -54,7 +54,8 @@ public class GetEvents implements Handler {
       final DataProvider dataProvider,
       final JsonProvider jsonProvider,
       final EventChannels eventChannels,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final int maxPendingEvents) {
     this(
         dataProvider.getNodeDataProvider(),
         dataProvider.getChainDataProvider(),
@@ -62,7 +63,8 @@ public class GetEvents implements Handler {
         dataProvider.getSyncDataProvider(),
         dataProvider.getConfigProvider(),
         eventChannels,
-        asyncRunner);
+        asyncRunner,
+        maxPendingEvents);
   }
 
   GetEvents(
@@ -72,7 +74,8 @@ public class GetEvents implements Handler {
       final SyncDataProvider syncDataProvider,
       final ConfigProvider configProvider,
       final EventChannels eventChannels,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final int maxPendingEvents) {
     this.jsonProvider = jsonProvider;
     eventSubscriptionManager =
         new EventSubscriptionManager(
@@ -82,7 +85,8 @@ public class GetEvents implements Handler {
             syncDataProvider,
             configProvider,
             asyncRunner,
-            eventChannels);
+            eventChannels,
+            maxPendingEvents);
   }
 
   @OpenApi(
