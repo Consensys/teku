@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class SignedBeaconBlockTest {
 
@@ -27,8 +28,7 @@ class SignedBeaconBlockTest {
     final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock internalBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock apiBlock = new SignedBeaconBlock(internalBlock);
-    assertThat(apiBlock.asInternalSignedBeaconBlock())
-        .usingRecursiveComparison()
-        .isEqualTo(internalBlock);
+    assertThat(SszTestUtils.equalsByGetters(apiBlock.asInternalSignedBeaconBlock(), internalBlock))
+        .isTrue();
   }
 }

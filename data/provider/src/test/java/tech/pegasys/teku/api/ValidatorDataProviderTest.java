@@ -48,6 +48,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -168,7 +169,7 @@ public class ValidatorDataProviderTest {
     provider.submitAttestation(attestation);
 
     verify(validatorApiChannel).sendSignedAttestation(args.capture());
-    assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
+    assertThat(SszTestUtils.equalsByGetters(args.getValue(), internalAttestation)).isTrue();
   }
 
   @Test
