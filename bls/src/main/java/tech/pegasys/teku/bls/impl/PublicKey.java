@@ -45,7 +45,7 @@ public interface PublicKey {
    * @param dst The domain separation tag, not null
    * @return True if the verification is successful, false otherwise.
    */
-  default boolean verifySignature(Signature signature, Bytes message, Bytes dst) {
+  default boolean verifySignature(Signature signature, Bytes message, String dst) {
     return signature.verify(this, message, dst);
   }
 
