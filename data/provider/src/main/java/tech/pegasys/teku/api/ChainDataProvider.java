@@ -54,6 +54,7 @@ import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -313,9 +314,12 @@ public class ChainDataProvider {
       final tech.pegasys.teku.datastructures.state.BeaconState state,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
+    final Spec spec = specProvider.atSlot(state.getSlot());
+    final UInt64 epoch = spec.getBeaconStateUtil().getCurrentEpoch(state);
+    final UInt64 farFutureEpoch = spec.getConstants().getFarFutureEpoch();
     return getValidatorSelector(state, validators)
         .filter(getStatusPredicate(state, statusFilter))
-        .mapToObj(index -> ValidatorResponse.fromState(state, index))
+        .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, farFutureEpoch))
         .flatMap(Optional::stream)
         .collect(toList());
   }
@@ -332,8 +336,11 @@ public class ChainDataProvider {
   private ValidatorResponse getValidatorFromState(
       final tech.pegasys.teku.datastructures.state.BeaconState state,
       final String validatorIdParam) {
+    final Spec spec = specProvider.atSlot(state.getSlot());
+    final UInt64 epoch = spec.getBeaconStateUtil().getCurrentEpoch(state);
+    final UInt64 farFutureEpoch = spec.getConstants().getFarFutureEpoch();
     return getValidatorSelector(state, List.of(validatorIdParam))
-        .mapToObj(index -> ValidatorResponse.fromState(state, index))
+        .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, farFutureEpoch))
         .flatMap(Optional::stream)
         .findFirst()
         .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
@@ -393,9 +400,12 @@ public class ChainDataProvider {
   private IntPredicate getStatusPredicate(
       final tech.pegasys.teku.datastructures.state.BeaconState state,
       final Set<ValidatorStatus> statusFilter) {
+    final Spec spec = specProvider.atSlot(state.getSlot());
+    final UInt64 farFutureEpoch = spec.getConstants().getFarFutureEpoch();
+    final UInt64 epoch = spec.getBeaconStateUtil().getCurrentEpoch(state);
     return statusFilter.isEmpty()
         ? i -> true
-        : i -> statusFilter.contains(getValidatorStatus(state, i));
+        : i -> statusFilter.contains(getValidatorStatus(state, i, epoch, farFutureEpoch));
   }
 
   private IntStream getValidatorSelector(

@@ -23,6 +23,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -32,12 +33,14 @@ class BeaconValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final BeaconStateUtil beaconStateUtil =
       StubSpecProvider.create().getGenesisSpec().getBeaconStateUtil();
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final UInt64 farFutureEpoch = specProvider.getGenesisSpecConstants().getFarFutureEpoch();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     SSZList<Validator> validatorList = beaconState.getValidators();
-    BeaconValidators response = new BeaconValidators(beaconState);
+    BeaconValidators response = new BeaconValidators(beaconState, farFutureEpoch);
     assertThat(response.total_size).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validators.size())
         .isEqualTo(Math.min(validatorList.size(), PAGE_SIZE_DEFAULT));
