@@ -25,11 +25,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class EventSubscriber {
   private static final Logger LOG = LogManager.getLogger();
-  static final int MAX_PENDING_EVENTS = 10;
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final List<EventType> eventTypes;
   private final SseClient sseClient;
   private final Queue<QueuedEvent> queuedEvents;
   private final Runnable closeCallback;
+  private final int maxPendingEvents;
   private final AtomicBoolean processingQueue;
   final AsyncRunner asyncRunner;
 
@@ -37,10 +38,12 @@ public class EventSubscriber {
       final List<String> eventTypes,
       final SseClient sseClient,
       final Runnable closeCallback,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final int maxPendingEvents) {
     this.eventTypes = EventType.getTopics(eventTypes);
     this.sseClient = sseClient;
     this.closeCallback = closeCallback;
+    this.maxPendingEvents = maxPendingEvents;
     this.queuedEvents = new ConcurrentLinkedQueue<>();
     this.processingQueue = new AtomicBoolean(false);
     this.asyncRunner = asyncRunner;
@@ -51,11 +54,12 @@ public class EventSubscriber {
     if (!eventTypes.contains(eventType)) {
       return;
     }
-    if (queuedEvents.size() < MAX_PENDING_EVENTS) {
+    if (queuedEvents.size() < maxPendingEvents) {
       queuedEvents.add(QueuedEvent.of(eventType, message));
       processEventQueue();
     } else {
-      LOG.trace("Closing client connection due to exceeding the pending message limit");
+      LOG.debug("Closing event connection due to exceeding the pending message limit");
+      stopped.set(true);
       sseClient.ctx.req.getAsyncContext().complete();
       closeCallback.run();
     }
@@ -66,7 +70,7 @@ public class EventSubscriber {
   }
 
   private void processEventQueue() {
-    if (!processingQueue.compareAndSet(false, true)) {
+    if (!stopped.get() && !processingQueue.compareAndSet(false, true)) {
       // any queue processing in progress will clear the queue, no need to run another instance
       return;
     }
@@ -78,7 +82,7 @@ public class EventSubscriber {
                   queuedEvents.size(),
                   sseClient.hashCode());
               QueuedEvent event = queuedEvents.poll();
-              while (event != null) {
+              while (event != null && !stopped.get()) {
                 sseClient.sendEvent(event.getEventType().name(), event.getMessageData());
                 event = queuedEvents.poll();
               }

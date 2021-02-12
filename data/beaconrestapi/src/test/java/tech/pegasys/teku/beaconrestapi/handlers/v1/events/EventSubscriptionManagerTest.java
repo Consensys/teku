@@ -128,7 +128,8 @@ public class EventSubscriptionManagerTest {
             syncDataProvider,
             configProvider,
             asyncRunner,
-            channels);
+            channels,
+            10);
     client1 = new SseClient(ctx);
   }
 
