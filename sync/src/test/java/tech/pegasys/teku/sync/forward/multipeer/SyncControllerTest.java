@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -114,6 +115,25 @@ class SyncControllerTest {
     assertThat(syncController.getSyncStatus())
         .isEqualTo(
             new SyncingStatus(true, HEAD_SLOT, HEAD_SLOT, newTargetChain.getChainHead().getSlot()));
+  }
+
+  @Test
+  void shouldPassFailedSyncsToSyncTargetSelector() {
+    // When a sync fails, we want to stay in sync mode and switch to another target chain even
+    // if it's not much ahead of our current head.
+
+    final SafeFuture<SyncResult> syncFuture = startFinalizedSync();
+
+    // First selection has no current sync
+    verify(syncTargetSelector).selectSyncTarget(Optional.empty());
+
+    when(sync.syncToChain(targetChain)).thenReturn(new SafeFuture<>());
+    syncFuture.complete(SyncResult.FAILED);
+
+    verify(syncTargetSelector)
+        .selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain)));
+    // Should restart sync to the chain even though it has the same target
+    verify(sync, times(2)).syncToChain(targetChain);
   }
 
   @Test
