@@ -45,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -437,7 +438,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
                     .restApiCorsAllowedOrigins(new ArrayList<>())
-                    .eth1DepositContractAddress(Optional.of(address)))
+                    .eth1DepositContractAddress(Optional.of(address))
+                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
