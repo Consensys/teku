@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -348,7 +349,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
+    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation)).isTrue();
   }
 
   @Test
@@ -371,7 +372,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation.getData());
+    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation.getData())).isTrue();
   }
 
   @Test
@@ -434,7 +435,7 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<BeaconBlock>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(beaconBlock);
+    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), beaconBlock)).isTrue();
   }
 
   @Test
@@ -486,7 +487,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
+    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation)).isTrue();
   }
 
   @SuppressWarnings("unchecked")
