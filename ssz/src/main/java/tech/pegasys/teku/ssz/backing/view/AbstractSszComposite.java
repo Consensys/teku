@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -40,14 +42,15 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final IntCache<SszChildT> childrenViewCache;
   private final int sizeCache;
   private final SszCompositeSchema<?> schema;
-  private final TreeNode backingNode;
+  private final Supplier<TreeNode> backingNode;
 
   /** Creates an instance from a schema and a backing node */
+  protected AbstractSszComposite(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+    this(schema, lazyBackingNode, Optional.empty());
+  }
+
   protected AbstractSszComposite(SszCompositeSchema<?> schema, TreeNode backingNode) {
-    this.schema = schema;
-    this.backingNode = backingNode;
-    this.sizeCache = sizeImpl();
-    this.childrenViewCache = createCache();
+    this(schema, () -> backingNode, Optional.empty());
   }
 
   /**
@@ -58,10 +61,17 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    */
   protected AbstractSszComposite(
       SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszChildT> cache) {
+    this(schema, () -> backingNode, Optional.of(cache));
+  }
+
+  protected AbstractSszComposite(
+      SszCompositeSchema<?> schema,
+      Supplier<TreeNode> lazyBackingNode,
+      Optional<IntCache<SszChildT>> cache) {
     this.schema = schema;
-    this.backingNode = backingNode;
+    this.backingNode = lazyBackingNode;
     this.sizeCache = sizeImpl();
-    this.childrenViewCache = cache;
+    this.childrenViewCache = cache.orElseGet(this::createCache);
   }
 
   /**
@@ -98,7 +108,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public TreeNode getBackingNode() {
-    return backingNode;
+    return backingNode.get();
   }
 
   @Override

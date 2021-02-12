@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.backing.collections;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
-import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -50,7 +49,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   public SszBitlistImpl(SszListSchema<SszBit, ?> schema, Bitlist value) {
-    super(schema, SszUtils.toSszBitList(value).getBackingNode());
+    super(schema, () -> SszUtils.toSszBitList(value).getBackingNode());
     this.value = value;
   }
 

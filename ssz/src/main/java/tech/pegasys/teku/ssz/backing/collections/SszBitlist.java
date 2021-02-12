@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
