@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -25,13 +30,17 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
@@ -39,6 +48,8 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
+import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -47,9 +58,11 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
@@ -63,9 +76,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
+  private final GossipConfigurator gossipConfigurator;
   private final AttestationSubnetService attestationSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
+  private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
 
   // Gossip managers
   private BlockGossipManager blockGossipManager;
@@ -88,6 +103,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
   private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
 
+  private volatile Cancellable gossipUpdateTask;
+
   public ActiveEth2Network(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -95,8 +112,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final RecentChainData recentChainData,
-      final GossipEncoding gossipEncoding,
       final AttestationSubnetService attestationSubnetService,
+      final GossipEncoding gossipEncoding,
+      final GossipConfigurator gossipConfigurator,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
@@ -115,6 +133,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
+    this.gossipConfigurator = gossipConfigurator;
     this.attestationSubnetService = attestationSubnetService;
     this.blockProcessor = blockProcessor;
     this.attestationProcessor = attestationProcessor;
@@ -130,20 +149,47 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public SafeFuture<?> start() {
+    if (recentChainData.isPreGenesis() || recentChainData.isPreForkChoice()) {
+      throw new IllegalStateException(
+          getClass().getSimpleName()
+              + " should only be started after "
+              + recentChainData.getClass().getSimpleName()
+              + " is fully initialized.");
+    }
     // Set the current fork info prior to discovery starting up.
-    final ForkInfo currentForkInfo =
-        recentChainData
-            .getHeadForkInfo()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException("Can not start Eth2Network before genesis is known"));
+    final ForkInfo currentForkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
     return super.start().thenAccept(r -> startup());
   }
 
   private synchronized void startup() {
     state.set(State.RUNNING);
+    queueGossipStart();
+  }
 
+  private void queueGossipStart() {
+    LOG.debug("Check if gossip should be started");
+    final UInt64 slotsBehind = recentChainData.getChainHeadSlotsBehind().orElseThrow();
+    if (slotsBehind.isLessThanOrEqualTo(500)) {
+      // Start gossip if we're "close enough" to the chain head
+      // Note: we don't want to be too strict here, otherwise we could end up with our sync logic
+      // inactive because our chain is almost caught up to the chainhead, but gossip inactive so
+      // that our node slowly falls behind because no gossip is propagating.  However, if we're too
+      // aggressive, our node could be down-scored for subscribing to topics that it can't yet
+      // validate or propagate.
+      startGossip();
+    } else {
+      // Schedule a future check
+      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(10)).reportExceptions();
+    }
+  }
+
+  private synchronized void startGossip() {
+    if (!gossipStarted.compareAndSet(false, true)) {
+      return;
+    }
+
+    LOG.info("Starting eth2 gossip");
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
@@ -197,6 +243,48 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
     processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
+
+    setTopicScoringParams();
+  }
+
+  private void setTopicScoringParams() {
+    final GossipTopicsScoringConfig topicConfig =
+        gossipConfigurator.configureAllTopics(getEth2Context());
+    discoveryNetwork.updateGossipTopicScoring(topicConfig);
+
+    gossipUpdateTask =
+        asyncRunner.runWithFixedDelay(
+            this::updateDynamicTopicScoring,
+            Duration.ofMinutes(1),
+            (err) -> {
+              LOG.error("Encountered error while attempting to updating gossip topic scoring", err);
+            });
+  }
+
+  private void updateDynamicTopicScoring() {
+    LOG.trace("Update dynamic topic scoring");
+    final GossipTopicsScoringConfig topicConfig =
+        gossipConfigurator.configureDynamicTopics(getEth2Context());
+    discoveryNetwork.updateGossipTopicScoring(topicConfig);
+  }
+
+  private Eth2Context getEth2Context() {
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest();
+    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
+    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+
+    final UInt64 activeValidatorsEpoch =
+        ValidatorsUtil.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
+    final int activeValidators =
+        get_active_validator_indices(chainHead.getState(), activeValidatorsEpoch).size();
+
+    return Eth2Context.builder()
+        .currentSlot(currentSlot)
+        .activeValidatorCount(activeValidators)
+        .forkDigest(forkDigest)
+        .gossipEncoding(gossipEncoding)
+        .build();
   }
 
   @Override
@@ -204,13 +292,18 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return SafeFuture.COMPLETE;
     }
-    blockGossipManager.shutdown();
-    attestationGossipManager.shutdown();
-    aggregateGossipManager.shutdown();
-    voluntaryExitGossipManager.shutdown();
-    proposerSlashingGossipManager.shutdown();
-    attesterSlashingGossipManager.shutdown();
-    attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+
+    if (gossipStarted.get()) {
+      gossipUpdateTask.cancel();
+      blockGossipManager.shutdown();
+      attestationGossipManager.shutdown();
+      aggregateGossipManager.shutdown();
+      voluntaryExitGossipManager.shutdown();
+      proposerSlashingGossipManager.shutdown();
+      attesterSlashingGossipManager.shutdown();
+      attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+    }
+
     return peerManager
         .sendGoodbyeToPeers()
         .exceptionally(

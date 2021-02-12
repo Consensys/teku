@@ -127,13 +127,13 @@ class ValidatorApiHandlerTest {
   @Test
   public void isSyncActive_syncIsActiveAndHeadALittleBehind() {
     setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH.minus(1));
-    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
   }
 
   @Test
   public void isSyncActive_syncIsActiveAndHeadIsCaughtUp() {
     setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH);
-    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
   }
 
   @Test

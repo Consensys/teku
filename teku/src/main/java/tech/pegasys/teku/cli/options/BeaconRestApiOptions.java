@@ -22,6 +22,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 public class BeaconRestApiOptions {
 
   public static final int DEFAULT_REST_API_PORT = 5051;
+  public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
 
   @Option(
       names = {"--rest-api-port"},
@@ -69,29 +70,11 @@ public class BeaconRestApiOptions {
       arity = "0..*")
   private final List<String> restApiCorsAllowedOrigins = new ArrayList<>();
 
-  public int getRestApiPort() {
-    return restApiPort;
-  }
-
-  public boolean isRestApiDocsEnabled() {
-    return restApiDocsEnabled;
-  }
-
-  public boolean isRestApiEnabled() {
-    return restApiEnabled;
-  }
-
-  public String getRestApiInterface() {
-    return restApiInterface;
-  }
-
-  public List<String> getRestApiHostAllowlist() {
-    return restApiHostAllowlist;
-  }
-
-  public List<String> getRestApiCorsAllowedOrigins() {
-    return restApiCorsAllowedOrigins;
-  }
+  @Option(
+      names = {"--Xrest-api-max-pending-events"},
+      paramLabel = "<INTEGER>",
+      hidden = true)
+  private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
@@ -102,6 +85,7 @@ public class BeaconRestApiOptions {
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
                 .restApiHostAllowlist(restApiHostAllowlist)
-                .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins));
+                .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
+                .maxPendingEvents(maxPendingEvents));
   }
 }

@@ -9,6 +9,10 @@ dependencies {
 
     testFixturesImplementation project(':ethereum:datastructures')
     testFixturesImplementation project(':infrastructure:unsigned')
+    testFixturesImplementation testFixtures(project(':bls'))
+
+    testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':ethereum:datastructures'))
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'

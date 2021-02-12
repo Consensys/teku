@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -142,8 +143,7 @@ class ScheduledExecutorAsyncRunnerTest {
             });
     AtomicInteger counter = new AtomicInteger();
     Cancellable task =
-        asyncRunner.runWithFixedDelay(
-            counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
+        asyncRunner.runWithFixedDelay(counter::incrementAndGet, Duration.ofMillis(100), t -> {});
     assertThat(scheduledActions).hasSize(1);
     scheduledActions.get(0).run();
     assertThat(counter).hasValue(1);
@@ -175,8 +175,7 @@ class ScheduledExecutorAsyncRunnerTest {
             throw new RuntimeException("Ups");
           }
         },
-        100,
-        TimeUnit.MILLISECONDS,
+        Duration.ofMillis(100),
         exception::set);
     assertThat(scheduledActions).hasSize(1);
     scheduledActions.get(0).run();
@@ -192,7 +191,7 @@ class ScheduledExecutorAsyncRunnerTest {
     final RejectedExecutionException exception = new RejectedExecutionException("Too lazy");
     doThrow(exception).when(workerPool).execute(any());
 
-    final SafeFuture<Void> result = asyncRunner.runAfterDelay(() -> {}, 100, TimeUnit.MILLISECONDS);
+    final SafeFuture<Void> result = asyncRunner.runAfterDelay(() -> {}, Duration.ofMillis(100));
 
     final ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
     verify(scheduler).schedule(taskCaptor.capture(), eq(100L), eq(TimeUnit.MILLISECONDS));

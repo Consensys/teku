@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
@@ -114,5 +115,10 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return network.getSubscribersByTopic();
+  }
+
+  @Override
+  public void updateGossipTopicScoring(final GossipTopicsScoringConfig config) {
+    network.updateGossipTopicScoring(config);
   }
 }

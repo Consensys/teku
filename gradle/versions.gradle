@@ -38,8 +38,8 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
+    dependency 'tech.pegasys:jblst:0.3.2-RELEASE'
     dependency 'io.libp2p:jvm-libp2p-minimal:0.7.0-RELEASE'
-    dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -133,6 +133,7 @@ dependencyManagement {
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
+    dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
 
     dependencySet(group: "org.web3j", version: "4.6.2") {
       entry 'core'

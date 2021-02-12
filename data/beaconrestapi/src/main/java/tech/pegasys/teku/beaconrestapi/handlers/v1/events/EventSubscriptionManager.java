@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
@@ -26,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
@@ -52,9 +52,11 @@ import tech.pegasys.teku.sync.events.SyncState;
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final ConfigProvider configProvider;
   private final JsonProvider jsonProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;
+  private final int maxPendingEvents;
   // collection of subscribers
   private final Collection<EventSubscriber> eventSubscribers;
 
@@ -63,12 +65,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final ChainDataProvider chainDataProvider,
       final JsonProvider jsonProvider,
       final SyncDataProvider syncDataProvider,
+      final ConfigProvider configProvider,
       final AsyncRunner asyncRunner,
-      final EventChannels eventChannels) {
+      final EventChannels eventChannels,
+      final int maxPendingEvents) {
     this.provider = chainDataProvider;
     this.jsonProvider = jsonProvider;
     this.asyncRunner = asyncRunner;
+    this.maxPendingEvents = maxPendingEvents;
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
+    this.configProvider = configProvider;
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
@@ -89,7 +95,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
               eventSubscribers.removeIf(sub -> sub.getSseClient().equals(sseClient));
               LOG.trace("disconnected " + sseClient.hashCode());
             },
-            asyncRunner);
+            asyncRunner,
+            maxPendingEvents);
     eventSubscribers.add(subscriber);
   }
 
@@ -115,7 +122,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                         bestBlockRoot,
                         context.getOldBestStateRoot(),
                         stateRoot,
-                        compute_epoch_at_slot(slot)));
+                        configProvider.computeEpochAtSlot(slot)));
             notifySubscribersOfEvent(EventType.chain_reorg, reorgEventString);
           } catch (JsonProcessingException ex) {
             LOG.error(ex);

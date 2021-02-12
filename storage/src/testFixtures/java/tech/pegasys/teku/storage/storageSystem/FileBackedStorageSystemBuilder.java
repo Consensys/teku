@@ -59,6 +59,12 @@ public class FileBackedStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB2:
+        database = createLevelDb2Database();
+        break;
+      case LEVELDB1:
+        database = createLevelDb1Database();
+        break;
       case V6:
         database = createV6Database();
         break;
@@ -141,6 +147,16 @@ public class FileBackedStorageSystemBuilder {
     return (mode) -> copy().storageMode(mode).build();
   }
 
+  private Database createLevelDb1Database() {
+    return RocksDbDatabase.createLevelDb(
+        new StubMetricsSystem(),
+        RocksDbConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
+        RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
+        storageMode,
+        stateStorageFrequency,
+        specProvider);
+  }
+
   private Database createV6Database() {
     RocksDbConfiguration hotConfigDefault =
         v6ArchiveDir.isPresent()
@@ -150,6 +166,25 @@ public class FileBackedStorageSystemBuilder {
         v6ArchiveDir.map(dir -> RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
 
     return RocksDbDatabase.createV6(
+        new StubMetricsSystem(),
+        hotConfigDefault.withDatabaseDir(hotDir),
+        coldConfig,
+        V4SchemaHot.INSTANCE,
+        V6SchemaFinalized.INSTANCE,
+        storageMode,
+        stateStorageFrequency,
+        specProvider);
+  }
+
+  private Database createLevelDb2Database() {
+    RocksDbConfiguration hotConfigDefault =
+        v6ArchiveDir.isPresent()
+            ? RocksDbConfiguration.v5HotDefaults()
+            : RocksDbConfiguration.v6SingleDefaults();
+    Optional<RocksDbConfiguration> coldConfig =
+        v6ArchiveDir.map(dir -> RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
+
+    return RocksDbDatabase.createLevelDbV2(
         new StubMetricsSystem(),
         hotConfigDefault.withDatabaseDir(hotDir),
         coldConfig,

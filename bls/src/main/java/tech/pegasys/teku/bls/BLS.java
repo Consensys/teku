@@ -99,7 +99,7 @@ public class BLS {
     }
     try {
       return signature.getSignature().verify(publicKey.getPublicKey(), message);
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
@@ -403,7 +403,7 @@ public class BLS {
    * @param dst domain separation tag (DST), not null
    * @return The Signature, not null
    */
-  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, Bytes dst) {
+  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, String dst) {
     return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
   }
 
@@ -417,7 +417,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature, Bytes dst) {
+      BLSPublicKey publicKey, Bytes message, BLSSignature signature, String dst) {
     if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;

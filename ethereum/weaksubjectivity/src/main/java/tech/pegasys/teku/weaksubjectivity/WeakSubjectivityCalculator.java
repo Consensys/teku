@@ -83,7 +83,7 @@ public class WeakSubjectivityCalculator {
     final int activeValidators = stateCalculator.getActiveValidators(state);
     final UInt64 totalActiveValidatorBalance =
         stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
-    final SpecConstants constants = specProvider.get(checkpointState.getEpoch()).getConstants();
+    final SpecConstants constants = specProvider.atEpoch(checkpointState.getEpoch()).getConstants();
     return computeWeakSubjectivityPeriod(constants, activeValidators, totalActiveValidatorBalance);
   }
 
