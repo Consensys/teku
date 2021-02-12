@@ -14,9 +14,13 @@
 package tech.pegasys.teku.ssz.backing;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.tree.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.LeafNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszTestUtils {
 
@@ -47,6 +51,55 @@ public class SszTestUtils {
       return true;
     } else {
       return v1.equals(v2);
+    }
+  }
+
+  /** Estimates the number of 'non-default' tree nodes */
+  public static int estimateNonDefaultNodes(TreeNode node) {
+    if (node instanceof LeafNode) {
+      return 1;
+    } else {
+      BranchNode branchNode = (BranchNode) node;
+      if (branchNode.left() == branchNode.right()) {
+        return 0;
+      } else {
+        return estimateNonDefaultNodes(branchNode.left())
+            + estimateNonDefaultNodes(branchNode.right())
+            + 1;
+      }
+    }
+  }
+
+  /** Dumps the tree to stdout */
+  public static String dumpBinaryTree(TreeNode node) {
+    StringBuilder ret = new StringBuilder();
+    dumpBinaryTreeRec(node, "", false, s -> ret.append(s).append('\n'));
+    return ret.toString();
+  }
+
+  private static void dumpBinaryTreeRec(
+      TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
+    if (node instanceof LeafNode) {
+      LeafNode leafNode = (LeafNode) node;
+      linesConsumer.accept(prefix + leafNode);
+    } else {
+      BranchNode branchNode = (BranchNode) node;
+      String s = "├─┐";
+      if (printCommit) {
+        s += " " + branchNode;
+      }
+      if (branchNode.left() instanceof LeafNode) {
+        linesConsumer.accept(prefix + "├─" + branchNode.left());
+      } else {
+        linesConsumer.accept(prefix + s);
+        dumpBinaryTreeRec(branchNode.left(), prefix + "│ ", printCommit, linesConsumer);
+      }
+      if (branchNode.right() instanceof LeafNode) {
+        linesConsumer.accept(prefix + "└─" + branchNode.right());
+      } else {
+        linesConsumer.accept(prefix + "└─┐");
+        dumpBinaryTreeRec(branchNode.right(), prefix + "  ", printCommit, linesConsumer);
+      }
     }
   }
 }

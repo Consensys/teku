@@ -33,7 +33,6 @@ import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
@@ -360,7 +359,7 @@ public class ContainerViewTest {
     }
 
     ContainerRead c1r = c1w.commitChanges();
-    LOG.error("\n" + TreeUtil.dumpBinaryTree(c1r.getBackingNode()));
+    LOG.error("\n" + SszTestUtils.dumpBinaryTree(c1r.getBackingNode()));
 
     {
       assertThat(c1.getSub1().getLong1()).isEqualTo(UInt64.ZERO);
