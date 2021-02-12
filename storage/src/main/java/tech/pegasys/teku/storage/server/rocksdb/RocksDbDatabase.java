@@ -76,6 +76,7 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.leveldb.LevelDbInstanceFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
@@ -159,6 +160,70 @@ public class RocksDbDatabase implements Database {
       allColumns.addAll(schemaFinalized.getAllColumns());
       finalizedDb =
           RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+      hotDb = finalizedDb;
+    }
+    return createV6(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        stateStorageFrequency,
+        specProvider);
+  }
+
+  public static Database createLevelDb(
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration hotConfiguration,
+      final RocksDbConfiguration finalizedConfiguration,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
+    final RocksDbAccessor hotDb =
+        LevelDbInstanceFactory.create(
+            metricsSystem,
+            STORAGE_HOT_DB,
+            hotConfiguration,
+            V4SchemaFinalized.INSTANCE.getAllColumns());
+    final RocksDbAccessor finalizedDb =
+        LevelDbInstanceFactory.create(
+            metricsSystem,
+            STORAGE_FINALIZED_DB,
+            finalizedConfiguration,
+            V4SchemaFinalized.INSTANCE.getAllColumns());
+    return createV4(
+        metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, specProvider);
+  }
+
+  public static Database createLevelDbV2(
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration hotConfiguration,
+      final Optional<RocksDbConfiguration> finalizedConfiguration,
+      final SchemaHot schemaHot,
+      final SchemaFinalized schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency,
+      final SpecProvider specProvider) {
+    final RocksDbAccessor hotDb;
+    final RocksDbAccessor finalizedDb;
+
+    if (finalizedConfiguration.isPresent()) {
+      hotDb =
+          LevelDbInstanceFactory.create(
+              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
+      finalizedDb =
+          LevelDbInstanceFactory.create(
+              metricsSystem,
+              STORAGE_FINALIZED_DB,
+              finalizedConfiguration.get(),
+              schemaFinalized.getAllColumns());
+    } else {
+
+      ArrayList<RocksDbColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+      allColumns.addAll(schemaFinalized.getAllColumns());
+      finalizedDb =
+          LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
       hotDb = finalizedDb;
     }
     return createV6(

@@ -23,6 +23,7 @@ dependencies {
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
+  implementation 'org.fusesource.leveldbjni:leveldbjni-all'
 
   testImplementation project(':ethereum:networks')
 
