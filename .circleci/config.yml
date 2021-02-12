@@ -406,7 +406,6 @@ workflows:
       - referenceTestsPrep:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -415,7 +414,6 @@ workflows:
       - referenceTests:
           requires:
             - assemble
-            - spotless
             - referenceTestsPrep
           filters:
             tags:
@@ -425,7 +423,6 @@ workflows:
       - unitTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -434,7 +431,6 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -443,7 +439,6 @@ workflows:
       - acceptanceTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
