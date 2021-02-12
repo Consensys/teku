@@ -56,6 +56,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   private final JsonProvider jsonProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;
+  private final int maxPendingEvents;
   // collection of subscribers
   private final Collection<EventSubscriber> eventSubscribers;
 
@@ -66,10 +67,12 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final SyncDataProvider syncDataProvider,
       final ConfigProvider configProvider,
       final AsyncRunner asyncRunner,
-      final EventChannels eventChannels) {
+      final EventChannels eventChannels,
+      final int maxPendingEvents) {
     this.provider = chainDataProvider;
     this.jsonProvider = jsonProvider;
     this.asyncRunner = asyncRunner;
+    this.maxPendingEvents = maxPendingEvents;
     this.eventSubscribers = new ConcurrentLinkedQueue<>();
     this.configProvider = configProvider;
     eventChannels.subscribe(ChainHeadChannel.class, this);
@@ -92,7 +95,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
               eventSubscribers.removeIf(sub -> sub.getSseClient().equals(sseClient));
               LOG.trace("disconnected " + sseClient.hashCode());
             },
-            asyncRunner);
+            asyncRunner,
+            maxPendingEvents);
     eventSubscribers.add(subscriber);
   }
 
