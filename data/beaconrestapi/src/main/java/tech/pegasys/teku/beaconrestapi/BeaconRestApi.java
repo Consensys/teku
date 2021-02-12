@@ -94,7 +94,6 @@ public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
-  public static final String FILE_NOT_FOUND_HTML = "404.html";
 
   private void initialize(
       final DataProvider dataProvider,
@@ -117,7 +116,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     // standard api endpoint inclusion
     addV1BeaconHandlers(dataProvider);
-    addEventHandler(dataProvider, eventChannels, asyncRunner);
+    addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
     addV1ConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
@@ -337,8 +336,16 @@ public class BeaconRestApi {
   private void addEventHandler(
       final DataProvider dataProvider,
       final EventChannels eventChannels,
-      final AsyncRunner asyncRunner) {
-    app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels, asyncRunner));
+      final AsyncRunner asyncRunner,
+      final BeaconRestApiConfig configuration) {
+    app.get(
+        GetEvents.ROUTE,
+        new GetEvents(
+            dataProvider,
+            jsonProvider,
+            eventChannels,
+            asyncRunner,
+            configuration.getMaxPendingEvents()));
   }
 
   public void stop() {

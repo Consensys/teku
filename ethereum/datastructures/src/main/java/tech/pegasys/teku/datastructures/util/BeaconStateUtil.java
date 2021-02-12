@@ -207,10 +207,12 @@ public class BeaconStateUtil {
         && isThereEnoughNumberOfValidators(activeValidatorCount);
   }
 
+  @Deprecated
   private static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
     return activeValidatorCount >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   }
 
+  @Deprecated
   private static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
     return genesisTime.compareTo(MIN_GENESIS_TIME) >= 0;
   }
@@ -289,6 +291,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
+  @Deprecated
   public static UInt64 get_total_active_balance(BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
@@ -478,6 +481,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#initiate_validator_exit</a>
    */
+  @Deprecated
   public static void initiate_validator_exit(MutableBeaconState state, int index) {
     Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
@@ -524,7 +528,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slash_validator/a>
    */
-  public static void slash_validator(
+  @Deprecated
+  private static void slash_validator(
       MutableBeaconState state, int slashed_index, int whistleblower_index) {
     UInt64 epoch = get_current_epoch(state);
     initiate_validator_exit(state, slashed_index);
@@ -564,6 +569,7 @@ public class BeaconStateUtil {
     increase_balance(state, whistleblower_index, whistleblower_reward.minus(proposer_reward));
   }
 
+  @Deprecated
   public static void slash_validator(MutableBeaconState state, int slashed_index) {
     slash_validator(state, slashed_index, -1);
   }
@@ -596,6 +602,7 @@ public class BeaconStateUtil {
     return get_committee_count_per_slot(active_validator_indices.size());
   }
 
+  @Deprecated
   public static UInt64 get_committee_count_per_slot(final int activeValidatorCount) {
     return UInt64.valueOf(
         Math.max(
@@ -809,10 +816,12 @@ public class BeaconStateUtil {
     }
   }
 
+  @Deprecated
   public static Bytes32 uint_to_bytes32(long value) {
     return Bytes32.wrap(uint_to_bytes(value, 32));
   }
 
+  @Deprecated
   public static Bytes32 uint_to_bytes32(UInt64 value) {
     return uint_to_bytes32(value.longValue());
   }
@@ -823,10 +832,12 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#bytes_to_int</a>
    */
+  @Deprecated
   public static UInt64 bytes_to_int64(Bytes data) {
     return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
   }
 
+  @Deprecated
   public static Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
     // No previous block, use algorithm for calculating the genesis block root

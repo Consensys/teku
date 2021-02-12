@@ -28,6 +28,7 @@ public class BeaconRestApiConfig {
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
   private final Optional<Eth1Address> eth1DepositContractAddress;
+  private final int maxPendingEvents;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -36,7 +37,8 @@ public class BeaconRestApiConfig {
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
-      final Optional<Eth1Address> eth1DepositContractAddress) {
+      final Optional<Eth1Address> eth1DepositContractAddress,
+      final int maxPendingEvents) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -44,6 +46,7 @@ public class BeaconRestApiConfig {
     this.restApiHostAllowlist = restApiHostAllowlist;
     this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
+    this.maxPendingEvents = maxPendingEvents;
   }
 
   public int getRestApiPort() {
@@ -74,6 +77,10 @@ public class BeaconRestApiConfig {
     return eth1DepositContractAddress;
   }
 
+  public int getMaxPendingEvents() {
+    return maxPendingEvents;
+  }
+
   public static BeaconRestApiConfigBuilder builder() {
     return new BeaconRestApiConfigBuilder();
   }
@@ -87,6 +94,7 @@ public class BeaconRestApiConfig {
     private List<String> restApiHostAllowlist;
     private List<String> restApiCorsAllowedOrigins;
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
+    private int maxPendingEvents;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -136,6 +144,11 @@ public class BeaconRestApiConfig {
       return this;
     }
 
+    public BeaconRestApiConfigBuilder maxPendingEvents(final int maxEventQueueSize) {
+      this.maxPendingEvents = maxEventQueueSize;
+      return this;
+    }
+
     public BeaconRestApiConfig build() {
       return new BeaconRestApiConfig(
           restApiPort,
@@ -144,7 +157,8 @@ public class BeaconRestApiConfig {
           restApiInterface,
           restApiHostAllowlist,
           restApiCorsAllowedOrigins,
-          eth1DepositContractAddress);
+          eth1DepositContractAddress,
+          maxPendingEvents);
     }
   }
 }
