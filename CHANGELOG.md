@@ -34,3 +34,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Ensured shutdown operations have fully completed prior to exiting the process.
 - Fixed `NoSuchElementException` that occurred during syncing.
 - Avoid marking the node as in sync incorrectly if an error occurs while syncing. Now selects a new target chain and continues syncing.
+- Reject validator related REST API requests when syncing, even if the head block is close to the current slot.  `head` and `chain_reorg` events do not fire while sync is active so the validator client is unable to detect when it should invalidate duties.
