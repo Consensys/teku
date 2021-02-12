@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,6 +43,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
 
   @Override
   public SszBitlist ofBits(int size, int... setBitIndexes) {
+    Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
     return SszBitlistImpl.ofBits(this, size, setBitIndexes);
   }
 
