@@ -447,7 +447,6 @@ workflows:
       - docker:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
