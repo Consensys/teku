@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 public interface SszList<SszElementT extends SszData> extends SszCollection<SszElementT> {
 
   @Override
-  SszMutableList<SszElementT> createWritableCopy();
+  SszMutableList<SszElementT> createWritableCopy( );
 
   @Override
   SszListSchema<SszElementT, ?> getSchema();
