@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_PARTIAL_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
