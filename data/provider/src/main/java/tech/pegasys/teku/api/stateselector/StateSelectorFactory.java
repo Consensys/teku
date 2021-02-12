@@ -17,14 +17,18 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
 
 public class StateSelectorFactory {
   private final CombinedChainDataClient client;
+  private final SpecProvider specProvider;
 
-  public StateSelectorFactory(final CombinedChainDataClient client) {
+  public StateSelectorFactory(
+      final CombinedChainDataClient client, final SpecProvider specProvider) {
     this.client = client;
+    this.specProvider = specProvider;
   }
 
   public StateSelector byBlockRootStateSelector(final String selectorMethod) {
@@ -80,7 +84,8 @@ public class StateSelectorFactory {
   }
 
   public StateSelector genesisSelector() {
-    return () -> client.getStateAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT));
+    final SpecConstants specConstants = specProvider.getGenesisSpecConstants();
+    return () -> client.getStateAtSlotExact(UInt64.valueOf(specConstants.getGenesisSlot()));
   }
 
   public StateSelector forSlot(final UInt64 slot) {

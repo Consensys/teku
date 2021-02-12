@@ -27,7 +27,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateValidatorBalancesIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
@@ -56,7 +55,8 @@ public class GetStateValidatorBalancesIntegrationTest
             response.body().string(), GetStateValidatorBalancesResponse.class);
     assertThat(body.data)
         .containsExactly(
-            new ValidatorBalanceResponse(UInt64.valueOf(1), Constants.MAX_EFFECTIVE_BALANCE));
+            new ValidatorBalanceResponse(
+                UInt64.valueOf(1), specConstants.getMaxEffectiveBalance()));
   }
 
   @Test

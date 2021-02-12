@@ -21,14 +21,17 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
 
 public class BlockSelectorFactory {
   private final CombinedChainDataClient client;
+  private final SpecProvider specProvider;
 
-  public BlockSelectorFactory(final CombinedChainDataClient combinedChainDataClient) {
+  public BlockSelectorFactory(
+      final CombinedChainDataClient combinedChainDataClient, final SpecProvider specProvider) {
     this.client = combinedChainDataClient;
+    this.specProvider = specProvider;
   }
 
   /**
@@ -72,7 +75,9 @@ public class BlockSelectorFactory {
   }
 
   public BlockSelector genesisSelector() {
-    return () -> optionalToList(client.getBlockAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT)));
+    final UInt64 genesisSlot =
+        UInt64.valueOf(specProvider.getGenesisSpec().getConstants().getGenesisSlot());
+    return () -> optionalToList(client.getBlockAtSlotExact(genesisSlot));
   }
 
   public BlockSelector forSlot(final UInt64 slot) {

@@ -15,7 +15,6 @@ package tech.pegasys.teku.api;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorIndex;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -76,8 +75,10 @@ public class ChainDataProvider {
     this.specProvider = specProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
+    this.defaultBlockSelectorFactory =
+        new BlockSelectorFactory(combinedChainDataClient, specProvider);
+    this.defaultStateSelectorFactory =
+        new StateSelectorFactory(combinedChainDataClient, specProvider);
   }
 
   public UInt64 getGenesisTime() {
@@ -365,14 +366,22 @@ public class ChainDataProvider {
             ? __ -> true
             : (assignment) -> assignment.getCommitteeIndex().compareTo(committeeIndex.get()) == 0;
 
-    final UInt64 stateEpoch = compute_epoch_at_slot(state.getSlot());
+    final UInt64 stateEpoch =
+        specProvider
+            .atSlot(state.getSlot())
+            .getBeaconStateUtil()
+            .computeEpochAtSlot(state.getSlot());
     if (epoch.isPresent() && epoch.get().isGreaterThan(stateEpoch.plus(ONE))) {
       throw new BadRequestException(
           "Epoch " + epoch.get() + " is too far ahead of state epoch " + stateEpoch);
     }
-    if (slot.isPresent() && !compute_epoch_at_slot(slot.get()).equals(epoch.orElse(stateEpoch))) {
-      throw new BadRequestException(
-          "Slot " + slot.get() + " is not in epoch " + epoch.orElse(stateEpoch));
+    if (slot.isPresent()) {
+      final UInt64 computeEpochAtSlot =
+          specProvider.atSlot(slot.get()).getBeaconStateUtil().computeEpochAtSlot(slot.get());
+      if (!computeEpochAtSlot.equals(epoch.orElse(stateEpoch))) {
+        throw new BadRequestException(
+            "Slot " + slot.get() + " is not in epoch " + epoch.orElse(stateEpoch));
+      }
     }
     return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
         .filter(slotFilter)

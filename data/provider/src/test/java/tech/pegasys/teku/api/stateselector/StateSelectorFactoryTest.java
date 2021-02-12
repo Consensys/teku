@@ -27,6 +27,8 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -36,7 +38,9 @@ public class StateSelectorFactoryTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final DataStructureUtil data = new DataStructureUtil();
   private final BeaconState state = data.randomBeaconState();
-  private final StateSelectorFactory factory = new StateSelectorFactory(client);
+
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final StateSelectorFactory factory = new StateSelectorFactory(client, specProvider);
 
   @Test
   public void headSelector_shouldGetBestState() throws ExecutionException, InterruptedException {
@@ -110,7 +114,7 @@ public class StateSelectorFactoryTest {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     final CombinedChainDataClient client1 =
         new CombinedChainDataClient(recentChainData, historicalChainData);
-    final StateSelectorFactory factory = new StateSelectorFactory(client1);
+    final StateSelectorFactory factory = new StateSelectorFactory(client1, specProvider);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
     final SafeFuture<Optional<BeaconState>> future =

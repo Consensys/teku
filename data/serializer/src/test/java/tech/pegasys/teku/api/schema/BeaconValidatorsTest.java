@@ -21,14 +21,17 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
 class BeaconValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final BeaconStateUtil beaconStateUtil =
+      StubSpecProvider.create().getGenesisSpec().getBeaconStateUtil();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
@@ -53,7 +56,7 @@ class BeaconValidatorsTest {
         new BeaconValidators(
             beaconState,
             true,
-            BeaconStateUtil.get_current_epoch(beaconState),
+            beaconStateUtil.getCurrentEpoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
     int expectedNextPageToken =
@@ -62,7 +65,7 @@ class BeaconValidatorsTest {
         BeaconValidators.getEffectiveListSize(
             getValidators(beaconState),
             true,
-            BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
+            beaconStateUtil.computeEpochAtSlot(beaconState.getSlot()));
     assertThat(validators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, activeValidatorCount));
     assertThat(validators.total_size).isEqualTo(activeValidatorCount);
@@ -159,7 +162,7 @@ class BeaconValidatorsTest {
         BeaconValidators.getEffectiveListSize(
             getValidators(beaconState),
             true,
-            BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
+            beaconStateUtil.computeEpochAtSlot(beaconState.getSlot()));
     int originalValidatorCount = allValidators.size();
 
     assertThat(originalActiveValidatorCount)
@@ -179,7 +182,7 @@ class BeaconValidatorsTest {
         BeaconValidators.getEffectiveListSize(
             getValidators(beaconStateW),
             true,
-            BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+            beaconStateUtil.computeEpochAtSlot(beaconStateW.getSlot()));
 
     SSZList<Validator> updatedValidators = beaconStateW.getValidators();
 
