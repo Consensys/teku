@@ -90,6 +90,7 @@ downloadLicenses {
           'BSD',
           'BSD licence',
           'The BSD License',
+          'The BSD 3-Clause License',
           'Berkeley Software Distribution (BSD) License',
           license('New BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
       ],

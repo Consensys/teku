@@ -33,3 +33,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
 - Fixed `NoSuchElementException` that occurred during syncing.
+- Avoid marking the node as in sync incorrectly if an error occurs while syncing. Now selects a new target chain and continues syncing.
