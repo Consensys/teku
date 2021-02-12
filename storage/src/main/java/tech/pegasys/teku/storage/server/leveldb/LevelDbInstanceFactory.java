@@ -39,8 +39,6 @@ public class LevelDbInstanceFactory {
         "Column IDs are not distinct");
     final Options options =
         new Options().createIfMissing(true).maxOpenFiles(configuration.getMaxOpenFiles());
-    //            .cacheSize(configuration.getCacheCapacity())
-    //            .writeBufferSize((int) configuration.getWriteBufferCapacity());
 
     try {
       final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
