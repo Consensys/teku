@@ -19,12 +19,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class CommitteeUtilTest {
   final SpecConstants specConstants = mock(SpecConstants.class);
+  private final SpecProvider specProvider = StubSpecProvider.create();
   CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
 
   @Test
@@ -79,5 +88,32 @@ public class CommitteeUtilTest {
             IntStream.range(0, index_count)
                 .map(i -> committeeUtil.computeShuffledIndex(i, indexes.length, seed))
                 .toArray());
+  }
+
+  @Test
+  void testIsAggregatorReturnsFalseOnARealCase() {
+    Bytes signingRoot =
+        specProvider
+            .atSlot(UInt64.ZERO)
+            .getBeaconStateUtil()
+            .computeSigningRoot(
+                57950,
+                Bytes32.fromHexString(
+                    "0x05000000b5303f2ad2010d699a76c8e62350947421a3e4a979779642cfdb0f66"));
+    BLSSignature selectionProof =
+        BLSSignature.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xaa176502f0a5e954e4c6b452d0e11a03513c19b6d189f125f07b6c5c120df011c31da4c4a9c4a52a5a48fcba5b14d7b316b986a146187966d2341388bbf1f86c42e90553ba009ba10edc6b5544a6e945ce6d2419197f66ab2b9df2b0a0c89987"));
+    BLSPublicKey pKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0xb0861f72583516b17a3fdc33419d5c04c0a4444cc2478136b4935f3148797699e3ef4a4b2227b14876b3d49ff03b796d"));
+    int committeeLen = 146;
+
+    assertThat(BLS.verify(pKey, signingRoot, selectionProof)).isTrue();
+
+    int aggregatorModulo =
+        specProvider.atSlot(UInt64.ZERO).getCommitteeUtil().getAggregatorModulo(committeeLen);
+    assertThat(CommitteeUtil.isAggregator(selectionProof, aggregatorModulo)).isFalse();
   }
 }
