@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -126,10 +127,13 @@ class SyncControllerTest {
     // First selection has no current sync
     verify(syncTargetSelector).selectSyncTarget(Optional.empty());
 
+    when(sync.syncToChain(targetChain)).thenReturn(new SafeFuture<>());
     syncFuture.complete(SyncResult.FAILED);
 
     verify(syncTargetSelector)
         .selectSyncTarget(Optional.of(SyncTarget.finalizedTarget(targetChain)));
+    // Should restart sync to the chain even though it has the same target
+    verify(sync, times(2)).syncToChain(targetChain);
   }
 
   @Test

@@ -133,7 +133,9 @@ public class SyncController {
   private InProgressSync startSync(final SyncTarget syncTarget) {
     eventThread.checkOnEventThread();
     final TargetChain chain = syncTarget.getTargetChain();
-    if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
+    if (currentSync
+        .map(current -> !current.isFailed() && current.hasSameTarget(chain))
+        .orElse(false)) {
       LOG.trace("Not starting new sync because it has the same target as current sync");
       return currentSync.get();
     }
@@ -176,7 +178,11 @@ public class SyncController {
     }
 
     public boolean isActiveOrFailed() {
-      return isActive() || result.join() == SyncResult.FAILED;
+      return isActive() || isFailed();
+    }
+
+    public boolean isFailed() {
+      return result.isDone() && result.join() == SyncResult.FAILED;
     }
 
     public boolean isActivePrimarySync() {
