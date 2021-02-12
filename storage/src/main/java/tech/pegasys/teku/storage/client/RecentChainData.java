@@ -412,10 +412,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
-  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
-    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
-  }
-
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
