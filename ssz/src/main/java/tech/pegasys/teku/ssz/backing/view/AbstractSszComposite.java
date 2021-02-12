@@ -40,7 +40,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
     implements SszComposite<SszChildT> {
 
   private final IntCache<SszChildT> childrenViewCache;
-  private final int sizeCache;
+  private final IntSupplier sizeCache = IntSupplier.memorizing(this::sizeImpl);
   private final SszCompositeSchema<?> schema;
   private final Supplier<TreeNode> backingNode;
 
@@ -70,7 +70,6 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
       Optional<IntCache<SszChildT>> cache) {
     this.schema = schema;
     this.backingNode = lazyBackingNode;
-    this.sizeCache = sizeImpl();
     this.childrenViewCache = cache.orElseGet(this::createCache);
   }
 
@@ -113,7 +112,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public final int size() {
-    return sizeCache;
+    return sizeCache.get();
   }
 
   /** Size value is normally cached. This method calculates the size from backing tree */
@@ -141,5 +140,24 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   @Override
   public int hashCode() {
     return Objects.hash(childrenViewCache, sizeCache, getSchema(), getBackingNode());
+  }
+
+  private interface IntSupplier {
+    static IntSupplier memorizing(IntSupplier ctor) {
+      return new IntSupplier() {
+        boolean created;
+        int value;
+
+        @Override
+        public int get() {
+          if (!created) {
+            value = ctor.get();
+          }
+          return value;
+        }
+      };
+    }
+
+    int get();
   }
 }
