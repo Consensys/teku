@@ -27,16 +27,7 @@ public interface SszBitlist extends SszList<SszBit> {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
-    checkArgument(
-        bitlist1OrNull != null || bitlist2OrNull != null,
-        "At least one argument should be non-null");
-    if (bitlist1OrNull == null) {
-      return bitlist2OrNull;
-    } else if (bitlist2OrNull == null) {
-      return bitlist1OrNull;
-    } else {
-      return bitlist1OrNull.or(bitlist2OrNull);
-    }
+    return SszBitlistImpl.nullableOr(bitlist1OrNull, bitlist2OrNull);
   }
 
   @Override
@@ -46,6 +37,8 @@ public interface SszBitlist extends SszList<SszBit> {
 
   @Override
   SszBitlistSchema<SszBitlist> getSchema();
+
+  // Bitlist methods
 
   SszBitlist or(SszBitlist other);
 
@@ -59,7 +52,9 @@ public interface SszBitlist extends SszList<SszBit> {
 
   List<Integer> getAllSetBits();
 
-  IntStream streamAllSetBits();
+  default IntStream streamAllSetBits() {
+    return getAllSetBits().stream().mapToInt(i -> i);
+  }
 
   int getSize();
 }

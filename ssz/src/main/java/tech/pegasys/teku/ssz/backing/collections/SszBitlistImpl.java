@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
@@ -24,6 +27,20 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
+
+  static SszBitlist nullableOr(
+      @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
+    checkArgument(
+        bitlist1OrNull != null || bitlist2OrNull != null,
+        "At least one argument should be non-null");
+    if (bitlist1OrNull == null) {
+      return bitlist2OrNull;
+    } else if (bitlist2OrNull == null) {
+      return bitlist1OrNull;
+    } else {
+      return bitlist1OrNull.or(bitlist2OrNull);
+    }
+  }
 
   private final Bitlist value;
 
@@ -79,11 +96,6 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   @Override
   public List<Integer> getAllSetBits() {
     return value.getAllSetBits();
-  }
-
-  @Override
-  public IntStream streamAllSetBits() {
-    return value.streamAllSetBits();
   }
 
   @Override

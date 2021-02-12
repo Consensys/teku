@@ -49,8 +49,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int elementsCount = getLength(node);
-    // Bitlist is handled specially
-    BytesCollector bytesCollector = new BytesCollector(/*elementsCount / 8 + 1*/ );
+    BytesCollector bytesCollector = new BytesCollector();
     getCompatibleVectorSchema()
         .sszSerializeVector(getVectorNode(node), bytesCollector, elementsCount);
     return bytesCollector.flushWithBoundaryBit(writer, elementsCount);
@@ -58,7 +57,6 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    // Bitlist is handled specially
     int availableBytes = reader.getAvailableBytes();
     // preliminary rough check
     checkSsz(
