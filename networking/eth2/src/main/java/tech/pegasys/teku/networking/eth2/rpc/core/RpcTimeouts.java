@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import java.time.Duration;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * This class holds constants related to handling rpc request timeouts. See:
@@ -24,9 +23,9 @@ import tech.pegasys.teku.util.config.Constants;
 public abstract class RpcTimeouts {
 
   // The maximum time to wait for first byte of request response (time-to-first-byte).
-  static final Duration TTFB_TIMEOUT = Duration.ofSeconds(Constants.TTFB_TIMEOUT);
+  static final Duration TTFB_TIMEOUT = Duration.ofSeconds(5);
   // The maximum time for complete response transfer.
-  static final Duration RESP_TIMEOUT = Duration.ofSeconds(Constants.RESP_TIMEOUT);
+  public static final Duration RESP_TIMEOUT = Duration.ofSeconds(10);
 
   public static class RpcTimeoutException extends StreamTimeoutException {
 

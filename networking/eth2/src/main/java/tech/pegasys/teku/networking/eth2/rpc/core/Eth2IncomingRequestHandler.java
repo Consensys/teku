@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -115,7 +114,7 @@ public class Eth2IncomingRequestHandler<
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     asyncRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (!requestHandled.get()) {

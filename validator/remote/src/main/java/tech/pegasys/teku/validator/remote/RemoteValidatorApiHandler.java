@@ -17,13 +17,13 @@ import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -314,7 +314,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                   && attempt < MAX_RATE_LIMITING_RETRIES) {
                 LOG.warn("Beacon node request rate limit has been exceeded. Retrying after delay.");
                 return asyncRunner.runAfterDelay(
-                    () -> sendRequest(requestExecutor, attempt + 1), 2, TimeUnit.SECONDS);
+                    () -> sendRequest(requestExecutor, attempt + 1), Duration.ofSeconds(2));
               } else {
                 return SafeFuture.failedFuture(error);
               }

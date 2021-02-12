@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
@@ -114,4 +115,21 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    * @throws IndexOutOfBoundsException if index is invalid
    */
   protected abstract void checkIndex(int index);
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SszComposite)) {
+      return false;
+    }
+    SszComposite<?> that = (SszComposite<?>) o;
+    return getSchema().equals(that.getSchema()) && hashTreeRoot().equals(that.hashTreeRoot());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(childrenViewCache, sizeCache, getSchema(), getBackingNode());
+  }
 }

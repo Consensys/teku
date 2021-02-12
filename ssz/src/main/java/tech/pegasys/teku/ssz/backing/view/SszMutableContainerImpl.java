@@ -17,10 +17,11 @@ import java.util.List;
 import java.util.Map;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 
@@ -38,8 +39,8 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  public SszContainerSchema<?> getSchema() {
-    return (SszContainerSchema<?>) super.getSchema();
+  public AbstractSszContainerSchema<?> getSchema() {
+    return (AbstractSszContainerSchema<?>) super.getSchema();
   }
 
   @Override
@@ -48,8 +49,9 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  public SszMutableData createWritableCopy() {
-    return super.createWritableCopy();
+  public SszMutableContainer createWritableCopy() {
+    throw new UnsupportedOperationException(
+        "createWritableCopy() is now implemented for immutable SszData only");
   }
 
   @Override

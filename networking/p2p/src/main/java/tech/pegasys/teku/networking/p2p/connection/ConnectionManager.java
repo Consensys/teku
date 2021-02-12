@@ -92,8 +92,7 @@ public class ConnectionManager extends Service {
     periodicPeerSearch =
         asyncRunner.runWithFixedDelay(
             this::searchForPeers,
-            DISCOVERY_INTERVAL.toMillis(),
-            TimeUnit.MILLISECONDS,
+            DISCOVERY_INTERVAL,
             error -> LOG.error("Error while searching for peers", error));
     connectToKnownPeers();
     searchForPeers();
@@ -197,9 +196,7 @@ public class ConnectionManager extends Service {
                         RECONNECT_TIMEOUT.toSeconds());
                     asyncRunner
                         .runAfterDelay(
-                            () -> maintainPersistentConnection(peerAddress),
-                            RECONNECT_TIMEOUT.toMillis(),
-                            TimeUnit.MILLISECONDS)
+                            () -> maintainPersistentConnection(peerAddress), RECONNECT_TIMEOUT)
                         .reportExceptions();
                   });
               return peer;
@@ -213,9 +210,7 @@ public class ConnectionManager extends Service {
                   RECONNECT_TIMEOUT.toSeconds());
               failedConnectionCounter.inc();
               return asyncRunner.runAfterDelay(
-                  () -> maintainPersistentConnection(peerAddress),
-                  RECONNECT_TIMEOUT.toMillis(),
-                  TimeUnit.MILLISECONDS);
+                  () -> maintainPersistentConnection(peerAddress), RECONNECT_TIMEOUT);
             });
   }
 

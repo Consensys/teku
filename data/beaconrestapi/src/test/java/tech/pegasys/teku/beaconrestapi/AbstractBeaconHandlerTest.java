@@ -22,6 +22,7 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -30,16 +31,20 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public abstract class AbstractBeaconHandlerTest {
 
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
+  protected final SpecProvider specProvider = StubSpecProvider.create();
 
   protected final Context context = mock(Context.class);
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2Network);
+  protected final ConfigProvider configProvider = new ConfigProvider(specProvider);
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);

@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 - Pull in latest jvm-libp2p release (0.7.0).
+- Delay gossip topic subscription until the node is nearly in sync.
 
 ### Breaking Changes
 - The default docker image now uses Java 15. Java 14 based images are available with the `-jdk14` suffix if required (e.g `consensys/teku:develop-jdk14`)
@@ -31,3 +32,5 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
+- Fixed `NoSuchElementException` that occurred during syncing.
+- Avoid marking the node as in sync incorrectly if an error occurs while syncing. Now selects a new target chain and continues syncing.

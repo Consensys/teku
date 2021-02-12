@@ -20,17 +20,17 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszContainerImpl extends AbstractSszComposite<SszData> implements SszContainer {
 
-  public SszContainerImpl(SszContainerSchema<?> type) {
+  public SszContainerImpl(AbstractSszContainerSchema<?> type) {
     this(type, type.getDefaultTree());
   }
 
-  public SszContainerImpl(SszContainerSchema<?> type, TreeNode backingNode) {
+  public SszContainerImpl(AbstractSszContainerSchema<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -42,13 +42,13 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   @Override
   protected SszData getImpl(int index) {
     SszCompositeSchema<?> type = this.getSchema();
-    TreeNode node = getBackingNode().get(type.getGeneralizedIndex(index));
+    TreeNode node = getBackingNode().get(type.getChildGeneralizedIndex(index));
     return type.getChildSchema(index).createFromBackingNode(node);
   }
 
   @Override
-  public SszContainerSchema<?> getSchema() {
-    return (SszContainerSchema<?>) super.getSchema();
+  public AbstractSszContainerSchema<?> getSchema() {
+    return (AbstractSszContainerSchema<?>) super.getSchema();
   }
 
   @Override

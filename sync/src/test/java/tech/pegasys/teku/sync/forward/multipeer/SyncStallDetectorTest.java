@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.sync.forward.multipeer.SyncStallDetector.MAX_SECONDS_BETWEEN_IMPORTS;
 import static tech.pegasys.teku.sync.forward.multipeer.SyncStallDetector.MAX_SECONDS_BETWEEN_IMPORT_PROGRESS;
-import static tech.pegasys.teku.sync.forward.multipeer.SyncStallDetector.STALL_CHECK_INTERVAL_SECONDS;
+import static tech.pegasys.teku.sync.forward.multipeer.SyncStallDetector.STALL_CHECK_INTERVAL;
 
 import java.util.List;
 import java.util.Optional;
@@ -175,7 +175,7 @@ class SyncStallDetectorTest {
   }
 
   private void triggerStallCheck() {
-    timeProvider.advanceTimeBySeconds(STALL_CHECK_INTERVAL_SECONDS);
+    timeProvider.advanceTimeBySeconds(STALL_CHECK_INTERVAL.toSeconds());
     asyncRunner.executeDueActions();
   }
 

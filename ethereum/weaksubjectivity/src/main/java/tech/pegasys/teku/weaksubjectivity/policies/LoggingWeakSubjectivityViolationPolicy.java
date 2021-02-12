@@ -39,15 +39,13 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,
-      final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod) {
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
     LOG.log(
         level,
-        "The latest finalized checkpoint at epoch {} ({} active validators) fell outside of the weak subjectivity period after epoch {}, which is prior to the current epoch {}.",
+        "The latest finalized checkpoint at epoch {} fell outside of the weak subjectivity period after epoch {}, which is prior to the current epoch {}.",
         latestFinalizedCheckpoint.getEpoch(),
-        activeValidatorCount,
         latestFinalizedCheckpoint.getEpoch().plus(wsPeriod),
         currentEpoch);
     wsLogger.finalizedCheckpointOutsideOfWeakSubjectivityPeriod(

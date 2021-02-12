@@ -82,7 +82,7 @@ public class SyncController {
   private Optional<InProgressSync> selectNewSyncTarget() {
     return syncTargetSelector
         .selectSyncTarget(
-            currentSync.filter(InProgressSync::isActive).map(InProgressSync::getSyncTarget))
+            currentSync.filter(InProgressSync::isActiveOrFailed).map(InProgressSync::getSyncTarget))
         .map(this::startSync);
   }
 
@@ -133,7 +133,9 @@ public class SyncController {
   private InProgressSync startSync(final SyncTarget syncTarget) {
     eventThread.checkOnEventThread();
     final TargetChain chain = syncTarget.getTargetChain();
-    if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
+    if (currentSync
+        .map(current -> !current.isFailed() && current.hasSameTarget(chain))
+        .orElse(false)) {
       LOG.trace("Not starting new sync because it has the same target as current sync");
       return currentSync.get();
     }
@@ -173,6 +175,14 @@ public class SyncController {
 
     public boolean isActive() {
       return !result.isDone();
+    }
+
+    public boolean isActiveOrFailed() {
+      return isActive() || isFailed();
+    }
+
+    public boolean isFailed() {
+      return result.isDone() && result.join() == SyncResult.FAILED;
     }
 
     public boolean isActivePrimarySync() {

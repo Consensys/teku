@@ -409,7 +409,7 @@ class SignedAggregateAndProofValidatorTest {
     // Sanity check
     final int committeeLength = committeeAssignment.getCommittee().size();
     final int aggregatorModulo =
-        specProvider.get(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
+        specProvider.atEpoch(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
     assertThat(aggregatorModulo).isGreaterThan(1);
     assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();

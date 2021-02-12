@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
@@ -53,6 +53,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
@@ -61,13 +63,16 @@ import tech.pegasys.teku.util.config.Constants;
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil();
+  SpecProvider specProvider = StubSpecProvider.create();
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
+  private ConfigProvider configProvider = new ConfigProvider(specProvider);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
-  private final UInt64 epoch = compute_epoch_at_slot(slot);
+  private final UInt64 epoch =
+      specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
   private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(
@@ -121,6 +126,7 @@ public class EventSubscriptionManagerTest {
             chainDataProvider,
             jsonProvider,
             syncDataProvider,
+            configProvider,
             asyncRunner,
             channels);
     client1 = new SseClient(ctx);

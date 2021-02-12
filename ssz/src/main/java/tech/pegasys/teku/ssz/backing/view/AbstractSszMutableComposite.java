@@ -169,7 +169,7 @@ public abstract class AbstractSszMutableComposite<
           .map(
               e ->
                   new TreeUpdates.Update(
-                      type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
+                      type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
           .collect(TreeUpdates.collector());
     } else {
       return packChanges(newChildValues, original);
@@ -201,18 +201,9 @@ public abstract class AbstractSszMutableComposite<
     }
   }
 
-  /**
-   * Backing node is assumed to be retrieved from committed immutable view only for the sake of
-   * speed to restrict accidental non-optimal usages
-   */
-  @Override
-  public TreeNode getBackingNode() {
-    throw new IllegalStateException("Call commitChanges().getBackingNode()");
-  }
-
   /** Creating nested mutable copies is not supported yet */
   @Override
-  public SszMutableData createWritableCopy() {
+  public SszMutableComposite<SszChildT> createWritableCopy() {
     throw new UnsupportedOperationException(
         "createWritableCopy() is now implemented for immutable SszData only");
   }

@@ -53,6 +53,8 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
@@ -351,9 +353,13 @@ public class BlockImporterTest {
     final SignedBeaconBlock wsBlock = localChain.createBlockAtSlot(wsEpochSlot);
     final SignedBeaconBlock otherBlock = otherChain.createBlockAtSlot(wsEpochSlot.plus(1));
 
+    final SpecProvider specProvider = StubSpecProvider.create();
     final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
     final WeakSubjectivityConfig wsConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        WeakSubjectivityConfig.builder()
+            .specProvider(specProvider)
+            .weakSubjectivityCheckpoint(wsCheckpoint)
+            .build();
     final WeakSubjectivityValidator weakSubjectivityValidator =
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
@@ -371,9 +377,13 @@ public class BlockImporterTest {
     final SignedBeaconBlock nextBlock = localChain.createAndImportBlockAtSlot(wsEpochSlot.plus(1));
     localChain.setSlot(wsEpochSlot.plus(1));
 
+    final SpecProvider specProvider = StubSpecProvider.create();
     final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
     final WeakSubjectivityConfig wsConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+        WeakSubjectivityConfig.builder()
+            .specProvider(specProvider)
+            .weakSubjectivityCheckpoint(wsCheckpoint)
+            .build();
     final WeakSubjectivityValidator weakSubjectivityValidator =
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =

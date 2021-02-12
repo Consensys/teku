@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import java.time.Duration;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +28,7 @@ public class FutureUtil {
       AsyncRunner runner,
       ExceptionThrowingRunnable runnable,
       Cancellable task,
-      long delayAmount,
-      TimeUnit delayUnit,
+      final Duration duration,
       Consumer<Throwable> exceptionHandler) {
 
     runner
@@ -45,13 +44,11 @@ public class FutureUtil {
                     LOG.warn("Exception in exception handler", e);
                   }
                 } finally {
-                  runWithFixedDelay(
-                      runner, runnable, task, delayAmount, delayUnit, exceptionHandler);
+                  runWithFixedDelay(runner, runnable, task, duration, exceptionHandler);
                 }
               }
             },
-            delayAmount,
-            delayUnit)
+            duration)
         .finish(() -> {}, exceptionHandler);
   }
 

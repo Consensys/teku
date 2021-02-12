@@ -73,10 +73,6 @@ public class WeakSubjectivityValidator {
         config, calculator, WeakSubjectivityViolationPolicy.moderate());
   }
 
-  public static WeakSubjectivityValidator lenient() {
-    return lenient(WeakSubjectivityConfig.defaultConfig());
-  }
-
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
@@ -122,8 +118,7 @@ public class WeakSubjectivityValidator {
       return Optional.empty();
     }
 
-    return Optional.of(
-        calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint.getState()));
+    return Optional.of(calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint));
   }
 
   /**
@@ -210,11 +205,9 @@ public class WeakSubjectivityValidator {
 
   private void handleFinalizedCheckpointOutsideWSPeriod(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
-    final int activeValidators =
-        calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
-    final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(activeValidators);
+    final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint);
     violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-        latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
+        latestFinalizedCheckpoint, currentSlot, wsPeriod);
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {
